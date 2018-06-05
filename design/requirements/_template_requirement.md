@@ -1,5 +1,5 @@
 # Requirement Title
-The <navigation system> should be able to <shall> <do something>
+The \<navigation system> should be able to \<shall> \<do something>
 
 ## More details
 - Why is this needed?
@@ -7,7 +7,7 @@ The <navigation system> should be able to <shall> <do something>
 - What use case does this map to?
 
 
-#Example:
+# Example:
 
 # Warehouse Navigation
 The navigation system should include a modular collision avoidance algorithm that can be replaced with a new algorithm at run time
