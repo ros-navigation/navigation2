@@ -1,12 +1,12 @@
-# Use case Title
-As a <Developer, Researcher, Technician, etc.> I want the robot to <action> so that <I, the robot, etc.> can <do something important>
+# Use Case Title
+As a \<Developer, Researcher, Technician, etc.> I want the robot to \<action> so that \<I, the robot, etc.> can \<do something important>
 
 ## More details
 - Why is this needed?
 - What is the expected user interaction? 
+- Are there any non-functional requirements? (build system, tools, performance, etc)
 
-
-#Example:
+# Example:
 
 # Warehouse Navigation
 As a warehouse robot operator, I want the robot to navigate without colliding into people or objects so that it doesn't hurt anyone or damage anything
