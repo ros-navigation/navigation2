@@ -5,6 +5,7 @@ The \<navigation system> should be able to \<shall> \<do something>
 - Why is this needed?
 - What is the expected user interaction? 
 - What use case does this map to?
+- Are there any non-functional requirements (build system, tools, performance, etc)
 
 
 # Example:
@@ -15,4 +16,4 @@ The navigation system should include a modular collision avoidance algorithm tha
 ## More details
  - I want to be able to write or use my own collision avoidance algorithm without having to re-compile the entire stack from source
  - Ideally I can just change out a node using a custom launch file
- - This maps to the "Collision avoidance" use case
+ - This maps to the "Collision Avoidance" use case
