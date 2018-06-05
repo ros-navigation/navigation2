@@ -1,4 +1,4 @@
-# ROS2 Navigation Design documenation
+# ROS2 Navigation design documentation
 This is where the ROS2 Navigation design documentation is being collected and vetted
 
 # Use Cases
