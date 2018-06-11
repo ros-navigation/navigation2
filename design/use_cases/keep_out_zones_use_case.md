@@ -7,8 +7,7 @@ As a Robot user I want to be able to designate keep-out zones or areas on a map 
    - Example: a courier robot in a logistics warehouse may be required to avoid areas where the forklift is unloading pallets from trucks
 
 - What is the expected user interaction?
-   - The user should be able to specify a keep out zones on a map through a GUI 
-   - The keep out zones should also be able to be specified programmatically through an API or config file
+   - The user should be able to specify keep out zones for the robot to avoid
 
 - Are there any non-functional requirements? (build system, tools, performance, etc)
 
