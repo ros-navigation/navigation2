@@ -48,7 +48,7 @@ The following use case diagram shows an example of the kinds of operations provi
 
 ## 1.3.2 Mission Planning Use Cases
 
-Another area in which the user interacts with the system is in the creation of a mission plan for the robot. The user composes a sequence of primitive functions, such as **Navigate to Pose**, **Navigate to Area**, **Maintain Pose**, etc., into an overall plan. While mission planning is also outside the scope of the Navigation Stack, the mission plan format should be sufficient to meet the Navigation System requirements listed in this document.
+Another area in which the user interacts with the system is in the creation of a mission plan for the robot. The user composes a sequence of primitive functions, such as **Navigate to Pose**, **Navigate to Area**, **Maintain Pose**, etc., into an overall plan. While mission planning is also outside the scope of the Navigation System, the mission plan format should be sufficient to meet the Navigation System requirements listed in this document.
 
 ![Mission Planning Use Cases](./images/Mission-Planning-Use-Cases.png)
 
@@ -105,9 +105,9 @@ To facilitate error recovery, each module in the chain, if it is unable to carry
 
 The Navigation System designers should strive to meet the following high-level design goals:
 
-* **Extensibility** - The Navigation Stack should be a *pluggable framework* to allow for other developers to easily extend the capabilities of the Navigation System.
-* **Modularity** - The Navigation Stack should allow other developers to *easily replace components* with alternative implementations.
-* **Generality** - The Navigation Stack should not introduce inherent limitations in the architectural blocks. For example, it should support multiple kinds of robots, not making assumptions about robot capabilities and limitations and should support various map types and orientations.
+* **Extensibility** - The Navigation System should be a *pluggable framework* to allow for other developers to easily extend the capabilities of the Navigation System.
+* **Modularity** - The Navigation System should allow other developers to *easily replace components* with alternative implementations.
+* **Generality** - The Navigation System should not introduce inherent limitations in the architectural blocks. For example, it should support multiple kinds of robots, not making assumptions about robot capabilities and limitations and should support various map types and orientations.
 * **Performance** - *TODO: What are the performance goals?* 
 * **Scalability** - *TODO: How low should the implementation scale?* *Specify a minimum platform?*
 * *Other important design goals?*
@@ -133,12 +133,12 @@ IC001 | Developer's Guide | 1 | The Navigation System SHOULD be developed in acc
 IC002 | Implementation Language.C++.Version | 1 | Developers SHALL assume the availability of C++14 language features | Per the ROS 2 Developer's Guide
 IC003 | Implementation Language.C++.API Preference | 1 | Developers SHOULD prefer standard C++, then Boost, then custom code, in that order. | Boost may be used if equivalent functionality is not already available in the C++ standard library
 IC004 | Implementation Language.C++.Supported Compilers.g++ | 1 | The Navigation System code SHALL compile with gcc 5.4 or newer
-IC004 | Implementation Language.C++.Supported Compilers.Clang | 1 | The Navigation System code SHALL compile with Clang, version *x*
-IC004 | Implementation Language.C++.Supported Compilers.Intel C++ Compiler | 1 | The Navigation System code SHOULD compile with the Intel C++ Compiler, version *x* | Could be useful for optimization purposes
-IC005 | Implementation Language.Python.Version | 1 | Any Python code developed for the Navigation System MUST use Python 3
-IC006 | Implementation Language.GUI | 1 | Any GUIs developed as part of the Navigation System MUST use the Qt library, via C++ or Python (PyQt) | *Which version?*
-IC006 | Implementation Language.GUI.QML | 1 | Any GUIs developed as part of the Navigation System MAY use QML
-IC007 | ROS2.Version | 1 | The Navigation System WILL be developed against the latest stable version of the ROS 2 stack | *What is the current latest version?*
+IC005 | Implementation Language.C++.Supported Compilers.Clang | 1 | The Navigation System code SHALL compile with Clang, version *x*
+IC006 | Implementation Language.C++.Supported Compilers.Intel C++ Compiler | 1 | The Navigation System code SHOULD compile with the Intel C++ Compiler, version *x* | Could be useful for optimization purposes
+IC007 | Implementation Language.Python.Version | 1 | Any Python code developed for the Navigation System MUST use Python 3
+IC008 | Implementation Language.GUI | 1 | Any GUIs developed as part of the Navigation System MUST use the Qt library, via C++ or Python (PyQt) | *Which version?*
+IC009 | Implementation Language.GUI.QML | 1 | Any GUIs developed as part of the Navigation System MAY use QML
+IC010 | ROS2.Version | 1 | The Navigation System WILL be developed against the latest stable version of the ROS 2 stack | *What is the current latest version?*
 
 ## 2.2 Target Platforms
 
@@ -159,54 +159,45 @@ This section lists the requirements for the core command chain modules in the Na
 
 ### 2.3.1 Mission Planning
 
-TODO: 
-
-The Mission Planning subsystem is outside the scope of the Navigation System. However, the data format, or messages, required to interact with the subsystem area within scope and must be specified as the Navigation System needs to receive this information to be able to execute the mission plans.
-
-A complete system, which incorporates the Navigation System, would also have a Mission Planning subsystem that generates a Mission Plan from input provided by the User. The Mission Plan is a sequence of primitive operations and any associated policy about how the plan should be carried out. The design and implementation of the subsystem that creates the Mission Plan is outside the scope of the Navigation System, but its output, the Mission Plan, may have an impact on capabilities that the Navigation System must provide. 
-
-*TODO: Rephrase using "mission plan" terminology rather than taking the robot's perspective*
+A complete system would have some kind of Mission Planning subsystem to convey the user's intentions to the robot. The User interacts with this Mission Planning subsystem to generate a Mission Plan for the robot. The Mission Plan is defined as a sequence of navigation commands and any associated information about how and when the plan should be carried out. The design and implementation of a Mission Planning subsystem is outside the scope of the Navigation System. However, in order to understand the larger system context and how Mission Planning interacts with the Navigation System, this section will consider the nature of a mission plan and the kinds of operations it may contain.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-MP001 | Mission Planning.Primitives | 1 | The Mission Plan MUST be able to express the plan as a sequence of the following Primitives (MP002 - MP010)
-MP002 | Mission Planning.Primitives.Navigate to Pose | 1 | The Navigation System MUST be able to navigate the Robot from its current location to a specified destination pose.
-MP003 | Mission Planning.Primitives.Navigate to Area | 1 | The Navigation System MUST be able to navigate the Robot from its current location to a specified area. | *TODO: How to define "area"?*
-MP004 | Mission Planning.Primitives.Enqueue | 1 | The Navigation System MUST be able to navigate the Robot from its current location to a position behind another specified robot. 
-MP005 | Mission Planning.Primitives.Follow | 1 | The Navigation System MUST be able to direct the Robot to follow another specified robot. | This one doesn't have a completion state (reaching the goal), unless it specifies some more information such as "follow until destination reached"
-MP006 | Mission Planning.Primitives.Orbit | 1 | *TODO: How is this defined?* | Similar to Follow in that it doesn't complete (unless it specifies time)
-MP007 | Mission Planning.Primitives.Maintain Pose | 1 | The Navigation System MUST be able to maintain its current pose | Could be indefinite or time-based
-MP008 | Mission Planning.Primitives.Park | 1 | *TODO: What does parking mean? Some low-power state?*
-MP009 | Mission Planning.Primitives.Enter Elevator | 1 | The Navigation System MUST be able to navigate the Robot from its current location onto an elevator. | *TODO: Would the elevator door be automated?*
-MP010 | Mission Planning.Primitives.Exit Elevator | 1 | The Navigation System MUST be able to navigate the Robot from its position in an elevator to a specified location outside the elevator. 
-MP011 | Mission Planning.Policy | 1 | The Mission Plan MUST be able to express the following policy associated with how to carry out the mission (MP012 - MP015)| *What are the important qualities for how the primitives should be carried out? Should there be per-primitive policy?*
-MP012 | Mission Planning.Policy.Timeliness | 1 | The Navigation System MUST respect any timeliness constraints in the Mission Plan | *TODO: Is it important to specify by when the mission should be completed, for example?*
-MP013 | Mission Planning.Policy.Safety Constraints | 1 | The Navigation System MUST respect any safety constraints in the Mission Plan | *TODO: Is there a set of global safety-related policy for the robot to follow?*
-MP014 | Mission Planning.Policy.Safety Constraints.Maximum Speed | 1 | The Navigation System MUST respect the maximum speed specified in the Mission Plan 
-MP015 | Mission Planning.Policy.Safety Constraints.Minimum Safety Buffer | 1 | The Navigation System MUST maintain a minimum safe distance between the robot and other objects at all times, as specified int he Mission Plan | Configurable safety zone around the robot. *TODO: Variable with speed? Differ in each direction?*
-
-*TODO: How to handle reverse direction? Does each primitive include this information?*
+MP001 | Mission Planning.Navigation Commands | 1 | The Mission Plan MUST be able to express the plan as a coordinated sequence of Navigation Commands. | Could include time and policy aspects (*when* and *how*, not just *what*)
+MP002 | Mission Planning.Navigation Commands.Composition | 1 | The Mission Plan SHOULD allow for the composition and naming of new Navigation Commands from a sequence of previously-defined Navigation Commands. | Build up levels of abstraction. For example, Enter-Elevator could be expressed as Navigate-to-Pose (right outside of elevator), Wait (for door to open), Navigate-to-Pose (inside the elevator)
+MP003 | Mission Planning.Navigation Commands.Navigate to Pose | 1 | The Mission Plan MUST be able to convey the information required for a robot to navigate from its current location to a specific destination pose. 
+MP004 | Mission Planning.Navigation Commands.Navigate to Area | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to navigate from its current location to a specific area. | An "area" could be a rectangular region or a more complex shape 
+MP005 | Mission Planning.Navigation Commands.Enqueue | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to navigate from its current location to a position behind another specified robot. 
+MP006 | Mission Planning.Navigation Commands.Follow | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to be able to follow another specified robot. | This one doesn't have a completion state (reaching the goal), unless it specifies additional information such as "follow until destination reached"
+MP007 | Mission Planning.Navigation Commands.Maintain Pose | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to maintain its current pose. | Could be indefinite or time-based
+MP008 | Mission Planning.Navigation Commands.Park | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to park itself. | Presumably after Navigation-to-Pose *TODO: What does parking mean? Does the robot also enter some low-power state?*
+MP009 | Mission Planning.Policy | 1 | The Mission Plan SHOULD be able to express information about how and when the navigation commands are to be carried out. | *What are the important qualities for how the primitives should be carried out? For example, time and safety constraints.*
+MP010 | Mission Planning.Policy.Time.Initiation | 1 | The Mission Plan SHOULD be able to convey when a mission should begin.
+MP011 | Mission Planning.Policy.Time.Completion | 1 | The Mission Plan SHOULD be able to convey by when a mission should end.
+MP012 | Mission Planning.Policy.Safety.Maximum Speed | 1 | The Mission Plan SHOULD be able to convey a maximum speed for the robot. | The robot would respect this value in carrying out the plan. This could be site-specific policy.
+MP013 | Mission Planning.Policy.Safety.Minimum Safety Buffer | 1 | The Mission Plan SHOULD be able to convey a minimum safety buffer distance. | The robot would respect this value and maintain the distance from other objects at all times. *TODO: Variable with speed? Differ in each direction?*
 
 ### 2.3.2 Mission Execution
 
-The Mission Execution module has the responsibility to execute a provided mission. It provides each successive primitive operation to the global planner, monitoring and reporting progress towards the goal.
+The Mission Execution module has the responsibility to execute a provided mission. It provides each successive Navigation Command operation to the Navigation Subsystem, monitoring and reporting progress towards the goal.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 ME001 | Mission Execution.Inputs.Mission Plan | 1 | The Mission Execution module MUST accept the Mission Plan to execute.
-ME002 | Mission Execution.Inputs.Commands.Execute Mission | 1 | The Mission Execution module MUST execute the provided Mission Plan, respecting any specified constraints.
-ME003 | Mission Execution.Inputs.Commands.Cancel Mission | 1 | The Mission Execution module MUST be able to interrupt the Robot's navigation and cancel the current mission.
-ME004 | Mission Execution.Select Planners | 1 | The Mission Execution module SHOULD select the best planners to use for each mission primitive | Can dynamically utilize planners
-ME005 | Mission Execution.Outputs | 1 | At each stage of the Mission Plan, the Mission Execution module SHALL output the next primitive to execute and WILL monitor for completion of each primitive before sending the next. | Tracks completion of the mission and sequences the operations. *TODO: What about primitives that don't complete? Would they be defined with a time element so that they can complete?*
-ME006 | Mission Execution.Feedback.Outputs.Notify Progress | 1 | The Mission Execution module MUST provide progress notifications on the execution of the mission, including mission completion. | The current stack, once it reaches a goal, publishes a message. This would be a generalization of that feature. We can determine the elapsed time using the message timestamp.
-ME007 | Mission Execution.Logging | 1 | The Mission Execution module SHOULD log activity for later analysis. | In case of forensic analysis of a safety event, for example.
-ME008 | Mission Execution.Feedback.Inputs.Error Notification.Automatic Error Recovery | 1 | Upon receipt of a downstream failure (from a Planner), the Mission Execution module SHOULD attempt to automatically recover from the error | For example, if the robot gets stuck, the Mission Execution module could have the robot perform a recovery maneuver of some kind, before continuing with execution of the mission plan.
-ME009 | Mission Execution.Feedback.Outputs.Error Information | 1 | If the Mission Execution module is unable to execute the mission, it MUST report the failure | This would be received by the higher-level software. Perhaps a remote operating center where the remote operator "rescues" the robot. 
-ME010 | Mission Execution.Safe State Upon Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST direct the robot to a safe state. | *TODO: Define "safe state"* The failure could be for a variety of reasons - sensor failures, algorithmic failure, a collision, etc.
+ME002 | Mission Execution.Inputs.Commands.Execute Mission | 1 | When commanded to do so, the Mission Execution module MUST execute the provided Mission Plan, respecting any specified constraints. | It tracks completion of the mission and sequences the operations. *TODO: What about primitives that don't complete? Would they be defined with a time element so that they can complete?*
+ME003 | Mission Execution.Inputs.Commands.Cancel Mission | 1 | When commanded to do so, the Mission Execution module MUST interrupt the Robot's navigation and cancel the current mission.
+ME004 | Mission Execution.Outputs.Navigation Command | 1 | Upon completion of each Navigation Command, the Mission Execution module SHALL output the next Navigation Command to execute.
+ME005 | Mission Execution.Command Sequencing | 1 | The Mission Execution module MUST monitor for completion of each Navigation Command before sending the next command.
+ME006 | Mission Execution.Logging | 1 | The Mission Execution module SHOULD log its activity. | In case of forensic analysis of a safety event, for example.
+ME007 | Mission Execution.Feedback.Outputs.Notify Progress | 1 | The Mission Execution module MUST provide progress notifications on the execution of the mission, including mission completion. | The current stack, once it reaches a goal, publishes a message. This would be a generalization of that feature.
+ME008 | Mission Execution.Feedback.Outputs.Error Information | 1 | If the Mission Execution module is unable to execute the mission, it MUST report the failure | This would be received by the higher-level software. Perhaps a remote operating center where the remote operator "rescues" the robot. 
+ME009 | Mission Execution.Safe State Upon Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST direct the robot to a safe state. | *TODO: Define "safe state"* The failure could be for a variety of reasons - sensor failures, algorithmic failure, a collision, etc.
 
 ### 2.3.3 Routing
 
 The Routing Module computes the intended route for the robot, typically using a map, the robot's initial pose, and the desired primitive to execute. 
+
+ME008 | Mission Execution.Feedback.Inputs.Error Notification.Automatic Error Recovery | 1 | Upon receipt of a downstream failure, the Mission Execution module SHOULD attempt to automatically recover from the error | For example, if the robot gets stuck, the Mission Execution module could have the robot perform a recovery maneuver of some kind, before continuing with execution of the mission plan.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
@@ -377,3 +368,5 @@ DONE: GP003: (Mohammad) The Global Planner "MUST" have the robot's current pose.
 MP005: (Mohammad)  Are we planning to implement object detection and tracking to accomplish this task? Or does the Nav stack gets a series of waypoints from other supporting modules?
 
 DONE: MP007: (Mohammad) "Wait" should be changed to "HoldPose". For example: the robot is on an inclined plane and the user wants the robot to stay at its current pose. @crdelsey If the HoldPose primitive is not given the robot would role in this example.
+
+*TODO: How to handle reverse direction? Does each primitive include this information?*
