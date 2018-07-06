@@ -1,5 +1,3 @@
-![ROS2](doc/images/ros2-logo.png)
-
 # Navigation2
 
 ROS2 Navigation System
