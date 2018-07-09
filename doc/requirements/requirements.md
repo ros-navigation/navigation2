@@ -223,13 +223,11 @@ PLN016 | Planning.Feedback.Outputs.Command Completed | 1 | Upon completing the p
 PLN017 | Planning.Feedback.Outputs.Unable to Execute Command | 1 | If the Planning Module is unable to execute the Navigation Command, it SHALL report the error on its feedback output. | It should handle errors if possible, but report back if it can't.
 PLN018 | Planning.Feedback.Outputs.Collision Detected | 1 | *TODO: What happens in the error/exception reporting chain to report a collision?*
 PLN019 | Planning.Feedback.Outputs.Recovered from Collision | 1 | *TODO: What happens in the error/exception reporting chain to report a collision?*
-PLN020 | Planning.Dynammic Selection of Planners | 1 | The selection of the Planning Module to use for a given Navigation Command should be dynamic. | There SHOULD be multiple planners available and chosen depending on the command to be executed
+PLN020 | Planning.Dynammic Selection of Planners | 1 | The selection of the Planning Module to use for a given Navigation Command should be dynamic. | There SHOULD be multiple planners available and chosen depending on the command to be executed. 
 PLN021 | Planning.High-End Planner | 1 | The Navigation System SHOULD implement a state-of-the-art planner | Can serve as an example to others developing planners.
 PLN022 | Planning.Low-End Planner | 1 | The Navigation System SHOULD implement a planner for low-compute targets | Can serve as an example to others developing planners.
 PLN023 | Planning.Documentation | 1 | The Navigation System SHOULD provided detailed documentation on how to develop a planner.
-PLN024 | Planning.Simple Example | 1 | The Navigation System SHOULD provided a simple example of a Planner | Developers could use this as a starting point.
-
-*TODO: Planning Plugins*
+PLN024 | Planning.Simple Example | 1 | The Navigation System SHOULD provided a simple example of a Planner | An easily understood module that developers and students could use as a starting point.
 
 ### 2.3.4 Navigation System.Control
 
@@ -241,18 +239,21 @@ CTL001 | Control | 1 | The Control Module MUST...
 
 ### 2.3.5 Robot Interface
 
-*TODO: What to say about the robot interface?* *Should there be a robot abstraction?* *Perhaps this would be a convenient place to put some safety-related functionality*
+*TODO: What to say about the robot interface?* 
+* *Should there be a robot abstraction?* 
+* *Perhaps this would be a convenient place to put some safety-related functionality*
+
 There should be a uniform interface to the various supported robots. This may require a layer on top of the vendor-specific interface(s).
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-ROB001 | Robot Interface.Attributes | 1 | Holonomicity, max/min speeds and accelerations, etc. 
-ROB002 | Robot Interface.Dynamic Switching | 1 | Can the robot dynamically change attributes?
-ROB003 | Robot Interface.Safety.Limited Parameters | 1 | A list of parameters used to limit certain circumstances and provide the hooks for users to set those values if they want
-ROB004 | Robot Interface.Safety.Speed Limiting | 1 | TODO
-ROB005 | Robot Interface.Safety.Force Limiting | 1 | TODO
-ROB006 | Robot Interface.EMO Button | 1 | TODO
-ROB007 | Robot Interface.Feedback.Outputs | 1 | TODO
+RI001 | Robot Interface.Attributes | 1 | Holonomicity, max/min speeds and accelerations, etc. 
+RI002 | Robot Interface.Dynamic Switching | 1 | Can the robot dynamically change attributes?
+RI003 | Robot Interface.Safety.Limited Parameters | 1 | A list of parameters used to limit certain circumstances and provide the hooks for users to set those values if they want
+RI004 | Robot Interface.Safety.Speed Limiting | 1 | TODO
+RI005 | Robot Interface.Safety.Force Limiting | 1 | TODO
+RI006 | Robot Interface.EMO Button | 1 | TODO
+RI007 | Robot Interface.Feedback.Outputs | 1 | TODO
 
 ## 2.4 Support Modules
 
@@ -260,38 +261,38 @@ There are a few support modules and subsystems that are not part of the Navigati
 
 ### 2.4.1 Mapping
 
-The map data format should be capable of describing common indoor and outdoor environments.
+The map data format should be capable of describing common indoor and outdoor environments encoutered by the robots.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-MAP001 | Mapping | 1 | The Mapping System SHALL provide map information to the Navigation System | So that the Mapping System has a basic understanding of its environment. Used in planning
-MAP002 | Mapping.Dimensionality.2D | 1 | The Mapping System MUST provide 2D map information
-MAP003 | Mapping.Dimensionality.2D+ | 1 | The Mapping System MUST provide 2D+ map information | *TODO: How is this defined?*
-MAP004 | Mapping.Dimensionality.3D | 1 | The Mapping System SHOULD provide 3D map information | *TODO: Use voxel-based?*
-MAP005 | Mapping.Multiple Maps Per Environment | 1 | The Mapping system SHOULD provide multiple maps of the same environment. | *TODO: Different scales and elevations?*
-MAP006 | Mapping.Dynamic Updates | 1 | The Mapping System SHOULD provide real-time updates of map information | For example, to create a keep-out zone in the event of a spill hazard.
-MAP007 | Mapping.Data Model.Traversable Surface | 1 | Planar (2D) surface (street, floor). 
-MAP008 | Mapping.Data Model.Traversable Surface.Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces | Uneven ground
-MAP009 | Mapping.Data Model.Safety Zone | 1 | Specify limitations to be respected while the robot is in this zone. Speed, (increased) distance to people.
-MAP010 | Mapping.Data Model.Safety Zone.Keep Out Zone | 1 | Robot MUST NOT navigate through a keep-out zone
-MAP011 | Mapping.Data Model.Safety Zone.Intersection | 1 | May want to slow down (or even stop), for example, when approaching an intersection | Robots can slow down when coming to an intersection in order to ensure that they can see anyone coming and other people/robots can see them
-MAP012 | Mapping.Data Model.Lanes | 1 | Able to specify virtual lanes. Prefer the specified lanes (such as in a warehouse)
-MAP013 | Mapping.Data Model.Building Levels | 1 | Able to specify single and multi-level buildings
+MAP001 | Mapping | 1 | The Mapping System SHALL provide map information to the Navigation System | So that the Mapping System has a basic understanding of its environment. Can be used during planning.
+MAP002 | Mapping.Dynamic Updates | 1 | The Mapping System SHALL provide real-time updates of map information, as the environment described by the map changes.
+MAP003 | Mapping.Data Model.Obstacles | 1 | Maps provided by Mapping Subsystem MUST indicate the location of known obstacles.
+MAP004 | Mapping.Data Model.Confidence Metric | 1 | Each known obstacle in a map SHALL have a confidence metric associated with it. 
+MAP005 | Mapping.Data Model.Unknown Space | 1 | Maps provided by Mapping Subsystem MUST indicate unmapped/unknown space. | Such as areas beyond the edge of the map, or areas within the map for which we didn't have any observations during map building.
+MAP006 | Mapping.Data Model.Surface Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces. | Can describe uneven ground.
+MAP007 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations. 
+MAP008 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *Does it need to be a unique name?*
+MAP009 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for re-use of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
+MAP010 | Mapping.Data Model.Safety Zone.Policy | 1 | The map data format SHALL be capable of expressing policy associated with each safety zone and safety zone type. | Maximum speed, (increased) distance to people, etc.
+MAP011 | Mapping.Data Model.Safety Zone.Policy.Keep Out | 1 | The map data format SHALL be capable of expressing that a robot must not navigate through this zone.
+MAP012 | Mapping.Data Model.Lanes | 1 | Able to specify virtual lanes. Prefer the specified lanes (such as in a warehouse).
+MAP013 | Mapping.Data Model.Building Levels | 1 | Able to specify single and multi-level buildings.
 MAP014 | Mapping.Data Model.Building Levels.Level Connecting Features | 1 | Able to specify level connecting features, such as elevators, stairways, ramps.
-MAP015 | Mapping.Data Model.Unknown Space | 1 | To be dynamically mapped? In global maps, it can be areas beyond the edge of the map, or areas within the center of the map for which we didn't have any observations during map building. In the current system, this is the "dark grey" portion of the map (free space is light grey, obstacles are black)
-MAP016 | Mapping.Data Model.Extensibility | 1 | *TODO: Map attributes. Layers concept?*
+MAP015 | Mapping.Multiple Maps Per Environment | 1 | The Mapping System MAY provide multiple maps of the same environment. | Different scales and elevations?
+MAP016 | Mapping.Data Model.Extensibility | 1 | The Mapping System SHOULD be extensible, to allow for the description of additional entities in the environment | *TODO: Layers concept?*
+MAP017 | Mapping.Dimensionality.2D | 1 | The Mapping System MUST provide 2D map information.
+MAP018 | Mapping.Dimensionality.2D+ | 1 | The Mapping System MUST provide 2D+ map information. | *TODO: How is this defined?*
+MAP019 | Mapping.Dimensionality.3D | 1 | The Mapping System SHOULD provide 3D map information. | *TODO: Use voxel-based?*
 
 ### 2.4.2 Perception
 
-The Navigation System requires dyanamic information about objects in its environment. This information is provided by a Sensory Subsystem that is outside the scope of the Navigation System. This information would typically be provided by a set of sensors on the robot and a sensor fusion capability. This section lists the requirements on the data that the Sensory Subsystem provides. 
+The Perception Subsystem provides information about objects detected in the robot's environment. This information would typically be generated from a fusion of sensor input.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-SEN001 | Sensing | 1 | The Sensory Subsystem SHALL provide information about the dynamic environment of the robot | Info sufficient to carry out the Navigation System requirements
-SEN002 | Sensing.Latency | 1 | TODO
-SEN003 | Sensing.Environment Model | 1 | *TODO: What, specifically, should be in the environment model?*
-SEN004 | Sensing.Environment Model.Object Prediction | 1 | The Sensing Subsystem SHOULD provide an object prediction capability that projects the position of the objects into the future. | One of the biggest shortcomings of the current system is the inability to model/predict where obstacles will be in the future. This leads to collisions with other moving objects
-SEN005 | Sensing.Environment Model.Object Prediction.Time Horizon | 1 | *TODO: How far into the future should the object prediction work?*
+PER001 | Perception | 1 | The Sensory Subsystem SHALL provide information about the dynamic environment of the robot | Info sufficient to carry out the Navigation System requirements.
+PER002 | Perception.Latency | 1 | TODO
 
 ### 2.4.3 Prediction
 
@@ -299,7 +300,8 @@ The Prediction Subsystem TODO
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-PRE001 | Localization.Robot Pose | 1 | TDOO
+PRD001 | Prediction.Object Prediction | 1 | The Prediction Subsystem SHOULD predict the trajectories of detected objects. | One of the biggest shortcomings of the current system is the inability to model/predict where obstacles will be in the future. This leads to collisions with other moving objects
+PRD002 | Prediction.Object Prediction.Time Horizon | 1 | *TODO: How far into the future should the object prediction work?*
 
 ### 2.4.4 Localization
 
@@ -308,12 +310,11 @@ The Navigation System requires the Robot's current pose, provided by an external
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 LOC001 | Localization.Robot Pose | 1 | The Localization module MUST provide the robot's current pose to the Navigation System | This could be manual or as a result of automatic localization; the Navigation System wouldn't know either way 
-LOC002 | Localization.Robot Pose.Accuracy | 1 | *TODO: What are the requirements on the accuracy of this pose?*
+LOC002 | Localization.Robot Pose.Accuracy | 1 | The Localization Module MUST provide the expected accuracy of its generated poses. | So that Planning modules can determine if a particular Localization module has sufficient accuracy.
 
 
 
 **TODO**
-* (mikeferguson) Ideally, this module should also be extremely well commented and documented, such that it can be used as a teaching tool -- I presume it will be a fairly straight forward A* implementation, which means it can be easily understood by students and adapted during various coursework.
 
 * (mike furgeson) In supporting this, I think you'll find that you also want to make it easy to "reset or disable" a planner. Most of these planners may have large memory usage, and for efficiency may not want to recreate them for each plan -- if you have multiple running at once, each taking up memory, you might actually run out of memory quickly. Having an easy API to say "hey, not using this planner for a while, have it release resources" would be very useful.
 
@@ -346,6 +347,7 @@ Suggestion: Changing the phrase "known obstacles" to "known static obstacles".
 * MP008: (Carl) Going to a low power state seems out of scope for the navstack.
 * MP007: (Carl) Could this just be reduced to not having a specified objective? What would the robot do if it isn't given a wait primitive? (Mohammad) "Wait" should be changed to "HoldPose". For example: the robot is on an inclined plane and the user wants the robot to stay at its current pose. @crdelsey If the HoldPose primitive is not given the robot would role in this example. HoldPose may also be considered to be out of scope for Nav stack. The robot's base controller should take care of holding the pose.
 * MP006: (Carl) Orbit what? I can see potentially orbitting a fixed position in the world. Orbitting an object seems outside our scope.
+* (mikeferguson) Ideally, this module should also be extremely well commented and documented, such that it can be used as a teaching tool -- I presume it will be a fairly straight forward A* implementation, which means it can be easily understood by students and adapted during various coursework.
 
 **OPENS**
 * *TODO: How to handle reverse direction? Does each primitive include this information?*
