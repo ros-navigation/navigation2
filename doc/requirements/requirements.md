@@ -80,7 +80,7 @@ The following diagram shows the modules in the command chain and the successive 
 The Navigation System itself can be decomposed into two general responsibilities, *Planning*, and *Execution*.
 
 * **Planning** - The Planning Module is responsible to execute Navigation Commands. To do so, this module can evaluate input maps and continually assess the robot's environment to plan motion and provide trajectories for the robot to follow to eventually achieve completion of the Navigation Command.
-* **Control** - The Control Module is responsible to execute the trajectories provided by Planning, generating the control signals required to execute the Trajectory.
+* **Execution** - The Execution Module is responsible to execute the trajectories provided by Planning, generating the control signals required to execute the Trajectory.
 
 ![Navigation System](./images/Navigation-System.png)
 
