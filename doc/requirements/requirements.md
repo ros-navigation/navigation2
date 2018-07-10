@@ -32,7 +32,7 @@ In the requirements specified below, certain keywords have a specific meaning as
 
 5. **MAY**: This word, or the adjective "OPTIONAL", mean that an item is truly optional. An implementation which does not include a particular option MUST be prepared to interoperate with another implementation which does include the option, though perhaps with reduced functionality. In the same vein an implementation which does include a particular option MUST be prepared to interoperate with another implementation which does not include the option (except, of course, for the feature the option provides).
 
-These definitions are derived from the IETF Best Current Practices Document #14.
+These definitions are derived from the [IETF Best Current Practices Document 14](https://tools.ietf.org/html/bcp14).
 
 ## 1.3 Terminology
 
@@ -42,8 +42,8 @@ Term | Definition
 ---- | ----------
 Path | A *Path* is an ordered sequence of points in space.
 Route | A *Route* is a synonym for Path.
-Trajectory | A *Trajectory* is a path for which which timing is specified, e.g., velocities and accelerations for each point.
-Path Planning | *Path Planning* finds an optimal path from one node in a graph to another. Algorithms such as A*, D*, and RRT are all path planning algorithms if they don’t consider motion.
+Trajectory | A *Trajectory* is a path parameterized by time.
+Path Planning | *Path Planning* finds an optimal path from one node in a graph to another. Algorithms such as A*, D*, and RRT are all path planning algorithms if they don't consider motion.
 Motion Planning | *Motion Planning* specifies the motion of the robot over time. Motion can go along the same path but with different trajectories.
 
 ## 1.4 Use Cases
@@ -102,7 +102,7 @@ Decomposing the Navigation System, the overall command chain is as follows:
 
 ## 1.5.2 Support Modules
 
-In addition to the command chain, there are several supporting modules and subsystems required for a complete system. The implementation of these modules is outside the scope of the Navigation System. However, the inteface to these components is in scope and the associated requirements should be defined. Together, the support modules provide the robot with a full picture of the robot's environment.
+In addition to the command chain, there are several supporting modules and subsystems required for a complete system. The implementation of these modules is outside the scope of the Navigation System. However, the interface to these components is in scope and the associated requirements should be defined. Together, the support modules provide the robot with a full picture of the robot's environment.
 
 * **Mapping** - The Mapping Subsystem generates maps that can be used by the Navigation System to plan the robot's motion. Maps are typically created in advance and are available to the Navigation System. A map can be updated to reflect changes in the environment. The frequency of these updates will vary among implementations.
 * **Perception** - The Perception Subsystem utilizes sensors to develop an understanding of the dynamic environment around the robot. This information is available to the Navigation System, such as when avoiding obstacles in the robot's path.
@@ -117,10 +117,10 @@ To facilitate error recovery, each module in the command chain, if it is unable 
 
 ## 1.6 Design Goals
 
-The Navigation System designers should strive to meet the following high-level design goals:
+The Navigation System should meet the following high-level design goals:
 
 * **Extensibility** - The Navigation System should be a *pluggable framework* to allow for other developers to easily extend the capabilities of the Navigation System, such as adding the ability to handle new navigation commands.
-* **Modularity** - The Navigation System should allow other developers to *easily replace components* with alternative implementations.
+* **Modularity** - The Navigation System should allow developers to *easily replace components* with alternative implementations.
 * **Generality** - The Navigation System should not introduce inherent limitations in the architectural blocks. For example, it should support multiple kinds of robots, not making assumptions about robot capabilities and limitations and should support various map types and orientations.
 * **Performance** - *TODO: What are the performance goals?*
 * **Scalability** - *TODO: How low should the implementation scale?* *Specify a minimum platform?*
@@ -143,20 +143,20 @@ IC004 | Implementation Language.C++.Supported Compilers.g++ | 1 | The Navigation
 IC005 | Implementation Language.C++.Supported Compilers.Clang | 1 | The Navigation System code SHALL compile with Clang, version *x*
 IC006 | Implementation Language.C++.Supported Compilers.Intel C++ Compiler | 1 | The Navigation System code SHOULD compile with the Intel C++ Compiler, version *x* | Could be useful for optimization purposes
 IC007 | Implementation Language.Python.Version | 1 | Any Python code developed for the Navigation System MUST use Python 3
-IC008 | Implementation Language.GUI | 1 | Any GUIs developed as part of the Navigation System MUST use the Qt library, via C++ or Python (PyQt) | *Which version?*
+IC008 | Implementation Language.GUI | 1 | Any GUIs developed as part of the Navigation System SHOULD use the Qt library, via C++ or Python (PyQt) | *Which version?*
 IC009 | Implementation Language.GUI.QML | 1 | Any GUIs developed as part of the Navigation System MAY use QML
 IC010 | ROS2.Version | 1 | The Navigation System WILL be developed against the latest stable version of the ROS 2 stack | *What is the current latest version?*
 
 ## 2.2 Target Platforms
 
-The Navigation System will run on the latest versions of the operating systems supported by the core ROS 2 code.
+ Navigation System will run on the latest versions of the operating systems supported by the core ROS 2 code.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 TP001 | Target Platforms.Operating Systems.Ubuntu | 1 | The Navigation System MUST support Ubuntu Desktop 16.04 and Ubuntu Desktop 18.04
 TP002 | Target Platforms.Operating Systems.MacOS | 1 | The Navigation System MUST support MacOS 10.13 (High Sierra) and MacOS 10.14 (Mohave)
 TP003 | Target Platforms.Operating Systems.Windows | 1 | The Navigation System MUST support Windows 10 Professional
-TP004 | Target Platforms.Operating Systems.Clear Linux | 1 | The Navigation System SHOULD support the latest version of Intel's Clear Linux distribution | What is the latest version number?
+TP004 | Target Platforms.Operating Systems.Clear Linux | 1 | The Navigation System SHOULD support the Intel's Clear Linux distribution | Clear Linux uses a continuous deployment model. 
 TP005 | Target Platforms.CPU.Word Size | 1 | The Navigation System SHALL support 64-bit processors | Don't assume a specific pointer size
 TP006 | Target Platforms.Minimum Platform | 1 | *Should we specify a minimum target platform?* *Or, should this be expressed as minimum platform requirements?*
 
@@ -173,16 +173,17 @@ Id | Handle | Priority | Description | Notes
 MP001 | Mission Planning.Navigation Commands | 1 | The Mission Plan MUST be able to express the plan as a coordinated sequence of Navigation Commands. | Could include time and policy aspects (*when* and *how*, not just *what*)
 MP002 | Mission Planning.Navigation Commands.Composition | 1 | The Mission Plan SHOULD allow for the composition and naming of new Navigation Commands from a sequence of previously-defined Navigation Commands. | Build up levels of abstraction. For example, Enter-Elevator could be expressed as Navigate-to-Pose (right outside of elevator), Wait (for door to open), Navigate-to-Pose (inside the elevator).
 MP003 | Mission Planning.Navigation Commands.Navigate to Pose | 1 | The Mission Plan MUST be able to convey the information required for a robot to navigate from its current location to a specific destination pose.
-MP004 | Mission Planning.Navigation Commands.Navigate to Area | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to navigate from its current location to a specific area. | An "area" could be a rectangular region or a more complex shape.
+MP004 | Mission Planning.Navigation Commands.Navigate to Area | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to navigate from its current location to a specific area. | An "area" could be a rectangular region or a more complex shape. It may be defined as tolerance to a goal (ie. within +/- 1 meter distance).
 MP005 | Mission Planning.Navigation Commands.Enqueue | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to navigate from its current location to a position behind another specified robot.
 MP006 | Mission Planning.Navigation Commands.Follow | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to be able to follow another specified robot. | This one doesn't have a completion state (reaching the goal), unless it specifies additional information such as "follow until destination reached."
 MP007 | Mission Planning.Navigation Commands.Maintain Pose | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to maintain its current pose. | Could be indefinite or time-based.
 MP008 | Mission Planning.Navigation Commands.Park | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to park itself. | The implementation of the parking command could interact with the robot to cause it, for example, to shut down or enter a low-power state.
-MP009 | Mission Planning.Policy | 1 | The Mission Plan SHOULD be able to express information about how and when the navigation commands are to be carried out. | Time and safety constraints.
-MP010 | Mission Planning.Policy.Time.Initiation | 1 | The Mission Plan SHOULD be able to convey when a mission should begin.
-MP011 | Mission Planning.Policy.Time.Completion | 1 | The Mission Plan SHOULD be able to convey by when a mission should end.
-MP012 | Mission Planning.Policy.Safety.Maximum Speed | 1 | The Mission Plan SHOULD be able to convey a maximum speed for the robot. | The robot would respect this value in carrying out the plan. This could be site-specific policy.
-MP013 | Mission Planning.Policy.Safety.Minimum Safety Buffer | 1 | The Mission Plan SHOULD be able to convey a minimum safety buffer distance. | The robot would respect this value and maintain the distance from other objects at all times. Should vary with relative velocities.
+MP009 | Mission Planning.Navigation Commands.Dock to Charger | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to dock to a specific charging station. 
+MP010 | Mission Planning.Policy | 1 | The Mission Plan SHOULD be able to express information about how and when the navigation commands are to be carried out. | Time and safety constraints.
+MP011 | Mission Planning.Policy.Time.Initiation | 1 | The Mission Plan SHOULD be able to convey when a mission should begin.
+MP012 | Mission Planning.Policy.Time.Completion | 1 | The Mission Plan SHOULD be able to convey by when a mission should end.
+MP013 | Mission Planning.Policy.Safety.Maximum Speed | 1 | The Mission Plan SHOULD be able to convey a maximum speed for the robot. | The robot would respect this value in carrying out the plan. This could be site-specific policy.
+MP014 | Mission Planning.Policy.Safety.Minimum Safety Buffer | 1 | The Mission Plan SHOULD be able to convey a minimum safety buffer distance. | The robot would respect this value and maintain the distance from other objects at all times. Should vary with relative velocities.
 
 ### 2.3.2 Mission Execution
 
@@ -275,7 +276,7 @@ MAP002 | Mapping.Data Model.Obstacles | 1 | Maps provided by Mapping Subsystem M
 MAP003 | Mapping.Data Model.Confidence Metric | 1 | Each known obstacle in a map SHALL have a confidence metric associated with it.
 MAP004 | Mapping.Data Model.Unknown Space | 1 | Maps provided by the Mapping Subsystem MUST indicate unmapped/unknown space. | Such as areas beyond the edge of the map, or areas within the map for which we didn't have any observations during map building.
 MAP005 | Mapping.Data Model.Surface Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces. | Can describe uneven ground.
-MAP006 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations.
+MAP006 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations according to specified constraints.
 MAP007 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *Does it need to be a unique name?*
 MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for re-use of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
 MAP009 | Mapping.Data Model.Safety Zone.Policy | 1 | The map data format SHALL be capable of expressing policy associated with each safety zone and safety zone type. | Maximum speed, (increased) distance to people, etc.
