@@ -43,8 +43,8 @@ Term | Definition
 Path | A *Path* is an ordered sequence of points in space.
 Route | A *Route* is a synonym for Path.
 Trajectory | A *Trajectory* is a path parameterized by time.
-Path Planning | *Path Planning* finds an optimal path from one node in a graph to another. Algorithms such as A*, D*, and RRT are all path planning algorithms if they don't consider motion.
-Motion Planning | *Motion Planning* specifies the motion of the robot over time. Motion can go along the same path but with different trajectories.
+Path Planning | *Path Planning* refers to the process of finding an optimal path between multiple locations. Path planning is typically characterized as a graph traversal problem and algorithms such as A*, D*, and RRT are common choices for implementation.
+Motion Planning | *Motion Planning* refers to the process of specifying the motion of the robot over time to follow a specific path.
 
 ## 1.4 Use Cases
 
@@ -123,8 +123,8 @@ The Navigation System should meet the following high-level design goals:
 * **Modularity** - The Navigation System should allow developers to *easily replace components* with alternative implementations.
 * **Generality** - The Navigation System should not introduce inherent limitations in the architectural blocks. For example, it should support multiple kinds of robots, not making assumptions about robot capabilities and limitations and should support various map types and orientations.
 * **Performance** - *TODO: What are the performance goals?*
-* **Scalability** - *TODO: How low should the implementation scale?* *Specify a minimum platform?*
-* *Other important design goals?*
+* **Scalability** - *TODO: What are the scalability goals?*
+* *TODO: Other important design goals to call out?*
 
 # 2.0 Requirements
 
@@ -136,7 +136,7 @@ There are various constraints on the development of the ROS 2 Navigation stack.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
-IC001 | Developer's Guide | 1 | The Navigation System SHOULD be developed in accordance with the ROS 2 Devloper's Guide | [ROS 2 Developer's Guide](https://github.com/ros2/ros2/wiki/Developer-Guide)
+IC001 | Developer's Guide | 1 | The Navigation System SHOULD be developed in accordance with the ROS 2 Developer's Guide | [ROS 2 Developer's Guide](https://github.com/ros2/ros2/wiki/Developer-Guide)
 IC002 | Implementation Language.C++.Version | 1 | Developers SHALL assume the availability of C++14 language features | Per the ROS 2 Developer's Guide
 IC003 | Implementation Language.C++.API Preference | 1 | Developers SHOULD prefer standard C++, then Boost, then custom code, in that order. | Boost may be used if equivalent functionality is not already available in the C++ standard library
 IC004 | Implementation Language.C++.Supported Compilers.g++ | 1 | The Navigation System code SHALL compile with gcc 5.4 or newer
@@ -145,7 +145,7 @@ IC006 | Implementation Language.C++.Supported Compilers.Intel C++ Compiler | 1 |
 IC007 | Implementation Language.Python.Version | 1 | Any Python code developed for the Navigation System MUST use Python 3
 IC008 | Implementation Language.GUI | 1 | Any GUIs developed as part of the Navigation System SHOULD use the Qt library, via C++ or Python (PyQt) | *Which version?*
 IC009 | Implementation Language.GUI.QML | 1 | Any GUIs developed as part of the Navigation System MAY use QML
-IC010 | ROS2.Version | 1 | The Navigation System WILL be developed against the latest stable version of the ROS 2 stack | *What is the current latest version?*
+IC010 | ROS2.Version | 1 | The first revision of the Navigation System WILL target the Crystal Clemmys release of ROS2. | We should develop against the latest ROS2 code whenever possible.
 
 ## 2.2 Target Platforms
 
@@ -158,7 +158,7 @@ TP002 | Target Platforms.Operating Systems.MacOS | 1 | The Navigation System MUS
 TP003 | Target Platforms.Operating Systems.Windows | 1 | The Navigation System MUST support Windows 10 Professional
 TP004 | Target Platforms.Operating Systems.Clear Linux | 1 | The Navigation System SHOULD support the Intel's Clear Linux distribution | Clear Linux uses a continuous deployment model. 
 TP005 | Target Platforms.CPU.Word Size | 1 | The Navigation System SHALL support 64-bit processors | Don't assume a specific pointer size
-TP006 | Target Platforms.Minimum Platform | 1 | *Should we specify a minimum target platform?* *Or, should this be expressed as minimum platform requirements?*
+TP006 | Target Platforms.Minimum Platform | 1 | *TODO: Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?*
 
 ## 2.3 Command Chain Modules
 
@@ -216,10 +216,10 @@ PLN002 | Planning.Inputs.Navigation Command | 1 | The Planning Module SHALL rece
 PLN003 | Planning.Inputs.Policy | 1 | The Planning Module SHALL receive policy information associated with the Navigation Command to execute. | This could be global policy and/or per-command policy. Policy could contain, for example, a list of conventions for the robot to follow (navigate on the right side of a path, for example).
 PLN004 | Planning.Inputs.Mapping.Maps | 1 | The Planning Module MUST have access to one or more maps available that describe the robot's environment.
 PLN005 | Planning.Inputs.Perception.Sensory Input | 1 | The Planning Module MUST have access to data from the Perception Subsystem.
-PLN006 | Planning.Inputs.Prediction.Predicted Trajectories | 1 | The Planning Module MUST have access to predicted trajectories of objects detected by the Perception Subsystem.
+PLN006 | Planning.Inputs.Prediction.Predicted Trajectories | 1 | The Planning Module MAY have access to predicted trajectories of objects detected by the Perception Subsystem. | In simple planners, there is no prediction of moving objects, but in more complex planners, this may be considered. 
 PLN007 | Planning.Inputs.Localization.Current Pose | 1 | The Planning Module MUST have access to the robot's current pose. | The pose could be be provided manually or automatically determined (outside of this module).
-PLN008 | Planning.Outputs.Path | 1 | The Planning Module MUST output the Path for the robot to follow to execute the input Navigation Command and MUST respect any associated policy.
-PLN009 | Planning.Feedback.Inputs | 1 | The Planning Module MUST receive error input from the downstream Execution Module. | So that it can attempt to recover from execution failures.
+PLN008 | Planning.Outputs.Path | 1 | The Planning Module SHOULD output the Path for the robot to follow to execute the input Navigation Command and MUST respect any associated policy.
+PLN009 | Planning.Feedback.Inputs | 1 | The Planning Module MAY receive error input from the downstream Execution Module. | So that it can attempt to recover from execution failures.
 PLN010 | Planning.Feedback.Inputs.Error Recovery | 1 | Upon receipt of a downstream failure, the Planning Module SHOULD attempt to automatically recover from the error. | Handling a robot that gets stuck or handling a collision, for example.
 PLN011 | Planning.Feedback.Outputs.Command Completed | 1 | Upon completing the provided Navigation Command, the Planning Module MUST report this event on its feedback output.
 PLN012 | Planning.Feedback.Outputs.Unable to Execute Command | 1 | If the Planning Module is unable to execute the Navigation Command, it SHALL report the error on its feedback output. | It should handle errors if possible, but report back if it can't.
@@ -236,11 +236,11 @@ Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 EXE001 | Execution | 1 | The Navigation System SHOULD have an Execution Module that generates commands to the robot to achieve a specific Path.
 EXE002 | Execution.Inputs.Path | 1 | The Execution Module SHALL receive a Path that the robot is to follow.
-EXE003 | Execution.Inputs.Policy | 1 | The Planning Module SHALL receive policy information associated with the Path to follow. | Could filter down from higher-level policy specification.
+EXE003 | Execution.Inputs.Policy | 1 | The Execution Module SHALL receive policy information associated with the Path to follow. | Could filter down from higher-level policy specification.
 EXE004 | Execution.Collision Avoidance.Avoid Stationary Objects | 1 | The Execution Module MUST direct the robot such that it avoids colliding into stationary objects in its environment.
 EXE005 | Execution.Collision Avoidance.Avoid Moving Objects | 1 | The Execution Module MUST direct the robot such that it avoids colliding into moving objects that intercept its path.
 EXE006 | Execution.Collision Detection | 1 | The Execution Module SHOULD detect if a collision has occurred.
-EXE007 | Execution.Collision Detection.Latency | 1 | The Execution Module SHOULD detect collisions within 50ms. | *What is the right value?*
+EXE007 | Execution.Collision Detection.Latency | 1 | The Execution Module SHOULD detect collisions within 50ms. | *TODO: What is the right value?*
 EXE008 | Execution.Feedback.Inputs.Robot Malfunction | 1 | The Execution Module SHOULD receive notifications of any robot malfunctions from the downstream robot interface. | A sensor failure, for example.
 EXE009 | Execution.Feedback.Outputs.Collision Detected | 1 | The Execution Module SHOULD report the detection of a collision. | So that the Planning Module can attempt recovery or otherwise respond.
 EXE010 | Execution.Feedback.Outputs.Error Propagation | 1 | The Execution Module SHOULD propagate errors that it can't handle.
@@ -256,10 +256,10 @@ Id | Handle | Priority | Description | Notes
 RI001 | Robot Interface.Attributes | 1 | Holonomicity, max/min speeds and accelerations, etc.
 RI002 | Robot Interface.Dynamic Switching | 1 | Can the robot dynamically change attributes?
 RI003 | Robot Interface.Safety.Limited Parameters | 1 | A list of parameters used to limit certain circumstances and provide the hooks for users to set those values if they want
-RI004 | Robot Interface.Safety.Speed Limiting | 1 | TODO
-RI005 | Robot Interface.Safety.Force Limiting | 1 | TODO
-RI006 | Robot Interface.EMO Button | 1 | TODO
-RI007 | Robot Interface.Feedback.Outputs | 1 | TODO
+RI004 | Robot Interface.Safety.Speed Limiting | 1 | *TODO*
+RI005 | Robot Interface.Safety.Force Limiting | 1 | *TODO*
+RI006 | Robot Interface.EMO Button | 1 | *TODO*
+RI007 | Robot Interface.Feedback.Outputs | 1 | *TODO*
 
 ## 2.4 Support Modules
 
@@ -277,7 +277,7 @@ MAP003 | Mapping.Data Model.Confidence Metric | 1 | Each known obstacle in a map
 MAP004 | Mapping.Data Model.Unknown Space | 1 | Maps provided by the Mapping Subsystem MUST indicate unmapped/unknown space. | Such as areas beyond the edge of the map, or areas within the map for which we didn't have any observations during map building.
 MAP005 | Mapping.Data Model.Surface Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces. | Can describe uneven ground.
 MAP006 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations according to specified constraints.
-MAP007 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *Does it need to be a unique name?*
+MAP007 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *TODO: Does it need to be a unique name?*
 MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for re-use of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
 MAP009 | Mapping.Data Model.Safety Zone.Policy | 1 | The map data format SHALL be capable of expressing policy associated with each safety zone and safety zone type. | Maximum speed, (increased) distance to people, etc.
 MAP010 | Mapping.Data Model.Safety Zone.Policy.Keep Out Zone | 1 | The map data format SHALL be capable of expressing that a robot must not navigate through this zone.
@@ -287,8 +287,8 @@ MAP013 | Mapping.Data Model.Building Levels.Level Connecting Features | 1 | The 
 MAP014 | Mapping.Multiple Maps Per Environment | 1 | The Mapping System MAY provide multiple maps of the same environment. | Such as for different scales and elevations.
 MAP015 | Mapping.Data Model.Extensibility | 1 | The Mapping System SHOULD be extensible, to allow for the description of additional entities in the environment.
 MAP016 | Mapping.Dimensionality.2D | 1 | The Mapping System MUST provide 2D map information.
-MAP017 | Mapping.Dimensionality.2D+ | 1 | The Mapping System MUST provide 2D+ map information. | *TODO: How is this defined?*
-MAP018 | Mapping.Dimensionality.3D | 1 | The Mapping System SHOULD provide 3D map information.
+MAP017 | Mapping.Dimensionality.2D+ | 1 | The Mapping System MAY provide 2D+ map information.
+MAP018 | Mapping.Dimensionality.3D | 1 | The Mapping System MAY provide 3D map information.
 MAP019 | Mapping.Dynamic Updates | 1 | The Mapping System SHOULD provide real-time updates of map information. | Allow for updates to the map to be pushed to clients.
 MAP020 | Mapping.Memory Optimization.Tiling | 1 | The Mapping System MAY provide the Navigation System with local map regions, sufficient for navigation. | Could provide relevant map tiles, for example, saving memory in the planners.
 
@@ -299,11 +299,11 @@ The Perception Subsystem provides information about objects detected in the robo
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 PER001 | Perception | 1 | The Perception Subsystem SHALL provide information about the dynamic environment of the robot. | Info sufficient to carry out the Navigation System requirements.
-PER002 | Perception.Latency | 1 | TODO
+PER002 | Perception.Latency | 1 | *TODO*
 
 ### 2.4.3 Prediction
 
-The Prediction Subsystem TODO
+The Prediction Subsystem uses input from the Perception Subsystem and predicts the trajectories of the detected objects over time. 
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
@@ -318,3 +318,15 @@ Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
 LOC001 | Localization.Robot Pose | 1 | The Localization module MUST provide the robot's current pose to the Navigation System. | This could be manual or as a result of automatic localization; the Navigation System wouldn't know either way.
 LOC002 | Localization.Robot Pose.Accuracy | 1 | The Localization Module MUST provide the estimated accuracy of the pose. | So that Planning modules can determine if a particular Localization module has sufficient accuracy. Could use PoseWithCovariance message.
+
+## 2.5 Open Issues
+
+* What are the performance goals for the ROS2 Navigation System?
+* What are the scalability for the ROS2 Navigaton System?
+* Any other important design goals to call out?
+* Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?
+* What is the right latency value for detecting a collision? 
+* Should we add any safety-related functionality at the robot interface level? 
+* Do safety zones need unique names? 
+* What is the target latency for the perception subsystem?
+* How far into the future should the object prediction work? 
