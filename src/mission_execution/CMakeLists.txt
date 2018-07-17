@@ -15,6 +15,13 @@ find_package(rclcpp REQUIRED)
 
 include_directories(
   include
+  /usr/local/include/yasmine
+  /usr/local/include/yasmine/include
+  /usr/local/include/yasmine/include_impl
+#  /usr/local/include/yasmine/essentials/include
+#  /usr/local/include/yasmine/essentials/include/essentials
+#  /usr/local/include/yasmine/essentials/include/essentials/compatibility
+#  /usr/local/include/yasmine/hermes
   )
 
 add_executable(mission_execution
@@ -24,6 +31,10 @@ add_executable(mission_execution
   src/NavigationCommand.cpp
   )
 
+target_link_libraries(mission_execution
+  yasmine
+  )
+
 ament_target_dependencies(mission_execution 
   rclcpp 
   )
@@ -31,6 +42,6 @@ ament_target_dependencies(mission_execution
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

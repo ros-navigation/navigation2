@@ -33,7 +33,11 @@ public:
   void halt();
 
 private:
-  MissionExecutionStateMachineBehavior * m_behavior;
+  void initStateMachine();
+  bool checkStateMachineForDefects();
+
+  MissionExecutionStateMachineBehavior * behavior_;
+  void * impl_;
 };
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTIONSTATEMACHINE_HPP_

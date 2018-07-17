@@ -51,8 +51,8 @@ public:
   ///@}
 
 private:
-  MissionExecutionStateMachine m_MissionExecutionStateMachine;
-  const MissionPlan * m_missionPlan;
+  MissionExecutionStateMachine missionExecutionStateMachine_;
+  const MissionPlan * missionPlan_;
 };
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_
