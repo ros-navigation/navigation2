@@ -86,7 +86,27 @@ void MissionExecutionStateMachine::initStateMachine()
 
   // Add the state transitions
 
+  // The default state transition to Ready
   state_machine->add_transition(sxy::Y_COMPLETION_EVENT_ID, initial_pseudostate, simple_state_ready);
+
+  // Transitions from Ready
+  state_machine->add_transition(EVENT_EXECUTE_MISSION, simple_state_ready, simple_state_executing);
+
+  // Transitions from Executing
+  state_machine->add_transition(EVENT_CANCEL_MISSION, simple_state_executing, simple_state_canceling);
+  state_machine->add_transition(EVENT_EXECUTE_RECOVERY, simple_state_executing, simple_state_recovering);
+  state_machine->add_transition(EVENT_EXECUTION_FAILED, simple_state_executing, simple_state_aborting);
+  state_machine->add_transition(EVENT_MISSION_EXECUTED, simple_state_executing, simple_state_ready);
+
+  // Transitions from Canceling
+  state_machine->add_transition(EVENT_MISSION_CANCELED, simple_state_canceling, simple_state_ready);
+
+  // Transitions from Recovering
+  state_machine->add_transition(EVENT_RECOVERY_SUCCESSFUL, simple_state_recovering, simple_state_executing);
+  state_machine->add_transition(EVENT_RECOVERY_FAILED, simple_state_recovering, simple_state_aborting);
+
+  // Transitions from Aborting
+  state_machine->add_transition(EVENT_MISSION_FAILED, simple_state_aborting, simple_state_ready);
 }
 
 bool MissionExecutionStateMachine::checkStateMachineForDefects()

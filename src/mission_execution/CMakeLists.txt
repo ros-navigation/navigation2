@@ -18,9 +18,7 @@ include_directories(
   /usr/local/include/yasmine
   /usr/local/include/yasmine/include
   /usr/local/include/yasmine/include_impl
-#  /usr/local/include/yasmine/essentials/include
-#  /usr/local/include/yasmine/essentials/include/essentials
-#  /usr/local/include/yasmine/essentials/include/essentials/compatibility
+  /usr/local/include/yasmine/essentials/include
 #  /usr/local/include/yasmine/hermes
   )
 
