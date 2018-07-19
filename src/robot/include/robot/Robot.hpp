@@ -6,8 +6,11 @@
 
 class Robot
 {
-  Robot();
-  ~Robot();
+public:
+  virtual ~Robot() {}
+
+  // Commands to the robot
+  virtual void enterSafeState() = 0;
 };
 
 #endif  // ROBOT__ROBOT_HPP_

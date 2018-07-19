@@ -6,6 +6,7 @@
 
 class NavigationTask
 {
+public:
   NavigationTask();
   ~NavigationTask();
 };
