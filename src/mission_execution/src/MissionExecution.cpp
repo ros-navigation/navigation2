@@ -24,18 +24,20 @@ MissionExecution::~MissionExecution()
   stateMachine_.halt();
 }
 
-void MissionExecution::executeMission(const MissionPlan * missionPlan)
+void
+MissionExecution::executeMission(const MissionPlan * missionPlan)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::executeMission");
 
   missionPlan_ = missionPlan;
-  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_EXECUTE_MISSION);
+  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_EXECUTE_TASK);
 }
 
-void MissionExecution::cancelMission()
+void
+MissionExecution::cancelMission()
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::cancelMission");
-  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_CANCEL_MISSION);
+  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_CANCEL_TASK);
 }
 
 void MissionExecution::doReadyState()
@@ -52,11 +54,11 @@ void MissionExecution::doExecutingState()
   // TODO(mjeronimo): Perform normal processing loop for the mission plan
 
   // Initiate the state transition
-  //  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_MISSION_EXECUTED);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_EXECUTED);
   // Or:
-  //  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_MISSION_FAILED);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_FAILED);
   // Or:
-  //  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_EXECUTE_RECOVERY);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_EXECUTE_TASK_RECOVERY);
 
   RCLCPP_INFO(get_logger(), "MissionExecution::doExecutingState");
 }
@@ -66,6 +68,8 @@ void MissionExecution::doCancelingState()
   // TODO(mjeronimo): Cancel the currently running mission
 
   RCLCPP_INFO(get_logger(), "MissionExecution::doCancelingState");
+
+  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_CANCELED);
 }
 
 void MissionExecution::doRecoveringState()
@@ -82,7 +86,7 @@ void MissionExecution::doAbortingState()
   // TODO(mjeronimo): Do the work to abort the current mission
 
   // Initiate the state transition
-  stateMachine_.fireEvent(MissionExecutionStateMachine::EVENT_MISSION_FAILED);
+  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_FAILED);
 }
 
 void MissionExecution::onCmdReceived(const std_msgs::msg::String::SharedPtr msg)

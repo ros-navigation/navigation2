@@ -7,8 +7,8 @@
 class MissionPlan
 {
 public:
-  MissionPlan(){}
-  virtual ~MissionPlan(){}
+  MissionPlan() {}
+  virtual ~MissionPlan() {}
 };
 
 #endif  // MISSION_EXECUTION__MISSIONPLAN_HPP_

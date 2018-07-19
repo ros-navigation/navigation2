@@ -1,7 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
-#include "mission_execution/MissionExecutionStateMachine.hpp"
+#include "task/TaskExecutionStateMachine.hpp"
 
 #include <iostream>
 #include <string>
@@ -20,8 +20,8 @@ handleUnhandledEvent(const sxy::event & event)
   std::cout << "Unhandled state machine event: '" << event.get_name() << "'" << std::endl;
 }
 
-MissionExecutionStateMachine::MissionExecutionStateMachine(
-  MissionExecutionStateMachineBehavior * behavior)
+TaskExecutionStateMachine::TaskExecutionStateMachine(
+  TaskExecutionStateMachineBehavior * behavior)
 : behavior_(behavior)
 {
   impl_ = new yasmine_data;
@@ -39,44 +39,42 @@ MissionExecutionStateMachine::MissionExecutionStateMachine(
   initStateMachine();
 
   if (!isValidStateMachine()) {
-    throw("MissionExecution state machine has defects");
+    throw("TaskExecution state machine has defects");
   }
 }
 
-MissionExecutionStateMachine::~MissionExecutionStateMachine()
+TaskExecutionStateMachine::~TaskExecutionStateMachine()
 {
   // log_manager.halt();
 }
 
-void MissionExecutionStateMachine::run()
+void TaskExecutionStateMachine::run()
 {
-  // RCLCPP_INFO(this->get_logger(), "MissionExecutionStateMachine::run()\n");
-  std::cout << "MissionExecutionStateMachine::run()\n";
+  // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::run()\n");
 
   yasmine_data * impl = reinterpret_cast<yasmine_data *>(impl_);
   impl->sm->run();
 }
 
-void MissionExecutionStateMachine::fireEvent(const MissionExecutionEvent eventToFire)
+void TaskExecutionStateMachine::fireEvent(const TaskExecutionEvent eventToFire)
 {
-  // RCLCPP_INFO(this->get_logger(), "MissionExecutionStateMachine::fireEvent: %d\n", eventToFire);
+  // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::fireEvent: %d\n", eventToFire);
 
   yasmine_data * impl = reinterpret_cast<yasmine_data *>(impl_);
   impl->sm->fire_event(sxy::event_impl::create(eventToFire));
 }
 
-void MissionExecutionStateMachine::halt()
+void TaskExecutionStateMachine::halt()
 {
-  // RCLCPP_INFO(this->get_logger(), "MissionExecutionStateMachine::halt\n");
-  std::cout << "MissionExecutionStateMachine::halt\n";
+  // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::halt\n");
 
   yasmine_data * impl = reinterpret_cast<yasmine_data *>(impl_);
   impl->sm->halt_and_join();
 }
 
-void MissionExecutionStateMachine::initStateMachine()
+void TaskExecutionStateMachine::initStateMachine()
 {
-  std::string nm("MissionExecution");
+  std::string nm("TaskExecution");
   const std::string & name = nm;
 
   // Create the state machine
@@ -91,19 +89,19 @@ void MissionExecutionStateMachine::initStateMachine()
 
   // Add the states
   sxy::simple_state & simple_state_ready = main_region.add_simple_state("Ready",
-      Y_BEHAVIOR_METHOD2(behavior_, &MissionExecutionStateMachineBehavior::doReadyState));
+      Y_BEHAVIOR_METHOD2(behavior_, &TaskExecutionStateMachineBehavior::doReadyState));
 
   sxy::simple_state & simple_state_executing = main_region.add_simple_state("Executing",
-      Y_BEHAVIOR_METHOD2(behavior_, &MissionExecutionStateMachineBehavior::doExecutingState));
+      Y_BEHAVIOR_METHOD2(behavior_, &TaskExecutionStateMachineBehavior::doExecutingState));
 
   sxy::simple_state & simple_state_canceling = main_region.add_simple_state("Canceling",
-      Y_BEHAVIOR_METHOD2(behavior_, &MissionExecutionStateMachineBehavior::doCancelingState));
+      Y_BEHAVIOR_METHOD2(behavior_, &TaskExecutionStateMachineBehavior::doCancelingState));
 
   sxy::simple_state & simple_state_recovering = main_region.add_simple_state("Recovering",
-      Y_BEHAVIOR_METHOD2(behavior_, &MissionExecutionStateMachineBehavior::doRecoveringState));
+      Y_BEHAVIOR_METHOD2(behavior_, &TaskExecutionStateMachineBehavior::doRecoveringState));
 
   sxy::simple_state & simple_state_aborting = main_region.add_simple_state("Aborting",
-      Y_BEHAVIOR_METHOD2(behavior_, &MissionExecutionStateMachineBehavior::doAbortingState));
+      Y_BEHAVIOR_METHOD2(behavior_, &TaskExecutionStateMachineBehavior::doAbortingState));
 
   // Add the state transitions
 
@@ -112,29 +110,29 @@ void MissionExecutionStateMachine::initStateMachine()
     simple_state_ready);
 
   // Transitions from Ready
-  state_machine->add_transition(EVENT_EXECUTE_MISSION, simple_state_ready, simple_state_executing);
+  state_machine->add_transition(EVENT_EXECUTE_TASK, simple_state_ready, simple_state_executing);
 
   // Transitions from Executing
-  state_machine->add_transition(EVENT_CANCEL_MISSION, simple_state_executing,
+  state_machine->add_transition(EVENT_CANCEL_TASK, simple_state_executing,
     simple_state_canceling);
-  state_machine->add_transition(EVENT_EXECUTE_RECOVERY, simple_state_executing,
+  state_machine->add_transition(EVENT_EXECUTE_TASK_RECOVERY, simple_state_executing,
     simple_state_recovering);
-  state_machine->add_transition(EVENT_EXECUTION_FAILED, simple_state_executing,
+  state_machine->add_transition(EVENT_TASK_EXECUTION_FAILED, simple_state_executing,
     simple_state_aborting);
-  state_machine->add_transition(EVENT_MISSION_EXECUTED, simple_state_executing,
+  state_machine->add_transition(EVENT_TASK_EXECUTED, simple_state_executing,
     simple_state_ready);
 
   // Transitions from Canceling
-  state_machine->add_transition(EVENT_MISSION_CANCELED, simple_state_canceling, simple_state_ready);
+  state_machine->add_transition(EVENT_TASK_CANCELED, simple_state_canceling, simple_state_ready);
 
   // Transitions from Recovering
-  state_machine->add_transition(EVENT_RECOVERY_SUCCESSFUL, simple_state_recovering,
+  state_machine->add_transition(EVENT_TASK_RECOVERY_SUCCESSFUL, simple_state_recovering,
     simple_state_executing);
-  state_machine->add_transition(EVENT_RECOVERY_FAILED, simple_state_recovering,
+  state_machine->add_transition(EVENT_TASK_RECOVERY_FAILED, simple_state_recovering,
     simple_state_aborting);
 
   // Transitions from Aborting
-  state_machine->add_transition(EVENT_MISSION_FAILED, simple_state_aborting,
+  state_machine->add_transition(EVENT_TASK_FAILED, simple_state_aborting,
     simple_state_ready);
 
   // Set the handler for any invalid state transitions
@@ -151,7 +149,7 @@ void MissionExecutionStateMachine::initStateMachine()
   impl->sm = sxe::move(state_machine);
 }
 
-bool MissionExecutionStateMachine::isValidStateMachine()
+bool TaskExecutionStateMachine::isValidStateMachine()
 {
   yasmine_data * impl = reinterpret_cast<yasmine_data *>(impl_);
 

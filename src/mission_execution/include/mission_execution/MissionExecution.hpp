@@ -7,10 +7,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "mission_execution/MissionPlan.hpp"
-#include "mission_execution/MissionExecutionStateMachineBehavior.hpp"
-#include "mission_execution/MissionExecutionStateMachine.hpp"
+#include "task/TaskExecutionStateMachineBehavior.hpp"
+#include "task/TaskExecutionStateMachine.hpp"
 
-class MissionExecution : public rclcpp::Node, public MissionExecutionStateMachineBehavior
+class MissionExecution : public rclcpp::Node, public TaskExecutionStateMachineBehavior
 {
 public:
   MissionExecution();
@@ -28,7 +28,7 @@ public:
   void cancelMission();
 
   /** @name State Machine Behavior
-   * Implementation of the MissionExecutionStateMachineBehavior interface
+   * Implementation of the TaskExecutionStateMachineBehavior interface
    */
   ///@{
   void doReadyState();
@@ -42,7 +42,7 @@ private:
   void onCmdReceived(const std_msgs::msg::String::SharedPtr msg);
 
 private:
-  MissionExecutionStateMachine stateMachine_;
+  TaskExecutionStateMachine stateMachine_;
   const MissionPlan * missionPlan_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmdSub_;
 };

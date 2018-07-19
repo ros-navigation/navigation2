@@ -16,27 +16,26 @@ find_package(std_msgs REQUIRED)
 
 include_directories(
   include
-  /usr/local/include/yasmine
-  /usr/local/include/yasmine/include
-  /usr/local/include/yasmine/include_impl
-  /usr/local/include/yasmine/essentials/include
-#  /usr/local/include/yasmine/hermes
+  ../libs/task/include
   )
+
+link_directories(${CMAKE_BINARY_DIR}/../libs)
 
 add_executable(mission_execution
   src/main.cpp
   src/MissionExecution.cpp
-  src/MissionExecutionStateMachine.cpp
   src/NavigationCommand.cpp
-  )
-
-target_link_libraries(mission_execution
-  yasmine
   )
 
 ament_target_dependencies(mission_execution 
   rclcpp 
   std_msgs
+  task
+  )
+
+target_link_libraries(mission_execution
+  task
+  yasmine
   )
 
 install(TARGETS ${PROJECT_NAME}
