@@ -24,7 +24,6 @@ link_directories(${CMAKE_BINARY_DIR}/../libs)
 add_executable(mission_execution
   src/main.cpp
   src/MissionExecution.cpp
-  src/NavigationCommand.cpp
   )
 
 ament_target_dependencies(mission_execution 
