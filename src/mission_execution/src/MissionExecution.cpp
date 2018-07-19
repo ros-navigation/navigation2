@@ -29,7 +29,13 @@ MissionExecution::executeMission(const MissionPlan * missionPlan)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::executeMission");
 
+  // We've been given a mission plan to execute. Do an preparatory work
+  // and start things off by firing a state transition, which will land
+  // us in the Executing state. 
+
+  // TODO(mjeronimo): Validate the mission plan for syntax and semantics
   missionPlan_ = missionPlan;
+
   stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_EXECUTE_TASK);
 }
 
@@ -37,49 +43,60 @@ void
 MissionExecution::cancelMission()
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::cancelMission");
+
+  // We've been told to cancel the currently running mission, so fire the 
+  // state transition to cause a transition to the Canceling state
+
   stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_CANCEL_TASK);
 }
 
-void MissionExecution::doReadyState()
+void
+MissionExecution::doReadyState()
 {
-  // This is the starting state. Do any work to reset operations.
-
   RCLCPP_INFO(get_logger(), "MissionExecution::doReadyState");
+
+  // TODO(mjeronimo): Anything we can do while we're waiting for work to do?
 }
 
-void MissionExecution::doExecutingState()
+void
+MissionExecution::doExecutingState()
 {
-  // TODO(mjeronimo): Validate input for syntax and semantics
+  RCLCPP_INFO(get_logger(), "MissionExecution::doExecutingState");
 
   // TODO(mjeronimo): Perform normal processing loop for the mission plan
 
   // Initiate the state transition
-  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_EXECUTED);
-  // Or:
-  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_FAILED);
-  // Or:
-  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_EXECUTE_TASK_RECOVERY);
 
-  RCLCPP_INFO(get_logger(), "MissionExecution::doExecutingState");
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_EXECUTED);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_FAILED);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_EXECUTE_TASK_RECOVERY);
 }
 
-void MissionExecution::doCancelingState()
+void
+MissionExecution::doCancelingState()
 {
-  // TODO(mjeronimo): Cancel the currently running mission
-
   RCLCPP_INFO(get_logger(), "MissionExecution::doCancelingState");
 
+  // TODO(mjeronimo): Cancel the currently running mission
+
+  // Initiate the state transition
   stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_CANCELED);
 }
 
-void MissionExecution::doRecoveringState()
+void
+MissionExecution::doRecoveringState()
 {
+  RCLCPP_INFO(get_logger(), "MissionExecution::doRecoveringState");
+
   // TODO(mjeronimo): Attempt to perform local recovery
 
-  RCLCPP_INFO(get_logger(), "MissionExecution::doRecoveringState");
+  // Initiate the state transition
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_RECOVERY_FAILED);
+  //  stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_RECOVERY_SUCCEEDED);
 }
 
-void MissionExecution::doAbortingState()
+void
+MissionExecution::doAbortingState()
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::doAbortingState");
 
@@ -89,7 +106,8 @@ void MissionExecution::doAbortingState()
   stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_TASK_FAILED);
 }
 
-void MissionExecution::onCmdReceived(const std_msgs::msg::String::SharedPtr msg)
+void
+MissionExecution::onCmdReceived(const std_msgs::msg::String::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::onCmdReceived: \"%s\"", msg->data.c_str())
 

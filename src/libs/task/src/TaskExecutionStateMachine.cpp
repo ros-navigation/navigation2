@@ -48,7 +48,8 @@ TaskExecutionStateMachine::~TaskExecutionStateMachine()
   // log_manager.halt();
 }
 
-void TaskExecutionStateMachine::run()
+void
+TaskExecutionStateMachine::run()
 {
   // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::run()\n");
 
@@ -56,7 +57,8 @@ void TaskExecutionStateMachine::run()
   impl->sm->run();
 }
 
-void TaskExecutionStateMachine::fireEvent(const TaskExecutionEvent eventToFire)
+void
+TaskExecutionStateMachine::fireEvent(const TaskExecutionEvent eventToFire)
 {
   // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::fireEvent: %d\n", eventToFire);
 
@@ -64,7 +66,8 @@ void TaskExecutionStateMachine::fireEvent(const TaskExecutionEvent eventToFire)
   impl->sm->fire_event(sxy::event_impl::create(eventToFire));
 }
 
-void TaskExecutionStateMachine::halt()
+void
+TaskExecutionStateMachine::halt()
 {
   // RCLCPP_INFO(this->get_logger(), "TaskExecutionStateMachine::halt\n");
 
@@ -72,7 +75,8 @@ void TaskExecutionStateMachine::halt()
   impl->sm->halt_and_join();
 }
 
-void TaskExecutionStateMachine::initStateMachine()
+void
+TaskExecutionStateMachine::initStateMachine()
 {
   std::string nm("TaskExecution");
   const std::string & name = nm;
@@ -126,7 +130,7 @@ void TaskExecutionStateMachine::initStateMachine()
   state_machine->add_transition(EVENT_TASK_CANCELED, simple_state_canceling, simple_state_ready);
 
   // Transitions from Recovering
-  state_machine->add_transition(EVENT_TASK_RECOVERY_SUCCESSFUL, simple_state_recovering,
+  state_machine->add_transition(EVENT_TASK_RECOVERY_SUCCEEDED, simple_state_recovering,
     simple_state_executing);
   state_machine->add_transition(EVENT_TASK_RECOVERY_FAILED, simple_state_recovering,
     simple_state_aborting);
@@ -149,7 +153,8 @@ void TaskExecutionStateMachine::initStateMachine()
   impl->sm = sxe::move(state_machine);
 }
 
-bool TaskExecutionStateMachine::isValidStateMachine()
+bool
+TaskExecutionStateMachine::isValidStateMachine()
 {
   yasmine_data * impl = reinterpret_cast<yasmine_data *>(impl_);
 
