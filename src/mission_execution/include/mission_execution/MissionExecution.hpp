@@ -5,6 +5,7 @@
 #define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "mission_execution/MissionPlan.hpp"
 #include "mission_execution/MissionExecutionStateMachineBehavior.hpp"
 #include "mission_execution/MissionExecutionStateMachine.hpp"
@@ -14,19 +15,6 @@ class MissionExecution : public rclcpp::Node, public MissionExecutionStateMachin
 public:
   MissionExecution();
   virtual ~MissionExecution();
-
-  /**
-   * @brief Start Mission Execution. Once the instance is initialized, the state
-   * machine automatically transitions to the <b>Ready</b> state and is ready to
-   * execute missions, which can be initiated using executionMission.
-   */
-  void start();
-
-  /**
-   * @brief Stop Mission Execution. Any in-flight missions must be canceled first,
-   * using cancelMission.
-   */
-  void stop();
 
   /**
    * @brief Execute a Mission Plan
@@ -51,8 +39,12 @@ public:
   ///@}
 
 private:
-  MissionExecutionStateMachine missionExecutionStateMachine_;
+  void onCmdReceived(const std_msgs::msg::String::SharedPtr msg);
+
+private:
+  MissionExecutionStateMachine stateMachine_;
   const MissionPlan * missionPlan_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmdSub_;
 };
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_

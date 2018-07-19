@@ -12,6 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 include_directories(
   include
@@ -35,6 +36,7 @@ target_link_libraries(mission_execution
 
 ament_target_dependencies(mission_execution 
   rclcpp 
+  std_msgs
   )
 
 install(TARGETS ${PROJECT_NAME}

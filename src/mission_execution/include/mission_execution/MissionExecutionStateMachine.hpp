@@ -34,7 +34,7 @@ public:
 
 private:
   void initStateMachine();
-  bool checkStateMachineForDefects();
+  bool isValidStateMachine();
 
   MissionExecutionStateMachineBehavior * behavior_;
   void * impl_;
