@@ -6,9 +6,11 @@
 
 #include "robot/Robot.hpp"
 
-class RosRobot: public Robot
+class RosRobot : public Robot
 {
 public:
   RosRobot();
   ~RosRobot();
 };
+
+#endif  // ROBOT__ROSROBOT_HPP_

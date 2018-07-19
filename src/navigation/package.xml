@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>navigation</name>
+  <version>0.1.0</version>
+  <description>Navigation a ROS2 node carries out an input navigation command.</description>
+  <author email="michael.jeronimo@intel.com">Michael Jeronimo</author>
+  <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
+  <license>Apache License 2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>task</build_depend>
+  <exec_depend>rclcpp</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+

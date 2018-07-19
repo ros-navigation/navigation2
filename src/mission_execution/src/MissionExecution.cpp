@@ -31,7 +31,7 @@ MissionExecution::executeMission(const MissionPlan * missionPlan)
 
   // We've been given a mission plan to execute. Do an preparatory work
   // and start things off by firing a state transition, which will land
-  // us in the Executing state. 
+  // us in the Executing state.
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
   missionPlan_ = missionPlan;
@@ -44,7 +44,7 @@ MissionExecution::cancelMission()
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::cancelMission");
 
-  // We've been told to cancel the currently running mission, so fire the 
+  // We've been told to cancel the currently running mission, so fire the
   // state transition to cause a transition to the Canceling state
 
   stateMachine_.fireEvent(TaskExecutionStateMachine::EVENT_CANCEL_TASK);
