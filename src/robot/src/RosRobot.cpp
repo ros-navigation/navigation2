@@ -3,10 +3,16 @@
 
 #include "robot/RosRobot.hpp"
 
-RosRobot::RosRobot()
+RosRobot::RosRobot(std::string & /*filename*/)
 {
+  // Open and parser the URDF file
 }
 
 RosRobot::~RosRobot()
+{
+}
+
+void
+RosRobot::enterSafeState()
 {
 }

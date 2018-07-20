@@ -4,13 +4,23 @@
 #ifndef ROBOT__ROSROBOT_HPP_
 #define ROBOT__ROSROBOT_HPP_
 
+#include <string>
 #include "robot/Robot.hpp"
 
 class RosRobot : public Robot
 {
 public:
-  RosRobot();
+  /**
+   * Construct a RosRobot with a provided URDF file.
+   *
+   * @param[in] filename The filename of the URDF file describing this robot.
+   */
+  RosRobot(std::string & filename);
+
+  RosRobot() = delete;
   ~RosRobot();
+
+  void enterSafeState() override;
 };
 
 #endif  // ROBOT__ROSROBOT_HPP_

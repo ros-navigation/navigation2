@@ -12,7 +12,6 @@ public:
   explicit TaskExecutionStateMachine(TaskExecutionStateMachineBehavior * behavior);
   virtual ~TaskExecutionStateMachine();
 
-  // No default constructor
   TaskExecutionStateMachine() = delete;
 
   typedef enum TaskExecutionEvent
