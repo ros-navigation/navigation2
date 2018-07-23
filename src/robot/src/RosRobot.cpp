@@ -2,6 +2,7 @@
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
 #include "robot/RosRobot.hpp"
+#include <string>
 
 RosRobot::RosRobot(std::string & /*filename*/)
 {

@@ -1,12 +1,13 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
-#include "navigation/NavigationTask.hpp"
+#include "task/RobotTask.hpp"
 
-NavigationTask::NavigationTask()
+RobotTask::RobotTask(Robot * robot)
 {
+  robot = robot;
 }
 
-NavigationTask::~NavigationTask()
+RobotTask::~RobotTask()
 {
 }

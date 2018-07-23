@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(navigation)
+project(task)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -16,25 +16,21 @@ find_package(std_msgs REQUIRED)
 
 include_directories(
   include
-  ../libs/task/include
+  ../robot/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(navigation
-  src/main.cpp
-  src/Navigation.cpp
+add_library(task STATIC
+  src/ControlTask.cpp
+  src/NavigationTask.cpp
+  src/PlanningTask.cpp
+  src/RobotTask.cpp
   )
 
-ament_target_dependencies(navigation 
+ament_target_dependencies(task
   rclcpp 
   std_msgs
-  task
-  )
-
-target_link_libraries(navigation
-  task
-  yasmine
   )
 
 install(TARGETS ${PROJECT_NAME}

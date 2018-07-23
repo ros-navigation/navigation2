@@ -29,11 +29,9 @@ add_executable(mission_execution
 ament_target_dependencies(mission_execution 
   rclcpp 
   std_msgs
-  task
   )
 
 target_link_libraries(mission_execution
-  task
   yasmine
   )
 
