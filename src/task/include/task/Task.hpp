@@ -12,7 +12,14 @@ public:
   virtual ~Task() {}
 
 protected:
-  // ROS Action
+  // Emulate ROS Action for now:
+  // C++ templates for (Our)SimpleActionServer, (Our)SimpleActionClient
+  //
+  //   * Subscriber for ROS topic for commands w/ parameters
+  //      * Execute Command
+  //      * Cancel Command
+  //   * Publisher for status updates
+  //   * Publisher for completion
 };
 
 #endif  // TASK__TASK_HPP_
