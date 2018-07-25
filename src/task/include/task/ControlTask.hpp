@@ -9,11 +9,11 @@
 class ControlTask : public RobotTask
 {
 public:
-  explicit ControlTask(Robot * robot);
+  explicit ControlTask(const std::string & name, Robot * robot);
   ControlTask() = delete;
   ~ControlTask();
 
-  // executePlan()
+  virtual void executePlan() = 0;
 };
 
 #endif  // TASK__CONTROLTASK_HPP_

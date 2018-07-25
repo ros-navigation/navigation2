@@ -26,6 +26,9 @@ add_library(task STATIC
   src/NavigationTask.cpp
   src/PlanningTask.cpp
   src/RobotTask.cpp
+  src/Task.cpp
+  src/AStarPlanner.cpp
+  src/DwaController.cpp
   )
 
 ament_target_dependencies(task

@@ -3,11 +3,13 @@
 
 #include "task/ControlTask.hpp"
 
-ControlTask::ControlTask(Robot * robot)
-: RobotTask(robot)
+ControlTask::ControlTask(const std::string & name, Robot * robot)
+: RobotTask(name, robot)
 {
+  RCLCPP_INFO(get_logger(), "ControlTask::ControlTask");
 }
 
 ControlTask::~ControlTask()
 {
+  RCLCPP_INFO(get_logger(), "ControlTask::~ControlTask");
 }
