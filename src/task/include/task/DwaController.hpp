@@ -6,12 +6,12 @@
 
 #include "task/ControlTask.hpp"
 
-class SpecificController : public ControlTask
+class DwaController : public ControlTask
 {
 public:
-  SpecificController(const std::string & name, Robot * robot);
-  SpecificController() = delete;
-  ~SpecificController();
+  DwaController(const std::string & name, Robot * robot);
+  DwaController() = delete;
+  ~DwaController();
 
   void executePlan() override; 
 

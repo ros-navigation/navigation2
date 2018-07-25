@@ -6,9 +6,11 @@
 RobotTask::RobotTask(const std::string & name, Robot * robot)
 : Task(name)
 {
+  RCLCPP_INFO(get_logger(), "RobotTask::RobotTask");
   robot = robot;
 }
 
 RobotTask::~RobotTask()
 {
+  RCLCPP_INFO(get_logger(), "RobotTask::~RobotTask");
 }

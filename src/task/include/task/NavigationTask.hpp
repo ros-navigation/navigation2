@@ -6,7 +6,7 @@
 
 #include "task/RobotTask.hpp"
 #include "task/AStarPlanner.hpp"
-#include "task/SpecificController.hpp"
+#include "task/DwaController.hpp"
 
 class NavigationTask : public RobotTask
 {
@@ -17,7 +17,7 @@ public:
 
 protected:
   AStarPlanner planner_;
-  SpecificController controller_;
+  DwaController controller_;
 };
 
 #endif  // TASK__NAVIGATIONTASK_HPP_

@@ -18,9 +18,11 @@ void
 AStarPlanner::createPlan(const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  RCLCPP_INFO(get_logger(), "AStarPlanner::createPlan");
 }
 
 void
 AStarPlanner::workerThread()
 {
+  RCLCPP_INFO(get_logger(), "AStarPlanner::workerThread");
 }

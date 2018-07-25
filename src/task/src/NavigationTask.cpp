@@ -6,8 +6,10 @@
 NavigationTask::NavigationTask(const std::string & name, Robot * robot)
 : RobotTask(name, robot), planner_(name + "Planner"), controller_(name + "Controller", robot)
 {
+  RCLCPP_INFO(get_logger(), "NavigationTask::NavigationTask");
 }
 
 NavigationTask::~NavigationTask()
 {
+  RCLCPP_INFO(get_logger(), "NavigationTask::~NavigationTask");
 }

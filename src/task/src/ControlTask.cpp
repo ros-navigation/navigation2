@@ -6,8 +6,10 @@
 ControlTask::ControlTask(const std::string & name, Robot * robot)
 : RobotTask(name, robot)
 {
+  RCLCPP_INFO(get_logger(), "ControlTask::ControlTask");
 }
 
 ControlTask::~ControlTask()
 {
+  RCLCPP_INFO(get_logger(), "ControlTask::~ControlTask");
 }
