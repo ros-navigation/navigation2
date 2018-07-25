@@ -3,8 +3,8 @@
 
 #include "task/NavigationTask.hpp"
 
-NavigationTask::NavigationTask(Robot * robot)
-: RobotTask(robot), planner_(robot), controller_(robot)
+NavigationTask::NavigationTask(const std::string & name, Robot * robot)
+: RobotTask(name, robot), planner_(name + "Planner"), controller_(name + "Controller", robot)
 {
 }
 

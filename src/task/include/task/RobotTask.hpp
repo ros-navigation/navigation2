@@ -10,7 +10,7 @@
 class RobotTask : public Task
 {
 public:
-  explicit RobotTask(Robot * robot);
+  RobotTask(const std::string & name, Robot * robot);
   RobotTask() = delete;
   ~RobotTask();
 

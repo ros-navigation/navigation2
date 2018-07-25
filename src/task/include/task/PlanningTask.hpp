@@ -4,16 +4,18 @@
 #ifndef TASK__PLANNINGTASK_HPP_
 #define TASK__PLANNINGTASK_HPP_
 
-#include "task/RobotTask.hpp"
+#include "task/Task.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
-class PlanningTask : public RobotTask
+class PlanningTask : public Task
 {
 public:
-  explicit PlanningTask(Robot * robot);
+  PlanningTask(const std::string & name);
   PlanningTask() = delete;
   ~PlanningTask();
 
-  // getPlan()
+  virtual void createPlan(const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal) = 0;
 };
 
 #endif  // TASK__PLANNINGTASK_HPP_

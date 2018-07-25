@@ -4,22 +4,30 @@
 #ifndef TASK__TASK_HPP_
 #define TASK__TASK_HPP_
 
+#include <atomic>
+#include <thread>
+#include <string>
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 
-class Task
+class Task: public rclcpp::Node
 {
 public:
-  virtual ~Task() {}
+  Task(const std::string & name);
+  virtual ~Task();
+
+  void execute();
+  void cancel();
 
 protected:
-  // Emulate ROS Action for now:
-  // C++ templates for (Our)SimpleActionServer, (Our)SimpleActionClient
-  //
-  //   * Subscriber for ROS topic for commands w/ parameters
-  //      * Execute Command
-  //      * Cancel Command
-  //   * Publisher for status updates
-  //   * Publisher for completion
+  virtual void workerThread() = 0;
+
+  std::thread *workerThread_;
+  std::atomic<bool> stopWorkerThread_;
+
+  void onCmdReceived(const std_msgs::msg::String::SharedPtr msg);
+
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmdSub_;
 };
 
 #endif  // TASK__TASK_HPP_

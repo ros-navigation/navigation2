@@ -5,19 +5,19 @@
 #define TASK__NAVIGATIONTASK_HPP_
 
 #include "task/RobotTask.hpp"
-#include "task/PlanningTask.hpp"
-#include "task/ControlTask.hpp"
+#include "task/AStarPlanner.hpp"
+#include "task/SpecificController.hpp"
 
 class NavigationTask : public RobotTask
 {
 public:
-  explicit NavigationTask(Robot * robot);
+  explicit NavigationTask(const std::string & name, Robot * robot);
   NavigationTask() = delete;
   ~NavigationTask();
 
 protected:
-  PlanningTask planner_;
-  ControlTask controller_;
+  AStarPlanner planner_;
+  SpecificController controller_;
 };
 
 #endif  // TASK__NAVIGATIONTASK_HPP_

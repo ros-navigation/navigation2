@@ -3,11 +3,13 @@
 
 #include "task/PlanningTask.hpp"
 
-PlanningTask::PlanningTask(Robot * robot)
-: RobotTask(robot)
+PlanningTask::PlanningTask(const std::string & name)
+: Task(name)
 {
+  RCLCPP_INFO(get_logger(), "PlanningTask::PlanningTask");
 }
 
 PlanningTask::~PlanningTask()
 {
+  RCLCPP_INFO(get_logger(), "PlanningTask::~PlanningTask");
 }

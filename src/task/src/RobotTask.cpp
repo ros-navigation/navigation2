@@ -3,7 +3,8 @@
 
 #include "task/RobotTask.hpp"
 
-RobotTask::RobotTask(Robot * robot)
+RobotTask::RobotTask(const std::string & name, Robot * robot)
+: Task(name)
 {
   robot = robot;
 }
