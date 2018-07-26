@@ -4,7 +4,7 @@
 #include "task/RobotTask.hpp"
 
 RobotTask::RobotTask(const std::string & name, Robot * robot)
-: Task(name)
+: TaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "RobotTask::RobotTask");
   robot = robot;

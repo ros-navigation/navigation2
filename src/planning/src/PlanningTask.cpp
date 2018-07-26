@@ -4,7 +4,7 @@
 #include "planning/PlanningTask.hpp"
 
 PlanningTask::PlanningTask(const std::string & name)
-: Task(name)
+: TaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "PlanningTask::PlanningTask");
 }

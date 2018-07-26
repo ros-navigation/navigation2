@@ -4,10 +4,10 @@
 #ifndef PLANNING__PLANNINGTASK_HPP_
 #define PLANNING__PLANNINGTASK_HPP_
 
-#include "task/Task.hpp"
+#include "task/TaskServer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-class PlanningTask : public Task
+class PlanningTask : public TaskServer
 {
 public:
   PlanningTask(const std::string & name);
