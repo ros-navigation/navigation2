@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(control)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -13,25 +13,35 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../libs/task/include
+  ../task/include
+  ../robot/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_execution
+add_executable(dwa_controller
+  src/ControlTask.cpp
+  src/DwaController.cpp
   src/main.cpp
-  src/MissionExecution.cpp
   )
 
-ament_target_dependencies(mission_execution 
+target_link_libraries(dwa_controller
+  robot
+  task
+  )
+
+ament_target_dependencies(dwa_controller 
   rclcpp 
   std_msgs
+  task
+  robot
   )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS dwa_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

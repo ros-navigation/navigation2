@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(planning)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -13,25 +13,32 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../libs/task/include
+  ../task/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_execution
+add_executable(astar_planner
+  src/AStarPlanner.cpp
+  src/PlanningTask.cpp
   src/main.cpp
-  src/MissionExecution.cpp
   )
 
-ament_target_dependencies(mission_execution 
+target_link_libraries(astar_planner
+  task
+  )
+
+ament_target_dependencies(astar_planner 
   rclcpp 
   std_msgs
+  task
   )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS astar_planner
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
