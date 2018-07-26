@@ -1,10 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
-#include "robot/RosRobot.hpp"
 #include <string>
+#include "robot/RosRobot.hpp"
 
-RosRobot::RosRobot(std::string & /*filename*/)
+RosRobot::RosRobot(const std::string & urdf_filename)
 {
   // Open and parser the URDF file
 }

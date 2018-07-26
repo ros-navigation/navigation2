@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(navigation)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -13,25 +13,39 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../libs/task/include
+  ../task/include
+  ../robot/include
+  ../planning/include
+  ../control/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_execution
+add_executable(simple_navigator
+  src/NavigateToPoseTask.cpp
+  src/SimpleNavigator.cpp
   src/main.cpp
-  src/MissionExecution.cpp
   )
 
-ament_target_dependencies(mission_execution 
+target_link_libraries(simple_navigator
+  robot
+  task
+  )
+
+ament_target_dependencies(simple_navigator 
   rclcpp 
   std_msgs
+  planning
+  control
+  task
+  robot
   )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS simple_navigator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

@@ -1,8 +1,8 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
-#ifndef TASK__PLANNINGTASK_HPP_
-#define TASK__PLANNINGTASK_HPP_
+#ifndef PLANNING__PLANNINGTASK_HPP_
+#define PLANNING__PLANNINGTASK_HPP_
 
 #include "task/Task.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -18,4 +18,4 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) = 0;
 };
 
-#endif  // TASK__PLANNINGTASK_HPP_
+#endif  // PLANNING__PLANNINGTASK_HPP_

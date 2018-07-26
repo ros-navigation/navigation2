@@ -19,26 +19,16 @@ include_directories(
   ../robot/include
   )
 
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "../libs/")
 
 add_library(task STATIC
-  src/ControlTask.cpp
-  src/NavigationTask.cpp
-  src/PlanningTask.cpp
   src/RobotTask.cpp
   src/Task.cpp
-  src/AStarPlanner.cpp
-  src/DwaController.cpp
   )
 
 ament_target_dependencies(task
   rclcpp 
   std_msgs
   )
-
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
