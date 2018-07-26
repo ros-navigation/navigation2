@@ -3,16 +3,14 @@
 
 #include "mission_execution/MissionExecution.hpp"
 
-#include <stdio.h>
-
 MissionExecution::MissionExecution()
-: Node("mission_execution"),
-  missionPlan_(nullptr)
+: TaskServer("mission_execution")
+  //missionPlan_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::MissionExecution");
 
-  cmdSub_ = create_subscription<std_msgs::msg::String>("MissionExecutionCmd",
-      std::bind(&MissionExecution::onCmdReceived, this, std::placeholders::_1));
+  // TODO: make into C++ smart pointer
+  navigateToPoseTask_ = new TaskClient("SimpleNavigator", this);
 }
 
 MissionExecution::~MissionExecution()
@@ -21,39 +19,28 @@ MissionExecution::~MissionExecution()
 }
 
 void
-MissionExecution::executeMission(const MissionPlan * missionPlan)
+MissionExecution::execute(/*const MissionPlan & missionPlan*/)
 {
-  RCLCPP_INFO(get_logger(), "MissionExecution::executeMission");
-
-  // We've been given a mission plan to execute. Do an preparatory work
-  // and start things off by firing a state transition, which will land
-  // us in the Executing state.
+  RCLCPP_INFO(get_logger(), "MissionExecution:execute");
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
-  missionPlan_ = missionPlan;
-}
+  // missionPlan_ = missionPlan;
 
-void
-MissionExecution::cancelMission()
-{
-  RCLCPP_INFO(get_logger(), "MissionExecution::cancelMission");
+  navigateToPoseTask_->execute();
 
-  // We've been told to cancel the currently running mission, so fire the
-  // state transition to cause a transition to the Canceling state
-}
+  // Simulate looping until navigation reaches a terminal state
+  for (int i=0; i<5; i++)
+  {
+    // success/failure/running = navigateToPoseTask_->waitForResult(timeout)
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-void
-MissionExecution::onCmdReceived(const std_msgs::msg::String::SharedPtr msg)
-{
-  RCLCPP_INFO(get_logger(), "MissionExecution::onCmdReceived: \"%s\"", msg->data.c_str())
-
-  if (msg->data.compare("ExecuteMission") == 0) {
-    MissionPlan missionPlan;
-    executeMission(&missionPlan);
-  } else if (msg->data.compare("CancelMission") == 0) {
-    cancelMission();
-  } else {
-    RCLCPP_INFO(get_logger(), "MissionExecution::onCmdReceived: invalid command: \"%s\"",
-      msg->data.c_str())
+    if (isPreemptRequested()) {
+      RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been preempted");
+      navigateToPoseTask_->cancel();
+	  setPreempted();
+      return;
+    }
   }
+
+  RCLCPP_INFO(get_logger(), "MissionExecution::execute: task completed");
 }

@@ -17,7 +17,7 @@ public:
   TaskServer(const std::string & name);
   virtual ~TaskServer();
 
-  // Execute
+  // TODO: The type of this will be received from the template (a String for now)
   typedef std::function<void (const std_msgs::msg::String&)> ExecuteCallback;
 
   typedef std_msgs::msg::String Goal;
@@ -26,28 +26,39 @@ public:
   typedef std_msgs::msg::String Feedback;
   typedef std_msgs::msg::String Status;
 
+  // The user's class overrides this virtual method
+  virtual void execute/*CB*/(/*goal message*/) = 0;
+
+  // The user's execute method can check if a cancel/preempt is being attempted
+  bool isPreemptRequested();
+  void setPreempted();
+
+  // TODO: other methods useful to the user's execute implementation (ala ActionLib)
   // void publishStatus();
   // void publishResult();
   // void publishFeedback();
 
-  // Timer, status frequency
-
 protected:
+  // This class has a worker thread that calls the user's execute callback
+  void workerThread();
+
+  // The worker thread can be started and stopped (which is done from the ctor and dtor)
   void start(); 
   void stop();
 
-  virtual void workerThread() = 0;
-
-  std::thread *workerThread_;
-  std::atomic<bool> stopWorkerThread_;
+  // The pointer to our private worker thread
+  std::thread * workerThread_;
   std::atomic<bool> running_;
 
+  // The callbacks for the subscribers
   void onGoalReceived(const Goal::SharedPtr msg);
   void onCancelReceived(const GoalID::SharedPtr msg);
 
+  // The subscribers: goal and cancel
   rclcpp::Subscription<Goal>::SharedPtr goalSub_;
   rclcpp::Subscription<GoalID>::SharedPtr cancelSub_;
 
+  // The publishers: result, feedback, and status
   rclcpp::Publisher<Result>::SharedPtr resultPub_;
   rclcpp::Publisher<Feedback>::SharedPtr feedbackPub_;
   rclcpp::Publisher<Status>::SharedPtr statusPub_;

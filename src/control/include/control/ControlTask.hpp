@@ -12,8 +12,6 @@ public:
   ControlTask(const std::string & name, Robot * robot);
   ControlTask() = delete;
   ~ControlTask();
-
-  virtual void executePlan() = 0;
 };
 
 #endif  // CONTROL__CONTROLTASK_HPP_

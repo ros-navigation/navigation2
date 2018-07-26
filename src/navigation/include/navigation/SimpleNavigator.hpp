@@ -5,8 +5,6 @@
 #define NAVIGATION__SIMPLENAVIGATOR_HPP_
 
 #include "navigation/NavigateToPoseTask.hpp"
-#include "planning/AStarPlanner.hpp"
-#include "control/DwaController.hpp"
 #include "task/TaskClient.hpp"
 
 class SimpleNavigator : public NavigateToPoseTask
@@ -16,15 +14,10 @@ public:
   SimpleNavigator() = delete;
   ~SimpleNavigator();
 
-  void navigateTo(/*pose*/) override;
+  //void navigateTo(/*pose*/) override;
+  void execute();
 
 protected:
-  void workerThread();
-
-  // TODO: These will be the client-side proxies (like SimpleActionClient):
-  //AStarPlanner * planner_;
-  //DwaController * controller_;
-
   TaskClient * planner_;
   TaskClient * controller_;
 };

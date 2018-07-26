@@ -13,11 +13,10 @@ public:
   AStarPlanner() = delete;
   ~AStarPlanner();
 
-  void createPlan(const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal);
+  //void createPlan(const geometry_msgs::msg::PoseStamped & start,
+    //const geometry_msgs::msg::PoseStamped & goal);
 
-protected:
-  void workerThread() override;
+  void execute() override;
 };
 
 #endif  // PLANNING__ASTARPLANNER_HPP_

@@ -4,33 +4,20 @@
 #ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 #define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "mission_execution/MissionPlan.hpp"
+#include "task/TaskServer.hpp"
+#include "task/TaskClient.hpp"
 
-class MissionExecution : public rclcpp::Node
+class MissionExecution : public TaskServer
 {
 public:
   MissionExecution();
   virtual ~MissionExecution();
 
-  /**
-   * @brief Execute a Mission Plan
-   */
-  void executeMission(const MissionPlan * missionPlan);
-
-  /**
-   * @brief Cancel the current, in-flight Mission, which must have been previously
-   * starting using executeMission.
-   */
-  void cancelMission();
+  void execute(/*const MissionPlan & missionPlan*/) override;
 
 private:
-  void onCmdReceived(const std_msgs::msg::String::SharedPtr msg);
-
-private:
-  const MissionPlan * missionPlan_;
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmdSub_;
+  TaskClient * navigateToPoseTask_;
 };
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_

@@ -9,7 +9,7 @@ SimpleNavigator::SimpleNavigator(const std::string & name, Robot * robot)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 
-// TODO: make into C++ smart pointers
+  // TODO: make into C++ smart pointers
   planner_ = new TaskClient("AStarPlanner", this);
   controller_ = new TaskClient("DwaController", this);
 }
@@ -20,27 +20,43 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 void
-SimpleNavigator::navigateTo()
+SimpleNavigator::execute()
 {
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executePlan");
-}
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
-void
-SimpleNavigator::workerThread()
-{
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::workerThread");
-
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::workerThread: sending executes");
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   planner_->execute();
-  controller_->execute();
 
-  while (!stopWorkerThread_ /* && rclcpp::ok() */ )
+  // Simulate looping until the planner reaches a terminal state
+  for (int i=0; i<5; i++)
   {
-    RCLCPP_INFO(get_logger(), "SimpleNavigator::workerThread: doing work");
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // success/failure/running = planner->waitForResult(timeout)
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    if (isPreemptRequested()) {
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been preempted");
+      planner_->cancel();
+	  setPreempted();
+      return;
+    }
   }
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::workerThread: sending cancels");
-  planner_->cancel();
-  controller_->cancel();
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: sending the path to the controller to execute");
+  controller_->execute();
+
+  // Simulate looping until the controller reaches a terminal state
+  for (int i=0; i<5; i++)
+  {
+    // success/failure/running = controller->waitForResult()
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    if (isPreemptRequested()) {
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been preempted");
+      controller_->cancel();
+	  setPreempted();
+      return;
+    }
+  }
+
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task completed");
 }

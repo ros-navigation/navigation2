@@ -3,8 +3,20 @@
 
 #include "task/TaskServer.hpp"
 
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+
+using namespace std::chrono_literals;
+
+static std::condition_variable cv;
+
+static std::atomic<bool> shouldCancel;
+static std::atomic<bool> shouldExecute;
+
 TaskServer::TaskServer(const std::string & name)
-: Node(name), workerThread_(nullptr), stopWorkerThread_(false), running_(false)
+: Node(name), workerThread_(nullptr), running_(false)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::TaskServer");
 
@@ -17,13 +29,49 @@ TaskServer::TaskServer(const std::string & name)
   resultPub_ = this->create_publisher<Result>(name + "_result");
   feedbackPub_ = this->create_publisher<Feedback>(name + "_status");
   statusPub_ = this->create_publisher<Status>(name + "_feedback");
+
+  start();
 }
 
 TaskServer::~TaskServer()
 {
   RCLCPP_INFO(get_logger(), "TaskServer::~TaskServer");
-  if (workerThread_ != nullptr)
-    stop();
+  stop();
+}
+
+bool
+TaskServer::isPreemptRequested()
+{
+  return shouldCancel;
+}
+
+void
+TaskServer::setPreempted()
+{
+  shouldCancel = false;
+}
+
+void
+TaskServer::workerThread()
+{
+  RCLCPP_INFO(get_logger(), "TaskServer::workerThread: enter");
+
+  std::mutex m;
+  std::unique_lock<std::mutex> lock(m);
+
+  do
+  {
+    cv.wait_for(lock, 10ms);
+
+	if (shouldExecute)
+    {
+      RCLCPP_INFO(get_logger(), "TaskServer::workerThread: shouldExecute");
+      execute();
+      shouldExecute = false;
+    }
+  } while (rclcpp::ok());
+
+  RCLCPP_INFO(get_logger(), "TaskServer::workerThread: exit");
 }
 
 void
@@ -34,7 +82,6 @@ TaskServer::start()
   if (running_) {
     RCLCPP_INFO(get_logger(), "TaskServer::start: thread already running");
   } else {
-    stopWorkerThread_ = false;
     workerThread_ = new std::thread(&TaskServer::workerThread, this);
 	running_ = true;
   }
@@ -48,11 +95,10 @@ TaskServer::stop()
   if (!running_) {
     RCLCPP_INFO(get_logger(), "TaskServer::stop: thread already stopped");
   } else {
-    stopWorkerThread_ = true;
     workerThread_->join();
     delete workerThread_;
     workerThread_ = nullptr;
-	running_ = false;
+	  running_ = false;
   }
 }
 
@@ -60,14 +106,14 @@ void
 TaskServer::onGoalReceived(const Goal::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::onGoalReceived: \"%s\"", msg->data.c_str())
-
-  // TODO: save the msg, start the worker thread, which passes the msg to the user's callback
-  start();
+  shouldExecute = true;
+  cv.notify_one();
 }
 
 void
 TaskServer::onCancelReceived(const GoalID::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::onCancelReceived: \"%s\"", msg->data.c_str())
-  stop();
+  shouldCancel = true;
+  cv.notify_one();
 }

@@ -16,20 +16,25 @@ DwaController::~DwaController()
 }
 
 void
-DwaController::executePlan()
+DwaController::execute()
 {
-  RCLCPP_INFO(get_logger(), "DwaController::executePlan");
-}
+  RCLCPP_INFO(get_logger(), "DwaController::execute");
 
-void
-DwaController::workerThread()
-{
-  RCLCPP_INFO(get_logger(), "DwaController::workerThread");
-
-  while (!stopWorkerThread_)
+  // Fake out some work
+  for (int i=0; i<10; i++)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    RCLCPP_INFO(get_logger(), "DwaController::workerThread: doing work");
+    RCLCPP_INFO(get_logger(), "DwaController::execute: doing work: %d", i);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    // While we're doing the work, check if we've been preempted/canceled
+    if (isPreemptRequested()) {
+      RCLCPP_INFO(get_logger(), "DwaController::execute: task has been preempted");
+	  setPreempted();
+      return;
+    }
   }
+
+  // TODO: return the result
+  RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
 }
 

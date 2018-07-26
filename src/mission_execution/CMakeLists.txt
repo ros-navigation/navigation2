@@ -13,10 +13,11 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../libs/task/include
+  ../task/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
@@ -24,6 +25,10 @@ link_directories(${CMAKE_BINARY_DIR}/../libs)
 add_executable(mission_execution
   src/main.cpp
   src/MissionExecution.cpp
+  )
+
+target_link_libraries(mission_execution
+  task
   )
 
 ament_target_dependencies(mission_execution 

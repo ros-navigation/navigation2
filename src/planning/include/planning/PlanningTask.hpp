@@ -14,8 +14,8 @@ public:
   PlanningTask() = delete;
   ~PlanningTask();
 
-  virtual void createPlan(const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) = 0;
+  //virtual void createPlan(const geometry_msgs::msg::PoseStamped & start,
+    //const geometry_msgs::msg::PoseStamped & goal) = 0;
 };
 
 #endif  // PLANNING__PLANNINGTASK_HPP_

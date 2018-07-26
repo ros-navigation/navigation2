@@ -13,10 +13,7 @@ public:
   DwaController() = delete;
   ~DwaController();
 
-  void executePlan() override; 
-
-protected:
-  void workerThread() override; 
+  void execute() override; 
 };
 
 #endif  // CONTROL__DWACONTROLLER_HPP_
