@@ -7,6 +7,7 @@
 #include "navigation/NavigateToPoseTask.hpp"
 #include "planning/AStarPlanner.hpp"
 #include "control/DwaController.hpp"
+#include "task/TaskClient.hpp"
 
 class SimpleNavigator : public NavigateToPoseTask
 {
@@ -21,8 +22,11 @@ protected:
   void workerThread();
 
   // TODO: These will be the client-side proxies (like SimpleActionClient):
-  AStarPlanner * planner_;
-  DwaController * controller_;
+  //AStarPlanner * planner_;
+  //DwaController * controller_;
+
+  TaskClient * planner_;
+  TaskClient * controller_;
 };
 
 #endif  // NAVIGATION__SIMPLENAVIGATOR_HPP_

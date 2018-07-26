@@ -4,10 +4,10 @@
 #ifndef TASK__ROBOTTASK_HPP_
 #define TASK__ROBOTTASK_HPP_
 
-#include "task/Task.hpp"
+#include "task/TaskServer.hpp"
 #include "robot/Robot.hpp"
 
-class RobotTask : public Task
+class RobotTask : public TaskServer
 {
 public:
   RobotTask(const std::string & name, Robot * robot);

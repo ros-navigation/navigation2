@@ -29,6 +29,7 @@ add_executable(mission_execution
 ament_target_dependencies(mission_execution 
   rclcpp 
   std_msgs
+  task
   )
 
 install(TARGETS ${PROJECT_NAME}
