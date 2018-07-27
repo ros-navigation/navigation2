@@ -17,7 +17,8 @@ AStarPlanner::~AStarPlanner()
 
 #if 0
 void
-AStarPlanner::createPlan(const geometry_msgs::msg::PoseStamped & start,
+AStarPlanner::createPlan(
+  const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::createPlan");
@@ -30,20 +31,18 @@ AStarPlanner::execute()
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
 
   // Fake out some work
-  for (int i=0; i<10; i++)
-  {
+  for (int i = 0; i < 10; i++) {
     RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
     // While we're doing the work, check if we've been preempted/canceled
-    if (isPreemptRequested()) {
-      RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been preempted");
-	  setPreempted();
+    if (cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been canceled");
+      setCanceled();
       return;
     }
   }
 
-  // TODO: return the result
+  // TODO(mjeronimo): return the result
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task completed");
 }
-

@@ -9,12 +9,12 @@
 class AStarPlanner : public PlanningTask
 {
 public:
-  AStarPlanner(const std::string & name);
+  explicit AStarPlanner(const std::string & name);
   AStarPlanner() = delete;
   ~AStarPlanner();
 
-  //void createPlan(const geometry_msgs::msg::PoseStamped & start,
-    //const geometry_msgs::msg::PoseStamped & goal);
+  // void createPlan(const geometry_msgs::msg::PoseStamped & start,
+  //   const geometry_msgs::msg::PoseStamped & goal);
 
   void execute() override;
 };

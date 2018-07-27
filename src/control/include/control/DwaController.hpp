@@ -13,7 +13,7 @@ public:
   DwaController() = delete;
   ~DwaController();
 
-  void execute() override; 
+  void execute() override;
 };
 
 #endif  // CONTROL__DWACONTROLLER_HPP_

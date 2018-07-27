@@ -14,7 +14,7 @@ public:
   SimpleNavigator() = delete;
   ~SimpleNavigator();
 
-  //void navigateTo(/*pose*/) override;
+  // void navigateTo(/*pose*/) override;
   void execute();
 
 protected:

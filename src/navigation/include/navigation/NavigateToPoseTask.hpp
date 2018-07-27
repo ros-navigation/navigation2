@@ -13,7 +13,7 @@ public:
   NavigateToPoseTask() = delete;
   ~NavigateToPoseTask();
 
-  //virtual void navigateTo(/*pose*/) = 0;
+  // virtual void navigateTo(/*pose*/) = 0;
 };
 
 #endif  // NAVIGATION__NAVIGATETOPOSETASK_HPP_

@@ -5,11 +5,11 @@
 
 MissionExecution::MissionExecution()
 : TaskServer("mission_execution")
-  //missionPlan_(nullptr)
+  // missionPlan_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::MissionExecution");
 
-  // TODO: make into C++ smart pointer
+  // TODO(mjeronimo): make into C++ smart pointer
   navigateToPoseTask_ = new TaskClient("SimpleNavigator", this);
 }
 
@@ -29,15 +29,14 @@ MissionExecution::execute(/*const MissionPlan & missionPlan*/)
   navigateToPoseTask_->execute();
 
   // Simulate looping until navigation reaches a terminal state
-  for (int i=0; i<5; i++)
-  {
+  for (int i = 0; i < 5; i++) {
     // success/failure/running = navigateToPoseTask_->waitForResult(timeout)
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-    if (isPreemptRequested()) {
-      RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been preempted");
+    if (cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been canceled");
       navigateToPoseTask_->cancel();
-	  setPreempted();
+      setCanceled();
       return;
     }
   }

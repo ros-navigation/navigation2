@@ -9,7 +9,7 @@ SimpleNavigator::SimpleNavigator(const std::string & name, Robot * robot)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 
-  // TODO: make into C++ smart pointers
+  // TODO(mjeronimo): make into C++ smart pointers
   planner_ = new TaskClient("AStarPlanner", this);
   controller_ = new TaskClient("DwaController", this);
 }
@@ -28,32 +28,31 @@ SimpleNavigator::execute()
   planner_->execute();
 
   // Simulate looping until the planner reaches a terminal state
-  for (int i=0; i<5; i++)
-  {
+  for (int i = 0; i < 5; i++) {
     // success/failure/running = planner->waitForResult(timeout)
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-    if (isPreemptRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been preempted");
+    if (cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       planner_->cancel();
-	  setPreempted();
+      setCanceled();
       return;
     }
   }
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: sending the path to the controller to execute");
+  RCLCPP_INFO(
+    get_logger(), "SimpleNavigator::execute: sending the path to the controller to execute");
   controller_->execute();
 
   // Simulate looping until the controller reaches a terminal state
-  for (int i=0; i<5; i++)
-  {
+  for (int i = 0; i < 5; i++) {
     // success/failure/running = controller->waitForResult()
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-    if (isPreemptRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been preempted");
+    if (cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       controller_->cancel();
-	  setPreempted();
+      setCanceled();
       return;
     }
   }

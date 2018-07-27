@@ -16,37 +16,37 @@ static std::atomic<bool> shouldCancel;
 static std::atomic<bool> shouldExecute;
 
 TaskServer::TaskServer(const std::string & name)
-: Node(name), workerThread_(nullptr), running_(false)
+: Node(name), workerThread_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::TaskServer");
 
-  goalSub_ = create_subscription<std_msgs::msg::String>(name + "_goal",
-    std::bind(&TaskServer::onGoalReceived, this, std::placeholders::_1));
+  commandSub_ = create_subscription<std_msgs::msg::String>(name + "_command",
+      std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
 
   cancelSub_ = create_subscription<std_msgs::msg::String>(name + "_cancel",
-    std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
+      std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
-  resultPub_ = this->create_publisher<Result>(name + "_result");
-  feedbackPub_ = this->create_publisher<Feedback>(name + "_status");
-  statusPub_ = this->create_publisher<Status>(name + "_feedback");
+  resultPub_ = this->create_publisher<ResultMsg>(name + "_result");
+  feedbackPub_ = this->create_publisher<FeedbackMsg>(name + "_status");
+  statusPub_ = this->create_publisher<StatusMsg>(name + "_feedback");
 
-  start();
+  startWorkerThread();
 }
 
 TaskServer::~TaskServer()
 {
   RCLCPP_INFO(get_logger(), "TaskServer::~TaskServer");
-  stop();
+  stopWorkerThread();
 }
 
 bool
-TaskServer::isPreemptRequested()
+TaskServer::cancelRequested()
 {
   return shouldCancel;
 }
 
 void
-TaskServer::setPreempted()
+TaskServer::setCanceled()
 {
   shouldCancel = false;
 }
@@ -59,12 +59,10 @@ TaskServer::workerThread()
   std::mutex m;
   std::unique_lock<std::mutex> lock(m);
 
-  do
-  {
+  do {
     cv.wait_for(lock, 10ms);
 
-	if (shouldExecute)
-    {
+    if (shouldExecute) {
       RCLCPP_INFO(get_logger(), "TaskServer::workerThread: shouldExecute");
       execute();
       shouldExecute = false;
@@ -75,43 +73,31 @@ TaskServer::workerThread()
 }
 
 void
-TaskServer::start()
+TaskServer::startWorkerThread()
 {
-  RCLCPP_INFO(get_logger(), "TaskServer::start");
-
-  if (running_) {
-    RCLCPP_INFO(get_logger(), "TaskServer::start: thread already running");
-  } else {
-    workerThread_ = new std::thread(&TaskServer::workerThread, this);
-	running_ = true;
-  }
+  RCLCPP_INFO(get_logger(), "TaskServer::startWorkerThread");
+  workerThread_ = new std::thread(&TaskServer::workerThread, this);
 }
 
 void
-TaskServer::stop()
+TaskServer::stopWorkerThread()
 {
-  RCLCPP_INFO(get_logger(), "TaskServer::stop");
-
-  if (!running_) {
-    RCLCPP_INFO(get_logger(), "TaskServer::stop: thread already stopped");
-  } else {
-    workerThread_->join();
-    delete workerThread_;
-    workerThread_ = nullptr;
-	  running_ = false;
-  }
+  RCLCPP_INFO(get_logger(), "TaskServer::stopWorkerThread");
+  workerThread_->join();
+  delete workerThread_;
+  workerThread_ = nullptr;
 }
 
 void
-TaskServer::onGoalReceived(const Goal::SharedPtr msg)
+TaskServer::onCommandReceived(const CommandMsg::SharedPtr msg)
 {
-  RCLCPP_INFO(get_logger(), "TaskServer::onGoalReceived: \"%s\"", msg->data.c_str())
+  RCLCPP_INFO(get_logger(), "TaskServer::onCommandReceived: \"%s\"", msg->data.c_str())
   shouldExecute = true;
   cv.notify_one();
 }
 
 void
-TaskServer::onCancelReceived(const GoalID::SharedPtr msg)
+TaskServer::onCancelReceived(const CancelMsg::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::onCancelReceived: \"%s\"", msg->data.c_str())
   shouldCancel = true;
