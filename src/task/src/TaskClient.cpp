@@ -52,6 +52,7 @@ TaskClient::waitForResult(const ResultMsg::SharedPtr & result)
 {
   RCLCPP_INFO(node_->get_logger(), "TaskClient::waitForResult");
 
+#if 0
   static int i;
 
   // Simulate the task running for a bit
@@ -66,12 +67,27 @@ TaskClient::waitForResult(const ResultMsg::SharedPtr & result)
   RCLCPP_INFO(node_->get_logger(), "TaskClient::waitForResult: done");
   result->data = "Some fake result from TaskClient";
   return SUCCEEDED;
+#else
+  std::mutex m;
+  std::unique_lock<std::mutex> lock(m);
+
+  //cv_.wait_for(lock /*timeout*/);
+  cv_.wait(lock);
+
+  // TODO(mjeronimo) fix the copies
+  *result = result_;
+  return SUCCEEDED;
+#endif
 }
 
 void
 TaskClient::onResultReceived(const ResultMsg::SharedPtr msg)
 {
   RCLCPP_INFO(node_->get_logger(), "TaskClient::onResultReceived: %s", msg->data.c_str());
+
+  // Save the result and signal the client's waitForResult thread
+  result_ = *msg;
+  cv_.notify_one();
 }
 
 void

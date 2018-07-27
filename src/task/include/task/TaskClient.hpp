@@ -4,6 +4,8 @@
 #ifndef TASK__TASKCLIENT_HPP_
 #define TASK__TASKCLIENT_HPP_
 
+#include <atomic>
+#include <condition_variable>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -30,6 +32,9 @@ public:
   Status waitForResult(const ResultMsg::SharedPtr &result);
 
 protected:
+  std::condition_variable cv_;
+  ResultMsg result_;
+
   // The callbacks for the subscriptions
   void onResultReceived(const ResultMsg::SharedPtr msg);
   void onFeedbackReceived(const FeedbackMsg::SharedPtr msg);

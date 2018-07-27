@@ -1,19 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
+#include <mutex>
+#include <chrono>
 #include "task/TaskServer.hpp"
 
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
-
 using namespace std::chrono_literals;
-
-static std::condition_variable cv;
-
-static std::atomic<bool> shouldCancel;
-static std::atomic<bool> shouldExecute;
 
 TaskServer::TaskServer(const std::string & name)
 : Node(name), workerThread_(nullptr)
@@ -40,13 +32,13 @@ TaskServer::~TaskServer()
 bool
 TaskServer::cancelRequested()
 {
-  return shouldCancel;
+  return shouldCancel_;
 }
 
 void
 TaskServer::setCanceled()
 {
-  shouldCancel = false;
+  shouldCancel_ = false;
 }
 
 void
@@ -64,14 +56,14 @@ TaskServer::workerThread()
   std::unique_lock<std::mutex> lock(m);
 
   do {
-    cv.wait_for(lock, 10ms);
+    cv_.wait_for(lock, 10ms);
 
-    if (shouldExecute) {
+    if (shouldExecute_) {
       RCLCPP_INFO(get_logger(), "TaskServer::workerThread: shouldExecute");
       auto command = std::make_shared<std_msgs::msg::String>();
       command->data = "Command to execute";
       Status status = execute(command);
-      shouldExecute = false;
+      shouldExecute_ = false;
     }
   } while (rclcpp::ok());
 
@@ -98,14 +90,14 @@ void
 TaskServer::onCommandReceived(const CommandMsg::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::onCommandReceived: \"%s\"", msg->data.c_str())
-  shouldExecute = true;
-  cv.notify_one();
+  shouldExecute_ = true;
+  cv_.notify_one();
 }
 
 void
 TaskServer::onCancelReceived(const CancelMsg::SharedPtr msg)
 {
   RCLCPP_INFO(get_logger(), "TaskServer::onCancelReceived: \"%s\"", msg->data.c_str())
-  shouldCancel = true;
-  cv.notify_one();
+  shouldCancel_ = true;
+  cv_.notify_one();
 }

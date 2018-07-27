@@ -27,25 +27,45 @@ MissionExecution::execute(const CommandMsg::SharedPtr command)
   // missionPlan_ = missionPlan;
 
   navigateToPoseTask_->execute();
+  auto navResult = std::make_shared<std_msgs::msg::String>();
 
   // Simulate looping until navigation reaches a terminal state
-  for (int i = 0; i < 5; i++) {
-    // auto result = navigateToPoseTask_->waitForResult(timeout)
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
+  for (;;) {
+    // Check to see if this task has been canceled. If so, cancel any child tasks
+    // and bail out
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been canceled");
       navigateToPoseTask_->cancel();
       setCanceled();
       return TaskServer::CANCELED;
     }
+
+    TaskClient::Status status = navigateToPoseTask_->waitForResult(navResult);
+
+    switch (status)
+    {
+      case TaskClient::SUCCEEDED:
+      {
+        RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task completed");
+        RCLCPP_INFO(get_logger(), "MissionExecution::execute: msg: %s", navResult->data.c_str());
+
+        ResultMsg missionExecutionResult;
+        missionExecutionResult.data = "Here is the result from MissionExecution";
+        sendResult(missionExecutionResult);
+
+        return TaskServer::SUCCEEDED;
+      }
+
+      case TaskClient::FAILED:
+        return TaskServer::FAILED;
+
+      case TaskClient::RUNNING:
+        RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task still running");
+        break;
+
+      default:
+        RCLCPP_INFO(get_logger(), "MissionExecution::execute: invalid status value");
+        throw("MissionExecution::execute: invalid status value");
+    }
   }
-
-  RCLCPP_INFO(get_logger(), "MissionExecution::execute: task completed");
-
-  ResultMsg result;
-  result.data = "Here is the result from MissionExecution";
-  sendResult(result);
-
-  return TaskServer::SUCCEEDED;
 }

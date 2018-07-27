@@ -58,6 +58,7 @@ SimpleNavigator::execute(const CommandMsg::SharedPtr command)
 		break;
 
 	  default:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
         throw("SimpleNavigator::execute: invalid status value");
     }
   }
@@ -88,9 +89,9 @@ here:
 	  case TaskClient::SUCCEEDED:
 	  {
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task completed");
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", controlResult->data);
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", controlResult->data.c_str());
         ResultMsg navigationResult;
-        navigationResult.data = "SimpleNavigator was successful!";
+        navigationResult.data = "Here is the result from the SimpleNavigator!";
         sendResult(navigationResult);
 
         return TaskServer::SUCCEEDED;
@@ -104,6 +105,7 @@ here:
 		break;
 
 	  default:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
         throw("SimpleNavigator::execute: invalid status value");
     }
   }
