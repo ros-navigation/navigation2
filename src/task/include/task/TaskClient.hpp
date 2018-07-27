@@ -26,6 +26,9 @@ public:
   // An in-flight operation can be cancelled
   void cancel();
 
+  typedef enum { SUCCEEDED, FAILED, RUNNING } Status;
+  Status waitForResult(const ResultMsg::SharedPtr &result);
+
 protected:
   // The callbacks for the subscriptions
   void onResultReceived(const ResultMsg::SharedPtr msg);

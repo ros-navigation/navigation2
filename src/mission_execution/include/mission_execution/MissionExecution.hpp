@@ -4,6 +4,7 @@
 #ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 #define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 
+#include <string>
 #include "mission_execution/MissionPlan.hpp"
 #include "task/TaskServer.hpp"
 #include "task/TaskClient.hpp"
@@ -11,10 +12,10 @@
 class MissionExecution : public TaskServer
 {
 public:
-  MissionExecution();
+  explicit MissionExecution(const std::string & name);
   virtual ~MissionExecution();
 
-  void execute(/*const MissionPlan & missionPlan*/) override;
+  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
 
 private:
   TaskClient * navigateToPoseTask_;

@@ -20,24 +20,15 @@ public:
   typedef std_msgs::msg::String CommandMsg;
   typedef std_msgs::msg::String CancelMsg;
   typedef std_msgs::msg::String ResultMsg;
-  typedef std_msgs::msg::String FeedbackMsg;
-  typedef std_msgs::msg::String StatusMsg;
 
-  // TODO(mjeronimo): For now, the user's class overrides this virtual method. Need 
-  // to move this to the constructor w/ a callback.
-  virtual void execute(/*command message*/) = 0;
-  typedef std::function<void (const std_msgs::msg::String &)> ExecuteCallback;
+  typedef enum { SUCCEEDED, FAILED, CANCELED } Status;
+
+  virtual Status execute(const CommandMsg::SharedPtr command) = 0;
 
   // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested();
   void setCanceled();
-
-  // TODO(mjeronimo): other methods useful to the user's execute implementation
-  // (ala ActionLib). May not need feedback; may only need success/failure/running.
-  //
-  //   void publishStatus();
-  //   void publishResult();
-  //   void publishFeedback();
+  void sendResult(const ResultMsg & result);
 
 protected:
   // The pointer to our private worker thread
@@ -58,10 +49,8 @@ protected:
   rclcpp::Subscription<CommandMsg>::SharedPtr commandSub_;
   rclcpp::Subscription<CancelMsg>::SharedPtr cancelSub_;
 
-  // The publishers: result, feedback, and status
+  // The publishers for the result from this task
   rclcpp::Publisher<ResultMsg>::SharedPtr resultPub_;
-  rclcpp::Publisher<FeedbackMsg>::SharedPtr feedbackPub_;
-  rclcpp::Publisher<StatusMsg>::SharedPtr statusPub_;
 };
 
 #endif  // TASK__TASKSERVER_HPP_

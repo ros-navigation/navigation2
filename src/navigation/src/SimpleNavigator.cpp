@@ -19,43 +19,92 @@ SimpleNavigator::~SimpleNavigator()
   RCLCPP_INFO(get_logger(), "SimpleNavigator::~SimpleNavigator");
 }
 
-void
-SimpleNavigator::execute()
+TaskServer::Status
+SimpleNavigator::execute(const CommandMsg::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   planner_->execute();
+  auto planningResult = std::make_shared<std_msgs::msg::String>();
 
   // Simulate looping until the planner reaches a terminal state
-  for (int i = 0; i < 5; i++) {
-    // success/failure/running = planner->waitForResult(timeout)
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
+  for (;;) {
+    // Check to see if this task has been canceled. If so, cancel any child tasks
+	// and bail out
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       planner_->cancel();
       setCanceled();
-      return;
+      return TaskServer::CANCELED;
+    }
+
+    // Otherwise, check if the child task has completed (succeeded or failed)
+	TaskClient::Status status = planner_->waitForResult(planningResult /*, timeout*/);
+
+	switch (status)
+	{
+	  case TaskClient::SUCCEEDED:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task completed");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", planningResult->data);
+
+		goto here;
+
+	  case TaskClient::FAILED:
+        return TaskServer::FAILED;
+
+	  case TaskClient::RUNNING:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task still running");
+		break;
+
+	  default:
+        throw("SimpleNavigator::execute: invalid status value");
     }
   }
 
-  RCLCPP_INFO(
-    get_logger(), "SimpleNavigator::execute: sending the path to the controller to execute");
+here:
+  RCLCPP_INFO(get_logger(),
+      "SimpleNavigator::execute: sending the path to the controller to execute");
+
   controller_->execute();
+  auto controlResult = std::make_shared<std_msgs::msg::String>();
 
   // Simulate looping until the controller reaches a terminal state
-  for (int i = 0; i < 5; i++) {
-    // success/failure/running = controller->waitForResult()
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
+  for (;;) {
+    // Check to see if this task has been canceled. If so, cancel any child tasks
+	// and bail out
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       controller_->cancel();
       setCanceled();
-      return;
+      return TaskServer::CANCELED;
+	}
+
+    // Otherwise, check if the child task has completed (succeeded or failed)
+	TaskClient::Status status = controller_->waitForResult(controlResult /*, timeout*/);
+
+	switch (status)
+	{
+	  case TaskClient::SUCCEEDED:
+	  {
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task completed");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", controlResult->data);
+        ResultMsg navigationResult;
+        navigationResult.data = "SimpleNavigator was successful!";
+        sendResult(navigationResult);
+
+        return TaskServer::SUCCEEDED;
+      }
+
+	  case TaskClient::FAILED:
+        return TaskServer::FAILED;
+
+	  case TaskClient::RUNNING:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task still running");
+		break;
+
+	  default:
+        throw("SimpleNavigator::execute: invalid status value");
     }
   }
-
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task completed");
 }

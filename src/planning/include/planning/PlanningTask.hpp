@@ -5,7 +5,7 @@
 #define PLANNING__PLANNINGTASK_HPP_
 
 #include "task/TaskServer.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+//#include "geometry_msgs/msg/pose_stamped.hpp"
 
 class PlanningTask : public TaskServer
 {

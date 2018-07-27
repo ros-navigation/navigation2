@@ -27,8 +27,6 @@ TaskServer::TaskServer(const std::string & name)
       std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
   resultPub_ = this->create_publisher<ResultMsg>(name + "_result");
-  feedbackPub_ = this->create_publisher<FeedbackMsg>(name + "_status");
-  statusPub_ = this->create_publisher<StatusMsg>(name + "_feedback");
 
   startWorkerThread();
 }
@@ -52,6 +50,12 @@ TaskServer::setCanceled()
 }
 
 void
+TaskServer::sendResult(const ResultMsg & result)
+{
+  resultPub_->publish(result);
+}
+
+void
 TaskServer::workerThread()
 {
   RCLCPP_INFO(get_logger(), "TaskServer::workerThread: enter");
@@ -64,7 +68,9 @@ TaskServer::workerThread()
 
     if (shouldExecute) {
       RCLCPP_INFO(get_logger(), "TaskServer::workerThread: shouldExecute");
-      execute();
+      auto command = std::make_shared<std_msgs::msg::String>();
+      command->data = "Command to execute";
+      Status status = execute(command);
       shouldExecute = false;
     }
   } while (rclcpp::ok());

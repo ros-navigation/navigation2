@@ -14,8 +14,7 @@ public:
   SimpleNavigator() = delete;
   ~SimpleNavigator();
 
-  // void navigateTo(/*pose*/) override;
-  void execute() override;
+  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
 
 protected:
   TaskClient * planner_;

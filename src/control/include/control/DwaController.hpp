@@ -13,7 +13,7 @@ public:
   DwaController() = delete;
   ~DwaController();
 
-  void execute() override;
+  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
 };
 
 #endif  // CONTROL__DWACONTROLLER_HPP_
