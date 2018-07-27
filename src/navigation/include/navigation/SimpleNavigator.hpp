@@ -15,7 +15,7 @@ public:
   ~SimpleNavigator();
 
   // void navigateTo(/*pose*/) override;
-  void execute();
+  void execute() override;
 
 protected:
   TaskClient * planner_;
