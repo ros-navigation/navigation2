@@ -15,7 +15,7 @@ DwaController::~DwaController()
   RCLCPP_INFO(get_logger(), "DwaController::~DwaController");
 }
 
-ControlTaskServer::Status
+TaskStatus
 DwaController::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "DwaController::execute");
@@ -29,7 +29,7 @@ DwaController::execute(const std_msgs::msg::String::SharedPtr /*command*/)
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "DwaController::execute: task has been canceled");
       setCanceled();
-      return ControlTaskServer::CANCELED;
+      return TaskStatus::CANCELED;
     }
   }
 
@@ -39,5 +39,5 @@ DwaController::execute(const std_msgs::msg::String::SharedPtr /*command*/)
   result.data = "Here is the result from the DwaController";
   setResult(result);
 
-  return ControlTaskServer::SUCCEEDED;
+  return TaskStatus::SUCCEEDED;
 }

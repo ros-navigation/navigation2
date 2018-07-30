@@ -12,8 +12,7 @@
 #include <functional>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-
-typedef enum { TASK_SUCCEEDED, TASK_FAILED, TASK_CANCELED } TaskStatus;
+#include "task/TaskStatus.hpp"
 
 template <class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
@@ -29,6 +28,7 @@ public:
         std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
     resultPub_ = this->create_publisher<ResultMsg>(name + "_result");
+    statusPub_ = this->create_publisher<StatusMsg>(name + "_status");
 
     startWorkerThread();
   }
@@ -38,10 +38,7 @@ public:
     stopWorkerThread();
   }
 
-  typedef std_msgs::msg::String CancelMsg;
-  typedef enum { SUCCEEDED, FAILED, CANCELED } Status;
-
-  virtual Status execute(const typename CommandMsg::SharedPtr command) = 0;
+  virtual TaskStatus execute(const typename CommandMsg::SharedPtr command) = 0;
 
   // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested()
@@ -56,10 +53,14 @@ public:
 
   void setResult(const ResultMsg & result)
   {
-    resultPub_->publish(result);
+    resultMsg_ = result;
   }
 
 protected:
+  // These messages are internal to the TaskClient implementation
+  typedef std_msgs::msg::String CancelMsg;
+  typedef std_msgs::msg::String StatusMsg;
+
   // The pointer to our private worker thread
   std::thread * workerThread_;
 
@@ -75,7 +76,27 @@ protected:
       if (shouldExecute_) {
         auto command = std::make_shared<std_msgs::msg::String>();
         command->data = "Command to execute";
-        /*Status status = */ execute(command);
+
+        TaskStatus status = execute(command);
+
+        if (status == TaskStatus::SUCCEEDED) {
+          // If the task succeeded, publish the result first
+          resultPub_->publish(resultMsg_);
+
+          // Then send the success code
+          std_msgs::msg::String statusMsg;
+          statusMsg.data = "Success";
+          statusPub_->publish(statusMsg);
+        } else if (status == TaskStatus::FAILED) {
+          // Otherwise, just send the failure code
+          std_msgs::msg::String statusMsg;
+          statusMsg.data = "Failure";
+          statusPub_->publish(statusMsg);
+        }
+        else {
+          throw "Unexpected status return from task";
+        }
+
         shouldExecute_ = false;
       }
     } while (rclcpp::ok());
@@ -98,6 +119,8 @@ protected:
   std::atomic<bool> shouldCancel_;
   std::atomic<bool> shouldExecute_;
 
+  ResultMsg resultMsg_;
+
   // The callbacks for our subscribers
   void onCommandReceived(const typename CommandMsg::SharedPtr /*msg*/)
   {
@@ -117,6 +140,7 @@ protected:
 
   // The publishers for the result from this task
   typename rclcpp::Publisher<ResultMsg>::SharedPtr resultPub_;
+  typename rclcpp::Publisher<StatusMsg>::SharedPtr statusPub_;
 };
 
 #endif  // TASK__TASKSERVER_HPP_

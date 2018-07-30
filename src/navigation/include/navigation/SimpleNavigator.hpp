@@ -17,7 +17,7 @@ public:
   SimpleNavigator() = delete;
   ~SimpleNavigator();
 
-  NavigateToPoseTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
+  TaskStatus execute(const std_msgs::msg::String::SharedPtr command) override;
 
 protected:
   std::unique_ptr<PlanningTaskClient> planner_;

@@ -16,7 +16,7 @@ public:
   // void createPlan(const geometry_msgs::msg::PoseStamped & start,
   //   const geometry_msgs::msg::PoseStamped & goal);
 
-  PlanningTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
+  TaskStatus execute(const std_msgs::msg::String::SharedPtr command) override;
 };
 
 #endif  // PLANNING__ASTARPLANNER_HPP_

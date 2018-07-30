@@ -9,6 +9,7 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "task/TaskStatus.hpp"
 
 template <class CommandMsg, class ResultMsg>
 class TaskClient
@@ -17,15 +18,13 @@ public:
   TaskClient(const std::string & name, rclcpp::Node * node)
   : node_(node)
   {
+    // Create the publishers
     commandPub_ = node_->create_publisher<CommandMsg>(name + "_command");
     cancelPub_ = node_->create_publisher<CancelMsg>(name + "_cancel");
 
+    // Create the subscribers
     resultSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_result",
         std::bind(&TaskClient::onResultReceived, this, std::placeholders::_1));
-
-    feedbackSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_feedback",
-        std::bind(&TaskClient::onFeedbackReceived, this, std::placeholders::_1));
-
     statusSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_status",
         std::bind(&TaskClient::onStatusReceived, this, std::placeholders::_1));
   }
@@ -34,19 +33,17 @@ public:
   {
   }
 
-  typedef std_msgs::msg::String CancelMsg;
-  typedef std_msgs::msg::String FeedbackMsg;
-  typedef std_msgs::msg::String StatusMsg;
-
-  // The client can tell the TaskServer to execute it's operation
+  // The client can tell the TaskServer to execute its operation
   void execute()
-  {
+  { 
+    taskSucceeded_ = false;
+
     std_msgs::msg::String msg;
     msg.data = "Hello, World!";
     commandPub_->publish(msg);
   }
 
-  // An in-flight operation can be cancelled
+  // An in-flight operation can be canceled
   void cancel()
   {
     std_msgs::msg::String msg;
@@ -54,8 +51,8 @@ public:
     cancelPub_->publish(msg);
   }
 
-  typedef enum { SUCCEEDED, FAILED, RUNNING } Status;
-  Status waitForResult(const typename ResultMsg::SharedPtr &result, unsigned int milliseconds)
+  // The client can wait for a result with a timeout
+  TaskStatus waitForResult(ResultMsg & result, unsigned int milliseconds)
   { 
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
@@ -63,33 +60,38 @@ public:
     std::cv_status timeoutStatus = 
         cv_.wait_for(lock, std::chrono::milliseconds(milliseconds));
 
-    if (timeoutStatus ==  std::cv_status::timeout) {
-	  return RUNNING;
-	}
+    if (timeoutStatus == std::cv_status::timeout) {
+      return RUNNING;
+	  }
 
-    // TODO(mjeronimo) fix the copies
-    *result = result_;
-    return SUCCEEDED;
+    if (taskSucceeded_) {
+      result = result_;
+      return SUCCEEDED;
+    }
+
+    return FAILED;
   }
 
 protected:
+  // These messages are internal to the TaskClient implementation
+  typedef std_msgs::msg::String CancelMsg;
+  typedef std_msgs::msg::String StatusMsg;
+
   std::condition_variable cv_;
   ResultMsg result_;
 
-  // The callbacks for the subscriptions
+  // Called when the TaskServer has sent its result
   void onResultReceived(const typename ResultMsg::SharedPtr msg)
   {
-    // Save the result and signal the client's waitForResult thread
+    // Save it off 
     result_ = *msg;
-    cv_.notify_one();
   }
 
-  void onFeedbackReceived(const FeedbackMsg::SharedPtr /*msg*/)
-  {
-  }
-
+  // Called when the TaskServer sends it status code (success or failure)
   void onStatusReceived(const StatusMsg::SharedPtr /*msg*/)
   {
+    taskSucceeded_ = true; // msg.data.equals("Success");
+    cv_.notify_one();
   }
 
   // The TaskClient isn't itself a node, so needs to know which one to use
@@ -101,8 +103,10 @@ protected:
 
   // The client's subscriptions: result, feedback, and status
   typename rclcpp::Subscription<ResultMsg>::SharedPtr resultSub_;
-  rclcpp::Subscription<FeedbackMsg>::SharedPtr feedbackSub_;
   rclcpp::Subscription<StatusMsg>::SharedPtr statusSub_;
+
+  // A convenience variable for whether the task succeeded or not
+  bool taskSucceeded_;
 };
 
 #endif  // TASK__TASKCLIENT_HPP_

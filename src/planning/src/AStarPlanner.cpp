@@ -22,7 +22,7 @@ AStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & goal)
 #endif
 
-PlanningTaskServer::Status
+TaskStatus
 AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
@@ -36,7 +36,7 @@ AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been canceled");
       setCanceled();
-      return PlanningTaskServer::CANCELED;
+      return TaskStatus::CANCELED;
     }
   }
 
@@ -46,6 +46,6 @@ AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
   result.data = "Here is the result from the AStarPlanner";
   setResult(result);
 
-  return PlanningTaskServer::SUCCEEDED;
+  return TaskStatus::SUCCEEDED;
 
 }

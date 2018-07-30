@@ -16,7 +16,7 @@ MissionExecution::~MissionExecution()
   RCLCPP_INFO(get_logger(), "MissionExecution::~MissionExecution");
 }
 
-MissionExecutionTaskServer::Status
+TaskStatus
 MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution:execute");
@@ -25,39 +25,40 @@ MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
   // missionPlan_ = missionPlan;
 
   navigationTask_->execute();
-  auto navResult = std::make_shared<std_msgs::msg::String>();
 
   // Simulate looping until navigation reaches a terminal state
   for (;;) {
-    // Check to see if this task has been canceled. If so, cancel any child tasks
-    // and bail out
+    // Check to see if this task has been canceled. If so, cancel the navigation
+    // task first and then cancel this task
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been canceled");
       navigationTask_->cancel();
       setCanceled();
-      return MissionExecutionTaskServer::CANCELED;
+      return TaskStatus::CANCELED;
     }
 
-    NavigateToPoseTaskClient::Status status = navigationTask_->waitForResult(navResult, 100);
+    // This task hasn't been canceled, so see if the child task has finished
+    std_msgs::msg::String navResult;
+    TaskStatus status = navigationTask_->waitForResult(navResult, 100);
 
     switch (status)
     {
-      case NavigateToPoseTaskClient::SUCCEEDED:
+      case TaskStatus::SUCCEEDED:
       {
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task completed");
-        RCLCPP_INFO(get_logger(), "MissionExecution::execute: msg: %s", navResult->data.c_str());
+        RCLCPP_INFO(get_logger(), "MissionExecution::execute: msg: %s", navResult.data.c_str());
 
         std_msgs::msg::String missionExecutionResult;
         missionExecutionResult.data = "Here is the result from MissionExecution";
         setResult(missionExecutionResult);
 
-        return MissionExecutionTaskServer::SUCCEEDED;
+        return TaskStatus::SUCCEEDED;
       }
 
-      case NavigateToPoseTaskClient::FAILED:
-        return MissionExecutionTaskServer::FAILED;
+      case TaskStatus::FAILED:
+        return TaskStatus::FAILED;
 
-      case NavigateToPoseTaskClient::RUNNING:
+      case TaskStatus::RUNNING:
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task still running");
         break;
 

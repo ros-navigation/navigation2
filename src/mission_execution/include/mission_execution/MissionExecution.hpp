@@ -16,7 +16,7 @@ public:
   explicit MissionExecution(const std::string & name);
   virtual ~MissionExecution();
 
-  MissionExecutionTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
+  TaskStatus execute(const std_msgs::msg::String::SharedPtr command) override;
 
 private:
   std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
