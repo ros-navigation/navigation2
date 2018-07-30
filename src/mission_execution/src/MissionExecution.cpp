@@ -4,13 +4,11 @@
 #include "mission_execution/MissionExecution.hpp"
 
 MissionExecution::MissionExecution(const std::string & name)
-: TaskServer(name)
+: MissionExecutionTaskServer(name)
   // missionPlan_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::MissionExecution");
-
-  // TODO(mjeronimo): make into C++ smart pointer
-  navigateToPoseTask_ = new TaskClient("SimpleNavigator", this);
+  navigationTask_ = std::make_unique<NavigateToPoseTaskClient>("SimpleNavigator", this);
 }
 
 MissionExecution::~MissionExecution()
@@ -18,15 +16,15 @@ MissionExecution::~MissionExecution()
   RCLCPP_INFO(get_logger(), "MissionExecution::~MissionExecution");
 }
 
-TaskServer::Status
-MissionExecution::execute(const CommandMsg::SharedPtr command)
+MissionExecutionTaskServer::Status
+MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution:execute");
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
   // missionPlan_ = missionPlan;
 
-  navigateToPoseTask_->execute();
+  navigationTask_->execute();
   auto navResult = std::make_shared<std_msgs::msg::String>();
 
   // Simulate looping until navigation reaches a terminal state
@@ -35,31 +33,31 @@ MissionExecution::execute(const CommandMsg::SharedPtr command)
     // and bail out
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "MissionExecution::execute: task has been canceled");
-      navigateToPoseTask_->cancel();
+      navigationTask_->cancel();
       setCanceled();
-      return TaskServer::CANCELED;
+      return MissionExecutionTaskServer::CANCELED;
     }
 
-    TaskClient::Status status = navigateToPoseTask_->waitForResult(navResult);
+    NavigateToPoseTaskClient::Status status = navigationTask_->waitForResult(navResult);
 
     switch (status)
     {
-      case TaskClient::SUCCEEDED:
+      case NavigateToPoseTaskClient::SUCCEEDED:
       {
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task completed");
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: msg: %s", navResult->data.c_str());
 
-        ResultMsg missionExecutionResult;
+        std_msgs::msg::String missionExecutionResult;
         missionExecutionResult.data = "Here is the result from MissionExecution";
-        sendResult(missionExecutionResult);
+        setResult(missionExecutionResult);
 
-        return TaskServer::SUCCEEDED;
+        return MissionExecutionTaskServer::SUCCEEDED;
       }
 
-      case TaskClient::FAILED:
-        return TaskServer::FAILED;
+      case NavigateToPoseTaskClient::FAILED:
+        return MissionExecutionTaskServer::FAILED;
 
-      case TaskClient::RUNNING:
+      case NavigateToPoseTaskClient::RUNNING:
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: navigation task still running");
         break;
 

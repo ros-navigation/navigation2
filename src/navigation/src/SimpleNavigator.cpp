@@ -4,14 +4,12 @@
 #include "navigation/SimpleNavigator.hpp"
 #include <chrono>
 
-SimpleNavigator::SimpleNavigator(const std::string & name, Robot * robot)
-: NavigateToPoseTask(name, robot)
+SimpleNavigator::SimpleNavigator(const std::string & name, Robot * /*robot*/)
+: NavigateToPoseTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-
-  // TODO(mjeronimo): make into C++ smart pointers
-  planner_ = new TaskClient("AStarPlanner", this);
-  controller_ = new TaskClient("DwaController", this);
+  planner_ = std::make_unique<PlanningTaskClient>("AStarPlanner", this);
+  controller_ = std::make_unique<ControlTaskClient>("DwaController", this);
 }
 
 SimpleNavigator::~SimpleNavigator()
@@ -19,8 +17,8 @@ SimpleNavigator::~SimpleNavigator()
   RCLCPP_INFO(get_logger(), "SimpleNavigator::~SimpleNavigator");
 }
 
-TaskServer::Status
-SimpleNavigator::execute(const CommandMsg::SharedPtr command)
+NavigateToPoseTaskServer::Status
+SimpleNavigator::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
@@ -36,24 +34,24 @@ SimpleNavigator::execute(const CommandMsg::SharedPtr command)
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       planner_->cancel();
       setCanceled();
-      return TaskServer::CANCELED;
+      return NavigateToPoseTaskServer::CANCELED;
     }
 
     // Otherwise, check if the child task has completed (succeeded or failed)
-	TaskClient::Status status = planner_->waitForResult(planningResult /*, timeout*/);
+	PlanningTaskClient::Status status = planner_->waitForResult(planningResult /*, timeout*/);
 
 	switch (status)
 	{
-	  case TaskClient::SUCCEEDED:
+	  case PlanningTaskClient::SUCCEEDED:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task completed");
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", planningResult->data);
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", planningResult->data.c_str());
 
 		goto here;
 
-	  case TaskClient::FAILED:
-        return TaskServer::FAILED;
+	  case PlanningTaskClient::FAILED:
+        return NavigateToPoseTaskServer::FAILED;
 
-	  case TaskClient::RUNNING:
+	  case PlanningTaskClient::RUNNING:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task still running");
 		break;
 
@@ -78,29 +76,29 @@ here:
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       controller_->cancel();
       setCanceled();
-      return TaskServer::CANCELED;
+      return NavigateToPoseTaskServer::CANCELED;
 	}
 
     // Otherwise, check if the child task has completed (succeeded or failed)
-	TaskClient::Status status = controller_->waitForResult(controlResult /*, timeout*/);
+	ControlTaskClient::Status status = controller_->waitForResult(controlResult /*, timeout*/);
 
 	switch (status)
 	{
-	  case TaskClient::SUCCEEDED:
+	  case ControlTaskClient::SUCCEEDED:
 	  {
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task completed");
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", controlResult->data.c_str());
-        ResultMsg navigationResult;
+        std_msgs::msg::String navigationResult;
         navigationResult.data = "Here is the result from the SimpleNavigator!";
-        sendResult(navigationResult);
+        setResult(navigationResult);
 
-        return TaskServer::SUCCEEDED;
+        return NavigateToPoseTaskServer::SUCCEEDED;
       }
 
-	  case TaskClient::FAILED:
-        return TaskServer::FAILED;
+	  case ControlTaskClient::FAILED:
+        return NavigateToPoseTaskServer::FAILED;
 
-	  case TaskClient::RUNNING:
+	  case ControlTaskClient::RUNNING:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task still running");
 		break;
 

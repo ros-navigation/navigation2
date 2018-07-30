@@ -5,20 +5,21 @@
 #define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
 
 #include <string>
+#include <memory>
+#include "mission_execution/MissionExecutionTaskServer.hpp"
 #include "mission_execution/MissionPlan.hpp"
-#include "task/TaskServer.hpp"
-#include "task/TaskClient.hpp"
+#include "navigation/NavigateToPoseTaskClient.hpp"
 
-class MissionExecution : public TaskServer
+class MissionExecution : public MissionExecutionTaskServer
 {
 public:
   explicit MissionExecution(const std::string & name);
   virtual ~MissionExecution();
 
-  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
+  MissionExecutionTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
 
 private:
-  TaskClient * navigateToPoseTask_;
+  std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
 };
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_

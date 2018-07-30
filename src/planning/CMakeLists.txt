@@ -13,7 +13,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(task REQUIRED)
 
 include_directories(
   include
@@ -24,18 +23,15 @@ link_directories(${CMAKE_BINARY_DIR}/../libs)
 
 add_executable(astar_planner
   src/AStarPlanner.cpp
-  src/PlanningTask.cpp
   src/main.cpp
   )
 
 target_link_libraries(astar_planner
-  task
   )
 
 ament_target_dependencies(astar_planner 
   rclcpp 
   std_msgs
-  task
   )
 
 install(TARGETS astar_planner

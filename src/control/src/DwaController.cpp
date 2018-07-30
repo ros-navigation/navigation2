@@ -4,8 +4,8 @@
 #include "control/DwaController.hpp"
 #include <chrono>
 
-DwaController::DwaController(const std::string & name, Robot * robot)
-: ControlTask(name, robot)
+DwaController::DwaController(const std::string & name, Robot * /*robot*/)
+: ControlTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "DwaController::DwaController");
 }
@@ -15,8 +15,8 @@ DwaController::~DwaController()
   RCLCPP_INFO(get_logger(), "DwaController::~DwaController");
 }
 
-TaskServer::Status
-DwaController::execute(const CommandMsg::SharedPtr command)
+ControlTaskServer::Status
+DwaController::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "DwaController::execute");
 
@@ -29,15 +29,15 @@ DwaController::execute(const CommandMsg::SharedPtr command)
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "DwaController::execute: task has been canceled");
       setCanceled();
-      return TaskServer::CANCELED;
+      return ControlTaskServer::CANCELED;
     }
   }
 
   RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
 
-  ResultMsg result;
+  std_msgs::msg::String result;
   result.data = "Here is the result from the DwaController";
-  sendResult(result);
+  setResult(result);
 
-  return TaskServer::SUCCEEDED;
+  return ControlTaskServer::SUCCEEDED;
 }

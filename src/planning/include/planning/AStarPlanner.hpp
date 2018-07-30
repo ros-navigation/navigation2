@@ -4,9 +4,9 @@
 #ifndef PLANNING__ASTARPLANNER_HPP_
 #define PLANNING__ASTARPLANNER_HPP_
 
-#include "planning/PlanningTask.hpp"
+#include "planning/PlanningTaskServer.hpp"
 
-class AStarPlanner : public PlanningTask
+class AStarPlanner : public PlanningTaskServer
 {
 public:
   explicit AStarPlanner(const std::string & name);
@@ -16,7 +16,7 @@ public:
   // void createPlan(const geometry_msgs::msg::PoseStamped & start,
   //   const geometry_msgs::msg::PoseStamped & goal);
 
-  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
+  PlanningTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
 };
 
 #endif  // PLANNING__ASTARPLANNER_HPP_

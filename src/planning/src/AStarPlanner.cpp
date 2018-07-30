@@ -5,7 +5,7 @@
 #include <chrono>
 
 AStarPlanner::AStarPlanner(const std::string & name)
-: PlanningTask(name)
+: PlanningTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
 }
@@ -22,30 +22,30 @@ AStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & goal)
 #endif
 
-TaskServer::Status
-AStarPlanner::execute(const CommandMsg::SharedPtr command)
+PlanningTaskServer::Status
+AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
 
   // Fake out some work
   for (int i = 0; i < 10; i++) {
     RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // While we're doing the work, check if we've been preempted/canceled
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been canceled");
       setCanceled();
-      return TaskServer::CANCELED;
+      return PlanningTaskServer::CANCELED;
     }
   }
 
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task completed");
 
-  ResultMsg result;
+  std_msgs::msg::String result;
   result.data = "Here is the result from the AStarPlanner";
-  sendResult(result);
+  setResult(result);
 
-  return TaskServer::SUCCEEDED;
+  return PlanningTaskServer::SUCCEEDED;
 
 }

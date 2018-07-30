@@ -13,11 +13,11 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(task REQUIRED)
 
 include_directories(
   include
   ../task/include
+  ../navigation/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
@@ -28,13 +28,11 @@ add_executable(mission_execution
   )
 
 target_link_libraries(mission_execution
-  task
   )
 
 ament_target_dependencies(mission_execution 
   rclcpp 
   std_msgs
-  task
   )
 
 install(TARGETS ${PROJECT_NAME}

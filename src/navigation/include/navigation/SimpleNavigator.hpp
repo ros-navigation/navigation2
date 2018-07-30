@@ -4,21 +4,24 @@
 #ifndef NAVIGATION__SIMPLENAVIGATOR_HPP_
 #define NAVIGATION__SIMPLENAVIGATOR_HPP_
 
-#include "navigation/NavigateToPoseTask.hpp"
-#include "task/TaskClient.hpp"
+#include <memory>
+#include "navigation/NavigateToPoseTaskServer.hpp"
+#include "planning/PlanningTaskClient.hpp"
+#include "control/ControlTaskClient.hpp"
+#include "robot/Robot.hpp"
 
-class SimpleNavigator : public NavigateToPoseTask
+class SimpleNavigator : public NavigateToPoseTaskServer
 {
 public:
   SimpleNavigator(const std::string & name, Robot * robot);
   SimpleNavigator() = delete;
   ~SimpleNavigator();
 
-  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
+  NavigateToPoseTaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
 
 protected:
-  TaskClient * planner_;
-  TaskClient * controller_;
+  std::unique_ptr<PlanningTaskClient> planner_;
+  std::unique_ptr<ControlTaskClient> controller_;
 };
 
 #endif  // NAVIGATION__SIMPLENAVIGATOR_HPP_

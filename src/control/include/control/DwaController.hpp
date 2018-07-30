@@ -4,16 +4,17 @@
 #ifndef CONTROL__DWACONTROLLER_HPP_
 #define CONTROL__DWACONTROLLER_HPP_
 
-#include "control/ControlTask.hpp"
+#include "control/ControlTaskServer.hpp"
+#include "robot/Robot.hpp"
 
-class DwaController : public ControlTask
+class DwaController : public ControlTaskServer
 {
 public:
   DwaController(const std::string & name, Robot * robot);
   DwaController() = delete;
   ~DwaController();
 
-  TaskServer::Status execute(const CommandMsg::SharedPtr command) override;
+  TaskServer::Status execute(const std_msgs::msg::String::SharedPtr command) override;
 };
 
 #endif  // CONTROL__DWACONTROLLER_HPP_

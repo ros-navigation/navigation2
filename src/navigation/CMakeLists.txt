@@ -13,7 +13,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(task REQUIRED)
 
 include_directories(
   include
@@ -26,14 +25,12 @@ include_directories(
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
 add_executable(simple_navigator
-  src/NavigateToPoseTask.cpp
   src/SimpleNavigator.cpp
   src/main.cpp
   )
 
 target_link_libraries(simple_navigator
   robot
-  task
   )
 
 ament_target_dependencies(simple_navigator 
@@ -41,7 +38,6 @@ ament_target_dependencies(simple_navigator
   std_msgs
   planning
   control
-  task
   robot
   )
 
