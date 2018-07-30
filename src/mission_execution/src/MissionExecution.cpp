@@ -38,7 +38,7 @@ MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
       return MissionExecutionTaskServer::CANCELED;
     }
 
-    NavigateToPoseTaskClient::Status status = navigationTask_->waitForResult(navResult);
+    NavigateToPoseTaskClient::Status status = navigationTask_->waitForResult(navResult, 100);
 
     switch (status)
     {

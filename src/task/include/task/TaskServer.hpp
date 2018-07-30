@@ -84,7 +84,6 @@ protected:
   // Convenience routes for starting and stopping the worker thread (used from the ctor and dtor)
   void startWorkerThread()
   {
-    //RCLCPP_INFO(get_logger(), "TaskServer::startWorkerThread");
     workerThread_ = new std::thread(&TaskServer::workerThread, this);
   }
 

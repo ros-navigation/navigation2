@@ -38,7 +38,7 @@ SimpleNavigator::execute(const std_msgs::msg::String::SharedPtr /*command*/)
     }
 
     // Otherwise, check if the child task has completed (succeeded or failed)
-	PlanningTaskClient::Status status = planner_->waitForResult(planningResult /*, timeout*/);
+	PlanningTaskClient::Status status = planner_->waitForResult(planningResult, 100);
 
 	switch (status)
 	{
@@ -80,7 +80,7 @@ here:
 	}
 
     // Otherwise, check if the child task has completed (succeeded or failed)
-	ControlTaskClient::Status status = controller_->waitForResult(controlResult /*, timeout*/);
+	ControlTaskClient::Status status = controller_->waitForResult(controlResult, 10);
 
 	switch (status)
 	{

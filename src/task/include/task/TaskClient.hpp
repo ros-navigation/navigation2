@@ -55,13 +55,17 @@ public:
   }
 
   typedef enum { SUCCEEDED, FAILED, RUNNING } Status;
-  Status waitForResult(const typename ResultMsg::SharedPtr &result)
+  Status waitForResult(const typename ResultMsg::SharedPtr &result, unsigned int milliseconds)
   { 
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
 
-    //cv_.wait_for(lock /*timeout*/);
-    cv_.wait(lock);
+    std::cv_status timeoutStatus = 
+        cv_.wait_for(lock, std::chrono::milliseconds(milliseconds));
+
+    if (timeoutStatus ==  std::cv_status::timeout) {
+	  return RUNNING;
+	}
 
     // TODO(mjeronimo) fix the copies
     *result = result_;
