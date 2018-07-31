@@ -8,6 +8,6 @@
 #include "nav2_msgs/msg/path_end_points.hpp"
 #include "nav2_msgs/msg/path.hpp"
 
-typedef TaskServer<nav2_msgs::msg::PathEndPoints, nav2_msgs::msg::Path> PlanningTaskClient;
+typedef TaskServer<nav2_msgs::msg::PathEndPoints, nav2_msgs::msg::Path> PlanningTaskServer;
 
 #endif  // PLANNING__PLANNINGTASKSERVER_HPP_
