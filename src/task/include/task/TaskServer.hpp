@@ -20,7 +20,7 @@
 #include <thread>
 #include <string>
 #include <chrono>
-#include <functional>
+#include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "task/TaskStatus.hpp"
@@ -100,8 +100,10 @@ protected:
           std_msgs::msg::String statusMsg;
           statusMsg.data = "Failure";
           statusPub_->publish(statusMsg);
+        } else if (status == TaskStatus::CANCELED) {
+          shouldCancel_ = false;
         } else {
-          throw "Unexpected status return from task";
+          throw std::logic_error("Unexpected status return from task");
         }
 
         shouldExecute_ = false;
