@@ -21,7 +21,7 @@ public:
   explicit TaskServer(const std::string & name)
   : Node(name), workerThread_(nullptr)
   {
-    commandSub_ = create_subscription<std_msgs::msg::String>(name + "_command",
+    commandSub_ = create_subscription<CommandMsg>(name + "_command",
         std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
 
     cancelSub_ = create_subscription<std_msgs::msg::String>(name + "_cancel",
@@ -74,10 +74,7 @@ protected:
       cv_.wait_for(lock, std::chrono::milliseconds(10));
 
       if (shouldExecute_) {
-        auto command = std::make_shared<std_msgs::msg::String>();
-        command->data = "Command to execute";
-
-        TaskStatus status = execute(command);
+        TaskStatus status = execute(commandMsg_);
 
         if (status == TaskStatus::SUCCEEDED) {
           // If the task succeeded, publish the result first
@@ -119,17 +116,21 @@ protected:
   std::atomic<bool> shouldCancel_;
   std::atomic<bool> shouldExecute_;
 
+  typename CommandMsg::SharedPtr commandMsg_;
   ResultMsg resultMsg_;
 
   // The callbacks for our subscribers
-  void onCommandReceived(const typename CommandMsg::SharedPtr /*msg*/)
+  void onCommandReceived(const typename CommandMsg::SharedPtr msg)
   {
+    std::cout << "onCommandReceived\n";
+	commandMsg_ = msg;
     shouldExecute_ = true;
     cv_.notify_one();
   }
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
+    std::cout << "onCancelReceived\n";
     shouldCancel_ = true;
     cv_.notify_one();
   }

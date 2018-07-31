@@ -1,0 +1,1 @@
+ros2 topic pub -1 MissionExecution_cancel std_msgs/String "data: Some cancel message"

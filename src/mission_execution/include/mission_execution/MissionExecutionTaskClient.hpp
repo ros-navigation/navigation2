@@ -5,7 +5,8 @@
 #define MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
 
 #include "task/TaskClient.hpp"
+#include "nav2_msgs/msg/mission_plan.hpp"
 
-typedef TaskClient<std_msgs::msg::String, std_msgs::msg::String> MissionExecutionTaskClient;
+typedef TaskClient<nav2_msgs::msg::MissionPlan, std_msgs::msg::String> MissionExecutionTaskClient;
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_

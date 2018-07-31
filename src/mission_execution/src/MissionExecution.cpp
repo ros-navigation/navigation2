@@ -1,11 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
+#include <exception>
 #include "mission_execution/MissionExecution.hpp"
 
 MissionExecution::MissionExecution(const std::string & name)
 : MissionExecutionTaskServer(name)
-  // missionPlan_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::MissionExecution");
   navigationTask_ = std::make_unique<NavigateToPoseTaskClient>("SimpleNavigator", this);
@@ -17,12 +17,12 @@ MissionExecution::~MissionExecution()
 }
 
 TaskStatus
-MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
+MissionExecution::execute(const nav2_msgs::msg::MissionPlan::SharedPtr missionPlan)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution:execute");
+  RCLCPP_INFO(get_logger(), "MissionExecution:execute: plan: %s", missionPlan->mission_plan.c_str());
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
-  // missionPlan_ = missionPlan;
 
   navigationTask_->execute();
 
@@ -64,7 +64,7 @@ MissionExecution::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 
       default:
         RCLCPP_INFO(get_logger(), "MissionExecution::execute: invalid status value");
-        throw("MissionExecution::execute: invalid status value");
+        throw std::logic_error("MissionExecution::execute: invalid status value");
     }
   }
 }

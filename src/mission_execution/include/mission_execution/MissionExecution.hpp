@@ -7,7 +7,6 @@
 #include <string>
 #include <memory>
 #include "mission_execution/MissionExecutionTaskServer.hpp"
-#include "mission_execution/MissionPlan.hpp"
 #include "navigation/NavigateToPoseTaskClient.hpp"
 
 class MissionExecution : public MissionExecutionTaskServer
@@ -16,7 +15,7 @@ public:
   explicit MissionExecution(const std::string & name);
   virtual ~MissionExecution();
 
-  TaskStatus execute(const std_msgs::msg::String::SharedPtr command) override;
+  TaskStatus execute(const nav2_msgs::msg::MissionPlan::SharedPtr missionPlan) override;
 
 private:
   std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;

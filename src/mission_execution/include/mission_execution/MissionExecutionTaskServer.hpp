@@ -5,7 +5,8 @@
 #define MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
 
 #include "task/TaskServer.hpp"
+#include "nav2_msgs/msg/mission_plan.hpp"
 
-typedef TaskServer<std_msgs::msg::String, std_msgs::msg::String> MissionExecutionTaskServer;
+typedef TaskServer<nav2_msgs::msg::MissionPlan, std_msgs::msg::String> MissionExecutionTaskServer;
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_

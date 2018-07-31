@@ -1,8 +1,9 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright 2018 Intel Corporation. All Rights Reserved.
 
-#include "navigation/SimpleNavigator.hpp"
+#include <exception>
 #include <chrono>
+#include "navigation/SimpleNavigator.hpp"
 
 SimpleNavigator::SimpleNavigator(const std::string & name, Robot * /*robot*/)
 : NavigateToPoseTaskServer(name)
@@ -57,7 +58,7 @@ SimpleNavigator::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 
 	  default:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
-        throw("SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 
@@ -104,7 +105,7 @@ here:
 
 	  default:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
-        throw("SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 }
