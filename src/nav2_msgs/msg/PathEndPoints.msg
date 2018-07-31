@@ -1,0 +1,2 @@
+geometry_msgs/PoseStamped start
+geometry_msgs/PoseStamped goal

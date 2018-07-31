@@ -7,5 +7,6 @@
 #include "task/TaskClient.hpp"
 
 typedef TaskClient<std_msgs::msg::String, std_msgs::msg::String> PlanningTaskClient;
+//typedef TaskClient<nav2_msgs::msg::PathEndPoints, nav2_msgs::msg::Path> PlanningTaskClient;
 
 #endif  // PLANNING__PLANNINGTASKCLIENT_HPP_
