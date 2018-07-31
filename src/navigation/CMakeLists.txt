@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -36,6 +37,7 @@ target_link_libraries(simple_navigator
 ament_target_dependencies(simple_navigator 
   rclcpp 
   std_msgs
+  nav2_msgs
   planning
   control
   robot

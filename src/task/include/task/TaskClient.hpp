@@ -23,7 +23,7 @@ public:
     cancelPub_ = node_->create_publisher<CancelMsg>(name + "_cancel");
 
     // Create the subscribers
-    resultSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_result",
+    resultSub_ = node_->create_subscription<ResultMsg>(name + "_result",
         std::bind(&TaskClient::onResultReceived, this, std::placeholders::_1));
     statusSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_status",
         std::bind(&TaskClient::onStatusReceived, this, std::placeholders::_1));
@@ -34,12 +34,9 @@ public:
   }
 
   // The client can tell the TaskServer to execute its operation
-  void execute()
+  void execute(const typename CommandMsg::SharedPtr msg)
   { 
     taskSucceeded_ = false;
-
-    std_msgs::msg::String msg;
-    msg.data = "Hello, World!";
     commandPub_->publish(msg);
   }
 

@@ -24,7 +24,8 @@ MissionExecution::execute(const nav2_msgs::msg::MissionPlan::SharedPtr missionPl
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 
-  navigationTask_->execute();
+  std_msgs::msg::String::SharedPtr command;
+  navigationTask_->execute(command);
 
   // Simulate looping until navigation reaches a terminal state
   for (;;) {

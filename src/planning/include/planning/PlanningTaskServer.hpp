@@ -5,8 +5,9 @@
 #define PLANNING__PLANNINGTASKSERVER_HPP_
 
 #include "task/TaskServer.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
+#include "nav2_msgs/msg/path.hpp"
 
-typedef TaskServer<std_msgs::msg::String, std_msgs::msg::String> PlanningTaskServer;
-//typedef TaskServer<nav2_msgs::msg::PathEndPoints, nav2_msgs::msg::Path> PlanningTaskClient;
+typedef TaskServer<nav2_msgs::msg::PathEndPoints, nav2_msgs::msg::Path> PlanningTaskClient;
 
 #endif  // PLANNING__PLANNINGTASKSERVER_HPP_

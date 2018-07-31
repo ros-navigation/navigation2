@@ -15,15 +15,8 @@ AStarPlanner::~AStarPlanner()
   RCLCPP_INFO(get_logger(), "AStarPlanner::~AStarPlanner");
 }
 
-#if 0
-void
-AStarPlanner::createPlan(
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
-#endif
-
 TaskStatus
-AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
+AStarPlanner::execute(const nav2_msgs::msg::PathEndPoints::SharedPtr endpoints)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
 
@@ -42,9 +35,8 @@ AStarPlanner::execute(const std_msgs::msg::String::SharedPtr /*command*/)
 
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task completed");
 
-  std_msgs::msg::String result;
-  result.data = "Here is the result from the AStarPlanner";
-  setResult(result);
+  nav2_msgs::msg::Path path;
+  setResult(path);
 
   return TaskStatus::SUCCEEDED;
 

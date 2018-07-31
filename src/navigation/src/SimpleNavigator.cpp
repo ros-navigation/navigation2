@@ -24,7 +24,8 @@ SimpleNavigator::execute(const std_msgs::msg::String::SharedPtr /*command*/)
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
-  planner_->execute();
+  nav2_msgs::msg::PathEndPoints::SharedPtr endpoints;
+  planner_->execute(endpoints);
 
   // Simulate looping until the planner reaches a terminal state
   for (;;) {
@@ -38,15 +39,13 @@ SimpleNavigator::execute(const std_msgs::msg::String::SharedPtr /*command*/)
     }
 
     // Otherwise, check if the child task has completed (succeeded or failed)
-    std_msgs::msg::String planningResult;
-	TaskStatus status = planner_->waitForResult(planningResult, 100);
+    nav2_msgs::msg::Path path;
+	TaskStatus status = planner_->waitForResult(path, 100);
 
 	switch (status)
 	{
 	  case TaskStatus::SUCCEEDED:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task completed");
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: msg: %s", planningResult.data.c_str());
-
 		goto here;
 
 	  case TaskStatus::FAILED:
@@ -66,7 +65,8 @@ here:
   RCLCPP_INFO(get_logger(),
       "SimpleNavigator::execute: sending the path to the controller to execute");
 
-  controller_->execute();
+  std_msgs::msg::String::SharedPtr controllerCmd;
+  controller_->execute(controllerCmd);
 
   // Simulate looping until the controller reaches a terminal state
   for (;;) {

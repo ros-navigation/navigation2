@@ -13,10 +13,7 @@ public:
   AStarPlanner() = delete;
   ~AStarPlanner();
 
-  // void createPlan(const geometry_msgs::msg::PoseStamped & start,
-  //   const geometry_msgs::msg::PoseStamped & goal);
-
-  TaskStatus execute(const std_msgs::msg::String::SharedPtr command) override;
+  TaskStatus execute(const nav2_msgs::msg::PathEndPoints::SharedPtr endpoints) override;
 };
 
 #endif  // PLANNING__ASTARPLANNER_HPP_

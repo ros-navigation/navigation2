@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -32,6 +33,7 @@ target_link_libraries(astar_planner
 ament_target_dependencies(astar_planner 
   rclcpp 
   std_msgs
+  nav2_msgs
   )
 
 install(TARGETS astar_planner
