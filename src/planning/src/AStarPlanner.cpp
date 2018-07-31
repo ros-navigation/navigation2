@@ -1,11 +1,25 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright 2018 Intel Corporation. All Rights Reserved.
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include "planning/AStarPlanner.hpp"
+#include <string>
 #include <chrono>
+#include "planning/AStarPlanner.hpp"
+
+using namespace std::chrono_literals;
 
 AStarPlanner::AStarPlanner(const std::string & name)
-: PlanningTaskServer(name)
+: PointToPointPlanningTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
 }
@@ -16,28 +30,29 @@ AStarPlanner::~AStarPlanner()
 }
 
 TaskStatus
-AStarPlanner::execute(const nav2_msgs::msg::PathEndPoints::SharedPtr endpoints)
+AStarPlanner::executeAsync(const PointToPointPlanningCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
+  RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync");
 
-  // Fake out some work
+  // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {
-    RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // Do a bit of the task
+    RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: doing work: %d", i);
+    std::this_thread::sleep_for(100ms);
 
-    // While we're doing the work, check if we've been preempted/canceled
+    // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been canceled");
+      RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: task has been canceled");
       setCanceled();
       return TaskStatus::CANCELED;
     }
   }
 
-  RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task completed");
+  // We've successfully completed the task, so return the result
+  RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: task completed");
 
-  nav2_msgs::msg::Path path;
+  PointToPointPlanningResult path;
   setResult(path);
 
   return TaskStatus::SUCCEEDED;
-
 }

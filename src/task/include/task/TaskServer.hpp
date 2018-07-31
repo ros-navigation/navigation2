@@ -1,5 +1,16 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright 2018 Intel Corporation. All Rights Reserved.
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef TASK__TASKSERVER_HPP_
 #define TASK__TASKSERVER_HPP_
@@ -14,7 +25,7 @@
 #include "std_msgs/msg/string.hpp"
 #include "task/TaskStatus.hpp"
 
-template <class CommandMsg, class ResultMsg>
+template<class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
 {
 public:
@@ -38,9 +49,9 @@ public:
     stopWorkerThread();
   }
 
-  virtual TaskStatus execute(const typename CommandMsg::SharedPtr command) = 0;
+  virtual TaskStatus executeAsync(const typename CommandMsg::SharedPtr command) = 0;
 
-  // The user's execute method can check if the client is requesting a cancel
+  // The user's executeAsync method can check if the client is requesting a cancel
   bool cancelRequested()
   {
     return shouldCancel_;
@@ -64,7 +75,7 @@ protected:
   // The pointer to our private worker thread
   std::thread * workerThread_;
 
-  // This class has the worker thread body which calls the user's execute() callback
+  // This class has the worker thread body which calls the user's executeAsync() callback
   void workerThread()
   {
     std::mutex m;
@@ -74,7 +85,7 @@ protected:
       cv_.wait_for(lock, std::chrono::milliseconds(10));
 
       if (shouldExecute_) {
-        TaskStatus status = execute(commandMsg_);
+        TaskStatus status = executeAsync(commandMsg_);
 
         if (status == TaskStatus::SUCCEEDED) {
           // If the task succeeded, publish the result first
@@ -89,8 +100,7 @@ protected:
           std_msgs::msg::String statusMsg;
           statusMsg.data = "Failure";
           statusPub_->publish(statusMsg);
-        }
-        else {
+        } else {
           throw "Unexpected status return from task";
         }
 
@@ -123,7 +133,7 @@ protected:
   void onCommandReceived(const typename CommandMsg::SharedPtr msg)
   {
     std::cout << "onCommandReceived\n";
-	commandMsg_ = msg;
+    commandMsg_ = msg;
     shouldExecute_ = true;
     cv_.notify_one();
   }

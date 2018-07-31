@@ -1,2 +1,3 @@
-geometry_msgs/PoseStamped start
-geometry_msgs/PoseStamped goal
+std_msgs/Header header
+geometry_msgs/Pose start
+geometry_msgs/PoseWithCovariance goal

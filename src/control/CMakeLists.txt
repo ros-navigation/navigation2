@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -34,6 +35,7 @@ target_link_libraries(dwa_controller
 ament_target_dependencies(dwa_controller 
   rclcpp 
   std_msgs
+  nav2_msgs
   robot
   )
 

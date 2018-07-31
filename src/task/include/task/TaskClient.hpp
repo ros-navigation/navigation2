@@ -1,5 +1,16 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright 2018 Intel Corporation. All Rights Reserved.
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef TASK__TASKCLIENT_HPP_
 #define TASK__TASKCLIENT_HPP_
@@ -11,7 +22,7 @@
 #include "std_msgs/msg/string.hpp"
 #include "task/TaskStatus.hpp"
 
-template <class CommandMsg, class ResultMsg>
+template<class CommandMsg, class ResultMsg>
 class TaskClient
 {
 public:
@@ -34,8 +45,8 @@ public:
   }
 
   // The client can tell the TaskServer to execute its operation
-  void execute(const typename CommandMsg::SharedPtr msg)
-  { 
+  void executeAsync(const typename CommandMsg::SharedPtr msg)
+  {
     taskSucceeded_ = false;
     commandPub_->publish(msg);
   }
@@ -49,17 +60,17 @@ public:
   }
 
   // The client can wait for a result with a timeout
-  TaskStatus waitForResult(ResultMsg & result, unsigned int milliseconds)
-  { 
+  TaskStatus waitForResult(typename ResultMsg::SharedPtr result, unsigned int milliseconds)
+  {
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
 
-    std::cv_status timeoutStatus = 
-        cv_.wait_for(lock, std::chrono::milliseconds(milliseconds));
+    std::cv_status timeoutStatus =
+      cv_.wait_for(lock, std::chrono::milliseconds(milliseconds));
 
     if (timeoutStatus == std::cv_status::timeout) {
       return RUNNING;
-	  }
+    }
 
     if (taskSucceeded_) {
       result = result_;
@@ -75,19 +86,19 @@ protected:
   typedef std_msgs::msg::String StatusMsg;
 
   std::condition_variable cv_;
-  ResultMsg result_;
+  typename ResultMsg::SharedPtr result_;
 
   // Called when the TaskServer has sent its result
   void onResultReceived(const typename ResultMsg::SharedPtr msg)
   {
-    // Save it off 
-    result_ = *msg;
+    // Save it off
+    result_ = msg;
   }
 
   // Called when the TaskServer sends it status code (success or failure)
   void onStatusReceived(const StatusMsg::SharedPtr /*msg*/)
   {
-    taskSucceeded_ = true; // msg.data.equals("Success");
+    taskSucceeded_ = true;  // msg.data.equals("Success");
     cv_.notify_one();
   }
 

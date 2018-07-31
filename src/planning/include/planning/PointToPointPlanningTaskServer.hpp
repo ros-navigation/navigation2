@@ -12,9 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TASK__TASKSTATUS_HPP_
-#define TASK__TASKSTATUS_HPP_
+#ifndef PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#define PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
 
-typedef enum { SUCCEEDED, FAILED, RUNNING, CANCELED } TaskStatus;
+#include "task/TaskServer.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
+#include "nav2_msgs/msg/path.hpp"
 
-#endif  // TASK__TASKSTATUS_HPP_
+using PointToPointPlanningCommand = nav2_msgs::msg::PathEndPoints;
+using PointToPointPlanningResult = nav2_msgs::msg::Path;
+
+typedef TaskServer<PointToPointPlanningCommand, PointToPointPlanningResult>
+  PointToPointPlanningTaskServer;
+
+#endif  // PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_

@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TASK__TASKSTATUS_HPP_
-#define TASK__TASKSTATUS_HPP_
+#ifndef CONTROL__FOLLOWPATHTASKCLIENT_HPP_
+#define CONTROL__FOLLOWPATHTASKCLIENT_HPP_
 
-typedef enum { SUCCEEDED, FAILED, RUNNING, CANCELED } TaskStatus;
+#include "task/TaskClient.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "std_msgs/msg/empty.hpp"
 
-#endif  // TASK__TASKSTATUS_HPP_
+using FollowPathCommand = nav2_msgs::msg::Path;
+using FollowPathResult = std_msgs::msg::Empty;
+
+typedef TaskClient<FollowPathCommand, FollowPathResult> FollowPathTaskClient;
+
+#endif  // CONTROL__FOLLOWPATHTASKCLIENT_HPP_
