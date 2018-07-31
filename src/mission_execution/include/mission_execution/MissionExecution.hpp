@@ -24,7 +24,8 @@ class MissionExecution : public MissionExecutionTaskServer
 {
 public:
   explicit MissionExecution(const std::string & name);
-  virtual ~MissionExecution();
+  MissionExecution() = delete;
+  ~MissionExecution();
 
   TaskStatus executeAsync(const MissionExecutionCommand::SharedPtr command) override;
 
