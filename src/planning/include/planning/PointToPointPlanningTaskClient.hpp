@@ -19,10 +19,10 @@
 #include "nav2_msgs/msg/path_end_points.hpp"
 #include "nav2_msgs/msg/path.hpp"
 
-using PointToPointPlanningCommand = nav2_msgs::msg::PathEndPoints;
-using PointToPointPlanningResult = nav2_msgs::msg::Path;
+using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
-typedef TaskClient<PointToPointPlanningCommand, PointToPointPlanningResult>
+typedef TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>
   PointToPointPlanningTaskClient;
 
 #endif  // PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_

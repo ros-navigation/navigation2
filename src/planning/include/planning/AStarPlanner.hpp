@@ -25,7 +25,7 @@ public:
   AStarPlanner() = delete;
   ~AStarPlanner();
 
-  TaskStatus executeAsync(const PointToPointPlanningCommand::SharedPtr command) override;
+  TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
 };
 
 #endif  // PLANNING__ASTARPLANNER_HPP_

@@ -37,13 +37,13 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync");
 
   // Compose the PathEndPoints message for Navigation
-  auto endpoints = std::make_shared<PointToPointPlanningCommand>();
+  auto endpoints = std::make_shared<ComputePathToPoseCommand>();
   // TODO(mdjeroni): get the starting pose from Localization (fake it out for now)
   endpoints->start = command->pose.pose;
   endpoints->goal = command->pose;
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
-  auto path = std::make_shared<PointToPointPlanningResult>();
+  auto path = std::make_shared<ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
 
   // Loop until the subtasks are completed

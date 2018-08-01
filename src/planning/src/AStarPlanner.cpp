@@ -30,7 +30,7 @@ AStarPlanner::~AStarPlanner()
 }
 
 TaskStatus
-AStarPlanner::executeAsync(const PointToPointPlanningCommand::SharedPtr command)
+AStarPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync");
 
@@ -51,8 +51,8 @@ AStarPlanner::executeAsync(const PointToPointPlanningCommand::SharedPtr command)
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: task completed");
 
-  PointToPointPlanningResult path;
-  setResult(path);
+  ComputePathToPoseResult result;
+  setResult(result);
 
   return TaskStatus::SUCCEEDED;
 }

@@ -19,9 +19,9 @@
 #include "nav2_msgs/msg/mission_plan.hpp"
 #include "std_msgs/msg/empty.hpp"
 
-using MissionExecutionCommand = nav2_msgs::msg::MissionPlan;
-using MissionExecutionResult = std_msgs::msg::Empty;
+using ExecuteMissionCommand = nav2_msgs::msg::MissionPlan;
+using ExecuteMissionResult = std_msgs::msg::Empty;
 
-typedef TaskClient<MissionExecutionCommand, MissionExecutionResult> MissionExecutionTaskClient;
+typedef TaskClient<ExecuteMissionCommand, ExecuteMissionResult> MissionExecutionTaskClient;
 
 #endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_

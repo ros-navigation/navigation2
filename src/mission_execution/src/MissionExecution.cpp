@@ -30,7 +30,7 @@ MissionExecution::~MissionExecution()
 }
 
 TaskStatus
-MissionExecution::executeAsync(const MissionExecutionCommand::SharedPtr command)
+MissionExecution::executeAsync(const ExecuteMissionCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution:executeAsync");
   RCLCPP_INFO(get_logger(), "MissionExecution:executeAsync: plan: %s",
@@ -63,8 +63,8 @@ MissionExecution::executeAsync(const MissionExecutionCommand::SharedPtr command)
           RCLCPP_INFO(get_logger(), "MissionExecution::executeAsync: navigation task completed");
 
           // No data to return from this task, just an empty result message
-          MissionExecutionResult missionExecutionResult;
-          setResult(missionExecutionResult);
+          ExecuteMissionResult result;
+          setResult(result);
 
           return TaskStatus::SUCCEEDED;
         }

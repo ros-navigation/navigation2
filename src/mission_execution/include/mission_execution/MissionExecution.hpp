@@ -27,7 +27,7 @@ public:
   MissionExecution() = delete;
   ~MissionExecution();
 
-  TaskStatus executeAsync(const MissionExecutionCommand::SharedPtr command) override;
+  TaskStatus executeAsync(const ExecuteMissionCommand::SharedPtr command) override;
 
 private:
   std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
