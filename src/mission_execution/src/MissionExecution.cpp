@@ -18,7 +18,7 @@
 #include "mission_execution/MissionExecution.hpp"
 
 MissionExecution::MissionExecution(const std::string & name)
-: MissionExecutionTaskServer(name)
+: ExecuteMissionTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "MissionExecution::MissionExecution");
   navigationTask_ = std::make_unique<NavigateToPoseTaskClient>("SimpleNavigator", this);

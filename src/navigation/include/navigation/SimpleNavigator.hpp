@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 #include "navigation/NavigateToPoseTaskServer.hpp"
-#include "planning/PointToPointPlanningTaskClient.hpp"
+#include "planning/ComputePathToPoseTaskClient.hpp"
 #include "control/FollowPathTaskClient.hpp"
 
 class SimpleNavigator : public NavigateToPoseTaskServer
@@ -31,7 +31,7 @@ public:
   TaskStatus executeAsync(const NavigateToPoseCommand::SharedPtr command);
 
 protected:
-  std::unique_ptr<PointToPointPlanningTaskClient> planner_;
+  std::unique_ptr<ComputePathToPoseTaskClient> planner_;
   std::unique_ptr<FollowPathTaskClient> controller_;
 };
 

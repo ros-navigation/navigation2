@@ -16,12 +16,8 @@
 #define CONTROL__FOLLOWPATHTASKCLIENT_HPP_
 
 #include "task/TaskClient.hpp"
-#include "nav2_msgs/msg/path.hpp"
-#include "std_msgs/msg/empty.hpp"
+#include "control/FollowPathTaskMessages.hpp"
 
-using FollowPathCommand = nav2_msgs::msg::Path;
-using FollowPathResult = std_msgs::msg::Empty;
-
-typedef TaskClient<FollowPathCommand, FollowPathResult> FollowPathTaskClient;
+using FollowPathTaskClient = TaskClient<FollowPathCommand, FollowPathResult>;
 
 #endif  // CONTROL__FOLLOWPATHTASKCLIENT_HPP_

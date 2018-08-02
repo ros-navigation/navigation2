@@ -19,7 +19,7 @@
 using namespace std::chrono_literals;
 
 AStarPlanner::AStarPlanner(const std::string & name)
-: PointToPointPlanningTaskServer(name)
+: ComputePathToPoseTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
 }

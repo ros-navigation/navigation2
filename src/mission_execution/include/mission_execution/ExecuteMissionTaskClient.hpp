@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CONTROL__FOLLOWPATHTASKSERVER_HPP_
-#define CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#ifndef MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
+#define MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
 
-#include "task/TaskServer.hpp"
-#include "control/FollowPathTaskMessages.hpp"
+#include "task/TaskClient.hpp"
+#include "mission_execution/ExecuteMissionTaskMessages.hpp"
 
-using FollowPathTaskServer = TaskServer<FollowPathCommand, FollowPathResult>;
+using ExecuteMissionTaskClient = TaskClient<ExecuteMissionCommand, ExecuteMissionResult>;
 
-#endif  // CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_

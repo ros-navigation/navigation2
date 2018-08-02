@@ -16,12 +16,8 @@
 #define NAVIGATION__NAVIGATETOPOSETASKCLIENT_HPP_
 
 #include "task/TaskClient.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "std_msgs/msg/empty.hpp"
+#include "navigation/NavigateToPoseTaskMessages.hpp"
 
-using NavigateToPoseCommand = geometry_msgs::msg::PoseWithCovarianceStamped;
-using NavigateToPoseResult = std_msgs::msg::Empty;
-
-typedef TaskClient<NavigateToPoseCommand, NavigateToPoseResult> NavigateToPoseTaskClient;
+using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;
 
 #endif  // NAVIGATION__NAVIGATETOPOSETASKCLIENT_HPP_

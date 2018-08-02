@@ -16,9 +16,9 @@
 #define PLANNING__ASTARPLANNER_HPP_
 
 #include <string>
-#include "planning/PointToPointPlanningTaskServer.hpp"
+#include "planning/ComputePathToPoseTaskServer.hpp"
 
-class AStarPlanner : public PointToPointPlanningTaskServer
+class AStarPlanner : public ComputePathToPoseTaskServer
 {
 public:
   explicit AStarPlanner(const std::string & name);

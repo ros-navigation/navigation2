@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CONTROL__FOLLOWPATHTASKSERVER_HPP_
-#define CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#ifndef PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_
+#define PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_
 
-#include "task/TaskServer.hpp"
-#include "control/FollowPathTaskMessages.hpp"
+#include "task/TaskClient.hpp"
+#include "planning/ComputePathToPoseTaskMessages.hpp"
 
-using FollowPathTaskServer = TaskServer<FollowPathCommand, FollowPathResult>;
+using ComputePathToPoseTaskClient =
+  TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
-#endif  // CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#endif  // PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_

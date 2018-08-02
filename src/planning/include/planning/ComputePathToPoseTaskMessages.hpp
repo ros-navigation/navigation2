@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
+#ifndef PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_
+#define PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_
 
-#include "task/TaskClient.hpp"
-#include "nav2_msgs/msg/mission_plan.hpp"
-#include "std_msgs/msg/empty.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
+#include "nav2_msgs/msg/path.hpp"
 
-using ExecuteMissionCommand = nav2_msgs::msg::MissionPlan;
-using ExecuteMissionResult = std_msgs::msg::Empty;
+using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
-typedef TaskClient<ExecuteMissionCommand, ExecuteMissionResult> MissionExecutionTaskClient;
-
-#endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKCLIENT_HPP_
+#endif  // PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_

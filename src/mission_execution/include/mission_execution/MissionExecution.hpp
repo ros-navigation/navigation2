@@ -17,10 +17,10 @@
 
 #include <string>
 #include <memory>
-#include "mission_execution/MissionExecutionTaskServer.hpp"
+#include "mission_execution/ExecuteMissionTaskServer.hpp"
 #include "navigation/NavigateToPoseTaskClient.hpp"
 
-class MissionExecution : public MissionExecutionTaskServer
+class MissionExecution : public ExecuteMissionTaskServer
 {
 public:
   explicit MissionExecution(const std::string & name);

@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
+#ifndef PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#define PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
 
 #include "task/TaskServer.hpp"
-#include "nav2_msgs/msg/mission_plan.hpp"
-#include "std_msgs/msg/empty.hpp"
+#include "planning/ComputePathToPoseTaskMessages.hpp"
 
-using ExecuteMissionCommand = nav2_msgs::msg::MissionPlan;
-using ExecuteMissionResult = std_msgs::msg::Empty;
+using ComputePathToPoseTaskServer =
+  TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
-typedef TaskServer<ExecuteMissionCommand, ExecuteMissionResult> MissionExecutionTaskServer;
-
-#endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
+#endif  // PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_

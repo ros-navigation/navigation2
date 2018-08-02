@@ -22,7 +22,7 @@ SimpleNavigator::SimpleNavigator(const std::string & name)
 : NavigateToPoseTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-  planner_ = std::make_unique<PointToPointPlanningTaskClient>("AStarPlanner", this);
+  planner_ = std::make_unique<ComputePathToPoseTaskClient>("AStarPlanner", this);
   controller_ = std::make_unique<FollowPathTaskClient>("DwaController", this);
 }
 

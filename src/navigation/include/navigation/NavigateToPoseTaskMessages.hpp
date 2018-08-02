@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
-#define PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#ifndef NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
+#define NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
 
-#include "task/TaskServer.hpp"
-#include "nav2_msgs/msg/path_end_points.hpp"
-#include "nav2_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "std_msgs/msg/empty.hpp"
 
-using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
-using ComputePathToPoseResult = nav2_msgs::msg::Path;
+using NavigateToPoseCommand = geometry_msgs::msg::PoseWithCovarianceStamped;
+using NavigateToPoseResult = std_msgs::msg::Empty;
 
-typedef TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>
-  PointToPointPlanningTaskServer;
-
-#endif  // PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#endif  // NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_

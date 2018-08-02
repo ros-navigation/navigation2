@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CONTROL__FOLLOWPATHTASKSERVER_HPP_
-#define CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#ifndef CONTROL__FOLLOWPATHTASKMESSAGES_HPP_
+#define CONTROL__FOLLOWPATHTASKMESSAGES_HPP_
 
-#include "task/TaskServer.hpp"
-#include "control/FollowPathTaskMessages.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "std_msgs/msg/empty.hpp"
 
-using FollowPathTaskServer = TaskServer<FollowPathCommand, FollowPathResult>;
+using FollowPathCommand = nav2_msgs::msg::Path;
+using FollowPathResult = std_msgs::msg::Empty;
 
-#endif  // CONTROL__FOLLOWPATHTASKSERVER_HPP_
+#endif  // CONTROL__FOLLOWPATHTASKMESSAGES_HPP_
