@@ -15,6 +15,7 @@
 #include <string>
 #include <chrono>
 #include "planning/AStarPlanner.hpp"
+#include <chrono>
 
 using namespace std::chrono_literals;
 
@@ -56,3 +57,4 @@ AStarPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 
   return TaskStatus::SUCCEEDED;
 }
+
