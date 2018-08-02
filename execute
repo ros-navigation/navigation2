@@ -1,1 +1,0 @@
-ros2 topic pub -1 MissionExecution_command nav2_msgs/MissionPlan "mission_plan: Mission Plan to execute"
