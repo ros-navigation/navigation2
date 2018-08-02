@@ -17,7 +17,6 @@
 #include <exception>
 #include <chrono>
 #include "navigation/SimpleNavigator.hpp"
-#include <chrono>
 
 SimpleNavigator::SimpleNavigator(const std::string & name)
 : NavigateToPoseTaskServer(name)
