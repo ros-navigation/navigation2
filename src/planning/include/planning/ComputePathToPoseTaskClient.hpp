@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_
-#define PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_
+#ifndef PLANNING__COMPUTEPATHTOPOSETASKCLIENT_HPP_
+#define PLANNING__COMPUTEPATHTOPOSETASKCLIENT_HPP_
 
 #include "task/TaskClient.hpp"
 #include "planning/ComputePathToPoseTaskMessages.hpp"
 
 using ComputePathToPoseTaskClient =
-  TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
+    TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
-#endif  // PLANNING__POINTTOPOINTPLANNINGTASKCLIENT_HPP_
+#endif  // PLANNING__COMPUTEPATHTOPOSETASKCLIENT_HPP_

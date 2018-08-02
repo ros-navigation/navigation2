@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
+#ifndef MISSION_EXECUTION__EXECUTEMISSIONTASKSERVER_HPP_
+#define MISSION_EXECUTION__EXECUTEMISSIONTASKSERVER_HPP_
 
 #include "task/TaskServer.hpp"
 #include "mission_execution/ExecuteMissionTaskMessages.hpp"
 
 using ExecuteMissionTaskServer = TaskServer<ExecuteMissionCommand, ExecuteMissionResult>;
 
-#endif  // MISSION_EXECUTION__MISSIONEXECUTIONTASKSERVER_HPP_
+#endif  // MISSION_EXECUTION__EXECUTEMISSIONTASKSERVER_HPP_

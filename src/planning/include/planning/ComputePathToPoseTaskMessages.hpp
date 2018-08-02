@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_
-#define PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_
+#ifndef PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#define PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
 
 #include "nav2_msgs/msg/path_end_points.hpp"
 #include "nav2_msgs/msg/path.hpp"
@@ -21,4 +21,4 @@
 using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
 using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
-#endif  // PLANNING__COMPUTEPATHTOPOSEMESSAGES_HPP_
+#endif  // PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_

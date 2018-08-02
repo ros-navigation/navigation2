@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
-#define PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#ifndef PLANNING__COMPUTEPATHTOPOSETASKSERVER_HPP_
+#define PLANNING__COMPUTEPATHTOPOSETASKSERVER_HPP_
 
 #include "task/TaskServer.hpp"
 #include "planning/ComputePathToPoseTaskMessages.hpp"
 
 using ComputePathToPoseTaskServer =
-  TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
+    TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
-#endif  // PLANNING__POINTTOPOINTPLANNINGTASKSERVER_HPP_
+#endif  // PLANNING__COMPUTEPATHTOPOSETASKSERVER_HPP_
