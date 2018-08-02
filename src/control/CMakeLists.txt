@@ -13,7 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(task REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -24,20 +24,18 @@ include_directories(
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
 add_executable(dwa_controller
-  src/ControlTask.cpp
   src/DwaController.cpp
   src/main.cpp
   )
 
 target_link_libraries(dwa_controller
   robot
-  task
   )
 
 ament_target_dependencies(dwa_controller 
   rclcpp 
   std_msgs
-  task
+  nav2_msgs
   robot
   )
 
