@@ -15,11 +15,13 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "planning/AStarPlanner.hpp"
+#include "planning/DijkstraPlanner.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<AStarPlanner>("AStarPlanner"));
+  // rclcpp::spin(std::make_shared<AStarPlanner>("AStarPlanner"));
+  rclcpp::spin(std::make_shared<DijkstraPlanner>("DijkstraPlanner"));
   rclcpp::shutdown();
 
   return 0;

@@ -18,21 +18,44 @@ find_package(task REQUIRED)
 
 include_directories(
   include
-)
+  ../task/include
+  ../world_model/include
+  )
 
-add_executable(astar_planner
-  src/AStarPlanner.cpp
+link_directories(${CMAKE_BINARY_DIR}/../libs)
+
+# add_executable(astar_planner
+#   src/AStarPlanner.cpp
+#   src/main.cpp
+#   )
+
+add_executable(dijkstra_planner
+  src/DijkstraPlanner.cpp
+  src/Navfn.cpp
   src/main.cpp
+  )
+
+target_link_libraries(
+  dijkstra_planner
+  # astar_planner
 )
 
-ament_target_dependencies(astar_planner
+# ament_target_dependencies(astar_planner
+#   rclcpp
+#   std_msgs
+#   nav2_msgs
+#   )
+
+ament_target_dependencies(dijkstra_planner
   rclcpp
   std_msgs
   nav2_msgs
   task
 )
 
-install(TARGETS astar_planner
+install(TARGETS
+  dijkstra_planner
+  # astar_planner
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

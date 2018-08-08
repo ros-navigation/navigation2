@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__ASTARPLANNER_HPP_
-#define PLANNING__ASTARPLANNER_HPP_
+#ifndef PLANNING__PLANNER_HPP_
+#define PLANNING__PLANNER_HPP_
 
 #include <string>
 #include "planning/ComputePathToPoseTaskServer.hpp"
 
-class AStarPlanner : public ComputePathToPoseTaskServer
+class Planner : public ComputePathToPoseTaskServer
 {
 public:
-  explicit AStarPlanner(const std::string & name);
-  AStarPlanner() = delete;
-  ~AStarPlanner();
+  virtual explicit Planner(const std::string & name);
+  virtual Planner() = delete;
+  virtual ~Planner();
 
-  TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
+  
+
+  // virtual TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
+
 };
-
-#endif  // PLANNING__ASTARPLANNER_HPP_

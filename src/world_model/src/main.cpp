@@ -10,22 +10,17 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License. Reserved.
 
-#ifndef PLANNING__ASTARPLANNER_HPP_
-#define PLANNING__ASTARPLANNER_HPP_
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "world_model/WorldModel.hpp"
 
-#include <string>
-#include "planning/ComputePathToPoseTaskServer.hpp"
-
-class AStarPlanner : public ComputePathToPoseTaskServer
+int main(int argc, char ** argv)
 {
-public:
-  explicit AStarPlanner(const std::string & name);
-  AStarPlanner() = delete;
-  ~AStarPlanner();
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<WorldModel>("CostmapService"));
+  rclcpp::shutdown();
 
-  TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
-};
-
-#endif  // PLANNING__ASTARPLANNER_HPP_
+  return 0;
+}

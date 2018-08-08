@@ -1,3 +1,11 @@
 std_msgs/Header header
-geometry_msgs/Pose start
-geometry_msgs/PoseWithCovariance goal
+
+# The start pose for the plan
+geometry_msgs/PoseStamped start
+
+# The final pose of the goal
+geometry_msgs/PoseStamped goal
+
+# If the goal is obstructed, how many meters the planner can
+# relax the constraint in x and y before failing.
+float32 tolerance

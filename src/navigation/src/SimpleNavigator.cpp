@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+// Navigation Strategy based on:
+// Brock, O. and Oussama K. (1999). High-Speed Navigation Using the Global Dynamic Window Approach. IEEE.
+// https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
+
 #include <string>
 #include <memory>
 #include <exception>
 #include <chrono>
+#include <iostream>
 #include "navigation/SimpleNavigator.hpp"
 
 SimpleNavigator::SimpleNavigator(const std::string & name)
 : NavigateToPoseTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-  planner_ = std::make_unique<ComputePathToPoseTaskClient>("AStarPlanner", this);
+  planner_ = std::make_unique<ComputePathToPoseTaskClient>("DijkstraPlanner", this);
   controller_ = std::make_unique<FollowPathTaskClient>("DwaController", this);
 }
 
@@ -39,8 +45,14 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<ComputePathToPoseCommand>();
   // TODO(mdjeroni): get the starting pose from Localization (fake it out for now)
-  endpoints->start = command->pose.pose;
-  endpoints->goal = command->pose;
+  // endpoints->start = *command;
+  // endpoints->goal = *command;
+
+  endpoints->start.pose.position.x = 1.0;
+  endpoints->start.pose.position.y = 1.0;
+  endpoints->goal.pose.position.x = 9.0;
+  endpoints->goal.pose.position.y = 9.0;
+  endpoints->tolerance = 2.0;
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
   auto path = std::make_shared<ComputePathToPoseResult>();
@@ -79,6 +91,8 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   }
 
 here:
+  printPlan(*path);
+
   RCLCPP_INFO(get_logger(),
     "SimpleNavigator::executeAsync: sending the path to the controller to execute");
 
@@ -121,4 +135,19 @@ here:
         throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
     }
   }
+}
+
+void
+SimpleNavigator::printPlan(nav2_msgs::msg::Path& plan)
+{
+  // print header
+  std::cout << "Plan frame_id: " << plan.header.frame_id << std::endl;
+
+  // print content
+  std::cout << "Path size: " << plan.poses.size() << std::endl;
+  for_each(plan.poses.begin(), plan.poses.end(), [](geometry_msgs::msg::PoseStamped poseStamped)
+    {
+      std::cout << "x: " << poseStamped.pose.position.x << "  y: " << poseStamped.pose.position.y << std::endl;
+    }
+  );
 }

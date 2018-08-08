@@ -12,20 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__ASTARPLANNER_HPP_
-#define PLANNING__ASTARPLANNER_HPP_
+#ifndef WORLD_MODEL__WORLDMODEL_HPP_
+#define WORLD_MODEL__WORLDMODEL_HPP_
 
 #include <string>
-#include "planning/ComputePathToPoseTaskServer.hpp"
+#include <vector>
 
-class AStarPlanner : public ComputePathToPoseTaskServer
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_msgs/srv/get_costmap.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+
+class WorldModel : public rclcpp::Node
 {
 public:
-  explicit AStarPlanner(const std::string & name);
-  AStarPlanner() = delete;
-  ~AStarPlanner();
+  explicit WorldModel(const std::string& name);
 
-  TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
+private:
+  // Server for providing a costmap
+  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
+
+  void getCostmap(nav2_msgs::msg::Costmap& costmap);
+
+  void getCostVector(const int width, const int height, std::vector<uint8_t>& data);
 };
 
-#endif  // PLANNING__ASTARPLANNER_HPP_
+#endif // WORLD_MODEL__WORLDMODEL_HPP_
