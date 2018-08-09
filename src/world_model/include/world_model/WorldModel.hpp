@@ -17,10 +17,12 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "costmap/Costmap.hpp"
 
 
 class WorldModel : public rclcpp::Node
@@ -32,9 +34,20 @@ private:
   // Server for providing a costmap
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
 
-  void getCostmap(nav2_msgs::msg::Costmap& costmap);
+  // TODO(orduno): Define a server for scoring trajectories
+  // rclcpp::Service<nav2_msgs::srv::ScoreTrajectory>::SharedPtr scoringServer_;
 
-  void getCostVector(const int width, const int height, std::vector<uint8_t>& data);
+  // TODO(orduno): Define a client for getting the static map
+  // rclcpp::Client<nav2_msgs::srv::GetMap>::SharedPtr mapClient_;
+
+  // TODO(orduno): Alternatively, obtain from a latched topic
+  // rclcpp::Subscription<nav_msgs::OccupancyGrid>::SharedPtr mapSub_;
+
+  // TODO(orduno): Define a task for handling trajectory scoring
+  // std::unique_ptr<ScoreTrajectoryClient> scorer;
+
+  // TODO(orduno): std::unique_ptr<LayeredCostmap> layeredCostmap_;
+  std::unique_ptr<Costmap> costmap_;
 };
 
 #endif // WORLD_MODEL__WORLDMODEL_HPP_

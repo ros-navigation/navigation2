@@ -15,14 +15,16 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2 REQUIRED)
+find_package(costmap)
 
 include_directories(
   include
+  ../costmap/include
 )
 
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+# TODO(orduno): CMAKE is searching /usr/bin/ld for the library
+# link_directories(${CMAKE_BINARY_DIR}/../libs)
+link_directories(~/ros2_overlay_ws/build/costmap/)
 
 add_executable(world_model
   src/WorldModel.cpp
@@ -31,6 +33,7 @@ add_executable(world_model
 
 target_link_libraries(
   world_model
+  costmap
 )
 
 ament_target_dependencies(world_model
@@ -39,6 +42,7 @@ ament_target_dependencies(world_model
   nav2_msgs
   tf2_ros
   tf2
+  costmap
 )
 
 install(TARGETS

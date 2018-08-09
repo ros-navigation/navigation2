@@ -72,10 +72,11 @@ private:
   void clearRobotCell(unsigned int mx, unsigned int my);
 
   // Request costmap from world model
-  void getCostmap(nav2_msgs::msg::Costmap& costmap, const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
+  void getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string layer = "master",
+    const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
 
   // Wait for costmap server to appear
-  bool waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
+  void waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
 
   // Publish plan for visualization purposes
   void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path);

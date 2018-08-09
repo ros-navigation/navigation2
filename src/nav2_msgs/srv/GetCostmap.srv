@@ -1,6 +1,6 @@
 # Get the costmap
-# TODO(orduno): the request msg can have a field to define the layer of costmap to send
-#               for now we're sending the Master (aggreagate) layer
+
+# Specifications for the requested costmap
+nav2_msgs/Costmap map
 ---
 nav2_msgs/Costmap map
-# Costmap map

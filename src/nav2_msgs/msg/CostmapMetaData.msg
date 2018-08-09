@@ -6,6 +6,9 @@ builtin_interfaces/Time map_load_time
 # The time of the last update to costmap
 builtin_interfaces/Time update_time
 
+# The corresponding layer
+string layer
+
 # The map resolution [m/cell]
 float32 resolution
 

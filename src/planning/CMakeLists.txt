@@ -20,6 +20,7 @@ include_directories(
   include
   ../task/include
   ../world_model/include
+  ../costmap/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)

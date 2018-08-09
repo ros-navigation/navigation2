@@ -26,7 +26,7 @@
 #include <algorithm>
 #include "planning/DijkstraPlanner.hpp"
 #include "planning/Navfn.hpp"
-#include "world_model/CostValues.h"
+#include "costmap/CostValues.h"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -76,8 +76,8 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 
   ComputePathToPoseResult result;
   try {
-    // TODO(caorduno): call getCostmap() to update
-    //                 if costmap update throws error, might use the old one under some conditions.
+    // TODO(orduno): Get a updated costmap
+    // getCostmap(costmap_);
     makePlan(command->start, command->goal, command->tolerance, result.poses);
   }
   catch (...) {
@@ -362,19 +362,23 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 }
 
 void
-DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::chrono::milliseconds waitTime)
+DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string layer, const std::chrono::milliseconds waitTime)
 {
+  RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
+
+  // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request, including master (aggreate) layer
+  (void)layer; // suppress unused variable warning, alternatively can use the attribute [[maybe_unused]]
   auto costmapServiceResult = costmap_client_->async_send_request(std::make_shared<nav2_msgs::srv::GetCostmap::Request>());
   if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), costmapServiceResult, waitTime) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
+    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
     throw "costmap service call failed";
   }
   costmap = costmapServiceResult.get()->map;
 }
 
-bool
+void
 DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 {
   while (!costmap_client_->wait_for_service(waitTime))
@@ -384,10 +388,8 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
       RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::waitForCostmapServer: costmap client interrupted while waiting for the service to appear.");
       throw "interrupted while waiting for costmap server to appear";
     }
-    RCLCPP_INFO(this->get_logger(), "DijkstraPlanner:waitForCostmapServer: waiting for the costmap service to appear...")
+    RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")
   }
-  // TODO(orduno): fix return
-  return true;
 }
 
 void
@@ -420,10 +422,10 @@ DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap& costmap)
   std::cout << "  resolution: " << costmap.info.resolution << std::endl;
   std::cout << "  data:       " << "(" << costmap.data.size() << " cells)" << std::endl << "    ";
 
-  int index = 0;
-  for (int h = 0; h < costmap.info.height; ++h)
+  unsigned int index = 0;
+  for (unsigned int h = 0; h < costmap.info.height; ++h)
   {
-    for (int w = 0; w < costmap.info.height; ++w)
+    for (unsigned int w = 0; w < costmap.info.height; ++w)
     {
       std::cout << static_cast<unsigned int>(costmap.data[index]) << " ";
       index++;
