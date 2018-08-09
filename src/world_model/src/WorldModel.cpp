@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
 
 #include "world_model/WorldModel.hpp"
 #include <tf2/LinearMath/Quaternion.h>

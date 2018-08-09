@@ -38,7 +38,7 @@ public:
 
 private:
   // Compute a plan given start and goal poses, provided in global world frame.
-  bool makePlan(const geometry_msgs::msg::PoseStamped& start, const geometry_msgs::msg::PoseStamped& goal, 
+  bool makePlan(const geometry_msgs::msg::PoseStamped& start, const geometry_msgs::msg::PoseStamped& goal,
     double tolerance, std::vector<geometry_msgs::msg::PoseStamped>& plan);
 
   // Compute the navigation function given a seed point in the world to start from
@@ -79,6 +79,9 @@ private:
 
   // Publish plan for visualization purposes
   void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path);
+
+  // Print costmap to terminal
+  void printCostmap(const nav2_msgs::msg::Costmap& costmap);
 
   // Planner based on ROS1 NavFn algorithm
   std::shared_ptr<NavFn> planner_;

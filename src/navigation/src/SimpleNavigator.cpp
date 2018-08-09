@@ -45,9 +45,6 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<ComputePathToPoseCommand>();
   // TODO(mdjeroni): get the starting pose from Localization (fake it out for now)
-  // endpoints->start = *command;
-  // endpoints->goal = *command;
-
   endpoints->start.pose.position.x = 1.0;
   endpoints->start.pose.position.y = 1.0;
   endpoints->goal.pose.position.x = 9.0;
@@ -57,6 +54,8 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
   auto path = std::make_shared<ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
+
+  // TODO(orduno): implement continous replanning
 
   // Loop until the subtasks are completed
   for (;; ) {
@@ -91,7 +90,14 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   }
 
 here:
-  printPlan(*path);
+
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u", path->poses.size());
+  int index;
+  for (auto poseStamped : path->poses)
+  {
+    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f", index, poseStamped.pose.position.x, poseStamped.pose.position.y);
+    index++;
+  }
 
   RCLCPP_INFO(get_logger(),
     "SimpleNavigator::executeAsync: sending the path to the controller to execute");
@@ -127,7 +133,7 @@ here:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
+        // RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
         break;
 
       default:
@@ -135,19 +141,4 @@ here:
         throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
     }
   }
-}
-
-void
-SimpleNavigator::printPlan(nav2_msgs::msg::Path& plan)
-{
-  // print header
-  std::cout << "Plan frame_id: " << plan.header.frame_id << std::endl;
-
-  // print content
-  std::cout << "Path size: " << plan.poses.size() << std::endl;
-  for_each(plan.poses.begin(), plan.poses.end(), [](geometry_msgs::msg::PoseStamped poseStamped)
-    {
-      std::cout << "x: " << poseStamped.pose.position.x << "  y: " << poseStamped.pose.position.y << std::endl;
-    }
-  );
 }

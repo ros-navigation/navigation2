@@ -33,8 +33,6 @@ public:
 protected:
   std::unique_ptr<ComputePathToPoseTaskClient> planner_;
   std::unique_ptr<FollowPathTaskClient> controller_;
-
-  void printPlan(nav2_msgs::msg::Path& plan);
 };
 
 #endif  // NAVIGATION__SIMPLENAVIGATOR_HPP_

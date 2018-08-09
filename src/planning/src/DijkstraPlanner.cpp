@@ -22,6 +22,8 @@
 #include <memory>
 #include <chrono>
 #include <limits>
+#include <iostream>
+#include <algorithm>
 #include "planning/DijkstraPlanner.hpp"
 #include "planning/Navfn.hpp"
 #include "world_model/CostValues.h"
@@ -40,18 +42,22 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 
   //TODO(orduno): Enable parameter server
-  // get_parameter("allow_unknown_", allow_unknown_);
-  // get_parameter("default_tolerance_", default_tolerance_);
-  // get_parameter("global_frame_", global_frame_);
 
   costmap_client_ = this->create_client<nav2_msgs::srv::GetCostmap>("CostmapService");
   waitForCostmapServer();
-  getCostmap(costmap_);
 
-  RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::DijkstraPlanner: initial costmap is %u by %u, origin at %0.2f, %0.2f, with resolution of %0.2f.",
-    costmap_.info.width, costmap_.info.height, costmap_.info.origin.position.x, costmap_.info.origin.position.y, costmap_.info.resolution);
+  // TODO(orduno): Service for getting the costmap sometimes fails, check how the parent task can handle this.
+  //               might need to pull out the getCostmap() method out of the constructor and have an initialize() one.
+  try {
+    getCostmap(costmap_);
+  }
+  catch (...) {
+    RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::makePlan: failed to obtain costmap from server");
+    throw;
+  }
 
-  // Create the planner where map width is the 'x' direction, height is 'y'. Units are cells.
+  printCostmap(costmap_);
+
   planner_ = std::make_shared<NavFn>(costmap_.info.width, costmap_.info.height);
 
   // Plan publisher for visualization purposes
@@ -70,11 +76,13 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 
   ComputePathToPoseResult result;
   try {
+    // TODO(caorduno): call getCostmap() to update
+    //                 if costmap update throws error, might use the old one under some conditions.
     makePlan(command->start, command->goal, command->tolerance, result.poses);
   }
   catch (...) {
     RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::executeAsync: plan calculation failed");
-    // TODO(orduno): provide information about fail error, for example: couldn't get costmap update
+    // TODO(orduno): provide information about fail error to parent task, for example: couldn't get costmap update
     return TaskStatus::FAILED;
   }
 
@@ -83,8 +91,9 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
     setCanceled();
     return TaskStatus::CANCELED;
   }
-  // TODO(orduno): should check within makePlan() periodically if cancel was requested?
-  //               what is the model for sending periodic RUNNING status?
+  // TODO(orduno): should check for cancel within the makePlan() method?
+
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: calculated path of size %u", result.poses.size());
 
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task completed");
@@ -103,7 +112,7 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   // clear the plan, just in case
   plan.clear();
 
-  // TODO(orduno): add checks for start and goal reference frame, they should be in gobal frame
+  // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
 
   double wx = start.pose.position.x;
   double wy = start.pose.position.y;
@@ -114,27 +123,14 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
     return false;
   }
 
-  // get the latest costmap
-  // TODO(orduno): Update costmap
-  //               Instead of throwing error might use previous costmap under some condition.
-  // try {
-  //   getCostmap(costmap_);
-  // }
-  // catch (...) {
-  //   RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::makePlan: failed to obtain costmap from server");
-  //   throw;
-  // }
-
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
 
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(costmap_.info.width, costmap_.info.height);
 
-  // TODO(carlos): define a new costmap message that uses unsigned char for the data
-  std::vector<unsigned char> costmapData = std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end());
-
-  planner_->setCostmap(&costmapData[0], true, allow_unknown_);
+  // planner_->setCostmap(&std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end())[0], true, allow_unknown_);
+  planner_->setCostmap(&costmap_.data[0], true, allow_unknown_);
 
   int map_start[2];
   map_start[0] = mx;
@@ -156,6 +152,9 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
+
+  // TODO(orduno): Provide details on why we are providing 'map_goal' to setStart().
+  //               Same for setGoal, seems reversed. Computing backwards?
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
@@ -410,4 +409,26 @@ DijkstraPlanner::publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>&
   }
 
   plan_publisher_->publish(gui_path);
+}
+
+void
+DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap& costmap)
+{
+  std::cout << "Costmap" << std::endl;
+  std::cout << "  size:       " << costmap.info.width << "," << costmap.info.height << std::endl;
+  std::cout << "  origin:     " << costmap.info.origin.position.x << "," << costmap.info.origin.position.y << std::endl;
+  std::cout << "  resolution: " << costmap.info.resolution << std::endl;
+  std::cout << "  data:       " << "(" << costmap.data.size() << " cells)" << std::endl << "    ";
+
+  int index = 0;
+  for (int h = 0; h < costmap.info.height; ++h)
+  {
+    for (int w = 0; w < costmap.info.height; ++w)
+    {
+      std::cout << static_cast<unsigned int>(costmap.data[index]) << " ";
+      index++;
+    }
+    std::cout << std::endl << "    ";
+  }
+  std::cout << std::endl;
 }
