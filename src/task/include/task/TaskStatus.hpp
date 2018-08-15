@@ -12,25 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROBOT__ROSROBOT_HPP_
-#define ROBOT__ROSROBOT_HPP_
+#ifndef TASK__TASKSTATUS_HPP_
+#define TASK__TASKSTATUS_HPP_
 
-#include <string>
-#include "robot/Robot.hpp"
+typedef enum { SUCCEEDED, FAILED, RUNNING, CANCELED } TaskStatus;
 
-class RosRobot : public Robot
-{
-public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
-  explicit RosRobot(const std::string & urdf_filename);
-  RosRobot() = delete;
-  ~RosRobot();
-
-  void enterSafeState() override;
-};
-
-#endif  // ROBOT__ROSROBOT_HPP_
+#endif  // TASK__TASKSTATUS_HPP_

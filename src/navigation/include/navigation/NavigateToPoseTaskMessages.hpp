@@ -12,25 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROBOT__ROSROBOT_HPP_
-#define ROBOT__ROSROBOT_HPP_
+#ifndef NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
+#define NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
 
-#include <string>
-#include "robot/Robot.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "std_msgs/msg/empty.hpp"
 
-class RosRobot : public Robot
-{
-public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
-  explicit RosRobot(const std::string & urdf_filename);
-  RosRobot() = delete;
-  ~RosRobot();
+using NavigateToPoseCommand = geometry_msgs::msg::PoseWithCovarianceStamped;
+using NavigateToPoseResult = std_msgs::msg::Empty;
 
-  void enterSafeState() override;
-};
-
-#endif  // ROBOT__ROSROBOT_HPP_
+#endif  // NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_

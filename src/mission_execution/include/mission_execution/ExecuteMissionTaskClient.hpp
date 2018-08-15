@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROBOT__ROSROBOT_HPP_
-#define ROBOT__ROSROBOT_HPP_
+#ifndef MISSION_EXECUTION__EXECUTEMISSIONTASKCLIENT_HPP_
+#define MISSION_EXECUTION__EXECUTEMISSIONTASKCLIENT_HPP_
 
-#include <string>
-#include "robot/Robot.hpp"
+#include "task/TaskClient.hpp"
+#include "mission_execution/ExecuteMissionTaskMessages.hpp"
 
-class RosRobot : public Robot
-{
-public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
-  explicit RosRobot(const std::string & urdf_filename);
-  RosRobot() = delete;
-  ~RosRobot();
+using ExecuteMissionTaskClient = TaskClient<ExecuteMissionCommand, ExecuteMissionResult>;
 
-  void enterSafeState() override;
-};
-
-#endif  // ROBOT__ROSROBOT_HPP_
+#endif  // MISSION_EXECUTION__EXECUTEMISSIONTASKCLIENT_HPP_

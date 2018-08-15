@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#ifndef PLANNING__ASTARPLANNER_HPP_
+#define PLANNING__ASTARPLANNER_HPP_
 
 #include <string>
-#include <memory>
-#include "mission_execution/ExecuteMissionTaskServer.hpp"
-#include "navigation/NavigateToPoseTaskClient.hpp"
+#include "planning/ComputePathToPoseTaskServer.hpp"
 
-class MissionExecution : public ExecuteMissionTaskServer
+class AStarPlanner : public ComputePathToPoseTaskServer
 {
 public:
-  explicit MissionExecution(const std::string & name);
-  MissionExecution() = delete;
-  ~MissionExecution();
+  explicit AStarPlanner(const std::string & name);
+  AStarPlanner() = delete;
+  ~AStarPlanner();
 
-  TaskStatus executeAsync(const ExecuteMissionCommand::SharedPtr command) override;
-
-private:
-  std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
+  TaskStatus executeAsync(const ComputePathToPoseCommand::SharedPtr command) override;
 };
 
-#endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#endif  // PLANNING__ASTARPLANNER_HPP_

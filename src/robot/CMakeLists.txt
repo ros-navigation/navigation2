@@ -12,6 +12,8 @@ include_directories(
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "../libs/")
 
+link_directories(${CMAKE_BINARY_DIR}/../libs)
+
 add_library(robot STATIC
   src/RosRobot.cpp
   )

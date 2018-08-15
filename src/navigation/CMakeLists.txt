@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(navigation)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,26 +18,32 @@ find_package(nav2_msgs REQUIRED)
 include_directories(
   include
   ../task/include
-  ../navigation/include
+  ../robot/include
+  ../planning/include
+  ../control/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_execution
+add_executable(simple_navigator
+  src/SimpleNavigator.cpp
   src/main.cpp
-  src/MissionExecution.cpp
   )
 
-target_link_libraries(mission_execution
+target_link_libraries(simple_navigator
+  robot
   )
 
-ament_target_dependencies(mission_execution 
+ament_target_dependencies(simple_navigator 
   rclcpp 
   std_msgs
   nav2_msgs
+  planning
+  control
+  robot
   )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS simple_navigator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

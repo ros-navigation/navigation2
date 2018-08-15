@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROBOT__ROSROBOT_HPP_
-#define ROBOT__ROSROBOT_HPP_
+#ifndef CONTROL__FOLLOWPATHTASKCLIENT_HPP_
+#define CONTROL__FOLLOWPATHTASKCLIENT_HPP_
 
-#include <string>
-#include "robot/Robot.hpp"
+#include "task/TaskClient.hpp"
+#include "control/FollowPathTaskMessages.hpp"
 
-class RosRobot : public Robot
-{
-public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
-  explicit RosRobot(const std::string & urdf_filename);
-  RosRobot() = delete;
-  ~RosRobot();
+using FollowPathTaskClient = TaskClient<FollowPathCommand, FollowPathResult>;
 
-  void enterSafeState() override;
-};
-
-#endif  // ROBOT__ROSROBOT_HPP_
+#endif  // CONTROL__FOLLOWPATHTASKCLIENT_HPP_

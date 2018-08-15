@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(planning)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,26 +18,25 @@ find_package(nav2_msgs REQUIRED)
 include_directories(
   include
   ../task/include
-  ../navigation/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_execution
+add_executable(astar_planner
+  src/AStarPlanner.cpp
   src/main.cpp
-  src/MissionExecution.cpp
   )
 
-target_link_libraries(mission_execution
+target_link_libraries(astar_planner
   )
 
-ament_target_dependencies(mission_execution 
+ament_target_dependencies(astar_planner 
   rclcpp 
   std_msgs
   nav2_msgs
   )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS astar_planner
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

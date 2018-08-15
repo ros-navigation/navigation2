@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#ifndef NAVIGATION__SIMPLENAVIGATOR_HPP_
+#define NAVIGATION__SIMPLENAVIGATOR_HPP_
 
 #include <string>
 #include <memory>
-#include "mission_execution/ExecuteMissionTaskServer.hpp"
-#include "navigation/NavigateToPoseTaskClient.hpp"
+#include "navigation/NavigateToPoseTaskServer.hpp"
+#include "planning/ComputePathToPoseTaskClient.hpp"
+#include "control/FollowPathTaskClient.hpp"
 
-class MissionExecution : public ExecuteMissionTaskServer
+class SimpleNavigator : public NavigateToPoseTaskServer
 {
 public:
-  explicit MissionExecution(const std::string & name);
-  MissionExecution() = delete;
-  ~MissionExecution();
+  explicit SimpleNavigator(const std::string & name);
+  SimpleNavigator() = delete;
+  ~SimpleNavigator();
 
-  TaskStatus executeAsync(const ExecuteMissionCommand::SharedPtr command) override;
+  TaskStatus executeAsync(const NavigateToPoseCommand::SharedPtr command);
 
-private:
-  std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
+protected:
+  std::unique_ptr<ComputePathToPoseTaskClient> planner_;
+  std::unique_ptr<FollowPathTaskClient> controller_;
 };
 
-#endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#endif  // NAVIGATION__SIMPLENAVIGATOR_HPP_

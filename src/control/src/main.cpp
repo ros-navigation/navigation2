@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
-
 #include <string>
 #include <memory>
-#include "mission_execution/ExecuteMissionTaskServer.hpp"
-#include "navigation/NavigateToPoseTaskClient.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "control/DwaController.hpp"
 
-class MissionExecution : public ExecuteMissionTaskServer
+int main(int argc, char ** argv)
 {
-public:
-  explicit MissionExecution(const std::string & name);
-  MissionExecution() = delete;
-  ~MissionExecution();
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<DwaController>("DwaController"));
+  rclcpp::shutdown();
 
-  TaskStatus executeAsync(const ExecuteMissionCommand::SharedPtr command) override;
-
-private:
-  std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
-};
-
-#endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+  return 0;
+}

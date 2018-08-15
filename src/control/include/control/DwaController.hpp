@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTION_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#ifndef CONTROL__DWACONTROLLER_HPP_
+#define CONTROL__DWACONTROLLER_HPP_
 
 #include <string>
-#include <memory>
-#include "mission_execution/ExecuteMissionTaskServer.hpp"
-#include "navigation/NavigateToPoseTaskClient.hpp"
+#include "control/FollowPathTaskServer.hpp"
 
-class MissionExecution : public ExecuteMissionTaskServer
+class DwaController : public FollowPathTaskServer
 {
 public:
-  explicit MissionExecution(const std::string & name);
-  MissionExecution() = delete;
-  ~MissionExecution();
+  explicit DwaController(const std::string & name);
+  DwaController() = delete;
+  ~DwaController();
 
-  TaskStatus executeAsync(const ExecuteMissionCommand::SharedPtr command) override;
-
-private:
-  std::unique_ptr<NavigateToPoseTaskClient> navigationTask_;
+  TaskStatus executeAsync(const FollowPathCommand::SharedPtr path) override;
 };
 
-#endif  // MISSION_EXECUTION__MISSIONEXECUTION_HPP_
+#endif  // CONTROL__DWACONTROLLER_HPP_

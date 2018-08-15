@@ -12,25 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROBOT__ROSROBOT_HPP_
-#define ROBOT__ROSROBOT_HPP_
+#ifndef PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#define PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
 
-#include <string>
-#include "robot/Robot.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
+#include "nav2_msgs/msg/path.hpp"
 
-class RosRobot : public Robot
-{
-public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
-  explicit RosRobot(const std::string & urdf_filename);
-  RosRobot() = delete;
-  ~RosRobot();
+using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
-  void enterSafeState() override;
-};
-
-#endif  // ROBOT__ROSROBOT_HPP_
+#endif  // PLANNING__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
