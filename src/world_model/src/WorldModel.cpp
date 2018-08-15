@@ -23,17 +23,16 @@ WorldModel::WorldModel(const string& name) : Node (name)
 {
   costmap_ = std::make_unique<Costmap>(this);
 
-  // Create a (lambda) callback function for when a costmap service is received.
-  auto handle_costmap_service = [this]
-    (const std::shared_ptr<rmw_request_id_t> request_header,
-     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
-     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
-     {
-      (void)request_header; // suppress unused variable warning
-      RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
-      costmap_->getCostmap(request->map, response->map);
-     };
+  auto costmap_service_callback = [this](
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
+  {
+    (void)request_header; // suppress unused variable warning
+    RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
+    costmap_->getCostmap(request->specs, response->map);
+  };
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name, handle_costmap_service);
+  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name, costmap_service_callback);
 }

@@ -14,14 +14,14 @@
 
 
 // Navigation Strategy based on:
-// Brock, O. and Oussama K. (1999). High-Speed Navigation Using the Global Dynamic Window Approach. IEEE.
+// Brock, O. and Oussama K. (1999). High-Speed Navigation Using
+// the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
 #include <string>
 #include <memory>
 #include <exception>
 #include <chrono>
-#include <iostream>
 #include "navigation/SimpleNavigator.hpp"
 
 SimpleNavigator::SimpleNavigator(const std::string & name)
@@ -38,7 +38,7 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
+SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync");
 
@@ -91,11 +91,12 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
 
 here:
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u", path->poses.size());
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u",
+    path->poses.size());
   int index;
-  for (auto poseStamped : path->poses)
-  {
-    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f", index, poseStamped.pose.position.x, poseStamped.pose.position.y);
+  for (auto poseStamped : path->poses) {
+    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f",
+      index, poseStamped.pose.position.x, poseStamped.pose.position.y);
     index++;
   }
 

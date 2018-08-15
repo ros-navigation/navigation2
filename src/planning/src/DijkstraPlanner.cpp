@@ -23,6 +23,7 @@
 #include <chrono>
 #include <limits>
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include "planning/DijkstraPlanner.hpp"
 #include "planning/Navfn.hpp"
@@ -76,7 +77,7 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 
   ComputePathToPoseResult result;
   try {
-    // TODO(orduno): Get a updated costmap
+    // TODO(orduno): Get an updated costmap
     // getCostmap(costmap_);
     makePlan(command->start, command->goal, command->tolerance, result.poses);
   }
@@ -153,7 +154,7 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   map_goal[0] = mx;
   map_goal[1] = my;
 
-  // TODO(orduno): Provide details on why we are providing 'map_goal' to setStart().
+  // TODO(orduno): Explain why we are providing 'map_goal' to setStart().
   //               Same for setGoal, seems reversed. Computing backwards?
 
   planner_->setStart(map_goal);
@@ -358,22 +359,21 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 {
   // TODO(orduno), check usage of this function, might instead be a request to world_model / map server
   unsigned int index = my * costmap_.info.width + mx;
-  costmap_.data[index] = costmap::FREE_SPACE;
+  costmap_.data[index] = static_cast<uint8_t>(CostValue::free_space);
 }
 
 void
-DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string layer, const std::chrono::milliseconds waitTime)
+DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string /*layer*/, const std::chrono::milliseconds waitTime)
 {
   RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
 
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request, including master (aggreate) layer
-  (void)layer; // suppress unused variable warning, alternatively can use the attribute [[maybe_unused]]
   auto costmapServiceResult = costmap_client_->async_send_request(std::make_shared<nav2_msgs::srv::GetCostmap::Request>());
   if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), costmapServiceResult, waitTime) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
-    throw "costmap service call failed";
+    throw std::runtime_error("service call failed");
   }
   costmap = costmapServiceResult.get()->map;
 }
@@ -422,12 +422,16 @@ DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap& costmap)
   std::cout << "  resolution: " << costmap.info.resolution << std::endl;
   std::cout << "  data:       " << "(" << costmap.data.size() << " cells)" << std::endl << "    ";
 
+  const char separator = ' ';
+  const int valueWidth = 4;
+
   unsigned int index = 0;
   for (unsigned int h = 0; h < costmap.info.height; ++h)
   {
     for (unsigned int w = 0; w < costmap.info.height; ++w)
     {
-      std::cout << static_cast<unsigned int>(costmap.data[index]) << " ";
+      std::cout << std::left << std::setw(valueWidth) << std::setfill(separator)
+        << static_cast<unsigned int>(costmap.data[index]);
       index++;
     }
     std::cout << std::endl << "    ";

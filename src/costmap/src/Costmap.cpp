@@ -12,24 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <vector>
+
 #include "costmap/Costmap.hpp"
-#include <tf2/LinearMath/Quaternion.h>
+#include "costmap/CostValues.h"
+#include "tf2/LinearMath/Quaternion.h"
 
 using std::vector;
 
 // TODO(orduno): Port ROS1 Costmap package
-Costmap::Costmap(rclcpp::Node* node) : node_(node)
+Costmap::Costmap(rclcpp::Node * node) : node_(node)
 {
   RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
 }
 
 void
-Costmap::getCostmap(const nav2_msgs::msg::Costmap& specifications, nav2_msgs::msg::Costmap& costmap)
+Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/,
+  nav2_msgs::msg::Costmap & costmap)
 {
+  // TODO(orduno): build a costmap given the specifications
+
   RCLCPP_INFO(node_->get_logger(), "Costmap::getCostmap");
 
   // TODO(orduno): faking out a costmap for now
-  (void)specifications;
 
   costmap.header.stamp = node_->now();
   costmap.header.frame_id = "/map";
@@ -44,15 +49,15 @@ Costmap::getCostmap(const nav2_msgs::msg::Costmap& specifications, nav2_msgs::ms
 
   // The origin of the map [m, m, rad]. This is the real-world pose of the cell (0,0) in the map.
   // Origin is lower-left pixel?
-  costmap.info.origin.position.x = 0.0; // 2D pose of the lower-left pixel in the map
+  costmap.info.origin.position.x = 0.0;  // 2D pose of the lower-left pixel in the map
   costmap.info.origin.position.y = 0.0;
-  costmap.info.origin.position.z = 0.0; // ignored
+  costmap.info.origin.position.z = 0.0;  // ignored
 
   // Define map rotation
   // Provided as yaw with counterclockwise rotation, with yaw = 0 meaning no rotation
 
   tf2::Quaternion quaternion;
-  quaternion.setRPY(0.0, 0.0, 0.0); // set roll, pitch, yaw
+  quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
   costmap.info.origin.orientation.x = quaternion.x();
   costmap.info.origin.orientation.y = quaternion.y();
   costmap.info.origin.orientation.z = quaternion.z();
@@ -65,19 +70,17 @@ Costmap::getCostmap(const nav2_msgs::msg::Costmap& specifications, nav2_msgs::ms
 }
 
 void
-Costmap::getTestData(const int width, const int height, vector<uint8_t>& data)
+Costmap::getTestData(const int /*width*/, const int /*height*/, vector<uint8_t> & data)
 {
   // TODO(orduno): fixed size for now
-  (void)width;
-  (void)height;
 
-  // TODO(orduno): instead of hardcoding, define a function
+  // TODO(orduno): besides hardcoded costmaps, use a mathematical function
 
-  const uint8_t n = 255; // no information
-  const uint8_t x = 254; // lethal obstacle
-  const uint8_t i = 253; // inscribed inflated obstacle
-  const uint8_t u = 128; // medium cost
-  const uint8_t o = 0;   // free space
+  const uint8_t n = static_cast<uint8_t>(CostValue::no_information);
+  const uint8_t x = static_cast<uint8_t>(CostValue::lethal_obstacle);
+  const uint8_t i = static_cast<uint8_t>(CostValue::inscribed_inflated_obstacle);
+  const uint8_t u = static_cast<uint8_t>(CostValue::medium_cost);
+  const uint8_t o = static_cast<uint8_t>(CostValue::free_space);
 
   vector<uint8_t> costmapFree =
   // 0 1 2 3 4 5 6 7 8 9
@@ -120,16 +123,16 @@ Costmap::getTestData(const int width, const int height, vector<uint8_t>& data)
 
   vector<uint8_t> costmapObstacleTL =
   // 0 1 2 3 4 5 6 7 8 9
-     {n,n,n,n,n,n,n,n,n,n,   //0
-      n,o,o,o,o,o,o,o,o,n,   //1
-      n,o,x,x,x,o,o,o,o,n,   //2
-      n,o,x,x,x,o,o,o,o,n,   //3
-      n,o,x,x,x,o,o,o,o,n,   //4
-      n,o,o,o,o,o,o,o,o,n,   //5
-      n,o,o,o,o,o,o,o,o,n,   //6
-      n,o,o,o,o,o,o,o,o,n,   //7
-      n,o,o,o,o,o,o,o,o,n,   //8
-      n,n,n,n,n,n,n,n,n,n};  //9
+    {n,n,n,n,n,n,n,n,n,n,   //0
+     n,o,o,o,o,o,o,o,o,n,   //1
+     n,o,x,x,x,o,o,o,o,n,   //2
+     n,o,x,x,x,o,o,o,o,n,   //3
+     n,o,x,x,x,o,o,o,o,n,   //4
+     n,o,o,o,o,o,o,o,o,n,   //5
+     n,o,o,o,o,o,o,o,o,n,   //6
+     n,o,o,o,o,o,o,o,o,n,   //7
+     n,o,o,o,o,o,o,o,o,n,   //8
+     n,n,n,n,n,n,n,n,n,n};  //9
 
   vector<uint8_t> costmapMaze =
   // 0 1 2 3 4 5 6 7 8 9

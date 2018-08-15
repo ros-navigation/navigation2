@@ -20,19 +20,22 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 class Costmap
 {
 public:
-  explicit Costmap(rclcpp::Node* node);
+  explicit Costmap(rclcpp::Node * node);
 
-  void getCostmap(const nav2_msgs::msg::Costmap& specifications, nav2_msgs::msg::Costmap& costmap);
+  void getCostmap(
+    const nav2_msgs::msg::CostmapMetaData & specifications,
+    nav2_msgs::msg::Costmap & costmap);
 
 private:
   // TODO(orduno): For now, the Costmap isn't itself a node
-  rclcpp::Node* node_;
+  rclcpp::Node * node_;
 
-  void getTestData(const int width, const int height, std::vector<uint8_t>& data);
+  void getTestData(const int width, const int height, std::vector<uint8_t> & data);
 };
 
-#endif // COSTMAP__COSTMAP_HPP_
+#endif  // COSTMAP__COSTMAP_HPP_
