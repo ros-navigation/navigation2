@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANNING__LOGGER_H_
-#define PLANNING__LOGGER_H_
+#ifndef LOGGER_H_
+#define LOGGER_H_
 
 #include <cstdio>
 
-// TODO: Figure out how to get a reference to the node logger
+// TODO(orduno): Figure out how to get a reference to the node logger
 #define ROS_ERROR(...) std::fprintf(stderr, __VA_ARGS__)
 
 #define ROS_WARN(...) std::fprintf(stderr, __VA_ARGS__)
@@ -30,4 +30,4 @@
 
 #define ROS_INFO_ONCE(...) std::fprintf(stderr, __VA_ARGS__)
 
-#endif // PLANNING__LOGGER_H_
+#endif  // LOGGER_H_

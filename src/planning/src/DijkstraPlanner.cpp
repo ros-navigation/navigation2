@@ -14,7 +14,8 @@
 
 
 // Navigation Strategy based on:
-// Brock, O. and Oussama K. (1999). High-Speed Navigation Using the Global Dynamic Window Approach. IEEE.
+// Brock, O. and Oussama K. (1999). High-Speed Navigation Using
+// the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
 #include <string>
@@ -38,22 +39,24 @@ using namespace std::chrono_literals;
 
 
 DijkstraPlanner::DijkstraPlanner(const std::string & name)
-: ComputePathToPoseTaskServer(name), global_frame_("/map"), allow_unknown_(true), default_tolerance_(1.0)
+: ComputePathToPoseTaskServer(name), global_frame_("/map"),
+  allow_unknown_(true), default_tolerance_(1.0)
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 
-  //TODO(orduno): Enable parameter server
+  // TODO(orduno): Enable parameter server
 
   costmap_client_ = this->create_client<nav2_msgs::srv::GetCostmap>("CostmapService");
   waitForCostmapServer();
 
-  // TODO(orduno): Service for getting the costmap sometimes fails, check how the parent task can handle this.
-  //               might need to pull out the getCostmap() method out of the constructor and have an initialize() one.
+  // TODO(orduno): Service for getting the costmap sometimes fails,
+  //               check how the parent task can handle this. Might need to pull out
+  //               the getCostmap() method out of the constructor and have an initialize() one.
   try {
     getCostmap(costmap_);
-  }
-  catch (...) {
-    RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::makePlan: failed to obtain costmap from server");
+  } catch (...) {
+    RCLCPP_ERROR(this->get_logger(),
+      "DijkstraPlanner::makePlan: failed to obtain costmap from server");
     throw;
   }
 
@@ -80,21 +83,22 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
     // TODO(orduno): Get an updated costmap
     // getCostmap(costmap_);
     makePlan(command->start, command->goal, command->tolerance, result.poses);
-  }
-  catch (...) {
+  } catch (...) {
     RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::executeAsync: plan calculation failed");
-    // TODO(orduno): provide information about fail error to parent task, for example: couldn't get costmap update
+    // TODO(orduno): provide information about fail error to parent task,
+    //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   }
 
-  if (cancelRequested()){
+  if (cancelRequested()) {
     RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task has been canceled");
     setCanceled();
     return TaskStatus::CANCELED;
   }
   // TODO(orduno): should check for cancel within the makePlan() method?
 
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: calculated path of size %u", result.poses.size());
+  RCLCPP_INFO(get_logger(),
+    "DijkstraPlanner::executeAsync: calculated path of size %u", result.poses.size());
 
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task completed");
@@ -107,8 +111,10 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
 }
 
 bool
-DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const geometry_msgs::msg::PoseStamped& goal,
-    double tolerance, std::vector<geometry_msgs::msg::PoseStamped>& plan)
+DijkstraPlanner::makePlan(
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal, double tolerance,
+  std::vector<geometry_msgs::msg::PoseStamped> & plan)
 {
   // clear the plan, just in case
   plan.clear();
@@ -119,8 +125,10 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   double wy = start.pose.position.y;
 
   unsigned int mx, my;
-  if(!worldToMap(wx, wy, mx, my)){
-    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::makePlan: The robot's start position is off the global costmap. Planning will always fail, are you sure the robot has been properly localized?");
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "DijkstraPlanner::makePlan: The robot's start position is off the global costmap. Planning will always fail, are you sure the robot has been properly localized?");
     return false;
   }
 
@@ -130,7 +138,9 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(costmap_.info.width, costmap_.info.height);
 
-  // planner_->setCostmap(&std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end())[0], true, allow_unknown_);
+  // planner_->setCostmap(
+  //  &std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end())[0],
+  //  true, allow_unknown_);
   planner_->setCostmap(&costmap_.data[0], true, allow_unknown_);
 
   int map_start[2];
@@ -140,10 +150,12 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
   wx = goal.pose.position.x;
   wy = goal.pose.position.y;
 
-  if(worldToMap(wx, wy, mx, my)){
-    if(tolerance <= 0.0){
+  if (worldToMap(wx, wy, mx, my)) {
+    if (tolerance <= 0.0) {
       std::cout << "tolerance: " << tolerance << std::endl;
-      RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::makePlan: The goal sent to the planner is off the global costmap. Planning will always fail to this goal.");
+      RCLCPP_WARN(
+        this->get_logger(),
+        "DijkstraPlanner::makePlan: The goal sent to the planner is off the global costmap. Planning will always fail to this goal.");
       return false;
     }
     mx = 0;
@@ -170,12 +182,12 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
 
   p.pose.position.y = goal.pose.position.y - tolerance;
 
-  while(p.pose.position.y <= goal.pose.position.y + tolerance){
+  while (p.pose.position.y <= goal.pose.position.y + tolerance) {
     p.pose.position.x = goal.pose.position.x - tolerance;
-    while(p.pose.position.x <= goal.pose.position.x + tolerance){
+    while (p.pose.position.x <= goal.pose.position.x + tolerance) {
       double potential = getPointPotential(p.pose.position);
       double sdist = squared_distance(p, goal);
-      if(potential < POT_HIGH && sdist < best_sdist){
+      if (potential < POT_HIGH && sdist < best_sdist) {
         best_sdist = sdist;
         best_pose = p;
         found_legal = true;
@@ -185,16 +197,17 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
     p.pose.position.y += resolution;
   }
 
-  if(found_legal){
-    //extract the plan
-    if(getPlanFromPotential(best_pose, plan)){
-      //make sure the goal we push on has the same timestamp as the rest of the plan
+  if (found_legal) {
+    // extract the plan
+    if (getPlanFromPotential(best_pose, plan)) {
+      // make sure the goal we push on has the same timestamp as the rest of the plan
       geometry_msgs::msg::PoseStamped goal_copy = best_pose;
       goal_copy.header.stamp = this->now();
       plan.push_back(goal_copy);
-    }
-    else{
-      RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::makePlan: Failed to get a plan from potential when a legal potential was found. This shouldn't happen.");
+    } else {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "DijkstraPlanner::makePlan: Failed to get a plan from potential when a legal potential was found. This shouldn't happen.");
     }
   }
 
@@ -207,18 +220,20 @@ DijkstraPlanner::makePlan(const geometry_msgs::msg::PoseStamped& start, const ge
 }
 
 bool
-DijkstraPlanner::computePotential(const geometry_msgs::msg::Point& world_point)
+DijkstraPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 {
-  //make sure to resize the underlying array that Navfn uses
+  // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(costmap_.info.width, costmap_.info.height);
 
-  std::vector<unsigned char> costmapData = std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end());
+  std::vector<unsigned char> costmapData = std::vector<unsigned char>(
+    costmap_.data.begin(), costmap_.data.end());
 
   planner_->setCostmap(&costmapData[0], true, allow_unknown_);
 
   unsigned int mx, my;
-  if(!worldToMap(world_point.x, world_point.y, mx, my))
+  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
     return false;
+  }
 
   int map_start[2];
   map_start[0] = 0;
@@ -235,19 +250,23 @@ DijkstraPlanner::computePotential(const geometry_msgs::msg::Point& world_point)
 }
 
 bool
-DijkstraPlanner::getPlanFromPotential(const geometry_msgs::msg::PoseStamped& goal, std::vector<geometry_msgs::msg::PoseStamped>& plan)
+DijkstraPlanner::getPlanFromPotential(
+  const geometry_msgs::msg::PoseStamped & goal,
+  std::vector<geometry_msgs::msg::PoseStamped> & plan)
 {
-  //clear the plan, just in case
+  // clear the plan, just in case
   plan.clear();
 
   // Goal should be in global frame
   double wx = goal.pose.position.x;
   double wy = goal.pose.position.y;
 
-  //the potential has already been computed, so we won't update our copy of the costmap
+  // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
-  if(!worldToMap(wx, wy, mx, my)){
-    RCLCPP_WARN(this->get_logger(), "The goal sent to the navfn planner is off the global costmap. Planning will always fail to this goal.");
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "The goal sent to the navfn planner is off the global costmap. Planning will always fail to this goal.");
     return false;
   }
 
@@ -259,14 +278,14 @@ DijkstraPlanner::getPlanFromPotential(const geometry_msgs::msg::PoseStamped& goa
 
   planner_->calcPath(costmap_.info.width * 4);
 
-  //extract the plan
-  float *x = planner_->getPathX();
-  float *y = planner_->getPathY();
+  // extract the plan
+  float * x = planner_->getPathX();
+  float * y = planner_->getPathY();
   int len = planner_->getPathLen();
   rclcpp::Time plan_time = this->now();
 
-  for(int i = len - 1; i >= 0; --i){
-    //convert the plan to world coordinates
+  for (int i = len - 1; i >= 0; --i) {
+    // convert the plan to world coordinates
     double world_x, world_y;
     mapToWorld(x[i], y[i], world_x, world_y);
 
@@ -283,30 +302,32 @@ DijkstraPlanner::getPlanFromPotential(const geometry_msgs::msg::PoseStamped& goa
     plan.push_back(pose);
   }
 
-  //publish the plan for visualization purposes
+  // publish the plan for visualization purposes
   publishPlan(plan);
   return !plan.empty();
 }
 
 double
-DijkstraPlanner::getPointPotential(const geometry_msgs::msg::Point& world_point)
+DijkstraPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   unsigned int mx, my;
-  if(!worldToMap(world_point.x, world_point.y, mx, my))
+  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
     return std::numeric_limits<double>::max();
+  }
 
   unsigned int index = my * planner_->nx + mx;
   return planner_->potarr[index];
 }
 
 bool
-DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point& world_point)
+DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   return validPointPotential(world_point, default_tolerance_);
 }
 
 bool
-DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point& world_point, double tolerance)
+DijkstraPlanner::validPointPotential(
+  const geometry_msgs::msg::Point & world_point, double tolerance)
 {
   double resolution = costmap_.info.resolution;
 
@@ -315,11 +336,11 @@ DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point& world_poin
 
   p.y = world_point.y - tolerance;
 
-  while(p.y <= world_point.y + tolerance){
+  while (p.y <= world_point.y + tolerance) {
     p.x = world_point.x - tolerance;
-    while(p.x <= world_point.x + tolerance){
+    while (p.x <= world_point.x + tolerance) {
       double potential = getPointPotential(p);
-      if(potential < POT_HIGH){
+      if (potential < POT_HIGH) {
         return true;
       }
       p.x += resolution;
@@ -331,24 +352,24 @@ DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point& world_poin
 }
 
 bool
-DijkstraPlanner::worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my)
+DijkstraPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
-  if (wx < costmap_.info.origin.position.x || wy < costmap_.info.origin.position.y)
-  {
+  if (wx < costmap_.info.origin.position.x || wy < costmap_.info.origin.position.y) {
     return false;
   }
 
-  mx = (int)((wx - costmap_.info.origin.position.x) / costmap_.info.resolution);
-  my = (int)((wy - costmap_.info.origin.position.y) / costmap_.info.resolution);
+  mx = static_cast<int>((wx - costmap_.info.origin.position.x) / costmap_.info.resolution);
+  my = static_cast<int>((wy - costmap_.info.origin.position.y) / costmap_.info.resolution);
 
-  if (mx < costmap_.info.width && my < costmap_.info.height)
+  if (mx < costmap_.info.width && my < costmap_.info.height) {
     return true;
+  }
 
   return false;
 }
 
 void
-DijkstraPlanner::mapToWorld(double mx, double my, double& wx, double& wy)
+DijkstraPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
 {
   wx = costmap_.info.origin.position.x + mx * costmap_.info.resolution;
   wy = costmap_.info.origin.position.y + my * costmap_.info.resolution;
@@ -357,19 +378,26 @@ DijkstraPlanner::mapToWorld(double mx, double my, double& wx, double& wy)
 void
 DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 {
-  // TODO(orduno), check usage of this function, might instead be a request to world_model / map server
+  // TODO(orduno): check usage of this function, might instead be a request to
+  //               world_model / map server
   unsigned int index = my * costmap_.info.width + mx;
   costmap_.data[index] = static_cast<uint8_t>(CostValue::free_space);
 }
 
 void
-DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string /*layer*/, const std::chrono::milliseconds waitTime)
+DijkstraPlanner::getCostmap(
+  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
+  const std::chrono::milliseconds waitTime)
 {
   RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
 
-  // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request, including master (aggreate) layer
-  auto costmapServiceResult = costmap_client_->async_send_request(std::make_shared<nav2_msgs::srv::GetCostmap::Request>());
-  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), costmapServiceResult, waitTime) !=
+  // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
+  //               including master (aggreate) layer
+  auto costmapServiceResult = costmap_client_->async_send_request(
+    std::make_shared<nav2_msgs::srv::GetCostmap::Request>());
+
+  if (rclcpp::spin_until_future_complete(
+      this->get_node_base_interface(), costmapServiceResult, waitTime) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
@@ -381,32 +409,32 @@ DijkstraPlanner::getCostmap(nav2_msgs::msg::Costmap& costmap, const std::string 
 void
 DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 {
-  while (!costmap_client_->wait_for_service(waitTime))
-  {
-    if(!rclcpp::ok())
-    {
-      RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::waitForCostmapServer: costmap client interrupted while waiting for the service to appear.");
+  while (!costmap_client_->wait_for_service(waitTime)) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(
+        this->get_logger(),
+        "DijkstraPlanner::waitForCostmapServer: costmap client interrupted while waiting for the service to appear.");
       throw "interrupted while waiting for costmap server to appear";
     }
-    RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")
+    RCLCPP_INFO(this->get_logger(),
+      "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")
   }
 }
 
 void
-DijkstraPlanner::publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path)
+DijkstraPlanner::publishPlan(const std::vector<geometry_msgs::msg::PoseStamped> & path)
 {
-  //create a message for the plan
+  // create a message for the plan
   nav2_msgs::msg::Path gui_path;
   gui_path.poses.resize(path.size());
 
-  if(!path.empty())
-  {
+  if (!path.empty()) {
     gui_path.header.frame_id = path[0].header.frame_id;
     gui_path.header.stamp = path[0].header.stamp;
   }
 
   // Extract the plan in world coordinates, we assume the path is all in the same frame
-  for(unsigned int i=0; i < path.size(); i++){
+  for (unsigned int i = 0; i < path.size(); i++) {
     gui_path.poses[i] = path[i];
   }
 
@@ -414,24 +442,25 @@ DijkstraPlanner::publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>&
 }
 
 void
-DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap& costmap)
+DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 {
   std::cout << "Costmap" << std::endl;
-  std::cout << "  size:       " << costmap.info.width << "," << costmap.info.height << std::endl;
-  std::cout << "  origin:     " << costmap.info.origin.position.x << "," << costmap.info.origin.position.y << std::endl;
+  std::cout << "  size:       " <<
+    costmap.info.width << "," << costmap.info.height << std::endl;
+  std::cout << "  origin:     " <<
+    costmap.info.origin.position.x << "," << costmap.info.origin.position.y << std::endl;
   std::cout << "  resolution: " << costmap.info.resolution << std::endl;
-  std::cout << "  data:       " << "(" << costmap.data.size() << " cells)" << std::endl << "    ";
+  std::cout << "  data:       " <<
+    "(" << costmap.data.size() << " cells)" << std::endl << "    ";
 
   const char separator = ' ';
   const int valueWidth = 4;
 
   unsigned int index = 0;
-  for (unsigned int h = 0; h < costmap.info.height; ++h)
-  {
-    for (unsigned int w = 0; w < costmap.info.height; ++w)
-    {
-      std::cout << std::left << std::setw(valueWidth) << std::setfill(separator)
-        << static_cast<unsigned int>(costmap.data[index]);
+  for (unsigned int h = 0; h < costmap.info.height; ++h) {
+    for (unsigned int w = 0; w < costmap.info.height; ++w) {
+      std::cout << std::left << std::setw(valueWidth) << std::setfill(separator) <<
+        static_cast<unsigned int>(costmap.data[index]);
       index++;
     }
     std::cout << std::endl << "    ";
