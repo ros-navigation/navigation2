@@ -12,9 +12,24 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(Boost REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
 
-include_directories(include ${Boost_INCLUDE_DIRS})
+include_directories(
+  include 
+  ../util/include
+  ${Boost_INCLUDE_DIRS}
+  )
+
+link_directories(
+ ${CMAKE_BINARY_DIR}/../util
+ )
 
 add_library(amcl_pf
                     src/amcl/pf/pf.c
@@ -36,9 +51,7 @@ add_library(amcl_sensors
                     src/amcl/sensors/amcl_odom.cpp
                     src/amcl/sensors/amcl_laser.cpp)
 
-target_link_libraries(amcl_sensors amcl_map amcl_pf)
-
-add_executable(amcl src/amcl_node.cpp)
+add_executable(amcl src/main.cpp src/amcl_node.cpp)
 
 target_link_libraries(amcl
   amcl_sensors
@@ -46,12 +59,26 @@ target_link_libraries(amcl
   amcl_pf
   ${Boost_LIBRARIES}
   boost_system
+  util
   )
 
 ament_target_dependencies(amcl
   rclcpp
+  message_filters
+  tf2_geometry_msgs
+  nav_msgs
+  sensor_msgs
+  std_srvs
+  tf2_ros
+  tf2
+  util
   )
 
-install(TARGETS amcl DESTINATION lib/${PROJECT_NAME})
+install(TARGETS
+  amcl amcl_sensors amcl_map amcl_pf
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  )
 
 ament_package()
