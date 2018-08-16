@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>amcl</name>
+  <version>1.15.2</version>
+  <description>
+    <p>
+      amcl is a probabilistic localization system for a robot moving in
+      2D. It implements the adaptive (or KLD-sampling) Monte Carlo
+      localization approach (as described by Dieter Fox), which uses a
+      particle filter to track the pose of a robot against a known map.
+    </p>
+    <p>
+      This node is derived, with thanks, from Andrew Howard's excellent
+      'amcl' Player driver.
+    </p>
+  </description>
+  <url>http://wiki.ros.org/amcl</url>
+  <author>Brian P. Gerkey</author>
+  <author>contradict@gmail.com</author>
+  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
+  <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
+  <license>LGPL</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rclcpp</build_depend>
+
+<!--
+  <build_depend>message_filters</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
+
+  <depend>dynamic_reconfigure</depend>
+  <depend>nav_msgs</depend>
+  <depend>rosbag</depend>
+  <depend>roscpp</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>map_server</test_depend>
+  <test_depend>rostest</test_depend>
+-->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
