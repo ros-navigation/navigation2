@@ -14,34 +14,34 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../task/include
-  ../robot/include
-  )
-
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+)
 
 add_executable(dwa_controller
   src/DwaController.cpp
   src/main.cpp
-  )
+)
 
-target_link_libraries(dwa_controller
-  robot
-  )
-
-ament_target_dependencies(dwa_controller 
-  rclcpp 
+ament_target_dependencies(dwa_controller
+  rclcpp
   std_msgs
   nav2_msgs
-  robot
-  )
+  task
+)
 
 install(TARGETS dwa_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+ament_export_include_directories(include)
 
 ament_package()

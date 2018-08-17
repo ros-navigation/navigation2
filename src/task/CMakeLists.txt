@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(robot)
+project(task)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,19 +11,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 include_directories(
   include
-)
-
-add_library(robot STATIC
-  src/RosRobot.cpp
-)
-
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/
@@ -31,6 +23,5 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
 
 ament_package()

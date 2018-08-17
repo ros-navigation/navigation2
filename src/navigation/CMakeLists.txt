@@ -14,38 +14,40 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(task REQUIRED)
+find_package(planning REQUIRED)
+find_package(control REQUIRED)
+find_package(robot REQUIRED)
 
 include_directories(
   include
-  ../task/include
-  ../robot/include
-  ../planning/include
-  ../control/include
-  )
-
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+)
 
 add_executable(simple_navigator
   src/SimpleNavigator.cpp
   src/main.cpp
-  )
+)
 
-target_link_libraries(simple_navigator
-  robot
-  )
-
-ament_target_dependencies(simple_navigator 
-  rclcpp 
+ament_target_dependencies(simple_navigator
+  rclcpp
   std_msgs
   nav2_msgs
+  task
   planning
   control
   robot
-  )
+)
 
 install(TARGETS simple_navigator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+ament_export_include_directories(include)
 
 ament_package()

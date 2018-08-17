@@ -11,10 +11,13 @@
   <build_depend>rclcpp</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>robot</build_depend>
+  <build_depend>task</build_depend>
+  <build_depend>planning</build_depend>
+  <build_depend>control</build_depend>
+  <build_depend>robot</build_depend>
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>
 </package>
-
