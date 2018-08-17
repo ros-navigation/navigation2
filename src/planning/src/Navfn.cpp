@@ -58,14 +58,13 @@ create_nav_plan_astar(
   int * goal, int * start,
   float * plan, int nplan)
 {
-
   static NavFn * nav = NULL;
 
   if (nav == NULL) {
     nav = new NavFn(nx, ny);
   }
 
-  if (nav->nx != nx || nav->ny != ny) { // check for compatibility with previous call
+  if (nav->nx != nx || nav->ny != ny) {  // check for compatibility with previous call
     delete nav;
     nav = new NavFn(nx, ny);
   }
@@ -283,7 +282,6 @@ NavFn::setCostmap(const COSTTYPE * cmap, bool isROS, bool allow_unknown)
         }
       }
     }
-
   }
 }
 
@@ -305,7 +303,6 @@ NavFn::calcNavFnDijkstra(bool atStart)
     ROS_DEBUG("[NavFn] No path found\n");
     return false;
   }
-
 }
 
 
@@ -324,7 +321,7 @@ NavFn::calcNavFnAstar()
   // path
   int len = calcPath(nx * 4);
 
-  if (len > 0) { // found plan
+  if (len > 0) {  // found plan
     ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
     return true;
   } else {
@@ -405,7 +402,7 @@ NavFn::setupNavFn(bool keepit)
   int ntot = 0;
   for (int i = 0; i < ns; i++, pc++) {
     if (*pc >= COST_OBS) {
-      ntot++; // number of cells that are obstacles
+      ntot++;  // number of cells that are obstacles
     }
   }
   nobs = ntot;
@@ -455,7 +452,7 @@ NavFn::updateCell(int n)
 
   // do planar wave update
   if (costarr[n] < COST_OBS) {  // don't propagate into obstacles
-    float hf = (float)costarr[n]; // traversability factor
+    float hf = static_cast<float>(costarr[n]);  // traversability factor
     float dc = tc - ta;  // relative cost between ta,tc
     if (dc < 0) {  // ta is lowest
       dc = -dc;
@@ -479,10 +476,10 @@ NavFn::updateCell(int n)
 
     // now add affected neighbors to priority blocks
     if (pot < potarr[n]) {
-      float le = INVSQRT2 * (float)costarr[n - 1];
-      float re = INVSQRT2 * (float)costarr[n + 1];
-      float ue = INVSQRT2 * (float)costarr[n - nx];
-      float de = INVSQRT2 * (float)costarr[n + nx];
+      float le = INVSQRT2 * static_cast<float>(costarr[n - 1]);
+      float re = INVSQRT2 * static_cast<float>(costarr[n + 1]);
+      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);
+      float de = INVSQRT2 * static_cast<float>(costarr[n + nx]);
       potarr[n] = pot;
       if (pot < curT) {  // low-cost buffer block
         if (l > pot + le) {push_next(n - 1);}
@@ -519,8 +516,8 @@ NavFn::updateCellAstar(int n)
   r = potarr[n + 1];
   u = potarr[n - nx];
   d = potarr[n + nx];
-  //ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n",
-  //	 potarr[n], l, r, u, d);
+  // ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n",
+  // potarr[n], l, r, u, d);
   // ROS_INFO("[Update] cost of %d: %d\n", n, costarr[n]);
 
   // find lowest, and its lowest neighbor
@@ -530,7 +527,7 @@ NavFn::updateCellAstar(int n)
 
   // do planar wave update
   if (costarr[n] < COST_OBS) {  // don't propagate into obstacles
-    float hf = (float)costarr[n];  // traversability factor
+    float hf = static_cast<float>(costarr[n]);  // traversability factor
     float dc = tc - ta;  // relative cost between ta,tc
     if (dc < 0) {  // ta is lowest
       dc = -dc;
@@ -550,19 +547,19 @@ NavFn::updateCellAstar(int n)
       pot = ta + hf * v;
     }
 
-    //ROS_INFO("[Update] new pot: %d\n", costarr[n]);
+    // ROS_INFO("[Update] new pot: %d\n", costarr[n]);
 
     // now add affected neighbors to priority blocks
     if (pot < potarr[n]) {
-      float le = INVSQRT2 * (float)costarr[n - 1];
-      float re = INVSQRT2 * (float)costarr[n + 1];
-      float ue = INVSQRT2 * (float)costarr[n - nx];
-      float de = INVSQRT2 * (float)costarr[n + nx];
+      float le = INVSQRT2 * static_cast<float>(costarr[n - 1]);
+      float re = INVSQRT2 * static_cast<float>(costarr[n + 1]);
+      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);
+      float de = INVSQRT2 * static_cast<float>(costarr[n + nx]);
 
       // calculate distance
       int x = n % nx;
       int y = n / nx;
-      float dist = hypot(x - start[0], y - start[1]) * (float)COST_NEUTRAL;
+      float dist = hypot(x - start[0], y - start[1]) * static_cast<float>(COST_NEUTRAL);
 
       potarr[n] = pot;
       pot += dist;
@@ -600,8 +597,7 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
   // set up start cell
   int startCell = start[1] * nx + start[0];
 
-  for (; cycle < cycles; cycle++) { // go for this many cycles, unless interrupted
-
+  for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty
       break;
     }
@@ -659,7 +655,7 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
   if (cycle < cycles) {
-    return true; // finished up here
+    return true;  // finished up here
   } else {return false;}
 }
 
@@ -681,15 +677,14 @@ NavFn::propNavFnAstar(int cycles)
   int cycle = 0;  // which cycle we're on
 
   // set initial threshold, based on distance
-  float dist = hypot(goal[0] - start[0], goal[1] - start[1]) * (float)COST_NEUTRAL;
+  float dist = hypot(goal[0] - start[0], goal[1] - start[1]) * static_cast<float>(COST_NEUTRAL);
   curT = dist + curT;
 
   // set up start cell
   int startCell = start[1] * nx + start[0];
 
   // do main cycle
-  for (; cycle < cycles; cycle++) { // go for this many cycles, unless interrupted
-
+  for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty
       break;
     }
@@ -727,8 +722,8 @@ NavFn::propNavFnAstar(int cycles)
 
     // see if we're done with this priority level
     if (curPe == 0) {
-      curT += priInc; // increment priority threshold
-      curPe = overPe; // set current to overflow block
+      curT += priInc;  // increment priority threshold
+      curPe = overPe;  // set current to overflow block
       overPe = 0;
       pb = curP;  // swap buffers
       curP = overP;
@@ -739,7 +734,6 @@ NavFn::propNavFnAstar(int cycles)
     if (potarr[startCell] < POT_HIGH) {
       break;
     }
-
   }
 
   last_path_cost_ = potarr[startCell];
@@ -748,7 +742,7 @@ NavFn::propNavFnAstar(int cycles)
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
   if (potarr[startCell] < POT_HIGH) {
-    return true; // finished up here}
+    return true;  // finished up here}
   } else {
     return false;
   }
@@ -776,7 +770,7 @@ int
 NavFn::calcPath(int n, int * st)
 {
   // test write
-  //savemap("test");
+  // savemap("test");
 
   // check path arrays
   if (npathbuf < n) {
@@ -801,10 +795,11 @@ NavFn::calcPath(int n, int * st)
   for (int i = 0; i < n; i++) {
     // check if near goal
     int nearest_point = std::max(0,
-        std::min(nx * ny - 1, stc + (int)round(dx) + (int)(nx * round(dy))));
+        std::min(nx * ny - 1, stc + static_cast<int>(round(dx)) +
+        static_cast<int>(nx * round(dy))));
     if (potarr[nearest_point] < COST_NEUTRAL) {
-      pathx[npath] = (float)goal[0];
-      pathy[npath] = (float)goal[1];
+      pathx[npath] = static_cast<float>(goal[0]);
+      pathy[npath] = static_cast<float>(goal[1]);
       return ++npath;  // done!
     }
 
@@ -871,10 +866,10 @@ NavFn::calcPath(int n, int * st)
 
       if (potarr[stc] >= POT_HIGH) {
         ROS_DEBUG("[PathCalc] No path found, high potential");
-        //savemap("navfn_highpot");
+        // savemap("navfn_highpot");
         return 0;
       }
-    } else { // have a good gradient here
+    } else {  // have a good gradient here
       // get grad at four positions near cell
       gradCell(stc);
       gradCell(stc + 1);
@@ -885,10 +880,10 @@ NavFn::calcPath(int n, int * st)
       // get interpolated gradient
       float x1 = (1.0 - dx) * gradx[stc] + dx * gradx[stc + 1];
       float x2 = (1.0 - dx) * gradx[stcnx] + dx * gradx[stcnx + 1];
-      float x = (1.0 - dy) * x1 + dy * x2; // interpolated x
+      float x = (1.0 - dy) * x1 + dy * x2;  // interpolated x
       float y1 = (1.0 - dx) * grady[stc] + dx * grady[stc + 1];
       float y2 = (1.0 - dx) * grady[stcnx] + dx * grady[stcnx + 1];
-      float y = (1.0 - dy) * y1 + dy * y2; // interpolated y
+      float y = (1.0 - dy) * y1 + dy * y2;  // interpolated y
 
       // show gradients
       ROS_DEBUG("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f; final x=%.3f, y=%.3f\n",
@@ -915,12 +910,12 @@ NavFn::calcPath(int n, int * st)
     }
 
     //      ROS_INFO("[Path] Pot: %0.1f  grad: %0.1f,%0.1f  pos: %0.1f,%0.1f\n",
-    //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
+    //      potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
   }
 
   //  return npath;  // out of cycles, return failure
   ROS_DEBUG("[PathCalc] No path found, path too long");
-  //savemap("navfn_pathlong");
+  // savemap("navfn_pathlong");
   return 0;  // out of cycles, return failure
 }
 
@@ -1012,7 +1007,7 @@ NavFn::savemap(const char * fname)
 
   ROS_DEBUG("[NavFn] Saving costmap and start/goal points");
   // write start and goal points
-  sprintf(fn, "%s.txt", fname);
+  snprintf(fn, sizeof(fn), "%s.txt", fname);
   FILE * fp = fopen(fn, "w");
   if (!fp) {
     ROS_WARN("Can't open file %s", fn);
@@ -1025,7 +1020,7 @@ NavFn::savemap(const char * fname)
   if (!costarr) {
     return;
   }
-  sprintf(fn, "%s.pgm", fname);
+  snprintf(fn, sizeof(fn), "%s.pgm", fname);
   fp = fopen(fn, "wb");
   if (!fp) {
     ROS_WARN("Can't open file %s", fn);

@@ -128,7 +128,8 @@ DijkstraPlanner::makePlan(
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
       this->get_logger(),
-      "DijkstraPlanner::makePlan: The robot's start position is off the global costmap. Planning will always fail, are you sure the robot has been properly localized?");
+      "DijkstraPlanner::makePlan: The robot's start position is off the global costmap."
+      " Planning will always fail, are you sure the robot has been properly localized?");
     return false;
   }
 
@@ -155,7 +156,8 @@ DijkstraPlanner::makePlan(
       std::cout << "tolerance: " << tolerance << std::endl;
       RCLCPP_WARN(
         this->get_logger(),
-        "DijkstraPlanner::makePlan: The goal sent to the planner is off the global costmap. Planning will always fail to this goal.");
+        "DijkstraPlanner::makePlan: The goal sent to the planner is off the global costmap."
+        " Planning will always fail to this goal.");
       return false;
     }
     mx = 0;
@@ -207,7 +209,8 @@ DijkstraPlanner::makePlan(
     } else {
       RCLCPP_ERROR(
         this->get_logger(),
-        "DijkstraPlanner::makePlan: Failed to get a plan from potential when a legal potential was found. This shouldn't happen.");
+        "DijkstraPlanner::makePlan: Failed to get a plan from potential when a legal"
+        " potential was found. This shouldn't happen.");
     }
   }
 
@@ -266,7 +269,8 @@ DijkstraPlanner::getPlanFromPotential(
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
       this->get_logger(),
-      "The goal sent to the navfn planner is off the global costmap. Planning will always fail to this goal.");
+      "The goal sent to the navfn planner is off the global costmap."
+      " Planning will always fail to this goal.");
     return false;
   }
 
@@ -413,7 +417,8 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(
         this->get_logger(),
-        "DijkstraPlanner::waitForCostmapServer: costmap client interrupted while waiting for the service to appear.");
+        "DijkstraPlanner::waitForCostmapServer:"
+        " costmap client interrupted while waiting for the service to appear.");
       throw "interrupted while waiting for costmap server to appear";
     }
     RCLCPP_INFO(this->get_logger(),

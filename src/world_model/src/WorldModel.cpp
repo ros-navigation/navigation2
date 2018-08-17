@@ -13,25 +13,28 @@
 // limitations under the License.
 
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <string>
 
 #include "world_model/WorldModel.hpp"
 
 using std::vector;
 using std::string;
 
-WorldModel::WorldModel(const string& name) : Node (name)
+WorldModel::WorldModel(const string & name)
+: Node(name)
 {
   costmap_ = std::make_unique<Costmap>(this);
 
   auto costmap_service_callback = [this](
-    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
-  {
-    (void)request_header; // suppress unused variable warning
-    RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
-    costmap_->getCostmap(request->specs, response->map);
-  };
+    {
+      RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
+      costmap_->getCostmap(request->specs, response->map);
+    };
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name, costmap_service_callback);

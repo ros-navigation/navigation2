@@ -28,7 +28,7 @@
 class WorldModel : public rclcpp::Node
 {
 public:
-  explicit WorldModel(const std::string& name);
+  explicit WorldModel(const std::string & name);
 
 private:
   // Server for providing a costmap
@@ -50,4 +50,4 @@ private:
   std::unique_ptr<Costmap> costmap_;
 };
 
-#endif // WORLD_MODEL__WORLDMODEL_HPP_
+#endif  // WORLD_MODEL__WORLDMODEL_HPP_

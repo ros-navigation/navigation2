@@ -61,7 +61,7 @@ public:
   }
 
   // The client can wait for a result with a timeout
-  TaskStatus waitForResult(typename ResultMsg::SharedPtr& result, unsigned int milliseconds)
+  TaskStatus waitForResult(typename ResultMsg::SharedPtr & result, unsigned int milliseconds)
   {
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
@@ -73,8 +73,8 @@ public:
       return RUNNING;
     }
 
-    // TODO: possible race condition between receiving status message and actual data
-    //       for now implemented a method using a flag, but might want to review further
+    // TODO(orduno): possible race condition between receiving status message and actual data
+    //               for now implemented a method using a flag, but might want to review further
     if (taskSucceeded_ && receivedNewMsg_) {
       result = result_;
       receivedNewMsg_ = false;
