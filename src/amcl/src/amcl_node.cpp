@@ -91,8 +91,6 @@ AmclNode::AmclNode()
 
   boost::recursive_mutex::scoped_lock l(configuration_mutex_);
 
-  parameter_service = std::make_shared<rclcpp::ParameterService>(std::shared_ptr<rclcpp::Node>(this));
-  //parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(this);
   parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(this));
   
   // Grab params off the param server
@@ -221,10 +219,10 @@ AmclNode::AmclNode()
       };
   set_map_srv_ = create_service<nav_msgs::srv::SetMap>("set_map", handle_set_map_callback);
 
+  
+  custom_qos_profile.depth = 100;
+  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this, scan_topic_, custom_qos_profile);
   #if 0
-  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, scan_topic_, 100);
-
-
   laser_scan_filter_ = 
           new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_,
                                                              *tf_,
@@ -521,14 +519,14 @@ void AmclNode::savePoseToServer()
   RCLCPP_DEBUG(get_logger(), "Saving pose to server. x: %.3f, y: %.3f", map_pose.getOrigin().x(), map_pose.getOrigin().y());
 
   parameters_client->set_parameters({
-    rclcpp::parameter::ParameterVariant("initial_pose_x", map_pose.getOrigin().x()),
-    rclcpp::parameter::ParameterVariant("initial_pose_y", map_pose.getOrigin().y()),
-    rclcpp::parameter::ParameterVariant("initial_pose_a", yaw),
-    rclcpp::parameter::ParameterVariant("initial_cov_xx", 
+    rclcpp::Parameter("initial_pose_x", map_pose.getOrigin().x()),
+    rclcpp::Parameter("initial_pose_y", map_pose.getOrigin().y()),
+    rclcpp::Parameter("initial_pose_a", yaw),
+    rclcpp::Parameter("initial_cov_xx", 
                                   last_published_pose.pose.covariance[6*0+0]),
-    rclcpp::parameter::ParameterVariant("initial_cov_yy", 
+    rclcpp::Parameter("initial_cov_yy", 
                                   last_published_pose.pose.covariance[6*1+1]),
-    rclcpp::parameter::ParameterVariant("initial_cov_aa", 
+    rclcpp::Parameter("initial_cov_aa", 
                                   last_published_pose.pose.covariance[6*5+5]),
   });
 }

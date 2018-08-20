@@ -135,7 +135,6 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
 private:
-  rclcpp::ParameterService::SharedPtr parameter_service;
   rclcpp::SyncParametersClient::SharedPtr parameters_client;
 
   bool sent_first_transform_;
