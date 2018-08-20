@@ -28,7 +28,7 @@
 #include <algorithm>
 #include "planning/DijkstraPlanner.hpp"
 #include "planning/Navfn.hpp"
-#include "costmap/CostValues.h"
+#include "costmap/Costmap.hpp"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -36,7 +36,6 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 
 using namespace std::chrono_literals;
-
 
 DijkstraPlanner::DijkstraPlanner(const std::string & name)
 : ComputePathToPoseTaskServer(name), global_frame_("/map"),
@@ -385,7 +384,7 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
   // TODO(orduno): check usage of this function, might instead be a request to
   //               world_model / map server
   unsigned int index = my * costmap_.info.width + mx;
-  costmap_.data[index] = static_cast<uint8_t>(CostValue::free_space);
+  costmap_.data[index] = Costmap::free_space;
 }
 
 void

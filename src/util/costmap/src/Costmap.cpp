@@ -15,10 +15,15 @@
 #include <vector>
 
 #include "costmap/Costmap.hpp"
-#include "costmap/CostValues.h"
 #include "tf2/LinearMath/Quaternion.h"
 
 using std::vector;
+
+const Costmap::CostValue Costmap::no_information = 255;
+const Costmap::CostValue Costmap::lethal_obstacle = 254;
+const Costmap::CostValue Costmap::inscribed_inflated_obstacle = 253;
+const Costmap::CostValue Costmap::medium_cost = 128;
+const Costmap::CostValue Costmap::free_space = 0;
 
 // TODO(orduno): Port ROS1 Costmap package
 Costmap::Costmap(rclcpp::Node * node) : node_(node)
@@ -26,9 +31,8 @@ Costmap::Costmap(rclcpp::Node * node) : node_(node)
   RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
 }
 
-void
-Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/,
-  nav2_msgs::msg::Costmap & costmap)
+nav2_msgs::msg::Costmap
+Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/)
 {
   // TODO(orduno): build a costmap given the specifications
 
@@ -36,6 +40,7 @@ Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/,
 
   // TODO(orduno): faking out a costmap for now
 
+  nav2_msgs::msg::Costmap costmap;
   costmap.header.stamp = node_->now();
   costmap.header.frame_id = "/map";
 
@@ -66,21 +71,23 @@ Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/,
   costmap.data.resize(costmap.info.width, costmap.info.height);
 
   // Fill with some fake data for testing
-  getTestData(costmap.info.width, costmap.info.height, costmap.data);
+  costmap.data = getTestData(costmap.info.width, costmap.info.height);
+
+  return costmap;
 }
 
-void
-Costmap::getTestData(const int /*width*/, const int /*height*/, vector<uint8_t> & data)
+vector<uint8_t>
+Costmap::getTestData(const int /*width*/, const int /*height*/)
 {
   // TODO(orduno): fixed size for now
 
   // TODO(orduno): besides hardcoded costmaps, use a mathematical function
 
-  const uint8_t n = static_cast<uint8_t>(CostValue::no_information);
-  const uint8_t x = static_cast<uint8_t>(CostValue::lethal_obstacle);
-  const uint8_t i = static_cast<uint8_t>(CostValue::inscribed_inflated_obstacle);
-  const uint8_t u = static_cast<uint8_t>(CostValue::medium_cost);
-  const uint8_t o = static_cast<uint8_t>(CostValue::free_space);
+  const uint8_t n = no_information;
+  const uint8_t x = lethal_obstacle;
+  const uint8_t i = inscribed_inflated_obstacle;
+  const uint8_t u = medium_cost;
+  const uint8_t o = free_space;
 
   vector<uint8_t> costmapFree =
   // 0 1 2 3 4 5 6 7 8 9
@@ -160,5 +167,5 @@ Costmap::getTestData(const int /*width*/, const int /*height*/, vector<uint8_t> 
      n,o,o,o,o,o,o,o,o,n,   //8
      n,n,n,n,n,n,n,n,n,n};  //9
 
-  data = costmapMaze2;
+  return costmapMaze2;
 }

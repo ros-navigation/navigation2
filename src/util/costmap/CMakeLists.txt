@@ -27,6 +27,20 @@ ament_target_dependencies(costmap
   tf2
 )
 
+# Export library to make it available to other packages
+ament_export_dependencies(
+  nav2_msgs
+  tf2_ros
+  tf2
+)
+ament_export_include_directories(include)
+ament_export_libraries(costmap)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
 install(TARGETS
   costmap
   ARCHIVE DESTINATION lib

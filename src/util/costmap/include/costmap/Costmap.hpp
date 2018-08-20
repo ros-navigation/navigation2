@@ -25,17 +25,24 @@
 class Costmap
 {
 public:
+  typedef uint8_t CostValue;
+
   explicit Costmap(rclcpp::Node * node);
 
-  void getCostmap(
-    const nav2_msgs::msg::CostmapMetaData & specifications,
-    nav2_msgs::msg::Costmap & costmap);
+  nav2_msgs::msg::Costmap getCostmap(const nav2_msgs::msg::CostmapMetaData & specifications);
+
+  // Mapping for often used cost values
+  static const CostValue no_information;
+  static const CostValue lethal_obstacle;
+  static const CostValue inscribed_inflated_obstacle;
+  static const CostValue medium_cost;
+  static const CostValue free_space;
 
 private:
   // TODO(orduno): For now, the Costmap isn't itself a node
   rclcpp::Node * node_;
 
-  void getTestData(const int width, const int height, std::vector<uint8_t> & data);
+  std::vector<uint8_t> getTestData(const int width, const int height);
 };
 
 #endif  // COSTMAP__COSTMAP_HPP_

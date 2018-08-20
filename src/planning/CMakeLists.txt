@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(task REQUIRED)
+find_package(costmap REQUIRED)
 
 include_directories(
   include
@@ -25,38 +26,22 @@ include_directories(
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-# add_executable(astar_planner
-#   src/AStarPlanner.cpp
-#   src/main.cpp
-#   )
-
 add_executable(dijkstra_planner
   src/DijkstraPlanner.cpp
   src/Navfn.cpp
   src/main.cpp
   )
 
-target_link_libraries(
-  dijkstra_planner
-  # astar_planner
-)
-
-# ament_target_dependencies(astar_planner
-#   rclcpp
-#   std_msgs
-#   nav2_msgs
-#   )
-
 ament_target_dependencies(dijkstra_planner
   rclcpp
   std_msgs
   nav2_msgs
   task
-)
+  costmap
+  )
 
 install(TARGETS
   dijkstra_planner
-  # astar_planner
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

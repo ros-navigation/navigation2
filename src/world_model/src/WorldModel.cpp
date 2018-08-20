@@ -33,7 +33,7 @@ WorldModel::WorldModel(const string & name)
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
     {
       RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
-      costmap_->getCostmap(request->specs, response->map);
+      response->map = costmap_->getCostmap(request->specs);
     };
 
   // Create a service that will use the callback function to handle requests.
