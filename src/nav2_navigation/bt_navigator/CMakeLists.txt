@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(bt_navigator)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -17,28 +17,33 @@ find_package(nav2_tasks REQUIRED)
 
 include_directories(
   include
-  ../task/include
-  ../nav2_tasks/include
-  ../nav2_navigation/simple_navigator/include
+  ../../nav2_tasks/include
+  ../../nav2_robot/include
+  ../../nav2_planning/include
+  ../../nav2_control/include
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)
 
-add_executable(mission_executor
+add_executable(bt_navigator
+  src/BTNavigator.cpp
   src/main.cpp
-  src/MissionExecutor.cpp
   )
 
-target_link_libraries(mission_executor
+target_link_libraries(bt_navigator
+  nav2_robot
   )
 
-ament_target_dependencies(mission_executor 
+ament_target_dependencies(bt_navigator 
   rclcpp 
   std_msgs
   nav2_tasks
+  nav2_planning
+  nav2_control
+  nav2_robot
   )
 
-install(TARGETS mission_executor
+install(TARGETS bt_navigator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

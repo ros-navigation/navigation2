@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#define NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
 
-int main(int argc, char ** argv)
+#include "nav2_tasks/msg/path_end_points.hpp"
+#include "nav2_tasks/msg/path.hpp"
+
+namespace nav2_tasks
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+using ComputePathToPoseCommand = nav2_tasks::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_tasks::msg::Path;
+
+}  // namespace nav2_tasks
+
+#endif  // NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_

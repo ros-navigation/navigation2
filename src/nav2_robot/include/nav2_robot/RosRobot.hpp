@@ -12,16 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef NAV2_ROBOT__ROSROBOT_HPP_
+#define NAV2_ROBOT__ROSROBOT_HPP_
 
-int main(int argc, char ** argv)
+#include <string>
+#include "nav2_robot/Robot.hpp"
+
+namespace nav2_robot
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+class RosRobot : public Robot
+{
+public:
+  /**
+   * Construct a RosRobot with a provided URDF file.
+   *
+   * @param[in] filename The filename of the URDF file describing this robot.
+   */
+  explicit RosRobot(const std::string & urdf_filename);
+  RosRobot() = delete;
+  ~RosRobot();
+
+  void enterSafeState() override;
+};
+
+}  // namespace nav2_robot
+
+#endif  // NAV2_ROBOT__ROSROBOT_HPP_

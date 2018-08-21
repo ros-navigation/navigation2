@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef DWA_CONTROLLER__DWACONTROLLER_HPP_
+#define DWA_CONTROLLER__DWACONTROLLER_HPP_
 
-int main(int argc, char ** argv)
+#include <string>
+#include "nav2_tasks/FollowPathTaskServer.hpp"
+
+namespace dwa_controller
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+class DwaController : public nav2_tasks::FollowPathTaskServer
+{
+public:
+  explicit DwaController(const std::string & name);
+  DwaController() = delete;
+  ~DwaController();
+
+  nav2_tasks::TaskStatus executeAsync(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+};
+
+}  // namespace dwa_controller
+
+#endif  // DWA_CONTROLLER__DWACONTROLLER_HPP_
