@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
 #include <memory>
-#include <exception>
 #include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#include "simple_navigator/SimpleNavigator.hpp"
+#include "nav2_robot/RosRobot.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
+  rclcpp::spin(std::make_shared<simple_navigator::SimpleNavigator>("SimpleNavigator"));
   rclcpp::shutdown();
 
   return 0;

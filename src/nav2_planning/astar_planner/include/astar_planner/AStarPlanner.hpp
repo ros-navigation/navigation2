@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef ASTAR_PLANNER__ASTARPLANNER_HPP_
+#define ASTAR_PLANNER__ASTARPLANNER_HPP_
 
-int main(int argc, char ** argv)
+#include <string>
+#include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
+
+namespace astar_planner
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+class AStarPlanner : public nav2_tasks::ComputePathToPoseTaskServer
+{
+public:
+  explicit AStarPlanner(const std::string & name);
+  AStarPlanner() = delete;
+  ~AStarPlanner();
+
+  nav2_tasks::TaskStatus executeAsync(
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
+};
+
+}  // namespace astar_planner
+
+#endif  // ASTAR_PLANNER__ASTARPLANNER_HPP_

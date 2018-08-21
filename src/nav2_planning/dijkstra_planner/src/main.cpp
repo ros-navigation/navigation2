@@ -10,17 +10,16 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License. Reserved.
 
 #include <memory>
-#include <exception>
 #include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#include "dijkstra_planner/DijkstraPlanner.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
+  rclcpp::spin(std::make_shared<dijkstra_planner::DijkstraPlanner>("DijkstraPlanner"));
   rclcpp::shutdown();
 
   return 0;

@@ -1,0 +1,6 @@
+# Get the costmap
+
+# Specifications for the requested costmap
+nav2_tasks/CostmapMetaData specs
+---
+nav2_tasks/Costmap map

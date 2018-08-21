@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef NAV2_ROBOT__ROBOT_HPP_
+#define NAV2_ROBOT__ROBOT_HPP_
 
-int main(int argc, char ** argv)
+namespace nav2_robot
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+class Robot
+{
+public:
+  virtual ~Robot() {}
+
+  // Commands to the robot
+  virtual void enterSafeState() = 0;
+};
+
+}  // namespace nav2_robot
+
+#endif  // NAV2_ROBOT__ROBOT_HPP_
