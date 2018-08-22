@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+    <name>env_model</name>
+    <version>1.15.2</version>
+    <description>
+	Environmental model for ROS2 Navigation
+    </description>
+    <author>Brian Gerkey, Tony Pratkanis</author>
+    <author>contradict@gmail.com</author>
+    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+    <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
+    <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
+    <url>http://wiki.ros.org/map_server</url>
+    <license>BSD</license>
+
+	<buildtool_depend>ament_cmake</buildtool_depend>
+
+
+
+    <depend>nav_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>env_model_msgs</depend>
+    <depend>rclcpp</depend>
+ 
+
+	<export>
+		<build_type>ament_cmake</build_type>
+	</export>
+
+</package>
