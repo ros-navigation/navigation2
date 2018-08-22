@@ -21,7 +21,8 @@ include_directories(
   include
   ../task/include
   ../world_model/include
-  ../costmap/include
+  # ../util/costmap/include
+  ${costmap_INCLUDE_DIR}
   )
 
 link_directories(${CMAKE_BINARY_DIR}/../libs)

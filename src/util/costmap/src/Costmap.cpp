@@ -45,39 +45,39 @@ Costmap::getCostmap(const nav2_msgs::msg::CostmapMetaData & /*specifications*/)
   costmap.header.frame_id = "/map";
 
   // Fill map metadata
-  costmap.info.map_load_time = node_->now();
+  costmap.metadata.map_load_time = node_->now();
 
   // Some arbitrary numbers
-  costmap.info.resolution = 1;  // m/cell
-  costmap.info.width = 10;  // cells
-  costmap.info.height = 10;  // cells
+  costmap.metadata.resolution = 1;  // m/cell
+  costmap.metadata.size_x = 10;  // cells
+  costmap.metadata.size_y = 10;  // cells
 
   // The origin of the map [m, m, rad]. This is the real-world pose of the cell (0,0) in the map.
   // Origin is lower-left pixel?
-  costmap.info.origin.position.x = 0.0;  // 2D pose of the lower-left pixel in the map
-  costmap.info.origin.position.y = 0.0;
-  costmap.info.origin.position.z = 0.0;  // ignored
+  costmap.metadata.origin.position.x = 0.0;  // 2D pose of the lower-left pixel in the map
+  costmap.metadata.origin.position.y = 0.0;
+  costmap.metadata.origin.position.z = 0.0;  // ignored
 
   // Define map rotation
   // Provided as yaw with counterclockwise rotation, with yaw = 0 meaning no rotation
 
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
-  costmap.info.origin.orientation.x = quaternion.x();
-  costmap.info.origin.orientation.y = quaternion.y();
-  costmap.info.origin.orientation.z = quaternion.z();
-  costmap.info.origin.orientation.w = quaternion.w();
+  costmap.metadata.origin.orientation.x = quaternion.x();
+  costmap.metadata.origin.orientation.y = quaternion.y();
+  costmap.metadata.origin.orientation.z = quaternion.z();
+  costmap.metadata.origin.orientation.w = quaternion.w();
 
-  costmap.data.resize(costmap.info.width, costmap.info.height);
+  costmap.data.resize(costmap.metadata.size_x, costmap.metadata.size_y);
 
   // Fill with some fake data for testing
-  costmap.data = getTestData(costmap.info.width, costmap.info.height);
+  costmap.data = getTestData(costmap.metadata.size_x, costmap.metadata.size_y);
 
   return costmap;
 }
 
 vector<uint8_t>
-Costmap::getTestData(const int /*width*/, const int /*height*/)
+Costmap::getTestData(const int /*size_x*/, const int /*size_y*/)
 {
   // TODO(orduno): fixed size for now
 
@@ -88,6 +88,9 @@ Costmap::getTestData(const int /*width*/, const int /*height*/)
   const uint8_t i = inscribed_inflated_obstacle;
   const uint8_t u = medium_cost;
   const uint8_t o = free_space;
+
+  // TODO(orduno): make these vector of vectors, select maze by index
+  //               within the test program
 
   vector<uint8_t> costmapFree =
   // 0 1 2 3 4 5 6 7 8 9

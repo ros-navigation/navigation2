@@ -30,7 +30,7 @@ DwaController::~DwaController()
 }
 
 TaskStatus
-DwaController::executeAsync(const FollowPathCommand::SharedPtr command)
+DwaController::executeAsync(const FollowPathCommand::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "DwaController::executeAsync");
 

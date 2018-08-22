@@ -61,7 +61,7 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
 
   printCostmap(costmap_);
 
-  planner_ = std::make_shared<NavFn>(costmap_.info.width, costmap_.info.height);
+  planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   // Plan publisher for visualization purposes
   plan_publisher_ = this->create_publisher<nav2_msgs::msg::Path>("plan", 1);
@@ -81,7 +81,7 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
   try {
     // TODO(orduno): Get an updated costmap
     // getCostmap(costmap_);
-    makePlan(command->start, command->goal, command->tolerance, result.poses);
+    makePlan(command->start, command->goal, command->tolerance, result);
   } catch (...) {
     RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::executeAsync: plan calculation failed");
     // TODO(orduno): provide information about fail error to parent task,
@@ -102,26 +102,30 @@ DijkstraPlanner::executeAsync(const ComputePathToPoseCommand::SharedPtr command)
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task completed");
 
-  result.header.stamp = this->now();
-  result.header.frame_id = global_frame_;
+  // Pass the output to the Task Client
   setResult(result);
+
+  // Publish the plan for visualization purposes
+  plan_publisher_->publish(result);
+
+  // TODO(orduno): Enable potential visualization
 
   return TaskStatus::SUCCEEDED;
 }
 
 bool
 DijkstraPlanner::makePlan(
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal, double tolerance,
-  std::vector<geometry_msgs::msg::PoseStamped> & plan)
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & goal, double tolerance,
+  nav2_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
-  plan.clear();
+  plan.poses.clear();
 
   // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
 
-  double wx = start.pose.position.x;
-  double wy = start.pose.position.y;
+  double wx = start.position.x;
+  double wy = start.position.y;
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
@@ -136,19 +140,16 @@ DijkstraPlanner::makePlan(
   clearRobotCell(mx, my);
 
   // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(costmap_.info.width, costmap_.info.height);
+  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-  // planner_->setCostmap(
-  //  &std::vector<unsigned char>(costmap_.data.begin(), costmap_.data.end())[0],
-  //  true, allow_unknown_);
   planner_->setCostmap(&costmap_.data[0], true, allow_unknown_);
 
   int map_start[2];
   map_start[0] = mx;
   map_start[1] = my;
 
-  wx = goal.pose.position.x;
-  wy = goal.pose.position.y;
+  wx = goal.position.x;
+  wy = goal.position.y;
 
   if (worldToMap(wx, wy, mx, my)) {
     if (tolerance <= 0.0) {
@@ -174,37 +175,35 @@ DijkstraPlanner::makePlan(
   planner_->setGoal(map_start);
   planner_->calcNavFnDijkstra(true);
 
-  double resolution = costmap_.info.resolution;
-  geometry_msgs::msg::PoseStamped p, best_pose;
+  double resolution = costmap_.metadata.resolution;
+  geometry_msgs::msg::Pose p, best_pose;
   p = goal;
 
   bool found_legal = false;
   double best_sdist = std::numeric_limits<double>::max();
 
-  p.pose.position.y = goal.pose.position.y - tolerance;
+  p.position.y = goal.position.y - tolerance;
 
-  while (p.pose.position.y <= goal.pose.position.y + tolerance) {
-    p.pose.position.x = goal.pose.position.x - tolerance;
-    while (p.pose.position.x <= goal.pose.position.x + tolerance) {
-      double potential = getPointPotential(p.pose.position);
+  while (p.position.y <= goal.position.y + tolerance) {
+    p.position.x = goal.position.x - tolerance;
+    while (p.position.x <= goal.position.x + tolerance) {
+      double potential = getPointPotential(p.position);
       double sdist = squared_distance(p, goal);
       if (potential < POT_HIGH && sdist < best_sdist) {
         best_sdist = sdist;
         best_pose = p;
         found_legal = true;
       }
-      p.pose.position.x += resolution;
+      p.position.x += resolution;
     }
-    p.pose.position.y += resolution;
+    p.position.y += resolution;
   }
 
   if (found_legal) {
     // extract the plan
     if (getPlanFromPotential(best_pose, plan)) {
-      // make sure the goal we push on has the same timestamp as the rest of the plan
-      geometry_msgs::msg::PoseStamped goal_copy = best_pose;
-      goal_copy.header.stamp = this->now();
-      plan.push_back(goal_copy);
+      geometry_msgs::msg::Pose goal_copy = best_pose;
+      plan.poses.push_back(goal_copy);
     } else {
       RCLCPP_ERROR(
         this->get_logger(),
@@ -213,19 +212,14 @@ DijkstraPlanner::makePlan(
     }
   }
 
-  // TODO(orduno): Enable potential visualization
-
-  // Publish the plan for visualization purposes
-  publishPlan(plan);
-
-  return !plan.empty();
+  return !plan.poses.empty();
 }
 
 bool
 DijkstraPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 {
   // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(costmap_.info.width, costmap_.info.height);
+  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   std::vector<unsigned char> costmapData = std::vector<unsigned char>(
     costmap_.data.begin(), costmap_.data.end());
@@ -253,15 +247,15 @@ DijkstraPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 
 bool
 DijkstraPlanner::getPlanFromPotential(
-  const geometry_msgs::msg::PoseStamped & goal,
-  std::vector<geometry_msgs::msg::PoseStamped> & plan)
+  const geometry_msgs::msg::Pose & goal,
+  nav2_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
-  plan.clear();
+  plan.poses.clear();
 
   // Goal should be in global frame
-  double wx = goal.pose.position.x;
-  double wy = goal.pose.position.y;
+  double wx = goal.position.x;
+  double wy = goal.position.y;
 
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
@@ -279,35 +273,33 @@ DijkstraPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  planner_->calcPath(costmap_.info.width * 4);
+  planner_->calcPath(costmap_.metadata.size_x * 4);
 
   // extract the plan
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();
   int len = planner_->getPathLen();
-  rclcpp::Time plan_time = this->now();
+
+  plan.header.stamp = this->now();
+  plan.header.frame_id = global_frame_;
 
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
     double world_x, world_y;
     mapToWorld(x[i], y[i], world_x, world_y);
 
-    geometry_msgs::msg::PoseStamped pose;
-    pose.header.stamp = plan_time;
-    pose.header.frame_id = global_frame_;
-    pose.pose.position.x = world_x;
-    pose.pose.position.y = world_y;
-    pose.pose.position.z = 0.0;
-    pose.pose.orientation.x = 0.0;
-    pose.pose.orientation.y = 0.0;
-    pose.pose.orientation.z = 0.0;
-    pose.pose.orientation.w = 1.0;
-    plan.push_back(pose);
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = world_x;
+    pose.position.y = world_y;
+    pose.position.z = 0.0;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = 0.0;
+    pose.orientation.z = 0.0;
+    pose.orientation.w = 1.0;
+    plan.poses.push_back(pose);
   }
 
-  // publish the plan for visualization purposes
-  publishPlan(plan);
-  return !plan.empty();
+  return !plan.poses.empty();
 }
 
 double
@@ -332,7 +324,7 @@ bool
 DijkstraPlanner::validPointPotential(
   const geometry_msgs::msg::Point & world_point, double tolerance)
 {
-  double resolution = costmap_.info.resolution;
+  double resolution = costmap_.metadata.resolution;
 
   geometry_msgs::msg::Point p;
   p = world_point;
@@ -357,14 +349,14 @@ DijkstraPlanner::validPointPotential(
 bool
 DijkstraPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
-  if (wx < costmap_.info.origin.position.x || wy < costmap_.info.origin.position.y) {
+  if (wx < costmap_.metadata.origin.position.x || wy < costmap_.metadata.origin.position.y) {
     return false;
   }
 
-  mx = static_cast<int>((wx - costmap_.info.origin.position.x) / costmap_.info.resolution);
-  my = static_cast<int>((wy - costmap_.info.origin.position.y) / costmap_.info.resolution);
+  mx = static_cast<int>((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution);
+  my = static_cast<int>((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution);
 
-  if (mx < costmap_.info.width && my < costmap_.info.height) {
+  if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
     return true;
   }
 
@@ -374,8 +366,8 @@ DijkstraPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned in
 void
 DijkstraPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
 {
-  wx = costmap_.info.origin.position.x + mx * costmap_.info.resolution;
-  wy = costmap_.info.origin.position.y + my * costmap_.info.resolution;
+  wx = costmap_.metadata.origin.position.x + mx * costmap_.metadata.resolution;
+  wy = costmap_.metadata.origin.position.y + my * costmap_.metadata.resolution;
 }
 
 void
@@ -383,7 +375,7 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 {
   // TODO(orduno): check usage of this function, might instead be a request to
   //               world_model / map server
-  unsigned int index = my * costmap_.info.width + mx;
+  unsigned int index = my * costmap_.metadata.size_x + mx;
   costmap_.data[index] = Costmap::free_space;
 }
 
@@ -426,34 +418,14 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 }
 
 void
-DijkstraPlanner::publishPlan(const std::vector<geometry_msgs::msg::PoseStamped> & path)
-{
-  // create a message for the plan
-  nav2_msgs::msg::Path gui_path;
-  gui_path.poses.resize(path.size());
-
-  if (!path.empty()) {
-    gui_path.header.frame_id = path[0].header.frame_id;
-    gui_path.header.stamp = path[0].header.stamp;
-  }
-
-  // Extract the plan in world coordinates, we assume the path is all in the same frame
-  for (unsigned int i = 0; i < path.size(); i++) {
-    gui_path.poses[i] = path[i];
-  }
-
-  plan_publisher_->publish(gui_path);
-}
-
-void
 DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 {
   std::cout << "Costmap" << std::endl;
   std::cout << "  size:       " <<
-    costmap.info.width << "," << costmap.info.height << std::endl;
+    costmap.metadata.size_x << "," << costmap.metadata.size_x << std::endl;
   std::cout << "  origin:     " <<
-    costmap.info.origin.position.x << "," << costmap.info.origin.position.y << std::endl;
-  std::cout << "  resolution: " << costmap.info.resolution << std::endl;
+    costmap.metadata.origin.position.x << "," << costmap.metadata.origin.position.y << std::endl;
+  std::cout << "  resolution: " << costmap.metadata.resolution << std::endl;
   std::cout << "  data:       " <<
     "(" << costmap.data.size() << " cells)" << std::endl << "    ";
 
@@ -461,8 +433,8 @@ DijkstraPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
   const int valueWidth = 4;
 
   unsigned int index = 0;
-  for (unsigned int h = 0; h < costmap.info.height; ++h) {
-    for (unsigned int w = 0; w < costmap.info.height; ++w) {
+  for (unsigned int h = 0; h < costmap.metadata.size_y; ++h) {
+    for (unsigned int w = 0; w < costmap.metadata.size_x; ++w) {
       std::cout << std::left << std::setw(valueWidth) << std::setfill(separator) <<
         static_cast<unsigned int>(costmap.data[index]);
       index++;

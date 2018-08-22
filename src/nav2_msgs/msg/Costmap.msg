@@ -3,7 +3,7 @@
 std_msgs/Header header
 
 # MetaData for the map
-CostmapMetaData info
+CostmapMetaData metadata
 
 # The cost data, in row-major order, starting with (0,0).
 uint8[] data

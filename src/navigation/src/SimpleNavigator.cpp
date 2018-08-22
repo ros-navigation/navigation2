@@ -45,10 +45,10 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr /*command*/
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<ComputePathToPoseCommand>();
   // TODO(mdjeroni): get the starting pose from Localization (fake it out for now)
-  endpoints->start.pose.position.x = 1.0;
-  endpoints->start.pose.position.y = 1.0;
-  endpoints->goal.pose.position.x = 9.0;
-  endpoints->goal.pose.position.y = 9.0;
+  endpoints->start.position.x = 1.0;
+  endpoints->start.position.y = 1.0;
+  endpoints->goal.position.x = 9.0;
+  endpoints->goal.position.y = 9.0;
   endpoints->tolerance = 2.0;
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
@@ -94,9 +94,9 @@ here:
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u",
     path->poses.size());
   int index;
-  for (auto poseStamped : path->poses) {
+  for (auto pose : path->poses) {
     RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f",
-      index, poseStamped.pose.position.x, poseStamped.pose.position.y);
+      index, pose.position.x, pose.position.y);
     index++;
   }
 

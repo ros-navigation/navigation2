@@ -44,6 +44,8 @@
 
 #include <planning/Navfn.hpp>
 #include <algorithm>
+
+// TODO(orduno): Define how to pass the node handle for ROS logging
 #include "Logger.h"
 
 //

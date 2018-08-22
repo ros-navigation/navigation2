@@ -42,7 +42,7 @@ private:
   // TODO(orduno): For now, the Costmap isn't itself a node
   rclcpp::Node * node_;
 
-  std::vector<uint8_t> getTestData(const int width, const int height);
+  std::vector<uint8_t> getTestData(const int size_x, const int size_y);
 };
 
 #endif  // COSTMAP__COSTMAP_HPP_

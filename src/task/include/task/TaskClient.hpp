@@ -48,7 +48,7 @@ public:
   void executeAsync(const typename CommandMsg::SharedPtr msg)
   {
     taskSucceeded_ = false;
-    receivedNewMsg_ = false;
+    receivedResult_ = false;
     commandPub_->publish(msg);
   }
 
@@ -75,9 +75,9 @@ public:
 
     // TODO(orduno): possible race condition between receiving status message and actual data
     //               for now implemented a method using a flag, but might want to review further
-    if (taskSucceeded_ && receivedNewMsg_) {
+    if (taskSucceeded_ && receivedResult_) {
       result = result_;
-      receivedNewMsg_ = false;
+      receivedResult_ = false;
       return SUCCEEDED;
     }
 
@@ -97,7 +97,7 @@ protected:
   {
     // Save it off
     result_ = msg;
-    receivedNewMsg_ = true;
+    receivedResult_ = true;
   }
 
   // Called when the TaskServer sends it status code (success or failure)
@@ -121,7 +121,7 @@ protected:
   // A convenience variable for whether the task succeeded or not
   bool taskSucceeded_;
 
-  std::atomic<bool> receivedNewMsg_;
+  std::atomic<bool> receivedResult_;
 };
 
 #endif  // TASK__TASKCLIENT_HPP_

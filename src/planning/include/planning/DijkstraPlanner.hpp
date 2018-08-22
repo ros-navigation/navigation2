@@ -39,17 +39,17 @@ public:
 private:
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal, double tolerance,
-    std::vector<geometry_msgs::msg::PoseStamped> & plan);
+    const geometry_msgs::msg::Pose & start,
+    const geometry_msgs::msg::Pose & goal, double tolerance,
+    nav2_msgs::msg::Path & plan);
 
   // Compute the navigation function given a seed point in the world to start from
   bool computePotential(const geometry_msgs::msg::Point & world_point);
 
   // Compute a plan to a goal from a potential - must call computePotential first
   bool getPlanFromPotential(
-    const geometry_msgs::msg::PoseStamped & goal,
-    std::vector<geometry_msgs::msg::PoseStamped> & plan);
+    const geometry_msgs::msg::Pose & goal,
+    nav2_msgs::msg::Path & plan);
 
   // Compute the potential, or navigation cost, at a given point in the world
   // - must call computePotential first
@@ -62,11 +62,11 @@ private:
 
   // Compute the squared distance between two points
   inline double squared_distance(
-    const geometry_msgs::msg::PoseStamped & p1,
-    const geometry_msgs::msg::PoseStamped & p2)
+    const geometry_msgs::msg::Pose & p1,
+    const geometry_msgs::msg::Pose & p2)
   {
-    double dx = p1.pose.position.x - p2.pose.position.x;
-    double dy = p1.pose.position.y - p2.pose.position.y;
+    double dx = p1.position.x - p2.position.x;
+    double dy = p1.position.y - p2.position.y;
     return dx * dx + dy * dy;
   }
 
@@ -86,9 +86,6 @@ private:
 
   // Wait for costmap server to appear
   void waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
-
-  // Publish plan for visualization purposes
-  void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped> & path);
 
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
