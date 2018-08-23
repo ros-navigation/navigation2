@@ -33,19 +33,6 @@
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>util</build_depend>
-  
-<!--
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <depend>dynamic_reconfigure</depend>
-  <depend>nav_msgs</depend>
-  <depend>rosbag</depend>
-  <depend>roscpp</depend>
-  <depend>std_srvs</depend>
-  <depend>tf2_ros</depend>
-
-  <test_depend>map_server</test_depend>
-  <test_depend>rostest</test_depend>
--->
   <export>
     <build_type>ament_cmake</build_type>
   </export>
