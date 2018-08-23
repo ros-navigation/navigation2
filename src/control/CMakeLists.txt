@@ -14,34 +14,48 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(task REQUIRED)
 
 include_directories(
   include
-  ../task/include
-  ../robot/include
-  )
-
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+)
 
 add_executable(dwa_controller
   src/DwaController.cpp
   src/main.cpp
-  )
+)
 
-target_link_libraries(dwa_controller
-  robot
-  )
-
-ament_target_dependencies(dwa_controller 
-  rclcpp 
+ament_target_dependencies(dwa_controller
+  rclcpp
   std_msgs
   nav2_msgs
-  robot
-  )
+  task
+)
 
 install(TARGETS dwa_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_cppcheck REQUIRED)
+  find_package(ament_cmake_cpplint REQUIRED)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
+  # This forces cppcheck to consider all files in this project to be C++,
+  # including the headers which end with .h, which cppcheck would normally
+  # consider to be C instead.
+  ament_cppcheck(LANGUAGE "c++")
+  ament_cpplint()
+  ament_lint_cmake()
+  ament_uncrustify()
+endif()
+
+ament_export_include_directories(include)
 
 ament_package()
