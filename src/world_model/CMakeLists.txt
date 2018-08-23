@@ -19,21 +19,11 @@ find_package(costmap)
 
 include_directories(
   include
-  ../costmap/include
 )
-
-# TODO(orduno): CMAKE is searching /usr/bin/ld for the library
-# link_directories(${CMAKE_BINARY_DIR}/../libs)
-link_directories(~/ros2_overlay_ws/build/costmap/)
 
 add_executable(world_model
   src/WorldModel.cpp
   src/main.cpp
-)
-
-target_link_libraries(
-  world_model
-  costmap
 )
 
 ament_target_dependencies(world_model
@@ -50,5 +40,21 @@ install(TARGETS
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_cppcheck REQUIRED)
+  find_package(ament_cmake_cpplint REQUIRED)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
+  # This forces cppcheck to consider all files in this project to be C++,
+  # including the headers which end with .h, which cppcheck would normally
+  # consider to be C instead.
+  ament_cppcheck(LANGUAGE "c++")
+  ament_cpplint()
+  ament_lint_cmake()
+  ament_uncrustify()
+endif()
+
+ament_export_include_directories(include)
 
 ament_package()

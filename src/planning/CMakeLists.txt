@@ -19,19 +19,13 @@ find_package(costmap REQUIRED)
 
 include_directories(
   include
-  ../task/include
-  ../world_model/include
-  # ../util/costmap/include
-  ${costmap_INCLUDE_DIR}
-  )
-
-link_directories(${CMAKE_BINARY_DIR}/../libs)
+)
 
 add_executable(dijkstra_planner
   src/DijkstraPlanner.cpp
   src/Navfn.cpp
   src/main.cpp
-  )
+)
 
 ament_target_dependencies(dijkstra_planner
   rclcpp
@@ -39,7 +33,7 @@ ament_target_dependencies(dijkstra_planner
   nav2_msgs
   task
   costmap
-  )
+)
 
 install(TARGETS
   dijkstra_planner

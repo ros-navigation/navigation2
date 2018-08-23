@@ -27,23 +27,30 @@ ament_target_dependencies(costmap
   tf2
 )
 
-# Export library to make it available to other packages
-ament_export_dependencies(
-  nav2_msgs
-  tf2_ros
-  tf2
-)
-ament_export_include_directories(include)
-ament_export_libraries(costmap)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
 install(TARGETS
   costmap
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_cppcheck REQUIRED)
+  find_package(ament_cmake_cpplint REQUIRED)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
+  # This forces cppcheck to consider all files in this project to be C++,
+  # including the headers which end with .h, which cppcheck would normally
+  # consider to be C instead.
+  ament_cppcheck(LANGUAGE "c++")
+  ament_cpplint()
+  ament_lint_cmake()
+  ament_uncrustify()
+endif()
+
+ament_export_include_directories(include)
+ament_export_libraries(costmap)
 
 ament_package()

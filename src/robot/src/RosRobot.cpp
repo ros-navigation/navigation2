@@ -15,7 +15,7 @@
 #include <string>
 #include "robot/RosRobot.hpp"
 
-RosRobot::RosRobot(const std::string & urdf_filename)
+RosRobot::RosRobot(const std::string & /*urdf_filename*/)
 {
   // Open and parser the URDF file
 }
