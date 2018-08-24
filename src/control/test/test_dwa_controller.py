@@ -1,30 +1,51 @@
 #!/usr/bin/env python3
-import os
-import time
-import sys
-import pytest
+
+# Copyright (c) 2018 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import subprocess
 
+from nav2_msgs.msg import Path
+import pytest
 import rclpy
 from rclpy.node import Node
-from nav2_msgs.msg import Path
 from std_msgs.msg import Empty
 
+
 class DwaControllerTestNode(Node):
+
     def __init__(self):
-        super().__init__("dwa_controller_test")
-        self.path_publisher_ = self.create_publisher(Path, "DwaController_command")
-        self.result_subscription_ = self.create_subscription(Empty, "DwaController_result", self.result_callback)
+        super().__init__('dwa_controller_test')
+        self.path_publisher_ = self.create_publisher(
+            Path,
+            'DwaController_command')
+        self.result_subscription_ = self.create_subscription(
+            Empty,
+            'DwaController_result',
+            self.result_callback)
         self.result_received = False
 
     def result_callback(self, msg):
         self.result_received = True
 
-@pytest.fixture(scope="module")
+
+@pytest.fixture(scope='module')
 def plannerNode():
-    p = subprocess.Popen("ros2 run control dwa_controller", shell=True)
+    p = subprocess.Popen('ros2 run control dwa_controller', shell=True)
     yield
     p.terminate()
+
 
 @pytest.fixture()
 def testNode(plannerNode):
@@ -38,7 +59,7 @@ def testNode(plannerNode):
 
 
 def test_result_returned(testNode):
-    while(testNode.count_subscribers("DwaController_command") < 1):
+    while(testNode.count_subscribers('DwaController_command') < 1):
         rclpy.spin_once(testNode)
 
     testNode.path_publisher_.publish(Path())
