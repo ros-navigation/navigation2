@@ -54,6 +54,9 @@ if(BUILD_TESTING)
   ament_cpplint()
   ament_lint_cmake()
   ament_uncrustify()
+
+  find_package(ament_cmake_pytest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
