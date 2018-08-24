@@ -1,2 +1,4 @@
 std_msgs/Header header
-geometry_msgs/PoseStamped[] poses
+
+# An array of poses that represents a Path for a robot to follow
+geometry_msgs/Pose[] poses

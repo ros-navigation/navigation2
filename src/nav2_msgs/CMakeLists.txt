@@ -22,6 +22,9 @@ rosidl_generate_interfaces(nav2_msgs
   "msg/MissionPlan.msg"
   "msg/PathEndPoints.msg"
   "msg/Path.msg"
+  "msg/Costmap.msg"
+  "msg/CostmapMetaData.msg"
+  "srv/GetCostmap.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 

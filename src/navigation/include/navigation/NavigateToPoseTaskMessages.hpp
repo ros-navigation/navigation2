@@ -15,10 +15,10 @@
 #ifndef NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
 #define NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_
 
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/empty.hpp"
 
-using NavigateToPoseCommand = geometry_msgs::msg::PoseWithCovarianceStamped;
+using NavigateToPoseCommand = geometry_msgs::msg::PoseStamped;
 using NavigateToPoseResult = std_msgs::msg::Empty;
 
 #endif  // NAVIGATION__NAVIGATETOPOSETASKMESSAGES_HPP_

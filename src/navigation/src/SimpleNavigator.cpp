@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+// Navigation Strategy based on:
+// Brock, O. and Oussama K. (1999). High-Speed Navigation Using
+// the Global Dynamic Window Approach. IEEE.
+// https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
+
 #include <string>
 #include <memory>
 #include <exception>
@@ -22,7 +28,7 @@ SimpleNavigator::SimpleNavigator(const std::string & name)
 : NavigateToPoseTaskServer(name)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-  planner_ = std::make_unique<ComputePathToPoseTaskClient>("AStarPlanner", this);
+  planner_ = std::make_unique<ComputePathToPoseTaskClient>("DijkstraPlanner", this);
   controller_ = std::make_unique<FollowPathTaskClient>("DwaController", this);
 }
 
@@ -32,19 +38,24 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
+SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync");
 
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<ComputePathToPoseCommand>();
   // TODO(mdjeroni): get the starting pose from Localization (fake it out for now)
-  endpoints->start = command->pose.pose;
-  endpoints->goal = command->pose;
+  endpoints->start.position.x = 1.0;
+  endpoints->start.position.y = 1.0;
+  endpoints->goal.position.x = 9.0;
+  endpoints->goal.position.y = 9.0;
+  endpoints->tolerance = 2.0;
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
   auto path = std::make_shared<ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
+
+  // TODO(orduno): implement continous replanning
 
   // Loop until the subtasks are completed
   for (;; ) {
@@ -79,6 +90,16 @@ SimpleNavigator::executeAsync(const NavigateToPoseCommand::SharedPtr command)
   }
 
 here:
+
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u",
+    path->poses.size());
+  int index;
+  for (auto pose : path->poses) {
+    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f",
+      index, pose.position.x, pose.position.y);
+    index++;
+  }
+
   RCLCPP_INFO(get_logger(),
     "SimpleNavigator::executeAsync: sending the path to the controller to execute");
 
@@ -113,7 +134,7 @@ here:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
+        // RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
         break;
 
       default:

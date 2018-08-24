@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-#include "robot/RosRobot.hpp"
+#ifndef LOGGER_H_
+#define LOGGER_H_
 
-RosRobot::RosRobot(const std::string & /*urdf_filename*/)
-{
-  // Open and parser the URDF file
-}
+#include <cstdio>
 
-RosRobot::~RosRobot()
-{
-}
+// TODO(orduno): Figure out how to get a reference to the node logger
+#define ROS_ERROR(...) std::fprintf(stderr, __VA_ARGS__)
 
-void
-RosRobot::enterSafeState()
-{
-}
+#define ROS_WARN(...) std::fprintf(stderr, __VA_ARGS__)
+
+#define ROS_INFO(...) std::fprintf(stderr, __VA_ARGS__)
+
+#define ROS_DEBUG(...) std::fprintf(stderr, __VA_ARGS__)
+
+#define ROS_DEBUG_NAMED(...) std::fprintf(stderr, __VA_ARGS__)
+
+#define ROS_INFO_ONCE(...) std::fprintf(stderr, __VA_ARGS__)
+
+#endif  // LOGGER_H_

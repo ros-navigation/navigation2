@@ -48,6 +48,7 @@ public:
   void executeAsync(const typename CommandMsg::SharedPtr msg)
   {
     taskSucceeded_ = false;
+    receivedResult_ = false;
     commandPub_->publish(msg);
   }
 
@@ -60,7 +61,7 @@ public:
   }
 
   // The client can wait for a result with a timeout
-  TaskStatus waitForResult(typename ResultMsg::SharedPtr result, unsigned int milliseconds)
+  TaskStatus waitForResult(typename ResultMsg::SharedPtr & result, unsigned int milliseconds)
   {
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
@@ -72,8 +73,11 @@ public:
       return RUNNING;
     }
 
-    if (taskSucceeded_) {
+    // TODO(orduno): possible race condition between receiving status message and actual data
+    //               for now implemented a method using a flag, but might want to review further
+    if (taskSucceeded_ && receivedResult_) {
       result = result_;
+      receivedResult_ = false;
       return SUCCEEDED;
     }
 
@@ -93,6 +97,7 @@ protected:
   {
     // Save it off
     result_ = msg;
+    receivedResult_ = true;
   }
 
   // Called when the TaskServer sends it status code (success or failure)
@@ -115,6 +120,8 @@ protected:
 
   // A convenience variable for whether the task succeeded or not
   bool taskSucceeded_;
+
+  std::atomic<bool> receivedResult_;
 };
 
 #endif  // TASK__TASKCLIENT_HPP_

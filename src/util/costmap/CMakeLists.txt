@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(planning)
+project(costmap)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,39 +11,29 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(task REQUIRED)
-find_package(costmap REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
 
-include_directories(
-  include
+include_directories(include)
+
+add_library(costmap STATIC
+  src/Costmap.cpp
 )
 
-add_executable(dijkstra_planner
-  src/DijkstraPlanner.cpp
-  src/Navfn.cpp
-  src/main.cpp
-)
-
-ament_target_dependencies(dijkstra_planner
-  rclcpp
-  std_msgs
+ament_target_dependencies(costmap
   nav2_msgs
-  task
-  costmap
+  tf2_ros
+  tf2
 )
 
 install(TARGETS
-  dijkstra_planner
+  costmap
   ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
+  LIBRARY DESTINATION lib)
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include
 )
 
 if(BUILD_TESTING)
@@ -61,5 +51,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_libraries(costmap)
 
 ament_package()

@@ -20,7 +20,7 @@
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
-  
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

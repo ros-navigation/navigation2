@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(planning)
+project(world_model)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -12,39 +12,34 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(task REQUIRED)
-find_package(costmap REQUIRED)
+find_package(costmap)
 
 include_directories(
   include
 )
 
-add_executable(dijkstra_planner
-  src/DijkstraPlanner.cpp
-  src/Navfn.cpp
+add_executable(world_model
+  src/WorldModel.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(dijkstra_planner
+ament_target_dependencies(world_model
   rclcpp
   std_msgs
   nav2_msgs
-  task
+  tf2_ros
+  tf2
   costmap
 )
 
 install(TARGETS
-  dijkstra_planner
+  world_model
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-install(DIRECTORY include/
-  DESTINATION include/
-)
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_cppcheck REQUIRED)
