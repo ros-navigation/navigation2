@@ -1,4 +1,0 @@
-string layer
----
-float64[] d
-nav_msgs/MapMetaData info
