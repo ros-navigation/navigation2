@@ -4,15 +4,12 @@
     <name>map_server</name>
     <version>1.15.2</version>
     <description>
-	Refactored map server for ROS2 Navigation
+	    Refactored map server for ROS2 Navigation
     </description>
     <author>Brian Gerkey, Tony Pratkanis</author>
-    <author>contradict@gmail.com</author>
-    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-    <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
-    <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
-    <url>http://wiki.ros.org/map_server</url>
-    <license>BSD</license>
+    <author>email="oregon.robotics.team@intel.com">Oregon Robotics Team</author>
+    <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+    <license>Apache License 2.0</license>
 
 	<buildtool_depend>ament_cmake</buildtool_depend>
 
