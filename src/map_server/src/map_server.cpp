@@ -5,52 +5,26 @@
 
 #define USAGE "\nUSAGE: map_server <map.yaml> <map_type>\n" \
               "  map.yaml: map description file\n" \
-              "  map_type: the type of map to load (i.e. occupancy)"
+              "  map_type: the type of map to load (i.e. occupancy)\n"
 
 
 MappingServerROS::MappingServerROS(const std::string& fname, const std::string& map_type)
 {
     n = rclcpp::Node::make_shared("map_server");
 
-    
-    // Load Map from File
     try
     {
         m = new MapLoader(); 
-
-        // Initialize from derived constructor  //
         
-        RCLCPP_INFO(n->get_logger(),"Create Map Object");
+        RCLCPP_INFO(n->get_logger(),"Loading Map of Type '%s'", map_type.c_str());
         MyMap = m->createMap(map_type, n, fname); 
 
-  
-        //Possible node initialization:
-        //n = rclcpp::Node::make_shared<MyMap>("map_server");
-
-        // Initialize from interface //
-
-/*
-        RCLCPP_INFO(n->get_logger(),"Create Map Object");
-        MyMap = m->createMap(map_type); 
-        RCLCPP_INFO(n->get_logger(),"Load map info");
-        MyMap->loadMapInfoFromFile(fname,n);
-        std::string temp = MyMap->mapfname;
-        RCLCPP_INFO(n->get_logger(),"Load Map: %s", temp.c_str());
-        MyMap->loadMapFromFile(MyMap->mapfname);
-        RCLCPP_INFO(n->get_logger(),"Set up Service");
-        MyMap->connectROS(n); 
-        MyMap->setMap();
-        RCLCPP_INFO(n->get_logger(),"Set up Publisher");      
-        MyMap->publishMap();
-        RCLCPP_INFO(n->get_logger(),"Success");
-        
-*/
         rclcpp::spin(n);
     
     }
     catch (std::runtime_error e)
     {
-        RCLCPP_ERROR(n->get_logger(),"Cannot create map");
+        RCLCPP_ERROR(n->get_logger(),"Cannot load map");
         exit(-1); 
     }
    
@@ -64,6 +38,7 @@ int main(int argc, char **argv)
 
   if(argc != 3 && argc != 2)
   {
+    fprintf(stderr,"[ERROR] [map_server]: %s", USAGE);
     exit(-1);
   }
 
@@ -77,6 +52,8 @@ int main(int argc, char **argv)
   }
   catch(std::runtime_error& e)
   {
+
+    fprintf(stderr,"[ERROR] [map_server]: map_server exception: %s", e.what());
     return -1;
   }
 

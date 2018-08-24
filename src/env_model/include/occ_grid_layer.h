@@ -90,7 +90,10 @@ struct MyData : MyLayer{
 
     // Get Data
 
+    //grab single value
     float get_value(int index)  {return (float) data_[index];} 
+
+    //grab all values in layer
 
     float* get_data()
     {
@@ -104,7 +107,7 @@ struct MyData : MyLayer{
         return d;
     
     }
-
+    //grab multipe values by indices 
     float* get_data(std::vector<int> index)
     {
         float * d;

@@ -1,22 +1,15 @@
-#include "map_server/map_reps/occupancy_grid.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
 #include <fstream>
-//#include "nav_msgs/MapMetaData.h"
-//#include "nav_msgs/GetMap.h"
-
-#include "nav_msgs/srv/get_map.hpp"
-#include "nav_msgs/msg/map_meta_data.hpp"
-
-
-#include "yaml-cpp/yaml.h"
-//#include "ros/ros.h"
-//#include "ros/console.h"
-#include "rclcpp/rclcpp.hpp"
-
 #include <cstring>
 #include <stdexcept>
+#include "yaml-cpp/yaml.h"
+
+#include "rclcpp/rclcpp.hpp"
+#include "map_server/map_reps/occupancy_grid.h"
+#include "nav_msgs/srv/get_map.hpp"
+#include "nav_msgs/msg/map_meta_data.hpp"
 
 // We use SDL_image to load the image from disk
 #include <SDL/SDL_image.h>
@@ -24,7 +17,6 @@
 // Use Bullet's Quaternion object to create one from Euler angles
 #include <LinearMath/btQuaternion.h>
 
-using std::placeholders::_1;
 
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
@@ -42,13 +34,14 @@ void operator >> (const YAML::Node& node, T& i)
 #endif
 
 
-void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedPtr n)
+// Interface // 
+
+void OccGridLoader::loadMapInfoFromFile(std::string fname)
 {   
 
     std::ifstream fin(fname.c_str());
     if (fin.fail()) {
-        RCLCPP_ERROR(n->get_logger(),"Map_server could not open %s.", fname.c_str());
-
+        fprintf(stderr,"[ERROR] [map_server] Map_server could not open %s.\n", fname.c_str());
         exit(-1);
     }
 
@@ -66,7 +59,7 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
         doc["resolution"] >> res;
 
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain a resolution tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain a resolution tag or it is invalid.\n");
 
         exit(-1);
     }
@@ -75,21 +68,21 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
     try {
         doc["negate"] >> negate;
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain a negate tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain a negate tag or it is invalid.\n");
 
         exit(-1);
     }
     try {
         doc["occupied_thresh"] >> occ_th;
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain an occupied_thresh tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain an occupied_thresh tag or it is invalid.\n");
 
         exit(-1);
     }
     try {
         doc["free_thresh"] >> free_th;
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain a free_thresh tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain a free_thresh tag or it is invalid.\n");
 
         exit(-1);
     }
@@ -104,13 +97,12 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
         else if(modeS=="raw")
         mode = RAW;
         else{
-        RCLCPP_ERROR(n->get_logger(),"Invalid mode tag \"%s\".", modeS.c_str());
+        fprintf(stderr,"Invalid mode tag \"%s\".\n", modeS.c_str());
 
         exit(-1);
         }
     } catch (YAML::Exception) {
-        RCLCPP_DEBUG(n->get_logger(),"The map does not contain a mode tag or it is invalid... assuming Trinary");
-
+        //fprintf(stdout,"[DEBUG] [map_server] The map does not contain a mode tag or it is invalid... assuming Trinary\n");
         mode = TRINARY;
     }
     try {
@@ -118,7 +110,7 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
         doc["origin"][1] >> origin[1];
         doc["origin"][2] >> origin[2];
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain an origin tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain an origin tag or it is invalid.\n");
 
         exit(-1);
     }
@@ -127,7 +119,7 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
         // TODO: make this path-handling more robust
         if(mapfname.size() == 0)
         {
-        RCLCPP_ERROR(n->get_logger(),"The image tag cannot be an empty string.");
+        fprintf(stderr,"[ERROR] [map_server]: The image tag cannot be an empty string.\n");
 
         exit(-1);
         }
@@ -139,13 +131,12 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname, rclcpp::Node::SharedP
         free(fname_copy);
         }
     } catch (YAML::InvalidScalar) {
-        RCLCPP_ERROR(n->get_logger(),"The map does not contain an image tag or it is invalid.");
+        fprintf(stderr,"[ERROR] [map_server]: The map does not contain an image tag or it is invalid.\n");
 
         exit(-1);
     }
     
 }
-
 
 void OccGridLoader::loadMapFromFile(std::string mapfname)
 {
@@ -168,28 +159,27 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
   {
     std::string errmsg = std::string("failed to open image file \"") +
             std::string(name) + std::string("\": ") + IMG_GetError();
-    //RCLCPP_ERROR(n->get_logger(),"%s", errmsg.c_str());
+    fprintf(stderr,"[ERROR] [map_server] %s\n", errmsg.c_str());
 
     throw std::runtime_error(errmsg);
   }
- // ROS_INFO("Still loading...");
   // Copy the image data into the map structure
-  map_msg.info.width = img->w;
-  map_msg.info.height = img->h;
-  map_msg.info.resolution = res;
-  map_msg.info.origin.position.x = *(origin);
-  map_msg.info.origin.position.y = *(origin+1);
-  map_msg.info.origin.position.z = 0.0;
+  map_msg_.info.width = img->w;
+  map_msg_.info.height = img->h;
+  map_msg_.info.resolution = res;
+  map_msg_.info.origin.position.x = *(origin);
+  map_msg_.info.origin.position.y = *(origin+1);
+  map_msg_.info.origin.position.z = 0.0;
   btQuaternion q;
   // setEulerZYX(yaw, pitch, roll)
   q.setEulerZYX(*(origin+2), 0, 0);
-  map_msg.info.origin.orientation.x = q.x();
-  map_msg.info.origin.orientation.y = q.y();
-  map_msg.info.origin.orientation.z = q.z();
-  map_msg.info.origin.orientation.w = q.w();
+  map_msg_.info.origin.orientation.x = q.x();
+  map_msg_.info.origin.orientation.y = q.y();
+  map_msg_.info.origin.orientation.z = q.z();
+  map_msg_.info.origin.orientation.w = q.w();
 
   // Allocate space to hold the data
-  map_msg.data.resize(map_msg.info.width * map_msg.info.height);
+  map_msg_.data.resize(map_msg_.info.width * map_msg_.info.height);
 
   // Get values that we'll need to iterate through the pixels
   rowstride = img->pitch;
@@ -204,9 +194,9 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
 
   // Copy pixel data into the map structure
   pixels = (unsigned char*)(img->pixels);
-  for(j = 0; j < map_msg.info.height; j++)
+  for(j = 0; j < map_msg_.info.height; j++)
   {
-    for (i = 0; i < map_msg.info.width; i++)
+    for (i = 0; i < map_msg_.info.width; i++)
     {
       // Compute mean of RGB for this pixel
       p = pixels + j*rowstride + i*n_channels;
@@ -225,7 +215,7 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
 
       if(mode==RAW){
           value = color_avg;
-          map_msg.data[MAP_IDX(map_msg.info.width,i,map_msg.info.height - j - 1)] = value;
+          map_msg_.data[MAP_IDX(map_msg_.info.width,i,map_msg_.info.height - j - 1)] = value;
           continue;
       }
 
@@ -247,7 +237,7 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
         value = 99 * ratio;
       }
 
-      map_msg.data[MAP_IDX(map_msg.info.width,i,map_msg.info.height - j - 1)] = value;
+      map_msg_.data[MAP_IDX(map_msg_.info.width,i,map_msg_.info.height - j - 1)] = value;
     }
   }
     
@@ -256,27 +246,13 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
 
 }
 
-
-// Newer Interface // 
-
-
-
-
-OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr n, std::string filename)
+void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
 {
+    // Create a publisher
 
-    // Set up //
-    RCLCPP_INFO(n->get_logger(),"Load map info");
-    loadMapInfoFromFile(filename,n);
-
-    std::string temp = mapfname;
-    RCLCPP_INFO(n->get_logger(),"Load Map: %s", temp.c_str());
-    loadMapFromFile(mapfname);
-
-    RCLCPP_INFO(n->get_logger(),"Set up Service");
-    setOccResponse(map_msg);   
-
-
+    occ_pub_ = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occmap", rmw_qos_profile_default);
+    
+    // Create a service callback handle
     auto handle_occ_callback = [this](
         const std::shared_ptr<rmw_request_id_t> request_header,
         const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
@@ -285,28 +261,43 @@ OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr n, std::string filename)
         OccMapCallback(request_header, request, response);
     };
 
-    occ_service = n->create_service<nav_msgs::srv::GetMap>("static_occ_grid",handle_occ_callback);
+    // Create a service 
+    occ_service_ = n->create_service<nav_msgs::srv::GetMap>("static_occ_grid",handle_occ_callback);
+}
 
-    occmap_pub = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occmap", rmw_qos_profile_default);
+void OccGridLoader::setMap()
+{
+    occ_resp_.map = map_msg_;
+}
+
+void OccGridLoader::publishMap()
+{
+    occ_pub_->publish(map_msg_);
+}
+
+// OccGridLoader specific //
+
+OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr n, std::string filename)
+{
+    // Set up //
+
+    RCLCPP_INFO(n->get_logger(),"Load map info");
+    loadMapInfoFromFile(filename);
+
+    RCLCPP_INFO(n->get_logger(),"Load Map: %s", mapfname.c_str());
+    loadMapFromFile(mapfname);
+
+    connectROS(n);
+
+    RCLCPP_INFO(n->get_logger(),"Set up Service");
+    setMap();
 
     RCLCPP_INFO(n->get_logger(),"Set up Publisher");
-    publishOccMap(map_msg);
+    publishMap();
+
     RCLCPP_INFO(n->get_logger(),"Success!");
 
 }
-
-void OccGridLoader::publishOccMap(nav_msgs::msg::OccupancyGrid map)
-{
-
-    occmap_pub->publish(map);
-
-}
-
-void OccGridLoader::setOccResponse(nav_msgs::msg::OccupancyGrid map)
-{
-    occmap_resp_.map = map;
-}
-
 
 void OccGridLoader::OccMapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -315,25 +306,6 @@ void OccGridLoader::OccMapCallback(
 {
     (void)request_header;
     (void)req;
-    res->map = occmap_resp_.map;
-
-}
-
-
-void OccGridLoader::createROSInterface(rclcpp::Node::SharedPtr n)
-{
-    occmap_pub = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occmap", rmw_qos_profile_default);
-    
-    auto handle_occ_callback = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
-        std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void
-    {
-        OccMapCallback(request_header, request, response);
-    };
-
-
-    occ_service = n->create_service<nav_msgs::srv::GetMap>("static_occ_grid",handle_occ_callback);
-
+    res->map = occ_resp_.map;
 
 }

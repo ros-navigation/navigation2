@@ -1,7 +1,6 @@
 #include "map_server/map_reps/gridmap.h"
 
 
-
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
 #ifdef HAVE_YAMLCPP_GT_0_5_0

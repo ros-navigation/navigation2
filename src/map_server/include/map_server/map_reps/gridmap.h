@@ -1,6 +1,10 @@
 #ifndef MAP_SERVER_MAP_REPS_GRIDMAP_LOADER_H
 #define MAP_SERVER_MAP_REPS_GRIDMAP_LOADER_H
 
+
+
+// TODO: Port grid_map to ROS2 //
+
 #include "map_server/base_map_loader.h"
 #include <grid_map_msgs/GridMap.h>
 #include <grid_map_ros/grid_map_ros.hpp>
@@ -23,8 +27,6 @@ class GridMapLoader: public BaseMapLoader
     public:
         GridMap gridMap;
         grid_map_msgs::GridMap map_msg;
-
-        //Map<grid_map_msgs::GridMap> map_msg;
 
         cv::Mat MapImage;
         

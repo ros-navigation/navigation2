@@ -4,10 +4,6 @@
 // Add headers for any used map packages 
 
 #include "map_server/map_reps/occupancy_grid.h"
-
-
-
-
 //#include "map_server/map_reps/gridmap.h"
 
 #endif
