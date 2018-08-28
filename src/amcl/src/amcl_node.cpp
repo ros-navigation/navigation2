@@ -221,8 +221,9 @@ AmclNode::AmclNode()
 
   
   custom_qos_profile.depth = 100;
-  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this, scan_topic_, custom_qos_profile);
-  #if 0
+  //laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this, scan_topic_, custom_qos_profile);
+  //Disabling laser_scan_filter
+  /*
   laser_scan_filter_ = 
           new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_,
                                                              *tf_,
@@ -231,9 +232,11 @@ AmclNode::AmclNode()
                                                              nh_);
   laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
-#endif
+  */
+  laser_scan_filter_ = this->create_subscription<sensor_msgs::msg::LaserScan>(scan_topic_,
+                       std::bind(&AmclNode::laserReceived, this, std::placeholders::_1), custom_qos_profile);
 
-initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+  initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
   "initialpose",
   std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
@@ -403,7 +406,9 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   odom_frame_id_ = strutils::stripLeadingSlash(config.odom_frame_id);
   base_frame_id_ = strutils::stripLeadingSlash(config.base_frame_id);
   global_frame_id_ = strutils::stripLeadingSlash(config.global_frame_id);
-
+  
+  //Disabling laser_scan_filter
+  /*
   delete laser_scan_filter_;
   laser_scan_filter_ = 
           new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_,
@@ -413,7 +418,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
                                                              nh_);
   laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
-
+  */
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
 }
 #endif
@@ -477,7 +482,8 @@ void AmclNode::runFromBag(const std::string &/*in_bag_fn*/)
     if (base_scan != NULL)
     {
       laser_pub.publish(msg);
-      laser_scan_filter_->add(base_scan);
+      //Disabling laser_scan_filter
+      //laser_scan_filter_->add(base_scan);
       if (bag_scan_period_ > ros::WallDuration(0))
       {
         bag_scan_period_.sleep();
@@ -897,7 +903,7 @@ AmclNode::setMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
 }
 
 void
-AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
   std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
   rclcpp::Clock ros_clock(RCL_ROS_TIME);

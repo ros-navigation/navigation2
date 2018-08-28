@@ -105,7 +105,7 @@ private:
                       const std::shared_ptr<nav_msgs::srv::SetMap::Request> req,
                       std::shared_ptr<nav_msgs::srv::SetMap::Response> res);
 
-  void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
+  void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
   void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
@@ -176,8 +176,9 @@ private:
   double resolution;
 
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> *laser_scan_sub_;
-// 2. Message Filters
-  //tf2_ros::MessageFilter<sensor_msgs::LaserScan> *laser_scan_filter_;
+  //Disabling MessageFilter Subscriber and creating a regular sub without filtering
+  //tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
 
   std::vector<amcl::AMCLLaser *> lasers_;
   std::vector<bool> lasers_update_;
