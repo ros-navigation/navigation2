@@ -15,13 +15,13 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "bt_navigator/BTNavigator.hpp"
+#include "bt_navigator/BtNavigator.hpp"
 #include "nav2_robot/RosRobot.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<bt_navigator::BTNavigator>("BTNavigator"));
+  rclcpp::spin(std::make_shared<bt_navigator::BtNavigator>("BtNavigator"));
   rclcpp::shutdown();
 
   return 0;

@@ -24,12 +24,12 @@
 namespace bt_navigator
 {
 
-class BTNavigator : public nav2_tasks::NavigateToPoseTaskServer
+class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
-  explicit BTNavigator(const std::string & name);
-  BTNavigator() = delete;
-  ~BTNavigator();
+  explicit BtNavigator(const std::string & name);
+  BtNavigator() = delete;
+  ~BtNavigator();
 
   nav2_tasks::TaskStatus executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 

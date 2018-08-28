@@ -16,7 +16,7 @@
 #include <memory>
 #include <exception>
 #include <chrono>
-#include "bt_navigator/BTNavigator.hpp"
+#include "bt_navigator/BtNavigator.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -24,23 +24,23 @@ using nav2_tasks::TaskStatus;
 namespace bt_navigator
 {
 
-BTNavigator::BTNavigator(const std::string & name)
+BtNavigator::BtNavigator(const std::string & name)
 : nav2_tasks::NavigateToPoseTaskServer(name)
 {
-  RCLCPP_INFO(get_logger(), "BTNavigator::BTNavigator");
+  RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
   planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>("AStarPlanner", this);
   controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
 }
 
-BTNavigator::~BTNavigator()
+BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "BTNavigator::~BTNavigator");
+  RCLCPP_INFO(get_logger(), "BtNavigator::~BtNavigator");
 }
 
 TaskStatus
-BTNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
+BtNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync");
+  RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync");
 
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
@@ -48,7 +48,7 @@ BTNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr com
   endpoints->start = command->pose;
   endpoints->goal = command->pose;
 
-  RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: getting the path from the planner");
+  RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
 
@@ -57,7 +57,7 @@ BTNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr com
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: task has been canceled");
       planner_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -68,25 +68,25 @@ BTNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr com
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: planning task completed");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: planning task completed");
         goto here;
 
       case TaskStatus::FAILED:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: planning task still running");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: planning task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: invalid status value");
-        throw std::logic_error("BTNavigator::executeAsync: invalid status value");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: invalid status value");
+        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
     }
   }
 
 here:
   RCLCPP_INFO(get_logger(),
-    "BTNavigator::executeAsync: sending the path to the controller to execute");
+    "BtNavigator::executeAsync: sending the path to the controller to execute");
 
   controller_->executeAsync(path);
 
@@ -95,7 +95,7 @@ here:
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: task has been canceled");
       controller_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -108,7 +108,7 @@ here:
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: control task completed");
+          RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: control task completed");
           nav2_tasks::NavigateToPoseResult navigationResult;
           setResult(navigationResult);
 
@@ -119,12 +119,12 @@ here:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: control task still running");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: control task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "BTNavigator::executeAsync: invalid status value");
-        throw std::logic_error("BTNavigator::executeAsync: invalid status value");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: invalid status value");
+        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
     }
   }
 }

@@ -20,7 +20,7 @@ include_directories(
 )
 
 add_executable(bt_navigator
-  src/BTNavigator.cpp
+  src/BtNavigator.cpp
   src/main.cpp
 )
 
