@@ -12,16 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#include <string>
+#include "nav2_robot/RosRobot.hpp"
 
-int main(int argc, char ** argv)
+namespace nav2_robot
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
+RosRobot::RosRobot(const std::string & /*urdf_filename*/)
+{
+  // Open and parser the URDF file
 }
+
+RosRobot::~RosRobot()
+{
+}
+
+void
+RosRobot::enterSafeState()
+{
+}
+
+}  // namespace nav2_robot

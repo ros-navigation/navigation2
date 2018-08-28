@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(nav2_robot)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,29 +11,23 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
 
 include_directories(
   include
 )
 
-add_executable(mission_executor
-  src/main.cpp
-  src/MissionExecutor.cpp
+add_library(nav2_robot STATIC
+  src/RosRobot.cpp
 )
 
-ament_target_dependencies(mission_executor
-  rclcpp
-  std_msgs
-  nav2_tasks
-)
-
-install(TARGETS mission_executor
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)
@@ -49,5 +43,8 @@ if(BUILD_TESTING)
   ament_lint_cmake()
   ament_uncrustify()
 endif()
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
 
 ament_package()

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(simple_navigator)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -19,21 +19,25 @@ include_directories(
   include
 )
 
-add_executable(mission_executor
+add_executable(simple_navigator
+  src/SimpleNavigator.cpp
   src/main.cpp
-  src/MissionExecutor.cpp
 )
 
-ament_target_dependencies(mission_executor
+ament_target_dependencies(simple_navigator
   rclcpp
   std_msgs
   nav2_tasks
 )
 
-install(TARGETS mission_executor
+install(TARGETS simple_navigator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)
@@ -49,5 +53,7 @@ if(BUILD_TESTING)
   ament_lint_cmake()
   ament_uncrustify()
 endif()
+
+ament_export_include_directories(include)
 
 ament_package()

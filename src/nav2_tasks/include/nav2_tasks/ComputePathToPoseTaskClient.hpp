@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <exception>
-#include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKCLIENT_HPP_
+#define NAV2_TASKS__COMPUTEPATHTOPOSETASKCLIENT_HPP_
 
-int main(int argc, char ** argv)
+#include "nav2_tasks/TaskClient.hpp"
+#include "nav2_tasks/ComputePathToPoseTaskMessages.hpp"
+
+namespace nav2_tasks
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<mission_execution::MissionExecutor>("MissionExecutor"));
-  rclcpp::shutdown();
 
-  return 0;
-}
+using ComputePathToPoseTaskClient =
+    TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
+
+}  // namespace nav2_tasks
+
+#endif  // NAV2_TASKS__COMPUTEPATHTOPOSETASKCLIENT_HPP_

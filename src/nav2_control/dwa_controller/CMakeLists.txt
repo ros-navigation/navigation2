@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mission_execution)
+project(dwa_controller)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -14,26 +14,32 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 include_directories(
   include
 )
 
-add_executable(mission_executor
+add_executable(dwa_controller
+  src/DwaController.cpp
   src/main.cpp
-  src/MissionExecutor.cpp
 )
 
-ament_target_dependencies(mission_executor
+ament_target_dependencies(dwa_controller
   rclcpp
   std_msgs
   nav2_tasks
+  nav2_robot
 )
 
-install(TARGETS mission_executor
+install(TARGETS dwa_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)
@@ -49,5 +55,7 @@ if(BUILD_TESTING)
   ament_lint_cmake()
   ament_uncrustify()
 endif()
+
+ament_export_include_directories(include)
 
 ament_package()
