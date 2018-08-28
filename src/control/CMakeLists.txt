@@ -15,9 +15,18 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(task REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 include_directories(
   include
+)
+
+set(PROJECT_DEPENDENCIES
+rclcpp
+std_msgs
+nav2_msgs
+task
+geometry_msgs
 )
 
 add_executable(dwa_controller
@@ -26,10 +35,7 @@ add_executable(dwa_controller
 )
 
 ament_target_dependencies(dwa_controller
-  rclcpp
-  std_msgs
-  nav2_msgs
-  task
+  ${PROJECT_DEPENDENCIES}
 )
 
 install(TARGETS dwa_controller
@@ -54,6 +60,10 @@ if(BUILD_TESTING)
   ament_cpplint()
   ament_lint_cmake()
   ament_uncrustify()
+
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
