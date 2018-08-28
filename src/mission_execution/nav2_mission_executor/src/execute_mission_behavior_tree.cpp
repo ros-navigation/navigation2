@@ -35,7 +35,8 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
     navigateToPoseCommand_, navigateToPoseResult_);
 
   // Add the nodes to the tree, creating the tree structure
-  root_->AddChild(navigateToPoseAction_);
+  root_->AddChild(navigateToPoseAction1_);
+  root_->AddChild(navigateToPoseAction2_);
 }
 
 nav2_tasks::TaskStatus

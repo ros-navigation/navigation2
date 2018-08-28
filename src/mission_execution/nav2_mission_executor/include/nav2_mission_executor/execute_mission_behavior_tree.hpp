@@ -40,7 +40,8 @@ private:
   BT::SequenceNodeWithMemory * root_;
 
   // The actions that will be composed into a tree
-  nav2_tasks::NavigateToPoseAction * navigateToPoseAction_;
+  nav2_tasks::NavigateToPoseAction * navigateToPoseAction1_;
+  nav2_tasks::NavigateToPoseAction * navigateToPoseAction2_;
 
   // The commands and results for each action
   nav2_tasks::NavigateToPoseCommand::SharedPtr navigateToPoseCommand_;
