@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import signal
 import subprocess
+import sys
 
 from nav2_msgs.msg import Path
 import pytest
@@ -42,28 +45,27 @@ class DwaControllerTestNode(Node):
 
 @pytest.fixture(scope='module')
 def plannerNode():
-    p = subprocess.Popen('ros2 run control dwa_controller', shell=True)
+    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'dwa_controller_node.launch.py')
+    p = subprocess.Popen('ros2 launch ' + launchFile, shell=True, preexec_fn=os.setsid)
     yield
-    p.terminate()
+    os.killpg(p.pid, signal.SIGINT)
 
 
 @pytest.fixture()
 def testNode(plannerNode):
     rclpy.init()
     node = DwaControllerTestNode()
-
     yield node
-
     node.destroy_node()
     rclpy.shutdown()
 
 
 def test_result_returned(testNode):
     while(testNode.count_subscribers('DwaController_command') < 1):
-        rclpy.spin_once(testNode)
+        rclpy.spin_once(testNode, timeout_sec=0.1)
 
     testNode.path_publisher_.publish(Path())
 
     while(not testNode.result_received):
-        rclpy.spin_once(testNode)
+        rclpy.spin_once(testNode, timeout_sec=0.1)
     assert(True)
