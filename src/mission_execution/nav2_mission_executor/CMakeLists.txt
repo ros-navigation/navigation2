@@ -18,11 +18,17 @@ find_package(nav2_tasks REQUIRED)
 
 include_directories(
   include
+  /usr/local/include/BTpp
 )
 
 add_executable(mission_executor
   src/main.cpp
   src/mission_executor.cpp
+  src/execute_mission_behavior_tree.cpp
+)
+
+target_link_libraries(mission_executor
+  /usr/local/BTpp/lib/libBTppLib.a
 )
 
 ament_target_dependencies(mission_executor

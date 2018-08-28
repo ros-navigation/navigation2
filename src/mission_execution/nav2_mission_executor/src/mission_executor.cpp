@@ -16,23 +16,17 @@
 #include <memory>
 #include <exception>
 #include "nav2_mission_executor/mission_executor.hpp"
+#include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
 
-using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
-namespace nav2_mission_execution
+namespace nav2_mission_executor
 {
 
 MissionExecutor::MissionExecutor()
 : nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
-  navTaskClient_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(this);
-
-  if (!navTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "MissionExecutor: NavigateToPoseTaskServer not running");
-    throw std::runtime_error("MissionExecutor: NavigateToPoseTaskServer not running");
-  }
 }
 
 MissionExecutor::~MissionExecutor()
@@ -49,50 +43,25 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 
+  // Create the behavior tree for this mission
+  ExecuteMissionBehaviorTree bt(this);
+
+  // Compose the NavigateToPose message for the Navigation module
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan
-  auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  navTaskClient_->sendCommand(goalPose);
+  auto navigateToPoseCommand = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
 
-  auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
+  navigateToPoseCommand->pose.position.x = 0;
+  navigateToPoseCommand->pose.position.y = 1;
+  navigateToPoseCommand->pose.position.z = 2;
+  navigateToPoseCommand->pose.orientation.x = 0;
+  navigateToPoseCommand->pose.orientation.y = 1;
+  navigateToPoseCommand->pose.orientation.z = 2;
+  navigateToPoseCommand->pose.orientation.w = 3;
 
-  // Loop until navigation reaches a terminal state
-  for (;; ) {
-    // Check to see if this task (mission execution) has been canceled. If so,
-    // cancel the navigation task first and then cancel this task
-    if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "MissionExecutor::execute: task has been canceled");
-      navTaskClient_->cancel();
-      setCanceled();
-      return TaskStatus::CANCELED;
-    }
+  TaskStatus result = bt.run(navigateToPoseCommand);
+  RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: completed: %d", result);
 
-    // This task hasn't been canceled, so see if the navigation task has finished
-    TaskStatus status = navTaskClient_->waitForResult(navResult, 100ms);
-
-    switch (status) {
-      case TaskStatus::SUCCEEDED:
-        {
-          RCLCPP_INFO(get_logger(), "MissionExecutor::execute: navigation task completed");
-
-          // No data to return from this task, just an empty result message
-          nav2_tasks::ExecuteMissionResult result;
-          setResult(result);
-
-          return TaskStatus::SUCCEEDED;
-        }
-
-      case TaskStatus::FAILED:
-        return TaskStatus::FAILED;
-
-      case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "MissionExecutor::execute: navigation task still running");
-        break;
-
-      default:
-        RCLCPP_ERROR(get_logger(), "MissionExecutor::execute: invalid status value");
-        throw std::logic_error("MissionExecutor::execute: invalid status value");
-    }
-  }
+  return result;
 }
 
-}  // namespace nav2_mission_execution
+}  // namespace nav2_mission_executor

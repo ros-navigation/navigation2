@@ -18,11 +18,17 @@ find_package(nav2_planning_msgs REQUIRED)
 
 include_directories(
   include
+  /usr/local/include/BTpp
 )
 
 add_executable(bt_navigator
   src/bt_navigator.cpp
+  src/navigate_to_pose_behavior_tree.cpp
   src/main.cpp
+)
+
+target_link_libraries(bt_navigator
+  /usr/local/BTpp/lib/libBTppLib.a
 )
 
 ament_target_dependencies(bt_navigator

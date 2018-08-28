@@ -12,27 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
-#define NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
+#ifndef NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
+#define NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
 
-#include <string>
-#include <memory>
-#include "nav2_tasks/execute_mission_task.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
 
-namespace nav2_mission_executor
+namespace nav2_tasks
 {
 
-class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
-{
-public:
-  MissionExecutor();
-  ~MissionExecutor();
+using ComputePathToPoseAction =
+    BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
-  nav2_tasks::TaskStatus execute(
-    const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
-};
+}  // namespace nav2_tasks
 
-}  // namespace nav2_mission_executor
-
-#endif  // NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
+#endif  // NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
