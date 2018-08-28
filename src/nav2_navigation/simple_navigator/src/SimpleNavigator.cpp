@@ -24,6 +24,7 @@
 #include <chrono>
 #include "simple_navigator/SimpleNavigator.hpp"
 
+using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
 namespace simple_navigator
@@ -74,7 +75,7 @@ SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr
     }
 
     // Check if the planning task has completed
-    TaskStatus status = planner_->waitForResult(path, 100);
+    TaskStatus status = planner_->waitForResult(path, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -123,7 +124,7 @@ here:
 
     // Check if the control task has completed
     auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controller_->waitForResult(controlResult, 10);
+    TaskStatus status = controller_->waitForResult(controlResult, 10ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:

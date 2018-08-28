@@ -64,13 +64,15 @@ public:
   }
 
   // The client can wait for a result with a timeout
-  TaskStatus waitForResult(typename ResultMsg::SharedPtr & result, unsigned int milliseconds)
+  TaskStatus waitForResult(
+    typename ResultMsg::SharedPtr & result,
+    std::chrono::milliseconds duration)
   {
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
 
     std::cv_status timeoutStatus =
-      cv_.wait_for(lock, std::chrono::milliseconds(milliseconds));
+      cv_.wait_for(lock, std::chrono::milliseconds(duration));
 
     if (timeoutStatus == std::cv_status::timeout) {
       return RUNNING;

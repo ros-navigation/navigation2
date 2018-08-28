@@ -17,6 +17,7 @@
 #include <exception>
 #include "mission_execution/MissionExecutor.hpp"
 
+using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
 namespace mission_execution
@@ -60,7 +61,7 @@ MissionExecutor::executeAsync(const nav2_tasks::ExecuteMissionCommand::SharedPtr
 
     // This task hasn't been canceled, so see if the navigation task has finished
     auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
-    TaskStatus status = navigationTask_->waitForResult(navResult, 100);
+    TaskStatus status = navigationTask_->waitForResult(navResult, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:

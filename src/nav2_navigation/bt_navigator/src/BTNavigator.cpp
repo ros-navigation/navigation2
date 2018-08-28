@@ -18,6 +18,7 @@
 #include <chrono>
 #include "bt_navigator/BTNavigator.hpp"
 
+using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
 namespace bt_navigator
@@ -63,7 +64,7 @@ BTNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr com
     }
 
     // Check if the planning task has completed
-    TaskStatus status = planner_->waitForResult(path, 100);
+    TaskStatus status = planner_->waitForResult(path, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -102,7 +103,7 @@ here:
 
     // Check if the control task has completed
     auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controller_->waitForResult(controlResult, 10);
+    TaskStatus status = controller_->waitForResult(controlResult, 10ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
