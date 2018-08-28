@@ -17,7 +17,7 @@
 
 #include <string>
 #include <chrono>
-#include "action_node.h"
+#include "BTpp/action_node.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/logger.hpp"
 #include "nav2_tasks/task_client.hpp"
@@ -57,7 +57,8 @@ public:
     // Loop until the subtasks are completed
     while (get_status() != BT::HALTED) {
       // Check if the planning task has completed
-      nav2_tasks::TaskStatus status = taskClient_.waitForResult(result_, std::chrono::milliseconds(100));
+      nav2_tasks::TaskStatus status =
+        taskClient_.waitForResult(result_, std::chrono::milliseconds(100));
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:

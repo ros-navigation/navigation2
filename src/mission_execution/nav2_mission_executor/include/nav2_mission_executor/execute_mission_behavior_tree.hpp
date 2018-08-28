@@ -48,5 +48,3 @@ private:
 };
 
 }  // namespace nav2_mission_executor
-
-#endif  // NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_

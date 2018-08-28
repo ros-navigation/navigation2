@@ -52,7 +52,7 @@ NavigateToPoseBehaviorTree::run(nav2_tasks::NavigateToPoseCommand::SharedPtr com
 
   // Compose the PathEndPoints message for the Navigation module
   // TODO(mjeronimo): starting pose needs to come from localization
-  computePathToPoseCommand_->start = command->pose; 
+  computePathToPoseCommand_->start = command->pose;
   computePathToPoseCommand_->goal = command->pose;
 
   BT::ReturnStatus result = root_->get_status();

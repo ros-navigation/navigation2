@@ -42,7 +42,7 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   TaskStatus result = bt.run(command);
   RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: completed: %d", result);
-	    
+
   return result;
 }
 
