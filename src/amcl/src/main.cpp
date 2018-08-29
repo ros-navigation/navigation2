@@ -36,16 +36,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "amcl_node.hpp"
 
-#if 0
-#include <csignal>
-void sigintHandler(int sig)
-{
-  // Save latest pose as we're shutting down.
-  amcl_node_ptr->savePoseToServer();
-  ros::shutdown();
-}
-#endif
-
 int
 main(int argc, char** argv)
 {
@@ -55,24 +45,3 @@ main(int argc, char** argv)
 
   return 0;
 }
-
-#if 0
-  // Override default sigint handler
-  signal(SIGINT, sigintHandler);
-
-  // Make our node available to sigintHandler
-  amcl_node_ptr.reset(new AmclNode());
-
-  if (argc == 1)
-  {
-    // run using ROS input
-    ros::spin();
-  }
-  else if ((argc == 3) && (std::string(argv[1]) == "--run-from-bag"))
-  {
-    amcl_node_ptr->runFromBag(argv[2]);
-  }
-
-  // Without this, our boost locks are not shut down nicely
-  amcl_node_ptr.reset();
-#endif
