@@ -35,27 +35,16 @@
 #ifndef LOCALIZATION__AMCLNODE_HPP_
 #define LOCALIZATION__AMCLNODE_HPP_
 
-#include <chrono>
-#include <map>
-#include <string>
-#include <vector>
 #include <boost/thread/recursive_mutex.hpp>
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "message_filters/subscriber.h"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "nav_msgs/srv/get_map.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "amcl/map/map.h"
-#include "amcl/pf/pf.h"
-#include "amcl/pf/pf_vector.h"
 #include "amcl/sensors/amcl_laser.h"
 #include "amcl/sensors/amcl_odom.h"
 
