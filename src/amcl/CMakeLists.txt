@@ -20,6 +20,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
+#find_package(util REQUIRED)  //TODO (mhpanah) remove ../util/include
 
 include_directories(
   include 
@@ -59,7 +60,7 @@ target_link_libraries(amcl
   amcl_pf
   ${Boost_LIBRARIES}
   boost_system
-  util
+  util  #TODO (mhpanah) remove util from here
   )
 
 ament_target_dependencies(amcl
@@ -80,5 +81,6 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   )
-
+ament_export_include_directories(include)
+ament_export_libraries(amcl amcl_sensors amcl_map amcl_pf)
 ament_package()
