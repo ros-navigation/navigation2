@@ -16,7 +16,6 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "bt_navigator/BtNavigator.hpp"
-#include "nav2_robot/RosRobot.hpp"
 
 int main(int argc, char ** argv)
 {
