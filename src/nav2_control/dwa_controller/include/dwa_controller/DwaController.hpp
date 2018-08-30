@@ -28,7 +28,7 @@ public:
   DwaController() = delete;
   ~DwaController();
 
-  nav2_tasks::TaskStatus executeAsync(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
 };
 
 }  // namespace dwa_controller

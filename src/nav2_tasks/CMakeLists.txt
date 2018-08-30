@@ -31,6 +31,7 @@ rosidl_generate_interfaces(nav2_tasks
   "msg/Path.msg"
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
+  "msg/TaskStatus.msg"
   "srv/GetCostmap.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )

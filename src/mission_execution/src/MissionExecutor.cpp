@@ -36,10 +36,10 @@ MissionExecutor::~MissionExecutor()
 }
 
 TaskStatus
-MissionExecutor::executeAsync(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
+MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "MissionExecutor:executeAsync");
-  RCLCPP_INFO(get_logger(), "MissionExecutor:executeAsync: plan: %s",
+  RCLCPP_INFO(get_logger(), "MissionExecutor:execute");
+  RCLCPP_INFO(get_logger(), "MissionExecutor:execute: plan: %s",
     command->mission_plan.c_str());
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
@@ -48,25 +48,26 @@ MissionExecutor::executeAsync(const nav2_tasks::ExecuteMissionCommand::SharedPtr
   auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
   navigationTask_->executeAsync(goalPose);
 
+  auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
+
   // Loop until navigation reaches a terminal state
   for (;; ) {
     // Check to see if this task (mission execution) has been canceled. If so,
     // cancel the navigation task first and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "MissionExecutor::execute: task has been canceled");
       navigationTask_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // This task hasn't been canceled, so see if the navigation task has finished
-    auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
     TaskStatus status = navigationTask_->waitForResult(navResult, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: navigation task completed");
+          RCLCPP_INFO(get_logger(), "MissionExecutor::execute: navigation task completed");
 
           // No data to return from this task, just an empty result message
           nav2_tasks::ExecuteMissionResult result;
@@ -79,12 +80,12 @@ MissionExecutor::executeAsync(const nav2_tasks::ExecuteMissionCommand::SharedPtr
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: navigation task still running");
+        RCLCPP_INFO(get_logger(), "MissionExecutor::execute: navigation task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: invalid status value");
-        throw std::logic_error("MissionExecutor::executeAsync: invalid status value");
+        RCLCPP_INFO(get_logger(), "MissionExecutor::execute: invalid status value");
+        throw std::logic_error("MissionExecutor::execute: invalid status value");
     }
   }
 }

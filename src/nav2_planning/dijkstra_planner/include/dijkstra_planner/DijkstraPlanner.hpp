@@ -36,7 +36,7 @@ public:
   DijkstraPlanner() = delete;
   ~DijkstraPlanner();
 
-  nav2_tasks::TaskStatus executeAsync(
+  nav2_tasks::TaskStatus execute(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
 
 private:

@@ -34,26 +34,26 @@ DwaController::~DwaController()
 }
 
 TaskStatus
-DwaController::executeAsync(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
 {
-  RCLCPP_INFO(get_logger(), "DwaController::executeAsync");
+  RCLCPP_INFO(get_logger(), "DwaController::execute");
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {
     // Do a bit of the task
-    RCLCPP_INFO(get_logger(), "DwaController::executeAsync: doing work: %d", i);
+    RCLCPP_INFO(get_logger(), "DwaController::execute: doing work: %d", i);
     std::this_thread::sleep_for(250ms);
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "DwaController::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "DwaController::execute: task has been canceled");
       setCanceled();
       return TaskStatus::CANCELED;
     }
   }
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "DwaController::executeAsync: task completed");
+  RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
 
   nav2_tasks::FollowPathResult result;
   setResult(result);

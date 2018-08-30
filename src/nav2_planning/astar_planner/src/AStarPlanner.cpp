@@ -34,26 +34,26 @@ AStarPlanner::~AStarPlanner()
 }
 
 TaskStatus
-AStarPlanner::executeAsync(const nav2_tasks::ComputePathToPoseCommand::SharedPtr /*command*/)
+AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr /*command*/)
 {
-  RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync");
+  RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {
     // Do a bit of the task
-    RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: doing work: %d", i);
+    RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
     std::this_thread::sleep_for(100ms);
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task has been canceled");
       setCanceled();
       return TaskStatus::CANCELED;
     }
   }
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "AStarPlanner::executeAsync: task completed");
+  RCLCPP_INFO(get_logger(), "AStarPlanner::execute: task completed");
 
   nav2_tasks::ComputePathToPoseResult result;
   setResult(result);

@@ -44,9 +44,9 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*command*/)
+SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*command*/)
 {
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync");
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
@@ -57,7 +57,7 @@ SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr
   endpoints->goal.position.y = 9.0;
   endpoints->tolerance = 2.0;
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
 
@@ -68,7 +68,7 @@ SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       planner_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -79,35 +79,35 @@ SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: planning task completed");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task completed");
         goto here;
 
       case TaskStatus::FAILED:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: planning task still running");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 
 here:
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u",
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: got path of size %u",
     path->poses.size());
   int index;
   for (auto pose : path->poses) {
-    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f",
+    RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: point %u x: %0.2f, y: %0.2f",
       index, pose.position.x, pose.position.y);
     index++;
   }
 
   RCLCPP_INFO(get_logger(),
-    "SimpleNavigator::executeAsync: sending the path to the controller to execute");
+    "SimpleNavigator::execute: sending the path to the controller to execute");
 
   controller_->executeAsync(path);
 
@@ -116,7 +116,7 @@ here:
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
       controller_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -129,7 +129,7 @@ here:
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task completed");
+          RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task completed");
           nav2_tasks::NavigateToPoseResult navigationResult;
           setResult(navigationResult);
 
@@ -140,12 +140,12 @@ here:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        // RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
+        // RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 }

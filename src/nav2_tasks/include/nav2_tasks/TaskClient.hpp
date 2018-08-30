@@ -18,6 +18,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <string>
+#include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "nav2_tasks/TaskStatus.hpp"
@@ -39,7 +40,7 @@ public:
     // Create the subscribers
     resultSub_ = node_->create_subscription<ResultMsg>(name + "_result",
         std::bind(&TaskClient::onResultReceived, this, std::placeholders::_1));
-    statusSub_ = node_->create_subscription<std_msgs::msg::String>(name + "_status",
+    statusSub_ = node_->create_subscription<StatusMsg>(name + "_status",
         std::bind(&TaskClient::onStatusReceived, this, std::placeholders::_1));
   }
 
@@ -50,8 +51,8 @@ public:
   // The client can tell the TaskServer to execute its operation
   void executeAsync(const typename CommandMsg::SharedPtr msg)
   {
-    taskSucceeded_ = false;
-    receivedResult_ = false;
+    resultReceived_ = false;
+    statusReceived_ = false;
     commandPub_->publish(msg);
   }
 
@@ -68,48 +69,90 @@ public:
     typename ResultMsg::SharedPtr & result,
     std::chrono::milliseconds duration)
   {
-    std::mutex m;
-    std::unique_lock<std::mutex> lock(m);
-
-    std::cv_status timeoutStatus =
-      cv_.wait_for(lock, std::chrono::milliseconds(duration));
-
-    if (timeoutStatus == std::cv_status::timeout) {
+    // Wait for a status message to come in
+    std::unique_lock<std::mutex> lock(statusMutex_);
+    if (!cvStatus_.wait_for(lock, std::chrono::milliseconds(duration), [&]{ return statusReceived_ == true; }))
       return RUNNING;
+
+    // We've got a status message, indicating that the server task has finished (succeeded, failed, or canceled)
+    switch (statusMsg_->result)
+    {
+      // If the task has failed or has been canceled, no result message is forthcoming and we 
+      // can propagate the status code, using the TaskStatus type rather than the message-level
+      // implementation type
+      case nav2_tasks::msg::TaskStatus::FAILED:
+      case nav2_tasks::msg::TaskStatus::CANCELED:
+        return static_cast<TaskStatus>(statusMsg_->result);
+
+      case nav2_tasks::msg::TaskStatus::SUCCEEDED:
+      {
+        {
+          std::lock_guard<std::mutex> lock(resultMutex_);
+          if (resultReceived_) {
+            result = resultMsg_;
+            resultReceived_ = false;
+            return SUCCEEDED;
+          }
+        }
+
+        // The result message may have come *after* the status message, so let's wait for it 
+        std::unique_lock<std::mutex> lock(resultMutex_);
+        if (cvResult_.wait_for(lock, std::chrono::milliseconds(100), [&]{ return resultReceived_ == true; }))
+          return SUCCEEDED;
+
+        // Give up since we never received the result message
+        return FAILED;
+      }
+	
+      default:
+        throw std::logic_error("Invalid status value from TaskServer");;
     }
 
-    // TODO(orduno): possible race condition between receiving status message and actual data
-    //               for now implemented a method using a flag, but might want to review further
-    if (taskSucceeded_ && receivedResult_) {
-      result = result_;
-      receivedResult_ = false;
-      return SUCCEEDED;
-    }
-
-    return FAILED;
+    // Not reachable; added to avoid a warning
+	  return FAILED;
   }
 
 protected:
+  // The result of this task
+  typename ResultMsg::SharedPtr resultMsg_;
+
   // These messages are internal to the TaskClient implementation
   typedef std_msgs::msg::String CancelMsg;
-  typedef std_msgs::msg::String StatusMsg;
+  typedef nav2_tasks::msg::TaskStatus StatusMsg;
+  StatusMsg::SharedPtr statusMsg_;
 
-  std::condition_variable cv_;
-  typename ResultMsg::SharedPtr result_;
+  // Variables to handle the communication of the status message to the waitForResult thread
+  std::mutex statusMutex_;
+  std::atomic<bool> statusReceived_;
+  std::condition_variable cvStatus_;
+
+  // Variables to handle the communication of the result message to the waitForResult thread
+  std::mutex resultMutex_;
+  std::atomic<bool> resultReceived_;
+  std::condition_variable cvResult_;
 
   // Called when the TaskServer has sent its result
-  void onResultReceived(const typename ResultMsg::SharedPtr msg)
+  void onResultReceived(const typename ResultMsg::SharedPtr resultMsg)
   {
-    // Save it off
-    result_ = msg;
-    receivedResult_ = true;
+    {
+      std::lock_guard<std::mutex> lock(resultMutex_);
+      resultMsg_ = resultMsg;
+      resultReceived_ = true;
+    }
+
+    cvResult_.notify_one();
   }
 
   // Called when the TaskServer sends it status code (success or failure)
-  void onStatusReceived(const StatusMsg::SharedPtr /*msg*/)
+  void onStatusReceived(const StatusMsg::SharedPtr statusMsg)
   {
-    taskSucceeded_ = true;  // msg.data.equals("Success");
-    cv_.notify_one();
+    {
+      std::lock_guard<std::mutex> lock(statusMutex_);
+      statusMsg_ = statusMsg;
+      statusReceived_ = true;
+    }
+
+    cvStatus_.notify_one();
   }
 
   // The TaskClient isn't itself a node, so needs to know which one to use
@@ -122,11 +165,6 @@ protected:
   // The client's subscriptions: result, feedback, and status
   typename rclcpp::Subscription<ResultMsg>::SharedPtr resultSub_;
   rclcpp::Subscription<StatusMsg>::SharedPtr statusSub_;
-
-  // A convenience variable for whether the task succeeded or not
-  bool taskSucceeded_;
-
-  std::atomic<bool> receivedResult_;
 };
 
 }  // namespace nav2_tasks
