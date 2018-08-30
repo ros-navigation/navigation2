@@ -18,6 +18,7 @@ MappingServerROS::MappingServerROS(const std::string& fname, const std::string& 
         
         RCLCPP_INFO(n->get_logger(),"Loading Map of Type '%s'", map_type.c_str());
         MyMap = m->createMap(map_type, n, fname); 
+        //MyMap = m->createMap(map_type, n, "Downloads/mymap.yaml"); 
 
         rclcpp::spin(n);
     

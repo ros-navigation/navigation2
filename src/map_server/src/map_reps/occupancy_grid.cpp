@@ -41,7 +41,7 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname)
 
     std::ifstream fin(fname.c_str());
     if (fin.fail()) {
-        fprintf(stderr,"[ERROR] [map_server] Map_server could not open %s.\n", fname.c_str());
+        fprintf(stderr,"[ERROR] [map_server] Map_server could not open %s\n", fname.c_str());
         exit(-1);
     }
 

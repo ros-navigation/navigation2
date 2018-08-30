@@ -47,7 +47,7 @@ class OccGridLoader: public BaseMapLoader
             const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
             const std::shared_ptr<nav_msgs::srv::GetMap::Response> res);
 
-    private:
+    protected:
     
         // Info From YAML file
         double origin[3];

@@ -10,7 +10,7 @@ class MappingServerROS
 
         MappingServerROS(const std::string& fname, const std::string& map_type);
 
-        rclcpp::Node::SharedPtr getNode(){return n;};
+        //rclcpp::Node::SharedPtr getNode(){return n;};
     private:
 
         MapLoader *m;

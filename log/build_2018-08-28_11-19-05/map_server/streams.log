@@ -1,0 +1,35 @@
+Invoking command in '/home/brian/ros2_overlay_ws/src/navigation2/build/map_server': /usr/bin/cmake /home/brian/ros2_overlay_ws/src/navigation2/src/map_server -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/brian/ros2_overlay_ws/src/navigation2/install/map_server
+-- The C compiler identification is GNU 5.4.0
+-- The CXX compiler identification is GNU 5.4.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at CMakeLists.txt:16 (find_package):
+  By not providing "Findament_cmake.cmake" in CMAKE_MODULE_PATH this project
+  has asked CMake to find a package configuration file provided by
+  "ament_cmake", but CMake did not find one.
+
+  Could not find a package configuration file provided by "ament_cmake" with
+  any of the following names:
+
+    ament_cmakeConfig.cmake
+    ament_cmake-config.cmake
+
+  Add the installation prefix of "ament_cmake" to CMAKE_PREFIX_PATH or set
+  "ament_cmake_DIR" to a directory containing one of the above files.  If
+  "ament_cmake" provides a separate development package or SDK, be sure it
+  has been installed.
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/brian/ros2_overlay_ws/src/navigation2/build/map_server/CMakeFiles/CMakeOutput.log".
+Invoked command in '/home/brian/ros2_overlay_ws/src/navigation2/build/map_server' returned '1': /usr/bin/cmake /home/brian/ros2_overlay_ws/src/navigation2/src/map_server -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/brian/ros2_overlay_ws/src/navigation2/install/map_server
