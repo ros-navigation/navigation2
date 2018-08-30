@@ -71,13 +71,16 @@ public:
   {
     // Wait for a status message to come in
     std::unique_lock<std::mutex> lock(statusMutex_);
-    if (!cvStatus_.wait_for(lock, std::chrono::milliseconds(duration), [&]{ return statusReceived_ == true; }))
-      return RUNNING;
-
-    // We've got a status message, indicating that the server task has finished (succeeded, failed, or canceled)
-    switch (statusMsg_->result)
+    if (!cvStatus_.wait_for(lock, std::chrono::milliseconds(duration),
+      [&] {return statusReceived_ == true;}))
     {
-      // If the task has failed or has been canceled, no result message is forthcoming and we 
+      return RUNNING;
+    }
+
+    // We've got a status message, indicating that the server task has finished (succeeded,
+    // failed, or canceled)
+    switch (statusMsg_->result) {
+      // If the task has failed or has been canceled, no result message is forthcoming and we
       // can propagate the status code, using the TaskStatus type rather than the message-level
       // implementation type
       case nav2_tasks::msg::TaskStatus::FAILED:
@@ -85,31 +88,34 @@ public:
         return static_cast<TaskStatus>(statusMsg_->result);
 
       case nav2_tasks::msg::TaskStatus::SUCCEEDED:
-      {
         {
-          std::lock_guard<std::mutex> lock(resultMutex_);
-          if (resultReceived_) {
-            result = resultMsg_;
-            resultReceived_ = false;
+          {
+            std::lock_guard<std::mutex> lock(resultMutex_);
+            if (resultReceived_) {
+              result = resultMsg_;
+              resultReceived_ = false;
+              return SUCCEEDED;
+            }
+          }
+
+          // The result message may have come *after* the status message, so let's wait for it
+          std::unique_lock<std::mutex> lock(resultMutex_);
+          if (cvResult_.wait_for(lock, std::chrono::milliseconds(100),
+            [&] {return resultReceived_ == true;}))
+          {
             return SUCCEEDED;
           }
+
+          // Give up since we never received the result message
+          return FAILED;
         }
 
-        // The result message may have come *after* the status message, so let's wait for it 
-        std::unique_lock<std::mutex> lock(resultMutex_);
-        if (cvResult_.wait_for(lock, std::chrono::milliseconds(100), [&]{ return resultReceived_ == true; }))
-          return SUCCEEDED;
-
-        // Give up since we never received the result message
-        return FAILED;
-      }
-	
       default:
-        throw std::logic_error("Invalid status value from TaskServer");;
+        throw std::logic_error("Invalid status value from TaskServer");
     }
 
     // Not reachable; added to avoid a warning
-	  return FAILED;
+    return FAILED;
   }
 
 protected:

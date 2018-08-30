@@ -86,8 +86,8 @@ protected:
   {
     do {
       std::unique_lock<std::mutex> lock(commandMutex_);
-      //cv_.wait_for(lock, std::chrono::milliseconds(10));
-      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(10), [&]{ return commandReceived_ == true; }))
+      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(10),
+        [&] {return commandReceived_ == true;}))
       {
         // Call the user's overridden method
         TaskStatus status = execute(commandMsg_);
@@ -116,9 +116,6 @@ protected:
           // Or the canceled code
           statusMsg.result = nav2_tasks::msg::TaskStatus::CANCELED;
           statusPub_->publish(statusMsg);
-
-          // Reset the canceled flag now that we've handled it
-          //cancelReceived_ = false;
         } else {
           throw std::logic_error("Unexpected status return from task");
         }

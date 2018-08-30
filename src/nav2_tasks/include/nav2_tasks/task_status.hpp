@@ -20,7 +20,8 @@
 namespace nav2_tasks
 {
 
-typedef enum {
+typedef enum
+{
   SUCCEEDED = msg::TaskStatus::SUCCEEDED,
   FAILED = msg::TaskStatus::FAILED,
   RUNNING = msg::TaskStatus::RUNNING,
