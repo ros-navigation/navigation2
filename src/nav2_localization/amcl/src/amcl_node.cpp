@@ -52,8 +52,7 @@ public:
   static std::string stripLeadingSlash(const std::string& in);
 };
 
-std::string 
-strutils::stripLeadingSlash(const std::string& in)
+std::string strutils::stripLeadingSlash(const std::string& in)
 {
   std::string out = in;
 
@@ -62,7 +61,6 @@ strutils::stripLeadingSlash(const std::string& in)
 
   return out;
 }
-
 
 static double
 normalize(double z)
