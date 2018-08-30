@@ -76,9 +76,9 @@ DijkstraPlanner::~DijkstraPlanner()
 }
 
 TaskStatus
-DijkstraPlanner::executeAsync(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync");
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute");
 
   nav2_tasks::ComputePathToPoseResult result;
   try {
@@ -86,24 +86,24 @@ DijkstraPlanner::executeAsync(const nav2_tasks::ComputePathToPoseCommand::Shared
     // getCostmap(costmap_);
     makePlan(command->start, command->goal, command->tolerance, result);
   } catch (...) {
-    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::executeAsync: plan calculation failed");
+    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::execute: plan calculation failed");
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   }
 
   if (cancelRequested()) {
-    RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task has been canceled");
+    RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: task has been canceled");
     setCanceled();
     return TaskStatus::CANCELED;
   }
   // TODO(orduno): should check for cancel within the makePlan() method?
 
   RCLCPP_INFO(get_logger(),
-    "DijkstraPlanner::executeAsync: calculated path of size %u", result.poses.size());
+    "DijkstraPlanner::execute: calculated path of size %u", result.poses.size());
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::executeAsync: task completed");
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: task completed");
 
   // Pass the output to the Task Client
   setResult(result);

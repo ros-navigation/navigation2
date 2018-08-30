@@ -30,7 +30,7 @@ public:
   MissionExecutor() = delete;
   ~MissionExecutor();
 
-  nav2_tasks::TaskStatus executeAsync(
+  nav2_tasks::TaskStatus execute(
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
 
 private:
