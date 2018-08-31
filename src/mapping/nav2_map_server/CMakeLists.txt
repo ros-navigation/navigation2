@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_map_server)
 
+# Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
@@ -75,12 +76,10 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-
-  find_package(ament_cmake_pytest REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
-  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
 
 ament_package()
+
+
