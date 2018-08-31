@@ -15,11 +15,11 @@ find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_util_msgs REQUIRED)
+find_package(nav2_libs_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetCostmap.srv"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav2_util_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav2_libs_msgs
 )
 
 if(BUILD_TESTING)

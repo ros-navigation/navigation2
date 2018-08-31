@@ -20,8 +20,8 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util_msgs/msg/costmap.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
 namespace nav2_world_model

@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_planning_msgs REQUIRED)
 
 include_directories(
   include
@@ -31,6 +32,7 @@ ament_target_dependencies(astar_planner
   nav2_tasks
   task
   nav2_util
+  nav2_planning_msgs
 )
 
 install(TARGETS

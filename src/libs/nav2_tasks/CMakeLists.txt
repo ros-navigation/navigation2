@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_util)
+project(nav2_tasks)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,29 +11,23 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_util_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2 REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
-include_directories(include)
-
-add_library(nav2_util STATIC
-  src/costmap.cpp
+include_directories(
+  include
 )
-
-ament_target_dependencies(nav2_util
-  nav2_util_msgs
-  tf2_ros
-  tf2
-)
-
-install(TARGETS
-  nav2_util
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib)
 
 install(DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/
+)
+
+rosidl_generate_interfaces(nav2_tasks
+  "msg/TaskStatus.msg"
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
 if(BUILD_TESTING)
@@ -51,6 +45,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2_util)
+ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()

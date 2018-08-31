@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
+find_package(nav2_planning_msgs REQUIRED)
 
 include_directories(
   include
@@ -28,6 +29,7 @@ ament_target_dependencies(bt_navigator
   rclcpp
   std_msgs
   nav2_tasks
+  nav2_planning_msgs
 )
 
 install(TARGETS bt_navigator

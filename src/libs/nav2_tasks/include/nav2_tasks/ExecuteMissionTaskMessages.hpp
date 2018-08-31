@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
-#define NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#ifndef NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_
+#define NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_
 
-#include "nav2_tasks/msg/path_end_points.hpp"
-#include "nav2_tasks/msg/path.hpp"
+#include "nav2_mission_execution_msgs/msg/mission_plan.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using ComputePathToPoseCommand = nav2_tasks::msg::PathEndPoints;
-using ComputePathToPoseResult = nav2_tasks::msg::Path;
+using ExecuteMissionCommand = nav2_mission_execution_msgs::msg::MissionPlan;
+using ExecuteMissionResult = std_msgs::msg::Empty;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#endif  // NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_simple_navigator)
+project(nav2_libs_msgs)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,35 +11,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
-find_package(nav2_planning_msgs REQUIRED)
 
-include_directories(
-  include
-)
-
-add_executable(simple_navigator
-  src/simple_navigator.cpp
-  src/main.cpp
-)
-
-ament_target_dependencies(simple_navigator
-  rclcpp
-  std_msgs
-  nav2_tasks
-  nav2_planning_msgs
-)
-
-install(TARGETS simple_navigator
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-install(DIRECTORY include/
-  DESTINATION include/
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Costmap.msg"
+  "msg/CostmapMetaData.msg"
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
 if(BUILD_TESTING)
@@ -56,6 +36,6 @@ if(BUILD_TESTING)
   ament_uncrustify()
 endif()
 
-ament_export_include_directories(include)
+ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()

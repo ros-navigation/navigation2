@@ -18,8 +18,8 @@
 #include <vector>
 #include <cstdint>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util_msgs/msg/costmap.hpp"
-#include "nav2_util_msgs/msg/costmap_meta_data.hpp"
+#include "nav2_libs_msgs/msg/costmap.hpp"
+#include "nav2_libs_msgs/msg/costmap_meta_data.hpp"
 
 namespace nav2_util
 {
@@ -31,7 +31,7 @@ public:
 
   explicit Costmap(rclcpp::Node * node);
 
-  nav2_util_msgs::msg::Costmap getCostmap(const nav2_util_msgs::msg::CostmapMetaData & specifications);
+  nav2_libs_msgs::msg::Costmap getCostmap(const nav2_libs_msgs::msg::CostmapMetaData & specifications);
 
   // Mapping for often used cost values
   static const CostValue no_information;

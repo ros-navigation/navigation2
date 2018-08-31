@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_
-#define NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_
+#ifndef NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_
+#define NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_
 
-#include "nav2_tasks/msg/mission_plan.hpp"
+#include "nav2_planning_msgs/msg/path.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using ExecuteMissionCommand = nav2_tasks::msg::MissionPlan;
-using ExecuteMissionResult = std_msgs::msg::Empty;
+using FollowPathCommand = nav2_planning_msgs::msg::Path;
+using FollowPathResult = std_msgs::msg::Empty;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__EXECUTEMISSIONTASKMESSAGES_HPP_
+#endif  // NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_

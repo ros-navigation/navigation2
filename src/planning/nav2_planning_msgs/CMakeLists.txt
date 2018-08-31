@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_util_msgs)
+project(nav2_planning_msgs)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -16,9 +16,9 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 
-rosidl_generate_interfaces(nav2_util_msgs
-  "msg/Costmap.msg"
-  "msg/CostmapMetaData.msg"
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Path.msg"
+  "msg/PathEndPoints.msg"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 

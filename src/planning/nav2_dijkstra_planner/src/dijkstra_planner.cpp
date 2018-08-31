@@ -30,8 +30,8 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_dijkstra_planner/dijkstra_planner.hpp"
 #include "nav2_dijkstra_planner/navfn.hpp"
-#include "nav2_util_msgs/msg/costmap.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
 using namespace std::chrono_literals;
@@ -67,7 +67,7 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
   planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   // Plan publisher for visualization purposes
-  plan_publisher_ = this->create_publisher<nav2_tasks::msg::Path>("plan", 1);
+  plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
 }
 
 DijkstraPlanner::~DijkstraPlanner()
@@ -120,7 +120,7 @@ bool
 DijkstraPlanner::makePlan(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & goal, double tolerance,
-  nav2_tasks::msg::Path & plan)
+  nav2_planning_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
   plan.poses.clear();
@@ -251,7 +251,7 @@ DijkstraPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 bool
 DijkstraPlanner::getPlanFromPotential(
   const geometry_msgs::msg::Pose & goal,
-  nav2_tasks::msg::Path & plan)
+  nav2_planning_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
   plan.poses.clear();
@@ -384,7 +384,7 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 
 void
 DijkstraPlanner::getCostmap(
-  nav2_util_msgs::msg::Costmap & costmap, const std::string /*layer*/,
+  nav2_libs_msgs::msg::Costmap & costmap, const std::string /*layer*/,
   const std::chrono::milliseconds waitTime)
 {
   RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
@@ -421,7 +421,7 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 }
 
 void
-DijkstraPlanner::printCostmap(const nav2_util_msgs::msg::Costmap & costmap)
+DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
 {
   std::cout << "Costmap" << std::endl;
   std::cout << "  size:       " <<

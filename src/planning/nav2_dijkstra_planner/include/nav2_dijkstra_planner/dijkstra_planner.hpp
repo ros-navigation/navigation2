@@ -24,7 +24,7 @@
 #include "nav2_dijkstra_planner/navfn.hpp"
 #include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
-#include "nav2_util_msgs/msg/costmap.hpp"
+#include "nav2_libs_msgs/msg/costmap.hpp"
 
 namespace nav2_dijkstra_planner
 {
@@ -44,7 +44,7 @@ private:
   bool makePlan(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal, double tolerance,
-    nav2_tasks::msg::Path & plan);
+    nav2_planning_msgs::msg::Path & plan);
 
   // Compute the navigation function given a seed point in the world to start from
   bool computePotential(const geometry_msgs::msg::Point & world_point);
@@ -52,7 +52,7 @@ private:
   // Compute a plan to a goal from a potential - must call computePotential first
   bool getPlanFromPotential(
     const geometry_msgs::msg::Pose & goal,
-    nav2_tasks::msg::Path & plan);
+    nav2_planning_msgs::msg::Path & plan);
 
   // Compute the potential, or navigation cost, at a given point in the world
   // - must call computePotential first
@@ -84,14 +84,14 @@ private:
 
   // Request costmap from world model
   void getCostmap(
-    nav2_util_msgs::msg::Costmap & costmap, const std::string layer = "master",
+    nav2_libs_msgs::msg::Costmap & costmap, const std::string layer = "master",
     const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
 
   // Wait for costmap server to appear
   void waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
 
   // Print costmap to terminal
-  void printCostmap(const nav2_util_msgs::msg::Costmap & costmap);
+  void printCostmap(const nav2_libs_msgs::msg::Costmap & costmap);
 
   // Planner based on ROS1 NavFn algorithm
   std::shared_ptr<NavFn> planner_;
@@ -100,10 +100,10 @@ private:
   rclcpp::Client<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
 
   // Computed path publisher
-  rclcpp::Publisher<nav2_tasks::msg::Path>::SharedPtr plan_publisher_;
+  rclcpp::Publisher<nav2_planning_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // The costmap to use
-  nav2_util_msgs::msg::Costmap costmap_;
+  nav2_libs_msgs::msg::Costmap costmap_;
 
   // The global frame of the costmap
   std::string global_frame_;

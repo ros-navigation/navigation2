@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
+find_package(nav2_planning_msgs REQUIRED)
 
 include_directories(
   include
@@ -30,6 +31,7 @@ ament_target_dependencies(dwa_controller
   std_msgs
   nav2_tasks
   nav2_robot
+  nav2_planning_msgs
 )
 
 install(TARGETS dwa_controller

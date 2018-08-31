@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_mission_execution_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 
 include_directories(
@@ -28,6 +29,7 @@ ament_target_dependencies(mission_executor
   rclcpp
   std_msgs
   nav2_tasks
+  nav2_mission_execution_msgs
 )
 
 install(TARGETS mission_executor
