@@ -1,2 +1,0 @@
-Invoking command in '/home/brian/ros2_overlay_ws/src/navigation2/build/map_server': /usr/bin/cmake /home/brian/ros2_overlay_ws/src/navigation2/src/map_server -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/brian/ros2_overlay_ws/src/navigation2/install/map_server
-Invoked command in '/home/brian/ros2_overlay_ws/src/navigation2/build/map_server' returned '1': /usr/bin/cmake /home/brian/ros2_overlay_ws/src/navigation2/src/map_server -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/brian/ros2_overlay_ws/src/navigation2/install/map_server

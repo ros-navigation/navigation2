@@ -1,1 +1,0 @@
-Invoking command in '/home/brian/ros2_overlay_ws/src/navigation2/build/env_model_msgs': /usr/bin/cmake /home/brian/ros2_overlay_ws/src/navigation2/src/env_model_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/brian/ros2_overlay_ws/src/navigation2/install/env_model_msgs
