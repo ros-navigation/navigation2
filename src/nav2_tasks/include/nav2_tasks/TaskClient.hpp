@@ -89,20 +89,15 @@ public:
 
       case nav2_tasks::msg::TaskStatus::SUCCEEDED:
         {
-          {
-            std::lock_guard<std::mutex> lock(resultMutex_);
-            if (resultReceived_) {
-              result = resultMsg_;
-              resultReceived_ = false;
-              return SUCCEEDED;
-            }
-          }
-
-          // The result message may have come *after* the status message, so let's wait for it
+          // The result message may be here already or it may come *after* the status 
+		  // message. If it's here, the wait will be satisfied immediately. Otherwise
+		  // we'll wait for a bit longer to see if it comes in.
           std::unique_lock<std::mutex> lock(resultMutex_);
           if (cvResult_.wait_for(lock, std::chrono::milliseconds(100),
             [&] {return resultReceived_ == true;}))
           {
+            result = resultMsg_;
+            resultReceived_ = false;
             return SUCCEEDED;
           }
 

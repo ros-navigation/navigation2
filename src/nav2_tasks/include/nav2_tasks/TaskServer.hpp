@@ -138,11 +138,10 @@ protected:
 
   // Variables to handle the communication of the command to the execute thread
   std::mutex commandMutex_;
-  std::atomic<bool> commandReceived_;
+  bool commandReceived_;
   std::condition_variable cvCommand_;
 
   // Variables to handle the communication of the cancel request to the execute thread
-  std::mutex cancelMutex_;
   std::atomic<bool> cancelReceived_;
   std::condition_variable cvCancel_;
 
@@ -163,12 +162,7 @@ protected:
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
     std::cout << "onCancelReceived\n";
-
-    {
-      std::lock_guard<std::mutex> lock(cancelMutex_);
-      cancelReceived_ = true;
-    }
-
+    cancelReceived_ = true;
     cvCancel_.notify_one();
   }
 
