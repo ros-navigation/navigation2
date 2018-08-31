@@ -15,7 +15,7 @@
 #ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKCLIENT_HPP_
 #define NAV2_TASKS__COMPUTEPATHTOPOSETASKCLIENT_HPP_
 
-#include "nav2_tasks/TaskClient.hpp"
+#include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/ComputePathToPoseTaskMessages.hpp"
 
 namespace nav2_tasks

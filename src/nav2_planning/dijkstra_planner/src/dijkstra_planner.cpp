@@ -26,13 +26,13 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include "dijkstra_planner/DijkstraPlanner.hpp"
-#include "dijkstra_planner/Navfn.hpp"
+#include "dijkstra_planner/dijkstra_planner.hpp"
+#include "dijkstra_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_tasks/msg/costmap.hpp"
 #include "nav2_tasks/srv/get_costmap.hpp"
-#include "nav2_util/Costmap.hpp"
+#include "nav2_util/costmap.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;

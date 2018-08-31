@@ -14,7 +14,7 @@
 
 #include <string>
 #include <chrono>
-#include "dwa_controller/DwaController.hpp"
+#include "dwa_controller/dwa_controller.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;

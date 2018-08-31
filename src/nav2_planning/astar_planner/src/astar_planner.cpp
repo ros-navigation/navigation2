@@ -14,7 +14,7 @@
 
 #include <string>
 #include <chrono>
-#include "astar_planner/AStarPlanner.hpp"
+#include "astar_planner/astar_planner.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;

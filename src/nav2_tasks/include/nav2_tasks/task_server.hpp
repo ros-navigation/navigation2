@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__TASKSERVER_HPP_
-#define NAV2_TASKS__TASKSERVER_HPP_
+#ifndef NAV2_TASKS__TASK_SERVER_HPP_
+#define NAV2_TASKS__TASK_SERVER_HPP_
 
 #include <atomic>
 #include <condition_variable>
@@ -23,7 +23,7 @@
 #include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "nav2_tasks/TaskStatus.hpp"
+#include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
 {
@@ -161,4 +161,4 @@ protected:
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__TASKSERVER_HPP_
+#endif  // NAV2_TASKS__TASK_SERVER_HPP_

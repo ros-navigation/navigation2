@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WORLD_MODEL__WORLDMODEL_HPP_
-#define NAV2_WORLD_MODEL__WORLDMODEL_HPP_
+#ifndef NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
+#define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 
 #include <string>
 #include <vector>
@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/srv/get_costmap.hpp"
 #include "nav2_tasks/msg/costmap.hpp"
-#include "nav2_util/Costmap.hpp"
+#include "nav2_util/costmap.hpp"
 
 namespace nav2_world_model
 {
@@ -54,4 +54,4 @@ private:
 
 }  // namespace nav2_world_model
 
-#endif  // NAV2_WORLD_MODEL__WORLDMODEL_HPP_
+#endif  // NAV2_WORLD_MODEL__WORLD_MODEL_HPP_

@@ -22,7 +22,7 @@ include_directories(
 )
 
 add_executable(world_model
-  src/WorldModel.cpp
+  src/world_model.cpp
   src/main.cpp
 )
 

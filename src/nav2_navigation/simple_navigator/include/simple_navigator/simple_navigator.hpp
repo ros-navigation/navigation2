@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SIMPLE_NAVIGATOR__SIMPLENAVIGATOR_HPP_
-#define SIMPLE_NAVIGATOR__SIMPLENAVIGATOR_HPP_
+#ifndef SIMPLE_NAVIGATOR__SIMPLE_NAVIGATOR_HPP_
+#define SIMPLE_NAVIGATOR__SIMPLE_NAVIGATOR_HPP_
 
 #include <string>
 #include <memory>
@@ -40,4 +40,4 @@ protected:
 
 }  // namespace simple_navigator
 
-#endif  // SIMPLE_NAVIGATOR__SIMPLENAVIGATOR_HPP_
+#endif  // SIMPLE_NAVIGATOR__SIMPLE_NAVIGATOR_HPP_

@@ -12,63 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-// Navigation Strategy based on:
-// Brock, O. and Oussama K. (1999). High-Speed Navigation Using
-// the Global Dynamic Window Approach. IEEE.
-// https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
-
 #include <string>
 #include <memory>
 #include <exception>
 #include <chrono>
-#include "simple_navigator/SimpleNavigator.hpp"
+#include "bt_navigator/bt_navigator.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
-namespace simple_navigator
+namespace bt_navigator
 {
 
-SimpleNavigator::SimpleNavigator(const std::string & name)
+BtNavigator::BtNavigator(const std::string & name)
 : nav2_tasks::NavigateToPoseTaskServer(name)
 {
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
+  RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
   planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>("AStarPlanner", this);
   controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
 }
 
-SimpleNavigator::~SimpleNavigator()
+BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::~SimpleNavigator");
+  RCLCPP_INFO(get_logger(), "BtNavigator::~BtNavigator");
 }
 
 TaskStatus
-SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*command*/)
+BtNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync");
+  RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync");
 
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   // TODO(mjeronimo): get the starting pose from Localization (fake it out for now)
-  endpoints->start.position.x = 1.0;
-  endpoints->start.position.y = 1.0;
-  endpoints->goal.position.x = 9.0;
-  endpoints->goal.position.y = 9.0;
-  endpoints->tolerance = 2.0;
+  endpoints->start = command->pose;
+  endpoints->goal = command->pose;
 
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: getting the path from the planner");
+  RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   planner_->executeAsync(endpoints);
-
-  // TODO(orduno): implement continous replanning
 
   // Loop until the subtasks are completed
   for (;; ) {
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: task has been canceled");
       planner_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -79,35 +68,25 @@ SimpleNavigator::executeAsync(const nav2_tasks::NavigateToPoseCommand::SharedPtr
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: planning task completed");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: planning task completed");
         goto here;
 
       case TaskStatus::FAILED:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: planning task still running");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: planning task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "BtNavigator::executeAsync: invalid status value");
+        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
     }
   }
 
 here:
-
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: got path of size %u",
-    path->poses.size());
-  int index;
-  for (auto pose : path->poses) {
-    RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: point %u x: %0.2f, y: %0.2f",
-      index, pose.position.x, pose.position.y);
-    index++;
-  }
-
   RCLCPP_INFO(get_logger(),
-    "SimpleNavigator::executeAsync: sending the path to the controller to execute");
+    "BtNavigator::executeAsync: sending the path to the controller to execute");
 
   controller_->executeAsync(path);
 
@@ -116,7 +95,7 @@ here:
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: task has been canceled");
+      RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: task has been canceled");
       controller_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -129,7 +108,7 @@ here:
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task completed");
+          RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: control task completed");
           nav2_tasks::NavigateToPoseResult navigationResult;
           setResult(navigationResult);
 
@@ -140,14 +119,14 @@ here:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        // RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: control task still running");
+        RCLCPP_INFO(get_logger(), "BtNavigator::executeAsync: control task still running");
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "BtNavigator::executeAsync: invalid status value");
+        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
     }
   }
 }
 
-}  // namespace simple_navigator
+}  // namespace bt_navigator

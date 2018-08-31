@@ -21,7 +21,7 @@ include_directories(
 )
 
 add_executable(dwa_controller
-  src/DwaController.cpp
+  src/dwa_controller.cpp
   src/main.cpp
 )
 

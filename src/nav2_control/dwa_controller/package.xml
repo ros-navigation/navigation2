@@ -4,7 +4,7 @@
   <name>dwa_controller</name>
   <version>0.1.0</version>
   <description>TODO</description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

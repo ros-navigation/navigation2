@@ -43,7 +43,7 @@
 //
 
 #include <algorithm>
-#include "dijkstra_planner/Navfn.hpp"
+#include "dijkstra_planner/navfn.hpp"
 
 // TODO(orduno): Define how to pass the node handle for ROS logging
 #include "Logger.h"

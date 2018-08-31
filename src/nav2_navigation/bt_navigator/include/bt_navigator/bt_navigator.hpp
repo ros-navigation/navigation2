@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BT_NAVIGATOR__BTNAVIGATOR_HPP_
-#define BT_NAVIGATOR__BTNAVIGATOR_HPP_
+#ifndef BT_NAVIGATOR__BT_NAVIGATOR_HPP_
+#define BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
 #include <string>
 #include <memory>
@@ -40,4 +40,4 @@ protected:
 
 }  // namespace bt_navigator
 
-#endif  // BT_NAVIGATOR__BTNAVIGATOR_HPP_
+#endif  // BT_NAVIGATOR__BT_NAVIGATOR_HPP_

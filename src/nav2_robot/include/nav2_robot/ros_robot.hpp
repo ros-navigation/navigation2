@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef NAV2_ROBOT__ROS_ROBOT_HPP_
+#define NAV2_ROBOT__ROS_ROBOT_HPP_
+
 #include <string>
-#include "nav2_robot/RosRobot.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_robot
 {
 
-RosRobot::RosRobot(const std::string & /*urdf_filename*/)
+class RosRobot : public Robot
 {
-  // Open and parser the URDF file
-}
+public:
+  /**
+   * Construct a RosRobot with a provided URDF file.
+   *
+   * @param[in] filename The filename of the URDF file describing this robot.
+   */
+  explicit RosRobot(const std::string & urdf_filename);
+  RosRobot() = delete;
+  ~RosRobot();
 
-RosRobot::~RosRobot()
-{
-}
-
-void
-RosRobot::enterSafeState()
-{
-}
+  void enterSafeState() override;
+};
 
 }  // namespace nav2_robot
+
+#endif  // NAV2_ROBOT__ROS_ROBOT_HPP_

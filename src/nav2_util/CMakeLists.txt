@@ -18,7 +18,7 @@ find_package(tf2 REQUIRED)
 include_directories(include)
 
 add_library(nav2_util STATIC
-  src/Costmap.cpp
+  src/costmap.cpp
 )
 
 ament_target_dependencies(nav2_util

@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dwa_controller/DwaController.hpp"
+#include "dwa_controller/dwa_controller.hpp"
 
 int main(int argc, char ** argv)
 {

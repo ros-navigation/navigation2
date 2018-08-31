@@ -14,7 +14,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "astar_planner/AStarPlanner.hpp"
+#include "astar_planner/astar_planner.hpp"
 
 int main(int argc, char ** argv)
 {

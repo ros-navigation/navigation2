@@ -15,7 +15,7 @@
 #ifndef NAV2_TASKS__FOLLOWPATHTASKCLIENT_HPP_
 #define NAV2_TASKS__FOLLOWPATHTASKCLIENT_HPP_
 
-#include "nav2_tasks/TaskClient.hpp"
+#include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/FollowPathTaskMessages.hpp"
 
 namespace nav2_tasks

@@ -15,7 +15,7 @@
 #ifndef NAV2_TASKS__NAVIGATETOPOSETASKCLIENT_HPP_
 #define NAV2_TASKS__NAVIGATETOPOSETASKCLIENT_HPP_
 
-#include "nav2_tasks/TaskClient.hpp"
+#include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/NavigateToPoseTaskMessages.hpp"
 
 namespace nav2_tasks

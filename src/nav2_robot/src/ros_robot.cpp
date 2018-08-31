@@ -12,26 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ASTAR_PLANNER__ASTARPLANNER_HPP_
-#define ASTAR_PLANNER__ASTARPLANNER_HPP_
-
 #include <string>
-#include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
+#include "nav2_robot/ros_robot.hpp"
 
-namespace astar_planner
+namespace nav2_robot
 {
 
-class AStarPlanner : public nav2_tasks::ComputePathToPoseTaskServer
+RosRobot::RosRobot(const std::string & /*urdf_filename*/)
 {
-public:
-  explicit AStarPlanner(const std::string & name);
-  AStarPlanner() = delete;
-  ~AStarPlanner();
+  // Open and parser the URDF file
+}
 
-  nav2_tasks::TaskStatus executeAsync(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
-};
+RosRobot::~RosRobot()
+{
+}
 
-}  // namespace astar_planner
+void
+RosRobot::enterSafeState()
+{
+}
 
-#endif  // ASTAR_PLANNER__ASTARPLANNER_HPP_
+}  // namespace nav2_robot

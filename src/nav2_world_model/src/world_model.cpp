@@ -17,7 +17,7 @@
 #include <vector>
 #include <string>
 
-#include "nav2_world_model/WorldModel.hpp"
+#include "nav2_world_model/world_model.hpp"
 
 using std::vector;
 using std::string;

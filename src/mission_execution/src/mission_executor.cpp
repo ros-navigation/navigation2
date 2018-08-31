@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 #include <exception>
-#include "mission_execution/MissionExecutor.hpp"
+#include "mission_execution/mission_executor.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -83,7 +83,7 @@ MissionExecutor::executeAsync(const nav2_tasks::ExecuteMissionCommand::SharedPtr
         break;
 
       default:
-        RCLCPP_INFO(get_logger(), "MissionExecutor::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "MissionExecutor::executeAsync: invalid status value");
         throw std::logic_error("MissionExecutor::executeAsync: invalid status value");
     }
   }

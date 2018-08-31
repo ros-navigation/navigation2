@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DIJKSTRA_PLANNER__DIJKSTRAPLANNER_HPP_
-#define DIJKSTRA_PLANNER__DIJKSTRAPLANNER_HPP_
+#ifndef DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_
+#define DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_
 
 #include <string>
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "dijkstra_planner/Navfn.hpp"
+#include "dijkstra_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
@@ -117,4 +117,4 @@ private:
 
 }  // namespace dijkstra_planner
 
-#endif  // DIJKSTRA_PLANNER__DIJKSTRAPLANNER_HPP_
+#endif  // DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_

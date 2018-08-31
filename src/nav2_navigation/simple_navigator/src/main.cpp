@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "simple_navigator/SimpleNavigator.hpp"
+#include "simple_navigator/simple_navigator.hpp"
 
 int main(int argc, char ** argv)
 {

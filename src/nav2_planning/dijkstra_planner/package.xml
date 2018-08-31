@@ -4,8 +4,7 @@
   <name>dijkstra_planner</name>
   <version>0.1.0</version>
   <description>TODO</description>
-  <author email="oregon.robotics.team@intel.com">Oregon Robotics Team</author>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+  <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

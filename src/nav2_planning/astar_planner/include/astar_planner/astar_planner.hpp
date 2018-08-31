@@ -12,31 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MISSION_EXECUTION__MISSIONEXECUTOR_HPP_
-#define MISSION_EXECUTION__MISSIONEXECUTOR_HPP_
+#ifndef ASTAR_PLANNER__ASTAR_PLANNER_HPP_
+#define ASTAR_PLANNER__ASTAR_PLANNER_HPP_
 
 #include <string>
-#include <memory>
-#include "nav2_tasks/ExecuteMissionTaskServer.hpp"
-#include "nav2_tasks/NavigateToPoseTaskClient.hpp"
+#include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
 
-namespace mission_execution
+namespace astar_planner
 {
 
-class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
+class AStarPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
-  explicit MissionExecutor(const std::string & name);
-  MissionExecutor() = delete;
-  ~MissionExecutor();
+  explicit AStarPlanner(const std::string & name);
+  AStarPlanner() = delete;
+  ~AStarPlanner();
 
   nav2_tasks::TaskStatus executeAsync(
-    const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
-
-private:
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> navigationTask_;
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
 };
 
-}  // namespace mission_execution
+}  // namespace astar_planner
 
-#endif  // MISSION_EXECUTION__MISSIONEXECUTOR_HPP_
+#endif  // ASTAR_PLANNER__ASTAR_PLANNER_HPP_

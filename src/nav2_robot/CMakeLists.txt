@@ -17,7 +17,7 @@ include_directories(
 )
 
 add_library(nav2_robot STATIC
-  src/RosRobot.cpp
+  src/ros_robot.cpp
 )
 
 install(TARGETS ${PROJECT_NAME}

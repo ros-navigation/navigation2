@@ -21,8 +21,8 @@ include_directories(
 )
 
 add_executable(dijkstra_planner
-  src/DijkstraPlanner.cpp
-  src/Navfn.cpp
+  src/dijkstra_planner.cpp
+  src/navfn.cpp
   src/main.cpp
 )
 

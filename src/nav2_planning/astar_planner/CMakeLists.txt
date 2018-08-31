@@ -21,7 +21,7 @@ include_directories(
 )
 
 add_executable(astar_planner
-  src/AStarPlanner.cpp
+  src/astar_planner.cpp
   src/main.cpp
 )
 

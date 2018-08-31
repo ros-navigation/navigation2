@@ -20,7 +20,7 @@ include_directories(
 )
 
 add_executable(simple_navigator
-  src/SimpleNavigator.cpp
+  src/simple_navigator.cpp
   src/main.cpp
 )
 

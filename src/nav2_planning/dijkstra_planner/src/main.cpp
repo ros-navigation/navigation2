@@ -14,7 +14,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dijkstra_planner/DijkstraPlanner.hpp"
+#include "dijkstra_planner/dijkstra_planner.hpp"
 
 int main(int argc, char ** argv)
 {

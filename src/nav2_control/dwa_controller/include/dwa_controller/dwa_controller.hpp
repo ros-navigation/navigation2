@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__TASKSTATUS_HPP_
-#define NAV2_TASKS__TASKSTATUS_HPP_
+#ifndef DWA_CONTROLLER__DWA_CONTROLLER_HPP_
+#define DWA_CONTROLLER__DWA_CONTROLLER_HPP_
 
-namespace nav2_tasks
+#include <string>
+#include "nav2_tasks/FollowPathTaskServer.hpp"
+
+namespace dwa_controller
 {
 
-typedef enum { SUCCEEDED, FAILED, RUNNING, CANCELED } TaskStatus;
+class DwaController : public nav2_tasks::FollowPathTaskServer
+{
+public:
+  explicit DwaController(const std::string & name);
+  DwaController() = delete;
+  ~DwaController();
 
-}  // namespace nav2_tasks
+  nav2_tasks::TaskStatus executeAsync(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+};
 
-#endif  // NAV2_TASKS__TASKSTATUS_HPP_
+}  // namespace dwa_controller
+
+#endif  // DWA_CONTROLLER__DWA_CONTROLLER_HPP_

@@ -21,7 +21,7 @@ include_directories(
 
 add_executable(mission_executor
   src/main.cpp
-  src/MissionExecutor.cpp
+  src/mission_executor.cpp
 )
 
 ament_target_dependencies(mission_executor

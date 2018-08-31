@@ -15,7 +15,7 @@
 #include <memory>
 #include <exception>
 #include "rclcpp/rclcpp.hpp"
-#include "mission_execution/MissionExecutor.hpp"
+#include "mission_execution/mission_executor.hpp"
 
 int main(int argc, char ** argv)
 {
