@@ -20,9 +20,9 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_tasks/srv/get_costmap.hpp"
-#include "nav2_tasks/msg/costmap.hpp"
+#include "nav2_util_msgs/msg/costmap.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
 namespace nav2_world_model
 {
@@ -34,16 +34,16 @@ public:
 
 private:
   // Server for providing a costmap
-  rclcpp::Service<nav2_tasks::srv::GetCostmap>::SharedPtr costmapServer_;
+  rclcpp::Service<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
 
   // TODO(orduno): Define a server for scoring trajectories
-  // rclcpp::Service<nav2_tasks::srv::ScoreTrajectory>::SharedPtr scoringServer_;
+  // rclcpp::Service<nav2_world_model_msgs::srv::ScoreTrajectory>::SharedPtr scoringServer_;
 
   // TODO(orduno): Define a client for getting the static map
-  // rclcpp::Client<nav2_tasks::srv::GetMap>::SharedPtr mapClient_;
+  // rclcpp::Client<nav2_world_model_msgs::srv::GetMap>::SharedPtr mapClient_;
 
   // TODO(orduno): Alternatively, obtain from a latched topic
-  // rclcpp::Subscription<nav_tasks::OccupancyGrid>::SharedPtr mapSub_;
+  // rclcpp::Subscription<nav2_world_model_msgs::OccupancyGrid>::SharedPtr mapSub_;
 
   // TODO(orduno): Define a task for handling trajectory scoring
   // std::unique_ptr<ScoreTrajectoryClient> scorer;

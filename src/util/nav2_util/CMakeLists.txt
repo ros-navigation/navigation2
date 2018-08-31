@@ -11,7 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_tasks REQUIRED)
+find_package(nav2_util_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 
@@ -22,7 +22,7 @@ add_library(nav2_util STATIC
 )
 
 ament_target_dependencies(nav2_util
-  nav2_tasks
+  nav2_util_msgs
   tf2_ros
   tf2
 )

@@ -30,9 +30,9 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_dijkstra_planner/dijkstra_planner.hpp"
 #include "nav2_dijkstra_planner/navfn.hpp"
-#include "nav2_tasks/msg/costmap.hpp"
-#include "nav2_tasks/srv/get_costmap.hpp"
+#include "nav2_util_msgs/msg/costmap.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -48,7 +48,7 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
 
   // TODO(orduno): Enable parameter server
 
-  costmap_client_ = this->create_client<nav2_tasks::srv::GetCostmap>("CostmapService");
+  costmap_client_ = this->create_client<nav2_world_model_msgs::srv::GetCostmap>("CostmapService");
   waitForCostmapServer();
 
   // TODO(orduno): Service for getting the costmap sometimes fails,
@@ -384,7 +384,7 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 
 void
 DijkstraPlanner::getCostmap(
-  nav2_tasks::msg::Costmap & costmap, const std::string /*layer*/,
+  nav2_util_msgs::msg::Costmap & costmap, const std::string /*layer*/,
   const std::chrono::milliseconds waitTime)
 {
   RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
@@ -392,7 +392,7 @@ DijkstraPlanner::getCostmap(
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggreate) layer
   auto costmapServiceResult = costmap_client_->async_send_request(
-    std::make_shared<nav2_tasks::srv::GetCostmap::Request>());
+    std::make_shared<nav2_world_model_msgs::srv::GetCostmap::Request>());
 
   if (rclcpp::spin_until_future_complete(
       this->get_node_base_interface(), costmapServiceResult, waitTime) !=
@@ -421,7 +421,7 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 }
 
 void
-DijkstraPlanner::printCostmap(const nav2_tasks::msg::Costmap & costmap)
+DijkstraPlanner::printCostmap(const nav2_util_msgs::msg::Costmap & costmap)
 {
   std::cout << "Costmap" << std::endl;
   std::cout << "  size:       " <<

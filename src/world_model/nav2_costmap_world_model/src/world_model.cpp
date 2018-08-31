@@ -32,15 +32,15 @@ WorldModel::WorldModel(const string & name)
 
   auto costmap_service_callback = [this](
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_tasks::srv::GetCostmap::Request> request,
-    const std::shared_ptr<nav2_tasks::srv::GetCostmap::Response> response) -> void
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
     {
       RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
       response->map = costmap_->getCostmap(request->specs);
     };
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_tasks::srv::GetCostmap>(name, costmap_service_callback);
+  costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name, costmap_service_callback);
 }
 
 }  // namespace nav2_world_model

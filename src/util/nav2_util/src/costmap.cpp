@@ -35,8 +35,8 @@ Costmap::Costmap(rclcpp::Node * node)
   RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
 }
 
-nav2_tasks::msg::Costmap
-Costmap::getCostmap(const nav2_tasks::msg::CostmapMetaData & /*specifications*/)
+nav2_util_msgs::msg::Costmap
+Costmap::getCostmap(const nav2_util_msgs::msg::CostmapMetaData & /*specifications*/)
 {
   // TODO(orduno): build a costmap given the specifications
 
@@ -44,7 +44,7 @@ Costmap::getCostmap(const nav2_tasks::msg::CostmapMetaData & /*specifications*/)
 
   // TODO(orduno): faking out a costmap for now
 
-  nav2_tasks::msg::Costmap costmap;
+  nav2_util_msgs::msg::Costmap costmap;
   costmap.header.stamp = node_->now();
   costmap.header.frame_id = "/map";
 

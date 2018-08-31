@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_world_model)
+project(nav2_costmap_world_model)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -14,8 +14,9 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
 find_package(nav2_util)
+find_package(nav2_util_msgs)
+find_package(nav2_world_model_msgs)
 
 include_directories(
   include
@@ -29,8 +30,9 @@ add_executable(world_model
 ament_target_dependencies(world_model
   rclcpp
   std_msgs
-  nav2_tasks
   nav2_util
+  nav2_util_msgs
+  nav2_world_model_msgs
   tf2_ros
   tf2
 )
