@@ -17,6 +17,8 @@
 
 #include "nav2_tasks/msg/task_status.hpp"
 
+#include "nav2_tasks/msg/task_status.hpp"
+
 namespace nav2_tasks
 {
 
