@@ -52,17 +52,17 @@ public:
     stopWorkerThread();
   }
 
-  virtual TaskStatus executeAsync(const typename CommandMsg::SharedPtr command) = 0;
+  virtual TaskStatus execute(const typename CommandMsg::SharedPtr command) = 0;
 
-  // The user's executeAsync method can check if the client is requesting a cancel
+  // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested()
   {
-    return shouldCancel_;
+    return cancelReceived_;
   }
 
   void setCanceled()
   {
-    shouldCancel_ = false;
+    cancelReceived_ = false;
   }
 
   void setResult(const ResultMsg & result)
@@ -71,45 +71,54 @@ public:
   }
 
 protected:
+  typename CommandMsg::SharedPtr commandMsg_;
+  ResultMsg resultMsg_;
+
   // These messages are internal to the TaskClient implementation
   typedef std_msgs::msg::String CancelMsg;
-  typedef std_msgs::msg::String StatusMsg;
+  typedef nav2_tasks::msg::TaskStatus StatusMsg;
 
   // The pointer to our private worker thread
   std::thread * workerThread_;
 
-  // This class has the worker thread body which calls the user's executeAsync() callback
+  // This class has the worker thread body which calls the user's execute() callback
   void workerThread()
   {
-    std::mutex m;
-    std::unique_lock<std::mutex> lock(m);
-
     do {
-      cv_.wait_for(lock, std::chrono::milliseconds(10));
+      std::unique_lock<std::mutex> lock(commandMutex_);
+      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(10),
+        [&] {return commandReceived_ == true;}))
+      {
+        // Call the user's overridden method
+        TaskStatus status = execute(commandMsg_);
 
-      if (shouldExecute_) {
-        TaskStatus status = executeAsync(commandMsg_);
+        // Reset the execution flag now that we've executed the task
+        commandReceived_ = false;
+
+        nav2_tasks::msg::TaskStatus statusMsg;
+
+        // Check the result of the user's function and send the
+        // appropriate message
 
         if (status == TaskStatus::SUCCEEDED) {
-          // If the task succeeded, publish the result first
+          // If the task succeeded, first publish the result message
           resultPub_->publish(resultMsg_);
 
           // Then send the success code
-          std_msgs::msg::String statusMsg;
-          statusMsg.data = "Success";
+          statusMsg.result = nav2_tasks::msg::TaskStatus::SUCCEEDED;
           statusPub_->publish(statusMsg);
+          printf("TaskServer: publishing success status message");
         } else if (status == TaskStatus::FAILED) {
-          // Otherwise, just send the failure code
-          std_msgs::msg::String statusMsg;
-          statusMsg.data = "Failure";
+          // Otherwise, send the failure code
+          statusMsg.result = nav2_tasks::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
         } else if (status == TaskStatus::CANCELED) {
-          shouldCancel_ = false;
+          // Or the canceled code
+          statusMsg.result = nav2_tasks::msg::TaskStatus::CANCELED;
+          statusPub_->publish(statusMsg);
         } else {
           throw std::logic_error("Unexpected status return from task");
         }
-
-        shouldExecute_ = false;
       }
     } while (rclcpp::ok());
   }
@@ -127,27 +136,34 @@ protected:
     workerThread_ = nullptr;
   }
 
-  std::condition_variable cv_;
-  std::atomic<bool> shouldCancel_;
-  std::atomic<bool> shouldExecute_;
+  // Variables to handle the communication of the command to the execute thread
+  std::mutex commandMutex_;
+  bool commandReceived_;
+  std::condition_variable cvCommand_;
 
-  typename CommandMsg::SharedPtr commandMsg_;
-  ResultMsg resultMsg_;
+  // Variables to handle the communication of the cancel request to the execute thread
+  std::atomic<bool> cancelReceived_;
+  std::condition_variable cvCancel_;
 
   // The callbacks for our subscribers
   void onCommandReceived(const typename CommandMsg::SharedPtr msg)
   {
     std::cout << "onCommandReceived\n";
-    commandMsg_ = msg;
-    shouldExecute_ = true;
-    cv_.notify_one();
+
+    {
+      std::lock_guard<std::mutex> lock(commandMutex_);
+      commandMsg_ = msg;
+      commandReceived_ = true;
+    }
+
+    cvCommand_.notify_one();
   }
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
     std::cout << "onCancelReceived\n";
-    shouldCancel_ = true;
-    cv_.notify_one();
+    cancelReceived_ = true;
+    cvCancel_.notify_one();
   }
 
   // The subscribers: command and cancel
