@@ -35,16 +35,14 @@ include_directories(
 	${SDL_INCLUDE_DIR}
 	${SDL_IMAGE_INCLUDE_DIRS}
 	${YAML_CPP_ROS2_INCLUDE_DIRS}
-	
 )
-
 
 add_library(map_reps
 	src/map_reps/occupancy_grid.cpp
 	src/map_reps/map_loader.cpp
 	#src/map_reps/gridmap.cpp
-
 )
+
 ament_target_dependencies(map_reps rclcpp nav_msgs)
 target_link_libraries(map_reps
 	${BULLET_LIBRARIES}
@@ -54,7 +52,6 @@ target_link_libraries(map_reps
 	${YAML_CPP_ROS2_LIBRARIES}
 )
 
-
 add_executable(map_server src/map_server.cpp)
 ament_target_dependencies(map_server rclcpp nav_msgs)
 target_link_libraries(map_server
@@ -62,10 +59,7 @@ target_link_libraries(map_server
 	${ament_LIBRARIES}
 )
 
-
-
 install(TARGETS map_reps map_server DESTINATION lib/${PROJECT_NAME})
-
 
 ## Install project namespaced headers
 install(DIRECTORY include/${PROJECT_NAME}/
@@ -92,7 +86,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-
 ament_package()
 
 
