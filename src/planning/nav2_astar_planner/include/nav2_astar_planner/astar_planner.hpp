@@ -16,7 +16,7 @@
 #define NAV2_ASTAR_PLANNER__ASTAR_PLANNER_HPP_
 
 #include <string>
-#include "nav2_tasks/ComputePathToPoseTaskServer.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
 
 namespace nav2_astar_planner
 {

@@ -17,9 +17,9 @@
 
 #include <string>
 #include <memory>
-#include "nav2_tasks/NavigateToPoseTaskServer.hpp"
-#include "nav2_tasks/ComputePathToPoseTaskClient.hpp"
-#include "nav2_tasks/FollowPathTaskClient.hpp"
+#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_simple_navigator
 {

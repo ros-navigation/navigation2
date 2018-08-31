@@ -16,7 +16,7 @@
 #define NAV2_DWA_CONTROLLER__DWA_CONTROLLER_HPP_
 
 #include <string>
-#include "nav2_tasks/FollowPathTaskServer.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_dwa_controller
 {

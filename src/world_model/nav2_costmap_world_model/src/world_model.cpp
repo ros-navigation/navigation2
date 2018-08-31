@@ -40,7 +40,8 @@ WorldModel::WorldModel(const string & name)
     };
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name, costmap_service_callback);
+  costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name,
+      costmap_service_callback);
 }
 
 }  // namespace nav2_world_model

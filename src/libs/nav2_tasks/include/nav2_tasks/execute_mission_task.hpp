@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__EXECUTEMISSIONTASKSERVER_HPP_
-#define NAV2_TASKS__EXECUTEMISSIONTASKSERVER_HPP_
+#ifndef NAV2_TASKS__EXECUTE_MISSION_TASK_HPP_
+#define NAV2_TASKS__EXECUTE_MISSION_TASK_HPP_
 
+#include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_tasks/ExecuteMissionTaskMessages.hpp"
+#include "nav2_mission_execution_msgs/msg/mission_plan.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
+using ExecuteMissionCommand = nav2_mission_execution_msgs::msg::MissionPlan;
+using ExecuteMissionResult = std_msgs::msg::Empty;
+
+using ExecuteMissionTaskClient = TaskClient<ExecuteMissionCommand, ExecuteMissionResult>;
 using ExecuteMissionTaskServer = TaskServer<ExecuteMissionCommand, ExecuteMissionResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__EXECUTEMISSIONTASKSERVER_HPP_
+#endif  // NAV2_TASKS__EXECUTE_MISSION_TASK_HPP_

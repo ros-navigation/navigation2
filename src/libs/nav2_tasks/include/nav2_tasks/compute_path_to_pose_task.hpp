@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_
-#define NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_
+#ifndef NAV2_TASKS__COMPUTE_PATH_TO_POSE_TASK_HPP_
+#define NAV2_TASKS__COMPUTE_PATH_TO_POSE_TASK_HPP_
 
+#include "nav2_tasks/task_client.hpp"
+#include "nav2_tasks/task_server.hpp"
+#include "nav2_planning_msgs/msg/path_end_points.hpp"
 #include "nav2_planning_msgs/msg/path.hpp"
-#include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using FollowPathCommand = nav2_planning_msgs::msg::Path;
-using FollowPathResult = std_msgs::msg::Empty;
+using ComputePathToPoseCommand = nav2_planning_msgs::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_planning_msgs::msg::Path;
+
+using ComputePathToPoseTaskClient =
+    TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
+
+using ComputePathToPoseTaskServer =
+    TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__FOLLOWPATHTASKMESSAGES_HPP_
+#endif  // NAV2_TASKS__COMPUTE_PATH_TO_POSE_TASK_HPP_

@@ -17,8 +17,8 @@
 
 #include <string>
 #include <memory>
-#include "nav2_tasks/ExecuteMissionTaskServer.hpp"
-#include "nav2_tasks/NavigateToPoseTaskClient.hpp"
+#include "nav2_tasks/execute_mission_task.hpp"
+#include "nav2_tasks/navigate_to_pose_task.hpp"
 
 namespace nav2_mission_execution
 {

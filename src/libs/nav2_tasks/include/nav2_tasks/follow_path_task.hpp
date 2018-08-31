@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKSERVER_HPP_
-#define NAV2_TASKS__COMPUTEPATHTOPOSETASKSERVER_HPP_
+#ifndef NAV2_TASKS__FOLLOW_PATH_TASK_HPP_
+#define NAV2_TASKS__FOLLOW_PATH_TASK_HPP_
 
+#include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_tasks/ComputePathToPoseTaskMessages.hpp"
+#include "nav2_planning_msgs/msg/path.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using ComputePathToPoseTaskServer =
-    TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
+using FollowPathCommand = nav2_planning_msgs::msg::Path;
+using FollowPathResult = std_msgs::msg::Empty;
+
+using FollowPathTaskClient = TaskClient<FollowPathCommand, FollowPathResult>;
+using FollowPathTaskServer = TaskServer<FollowPathCommand, FollowPathResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__COMPUTEPATHTOPOSETASKSERVER_HPP_
+#endif  // NAV2_TASKS__FOLLOW_PATH_TASK_HPP_

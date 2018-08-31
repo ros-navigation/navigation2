@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
-#define NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#ifndef NAV2_TASKS__NAVIGATE_TO_POSE_TASK_HPP_
+#define NAV2_TASKS__NAVIGATE_TO_POSE_TASK_HPP_
 
-#include "nav2_planning_msgs/msg/path_end_points.hpp"
-#include "nav2_planning_msgs/msg/path.hpp"
+#include "nav2_tasks/task_client.hpp"
+#include "nav2_tasks/task_server.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using ComputePathToPoseCommand = nav2_planning_msgs::msg::PathEndPoints;
-using ComputePathToPoseResult = nav2_planning_msgs::msg::Path;
+using NavigateToPoseCommand = geometry_msgs::msg::PoseStamped;
+using NavigateToPoseResult = std_msgs::msg::Empty;
+
+using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;
+using NavigateToPoseTaskServer = TaskServer<NavigateToPoseCommand, NavigateToPoseResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__COMPUTEPATHTOPOSETASKMESSAGES_HPP_
+#endif  // NAV2_TASKS__NAVIGATE_TO_POSE_TASK_HPP_

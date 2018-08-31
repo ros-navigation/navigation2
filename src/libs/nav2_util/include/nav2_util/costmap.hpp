@@ -31,7 +31,8 @@ public:
 
   explicit Costmap(rclcpp::Node * node);
 
-  nav2_libs_msgs::msg::Costmap getCostmap(const nav2_libs_msgs::msg::CostmapMetaData & specifications);
+  nav2_libs_msgs::msg::Costmap getCostmap(
+    const nav2_libs_msgs::msg::CostmapMetaData & specifications);
 
   // Mapping for often used cost values
   static const CostValue no_information;
