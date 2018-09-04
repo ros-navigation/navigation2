@@ -16,7 +16,6 @@
 #define NAV2_UTIL__COSTMAP_HPP_
 
 #include <vector>
-#include <cstdint>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_libs_msgs/msg/costmap_meta_data.hpp"
@@ -27,12 +26,13 @@ namespace nav2_util
 class Costmap
 {
 public:
-  typedef uint8_t CostValue;
-
   explicit Costmap(rclcpp::Node * node);
+  Costmap() = delete;
 
   nav2_libs_msgs::msg::Costmap getCostmap(
     const nav2_libs_msgs::msg::CostmapMetaData & specifications);
+
+  typedef uint8_t CostValue;
 
   // Mapping for often used cost values
   static const CostValue no_information;

@@ -20,7 +20,6 @@
 #include <thread>
 #include <string>
 #include <chrono>
-#include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "nav2_tasks/task_status.hpp"

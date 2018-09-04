@@ -18,7 +18,6 @@
 #include <atomic>
 #include <condition_variable>
 #include <string>
-#include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "nav2_tasks/task_status.hpp"

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <memory>
-#include <exception>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mission_executor/mission_executor.hpp"
 

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_simple_navigator/simple_navigator.hpp"

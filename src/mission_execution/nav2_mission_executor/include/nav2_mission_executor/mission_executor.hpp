@@ -16,7 +16,6 @@
 #define NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 
 #include <string>
-#include <memory>
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 

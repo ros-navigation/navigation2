@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
@@ -31,6 +30,7 @@ class WorldModel : public rclcpp::Node
 {
 public:
   explicit WorldModel(const std::string & name);
+  WorldModel() = delete;
 
 private:
   // Server for providing a costmap

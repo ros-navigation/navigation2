@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 #include <string>
-
 #include "nav2_world_model/world_model.hpp"
 
 using std::vector;
