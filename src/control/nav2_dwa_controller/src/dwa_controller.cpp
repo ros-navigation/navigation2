@@ -28,6 +28,12 @@ DwaController::DwaController(const std::string & name)
   RCLCPP_INFO(get_logger(), "DwaController::DwaController");
 }
 
+DwaController::DwaController()
+ : DwaController("DwaController")
+{
+  RCLCPP_INFO(get_logger(), "DwaController::DwaController");
+}
+
 DwaController::~DwaController()
 {
   RCLCPP_INFO(get_logger(), "DwaController::~DwaController");

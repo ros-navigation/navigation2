@@ -26,7 +26,7 @@ class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
 {
 public:
   explicit MissionExecutor(const std::string & name);
-  MissionExecutor() = delete;
+  MissionExecutor();
   ~MissionExecutor();
 
   nav2_tasks::TaskStatus execute(

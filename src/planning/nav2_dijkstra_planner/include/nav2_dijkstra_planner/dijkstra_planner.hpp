@@ -33,7 +33,7 @@ class DijkstraPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
   explicit DijkstraPlanner(const std::string & name);
-  DijkstraPlanner() = delete;
+  DijkstraPlanner();
   ~DijkstraPlanner();
 
   nav2_tasks::TaskStatus execute(

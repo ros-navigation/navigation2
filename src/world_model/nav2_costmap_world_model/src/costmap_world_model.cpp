@@ -16,15 +16,15 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "nav2_world_model/world_model.hpp"
+#include "nav2_costmap_world_model/costmap_world_model.hpp"
 
 using std::vector;
 using std::string;
 
-namespace nav2_world_model
+namespace nav2_costmap_world_model
 {
 
-WorldModel::WorldModel(const string & name)
+CostmapWorldModel::CostmapWorldModel(const string & name)
 : Node(name)
 {
   costmap_ = std::make_unique<nav2_util::Costmap>(this);
@@ -34,7 +34,7 @@ WorldModel::WorldModel(const string & name)
     const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
     {
-      RCLCPP_INFO(this->get_logger(), "WorldModel::WorldModel:Incoming costmap request");
+      RCLCPP_INFO(this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
       response->map = costmap_->getCostmap(request->specs);
     };
 
@@ -43,4 +43,9 @@ WorldModel::WorldModel(const string & name)
       costmap_service_callback);
 }
 
-}  // namespace nav2_world_model
+CostmapWorldModel::CostmapWorldModel()
+: CostmapWorldModel("CostmapWorldModel")
+{
+}
+
+}  // namespace nav2_costmap_world_model

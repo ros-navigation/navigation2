@@ -23,14 +23,14 @@
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
-namespace nav2_world_model
+namespace nav2_costmap_world_model
 {
 
-class WorldModel : public rclcpp::Node
+class CostmapWorldModel : public rclcpp::Node
 {
 public:
-  explicit WorldModel(const std::string & name);
-  WorldModel() = delete;
+  explicit CostmapWorldModel(const std::string & name);
+  CostmapWorldModel();
 
 private:
   // Server for providing a costmap

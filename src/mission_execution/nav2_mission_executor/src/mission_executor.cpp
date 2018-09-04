@@ -30,6 +30,12 @@ MissionExecutor::MissionExecutor(const std::string & name)
   navigationTask_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>("SimpleNavigator", this);
 }
 
+MissionExecutor::MissionExecutor()
+ : MissionExecutor("MissionExecutor")
+{
+  RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
+}
+
 MissionExecutor::~MissionExecutor()
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::~MissionExecutor");

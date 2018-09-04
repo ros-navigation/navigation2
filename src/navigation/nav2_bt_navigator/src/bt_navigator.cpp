@@ -32,6 +32,12 @@ BtNavigator::BtNavigator(const std::string & name)
   controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
 }
 
+BtNavigator::BtNavigator()
+ : BtNavigator("BtNavigator")
+{
+  RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
+}
+
 BtNavigator::~BtNavigator()
 {
   RCLCPP_INFO(get_logger(), "BtNavigator::~BtNavigator");

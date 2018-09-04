@@ -25,7 +25,7 @@ class AStarPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
   explicit AStarPlanner(const std::string & name);
-  AStarPlanner() = delete;
+  AStarPlanner();
   ~AStarPlanner();
 
   nav2_tasks::TaskStatus execute(

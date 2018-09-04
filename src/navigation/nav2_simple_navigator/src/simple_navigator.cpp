@@ -37,6 +37,12 @@ SimpleNavigator::SimpleNavigator(const std::string & name)
   controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
 }
 
+SimpleNavigator::SimpleNavigator()
+ : SimpleNavigator("SimpleNavigator")
+{
+  RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
+}
+
 SimpleNavigator::~SimpleNavigator()
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::~SimpleNavigator");

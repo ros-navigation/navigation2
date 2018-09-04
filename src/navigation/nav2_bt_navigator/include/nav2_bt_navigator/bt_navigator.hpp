@@ -28,7 +28,7 @@ class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
   explicit BtNavigator(const std::string & name);
-  BtNavigator() = delete;
+  BtNavigator();
   ~BtNavigator();
 
   nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);

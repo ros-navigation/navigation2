@@ -25,7 +25,7 @@ class DwaController : public nav2_tasks::FollowPathTaskServer
 {
 public:
   explicit DwaController(const std::string & name);
-  DwaController() = delete;
+  DwaController();
   ~DwaController();
 
   nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;

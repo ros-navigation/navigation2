@@ -28,7 +28,7 @@ class SimpleNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
   explicit SimpleNavigator(const std::string & name);
-  SimpleNavigator() = delete;
+  SimpleNavigator();
   ~SimpleNavigator();
 
   nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);

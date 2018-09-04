@@ -19,7 +19,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_dijkstra_planner::DijkstraPlanner>("DijkstraPlanner"));
+  rclcpp::spin(std::make_shared<nav2_dijkstra_planner::DijkstraPlanner>());
   rclcpp::shutdown();
 
   return 0;

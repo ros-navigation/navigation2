@@ -19,7 +19,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_bt_navigator::BtNavigator>("BtNavigator"));
+  rclcpp::spin(std::make_shared<nav2_bt_navigator::BtNavigator>());
   rclcpp::shutdown();
 
   return 0;

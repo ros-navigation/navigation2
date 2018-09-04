@@ -19,7 +19,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_dwa_controller::DwaController>("DwaController"));
+  rclcpp::spin(std::make_shared<nav2_dwa_controller::DwaController>());
   rclcpp::shutdown();
 
   return 0;

@@ -70,6 +70,12 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
 }
 
+DijkstraPlanner::DijkstraPlanner()
+: DijkstraPlanner("DijkstraPlanner")
+{
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
+}
+
 DijkstraPlanner::~DijkstraPlanner()
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::~DijkstraPlanner");
