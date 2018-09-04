@@ -29,7 +29,7 @@ AStarPlanner::AStarPlanner(const std::string & name)
 }
 
 AStarPlanner::AStarPlanner()
- : AStarPlanner("AStarPlanner")
+: AStarPlanner("AStarPlanner")
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
 }

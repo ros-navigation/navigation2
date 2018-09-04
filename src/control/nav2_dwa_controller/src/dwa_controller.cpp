@@ -29,7 +29,7 @@ DwaController::DwaController(const std::string & name)
 }
 
 DwaController::DwaController()
- : DwaController("DwaController")
+: DwaController("DwaController")
 {
   RCLCPP_INFO(get_logger(), "DwaController::DwaController");
 }

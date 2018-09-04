@@ -38,7 +38,7 @@ SimpleNavigator::SimpleNavigator(const std::string & name)
 }
 
 SimpleNavigator::SimpleNavigator()
- : SimpleNavigator("SimpleNavigator")
+: SimpleNavigator("SimpleNavigator")
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
-#define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
+#ifndef NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_
+#define NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_
 
 #include <string>
 #include <vector>
@@ -52,6 +52,6 @@ private:
   std::unique_ptr<nav2_util::Costmap> costmap_;
 };
 
-}  // namespace nav2_world_model
+}  // namespace nav2_costmap_world_model
 
-#endif  // NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
+#endif  // NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_

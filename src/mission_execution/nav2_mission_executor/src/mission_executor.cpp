@@ -31,7 +31,7 @@ MissionExecutor::MissionExecutor(const std::string & name)
 }
 
 MissionExecutor::MissionExecutor()
- : MissionExecutor("MissionExecutor")
+: MissionExecutor("MissionExecutor")
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
 }

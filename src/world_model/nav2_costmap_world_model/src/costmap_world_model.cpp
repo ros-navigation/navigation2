@@ -34,7 +34,8 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
     const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
     {
-      RCLCPP_INFO(this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
+      RCLCPP_INFO(
+        this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
       response->map = costmap_->getCostmap(request->specs);
     };
 

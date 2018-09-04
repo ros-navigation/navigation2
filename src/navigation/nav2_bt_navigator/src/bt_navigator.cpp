@@ -33,7 +33,7 @@ BtNavigator::BtNavigator(const std::string & name)
 }
 
 BtNavigator::BtNavigator()
- : BtNavigator("BtNavigator")
+: BtNavigator("BtNavigator")
 {
   RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
 }
