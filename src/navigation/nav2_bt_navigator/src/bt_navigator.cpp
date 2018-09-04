@@ -24,18 +24,12 @@ using nav2_tasks::TaskStatus;
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator(const std::string & name)
-: nav2_tasks::NavigateToPoseTaskServer(name)
-{
-  RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
-  planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>("AStarPlanner", this);
-  controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
-}
-
 BtNavigator::BtNavigator()
-: BtNavigator("BtNavigator")
+: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
+  planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 }
 
 BtNavigator::~BtNavigator()

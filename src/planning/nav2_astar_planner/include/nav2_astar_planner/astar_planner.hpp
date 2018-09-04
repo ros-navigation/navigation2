@@ -24,7 +24,6 @@ namespace nav2_astar_planner
 class AStarPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
-  explicit AStarPlanner(const std::string & name);
   AStarPlanner();
   ~AStarPlanner();
 

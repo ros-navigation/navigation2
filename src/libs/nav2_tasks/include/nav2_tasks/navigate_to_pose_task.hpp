@@ -29,6 +29,12 @@ using NavigateToPoseResult = std_msgs::msg::Empty;
 using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;
 using NavigateToPoseTaskServer = TaskServer<NavigateToPoseCommand, NavigateToPoseResult>;
 
+template<>
+inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
+{
+  return "NavigateToPoseTask";
+}
+
 }  // namespace nav2_tasks
 
 #endif  // NAV2_TASKS__NAVIGATE_TO_POSE_TASK_HPP_

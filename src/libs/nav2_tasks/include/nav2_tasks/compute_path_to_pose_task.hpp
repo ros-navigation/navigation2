@@ -32,6 +32,12 @@ using ComputePathToPoseTaskClient =
 using ComputePathToPoseTaskServer =
     TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
+template<>
+inline const char * getTaskName<ComputePathToPoseCommand, ComputePathToPoseResult>()
+{
+  return "ComputePathToPoseTask";
+}
+
 }  // namespace nav2_tasks
 
 #endif  // NAV2_TASKS__COMPUTE_PATH_TO_POSE_TASK_HPP_

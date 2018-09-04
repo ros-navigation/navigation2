@@ -22,14 +22,8 @@ using nav2_tasks::TaskStatus;
 namespace nav2_dwa_controller
 {
 
-DwaController::DwaController(const std::string & name)
-: nav2_tasks::FollowPathTaskServer(name)
-{
-  RCLCPP_INFO(get_logger(), "DwaController::DwaController");
-}
-
 DwaController::DwaController()
-: DwaController("DwaController")
+: nav2_tasks::FollowPathTaskServer("FollowPathNode")
 {
   RCLCPP_INFO(get_logger(), "DwaController::DwaController");
 }

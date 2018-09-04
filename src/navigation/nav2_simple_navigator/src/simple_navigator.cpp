@@ -29,18 +29,12 @@ using nav2_tasks::TaskStatus;
 namespace nav2_simple_navigator
 {
 
-SimpleNavigator::SimpleNavigator(const std::string & name)
-: nav2_tasks::NavigateToPoseTaskServer(name)
-{
-  RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-  planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>("AStarPlanner", this);
-  controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>("DwaController", this);
-}
-
 SimpleNavigator::SimpleNavigator()
-: SimpleNavigator("SimpleNavigator")
+: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
+  planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 }
 
 SimpleNavigator::~SimpleNavigator()

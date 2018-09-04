@@ -27,7 +27,6 @@ namespace nav2_simple_navigator
 class SimpleNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
-  explicit SimpleNavigator(const std::string & name);
   SimpleNavigator();
   ~SimpleNavigator();
 

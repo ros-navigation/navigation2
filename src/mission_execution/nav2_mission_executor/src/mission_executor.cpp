@@ -23,17 +23,11 @@ using nav2_tasks::TaskStatus;
 namespace nav2_mission_execution
 {
 
-MissionExecutor::MissionExecutor(const std::string & name)
-: nav2_tasks::ExecuteMissionTaskServer(name)
-{
-  RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
-  navigationTask_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>("SimpleNavigator", this);
-}
-
 MissionExecutor::MissionExecutor()
-: MissionExecutor("MissionExecutor")
+: nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
+  navigationTask_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(this);
 }
 
 MissionExecutor::~MissionExecutor()

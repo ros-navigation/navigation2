@@ -28,20 +28,24 @@ namespace nav2_tasks
 {
 
 template<class CommandMsg, class ResultMsg>
+const char * getTaskName();
+
+template<class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
 {
 public:
   explicit TaskServer(const std::string & name)
   : Node(name), workerThread_(nullptr)
   {
-    commandSub_ = create_subscription<CommandMsg>(name + "_command",
+    std::string taskName = getTaskName<CommandMsg, ResultMsg>();
+    commandSub_ = create_subscription<CommandMsg>(taskName + "_command",
         std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
 
-    cancelSub_ = create_subscription<std_msgs::msg::String>(name + "_cancel",
+    cancelSub_ = create_subscription<std_msgs::msg::String>(taskName + "_cancel",
         std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
-    resultPub_ = this->create_publisher<ResultMsg>(name + "_result");
-    statusPub_ = this->create_publisher<StatusMsg>(name + "_status");
+    resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
+    statusPub_ = this->create_publisher<StatusMsg>(taskName + "_status");
 
     startWorkerThread();
   }

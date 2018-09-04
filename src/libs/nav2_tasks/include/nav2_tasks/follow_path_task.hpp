@@ -29,6 +29,12 @@ using FollowPathResult = std_msgs::msg::Empty;
 using FollowPathTaskClient = TaskClient<FollowPathCommand, FollowPathResult>;
 using FollowPathTaskServer = TaskServer<FollowPathCommand, FollowPathResult>;
 
+template<>
+inline const char * getTaskName<FollowPathCommand, FollowPathResult>()
+{
+  return "FollowPathTask";
+}
+
 }  // namespace nav2_tasks
 
 #endif  // NAV2_TASKS__FOLLOW_PATH_TASK_HPP_

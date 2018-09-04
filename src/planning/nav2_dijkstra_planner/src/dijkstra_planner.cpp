@@ -40,9 +40,9 @@ using nav2_tasks::TaskStatus;
 namespace nav2_dijkstra_planner
 {
 
-DijkstraPlanner::DijkstraPlanner(const std::string & name)
-: nav2_tasks::ComputePathToPoseTaskServer(name), global_frame_("/map"),
-  allow_unknown_(true), default_tolerance_(1.0)
+DijkstraPlanner::DijkstraPlanner()
+: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode"),
+  global_frame_("/map"), allow_unknown_(true), default_tolerance_(1.0)
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 
@@ -68,12 +68,6 @@ DijkstraPlanner::DijkstraPlanner(const std::string & name)
 
   // Plan publisher for visualization purposes
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
-}
-
-DijkstraPlanner::DijkstraPlanner()
-: DijkstraPlanner("DijkstraPlanner")
-{
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 }
 
 DijkstraPlanner::~DijkstraPlanner()

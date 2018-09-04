@@ -22,14 +22,8 @@ using nav2_tasks::TaskStatus;
 namespace nav2_astar_planner
 {
 
-AStarPlanner::AStarPlanner(const std::string & name)
-: nav2_tasks::ComputePathToPoseTaskServer(name)
-{
-  RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
-}
-
 AStarPlanner::AStarPlanner()
-: AStarPlanner("AStarPlanner")
+: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::AStarPlanner");
 }

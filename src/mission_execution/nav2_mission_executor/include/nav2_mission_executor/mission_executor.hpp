@@ -26,7 +26,6 @@ namespace nav2_mission_execution
 class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
 {
 public:
-  explicit MissionExecutor(const std::string & name);
   MissionExecutor();
   ~MissionExecutor();
 

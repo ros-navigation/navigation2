@@ -24,7 +24,6 @@ namespace nav2_dwa_controller
 class DwaController : public nav2_tasks::FollowPathTaskServer
 {
 public:
-  explicit DwaController(const std::string & name);
   DwaController();
   ~DwaController();
 

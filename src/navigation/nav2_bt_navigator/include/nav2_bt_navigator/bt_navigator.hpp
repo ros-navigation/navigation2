@@ -27,7 +27,6 @@ namespace nav2_bt_navigator
 class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
-  explicit BtNavigator(const std::string & name);
   BtNavigator();
   ~BtNavigator();
 

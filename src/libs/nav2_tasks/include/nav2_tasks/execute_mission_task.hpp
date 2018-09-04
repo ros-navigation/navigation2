@@ -29,6 +29,12 @@ using ExecuteMissionResult = std_msgs::msg::Empty;
 using ExecuteMissionTaskClient = TaskClient<ExecuteMissionCommand, ExecuteMissionResult>;
 using ExecuteMissionTaskServer = TaskServer<ExecuteMissionCommand, ExecuteMissionResult>;
 
+template<>
+inline const char * getTaskName<ExecuteMissionCommand, ExecuteMissionResult>()
+{
+  return "ExecuteMissionTask";
+}
+
 }  // namespace nav2_tasks
 
 #endif  // NAV2_TASKS__EXECUTE_MISSION_TASK_HPP_

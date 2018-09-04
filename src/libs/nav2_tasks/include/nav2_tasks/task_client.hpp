@@ -26,22 +26,29 @@ namespace nav2_tasks
 {
 
 template<class CommandMsg, class ResultMsg>
+const char * getTaskName();
+
+template<class CommandMsg, class ResultMsg>
 class TaskClient
 {
 public:
-  TaskClient(const std::string & name, rclcpp::Node * node)
+  explicit TaskClient(rclcpp::Node * node)
   : node_(node)
   {
+    std::string taskName = getTaskName<CommandMsg, ResultMsg>();
+
     // Create the publishers
-    commandPub_ = node_->create_publisher<CommandMsg>(name + "_command");
-    cancelPub_ = node_->create_publisher<CancelMsg>(name + "_cancel");
+    commandPub_ = node_->create_publisher<CommandMsg>(taskName + "_command");
+    cancelPub_ = node_->create_publisher<CancelMsg>(taskName + "_cancel");
 
     // Create the subscribers
-    resultSub_ = node_->create_subscription<ResultMsg>(name + "_result",
+    resultSub_ = node_->create_subscription<ResultMsg>(taskName + "_result",
         std::bind(&TaskClient::onResultReceived, this, std::placeholders::_1));
-    statusSub_ = node_->create_subscription<StatusMsg>(name + "_status",
+    statusSub_ = node_->create_subscription<StatusMsg>(taskName + "_status",
         std::bind(&TaskClient::onStatusReceived, this, std::placeholders::_1));
   }
+
+  TaskClient() = delete;
 
   ~TaskClient()
   {

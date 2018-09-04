@@ -32,7 +32,6 @@ namespace nav2_dijkstra_planner
 class DijkstraPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
-  explicit DijkstraPlanner(const std::string & name);
   DijkstraPlanner();
   ~DijkstraPlanner();
 
