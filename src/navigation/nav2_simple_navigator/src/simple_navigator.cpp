@@ -33,8 +33,8 @@ SimpleNavigator::SimpleNavigator()
 : nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
-  planner_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
-  controller_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+  plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 }
 
 SimpleNavigator::~SimpleNavigator()
@@ -58,7 +58,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  planner_->sendCommand(endpoints);
+  plannerTaskClient_->sendCommand(endpoints);
 
   // TODO(orduno): implement continous replanning
 
@@ -68,13 +68,13 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
     // tasks and then cancel this task
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
-      planner_->cancel();
+      plannerTaskClient_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // Check if the planning task has completed
-    TaskStatus status = planner_->waitForResult(path, 100ms);
+    TaskStatus status = plannerTaskClient_->waitForResult(path, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -108,7 +108,7 @@ planning_succeeded:
   RCLCPP_INFO(get_logger(),
     "SimpleNavigator::execute: sending the path to the controller to execute");
 
-  controller_->sendCommand(path);
+  controllerTaskClient_->sendCommand(path);
 
   // Loop until the control task completes
   for (;; ) {
@@ -116,14 +116,14 @@ planning_succeeded:
     // tasks and then cancel this task
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: task has been canceled");
-      controller_->cancel();
+      controllerTaskClient_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // Check if the control task has completed
     auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controller_->waitForResult(controlResult, 10ms);
+    TaskStatus status = controllerTaskClient_->waitForResult(controlResult, 10ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:

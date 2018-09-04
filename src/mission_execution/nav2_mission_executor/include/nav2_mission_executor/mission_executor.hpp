@@ -33,7 +33,7 @@ public:
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
 
 private:
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> navigationTask_;
+  std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> navTaskClient_;
 };
 
 }  // namespace nav2_mission_execution

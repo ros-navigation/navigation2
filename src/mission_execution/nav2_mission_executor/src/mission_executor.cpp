@@ -27,7 +27,7 @@ MissionExecutor::MissionExecutor()
 : nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
-  navigationTask_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(this);
+  navTaskClient_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(this);
 }
 
 MissionExecutor::~MissionExecutor()
@@ -46,7 +46,7 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan
   auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  navigationTask_->sendCommand(goalPose);
+  navTaskClient_->sendCommand(goalPose);
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
@@ -56,13 +56,13 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
     // cancel the navigation task first and then cancel this task
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "MissionExecutor::execute: task has been canceled");
-      navigationTask_->cancel();
+      navTaskClient_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // This task hasn't been canceled, so see if the navigation task has finished
-    TaskStatus status = navigationTask_->waitForResult(navResult, 100ms);
+    TaskStatus status = navTaskClient_->waitForResult(navResult, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:

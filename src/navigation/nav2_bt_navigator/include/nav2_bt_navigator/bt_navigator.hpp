@@ -33,8 +33,8 @@ public:
   nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 protected:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_;
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_;
+  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> plannerTaskClient_;
+  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controllerTaskClient_;
 };
 
 }  // namespace nav2_bt_navigator
