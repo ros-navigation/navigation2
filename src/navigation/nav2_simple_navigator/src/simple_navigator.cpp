@@ -58,7 +58,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  planner_->executeAsync(endpoints);
+  planner_->sendCommand(endpoints);
 
   // TODO(orduno): implement continous replanning
 
@@ -79,7 +79,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
     switch (status) {
       case TaskStatus::SUCCEEDED:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task completed");
-        goto here;
+        goto planning_succeeded;
 
       case TaskStatus::FAILED:
         return TaskStatus::FAILED;
@@ -89,12 +89,12 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 
-here:
+planning_succeeded:
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: got path of size %u",
     path->poses.size());
@@ -108,7 +108,7 @@ here:
   RCLCPP_INFO(get_logger(),
     "SimpleNavigator::execute: sending the path to the controller to execute");
 
-  controller_->executeAsync(path);
+  controller_->sendCommand(path);
 
   // Loop until the control task completes
   for (;; ) {
@@ -142,8 +142,8 @@ here:
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "SimpleNavigator::executeAsync: invalid status value");
-        throw std::logic_error("SimpleNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: invalid status value");
+        throw std::logic_error("SimpleNavigator::execute: invalid status value");
     }
   }
 }

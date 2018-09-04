@@ -46,7 +46,7 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan
   auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  navigationTask_->executeAsync(goalPose);
+  navigationTask_->sendCommand(goalPose);
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
@@ -84,8 +84,8 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "MissionExecutor::executeAsync: invalid status value");
-        throw std::logic_error("MissionExecutor::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "MissionExecutor::execute: invalid status value");
+        throw std::logic_error("MissionExecutor::execute: invalid status value");
     }
   }
 }

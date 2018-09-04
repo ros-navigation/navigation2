@@ -48,7 +48,7 @@ public:
   }
 
   // The client can tell the TaskServer to execute its operation
-  void executeAsync(const typename CommandMsg::SharedPtr msg)
+  void sendCommand(const typename CommandMsg::SharedPtr msg)
   {
     resultReceived_ = false;
     statusReceived_ = false;

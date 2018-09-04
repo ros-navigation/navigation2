@@ -50,7 +50,7 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   RCLCPP_INFO(get_logger(), "BtNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  planner_->executeAsync(endpoints);
+  planner_->sendCommand(endpoints);
 
   // Loop until the subtasks are completed
   for (;; ) {
@@ -79,8 +79,8 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "BtNavigator::executeAsync: invalid status value");
-        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "BtNavigator::execute: invalid status value");
+        throw std::logic_error("BtNavigator::execute: invalid status value");
     }
   }
 
@@ -88,7 +88,7 @@ here:
   RCLCPP_INFO(get_logger(),
     "BtNavigator::execute: sending the path to the controller to execute");
 
-  controller_->executeAsync(path);
+  controller_->sendCommand(path);
 
   // Loop until the control task completes
   for (;; ) {
@@ -123,8 +123,8 @@ here:
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "BtNavigator::executeAsync: invalid status value");
-        throw std::logic_error("BtNavigator::executeAsync: invalid status value");
+        RCLCPP_ERROR(get_logger(), "BtNavigator::execute: invalid status value");
+        throw std::logic_error("BtNavigator::execute: invalid status value");
     }
   }
 }
