@@ -19,7 +19,7 @@
 #include <condition_variable>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
@@ -65,8 +65,7 @@ public:
   // An in-flight operation can be canceled
   void cancel()
   {
-    std_msgs::msg::String msg;
-    msg.data = "Goodbye, World!";
+    CancelMsg msg;
     cancelPub_->publish(msg);
   }
 
@@ -142,7 +141,7 @@ protected:
   typename ResultMsg::SharedPtr resultMsg_;
 
   // These messages are internal to the TaskClient implementation
-  typedef std_msgs::msg::String CancelMsg;
+  typedef std_msgs::msg::Empty CancelMsg;
   typedef nav2_tasks::msg::TaskStatus StatusMsg;
   StatusMsg::SharedPtr statusMsg_;
 

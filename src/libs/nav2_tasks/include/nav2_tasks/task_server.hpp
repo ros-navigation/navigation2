@@ -21,7 +21,7 @@
 #include <string>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
@@ -41,7 +41,7 @@ public:
     commandSub_ = create_subscription<CommandMsg>(taskName + "_command",
         std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
 
-    cancelSub_ = create_subscription<std_msgs::msg::String>(taskName + "_cancel",
+    cancelSub_ = create_subscription<std_msgs::msg::Empty>(taskName + "_cancel",
         std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
     resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
@@ -78,7 +78,7 @@ protected:
   ResultMsg resultMsg_;
 
   // These messages are internal to the TaskClient implementation
-  typedef std_msgs::msg::String CancelMsg;
+  typedef std_msgs::msg::Empty CancelMsg;
   typedef nav2_tasks::msg::TaskStatus StatusMsg;
 
   // The pointer to our private worker thread
@@ -110,7 +110,6 @@ protected:
           // Then send the success code
           statusMsg.result = nav2_tasks::msg::TaskStatus::SUCCEEDED;
           statusPub_->publish(statusMsg);
-          printf("TaskServer: publishing success status message");
         } else if (status == TaskStatus::FAILED) {
           // Otherwise, send the failure code
           statusMsg.result = nav2_tasks::msg::TaskStatus::FAILED;
@@ -151,8 +150,6 @@ protected:
   // The callbacks for our subscribers
   void onCommandReceived(const typename CommandMsg::SharedPtr msg)
   {
-    std::cout << "onCommandReceived\n";
-
     {
       std::lock_guard<std::mutex> lock(commandMutex_);
       commandMsg_ = msg;
@@ -164,7 +161,6 @@ protected:
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
-    std::cout << "onCancelReceived\n";
     cancelReceived_ = true;
     cvCancel_.notify_one();
   }

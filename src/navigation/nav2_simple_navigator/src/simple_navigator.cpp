@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Navigation Strategy based on:
-// Brock, O. and Oussama K. (1999). High-Speed Navigation Using
-// the Global Dynamic Window Approach. IEEE.
-// https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
-
 #include <string>
 #include <memory>
 #include <exception>
@@ -68,8 +63,6 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   plannerTaskClient_->sendCommand(endpoints);
-
-  // TODO(orduno): implement continous replanning
 
   // Loop until the subtasks are completed
   for (;; ) {
