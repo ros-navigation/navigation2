@@ -49,17 +49,12 @@
 
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-#ifdef HAVE_YAMLCPP_GT_0_5_0
-// The >> operator disappeared in yaml-cpp 0.5, so this function is
-// added to provide support for code written under the yaml-cpp 0.3 API.
 
 template<typename T>
 void operator>>(const YAML::Node & node, T & i)
 {
   i = node.as<T>();
 }
-
-#endif
 
 // Interface //
 
@@ -72,15 +67,8 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname)
     exit(-1);
   }
 
-#ifdef HAVE_YAMLCPP_GT_0_5_0
-  // The document loading process changed in yaml-cpp 0.5.
-  // YAML::Node doc = YAML::Load(fin);
   YAML::Node doc = YAML::LoadFile(fname);
-#else
-  YAML::Parser parser(fin);
-  YAML::Node doc;
-  parser.GetNextDocument(doc);
-#endif
+
   try {
     doc["resolution"] >> res;
   } catch (YAML::InvalidScalar) {
@@ -267,7 +255,7 @@ void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
 {
   // Create a publisher
   // TODO(bpwilcox): publish a latched topic
-  occ_pub_ = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occmap", rmw_qos_profile_default);
+  occ_pub_ = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occ_grid", rmw_qos_profile_default);
 
   // Create a service callback handle
   auto handle_occ_callback = [this](
@@ -278,7 +266,7 @@ void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
     };
 
   // Create a service
-  occ_service_ = n->create_service<nav_msgs::srv::GetMap>("static_occ_grid", handle_occ_callback);
+  occ_service_ = n->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
 }
 
 void OccGridLoader::setMap()
