@@ -24,13 +24,8 @@ find_package(SDL_image REQUIRED)
 #find_package(yaml-cpp REQUIRED)
 find_package(example_interfaces REQUIRED)
 
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
-
-if(YAMLCPP_VERSION VERSION_GREATER "0.5.0")
-  add_definitions(-DHAVE_YAMLCPP_GT_0_5_0)
-endif()
 
 include_directories(
   include
@@ -91,5 +86,3 @@ endif()
 
 ament_export_include_directories(include)
 ament_package()
-
-
