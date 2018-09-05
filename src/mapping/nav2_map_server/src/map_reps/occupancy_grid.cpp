@@ -266,7 +266,7 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
 void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
 {
   // Create a publisher
-
+  // TODO(bpwilcox): publish a latched topic
   occ_pub_ = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occmap", rmw_qos_profile_default);
 
   // Create a service callback handle

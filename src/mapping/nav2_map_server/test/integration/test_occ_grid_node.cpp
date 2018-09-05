@@ -19,7 +19,8 @@
 #include "nav2_map_server/map_reps/occupancy_grid.hpp"
 #include "test_constants/test_constants.h"
 
-// rclcpp::init can only be called once per process, so this needs to be a global variable
+// TODO(bpwilcox): test publisher
+
 class RclCppFixture
 {
 public:
