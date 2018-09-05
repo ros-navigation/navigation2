@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MAP_SERVER_MAP_LOADER_H
-#define MAP_SERVER_MAP_LOADER_H
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_HPP_
 
-#include "map_server/map_reps/map_reps.h"
+#include <string>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_map_server/map_loader.hpp"
+#include "nav2_map_server/map_reps/map_reps.hpp"
 
-class MapLoader
+class MappingServerROS
 {
 public:
-	BaseMapLoader *createMap(std::string mapType, rclcpp::Node::SharedPtr n, std::string filename);
-	BaseMapLoader *createMap(std::string mapType);
+  MappingServerROS(const std::string & fname, const std::string & map_type);
+
+private:
+  MapLoader * m;
+  BaseMapLoader * MyMap;
+
+  // TODO(bpwilcox): Add converter for map representations
+
+  rclcpp::Node::SharedPtr n;
 };
 
-#endif
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_HPP_

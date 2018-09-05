@@ -15,6 +15,8 @@
 #ifndef NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
 #define NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
 
-#include "nav2_map_server/map_reps/occ_grid_server.hpp"
+// Add headers for any used map packages
+
+#include "nav2_map_server/map_reps/occupancy_grid.hpp"
 
 #endif  // NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
