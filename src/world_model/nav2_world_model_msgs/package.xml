@@ -14,14 +14,14 @@
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>nav2_util_msgs</build_depend>
+  <build_depend>nav2_libs_msgs</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>nav2_util_msgs</exec_depend>
+  <exec_depend>nav2_libs_msgs</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 

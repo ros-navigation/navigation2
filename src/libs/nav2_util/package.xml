@@ -10,10 +10,10 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>rclcpp</build_depend>
-  <build_depend>nav2_util_msgs</build_depend>
+  <build_depend>nav2_libs_msgs</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
-  <exec_depend>nav2_util_msgs</exec_depend>
+  <exec_depend>nav2_libs_msgs</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
