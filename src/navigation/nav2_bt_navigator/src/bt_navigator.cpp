@@ -28,8 +28,17 @@ BtNavigator::BtNavigator()
 : nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
+
   plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
   controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+
+  if (!plannerTaskClient_->waitForServer()) {
+    throw std::runtime_error("BtNavigator::BtNavigator: planner not running");
+  }
+
+  if (!controllerTaskClient_->waitForServer()) {
+    throw std::runtime_error("BtNavigator::BtNavigator: controller not running");
+  }
 }
 
 BtNavigator::~BtNavigator()

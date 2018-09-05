@@ -33,8 +33,17 @@ SimpleNavigator::SimpleNavigator()
 : nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
+
   plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
   controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+
+  if (!plannerTaskClient_->waitForServer()) {
+    throw std::runtime_error("SimpleNavigator::SimpleNavigator: planner not running");
+  }
+
+  if (!controllerTaskClient_->waitForServer()) {
+    throw std::runtime_error("SimpleNavigator::SimpleNavigator: controller not running");
+  }
 }
 
 SimpleNavigator::~SimpleNavigator()

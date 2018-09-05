@@ -28,6 +28,10 @@ MissionExecutor::MissionExecutor()
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
   navTaskClient_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(this);
+
+  if (!navTaskClient_->waitForServer()) {
+    throw std::runtime_error("MissionExecutor::execute: NavigateToPoseTaskServer not running");
+  }
 }
 
 MissionExecutor::~MissionExecutor()
