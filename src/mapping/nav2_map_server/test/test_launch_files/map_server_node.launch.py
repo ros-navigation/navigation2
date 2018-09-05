@@ -14,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import sys
 from launch import LaunchDescription
 import launch_ros.actions
 
 def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='map_server',
-            node_executable='map_server',
+            package='nav2_map_server',
+            node_executable='nav2_map_server',
             output='screen',
-            arguments = ['/home/brian/ros2_overlay_ws/src/navigation2/src/map_server/test/testmap.yaml'])
+            arguments = [os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'testmap.yaml')])
 ])

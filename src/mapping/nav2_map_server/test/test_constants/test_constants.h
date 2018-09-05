@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef MAP_SERVER_TEST_CONSTANTS_H
-#define MAP_SERVER_TEST_CONSTANTS_H
+#ifndef TEST_CONSTANTS__TEST_CONSTANTS_H_
+#define TEST_CONSTANTS__TEST_CONSTANTS_H_
 
 /* Author: Brian Gerkey */
 
@@ -36,10 +36,10 @@
 extern const unsigned int g_valid_image_width;
 extern const unsigned int g_valid_image_height;
 extern const char g_valid_image_content[];
-extern const char* g_valid_png_file;
-extern const char* g_valid_bmp_file;
-extern const char* g_valid_yaml_file;
+extern const char * g_valid_png_file;
+extern const char * g_valid_bmp_file;
+extern const char * g_valid_yaml_file;
 
 extern const float g_valid_image_res;
 
-#endif
+#endif  // TEST_CONSTANTS__TEST_CONSTANTS_H_

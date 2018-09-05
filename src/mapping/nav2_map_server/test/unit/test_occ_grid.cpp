@@ -29,41 +29,41 @@
 
 /* Author: Brian Gerkey */
 
-#include <stdexcept> // for std::runtime_error
 #include <gtest/gtest.h>
-#include "test_constants.h"
 #include <experimental/filesystem>
-#include "map_server/map_reps/occupancy_grid.h"
+#include <stdexcept>
+#include <string>
+
+#include "nav2_map_server/map_reps/occupancy_grid.hpp"
+#include "test_constants/test_constants.h"
 
 #ifdef TEST_DIRECTORY
-	#define TEST_DIR TEST_DIRECTORY
-#else 
-	#define TEST_DIR "Please set Directory"
+#define TEST_DIR TEST_DIRECTORY
+#else
+#define TEST_DIR "PleaseSetDirectory"
 #endif
 
-using namespace std;  // NOLINT
+using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
 class OccGridTest : public OccGridLoader
 {
-
 public:
-	OccGridTest() {}
-	~OccGridTest() {}
+  OccGridTest() {}
+  ~OccGridTest() {}
 
-	nav_msgs::srv::GetMap::Response getMap() { return occ_resp_; }
+  nav_msgs::srv::GetMap::Response getMap() {return occ_resp_;}
 };
 
 class MapServerTest : public ::testing::Test
 {
-
 protected:
-	OccGridTest *OccTest;
+  OccGridTest * OccTest;
 
-	MapServerTest()
-	{
-		OccTest = new OccGridTest;
-	}
+  MapServerTest()
+  {
+    OccTest = new OccGridTest;
+  }
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -74,27 +74,25 @@ protected:
 
 TEST_F(MapServerTest, loadValidPNG)
 {
-	try
-	{
-		nav_msgs::srv::GetMap::Response map_resp;
-		auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-		auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-		OccTest->loadMapInfoFromFile(test_yaml.string());
-		OccTest->loadMapFromFile(test_png.string());
-		OccTest->setMap();
-		map_resp = OccTest->getMap();
+  try {
+    nav_msgs::srv::GetMap::Response map_resp;
+    auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
+    auto test_png = path(TEST_DIR) / path(g_valid_png_file);
+    OccTest->loadMapInfoFromFile(test_yaml.string());
+    OccTest->loadMapFromFile(test_png.string());
+    OccTest->setMap();
+    map_resp = OccTest->getMap();
 
-		EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-		EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-		EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-		for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++)
-			EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
-	}
-	catch (...)
-	{
-		ADD_FAILURE() << "Uncaught exception : "
-									<< "This is OK on OS X";
-	}
+    EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
+    for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
+      EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+    }
+  } catch (...) {
+    ADD_FAILURE() << "Uncaught exception : " <<
+      "This is OK on OS X";
+  }
 }
 
 /* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
@@ -102,52 +100,44 @@ TEST_F(MapServerTest, loadValidPNG)
 
 TEST_F(MapServerTest, loadValidBMP)
 {
-	try
-	{
-		nav_msgs::srv::GetMap::Response map_resp;
-		auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-		auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-		OccTest->loadMapInfoFromFile(test_yaml.string());
-		OccTest->loadMapFromFile(test_png.string());
-		OccTest->setMap();
-		map_resp = OccTest->getMap();
+  try {
+    nav_msgs::srv::GetMap::Response map_resp;
+    auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
+    auto test_png = path(TEST_DIR) / path(g_valid_png_file);
+    OccTest->loadMapInfoFromFile(test_yaml.string());
+    OccTest->loadMapFromFile(test_png.string());
+    OccTest->setMap();
+    map_resp = OccTest->getMap();
 
-		EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-		EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-		EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-		for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++)
-			EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
-	}
-	catch (...)
-	{
-		ADD_FAILURE() << "Uncaught exception";
-	}
+    EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
+    for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
+      EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+    }
+  } catch (...) {
+    ADD_FAILURE() << "Uncaught exception";
+  }
 }
 
 TEST_F(MapServerTest, loadInvalidFile)
 {
-	try
-	{
-		auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-		auto test_png = path(TEST_DIR) / path("foo");
-		OccTest->loadMapInfoFromFile(test_yaml.string());
-		OccTest->loadMapFromFile(test_png.string());
-
-	}
-	catch (std::runtime_error &e)
-	{
-		SUCCEED();
-		return;
-	}
-	catch (...)
-	{
-		FAIL() << "Uncaught exception";
-	}
-	ADD_FAILURE() << "Didn't throw exception as expected";
+  try {
+    auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
+    auto test_png = path(TEST_DIR) / path("foo");
+    OccTest->loadMapInfoFromFile(test_yaml.string());
+    OccTest->loadMapFromFile(test_png.string());
+  } catch (std::runtime_error & e) {
+    SUCCEED();
+    return;
+  } catch (...) {
+    FAIL() << "Uncaught exception";
+  }
+  ADD_FAILURE() << "Didn't throw exception as expected";
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

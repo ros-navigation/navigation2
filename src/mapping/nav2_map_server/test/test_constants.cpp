@@ -33,7 +33,7 @@
 
 /* Note that these must be changed if the test image changes */
 
-#include "test_constants.h"
+#include "test_constants/test_constants.h"
 
 const unsigned int g_valid_image_width = 10;
 const unsigned int g_valid_image_height = 10;
@@ -43,21 +43,20 @@ const unsigned int g_valid_image_height = 10;
 // call converts from the latter to the former when it loads the image, and
 // we want to compare against the result of that conversion.
 const char g_valid_image_content[] = {
-0,0,0,0,0,0,0,0,0,0,
-100,100,100,100,0,0,100,100,100,0,
-100,100,100,100,0,0,100,100,100,0,
-100,0,0,0,0,0,0,0,0,0,
-100,0,0,0,0,0,0,0,0,0,
-100,0,0,0,0,0,100,100,0,0,
-100,0,0,0,0,0,100,100,0,0,
-100,0,0,0,0,0,100,100,0,0,
-100,0,0,0,0,0,100,100,0,0,
-100,0,0,0,0,0,0,0,0,0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  100, 100, 100, 100, 0, 0, 100, 100, 100, 0,
+  100, 100, 100, 100, 0, 0, 100, 100, 100, 0,
+  100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  100, 0, 0, 0, 0, 0, 100, 100, 0, 0,
+  100, 0, 0, 0, 0, 0, 100, 100, 0, 0,
+  100, 0, 0, 0, 0, 0, 100, 100, 0, 0,
+  100, 0, 0, 0, 0, 0, 100, 100, 0, 0,
+  100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-const char* g_valid_png_file = "testmap.png";
-const char* g_valid_bmp_file = "testmap.bmp";
-const char* g_valid_yaml_file = "testmap.yaml";
+const char * g_valid_png_file = "testmap.png";
+const char * g_valid_bmp_file = "testmap.bmp";
+const char * g_valid_yaml_file = "testmap.yaml";
 
 const float g_valid_image_res = 0.1;
-

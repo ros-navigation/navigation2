@@ -29,40 +29,38 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
 
 if(YAMLCPP_VERSION VERSION_GREATER "0.5.0")
-    add_definitions(-DHAVE_YAMLCPP_GT_0_5_0)
+  add_definitions(-DHAVE_YAMLCPP_GT_0_5_0)
 endif()
 
 include_directories(
-	include
-	${BULLET_INCLUDE_DIRS}
-	${ament_INCLUDE_DIRS}
-	${SDL_INCLUDE_DIR}
-	${SDL_IMAGE_INCLUDE_DIRS}
-	${YAML_CPP_ROS2_INCLUDE_DIRS}
-	#${YAMLCPP_INCLUDE_DIRS}
+  include
+  ${BULLET_INCLUDE_DIRS}
+  ${ament_INCLUDE_DIRS}
+  ${SDL_INCLUDE_DIR}
+  ${SDL_IMAGE_INCLUDE_DIRS}
+  ${YAML_CPP_ROS2_INCLUDE_DIRS}
 )
 
 add_library(map_reps
-	src/map_reps/occupancy_grid.cpp
-	src/map_reps/map_loader.cpp
-	#src/map_reps/gridmap.cpp
+  src/map_reps/occupancy_grid.cpp
+  src/map_reps/map_loader.cpp
+  #src/map_reps/gridmap.cpp
 )
 
 ament_target_dependencies(map_reps rclcpp nav_msgs)
 target_link_libraries(map_reps
-	${BULLET_LIBRARIES}
-	${ament_LIBRARIES}
-	${SDL_LIBRARY}
-	${SDL_IMAGE_LIBRARIES}
-	${YAML_CPP_ROS2_LIBRARIES}
-	#${YAMLCPP_INCLUDE_DIRS}
+  ${BULLET_LIBRARIES}
+  ${ament_LIBRARIES}
+  ${SDL_LIBRARY}
+  ${SDL_IMAGE_LIBRARIES}
+  ${YAML_CPP_ROS2_LIBRARIES}
 )
 
 add_executable(map_server src/map_server.cpp)
 ament_target_dependencies(map_server rclcpp nav_msgs)
 target_link_libraries(map_server
-	map_reps
-	${ament_LIBRARIES}
+  map_reps
+  ${ament_LIBRARIES}
 )
 
 install(TARGETS map_reps map_server DESTINATION lib/${PROJECT_NAME})

@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MAP_SERVER_MAP_REPS_MAP_REPS_H
-#define MAP_SERVER_MAP_REPS_MAP_REPS_H
+#ifndef NAV2_MAP_SERVER__MAP_LOADER_HPP_
+#define NAV2_MAP_SERVER__MAP_LOADER_HPP_
 
-// Add headers for any used map packages
+#include <string>
 
-#include "map_server/map_reps/occupancy_grid.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_map_server/map_reps/map_reps.hpp"
 
-#endif
+class MapLoader
+{
+public:
+  BaseMapLoader * createMap(std::string mapType, rclcpp::Node::SharedPtr n, std::string filename);
+  BaseMapLoader * createMap(std::string mapType);
+};
+
+#endif  // NAV2_MAP_SERVER__MAP_LOADER_HPP_
