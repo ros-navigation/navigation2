@@ -22,7 +22,7 @@
 
 #include "amcl_node.hpp"
 #include "amcl/pf/pf.h" // pf_vector_t
-#include "util/strutils.h"
+//#include "util/strutils.h" // TODO (mhpanah): put strutils in util directory
 
 // For transform support
 #include "tf2/LinearMath/Transform.h"
@@ -44,6 +44,23 @@
 #include <boost/foreach.hpp>
 
 using namespace amcl;
+
+// TODO (mhpanah): Factor out strutils and put it in util directory
+class strutils
+{
+public:
+  static std::string stripLeadingSlash(const std::string& in);
+};
+
+std::string strutils::stripLeadingSlash(const std::string& in)
+{
+  std::string out = in;
+
+  if ((!in.empty()) && (in[0] == '/'))
+    out.erase(0,1);
+
+  return out;
+}
 
 static double
 normalize(double z)
