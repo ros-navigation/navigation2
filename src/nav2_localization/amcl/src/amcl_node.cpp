@@ -21,7 +21,7 @@
 /* Author: Brian Gerkey */
 
 #include "amcl_node.hpp"
-#include "amcl/pf/pf.h" // pf_vector_t
+#include "nav2_util/pf/pf.h" // pf_vector_t
 //#include "util/strutils.h" // TODO (mhpanah): put strutils in util directory
 
 // For transform support

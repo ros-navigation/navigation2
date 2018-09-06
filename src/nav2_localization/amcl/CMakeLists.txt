@@ -28,15 +28,6 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   )
 
-add_library(amcl_pf
-                    src/amcl/pf/pf.c
-                    src/amcl/pf/pf_kdtree.c
-                    src/amcl/pf/pf_pdf.c
-                    src/amcl/pf/pf_vector.c
-                    src/amcl/pf/eig3.c
-                    src/amcl/pf/pf_draw.c)
-
-
 add_library(amcl_sensors
                     src/amcl/sensors/amcl_sensor.cpp
                     src/amcl/sensors/amcl_odom.cpp
@@ -46,7 +37,6 @@ add_executable(amcl src/main.cpp src/amcl_node.cpp)
 
 target_link_libraries(amcl
   amcl_sensors
-  amcl_pf
   ${Boost_LIBRARIES}
   boost_system
   )
@@ -67,11 +57,11 @@ ament_target_dependencies(amcl
   )
 
 install(TARGETS
-  amcl amcl_sensors amcl_pf
+  amcl amcl_sensors
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   )
 ament_export_include_directories(include)
-ament_export_libraries(amcl amcl_sensors amcl_pf)
+ament_export_libraries(amcl amcl_sensors)
 ament_package()
