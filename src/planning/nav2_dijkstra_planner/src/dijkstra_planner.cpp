@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <exception>
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_dijkstra_planner/dijkstra_planner.hpp"
@@ -59,7 +60,7 @@ DijkstraPlanner::DijkstraPlanner()
   } catch (...) {
     RCLCPP_ERROR(this->get_logger(),
       "DijkstraPlanner::makePlan: failed to obtain costmap from server");
-    throw;
+    throw std::runtime_error("makePlan: failed to obtain costmap from server");
   }
 
   printCostmap(costmap_);
@@ -398,8 +399,8 @@ DijkstraPlanner::getCostmap(
       this->get_node_base_interface(), costmapServiceResult, waitTime) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
-    throw std::runtime_error("service call failed");
+    RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
+    throw std::runtime_error("getCostmap: service call failed");
   }
   costmap = costmapServiceResult.get()->map;
 }
@@ -413,7 +414,8 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
         this->get_logger(),
         "DijkstraPlanner::waitForCostmapServer:"
         " costmap client interrupted while waiting for the service to appear.");
-      throw "interrupted while waiting for costmap server to appear";
+      throw std::runtime_error(
+              "waitForCostmapServer: interrupted while waiting for costmap server to appear");
     }
     RCLCPP_INFO(this->get_logger(),
       "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")

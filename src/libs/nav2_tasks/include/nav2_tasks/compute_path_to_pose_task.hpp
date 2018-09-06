@@ -27,10 +27,10 @@ using ComputePathToPoseCommand = nav2_planning_msgs::msg::PathEndPoints;
 using ComputePathToPoseResult = nav2_planning_msgs::msg::Path;
 
 using ComputePathToPoseTaskClient =
-    TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
+  TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
 using ComputePathToPoseTaskServer =
-    TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
+  TaskServer<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
 template<>
 inline const char * getTaskName<ComputePathToPoseCommand, ComputePathToPoseResult>()

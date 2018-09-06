@@ -18,12 +18,15 @@
 #include <atomic>
 #include <condition_variable>
 #include <string>
+#include <thread>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
 {
+
+constexpr std::chrono::milliseconds defaultServerTimeout = std::chrono::milliseconds(5000);
 
 template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
@@ -69,19 +72,24 @@ public:
     cancelPub_->publish(msg);
   }
 
-  bool waitForServer(std::chrono::milliseconds timeout = std::chrono::milliseconds(3000))
+  bool waitForServer(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
     taskName += "_command";
 
-    auto startTime = std::chrono::high_resolution_clock::now();
+    auto t0 = std::chrono::high_resolution_clock::now();
 
+    // TODO(mjeronimo): Replace this with a legit way to wait for the server
     while (node_->count_subscribers(taskName) < 1) {
       rclcpp::spin_some(node_->get_node_base_interface());
-      auto elapsedTime = std::chrono::high_resolution_clock::now() - startTime;
+
+      auto t1 = std::chrono::high_resolution_clock::now();
+      auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+
       if (elapsedTime > timeout) {
         return false;
       }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     return true;

@@ -32,12 +32,14 @@ BtNavigator::BtNavigator()
   plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
   controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 
-  if (!plannerTaskClient_->waitForServer()) {
-    throw std::runtime_error("BtNavigator::BtNavigator: planner not running");
+  if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    RCLCPP_ERROR(get_logger(), "BtNavigator: Planner not running");
+    throw std::runtime_error("BtNavigator: planner not running");
   }
 
-  if (!controllerTaskClient_->waitForServer()) {
-    throw std::runtime_error("BtNavigator::BtNavigator: controller not running");
+  if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    RCLCPP_ERROR(get_logger(), "BtNavigator: Controller not running");
+    throw std::runtime_error("BtNavigator: controller not running");
   }
 }
 

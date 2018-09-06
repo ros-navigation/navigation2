@@ -30,14 +30,17 @@ SimpleNavigator::SimpleNavigator()
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 
   plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 
-  if (!plannerTaskClient_->waitForServer()) {
-    throw std::runtime_error("SimpleNavigator::SimpleNavigator: planner not running");
+  if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    RCLCPP_ERROR(get_logger(), "SimpleNavigator: planner not running");
+    throw std::runtime_error("SimpleNavigator: planner not running");
   }
 
-  if (!controllerTaskClient_->waitForServer()) {
-    throw std::runtime_error("SimpleNavigator::SimpleNavigator: controller not running");
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+
+  if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    RCLCPP_ERROR(get_logger(), "SimpleNavigator: controller not running");
+    throw std::runtime_error("SimpleNavigator: controller not running");
   }
 }
 
@@ -84,6 +87,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*co
         goto planning_succeeded;
 
       case TaskStatus::FAILED:
+        RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: planning task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
@@ -138,6 +142,7 @@ planning_succeeded:
         }
 
       case TaskStatus::FAILED:
+        RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: control task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
