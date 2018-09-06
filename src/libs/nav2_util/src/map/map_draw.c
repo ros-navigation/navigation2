@@ -33,7 +33,7 @@
 #include <string.h>
 
 #include <rtk.h>
-#include "amcl/map/map.h"
+#include "nav2_util/map.h"
 
 
 ////////////////////////////////////////////////////////////////////////////

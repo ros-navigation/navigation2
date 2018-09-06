@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "amcl/map/map.h"
+#include "nav2_util/map.h"
 
 
 // Create a new map

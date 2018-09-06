@@ -19,6 +19,12 @@ include_directories(include)
 
 add_library(nav2_util STATIC
   src/costmap.cpp
+  src/map/map.c
+  src/map/map_store.c
+  src/map/map_range.c
+  src/map/map_draw.c
+  src/map/map_cspace.cpp
+
 )
 
 ament_target_dependencies(nav2_util
