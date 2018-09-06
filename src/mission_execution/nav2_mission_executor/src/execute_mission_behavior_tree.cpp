@@ -23,16 +23,11 @@ namespace nav2_mission_executor
 ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
 : node_(node)
 {
-  // Create the input and output data
+  // Create the input message
   navigateToPoseCommand_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  navigateToPoseResult_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
   // Create the nodes of the tree
   root_ = new BT::SequenceNodeWithMemory("Sequence");
-
-  navigateToPoseAction_ = new nav2_tasks::NavigateToPoseAction(
-    node_, "NavigateToPoseAction",
-    navigateToPoseCommand_, navigateToPoseResult_);
 
   // Add the nodes to the tree, creating the tree structure
   root_->AddChild(navigateToPoseAction1_);
