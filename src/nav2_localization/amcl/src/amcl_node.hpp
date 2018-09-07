@@ -45,8 +45,8 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "amcl/sensors/amcl_laser.h"
-#include "amcl/sensors/amcl_odom.h"
+#include "nav2_util/sensors/amcl_laser.h"
+#include "nav2_util/sensors/amcl_odom.h"
 
 #define NEW_UNIFORM_SAMPLING 1
 

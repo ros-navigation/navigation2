@@ -38,9 +38,17 @@ add_library(pf_lib STATIC
   src/pf/pf_draw.c
 )
 
+add_library(sensors_lib STATIC
+  src/sensors/amcl_sensor.cpp
+  src/sensors/amcl_odom.cpp
+  src/sensors/amcl_laser.cpp
+)
+
+
 ament_target_dependencies(costmap_lib
   map_lib
   pf_lib
+  sensors_lib
   nav2_libs_msgs
   tf2_ros
   tf2
@@ -50,6 +58,7 @@ install(TARGETS
   costmap_lib
   map_lib
   pf_lib
+  sensors_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib)
 
@@ -72,6 +81,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(costmap_lib map_lib pf_lib)
+ament_export_libraries(costmap_lib pf_lib sensors_lib map_lib)
 
 ament_package()

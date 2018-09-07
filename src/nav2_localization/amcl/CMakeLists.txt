@@ -24,24 +24,15 @@ find_package(nav2_util REQUIRED)
 
 include_directories(
   include 
- # ../util/include
   ${Boost_INCLUDE_DIRS}
   )
-
-add_library(amcl_sensors
-                    src/amcl/sensors/amcl_sensor.cpp
-                    src/amcl/sensors/amcl_odom.cpp
-                    src/amcl/sensors/amcl_laser.cpp)
 
 add_executable(amcl src/main.cpp src/amcl_node.cpp)
 
 target_link_libraries(amcl
-  amcl_sensors
   ${Boost_LIBRARIES}
   boost_system
   )
-
-ament_target_dependencies(amcl_sensors nav2_util)
 
 ament_target_dependencies(amcl
   rclcpp
@@ -52,16 +43,15 @@ ament_target_dependencies(amcl
   std_srvs
   tf2_ros
   tf2
-  #util
   nav2_util
   )
 
 install(TARGETS
-  amcl amcl_sensors
+  amcl
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   )
 ament_export_include_directories(include)
-ament_export_libraries(amcl amcl_sensors)
+ament_export_libraries(amcl)
 ament_package()
