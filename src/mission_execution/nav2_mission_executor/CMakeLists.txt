@@ -20,19 +20,35 @@ include_directories(
   include
 )
 
-add_executable(mission_executor
+set(executable_name mission_executor)
+
+add_executable(${executable_name}
   src/main.cpp
   src/mission_executor.cpp
 )
 
-ament_target_dependencies(mission_executor
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/mission_executor.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
   nav2_mission_execution_msgs
 )
 
-install(TARGETS mission_executor
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

@@ -20,19 +20,35 @@ include_directories(
   include
 )
 
-add_executable(bt_navigator
+set(executable_name bt_navigator)
+
+add_executable(${executable_name}
   src/bt_navigator.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(bt_navigator
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/bt_navigator.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
   nav2_planning_msgs
+) 
+
+ament_target_dependencies(${executable_name}
+  ${dependencies}
 )
 
-install(TARGETS bt_navigator
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

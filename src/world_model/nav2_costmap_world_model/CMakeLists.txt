@@ -22,12 +22,20 @@ include_directories(
   include
 )
 
-add_executable(costmap_world_model
+set(executable_name costmap_world_model)
+
+add_executable(${executable_name}
   src/costmap_world_model.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(costmap_world_model
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/costmap_world_model.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_util
@@ -37,8 +45,15 @@ ament_target_dependencies(costmap_world_model
   tf2
 )
 
-install(TARGETS
-  costmap_world_model
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})

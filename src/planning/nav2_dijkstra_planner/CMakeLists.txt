@@ -23,13 +23,22 @@ include_directories(
   include
 )
 
-add_executable(dijkstra_planner
+set(executable_name dijkstra_planner)
+
+add_executable(${executable_name}
   src/dijkstra_planner.cpp
   src/navfn.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(dijkstra_planner
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/dijkstra_planner.cpp
+  src/navfn.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
@@ -39,8 +48,15 @@ ament_target_dependencies(dijkstra_planner
   nav2_world_model_msgs
 )
 
-install(TARGETS
-  dijkstra_planner
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
