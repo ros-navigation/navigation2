@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(amcl)
+project(nav2_amcl)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -27,14 +27,25 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   )
 
-add_executable(amcl src/main.cpp src/amcl_node.cpp)
+set(executable_name amcl)
 
-target_link_libraries(amcl
+add_executable(${executable_name}
+  src/amcl_node.cpp
+  src/main.cpp
+)
+
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/amcl_node.cpp
+)
+
+target_link_libraries(${executable_name}
   ${Boost_LIBRARIES}
   boost_system
   )
 
-ament_target_dependencies(amcl
+set(dependencies
   rclcpp
   message_filters
   tf2_geometry_msgs
@@ -44,14 +55,22 @@ ament_target_dependencies(amcl
   tf2_ros
   tf2
   nav2_util
-  )
+)
 
-install(TARGETS
-  amcl
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   )
+
 ament_export_include_directories(include)
-ament_export_libraries(amcl)
+
 ament_package()
