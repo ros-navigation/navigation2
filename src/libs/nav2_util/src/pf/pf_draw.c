@@ -34,10 +34,9 @@
 
 #include "rtk.h"
 
-#include "pf.h"
-#include "pf_pdf.h"
-#include "pf_kdtree.h"
-
+#include "nav2_util/pf/pf.h"
+#include "nav2_util/pf/pf_pdf.h"
+#include "nav2_util/pf/pf_kdtree.h"
 
 // Draw the statistics
 void pf_draw_statistics(pf_t *pf, rtk_fig_t *fig);

@@ -28,7 +28,7 @@
 #ifndef AMCL_SENSOR_H
 #define AMCL_SENSOR_H
 
-#include "../pf/pf.h"
+#include "nav2_util/pf/pf.h"
 
 namespace amcl
 {

@@ -20,47 +20,18 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-#find_package(util REQUIRED)  //TODO (mhpanah) remove ../util/include
+find_package(nav2_util REQUIRED)
 
 include_directories(
   include 
-  ../util/include
   ${Boost_INCLUDE_DIRS}
   )
-
-link_directories(
- ${CMAKE_BINARY_DIR}/../util
- )
-
-add_library(amcl_pf
-                    src/amcl/pf/pf.c
-                    src/amcl/pf/pf_kdtree.c
-                    src/amcl/pf/pf_pdf.c
-                    src/amcl/pf/pf_vector.c
-                    src/amcl/pf/eig3.c
-                    src/amcl/pf/pf_draw.c)
-
-add_library(amcl_map
-                    src/amcl/map/map.c
-                    src/amcl/map/map_cspace.cpp
-                    src/amcl/map/map_range.c
-                    src/amcl/map/map_store.c
-                    src/amcl/map/map_draw.c)
-
-add_library(amcl_sensors
-                    src/amcl/sensors/amcl_sensor.cpp
-                    src/amcl/sensors/amcl_odom.cpp
-                    src/amcl/sensors/amcl_laser.cpp)
 
 add_executable(amcl src/main.cpp src/amcl_node.cpp)
 
 target_link_libraries(amcl
-  amcl_sensors
-  amcl_map
-  amcl_pf
   ${Boost_LIBRARIES}
   boost_system
-  util  #TODO (mhpanah) remove util from here
   )
 
 ament_target_dependencies(amcl
@@ -72,15 +43,15 @@ ament_target_dependencies(amcl
   std_srvs
   tf2_ros
   tf2
-  util
+  nav2_util
   )
 
 install(TARGETS
-  amcl amcl_sensors amcl_map amcl_pf
+  amcl
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   )
 ament_export_include_directories(include)
-ament_export_libraries(amcl amcl_sensors amcl_map amcl_pf)
+ament_export_libraries(amcl)
 ament_package()
