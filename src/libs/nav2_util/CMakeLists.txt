@@ -17,11 +17,16 @@ find_package(tf2 REQUIRED)
 
 include_directories(include)
 
-add_library(costmap_lib STATIC
+add_library(costmap_lib SHARED
   src/costmap.cpp
 )
 
-add_library(map_lib STATIC
+ament_target_dependencies(costmap_lib
+  nav2_libs_msgs
+  tf2_ros
+  tf2)
+
+add_library(map_lib SHARED
   src/map/map.c
   src/map/map_store.c
   src/map/map_range.c
@@ -29,7 +34,7 @@ add_library(map_lib STATIC
   src/map/map_cspace.cpp
 )
 
-add_library(pf_lib STATIC
+add_library(pf_lib SHARED
   src/pf/pf.c
   src/pf/pf_kdtree.c
   src/pf/pf_pdf.c
@@ -38,20 +43,10 @@ add_library(pf_lib STATIC
   src/pf/pf_draw.c
 )
 
-add_library(sensors_lib STATIC
+add_library(sensors_lib SHARED
   src/sensors/amcl_sensor.cpp
   src/sensors/amcl_odom.cpp
   src/sensors/amcl_laser.cpp
-)
-
-
-ament_target_dependencies(costmap_lib
-  map_lib
-  pf_lib
-  sensors_lib
-  nav2_libs_msgs
-  tf2_ros
-  tf2
 )
 
 install(TARGETS
