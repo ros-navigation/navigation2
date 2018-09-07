@@ -21,12 +21,20 @@ include_directories(
   include
 )
 
-add_executable(astar_planner
+set(executable_name astar_planner)
+
+add_executable(${executable_name}
   src/astar_planner.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(astar_planner
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/astar_planner.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
@@ -35,8 +43,15 @@ ament_target_dependencies(astar_planner
   nav2_planning_msgs
 )
 
-install(TARGETS
-  astar_planner
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

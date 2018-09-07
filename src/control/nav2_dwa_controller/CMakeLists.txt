@@ -21,12 +21,20 @@ include_directories(
   include
 )
 
-add_executable(dwa_controller
+set(executable_name dwa_controller)
+
+add_executable(${executable_name}
   src/dwa_controller.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(dwa_controller
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/dwa_controller.cpp
+)
+
+set(dependencies 
   rclcpp
   std_msgs
   nav2_tasks
@@ -34,7 +42,15 @@ ament_target_dependencies(dwa_controller
   nav2_planning_msgs
 )
 
-install(TARGETS dwa_controller
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

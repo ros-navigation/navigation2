@@ -20,19 +20,35 @@ include_directories(
   include
 )
 
-add_executable(simple_navigator
+set(executable_name simple_navigator)
+
+add_executable(${executable_name}
   src/simple_navigator.cpp
   src/main.cpp
 )
 
-ament_target_dependencies(simple_navigator
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/simple_navigator.cpp
+)
+
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
   nav2_planning_msgs
 )
 
-install(TARGETS simple_navigator
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
