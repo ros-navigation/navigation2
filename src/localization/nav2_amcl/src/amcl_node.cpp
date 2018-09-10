@@ -879,9 +879,9 @@ AmclNode::uniformPoseGenerator(void *arg)
 }
 
 void
-AmclNode::globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                     const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-                                     std::shared_ptr<std_srvs::srv::Empty::Response> res)
+AmclNode::globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+                                     const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+                                     std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
 {
   if (map_ == NULL) {
     return;
@@ -900,9 +900,9 @@ AmclNode::globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> req
 
 // force nomotion updates (amcl updating without requiring motion)
 void 
-AmclNode::nomotionUpdateCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                 const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-                                 std::shared_ptr<std_srvs::srv::Empty::Response> res)
+AmclNode::nomotionUpdateCallback(const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+                                 const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+                                 std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
 {
   m_force_update = true;
   RCLCPP_INFO(get_logger(), "Requesting no-motion update");
@@ -910,9 +910,9 @@ AmclNode::nomotionUpdateCallback(const std::shared_ptr<rmw_request_id_t> request
 }
 
 void 
-AmclNode::setMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
+AmclNode::setMapCallback(const std::shared_ptr<rmw_request_id_t> /*request_header*/,
                     const std::shared_ptr<nav_msgs::srv::SetMap::Request> req,
-                    std::shared_ptr<nav_msgs::srv::SetMap::Response> res)                    
+                    std::shared_ptr<nav_msgs::srv::SetMap::Response> /*res*/)                    
 {
   handleMapMessage(req->map);
   handleInitialPoseMessage(req->initial_pose);

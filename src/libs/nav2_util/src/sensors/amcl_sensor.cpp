@@ -45,7 +45,7 @@ AMCLSensor::~AMCLSensor()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the action model
-bool AMCLSensor::UpdateAction(pf_t *pf, AMCLSensorData *data)
+bool AMCLSensor::UpdateAction(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 {
   return false;
 }
@@ -53,7 +53,7 @@ bool AMCLSensor::UpdateAction(pf_t *pf, AMCLSensorData *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the filter
-bool AMCLSensor::InitSensor(pf_t *pf, AMCLSensorData *data)
+bool AMCLSensor::InitSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 {
   return false;
 }
@@ -61,7 +61,7 @@ bool AMCLSensor::InitSensor(pf_t *pf, AMCLSensorData *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the sensor model
-bool AMCLSensor::UpdateSensor(pf_t *pf, AMCLSensorData *data)
+bool AMCLSensor::UpdateSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 {
   return false;
 }
