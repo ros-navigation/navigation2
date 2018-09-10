@@ -30,7 +30,7 @@
 #define AMCL_LASER_H
 
 #include "nav2_util/sensors/amcl_sensor.h"
-#include "nav2_util/map.h"
+#include "nav2_util/map/map.h"
 
 namespace amcl
 {
