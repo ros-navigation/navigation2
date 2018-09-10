@@ -69,6 +69,7 @@ void map_free(map_t *map)
 // Get the cell at the given point
 map_cell_t *map_get_cell(map_t *map, double ox, double oy, double oa)
 {
+  (void)oa;
   int i, j;
   map_cell_t *cell;
 
