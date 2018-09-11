@@ -216,7 +216,6 @@ int pf_update_converged(pf_t *pf)
   int i;
   pf_sample_set_t *set;
   pf_sample_t *sample;
-  /*double total*/;
 
   set = pf->sets + pf->current_set;
   double mean_x = 0, mean_y = 0;
