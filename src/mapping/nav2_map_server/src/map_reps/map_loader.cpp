@@ -16,29 +16,34 @@
 
 #include "nav2_map_server/map_loader.hpp"
 
-// Factory Class for loading new map types
-BaseMapLoader * MapLoader::createMap(
-  std::string mapType,
-  rclcpp::Node::SharedPtr n, std::string filename)
+namespace nav2_map_server
 {
-  if (mapType == "occupancy") {
-    return new OccGridLoader(n, filename);
-  } else if (mapType == "gridmap") {
-    return new OccGridLoader(n, filename);  // TODO(bpwilcox): Substitute with GridMapLoader
+
+// Factory Class for loading new map types
+BaseMapLoader * MapLoader::CreateMap(
+  std::string map_type,
+  rclcpp::Node::SharedPtr node, std::string file_name)
+{
+  if (map_type == "occupancy") {
+    return new OccGridLoader(node, file_name);
+  } else if (map_type == "gridmap") {
+    return new OccGridLoader(node, file_name);  // TODO(bpwilcox): Substitute with GridMapLoader
   } else {
-    fprintf(stderr, "[ERROR] [map_server]: Cannot Load Map of Type '%s'\n", mapType.c_str());
+    fprintf(stderr, "[ERROR] [map_server]: Cannot Load Map of Type '%s'\n", map_type.c_str());
     exit(-1);
   }
 }
 
-BaseMapLoader * MapLoader::createMap(std::string mapType)
+BaseMapLoader * MapLoader::CreateMap(std::string map_type, rclcpp::Node::SharedPtr node)
 {
-  if (mapType == "occupancy") {
-    return new OccGridLoader;
-  } else if (mapType == "gridmap") {
-    return new OccGridLoader;  // TODO(bpwilcox): Substitute with GridMapLoader
+  if (map_type == "occupancy") {
+    return new OccGridLoader(node);
+  } else if (map_type == "gridmap") {
+    return new OccGridLoader(node);  // TODO(bpwilcox): Substitute with GridMapLoader
   } else {
-    fprintf(stderr, "[ERROR] [map_server]: Cannot Load Map of Type '%s'\n", mapType.c_str());
+    fprintf(stderr, "[ERROR] [map_server]: Cannot Load Map of Type '%s'\n", map_type.c_str());
     exit(-1);
   }
 }
+
+}  // namespace nav2_map_server

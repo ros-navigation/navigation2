@@ -34,7 +34,7 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    n_ = rclcpp::Node::make_shared("map_client_test");
+    node_ = rclcpp::Node::make_shared("map_client_test");
   }
 
   template<class T>
@@ -56,15 +56,15 @@ public:
   }
 
 protected:
-  rclcpp::Node::SharedPtr n_;
+  rclcpp::Node::SharedPtr node_;
 };
 
 TEST_F(TestNode, ResultReturned)
 {
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  auto client = n_->create_client<nav_msgs::srv::GetMap>("occ_grid");
-  ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(5)));
-  auto resp = send_request<nav_msgs::srv::GetMap>(n_, client, req);
+  auto client = node_->create_client<nav_msgs::srv::GetMap>("occ_grid");
+  ASSERT_TRUE(client->wait_for_service());
+  auto resp = send_request<nav_msgs::srv::GetMap>(node_, client, req);
   ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);
   ASSERT_EQ(resp->map.info.width, g_valid_image_width);
   ASSERT_EQ(resp->map.info.height, g_valid_image_height);

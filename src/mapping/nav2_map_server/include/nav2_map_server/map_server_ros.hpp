@@ -12,31 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
-#define NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_
 
-#include <libgen.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
 #include <string>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_map_server/map_loader.hpp"
+#include "nav2_map_server/map_reps/map_reps.hpp"
 
 namespace nav2_map_server
 {
 
-class BaseMapLoader
+class MapServerROS
 {
 public:
-  BaseMapLoader() {}
-  ~BaseMapLoader() {}
+  MapServerROS(const std::string & file_name, const std::string & map_type);
 
-  virtual void LoadMapInfoFromFile(std::string file_name) = 0;
-  virtual void LoadMapFromFile(std::string map_name) = 0;
-  virtual void PublishMap() = 0;
-  virtual void SetMap() = 0;
-  virtual void ConnectROS() = 0;
+private:
+  MapLoader * map_loader_;
+  BaseMapLoader * map_;
+
+  // TODO(bpwilcox): Add converter for map representations
+
+  rclcpp::Node::SharedPtr node_;
 };
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_

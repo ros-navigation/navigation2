@@ -30,32 +30,36 @@ enum MapMode
   SCALE,
   RAW
 };
+namespace nav2_map_server
+{
 
 class OccGridLoader : public BaseMapLoader
 {
 public:
-  // Interface //
-
-  void loadMapInfoFromFile(std::string fname);
-
-  void loadMapFromFile(std::string mapfname);
-
-  void publishMap();
-
-  void setMap();
-
-  void connectROS(rclcpp::Node::SharedPtr n);
-
-  void createROSInterface(rclcpp::Node::SharedPtr n);
-
   // Occupancy Grid Specific //
+
+  explicit OccGridLoader(rclcpp::Node::SharedPtr node)
+  : node_(node) {}
+
+  OccGridLoader(rclcpp::Node::SharedPtr node, std::string file_name);
 
   OccGridLoader() {}
 
-  OccGridLoader(rclcpp::Node::SharedPtr n, std::string filename);
-
   ~OccGridLoader() {}
 
+  // Interface //
+
+  void LoadMapInfoFromFile(std::string file_name);
+
+  void LoadMapFromFile(std::string map_name);
+
+  void PublishMap();
+
+  void SetMap();
+
+  void ConnectROS();
+
+private:
   void OccMapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
@@ -69,14 +73,18 @@ protected:
   double res;
   MapMode mode = TRINARY;
   std::string frame_id = "map";
+  std::string map_name_;
 
   // Occupancy Grid ROS Message / Service
   nav_msgs::msg::OccupancyGrid map_msg_;
   nav_msgs::srv::GetMap::Response occ_resp_;
 
   // ROS Interfaces
+  rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
 };
+
+}  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_REPS__OCCUPANCY_GRID_HPP_

@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_map_server)
 
-set(YAML_CPP_ROS2_LIBRARIES $ENV{HOME}/ros2_ws/ros2_ws/install/rviz_yaml_cpp_vendor/opt/rviz_yaml_cpp_vendor/lib/libyaml-cpp.so)
-set(YAML_CPP_ROS2_INCLUDE_DIRS $ENV{HOME}/ros2_ws/ros2_ws/install/rviz_yaml_cpp_vendor/opt/rviz_yaml_cpp_vendor/include)
-
-# Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
@@ -21,41 +17,34 @@ find_package(rmw REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
-#find_package(yaml-cpp REQUIRED)
 find_package(example_interfaces REQUIRED)
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
+find_package(rviz_yaml_cpp_vendor REQUIRED)
 
 include_directories(
   include
   ${BULLET_INCLUDE_DIRS}
-  ${ament_INCLUDE_DIRS}
   ${SDL_INCLUDE_DIR}
   ${SDL_IMAGE_INCLUDE_DIRS}
-  ${YAML_CPP_ROS2_INCLUDE_DIRS}
 )
 
 add_library(map_reps
   src/map_reps/occupancy_grid.cpp
   src/map_reps/map_loader.cpp
-  #src/map_reps/gridmap.cpp
+  src/map_server_ros.cpp
 )
 
-ament_target_dependencies(map_reps rclcpp nav_msgs)
+ament_target_dependencies(map_reps rclcpp nav_msgs rviz_yaml_cpp_vendor)
 target_link_libraries(map_reps
   ${BULLET_LIBRARIES}
-  ${ament_LIBRARIES}
   ${SDL_LIBRARY}
   ${SDL_IMAGE_LIBRARIES}
-  ${YAML_CPP_ROS2_LIBRARIES}
 )
 
-add_executable(map_server src/map_server.cpp)
+add_executable(map_server src/main.cpp)
 ament_target_dependencies(map_server rclcpp nav_msgs)
 target_link_libraries(map_server
   map_reps
-  ${ament_LIBRARIES}
 )
 
 install(TARGETS map_reps map_server DESTINATION lib/${PROJECT_NAME})
