@@ -20,11 +20,18 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_reps/map_reps.hpp"
 
+namespace nav2_map_server
+{
+
 class MapLoader
 {
 public:
-  BaseMapLoader * createMap(std::string mapType, rclcpp::Node::SharedPtr n, std::string filename);
-  BaseMapLoader * createMap(std::string mapType);
+  BaseMapLoader * CreateMap(
+    std::string map_type, rclcpp::Node::SharedPtr node,
+    std::string file_name);
+  BaseMapLoader * CreateMap(std::string map_type, rclcpp::Node::SharedPtr node);
 };
+
+}  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_LOADER_HPP_

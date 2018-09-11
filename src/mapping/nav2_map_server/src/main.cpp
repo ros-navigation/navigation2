@@ -15,9 +15,11 @@
 #include <string>
 #include "nav2_map_server/map_server_ros.hpp"
 
+
 #define USAGE    "\nUSAGE: map_server <map.yaml> <map_type>\n" \
   "  map.yaml: map description file\n" \
   "  map_type: the type of map to load (i.e. occupancy)\n"
+
 
 int main(int argc, char ** argv)
 {
@@ -25,14 +27,14 @@ int main(int argc, char ** argv)
 
   if (argc != 3 && argc != 2) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", USAGE);
-    return -1;
+    exit(-1);
   }
 
   std::string file_name(argv[1]);
   std::string map_type = (argc == 2) ? "occupancy" : std::string(argv[2]);
 
   try {
-    nav2_map_server::MapServerROS MapServer(file_name, map_type);
+    nav2_map_server::MapServerROS Server(file_name, map_type);
   } catch (std::runtime_error & e) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", e.what());
     return -1;

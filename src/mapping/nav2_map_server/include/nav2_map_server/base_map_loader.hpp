@@ -21,27 +21,22 @@
 #include <fstream>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+namespace nav2_map_server
+{
 
 class BaseMapLoader
 {
 public:
-  std::string fname;
-  std::string mapfname;
-
   BaseMapLoader() {}
-
-  virtual void loadMapInfoFromFile(std::string fname) = 0;
-
-  virtual void loadMapFromFile(std::string mapfname) = 0;
-
-  virtual void publishMap() = 0;
-
-  virtual void setMap() = 0;
-
-  virtual void connectROS(rclcpp::Node::SharedPtr n) = 0;
-
   ~BaseMapLoader() {}
+
+  virtual void LoadMapInfoFromFile(std::string file_name) = 0;
+  virtual void LoadMapFromFile(std::string map_name) = 0;
+  virtual void PublishMap() = 0;
+  virtual void SetMap() = 0;
+  virtual void ConnectROS() = 0;
 };
+
+}  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_

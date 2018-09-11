@@ -57,46 +57,52 @@ void operator>>(const YAML::Node & node, T & i)
 }
 
 // Interface //
-
-void OccGridLoader::loadMapInfoFromFile(std::string fname)
+namespace nav2_map_server
 {
-  std::ifstream fin(fname.c_str());
+
+void OccGridLoader::LoadMapInfoFromFile(std::string file_name)
+{
+  std::ifstream fin(file_name.c_str());
   if (fin.fail()) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: Map_server could not open %s\n", fname.c_str());
-    exit(-1);
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "Map_server could not open %s", file_name.c_str());
+    throw std::runtime_error("File path invalid");
   }
 
-  YAML::Node doc = YAML::LoadFile(fname);
+  YAML::Node doc = YAML::LoadFile(file_name);
 
   try {
     doc["resolution"] >> res;
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain a resolution tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain a resolution tag or it is invalid.");
+    throw std::runtime_error("The map does not contain a resolution tag or it is invalid.");
   }
+
   try {
     doc["negate"] >> negate;
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain a negate tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain a negate tag or it is invalid.");
+    throw std::runtime_error("The map does not contain a negate tag or it is invalid.");
   }
+
   try {
     doc["occupied_thresh"] >> occ_th;
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain an occupied_thresh tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain an occupied_thresh tag or it is invalid.");
+    throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid.");
   }
+
   try {
     doc["free_thresh"] >> free_th;
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain a free_thresh tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain a free_thresh tag or it is invalid.");
+    throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid.");
   }
+
   try {
     std::string modeS = "";
     doc["mode"] >> modeS;
@@ -107,49 +113,51 @@ void OccGridLoader::loadMapInfoFromFile(std::string fname)
     } else if (modeS == "raw") {
       mode = RAW;
     } else {
-      fprintf(stderr,
-        "Invalid mode tag \"%s\".\n", modeS.c_str());
-      exit(-1);
+      RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+        "Invalid mode tag \"%s\".", modeS.c_str());
+      throw std::runtime_error("Invalid mode tag.");
     }
   } catch (YAML::Exception) {
-    fprintf(stdout,
-      "[DEBUG] [map_server] The map does not contain a mode tag or it is invalid.\n");
+    RCLCPP_DEBUG(rclcpp::get_logger("map_server"),
+      "The map does not contain a mode tag or it is invalid.");
     mode = TRINARY;
   }
+
   try {
     doc["origin"][0] >> origin[0];
     doc["origin"][1] >> origin[1];
     doc["origin"][2] >> origin[2];
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain an origin tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain an origin tag or it is invalid.");
+    throw std::runtime_error("The map does not contain an origin tag or it is invalid.");
   }
+
   try {
-    doc["image"] >> mapfname;
+    doc["image"] >> map_name_;
     // TODO(bpwilcox): make this path-handling more robust
-    if (mapfname.size() == 0) {
-      fprintf(stderr,
-        "[ERROR] [map_server]: The image tag cannot be an empty string.\n");
-      exit(-1);
+    if (map_name_.size() == 0) {
+      RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+        "The image tag cannot be an empty string.");
+      throw std::runtime_error("The image tag cannot be an empty string.");
     }
-    if (mapfname[0] != '/') {
+    if (map_name_[0] != '/') {
       // dirname can modify what you pass it
-      char * fname_copy = strdup(fname.c_str());
-      mapfname = std::string(dirname(fname_copy)) + '/' + mapfname;
+      char * fname_copy = strdup(file_name.c_str());
+      map_name_ = std::string(dirname(fname_copy)) + '/' + map_name_;
       free(fname_copy);
     }
-  } catch (YAML::InvalidScalar) {
-    fprintf(stderr,
-      "[ERROR] [map_server]: The map does not contain an image tag or it is invalid.\n");
-    exit(-1);
+  } catch (YAML::Exception) {
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
+      "The map does not contain an image tag or it is invalid.");
+    throw std::runtime_error("The map does not contain an image tag or it is invalid.");
   }
 }
 
-void OccGridLoader::loadMapFromFile(std::string mapfname)
+void OccGridLoader::LoadMapFromFile(std::string map_name_)
 {
   SDL_Surface * img;
-  const char * name = mapfname.c_str();
+  const char * name = map_name_.c_str();
   unsigned char * pixels;
   unsigned char * p;
   unsigned char value;
@@ -165,8 +173,7 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
   if (!(img = IMG_Load(name))) {
     std::string errmsg = std::string("failed to open image file \"") +
       std::string(name) + std::string("\": ") + IMG_GetError();
-    fprintf(stderr,
-      "[ERROR] [map_server] %s\n", errmsg.c_str());
+    RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", errmsg.c_str());
 
     throw std::runtime_error(errmsg);
   }
@@ -251,11 +258,12 @@ void OccGridLoader::loadMapFromFile(std::string mapfname)
   SDL_FreeSurface(img);
 }
 
-void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
+void OccGridLoader::ConnectROS()
 {
   // Create a publisher
   // TODO(bpwilcox): publish a latched topic
-  occ_pub_ = n->create_publisher<nav_msgs::msg::OccupancyGrid>("occ_grid", rmw_qos_profile_default);
+  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "occ_grid", rmw_qos_profile_default);
 
   // Create a service callback handle
   auto handle_occ_callback = [this](
@@ -266,40 +274,41 @@ void OccGridLoader::connectROS(rclcpp::Node::SharedPtr n)
     };
 
   // Create a service
-  occ_service_ = n->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
+  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
 }
 
-void OccGridLoader::setMap()
+void OccGridLoader::SetMap()
 {
   occ_resp_.map = map_msg_;
 }
 
-void OccGridLoader::publishMap()
+void OccGridLoader::PublishMap()
 {
   occ_pub_->publish(map_msg_);
 }
 
 // OccGridLoader specific //
 
-OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr n, std::string filename)
+OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr node, std::string file_name)
+: node_(node)
 {
   // Set up //
 
-  RCLCPP_INFO(n->get_logger(), "Load map info");
-  loadMapInfoFromFile(filename);
+  RCLCPP_INFO(node_->get_logger(), "Load map info");
+  LoadMapInfoFromFile(file_name);
 
-  RCLCPP_INFO(n->get_logger(), "Load Map: %s", mapfname.c_str());
-  loadMapFromFile(mapfname);
+  RCLCPP_INFO(node_->get_logger(), "Load Map: %s", map_name_.c_str());
+  LoadMapFromFile(map_name_);
 
-  connectROS(n);
+  ConnectROS();
 
-  RCLCPP_INFO(n->get_logger(), "Set up Service");
-  setMap();
+  RCLCPP_INFO(node_->get_logger(), "Set up Service");
+  SetMap();
 
-  RCLCPP_INFO(n->get_logger(), "Set up Publisher");
-  publishMap();
+  RCLCPP_INFO(node_->get_logger(), "Set up Publisher");
+  PublishMap();
 
-  RCLCPP_INFO(n->get_logger(), "Success!");
+  RCLCPP_INFO(node_->get_logger(), "Success!");
 }
 
 void OccGridLoader::OccMapCallback(
@@ -311,3 +320,5 @@ void OccGridLoader::OccMapCallback(
   (void)req;
   res->map = occ_resp_.map;
 }
+
+}  // namespace nav2_map_server
