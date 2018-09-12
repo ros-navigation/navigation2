@@ -68,7 +68,7 @@ ament_target_dependencies(${library_name}
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
   )
 
 if(BUILD_TESTING)
