@@ -10,10 +10,18 @@ set -e
 
 CWD=`pwd`
 
+if [ -d "ros1_dependencies_ws" ]; then
+  ENABLE_ROS1=true
+else
+  ENABLE_ROS1=false
+fi
+
 # Build ROS 1 dependencies
-cd ros1_dependencies_ws
-(source /opt/ros/kinetic/setup.bash &&
- catkin_make)
+if [ "$ENABLE_ROS1" == true ]; then
+  cd ros1_dependencies_ws
+  (source /opt/ros/kinetic/setup.bash &&
+   catkin_make)
+ fi
 
 # Build ROS 2 base
 cd $CWD/ros2_ws
@@ -30,8 +38,10 @@ cd $CWD/navigation2
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
-cd $CWD
-source ros1_dependencies_ws/devel/setup.bash
-source navigation2/install/setup.bash
-cd $CWD/ros2_ws
-colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
+if [ "$ENABLE_ROS1" == true ]; then
+  cd $CWD
+  source ros1_dependencies_ws/devel/setup.bash
+  source navigation2/install/setup.bash
+  cd $CWD/ros2_ws
+  colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
+fi

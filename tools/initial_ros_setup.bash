@@ -1,5 +1,19 @@
 #!/bin/bash
 
+ENABLE_ROS1=true
+for opt in "$@" ; do
+	case $opt in
+		--no-ros1)
+			ENABLE_ROS1=false
+			shift
+		;;
+		*)
+			echo "Invalid option: $opt"
+			exit 1
+		;;
+	esac
+done
+
 set -e
 CHECKPOINT_FILES=''
 
@@ -56,7 +70,9 @@ function download_all {
 	checkpoint download_navstack
 	checkpoint download_ros2_dependencies
 	checkpoint download_ros2
-	checkpoint download_ros1_dependencies
+	if [ "$ENABLE_ROS1" == true ]; then
+		checkpoint download_ros1_dependencies
+	fi
 }
 
 echo "This script will download the ROS 2 latest release workspace, the"
