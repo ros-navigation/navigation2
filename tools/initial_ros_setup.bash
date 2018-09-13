@@ -1,14 +1,22 @@
 #!/bin/bash
 
 ENABLE_ROS1=true
+ENABLE_BUILD=true
 for opt in "$@" ; do
 	case $opt in
 		--no-ros1)
 			ENABLE_ROS1=false
 			shift
 		;;
+		--download-only)
+			ENABLE_BUILD=false
+			shift
+		;;
 		*)
 			echo "Invalid option: $opt"
+			echo "Valid options:"
+			echo "--no-ros1       Disables downloading and building ROS1 dependencies and ROS1 bridge"
+			echo "--download-only Skips the build step and only downloads the code"
 			exit 1
 		;;
 	esac
@@ -86,8 +94,10 @@ read -p "Are you sure you want to continue? [yN]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 	download_all
-	$CWD/navigation2/tools/build_all.sh
-
+	if [ "$ENABLE_BUILD" == true ]; then
+		$CWD/navigation2/tools/build_all.sh
+	fi
+	
 	cd ${CWD}
 	rm ${CHECKPOINT_FILES}
 	echo
