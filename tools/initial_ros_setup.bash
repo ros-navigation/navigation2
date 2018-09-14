@@ -1,11 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
 ENABLE_ROS1=true
 ENABLE_BUILD=true
+ENABLE_ROS2=true
 for opt in "$@" ; do
 	case $opt in
 		--no-ros1)
 			ENABLE_ROS1=false
+			shift
+		;;
+		--no-ros2)
+			ENABLE_ROS2=false
 			shift
 		;;
 		--download-only)
@@ -77,7 +82,9 @@ function checkpoint {
 function download_all {
 	checkpoint download_navstack
 	checkpoint download_ros2_dependencies
-	checkpoint download_ros2
+	if [ "$ENABLE_ROS2" == true ]; then
+		checkpoint download_ros2
+	fi
 	if [ "$ENABLE_ROS1" == true ]; then
 		checkpoint download_ros1_dependencies
 	fi
@@ -97,7 +104,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	if [ "$ENABLE_BUILD" == true ]; then
 		$CWD/navigation2/tools/build_all.sh
 	fi
-	
+
 	cd ${CWD}
 	rm ${CHECKPOINT_FILES}
 	echo
