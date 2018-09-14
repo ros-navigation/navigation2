@@ -22,8 +22,8 @@ add_library(costmap_lib SHARED
 )
 
 ament_target_dependencies(costmap_lib
+  rclcpp
   nav2_libs_msgs
-  tf2_ros
   tf2)
 
 add_library(map_lib SHARED

@@ -185,6 +185,7 @@ int pf_kdtree_get_cluster(pf_kdtree_t *self, pf_vector_t pose)
 // Compare keys to see if they are equal
 int pf_kdtree_equal(pf_kdtree_t *self, int key_a[], int key_b[])
 {
+  (void)self;
   //double a, b;
 
   if (key_a[0] != key_b[0])

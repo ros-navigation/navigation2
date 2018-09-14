@@ -216,7 +216,6 @@ int pf_update_converged(pf_t *pf)
   int i;
   pf_sample_set_t *set;
   pf_sample_t *sample;
-  double total;
 
   set = pf->sets + pf->current_set;
   double mean_x = 0, mean_y = 0;
@@ -472,6 +471,7 @@ int pf_resample_limit(pf_t *pf, int k)
 // Re-compute the cluster statistics for a sample set
 void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
 {
+  (void)pf;
   int i, j, k, cidx;
   pf_sample_t *sample;
   pf_cluster_t *cluster;
