@@ -27,33 +27,33 @@ fi
 
 
 # Build ROS 1 dependencies
-if [ "$ENABLE_ROS1" == true ]; then
+if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
-  (source /opt/ros/kinetic/setup.sh &&
+  (. /opt/ros/kinetic/setup.sh &&
    catkin_make)
  fi
 
 # Build ROS 2 base
-if [ "$ENABLE_ROS2" == true ]; then
+if [ "$ENABLE_ROS2" = true ]; then
   cd $CWD/ros2_ws
   colcon build --symlink-install --packages-skip ros1_bridge
 fi
 
 # Build our ROS 2 dependencies
 cd $CWD/navstack_dependencies_ws
-(source $ROS2_SETUP_FILE &&
+(. $ROS2_SETUP_FILE &&
  colcon build --symlink-install)
 
 # Build our code
 cd $CWD/navigation2
-(source $CWD/navstack_dependencies_ws/install/setup.sh &&
+(. $CWD/navstack_dependencies_ws/install/setup.sh &&
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
 if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
-  source ros1_dependencies_ws/devel/setup.sh
-  source navigation2/install/setup.sh
+  . ros1_dependencies_ws/devel/setup.sh
+  . navigation2/install/setup.sh
   cd $CWD/ros2_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi

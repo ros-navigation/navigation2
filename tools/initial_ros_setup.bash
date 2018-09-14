@@ -31,11 +31,11 @@ set -e
 CHECKPOINT_FILES=''
 
 CWD=`pwd`
-function return_to_root_dir {
+return_to_root_dir() {
 	cd $CWD
 }
 
-function download_navstack {
+download_navstack() {
 	echo "Downloading the ROS 2 navstack"
 	if [ -f "custom_nav2.repos" ]; then #override default location for testing
 		vcs-import < custom_nav2.repos
@@ -45,7 +45,7 @@ function download_navstack {
 	return_to_root_dir
 }
 
-function download_ros2 {
+download_ros2() {
 	echo "Downloading ROS 2 Release Latest"
 	mkdir -p ros2_ws/src
 	cd ros2_ws
@@ -54,7 +54,7 @@ function download_ros2 {
 	return_to_root_dir
 }
 
-function download_ros2_dependencies {
+download_ros2_dependencies() {
 	echo "Downloading the dependencies workspace"
 	mkdir -p navstack_dependencies_ws/src
 	cd navstack_dependencies_ws
@@ -62,7 +62,7 @@ function download_ros2_dependencies {
 	return_to_root_dir
 }
 
-function download_ros1_dependencies {
+download_ros1_dependencies() {
 	echo "Downloading the ROS 1 dependencies workspace"
 	mkdir -p ros1_dependencies_ws/src
 	cd ros1_dependencies_ws
@@ -70,7 +70,7 @@ function download_ros1_dependencies {
 	return_to_root_dir
 }
 
-function checkpoint {
+checkpoint() {
 	local CHECKPOINT_FILE_NAME=.INITIAL_SETUP_$1
 	CHECKPOINT_FILES="${CHECKPOINT_FILES} ${CHECKPOINT_FILE_NAME}"
 	if [ ! -f ${CHECKPOINT_FILE_NAME} ]; then
@@ -79,13 +79,13 @@ function checkpoint {
 	fi
 }
 
-function download_all {
+download_all() {
 	checkpoint download_navstack
 	checkpoint download_ros2_dependencies
-	if [ "$ENABLE_ROS2" == true ]; then
+	if [ "$ENABLE_ROS2" = true ]; then
 		checkpoint download_ros2
 	fi
-	if [ "$ENABLE_ROS1" == true ]; then
+	if [ "$ENABLE_ROS1" = true ]; then
 		checkpoint download_ros1_dependencies
 	fi
 }
@@ -97,11 +97,12 @@ echo "environment variables set at this time."
 echo
 echo "The current directory is $CWD"
 echo
-read -p "Are you sure you want to continue? [yN]" -n 1 -r
+echo "Are you sure you want to continue? [yN]"
+read -r REPLY
 echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [ "$REPLY" = "y" ]; then
 	download_all
-	if [ "$ENABLE_BUILD" == true ]; then
+	if [ "$ENABLE_BUILD" = true ]; then
 		$CWD/navigation2/tools/build_all.sh
 	fi
 
