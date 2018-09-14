@@ -5,4 +5,3 @@ add_definitions( -DTEST_DIRECTORY=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 
 add_subdirectory(unit)
 add_subdirectory(component)
-

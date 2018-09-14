@@ -60,7 +60,7 @@ target_link_libraries(${executable_name}
 target_link_libraries(${library_name}
   ${BULLET_LIBRARIES}
   ${SDL_LIBRARY}
-	${SDL_IMAGE_LIBRARIES}
+  ${SDL_IMAGE_LIBRARIES}
 )
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
@@ -75,6 +75,10 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
