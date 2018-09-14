@@ -21,6 +21,7 @@ for opt in "$@" ; do
 			echo "Invalid option: $opt"
 			echo "Valid options:"
 			echo "--no-ros1       Disables downloading and building ROS1 dependencies and ROS1 bridge"
+			echo "--no-ros2       Uses the binary distribution of ROS2 bouncy"
 			echo "--download-only Skips the build step and only downloads the code"
 			exit 1
 		;;
