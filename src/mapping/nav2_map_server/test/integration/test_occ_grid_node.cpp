@@ -16,7 +16,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <memory>
 
-#include "nav2_map_server/map_reps/occupancy_grid.hpp"
+#include "nav2_map_server/map_reps/occ_grid_server.hpp"
 #include "test_constants/test_constants.h"
 
 // TODO(bpwilcox): test publisher

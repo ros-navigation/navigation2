@@ -60,20 +60,12 @@ target_link_libraries(${executable_name}
 target_link_libraries(${library_name}
   ${BULLET_LIBRARIES}
   ${SDL_LIBRARY}
-  ${SDL_IMAGE_LIBRARIES}
+	${SDL_IMAGE_LIBRARIES}
 )
-
-<<<<<<< HEAD
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-=======
-add_executable(map_server src/main.cpp)
-ament_target_dependencies(map_server rclcpp nav_msgs)
-target_link_libraries(map_server
-  map_reps
->>>>>>> fcd1633... addressing feedback: changed all fprint to RCLCPP_ERROR, split main and server class, fixed yaml-cpp path, throwing exceptions up from yaml parser, cleaned cmakelist, added gtest assert throws, fixes naming conventions, added namespace
 )
 
 install(DIRECTORY include/
