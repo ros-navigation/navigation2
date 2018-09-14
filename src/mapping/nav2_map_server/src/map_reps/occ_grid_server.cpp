@@ -32,7 +32,7 @@
  *
  * Author: Brian Gerkey
  */
-#include "nav2_map_server/map_reps/occupancy_grid.hpp"
+#include "nav2_map_server/map_reps/occ_grid_server.hpp"
 
 #include <libgen.h>
 #include <LinearMath/btQuaternion.h>
@@ -56,11 +56,10 @@ void operator>>(const YAML::Node & node, T & i)
   i = node.as<T>();
 }
 
-// Interface //
 namespace nav2_map_server
 {
 
-void OccGridLoader::LoadMapInfoFromFile(std::string file_name)
+void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
 {
   std::ifstream fin(file_name.c_str());
   if (fin.fail()) {
@@ -154,7 +153,7 @@ void OccGridLoader::LoadMapInfoFromFile(std::string file_name)
   }
 }
 
-void OccGridLoader::LoadMapFromFile(std::string map_name_)
+void OccGridServer::LoadMapFromFile(const std::string & map_name_)
 {
   SDL_Surface * img;
   const char * name = map_name_.c_str();
@@ -258,7 +257,7 @@ void OccGridLoader::LoadMapFromFile(std::string map_name_)
   SDL_FreeSurface(img);
 }
 
-void OccGridLoader::ConnectROS()
+void OccGridServer::ConnectROS()
 {
   // Create a publisher
   // TODO(bpwilcox): publish a latched topic
@@ -277,19 +276,17 @@ void OccGridLoader::ConnectROS()
   occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
 }
 
-void OccGridLoader::SetMap()
+void OccGridServer::SetMap()
 {
   occ_resp_.map = map_msg_;
 }
 
-void OccGridLoader::PublishMap()
+void OccGridServer::PublishMap()
 {
   occ_pub_->publish(map_msg_);
 }
 
-// OccGridLoader specific //
-
-OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr node, std::string file_name)
+OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name)
 : node_(node)
 {
   // Set up //
@@ -311,7 +308,7 @@ OccGridLoader::OccGridLoader(rclcpp::Node::SharedPtr node, std::string file_name
   RCLCPP_INFO(node_->get_logger(), "Success!");
 }
 
-void OccGridLoader::OccMapCallback(
+void OccGridServer::OccMapCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
   const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
   const std::shared_ptr<nav_msgs::srv::GetMap::Response> res)

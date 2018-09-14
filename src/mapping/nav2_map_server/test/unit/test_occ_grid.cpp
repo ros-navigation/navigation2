@@ -34,7 +34,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "nav2_map_server/map_reps/occupancy_grid.hpp"
+#include "nav2_map_server/map_reps/occ_grid_server.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -42,7 +42,7 @@
 using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
-class OccGridTest : public nav2_map_server::OccGridLoader
+class OccGridTest : public nav2_map_server::OccGridServer
 {
 public:
   OccGridTest() {}

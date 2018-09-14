@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
-#define NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
+#ifndef NAV2_MAP_SERVER__BASE_MAP_SERVER_HPP_
+#define NAV2_MAP_SERVER__BASE_MAP_SERVER_HPP_
 
 #include <libgen.h>
 #include <stdio.h>
@@ -24,14 +24,14 @@
 namespace nav2_map_server
 {
 
-class BaseMapLoader
+class BaseMapServer
 {
 public:
-  BaseMapLoader() {}
-  ~BaseMapLoader() {}
+  BaseMapServer() {}
+  virtual ~BaseMapServer() {}
 
-  virtual void LoadMapInfoFromFile(std::string file_name) = 0;
-  virtual void LoadMapFromFile(std::string map_name) = 0;
+  virtual void LoadMapInfoFromFile(const std::string & file_name) = 0;
+  virtual void LoadMapFromFile(const std::string & map_name) = 0;
   virtual void PublishMap() = 0;
   virtual void SetMap() = 0;
   virtual void ConnectROS() = 0;
@@ -39,4 +39,4 @@ public:
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__BASE_MAP_LOADER_HPP_
+#endif  // NAV2_MAP_SERVER__BASE_MAP_SERVER_HPP_

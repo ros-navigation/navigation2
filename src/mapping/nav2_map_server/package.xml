@@ -16,7 +16,6 @@
     <depend>bullet</depend>
     <depend>nav_msgs</depend>
     <depend>std_msgs</depend>
-    <depend>example_interfaces</depend>
     <depend>rclcpp</depend>
     <depend>sdl</depend>
     <depend>sdl-image</depend>

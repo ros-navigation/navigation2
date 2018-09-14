@@ -12,13 +12,9 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rmw REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
-find_package(example_interfaces REQUIRED)
-find_package(PkgConfig REQUIRED)
 find_package(rviz_yaml_cpp_vendor REQUIRED)
 
 include_directories(
@@ -28,50 +24,59 @@ include_directories(
   ${SDL_IMAGE_INCLUDE_DIRS}
 )
 
-add_library(map_reps
-  src/map_reps/occupancy_grid.cpp
-  src/map_reps/map_loader.cpp
+set(executable_name map_server)
+
+add_executable(${executable_name}
+	src/main.cpp
+)
+
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/map_reps/occ_grid_server.cpp
+  src/map_reps/map_factory.cpp
   src/map_server_ros.cpp
 )
 
-ament_target_dependencies(map_reps rclcpp nav_msgs rviz_yaml_cpp_vendor)
-target_link_libraries(map_reps
+set(dependencies
+  rclcpp
+	nav_msgs
+	rviz_yaml_cpp_vendor
+)
+
+ament_target_dependencies(${executable_name}
+	${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+	${dependencies}
+)
+
+target_link_libraries(${executable_name}
+  ${library_name}
+)
+
+target_link_libraries(${library_name}
   ${BULLET_LIBRARIES}
   ${SDL_LIBRARY}
-  ${SDL_IMAGE_LIBRARIES}
+	${SDL_IMAGE_LIBRARIES}
 )
 
-add_executable(map_server src/main.cpp)
-ament_target_dependencies(map_server rclcpp nav_msgs)
-target_link_libraries(map_server
-  map_reps
+install(TARGETS ${executable_name} ${library_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS map_reps map_server DESTINATION lib/${PROJECT_NAME})
-
-## Install project namespaced headers
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE)
+install(DIRECTORY include/
+  DESTINATION include/
+)
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_cppcheck REQUIRED)
-  find_package(ament_cmake_cpplint REQUIRED)
-  find_package(ament_cmake_lint_cmake REQUIRED)
-  find_package(ament_cmake_uncrustify REQUIRED)
-  # This forces cppcheck to consider all files in this project to be C++,
-  # including the headers which end with .h, which cppcheck would normally
-  # consider to be C instead.
-  ament_cppcheck(LANGUAGE "c++")
-  ament_cpplint()
-  ament_lint_cmake()
-  ament_uncrustify()
-
-  find_package(ament_cmake_pytest REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
-  add_subdirectory(test)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_include_directories(include)
+
 ament_package()

@@ -18,7 +18,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_loader.hpp"
+#include "nav2_map_server/map_factory.hpp"
 #include "nav2_map_server/map_reps/map_reps.hpp"
 
 namespace nav2_map_server
@@ -30,8 +30,8 @@ public:
   MapServerROS(const std::string & file_name, const std::string & map_type);
 
 private:
-  MapLoader * map_loader_;
-  BaseMapLoader * map_;
+  MapFactory * map_loader_;
+  BaseMapServer * map_;
 
   // TODO(bpwilcox): Add converter for map representations
 

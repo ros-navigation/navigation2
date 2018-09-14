@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_REPS__OCCUPANCY_GRID_HPP_
-#define NAV2_MAP_SERVER__MAP_REPS__OCCUPANCY_GRID_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
+#define NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
 
 #include <memory>
 #include <string>
@@ -22,7 +22,7 @@
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/base_map_loader.hpp"
+#include "nav2_map_server/base_map_server.hpp"
 
 enum MapMode
 {
@@ -33,25 +33,22 @@ enum MapMode
 namespace nav2_map_server
 {
 
-class OccGridLoader : public BaseMapLoader
+class OccGridServer : public BaseMapServer
 {
 public:
-  // Occupancy Grid Specific //
 
-  explicit OccGridLoader(rclcpp::Node::SharedPtr node)
+  explicit OccGridServer(rclcpp::Node::SharedPtr node)
   : node_(node) {}
 
-  OccGridLoader(rclcpp::Node::SharedPtr node, std::string file_name);
+  OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name);
 
-  OccGridLoader() {}
+  OccGridServer() {}
 
-  ~OccGridLoader() {}
+  ~OccGridServer() {}
 
-  // Interface //
+  void LoadMapInfoFromFile(const std::string & file_name);
 
-  void LoadMapInfoFromFile(std::string file_name);
-
-  void LoadMapFromFile(std::string map_name);
+  void LoadMapFromFile(const std::string & map_name);
 
   void PublishMap();
 
@@ -87,4 +84,4 @@ protected:
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAP_REPS__OCCUPANCY_GRID_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
