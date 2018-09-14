@@ -36,7 +36,6 @@ namespace nav2_map_server
 class OccGridServer : public BaseMapServer
 {
 public:
-
   explicit OccGridServer(rclcpp::Node::SharedPtr node)
   : node_(node) {}
 

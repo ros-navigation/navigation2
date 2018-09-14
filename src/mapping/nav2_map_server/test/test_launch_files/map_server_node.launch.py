@@ -23,7 +23,8 @@ def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
             package='nav2_map_server',
-            node_executable='nav2_map_server',
+            node_executable='map_server',
             output='screen',
-            arguments = [os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'testmap.yaml')])
+            arguments = [os.path.join(os.getenv('TEST_DIR'), 'testmap.yaml')])
+            #arguments = [os.path.join(os.getenv('HOME'), 'ros2_overlay_ws/src/navigation2/src/mapping/nav2_map_server/test/testmap.yaml')])
 ])
