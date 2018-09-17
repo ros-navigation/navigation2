@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+    <name>costmap_2d</name>
+    <version>0.1.0</version>
+    <description>
+
+        This package implements a mock/fake/stub of the costmap_2d library.
+
+    </description>
+    <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
+    <license>Apache License 2.0</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>geometry_msgs</depend>
+    <depend>tf2_ros</depend>
+    <depend>tf2</depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>

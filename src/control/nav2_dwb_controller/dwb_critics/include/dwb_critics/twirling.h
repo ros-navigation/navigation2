@@ -52,7 +52,7 @@ class TwirlingCritic: public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
 };
 }  // namespace dwb_critics
 

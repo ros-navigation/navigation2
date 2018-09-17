@@ -58,10 +58,10 @@ class PathAlignCritic: public PathDistCritic
 public:
   PathAlignCritic() : zero_scale_(false), forward_point_distance_(0.0) {}
   void onInit() override;
-  bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-               const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan) override;
+  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
   double getScale() const override;
-  double scorePose(const geometry_msgs::Pose2D& pose) override;
+  double scorePose(const geometry_msgs::msg::Pose2D& pose) override;
 protected:
   bool zero_scale_;
   double forward_point_distance_;

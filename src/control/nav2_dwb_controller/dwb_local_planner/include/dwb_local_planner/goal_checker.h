@@ -35,9 +35,9 @@
 #ifndef DWB_LOCAL_PLANNER_GOAL_CHECKER_H
 #define DWB_LOCAL_PLANNER_GOAL_CHECKER_H
 
-#include <ros/ros.h>
-#include <geometry_msgs/Pose2D.h>
-#include <nav_2d_msgs/Twist2D.h>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose2_d.hpp>
+#include <nav_2d_msgs/msg/twist2_d.hpp>
 
 namespace dwb_local_planner
 {
@@ -62,7 +62,7 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param nh NodeHandle for grabbing parameters
    */
-  virtual void initialize(const ros::NodeHandle& nh) = 0;
+  virtual void initialize(const rclcpp::Node& nh) = 0;
 
   /**
    * @brief Check whether the goal should be considered reached
@@ -71,8 +71,8 @@ public:
    * @param velocity The robot's current velocity
    * @return True if goal is reached
    */
-  virtual bool isGoalReached(const geometry_msgs::Pose2D& query_pose, const geometry_msgs::Pose2D& goal_pose,
-                             const nav_2d_msgs::Twist2D& velocity) = 0;
+  virtual bool isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
+                             const nav_2d_msgs::msg::Twist2D& velocity) = 0;
 };
 
 }  // namespace dwb_local_planner

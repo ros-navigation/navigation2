@@ -35,8 +35,8 @@
 #include <dwb_plugins/standard_traj_generator.h>
 #include <dwb_plugins/xy_theta_iterator.h>
 #include <nav_2d_utils/parameters.h>
-#include <pluginlib/class_list_macros.h>
-#include <nav_core2/exceptions.h>
+#include <pluginlib/class_list_macros.hpp>
+#include <dwb_local_planner/exceptions.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -46,13 +46,15 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(ros::NodeHandle& nh)
+void StandardTrajectoryGenerator::initialize(const rclcpp::Node& nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
   initializeIterator(nh);
 
-  nh.param("sim_time", sim_time_, 1.7);
+  // TODO(crdelsey): handle params
+  sim_time_ = 1.7;
+  // nh.param("sim_time", sim_time_, 1.7);
   checkUseDwaParam(nh);
 
   /*
@@ -63,36 +65,41 @@ void StandardTrajectoryGenerator::initialize(ros::NodeHandle& nh)
    *  two successive points on the trajectory, and angular_sim_granularity is the maximum amount of
    *  angular distance between two successive points.
    */
-  nh.param("discretize_by_time", discretize_by_time_, false);
-  if (discretize_by_time_)
-  {
-    time_granularity_ = loadParameterWithDeprecation(nh, "time_granularity", "sim_granularity", 0.5);
-  }
-  else
-  {
-    linear_granularity_ = loadParameterWithDeprecation(nh, "linear_granularity", "sim_granularity", 0.5);
-    angular_granularity_ = loadParameterWithDeprecation(nh, "angular_granularity", "angular_sim_granularity", 0.025);
-  }
+  // TODO(crdelsey): handle params
+  discretize_by_time_ = false;
+  linear_granularity_= 0.5;
+  angular_granularity_ = 0.025;
+  // nh.param("discretize_by_time", discretize_by_time_, false);
+  // if (discretize_by_time_)
+  // {
+  //   time_granularity_ = loadParameterWithDeprecation(nh, "time_granularity", "sim_granularity", 0.5);
+  // }
+  // else
+  // {
+  //   linear_granularity_ = loadParameterWithDeprecation(nh, "linear_granularity", "sim_granularity", 0.5);
+  //   angular_granularity_ = loadParameterWithDeprecation(nh, "angular_granularity", "angular_sim_granularity", 0.025);
+  // }
 }
 
-void StandardTrajectoryGenerator::initializeIterator(ros::NodeHandle& nh)
+void StandardTrajectoryGenerator::initializeIterator(const rclcpp::Node& nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
 }
 
-void StandardTrajectoryGenerator::checkUseDwaParam(const ros::NodeHandle& nh)
+void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node& nh)
 {
-  bool use_dwa;
-  nh.param("use_dwa", use_dwa, false);
-  if (use_dwa)
-  {
-    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
-                                      "Please use LimitedAccelGenerator for that functionality.");
-  }
+  // TODO(crdelsey): handle params
+  // bool use_dwa;
+  // nh.param("use_dwa", use_dwa, false);
+  // if (use_dwa)
+  // {
+  //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
+  //                                     "Please use LimitedAccelGenerator for that functionality.");
+  // }
 }
 
-void StandardTrajectoryGenerator::startNewIteration(const nav_2d_msgs::Twist2D& current_velocity)
+void StandardTrajectoryGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity)
 {
   velocity_iterator_->startNewIteration(current_velocity, sim_time_);
 }
@@ -102,12 +109,12 @@ bool StandardTrajectoryGenerator::hasMoreTwists()
   return velocity_iterator_->hasMoreTwists();
 }
 
-nav_2d_msgs::Twist2D StandardTrajectoryGenerator::nextTwist()
+nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::nextTwist()
 {
   return velocity_iterator_->nextTwist();
 }
 
-std::vector<double> StandardTrajectoryGenerator::getTimeSteps(const nav_2d_msgs::Twist2D& cmd_vel)
+std::vector<double> StandardTrajectoryGenerator::getTimeSteps(const nav_2d_msgs::msg::Twist2D& cmd_vel)
 {
   std::vector<double> steps;
   if (discretize_by_time_)
@@ -137,16 +144,16 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(const nav_2d_msgs:
   return steps;
 }
 
-dwb_msgs::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(const geometry_msgs::Pose2D& start_pose,
-    const nav_2d_msgs::Twist2D& start_vel,
-    const nav_2d_msgs::Twist2D& cmd_vel)
+dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
+    const nav_2d_msgs::msg::Twist2D& start_vel,
+    const nav_2d_msgs::msg::Twist2D& cmd_vel)
 {
-  dwb_msgs::Trajectory2D traj;
+  dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = ros::Duration(sim_time_);
+  traj.duration = rclcpp::Duration(sim_time_);
   //  simulate the trajectory
-  geometry_msgs::Pose2D pose = start_pose;
-  nav_2d_msgs::Twist2D vel = start_vel;
+  geometry_msgs::msg::Pose2D pose = start_pose;
+  nav_2d_msgs::msg::Twist2D vel = start_vel;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   for (double dt : steps)
   {
@@ -164,10 +171,10 @@ dwb_msgs::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(const geo
 /**
  * change vel using acceleration limits to converge towards sample_target-vel
  */
-nav_2d_msgs::Twist2D StandardTrajectoryGenerator::computeNewVelocity(const nav_2d_msgs::Twist2D& cmd_vel,
-    const nav_2d_msgs::Twist2D& start_vel, const double dt)
+nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(const nav_2d_msgs::msg::Twist2D& cmd_vel,
+    const nav_2d_msgs::msg::Twist2D& start_vel, const double dt)
 {
-  nav_2d_msgs::Twist2D new_vel;
+  nav_2d_msgs::msg::Twist2D new_vel;
   new_vel.x = projectVelocity(start_vel.x, kinematics_->getAccX(), kinematics_->getDecelX(), dt, cmd_vel.x);
   new_vel.y = projectVelocity(start_vel.y, kinematics_->getAccY(), kinematics_->getDecelY(), dt, cmd_vel.y);
   new_vel.theta = projectVelocity(start_vel.theta, kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
@@ -175,10 +182,10 @@ nav_2d_msgs::Twist2D StandardTrajectoryGenerator::computeNewVelocity(const nav_2
   return new_vel;
 }
 
-geometry_msgs::Pose2D StandardTrajectoryGenerator::computeNewPosition(const geometry_msgs::Pose2D start_pose,
-                                                                      const nav_2d_msgs::Twist2D& vel, const double dt)
+geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(const geometry_msgs::msg::Pose2D start_pose,
+                                                                      const nav_2d_msgs::msg::Twist2D& vel, const double dt)
 {
-  geometry_msgs::Pose2D new_pose;
+  geometry_msgs::msg::Pose2D new_pose;
   new_pose.x = start_pose.x + (vel.x * cos(start_pose.theta) + vel.y * cos(M_PI_2 + start_pose.theta)) * dt;
   new_pose.y = start_pose.y + (vel.x * sin(start_pose.theta) + vel.y * sin(M_PI_2 + start_pose.theta)) * dt;
   new_pose.theta = start_pose.theta + vel.theta * dt;

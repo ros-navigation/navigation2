@@ -35,7 +35,7 @@
 #ifndef NAV_2D_UTILS_PARAMETERS_H
 #define NAV_2D_UTILS_PARAMETERS_H
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <string>
 
 namespace nav_2d_utils
@@ -53,15 +53,16 @@ namespace nav_2d_utils
  * @return Value of parameter if found, otherwise the default_value
  */
 template<class param_t>
-param_t searchAndGetParam(const ros::NodeHandle& nh, const std::string& param_name, const param_t& default_value)
+param_t searchAndGetParam(const rclcpp::Node& nh, const std::string& param_name, const param_t& default_value)
 {
-  std::string resolved_name;
-  if (nh.searchParam(param_name, resolved_name))
-  {
-    param_t value = 0;
-    nh.param(resolved_name, value, default_value);
-    return value;
-  }
+  // TODO(crdelsey): Handle params
+  // std::string resolved_name;
+  // if (nh.searchParam(param_name, resolved_name))
+  // {
+  //   param_t value = 0;
+  //   nh.param(resolved_name, value, default_value);
+  //   return value;
+  // }
   return default_value;
 }
 
@@ -74,21 +75,22 @@ param_t searchAndGetParam(const ros::NodeHandle& nh, const std::string& param_na
  * @return The value of the parameter or the default value
  */
 template<class param_t>
-param_t loadParameterWithDeprecation(const ros::NodeHandle& nh, const std::string current_name,
+param_t loadParameterWithDeprecation(const rclcpp::Node& nh, const std::string current_name,
                                      const std::string old_name, const param_t& default_value)
 {
-  param_t value;
-  if (nh.hasParam(current_name))
-  {
-    nh.getParam(current_name, value);
-    return value;
-  }
-  if (nh.hasParam(old_name))
-  {
-    ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
-    nh.getParam(old_name, value);
-    return value;
-  }
+  // TODO(crdelsey): Handle params
+  // param_t value;
+  // if (nh.hasParam(current_name))
+  // {
+  //   nh.getParam(current_name, value);
+  //   return value;
+  // }
+  // if (nh.hasParam(old_name))
+  // {
+  //   ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
+  //   nh.getParam(old_name, value);
+  //   return value;
+  // }
   return default_value;
 }
 
@@ -99,14 +101,15 @@ param_t loadParameterWithDeprecation(const ros::NodeHandle& nh, const std::strin
  * @param old_name Deprecated parameter name
  */
 template<class param_t>
-void moveDeprecatedParameter(const ros::NodeHandle& nh, const std::string current_name, const std::string old_name)
+void moveDeprecatedParameter(const rclcpp::Node& nh, const std::string current_name, const std::string old_name)
 {
-  if (!nh.hasParam(old_name)) return;
-
-  param_t value;
-  ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
-  nh.getParam(old_name, value);
-  nh.setParam(current_name, value);
+  // TODO(crdelsey): Handle params
+  // if (!nh.hasParam(old_name)) return;
+  //
+  // param_t value;
+  // ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
+  // nh.getParam(old_name, value);
+  // nh.setParam(current_name, value);
 }
 
 /**
@@ -123,25 +126,26 @@ void moveDeprecatedParameter(const ros::NodeHandle& nh, const std::string curren
  * @param should_delete If true, whether to delete the parameter from the old name
  */
 template<class param_t>
-void moveParameter(const ros::NodeHandle& nh, std::string old_name,
+void moveParameter(const rclcpp::Node& nh, std::string old_name,
                    std::string current_name, param_t default_value, bool should_delete = true)
 {
-  if (nh.hasParam(current_name))
-  {
-    if (should_delete)
-      nh.deleteParam(old_name);
-    return;
-  }
-  XmlRpc::XmlRpcValue value;
-  if (nh.hasParam(old_name))
-  {
-    nh.getParam(old_name, value);
-    if (should_delete) nh.deleteParam(old_name);
-  }
-  else
-    value = default_value;
-
-  nh.setParam(current_name, value);
+  // TODO(crdelsey): Handle params
+  // if (nh.hasParam(current_name))
+  // {
+  //   if (should_delete)
+  //     nh.deleteParam(old_name);
+  //   return;
+  // }
+  // XmlRpc::XmlRpcValue value;
+  // if (nh.hasParam(old_name))
+  // {
+  //   nh.getParam(old_name, value);
+  //   if (should_delete) nh.deleteParam(old_name);
+  // }
+  // else
+  //   value = default_value;
+  //
+  // nh.setParam(current_name, value);
 }
 
 

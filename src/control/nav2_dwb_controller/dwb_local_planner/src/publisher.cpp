@@ -31,66 +31,66 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <dwb_local_planner/publisher.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
+#include "dwb_local_planner/publisher.h"
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+//#include <sensor_msgs/point_cloud_conversion.hpp>
 #include <nav_2d_utils/conversions.h>
 #include <vector>
 
 namespace dwb_local_planner
 {
 
-void DWBPublisher::initialize(ros::NodeHandle& nh)
+void DWBPublisher::initialize(rclcpp::Node& nh)
 {
-  ros::NodeHandle global_nh;
+  // TODO(crdelsey): How to publish
   // Load Publishers
-  nh.param("publish_evaluation", publish_evaluation_, true);
-  if (publish_evaluation_)
-    eval_pub_ = nh.advertise<dwb_msgs::LocalPlanEvaluation>("evaluation", 1);
-
-  nh.param("publish_global_plan", publish_global_plan_, true);
-  if (publish_global_plan_)
-    global_pub_ = nh.advertise<nav_msgs::Path>("global_plan", 1);
-
-  nh.param("publish_transformed_plan", publish_transformed_, true);
-  if (publish_transformed_)
-    transformed_pub_ = nh.advertise<nav_msgs::Path>("transformed_global_plan", 1);
-
-  nh.param("publish_local_plan", publish_local_plan_, true);
-  if (publish_local_plan_)
-    local_pub_ = nh.advertise<nav_msgs::Path>("local_plan", 1);
-
-  nh.param("publish_trajectories", publish_trajectories_, true);
-  if (publish_trajectories_)
-    marker_pub_ = global_nh.advertise<visualization_msgs::MarkerArray>("marker", 1);
-  prev_marker_count_ = 0;
-
-  nh.param("publish_cost_grid_pc", publish_cost_grid_pc_, false);
-  if (publish_cost_grid_pc_)
-    cost_grid_pc_pub_ = nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
+  // nh.param("publish_evaluation", publish_evaluation_, true);
+  // if (publish_evaluation_)
+    eval_pub_ = nh.create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
+  //
+  // nh.param("publish_global_plan", publish_global_plan_, true);
+  // if (publish_global_plan_)
+    global_pub_ = nh.create_publisher<nav_msgs::msg::Path>("global_plan", 1);
+  //
+  // nh.param("publish_transformed_plan", publish_transformed_, true);
+  // if (publish_transformed_)
+    transformed_pub_ = nh.create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+  //
+  // nh.param("publish_local_plan", publish_local_plan_, true);
+  // if (publish_local_plan_)
+    local_pub_ = nh.create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+  //
+  // nh.param("publish_trajectories", publish_trajectories_, true);
+  // if (publish_trajectories_)
+    marker_pub_ = nh.create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
+  // prev_marker_count_ = 0;
+  //
+  // nh.param("publish_cost_grid_pc", publish_cost_grid_pc_, false);
+  // if (publish_cost_grid_pc_)
+    cost_grid_pc_pub_ = nh.create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
 }
 
-void DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::LocalPlanEvaluation> results)
+void DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
   if (results == nullptr) return;
   if (publish_evaluation_)
   {
-    eval_pub_.publish(*results);
+    eval_pub_->publish(*results);
   }
   publishTrajectories(*results);
 }
 
-void DWBPublisher::publishTrajectories(const dwb_msgs::LocalPlanEvaluation& results)
+void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation& results)
 {
   if (!publish_trajectories_) return;
-  visualization_msgs::MarkerArray ma;
-  visualization_msgs::Marker m;
+  visualization_msgs::msg::MarkerArray ma;
+  visualization_msgs::msg::Marker m;
 
   if (results.twists.size() == 0) return;
 
-  geometry_msgs::Point pt;
+  geometry_msgs::msg::Point pt;
 
   m.header = results.header;
   m.type = m.LINE_STRIP;
@@ -103,7 +103,7 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::LocalPlanEvaluation& resu
 
   for (unsigned int i = 0; i < results.twists.size(); i++)
   {
-    const dwb_msgs::TrajectoryScore& twist = results.twists[i];
+    const dwb_msgs::msg::TrajectoryScore& twist = results.twists[i];
     if (twist.total >= 0)
     {
       m.color.r = 1 - (twist.total - best_cost) / (worst_cost - best_cost);
@@ -135,25 +135,25 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::LocalPlanEvaluation& resu
     ma.markers.push_back(m);
   }
   prev_marker_count_ = temp;
-  marker_pub_.publish(ma);
+  marker_pub_->publish(ma);
 }
 
-void DWBPublisher::publishLocalPlan(const std_msgs::Header& header,
-                                    const dwb_msgs::Trajectory2D& traj)
+void DWBPublisher::publishLocalPlan(const std_msgs::msg::Header& header,
+                                    const dwb_msgs::msg::Trajectory2D& traj)
 {
   if (!publish_local_plan_) return;
 
-  nav_msgs::Path path = nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  local_pub_.publish(path);
+  // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
+  // local_pub_->publish(path);
 }
 
 void DWBPublisher::publishCostGrid(const CostmapROSPtr costmap_ros, const std::vector<TrajectoryCritic::Ptr> critics)
 {
   if (!publish_cost_grid_pc_) return;
 
-  sensor_msgs::PointCloud cost_grid_pc;
+  sensor_msgs::msg::PointCloud cost_grid_pc;
   cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
-  cost_grid_pc.header.stamp = ros::Time::now();
+  cost_grid_pc.header.stamp = rclcpp::Clock().now();
 
   costmap_2d::Costmap2D* costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
@@ -172,7 +172,7 @@ void DWBPublisher::publishCostGrid(const CostmapROSPtr costmap_ros, const std::v
     }
   }
 
-  sensor_msgs::ChannelFloat32 totals;
+  sensor_msgs::msg::ChannelFloat32 totals;
   totals.name = "total_cost";
   totals.values.resize(size_x * size_y);
 
@@ -193,31 +193,31 @@ void DWBPublisher::publishCostGrid(const CostmapROSPtr costmap_ros, const std::v
   }
   cost_grid_pc.channels.push_back(totals);
 
-  sensor_msgs::PointCloud2 cost_grid_pc2;
-  convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
-  cost_grid_pc_pub_.publish(cost_grid_pc2);
+  sensor_msgs::msg::PointCloud2 cost_grid_pc2;
+  // TODO(crdelsey): convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
+  cost_grid_pc_pub_->publish(cost_grid_pc2);
 }
 
-void DWBPublisher::publishGlobalPlan(const nav_2d_msgs::Path2D plan)
+void DWBPublisher::publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan)
 {
-  publishGenericPlan(plan, global_pub_, publish_global_plan_);
+  publishGenericPlan(plan, *global_pub_, publish_global_plan_);
 }
 
-void DWBPublisher::publishTransformedPlan(const nav_2d_msgs::Path2D plan)
+void DWBPublisher::publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan)
 {
-  publishGenericPlan(plan, transformed_pub_, publish_transformed_);
+  publishGenericPlan(plan, *transformed_pub_, publish_transformed_);
 }
 
-void DWBPublisher::publishLocalPlan(const nav_2d_msgs::Path2D plan)
+void DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
 {
-  publishGenericPlan(plan, local_pub_, publish_local_plan_);
+  publishGenericPlan(plan, *local_pub_, publish_local_plan_);
 }
 
-void DWBPublisher::publishGenericPlan(const nav_2d_msgs::Path2D plan, const ros::Publisher pub, bool flag)
+void DWBPublisher::publishGenericPlan(const nav_2d_msgs::msg::Path2D plan, const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
   if (!flag) return;
-  nav_msgs::Path path = nav_2d_utils::pathToPath(plan);
-  pub.publish(path);
+  // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
+  // pub.publish(path);
 }
 
 }  // namespace dwb_local_planner

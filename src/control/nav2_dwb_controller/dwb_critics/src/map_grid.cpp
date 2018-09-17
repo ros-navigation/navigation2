@@ -33,9 +33,10 @@
  */
 
 #include <dwb_critics/map_grid.h>
-#include <nav_core2/exceptions.h>
+#include <dwb_local_planner/exceptions.h>
 #include <string>
 #include <algorithm>
+#include <costmap_2d/cost_values.h>
 
 namespace dwb_critics
 {
@@ -62,8 +63,9 @@ void MapGridCritic::onInit()
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
-  std::string aggro_str;
-  nh_->param("aggregation_type", aggro_str, std::string("last"));
+  std::string aggro_str("last");
+  // TODO(crdelsey): handle params
+  //nh_->param("aggregation_type", aggro_str, std::string("last"));
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last")
   {
@@ -79,7 +81,7 @@ void MapGridCritic::onInit()
   }
   else
   {
-    ROS_ERROR_NAMED("MapGridCritic", "aggregation_type parameter \"%s\" invalid. Using Last.", aggro_str.c_str());
+    RCLCPP_ERROR(rclcpp::get_logger("MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.", aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
   }
 }
@@ -107,7 +109,7 @@ void MapGridCritic::propogateManhattanDistances()
   }
 }
 
-double MapGridCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
+double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
 {
   double score = 0.0;
   unsigned int start_index = 0;
@@ -156,7 +158,7 @@ double MapGridCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
   return score;
 }
 
-double MapGridCritic::scorePose(const geometry_msgs::Pose2D& pose)
+double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D& pose)
 {
   unsigned int cell_x, cell_y;
   // we won't allow trajectories that go off the map... shouldn't happen that often anyways
@@ -167,9 +169,9 @@ double MapGridCritic::scorePose(const geometry_msgs::Pose2D& pose)
   return getScore(cell_x, cell_y);
 }
 
-void MapGridCritic::addGridScores(sensor_msgs::PointCloud& pc)
+void MapGridCritic::addGridScores(sensor_msgs::msg::PointCloud& pc)
 {
-  sensor_msgs::ChannelFloat32 grid_scores;
+  sensor_msgs::msg::ChannelFloat32 grid_scores;
   grid_scores.name = name_;
 
   costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();

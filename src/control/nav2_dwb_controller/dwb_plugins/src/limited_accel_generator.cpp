@@ -34,61 +34,64 @@
 
 #include <dwb_plugins/limited_accel_generator.h>
 #include <nav_2d_utils/parameters.h>
-#include <pluginlib/class_list_macros.h>
-#include <nav_core2/exceptions.h>
+#include <pluginlib/class_list_macros.hpp>
+#include <dwb_local_planner/exceptions.h>
 #include <vector>
 
 namespace dwb_plugins
 {
 
-void LimitedAccelGenerator::initialize(ros::NodeHandle& nh)
+void LimitedAccelGenerator::initialize(const rclcpp::Node& nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
-  if (nh.hasParam("sim_period"))
-  {
-    nh.param("sim_period", acceleration_time_);
-  }
-  else
-  {
-    double controller_frequency = nav_2d_utils::searchAndGetParam(nh, "controller_frequency", 20.0);
-    if (controller_frequency > 0)
-    {
-      acceleration_time_ = 1.0 / controller_frequency;
-    }
-    else
-    {
-      ROS_WARN_NAMED("LimitedAccelGenerator", "A controller_frequency less than or equal to 0 has been set. "
-                                              "Ignoring the parameter, assuming a rate of 20Hz");
-      acceleration_time_ = 0.05;
-    }
-  }
+  acceleration_time_ = 0.05;
+  // TODO(crdelsey): Handle params
+  // if (nh.hasParam("sim_period"))
+  // {
+  //   nh.param("sim_period", acceleration_time_);
+  // }
+  // else
+  // {
+  //   double controller_frequency = nav_2d_utils::searchAndGetParam(nh, "controller_frequency", 20.0);
+  //   if (controller_frequency > 0)
+  //   {
+  //     acceleration_time_ = 1.0 / controller_frequency;
+  //   }
+  //   else
+  //   {
+  //     ROS_WARN_NAMED("LimitedAccelGenerator", "A controller_frequency less than or equal to 0 has been set. "
+  //                                             "Ignoring the parameter, assuming a rate of 20Hz");
+  //     acceleration_time_ = 0.05;
+  //   }
+  // }
 }
 
-void LimitedAccelGenerator::checkUseDwaParam(const ros::NodeHandle& nh)
+void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node& nh)
 {
-  bool use_dwa;
-  nh.param("use_dwa", use_dwa, true);
-  if (!use_dwa)
-  {
-    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
-                                      "Please use StandardTrajectoryGenerator for that functionality.");
-  }
+  // TODO(crdelsey): Handle params
+  // bool use_dwa;
+  // nh.param("use_dwa", use_dwa, true);
+  // if (!use_dwa)
+  // {
+  //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
+  //                                     "Please use StandardTrajectoryGenerator for that functionality.");
+  // }
 }
 
-void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::Twist2D& current_velocity)
+void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity)
 {
   // Limit our search space to just those within the limited acceleration_time
   velocity_iterator_->startNewIteration(current_velocity, acceleration_time_);
 }
 
-dwb_msgs::Trajectory2D LimitedAccelGenerator::generateTrajectory(const geometry_msgs::Pose2D& start_pose,
-    const nav_2d_msgs::Twist2D& start_vel,
-    const nav_2d_msgs::Twist2D& cmd_vel)
+dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
+    const nav_2d_msgs::msg::Twist2D& start_vel,
+    const nav_2d_msgs::msg::Twist2D& cmd_vel)
 {
-  dwb_msgs::Trajectory2D traj;
+  dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = ros::Duration(sim_time_);
-  geometry_msgs::Pose2D pose = start_pose;
+  traj.duration = rclcpp::Duration(sim_time_);
+  geometry_msgs::msg::Pose2D pose = start_pose;
 
   std::vector<double> steps = getTimeSteps(cmd_vel);
   for (double dt : steps)

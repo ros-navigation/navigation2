@@ -35,7 +35,7 @@
 #ifndef DWB_PLUGINS_STANDARD_TRAJ_GENERATOR_H
 #define DWB_PLUGINS_STANDARD_TRAJ_GENERATOR_H
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <dwb_local_planner/trajectory_generator.h>
 #include <dwb_plugins/velocity_iterator.h>
 #include <dwb_plugins/kinematic_parameters.h>
@@ -53,19 +53,19 @@ class StandardTrajectoryGenerator : public dwb_local_planner::TrajectoryGenerato
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(ros::NodeHandle& nh) override;
-  void startNewIteration(const nav_2d_msgs::Twist2D& current_velocity) override;
+  void initialize(const rclcpp::Node& nh) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity) override;
   bool hasMoreTwists() override;
-  nav_2d_msgs::Twist2D nextTwist() override;
+  nav_2d_msgs::msg::Twist2D nextTwist() override;
 
-  dwb_msgs::Trajectory2D generateTrajectory(const geometry_msgs::Pose2D& start_pose,
-      const nav_2d_msgs::Twist2D& start_vel,
-      const nav_2d_msgs::Twist2D& cmd_vel) override;
+  dwb_msgs::msg::Trajectory2D generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
+      const nav_2d_msgs::msg::Twist2D& start_vel,
+      const nav_2d_msgs::msg::Twist2D& cmd_vel) override;
 protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding
    */
-  virtual void initializeIterator(ros::NodeHandle& nh);
+  virtual void initializeIterator(const rclcpp::Node& nh);
 
   /**
    * @brief Check if the deprecated use_dwa parameter is set to the functionality that matches this class
@@ -74,7 +74,7 @@ protected:
    * LimitedAccelGenerator. If use_dwa was false, this class should be used. If it was true, then LimitedAccelGenerator.
    * If this is NOT the case, this function will throw an exception.
    */
-  virtual void checkUseDwaParam(const ros::NodeHandle& nh);
+  virtual void checkUseDwaParam(const rclcpp::Node& nh);
 
   /**
    * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits
@@ -84,7 +84,7 @@ protected:
    * @param dt amount of time in seconds
    * @return new velocity after dt seconds
    */
-  nav_2d_msgs::Twist2D computeNewVelocity(const nav_2d_msgs::Twist2D& cmd_vel, const nav_2d_msgs::Twist2D& start_vel,
+  nav_2d_msgs::msg::Twist2D computeNewVelocity(const nav_2d_msgs::msg::Twist2D& cmd_vel, const nav_2d_msgs::msg::Twist2D& start_vel,
                                           const double dt);
 
   /**
@@ -95,7 +95,7 @@ protected:
    * @param dt amount of time in seconds
    * @return New pose after dt seconds
    */
-  geometry_msgs::Pose2D computeNewPosition(const geometry_msgs::Pose2D start_pose, const nav_2d_msgs::Twist2D& vel,
+  geometry_msgs::msg::Pose2D computeNewPosition(const geometry_msgs::msg::Pose2D start_pose, const nav_2d_msgs::msg::Twist2D& vel,
                                            const double dt);
 
 
@@ -111,7 +111,7 @@ protected:
    * Right now the vector contains a single value repeated many times, but this method could be overridden
    * to allow for dynamic spacing
    */
-  std::vector<double> getTimeSteps(const nav_2d_msgs::Twist2D& cmd_vel);
+  std::vector<double> getTimeSteps(const nav_2d_msgs::msg::Twist2D& cmd_vel);
 
   KinematicParameters::Ptr kinematics_;
   std::shared_ptr<VelocityIterator> velocity_iterator_;

@@ -35,10 +35,13 @@
 #ifndef DWB_LOCAL_PLANNER_PUBLISHER_H
 #define DWB_LOCAL_PLANNER_PUBLISHER_H
 
-#include <ros/ros.h>
-#include <nav_core2/common.h>
+#include <rclcpp/rclcpp.hpp>
+#include <dwb_local_planner/common_types.h>
 #include <dwb_local_planner/trajectory_critic.h>
-#include <dwb_msgs/LocalPlanEvaluation.h>
+#include <dwb_msgs/msg/local_plan_evaluation.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <vector>
 
 namespace dwb_local_planner
@@ -63,7 +66,7 @@ public:
    * @brief Load the parameters and advertise topics as needed
    * @param nh NodeHandle to load parameters from
    */
-  void initialize(ros::NodeHandle& nh);
+  void initialize(rclcpp::Node& nh);
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved
@@ -74,18 +77,18 @@ public:
   /**
    * @brief If the pointer is not null, publish the evaluation and trajectories as needed
    */
-  void publishEvaluation(std::shared_ptr<dwb_msgs::LocalPlanEvaluation> results);
-  void publishLocalPlan(const std_msgs::Header& header, const dwb_msgs::Trajectory2D& traj);
+  void publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results);
+  void publishLocalPlan(const std_msgs::msg::Header& header, const dwb_msgs::msg::Trajectory2D& traj);
   void publishCostGrid(const CostmapROSPtr costmap_ros, const std::vector<TrajectoryCritic::Ptr> critics);
-  void publishGlobalPlan(const nav_2d_msgs::Path2D plan);
-  void publishTransformedPlan(const nav_2d_msgs::Path2D plan);
-  void publishLocalPlan(const nav_2d_msgs::Path2D plan);
+  void publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan);
+  void publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan);
+  void publishLocalPlan(const nav_2d_msgs::msg::Path2D plan);
 
 protected:
-  void publishTrajectories(const dwb_msgs::LocalPlanEvaluation& results);
+  void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation& results);
 
   // Helper function for publishing other plans
-  void publishGenericPlan(const nav_2d_msgs::Path2D plan, const ros::Publisher pub, bool flag);
+  void publishGenericPlan(const nav_2d_msgs::msg::Path2D plan, const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_, publish_global_plan_, publish_transformed_, publish_local_plan_, publish_trajectories_;
@@ -95,7 +98,12 @@ protected:
   int prev_marker_count_;
 
   // Publisher Objects
-  ros::Publisher eval_pub_, global_pub_, transformed_pub_, local_pub_, marker_pub_, cost_grid_pc_pub_;
+  std::shared_ptr<rclcpp::Publisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> global_pub_;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> transformed_pub_;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> local_pub_;
+  std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 };
 
 }  // namespace dwb_local_planner

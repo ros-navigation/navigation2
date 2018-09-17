@@ -36,15 +36,15 @@
 
 namespace nav_2d_utils
 {
-nav_2d_msgs::Path2D adjustPlanResolution(const nav_2d_msgs::Path2D& global_plan_in, double resolution)
+nav_2d_msgs::msg::Path2D adjustPlanResolution(const nav_2d_msgs::msg::Path2D& global_plan_in, double resolution)
 {
-  nav_2d_msgs::Path2D global_plan_out;
+  nav_2d_msgs::msg::Path2D global_plan_out;
   if (global_plan_in.poses.size() == 0)
   {
     return global_plan_out;
   }
 
-  geometry_msgs::Pose2D last = global_plan_in.poses[0];
+  geometry_msgs::msg::Pose2D last = global_plan_in.poses[0];
   global_plan_out.poses.push_back(last);
 
   // we can take "holes" in the plan smaller than 2 grid cells (squared = 4)
@@ -52,7 +52,7 @@ nav_2d_msgs::Path2D adjustPlanResolution(const nav_2d_msgs::Path2D& global_plan_
 
   for (unsigned int i = 1; i < global_plan_in.poses.size(); ++i)
   {
-    geometry_msgs::Pose2D loop = global_plan_in.poses[i];
+    geometry_msgs::msg::Pose2D loop = global_plan_in.poses[i];
     double sq_dist = (loop.x - last.x) * (loop.x - last.x) + (loop.y - last.y) * (loop.y - last.y);
     if (sq_dist > min_sq_resolution)
     {
@@ -67,7 +67,7 @@ nav_2d_msgs::Path2D adjustPlanResolution(const nav_2d_msgs::Path2D& global_plan_
 
       for (int j = 1; j < steps; ++j)
       {
-        geometry_msgs::Pose2D pose;
+        geometry_msgs::msg::Pose2D pose;
         pose.x = last.x + j * delta_x;
         pose.y = last.y + j * delta_y;
         pose.theta = last.theta + j * delta_t;

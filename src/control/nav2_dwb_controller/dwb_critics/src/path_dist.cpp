@@ -35,22 +35,23 @@
 #include <pluginlib/class_list_macros.h>
 #include <nav_2d_utils/path_ops.h>
 #include <vector>
+#include <costmap_2d/cost_values.h>
 
 namespace dwb_critics
 {
-bool PathDistCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                             const geometry_msgs::Pose2D& goal,
-                             const nav_2d_msgs::Path2D& global_plan)
+bool PathDistCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+                             const geometry_msgs::msg::Pose2D& goal,
+                             const nav_2d_msgs::msg::Path2D& global_plan)
 {
   reset();
   bool started_path = false;
 
-  nav_2d_msgs::Path2D adjusted_global_plan =
+  nav_2d_msgs::msg::Path2D adjusted_global_plan =
     nav_2d_utils::adjustPlanResolution(global_plan, costmap_->getResolution());
 
   if (adjusted_global_plan.poses.size() != global_plan.poses.size())
   {
-    ROS_DEBUG_NAMED("PathDistCritic", "Adjusted global plan resolution, added %zu points",
+    RCLCPP_DEBUG(rclcpp::get_logger("PathDistCritic"), "Adjusted global plan resolution, added %zu points",
                     adjusted_global_plan.poses.size() - global_plan.poses.size());
   }
 
@@ -75,7 +76,7 @@ bool PathDistCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msg
   }
   if (!started_path)
   {
-    ROS_ERROR_NAMED("PathDistCritic",
+    RCLCPP_ERROR(rclcpp::get_logger("PathDistCritic"),
                     "None of the %d first of %zu (%zu) points of the global plan were in the local costmap and free",
                     i, adjusted_global_plan.poses.size(), global_plan.poses.size());
     return false;

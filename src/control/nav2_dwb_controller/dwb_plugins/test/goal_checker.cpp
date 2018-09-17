@@ -44,14 +44,14 @@ void checkMacro(dwb_local_planner::GoalChecker& gc,
                 double xv, double yv, double thetav,
                 bool expected_result)
 {
-  geometry_msgs::Pose2D pose0, pose1;
+  geometry_msgs::msg::Pose2D pose0, pose1;
   pose0.x = x0;
   pose0.y = y0;
   pose0.theta = theta0;
   pose1.x = x1;
   pose1.y = y1;
   pose1.theta = theta1;
-  nav_2d_msgs::Twist2D v;
+  nav_2d_msgs::msg::Twist2D v;
   v.x = xv;
   v.y = yv;
   v.theta = thetav;
@@ -82,11 +82,11 @@ void trueFalse(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalCheck
 
 TEST(VelocityIterator, two_checks)
 {
-  ros::NodeHandle x;
+  auto x = rclcpp::Node::make_shared("goal_checker");
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  gc.initialize(x);
-  sgc.initialize(x);
+  gc.initialize(*x);
+  sgc.initialize(*x);
   sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
   sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
   sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);
@@ -100,7 +100,7 @@ TEST(VelocityIterator, two_checks)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "goal_checker");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

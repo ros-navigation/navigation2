@@ -59,8 +59,8 @@ class MapGridCritic: public dwb_local_planner::TrajectoryCritic
 public:
   // Standard TrajectoryCritic Interface
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
-  void addGridScores(sensor_msgs::PointCloud& pc) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
+  void addGridScores(sensor_msgs::msg::PointCloud& pc) override;
   double getScale() const override { return costmap_->getResolution() * 0.5 * scale_; }
 
   // Helper Functions
@@ -69,7 +69,7 @@ public:
    * @param pose The pose to score, assumed to be in the same frame as the costmap
    * @return The score associated with the cell of the costmap where the pose lies
    */
-  virtual double scorePose(const geometry_msgs::Pose2D& pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose2D& pose);
 
   /**
    * @brief Retrieve the score for a particular cell of the costmap

@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include <costmap_queue/costmap_queue.h>
 #include <costmap_queue/limited_costmap_queue.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <memory>
 #include <algorithm>
 

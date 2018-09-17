@@ -5,10 +5,11 @@
   <description>The dwb_critics package</description>
 
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-  <author email="davidvlu@gmail.com">David V. Lu!!</author>
 
   <license>BSD</license>
-  <buildtool_depend>catkin</buildtool_depend>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>angles</depend>
   <depend>costmap_2d</depend>
   <depend>costmap_queue</depend>
@@ -16,12 +17,11 @@
   <depend>geometry_msgs</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav_2d_utils</depend>
-  <depend>nav_core2</depend>
   <depend>pluginlib</depend>
-  <depend>roscpp</depend>
+  <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
 
   <export>
-      <dwb_local_planner plugin="${prefix}/default_critics.xml"/>
+      <build_type>ament_cmake</build_type>
   </export>
 </package>

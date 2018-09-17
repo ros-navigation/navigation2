@@ -33,7 +33,7 @@
  */
 
 #include <dwb_plugins/simple_goal_checker.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <angles/angles.h>
 
 namespace dwb_plugins
@@ -44,15 +44,16 @@ SimpleGoalChecker::SimpleGoalChecker() :
 {
 }
 
-void SimpleGoalChecker::initialize(const ros::NodeHandle& nh)
+void SimpleGoalChecker::initialize(const rclcpp::Node& nh)
 {
-  nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.25);
-  nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.25);
+  // TODO(crdelsey): Handle params
+  // nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.25);
+  // nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-bool SimpleGoalChecker::isGoalReached(const geometry_msgs::Pose2D& query_pose, const geometry_msgs::Pose2D& goal_pose,
-                                      const nav_2d_msgs::Twist2D& velocity)
+bool SimpleGoalChecker::isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
+                                      const nav_2d_msgs::msg::Twist2D& velocity)
 {
   double dx = query_pose.x - goal_pose.x,
          dy = query_pose.y - goal_pose.y;

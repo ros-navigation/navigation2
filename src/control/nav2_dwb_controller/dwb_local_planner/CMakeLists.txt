@@ -1,73 +1,83 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(dwb_local_planner)
 
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "-std=c++11;-Wall;-Werror")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS
-  costmap_2d
-  dwb_msgs
-  geometry_msgs
-  nav_2d_msgs
-  nav_2d_utils
-  nav_core2
-  nav_msgs
-  pluginlib
-  roscpp
-  sensor_msgs
-  tf
-  visualization_msgs
-)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES dwb_local_planner debug_dwb_local_planner
-    CATKIN_DEPENDS
-        costmap_2d dwb_msgs geometry_msgs nav_2d_msgs nav_2d_utils nav_core2
-        nav_msgs pluginlib roscpp sensor_msgs tf visualization_msgs
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_2d_msgs REQUIRED)
+find_package(dwb_msgs REQUIRED)
+find_package(costmap_2d REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(nav_2d_utils REQUIRED)
 
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
 )
 
-add_library(dwb_local_planner src/dwb_local_planner.cpp
-                              src/backwards_compatibility.cpp
-                              src/publisher.cpp
-                              src/illegal_trajectory_tracker.cpp
+set(PROJECT_DEPENDENCIES
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_2d_msgs
+  dwb_msgs
+  costmap_2d
+  pluginlib
+  sensor_msgs
+  visualization_msgs
+  nav_2d_utils
 )
-target_link_libraries(dwb_local_planner ${catkin_LIBRARIES})
-add_dependencies(dwb_local_planner ${catkin_EXPORTED_TARGETS})
 
-add_library(debug_dwb_local_planner src/debug_dwb_local_planner.cpp)
-target_link_libraries(debug_dwb_local_planner ${catkin_LIBRARIES} dwb_local_planner)
-add_dependencies(debug_dwb_local_planner ${catkin_EXPORTED_TARGETS})
+add_library(dwb_local_planner
+  src/dwb_local_planner.cpp
+  src/publisher.cpp
+  src/illegal_trajectory_tracker.cpp
+)
+ament_target_dependencies(dwb_local_planner
+  ${PROJECT_DEPENDENCIES}
+)
 
-add_executable(planner_node src/planner_node.cpp)
-target_link_libraries(planner_node ${catkin_LIBRARIES} debug_dwb_local_planner)
-add_dependencies(planner_node ${catkin_EXPORTED_TARGETS})
+install(TARGETS dwb_local_planner
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
-if(CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS roslint)
-  roslint_cpp()
-  roslint_add_test()
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_cppcheck REQUIRED)
+  find_package(ament_cmake_cpplint REQUIRED)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
+  # This forces cppcheck to consider all files in this project to be C++,
+  # including the headers which end with .h, which cppcheck would normally
+  # consider to be C instead.
+  ament_cppcheck(LANGUAGE "c++")
+  ament_cpplint()
+  ament_lint_cmake()
+  ament_uncrustify()
+
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  #add_subdirectory(test)
 endif()
 
-install(TARGETS planner_node
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(TARGETS dwb_local_planner debug_dwb_local_planner
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-)
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
-install(FILES plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        FILES_MATCHING PATTERN "*.launch"
-)
+ament_export_include_directories(include)
+ament_export_libraries(dwb_local_planner)
+ament_export_dependencies(${PROJECT_DEPENDENCIES})
+
+ament_package()

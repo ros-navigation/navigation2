@@ -35,8 +35,8 @@
 #ifndef DWB_PLUGINS_VELOCITY_ITERATOR_H
 #define DWB_PLUGINS_VELOCITY_ITERATOR_H
 
-#include <ros/ros.h>
-#include <nav_2d_msgs/Twist2D.h>
+#include <rclcpp/rclcpp.hpp>
+#include <nav_2d_msgs/msg/twist2_d.hpp>
 #include <dwb_plugins/kinematic_parameters.h>
 
 namespace dwb_plugins
@@ -45,10 +45,10 @@ class VelocityIterator
 {
 public:
   virtual ~VelocityIterator() {}
-  virtual void initialize(ros::NodeHandle& nh, KinematicParameters::Ptr kinematics) = 0;
-  virtual void startNewIteration(const nav_2d_msgs::Twist2D& current_velocity, double dt) = 0;
+  virtual void initialize(const rclcpp::Node& nh, KinematicParameters::Ptr kinematics) = 0;
+  virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity, double dt) = 0;
   virtual bool hasMoreTwists() = 0;
-  virtual nav_2d_msgs::Twist2D nextTwist() = 0;
+  virtual nav_2d_msgs::msg::Twist2D nextTwist() = 0;
 };
 }  // namespace dwb_plugins
 

@@ -35,7 +35,7 @@
 #ifndef DWB_CRITICS_ALIGNMENT_UTIL_H
 #define DWB_CRITICS_ALIGNMENT_UTIL_H
 
-#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/msg/pose2_d.hpp>
 
 namespace dwb_critics
 {
@@ -47,7 +47,7 @@ namespace dwb_critics
  *
  * (used in both path_align and dist_align)
  */
-geometry_msgs::Pose2D getForwardPose(const geometry_msgs::Pose2D& pose, double distance);
+geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D& pose, double distance);
 
 }  // namespace dwb_critics
 

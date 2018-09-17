@@ -35,9 +35,7 @@
 #ifndef DWB_PLUGINS_KINEMATIC_PARAMETERS_H
 #define DWB_PLUGINS_KINEMATIC_PARAMETERS_H
 
-#include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
-#include <dwb_plugins/KinematicParamsConfig.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace dwb_plugins
 {
@@ -50,7 +48,7 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const ros::NodeHandle& nh);
+  void initialize(const rclcpp::Node& nh);
 
   inline double getMinX() { return min_vel_x_; }
   inline double getMaxX() { return max_vel_x_; }
@@ -103,8 +101,8 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_, max_speed_xy_sq_;
 
-  void reconfigureCB(KinematicParamsConfig &config, uint32_t level);
-  std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
+  // void reconfigureCB(KinematicParamsConfig &config, uint32_t level);
+  // std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
 };
 
 }  // namespace dwb_plugins

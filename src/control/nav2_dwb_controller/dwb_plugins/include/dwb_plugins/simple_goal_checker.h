@@ -35,7 +35,7 @@
 #ifndef DWB_PLUGINS_SIMPLE_GOAL_CHECKER_H
 #define DWB_PLUGINS_SIMPLE_GOAL_CHECKER_H
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <dwb_local_planner/goal_checker.h>
 
 namespace dwb_plugins
@@ -50,9 +50,9 @@ class SimpleGoalChecker : public dwb_local_planner::GoalChecker
 public:
   SimpleGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const ros::NodeHandle& nh) override;
-  bool isGoalReached(const geometry_msgs::Pose2D& query_pose, const geometry_msgs::Pose2D& goal_pose,
-                     const nav_2d_msgs::Twist2D& velocity) override;
+  void initialize(const rclcpp::Node& nh) override;
+  bool isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
+                     const nav_2d_msgs::msg::Twist2D& velocity) override;
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
 

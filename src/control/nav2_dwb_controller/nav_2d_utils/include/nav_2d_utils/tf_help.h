@@ -35,10 +35,9 @@
 #ifndef NAV_2D_UTILS_TF_HELP_H
 #define NAV_2D_UTILS_TF_HELP_H
 
-#include <nav_core2/common.h>
 #include <nav_2d_utils/conversions.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_2d_msgs/Pose2DStamped.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
 #include <string>
 
 namespace nav_2d_utils
@@ -53,26 +52,29 @@ namespace nav_2d_utils
  * @param out_pose Place to store the resulting transformed pose
  * @return True if successful transform
  */
-bool transformPose(const TFListenerPtr tf, const std::string frame,
-                   const geometry_msgs::PoseStamped& in_pose, geometry_msgs::PoseStamped& out_pose)
+bool transformPose(const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+                   const geometry_msgs::msg::PoseStamped& in_pose, geometry_msgs::msg::PoseStamped& out_pose)
 {
-  if (in_pose.header.frame_id == frame)
-  {
-    out_pose = in_pose;
-    return true;
-  }
-
-  try
-  {
-    tf->transformPose(frame, in_pose, out_pose);
-    return true;
-  }
-  catch (tf::TransformException& ex)
-  {
-    ROS_ERROR("Exception in transformPose: %s", ex.what());
-    return false;
-  }
-  return false;
+  // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
+  out_pose = in_pose;
+  return true;
+  // if (in_pose.header.frame_id == frame)
+  // {
+  //   out_pose = in_pose;
+  //   return true;
+  // }
+  //
+  // try
+  // {
+  //   tf->transformPose(frame, in_pose, out_pose);
+  //   return true;
+  // }
+  // catch (tf2::TransformException& ex)
+  // {
+  //   ROS_ERROR("Exception in transformPose: %s", ex.what());
+  //   return false;
+  // }
+  // return false;
 }
 
 /**
@@ -85,18 +87,21 @@ bool transformPose(const TFListenerPtr tf, const std::string frame,
  * @param out_pose Place to store the resulting transformed pose
  * @return True if successful transform
  */
-bool transformPose(const TFListenerPtr tf, const std::string frame,
-                   const nav_2d_msgs::Pose2DStamped& in_pose, nav_2d_msgs::Pose2DStamped& out_pose)
+bool transformPose(const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+                   const nav_2d_msgs::msg::Pose2DStamped& in_pose, nav_2d_msgs::msg::Pose2DStamped& out_pose)
 {
-  geometry_msgs::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
-  geometry_msgs::PoseStamped out_3d_pose;
-
-  bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose);
-  if (ret)
-  {
-    out_pose = poseStampedToPose2D(out_3d_pose);
-  }
-  return ret;
+  // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
+  out_pose = in_pose;
+  return true;
+  // geometry_msgs::msg::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
+  // geometry_msgs::msg::PoseStamped out_3d_pose;
+  //
+  // bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose);
+  // if (ret)
+  // {
+  //   out_pose = poseStampedToPose2D(out_3d_pose);
+  // }
+  // return ret;
 }
 
 }  // namespace nav_2d_utils

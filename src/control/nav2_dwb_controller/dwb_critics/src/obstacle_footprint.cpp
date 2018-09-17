@@ -34,43 +34,44 @@
 
 #include <dwb_critics/obstacle_footprint.h>
 #include <dwb_critics/line_iterator.h>
-#include <nav_core2/exceptions.h>
+#include <dwb_local_planner/exceptions.h>
 #include <pluginlib/class_list_macros.h>
 #include <algorithm>
 #include <vector>
+#include <costmap_2d/cost_values.h>
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::ObstacleFootprintCritic, dwb_local_planner::TrajectoryCritic)
 
 namespace dwb_critics
 {
-Footprint getOrientedFootprint(const geometry_msgs::Pose2D& pose, const Footprint& footprint_spec)
+Footprint getOrientedFootprint(const geometry_msgs::msg::Pose2D& pose, const Footprint& footprint_spec)
 {
-  std::vector<geometry_msgs::Point> oriented_footprint;
+  std::vector<geometry_msgs::msg::Point> oriented_footprint;
   oriented_footprint.resize(footprint_spec.size());
   double cos_th = cos(pose.theta);
   double sin_th = sin(pose.theta);
   for (unsigned int i = 0; i < footprint_spec.size(); ++i)
   {
-    geometry_msgs::Point& new_pt = oriented_footprint[i];
+    geometry_msgs::msg::Point& new_pt = oriented_footprint[i];
     new_pt.x = pose.x + footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th;
     new_pt.y = pose.y + footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th;
   }
   return oriented_footprint;
 }
 
-bool ObstacleFootprintCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                                      const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan)
+bool ObstacleFootprintCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+                                      const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan)
 {
   footprint_spec_ = costmap_ros_->getRobotFootprint();
   if (footprint_spec_.size() == 0)
   {
-    ROS_ERROR_NAMED("ObstacleFootprintCritic", "Footprint spec is empty, maybe missing call to setFootprint?");
+    // ROS_ERROR_NAMED("ObstacleFootprintCritic", "Footprint spec is empty, maybe missing call to setFootprint?");
     return false;
   }
   return true;
 }
 
-double ObstacleFootprintCritic::scorePose(const geometry_msgs::Pose2D& pose)
+double ObstacleFootprintCritic::scorePose(const geometry_msgs::msg::Pose2D& pose)
 {
   unsigned int cell_x, cell_y;
   if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y))
@@ -78,7 +79,7 @@ double ObstacleFootprintCritic::scorePose(const geometry_msgs::Pose2D& pose)
   return scorePose(pose, getOrientedFootprint(pose, footprint_spec_));
 }
 
-double ObstacleFootprintCritic::scorePose(const geometry_msgs::Pose2D& pose, const Footprint& footprint)
+double ObstacleFootprintCritic::scorePose(const geometry_msgs::msg::Pose2D& pose, const Footprint& footprint)
 {
   // now we really have to lay down the footprint in the costmap grid
   unsigned int x0, x1, y0, y1;

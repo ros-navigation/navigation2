@@ -35,10 +35,10 @@
 #ifndef DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
 #define DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
 
-#include <nav_core2/exceptions.h>
 #include <map>
 #include <utility>
 #include <string>
+#include "exceptions.h"
 
 namespace dwb_local_planner
 {

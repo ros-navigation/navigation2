@@ -1,30 +1,40 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>dwb_local_planner</name>
   <version>0.1.0</version>
-  <description>The dwb_local_planner package</description>
-
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-  <author email="davidvlu@gmail.com">David V. Lu!!</author>
-
+  <description>TODO</description>
+  <license>Apache License 2.0</license>
   <license>BSD</license>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <depend>costmap_2d</depend>
-  <depend>dwb_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>nav_2d_msgs</depend>
-  <depend>nav_2d_utils</depend>
-  <depend>nav_core2</depend>
-  <depend>nav_msgs</depend>
-  <depend>pluginlib</depend>
-  <depend>roscpp</depend>
-  <depend>sensor_msgs</depend>
-  <depend>tf</depend>
-  <depend>visualization_msgs</depend>
-  <test_depend>roslint</test_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_2d_msgs</build_depend>
+  <build_depend>dwb_msgs</build_depend>
+  <build_depend>costmap_2d</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>nav_2d_utils</build_depend>
+
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>dwb_msgs</exec_depend>
+  <exec_depend>costmap_2d</exec_depend>
+  <exec_depend>nav_2d_utils</exec_depend>
+  <exec_depend>pluginlib</exec_depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+
   <export>
-    <nav_core2 plugin="${prefix}/plugins.xml"/>
+    <build_type>ament_cmake</build_type>
   </export>
-
 </package>

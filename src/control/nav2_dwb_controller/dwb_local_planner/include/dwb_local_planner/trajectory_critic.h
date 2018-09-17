@@ -35,12 +35,13 @@
 #ifndef DWB_LOCAL_PLANNER_TRAJECTORY_CRITIC_H
 #define DWB_LOCAL_PLANNER_TRAJECTORY_CRITIC_H
 
-#include <ros/ros.h>
-#include <nav_core2/common.h>
-#include <geometry_msgs/Pose2D.h>
-#include <nav_2d_msgs/Twist2D.h>
-#include <nav_2d_msgs/Path2D.h>
-#include <dwb_msgs/Trajectory2D.h>
+#include <rclcpp/rclcpp.hpp>
+#include <dwb_local_planner/common_types.h>
+#include <geometry_msgs/msg/pose2_d.hpp>
+#include <nav_2d_msgs/msg/twist2_d.hpp>
+#include <nav_2d_msgs/msg/path2_d.hpp>
+#include <dwb_msgs/msg/trajectory2_d.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
 #include <string>
 #include <vector>
 
@@ -87,13 +88,14 @@ public:
    * @param parent_namespace The namespace of the planner
    * @param costmap_ros Pointer to the costmap
    */
-  void initialize(std::string name, std::string parent_namespace, CostmapROSPtr costmap_ros)
+  void initialize(const rclcpp::Node& nh, std::string parent_namespace, CostmapROSPtr costmap_ros)
   {
-    name_ = name;
+    // TODO(crdelsey): How to port?
     costmap_ros_ = costmap_ros;
-    nh_ = std::make_shared<ros::NodeHandle>("~/" + parent_namespace + "/" + name_);
-    parent_nh_ = std::make_shared<ros::NodeHandle>("~/" + parent_namespace);
-    nh_->param("scale", scale_, 1.0);
+    nh_ = &nh;
+    // TODO(crdelsey): Port parameter
+    scale_=1.0;
+    // nh_->param("scale", scale_, 1.0);
     onInit();
   }
 
@@ -117,9 +119,9 @@ public:
    * @param goal The final goal (costmap frame)
    * @param global_plan Transformed global plan in costmap frame, possibly cropped to nearby points
    */
-  virtual bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                       const geometry_msgs::Pose2D& goal,
-                       const nav_2d_msgs::Path2D& global_plan)
+  virtual bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+                       const geometry_msgs::msg::Pose2D& goal,
+                       const nav_2d_msgs::msg::Path2D& global_plan)
   {
     return true;
   }
@@ -130,12 +132,12 @@ public:
    * scores < 0 are considered invalid/errors, such as collisions
    * This is the raw score in that the scale should not be applied to it.
    */
-  virtual double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) = 0;
+  virtual double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) = 0;
 
   /**
    * @brief debrief informs the critic what the chosen cmd_vel was (if it cares)
    */
-  virtual void debrief(const nav_2d_msgs::Twist2D& cmd_vel) {}
+  virtual void debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel) {}
 
   /**
    * @brief Add information to the given pointcloud for debugging costmap-grid based scores
@@ -153,7 +155,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addGridScores(sensor_msgs::PointCloud& pc) {}
+  virtual void addGridScores(sensor_msgs::msg::PointCloud& pc) {}
 
   std::string getName()
   {
@@ -166,7 +168,7 @@ protected:
   std::string name_;
   CostmapROSPtr costmap_ros_;
   double scale_;
-  std::shared_ptr<ros::NodeHandle> nh_, parent_nh_;
+  const rclcpp::Node * nh_;
 };
 
 }  // namespace dwb_local_planner

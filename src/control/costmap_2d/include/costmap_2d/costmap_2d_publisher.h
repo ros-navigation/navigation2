@@ -1,7 +1,8 @@
-/*
+/*********************************************************************
+ *
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2017, Locus Robotics
+ *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +15,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of the copyright holder nor the names of its
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
  *
@@ -22,7 +23,7 @@
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
  *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
@@ -30,46 +31,52 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- */
-#ifndef NAV_CORE2_GLOBAL_PLANNER_H
-#define NAV_CORE2_GLOBAL_PLANNER_H
+ *
+ * Author: Eitan Marder-Eppstein
+ *         David V. Lu!!
+ *********************************************************************/
+#ifndef COSTMAP_2D_COSTMAP_2D_PUBLISHER_H_
+#define COSTMAP_2D_COSTMAP_2D_PUBLISHER_H_
+#include <rclcpp/rclcpp.hpp>
+#include <costmap_2d/costmap_2d.h>
 
-#include <nav_core2/common.h>
-#include <nav_2d_msgs/Path2D.h>
-#include <nav_2d_msgs/Pose2DStamped.h>
-#include <string>
-
-namespace nav_core2
+namespace costmap_2d
 {
-
 /**
- * @class GlobalPlanner
- * @brief Provides an interface for global planners used in navigation.
+ * @class Costmap2DPublisher
+ * @brief A tool to periodically publish visualization data from a Costmap2D
  */
-class GlobalPlanner
+class Costmap2DPublisher
 {
 public:
   /**
-   * @brief Virtual Destructor
+   * @brief  Constructor for the Costmap2DPublisher
    */
-  virtual ~GlobalPlanner() {}
+  Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D* costmap, std::string global_frame,
+                     std::string topic_name, bool always_send_full_costmap = false) {}
 
   /**
-   * @brief  Initialization function for the GlobalPlanner
-   * @param  name The name of this planner
-   * @param  costmap_ros A pointer to the costmap
+   * @brief  Destructor
    */
-  virtual void initialize(std::string name, CostmapROSPtr costmap_ros) = 0;
+  ~Costmap2DPublisher() {}
+
+  /** @brief Include the given bounds in the changed-rectangle. */
+  void updateBounds(unsigned int x0, unsigned int xn, unsigned int y0, unsigned int yn) {}
 
   /**
-   * @brief Run the global planner to make a plan starting at the start and ending at the goal.
-   * @param start The starting pose of the robot
-   * @param goal  The goal pose of the robot
-   * @return      The sequence of poses to get from start to goal, if any
+   * @brief  Publishes the visualization data over ROS
    */
-  virtual nav_2d_msgs::Path2D makePlan(const nav_2d_msgs::Pose2DStamped& start,
-                                       const nav_2d_msgs::Pose2DStamped& goal) = 0;
+  void publishCostmap();
+
+  /**
+   * @brief Check if the publisher is active
+   * @return True if the frequency for the publisher is non-zero, false otherwise
+   */
+  bool active()
+  {
+    return false;
+  }
+
 };
-}  // namespace nav_core2
-
-#endif  // NAV_CORE2_GLOBAL_PLANNER_H
+}  // namespace costmap_2d
+#endif  // COSTMAP_2D_COSTMAP_2D_PUBLISHER_H

@@ -64,8 +64,8 @@ public:
     odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, boost::bind(&OdomSubscriber::odomCallback, this, _1));
   }
 
-  inline nav_2d_msgs::Twist2D getTwist() { return odom_vel_.velocity; }
-  inline nav_2d_msgs::Twist2DStamped getTwistStamped() { return odom_vel_; }
+  inline nav_2d_msgs::msg::Twist2D getTwist() { return odom_vel_.velocity; }
+  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() { return odom_vel_; }
 
 protected:
   void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -79,7 +79,7 @@ protected:
   }
 
   ros::Subscriber odom_sub_;
-  nav_2d_msgs::Twist2DStamped odom_vel_;
+  nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   boost::mutex odom_mutex_;
 };
 

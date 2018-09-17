@@ -34,7 +34,7 @@
 
 #include <nav_2d_utils/parameters.h>
 #include <dwb_critics/oscillation.h>
-#include <nav_core2/exceptions.h>
+#include <dwb_local_planner/exceptions.h>
 #include <pluginlib/class_list_macros.h>
 #include <cmath>
 #include <string>
@@ -106,43 +106,45 @@ void OscillationCritic::onInit()
    * Otherwise, set x_only_threshold_ to 0.05
    */
   std::string resolved_name;
-  if (nh_->hasParam("x_only_threshold"))
-  {
-    nh_->param("x_only_threshold", x_only_threshold_);
-  }
-  else if (nh_->searchParam("min_speed_xy", resolved_name))
-  {
-    nh_->param(resolved_name, x_only_threshold_);
-  }
-  else if (nh_->searchParam("min_trans_vel", resolved_name))
-  {
-    ROS_WARN_NAMED("OscillationCritic", "Parameter min_trans_vel is deprecated. "
-                                        "Please use the name min_speed_xy or x_only_threshold instead.");
-    nh_->param(resolved_name, x_only_threshold_);
-  }
-  else
-  {
-    x_only_threshold_ = 0.05;
-  }
+  // TODO(crdelsey): handle params
+  x_only_threshold_ = 0.05;
+  // if (nh_->hasParam("x_only_threshold"))
+  // {
+  //   nh_->param("x_only_threshold", x_only_threshold_);
+  // }
+  // else if (nh_->searchParam("min_speed_xy", resolved_name))
+  // {
+  //   nh_->param(resolved_name, x_only_threshold_);
+  // }
+  // else if (nh_->searchParam("min_trans_vel", resolved_name))
+  // {
+  //   ROS_WARN_NAMED("OscillationCritic", "Parameter min_trans_vel is deprecated. "
+  //                                       "Please use the name min_speed_xy or x_only_threshold instead.");
+  //   nh_->param(resolved_name, x_only_threshold_);
+  // }
+  // else
+  // {
+  //   x_only_threshold_ = 0.05;
+  // }
 
   reset();
 }
 
-bool OscillationCritic::prepare(const geometry_msgs::Pose2D& pose,
-                                const nav_2d_msgs::Twist2D& vel,
-                                const geometry_msgs::Pose2D& goal,
-                                const nav_2d_msgs::Path2D& global_plan)
+bool OscillationCritic::prepare(const geometry_msgs::msg::Pose2D& pose,
+                                const nav_2d_msgs::msg::Twist2D& vel,
+                                const geometry_msgs::msg::Pose2D& goal,
+                                const nav_2d_msgs::msg::Path2D& global_plan)
 {
   pose_ = pose;
   return true;
 }
 
-void OscillationCritic::debrief(const nav_2d_msgs::Twist2D& cmd_vel)
+void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel)
 {
   if (setOscillationFlags(cmd_vel))
   {
     prev_stationary_pose_ = pose_;
-    prev_reset_time_ = ros::Time::now();
+    prev_reset_time_ = rclcpp::Clock().now();
   }
 
   // if we've got restrictions... check if we can reset any oscillation flags
@@ -178,8 +180,8 @@ bool OscillationCritic::resetAvailable()
   }
   if (oscillation_reset_time_ >= 0.0)
   {
-    double t_diff = (ros::Time::now() - prev_reset_time_).toSec();
-    if (t_diff > oscillation_reset_time_)
+    auto t_diff = (rclcpp::Clock().now() - prev_reset_time_);
+    if (t_diff > rclcpp::Duration(oscillation_reset_time_))
     {
       return true;
     }
@@ -194,7 +196,7 @@ void OscillationCritic::reset()
   theta_trend_.reset();
 }
 
-bool OscillationCritic::setOscillationFlags(const nav_2d_msgs::Twist2D& cmd_vel)
+bool OscillationCritic::setOscillationFlags(const nav_2d_msgs::msg::Twist2D& cmd_vel)
 {
   bool flag_set = false;
   // set oscillation flags for moving forward and backward
@@ -209,7 +211,7 @@ bool OscillationCritic::setOscillationFlags(const nav_2d_msgs::Twist2D& cmd_vel)
   return flag_set;
 }
 
-double OscillationCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
+double OscillationCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
 {
   if (x_trend_.isOscillating(traj.velocity.x) ||
       y_trend_.isOscillating(traj.velocity.y) ||

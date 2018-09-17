@@ -34,30 +34,30 @@
 #include <gtest/gtest.h>
 #include <dwb_plugins/standard_traj_generator.h>
 #include <dwb_plugins/limited_accel_generator.h>
-#include <nav_core2/exceptions.h>
+#include <dwb_local_planner/exceptions.h>
 #include <vector>
 #include <algorithm>
 
 using dwb_plugins::StandardTrajectoryGenerator;
 
-geometry_msgs::Pose2D origin;
-nav_2d_msgs::Twist2D zero;
-nav_2d_msgs::Twist2D forward;
+geometry_msgs::msg::Pose2D origin;
+nav_2d_msgs::msg::Twist2D zero;
+nav_2d_msgs::msg::Twist2D forward;
 
-void checkLimits(const std::vector<nav_2d_msgs::Twist2D>& twists,
+void checkLimits(const std::vector<nav_2d_msgs::msg::Twist2D>& twists,
                  double exp_min_x, double exp_max_x, double exp_min_y, double exp_max_y,
                  double exp_min_theta, double exp_max_theta,
                  double exp_max_xy = -1.0,
                  double exp_min_xy = -1.0, double exp_min_speed_theta = -1.0)
 {
   ASSERT_GT(twists.size(), 0);
-  nav_2d_msgs::Twist2D first = twists[0];
+  nav_2d_msgs::msg::Twist2D first = twists[0];
 
   double min_x = first.x, max_x = first.x, min_y = first.y, max_y = first.y;
   double min_theta = first.theta, max_theta = first.theta;
   double max_xy = hypot(first.x, first.y);
 
-  for (nav_2d_msgs::Twist2D twist : twists)
+  for (nav_2d_msgs::msg::Twist2D twist : twists)
   {
     min_x = std::min(min_x, twist.x);
     min_y = std::min(min_y, twist.y);
@@ -83,24 +83,30 @@ void checkLimits(const std::vector<nav_2d_msgs::Twist2D>& twists,
     EXPECT_DOUBLE_EQ(max_xy, exp_max_xy);
 }
 
+double durationToSec(builtin_interfaces::msg::Duration d)
+{
+  return d.sec + d.nanosec * 1e-9;
+}
+
 TEST(VelocityIterator, standard_gen)
 {
-  ros::NodeHandle nh("st_gen");
+  auto nh = rclcpp::Node::make_shared("st_gen");
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   EXPECT_EQ(twists.size(), 1926);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, 0.55, 0.1, 0.4);
 }
 
 TEST(VelocityIterator, max_xy)
 {
-  ros::NodeHandle nh("max_xy");
-  nh.setParam("max_speed_xy", 1.0);
+  auto nh = rclcpp::Node::make_shared("max_xy");
+  // TODO(crdelsey): handle params
+  // nh.setParam("max_speed_xy", 1.0);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
+  gen.initialize(*nh);
 
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // Expect more twists since max_speed_xy is now beyond feasible limits
   EXPECT_EQ(twists.size(), 2010);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, hypot(0.55, 0.1));
@@ -108,11 +114,12 @@ TEST(VelocityIterator, max_xy)
 
 TEST(VelocityIterator, min_xy)
 {
-  ros::NodeHandle nh("min_xy");
-  nh.setParam("min_speed_xy", -1);
+  auto nh = rclcpp::Node::make_shared("min_xy");
+  // TODO(crdelsey): handle params
+  // nh.setParam("min_speed_xy", -1);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // Expect even more since theres no min_speed_xy
   EXPECT_EQ(twists.size(), 2015);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
@@ -120,11 +127,12 @@ TEST(VelocityIterator, min_xy)
 
 TEST(VelocityIterator, min_theta)
 {
-  ros::NodeHandle nh("min_theta");
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("min_theta");
+  // TODO(crdelsey): handle params
+  // nh.setParam("min_speed_theta", -1);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // Expect even more since theres no min_speed_xy
   EXPECT_EQ(twists.size(), 2015);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
@@ -132,13 +140,14 @@ TEST(VelocityIterator, min_theta)
 
 TEST(VelocityIterator, no_limits)
 {
-  ros::NodeHandle nh("no_limits");
-  nh.setParam("max_speed_xy", -1.0);
-  nh.setParam("min_speed_xy", -1);
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("no_limits");
+  // TODO(crdelsey): handle params
+  // nh.setParam("max_speed_xy", -1.0);
+  // nh.setParam("min_speed_xy", -1);
+  // nh.setParam("min_speed_theta", -1);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // vx_samples * vtheta_samples * vy_samples + added zero theta samples - (0,0,0)
   EXPECT_EQ(twists.size(), 20 * 20 * 5 + 100 - 1);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, hypot(0.55, 0.1), 0.0, 0.0);
@@ -146,45 +155,49 @@ TEST(VelocityIterator, no_limits)
 
 TEST(VelocityIterator, no_limits_samples)
 {
-  ros::NodeHandle nh("no_limits_samples");
-  nh.setParam("max_speed_xy", -1.0);
-  nh.setParam("min_speed_xy", -1);
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("no_limits_samples");
+  // TODO(crdelsey): handle params
+  // nh.setParam("max_speed_xy", -1.0);
+  // nh.setParam("min_speed_xy", -1);
+  // nh.setParam("min_speed_theta", -1);
   int x_samples = 10, y_samples = 3, theta_samples = 5;
-  nh.setParam("vx_samples", x_samples);
-  nh.setParam("vy_samples", y_samples);
-  nh.setParam("vtheta_samples", theta_samples);
+  // nh.setParam("vx_samples", x_samples);
+  // nh.setParam("vy_samples", y_samples);
+  // nh.setParam("vtheta_samples", theta_samples);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   EXPECT_EQ(twists.size(), x_samples * y_samples * theta_samples - 1);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, hypot(0.55, 0.1), 0.0, 0.0);
 }
 
 TEST(VelocityIterator, dwa_gen_exception)
 {
-  ros::NodeHandle nh("dwa_gen_exception");
-  nh.setParam("use_dwa", true);
+  auto nh = rclcpp::Node::make_shared("dwa_gen_exception");
+  // TODO(crdelsey): handle params
+  // nh.setParam("use_dwa", true);
   StandardTrajectoryGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
+  EXPECT_THROW(gen.initialize(*nh), nav_core2::PlannerException);
 }
 
 TEST(VelocityIterator, no_dwa_gen_exception)
 {
-  ros::NodeHandle nh("no_dwa_gen_exception");
-  nh.setParam("use_dwa", false);
+  auto nh = rclcpp::Node::make_shared("no_dwa_gen_exception");
+  // TODO(crdelsey): handle params
+  // nh.setParam("use_dwa", false);
   dwb_plugins::LimitedAccelGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
+  EXPECT_THROW(gen.initialize(*nh), nav_core2::PlannerException);
 }
 
 TEST(VelocityIterator, dwa_gen)
 {
-  ros::NodeHandle nh("dwa_gen");
-  nh.setParam("use_dwa", true);
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("dwa_gen");
+  // TODO(crdelsey): handle params
+  // nh.setParam("use_dwa", true);
+  // nh.setParam("min_speed_theta", -1);
   dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // Same as no-limits since everything is within our velocity limits
   EXPECT_EQ(twists.size(), 20 * 20 * 5 + 100 - 1);
   checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
@@ -192,54 +205,56 @@ TEST(VelocityIterator, dwa_gen)
 
 TEST(VelocityIterator, dwa_gen_no_param)
 {
-  ros::NodeHandle nh("dwa_gen_no_param");
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("dwa_gen_no_param");
+  // TODO(crdelsey): handle params
+  // nh.setParam("min_speed_theta", -1);
   dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(zero);
+  gen.initialize(*nh);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   EXPECT_EQ(twists.size(), 20 * 20 * 5 + 100 - 1);
   checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
 }
 
 TEST(VelocityIterator, nonzero)
 {
-  ros::NodeHandle nh("nonzero");
-  nh.setParam("use_dwa", true);
-  nh.setParam("min_speed_theta", -1);
+  auto nh = rclcpp::Node::make_shared("nonzero");
+  // TODO(crdelsey): handle params
+  // nh.setParam("use_dwa", true);
+  // nh.setParam("min_speed_theta", -1);
   dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
-  nav_2d_msgs::Twist2D initial;
+  gen.initialize(*nh);
+  nav_2d_msgs::msg::Twist2D initial;
   initial.x = 0.1;
   initial.y = -0.08;
   initial.theta = 0.05;
-  std::vector<nav_2d_msgs::Twist2D> twists = gen.getTwists(initial);
+  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(initial);
   EXPECT_EQ(twists.size(), 2519);
   checkLimits(twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
                       0.24622144504490268, 0.0, 0.1);
 }
 
-void matchPose(const geometry_msgs::Pose2D& a, const geometry_msgs::Pose2D& b)
+void matchPose(const geometry_msgs::msg::Pose2D& a, const geometry_msgs::msg::Pose2D& b)
 {
   EXPECT_DOUBLE_EQ(a.x, b.x);
   EXPECT_DOUBLE_EQ(a.y, b.y);
   EXPECT_DOUBLE_EQ(a.theta, b.theta);
 }
 
-void matchPose(const geometry_msgs::Pose2D& a, const double x, const double y, const double theta)
+void matchPose(const geometry_msgs::msg::Pose2D& a, const double x, const double y, const double theta)
 {
   EXPECT_DOUBLE_EQ(a.x, x);
   EXPECT_DOUBLE_EQ(a.y, y);
   EXPECT_DOUBLE_EQ(a.theta, theta);
 }
 
-void matchTwist(const nav_2d_msgs::Twist2D& a, const nav_2d_msgs::Twist2D& b)
+void matchTwist(const nav_2d_msgs::msg::Twist2D& a, const nav_2d_msgs::msg::Twist2D& b)
 {
   EXPECT_DOUBLE_EQ(a.x, b.x);
   EXPECT_DOUBLE_EQ(a.y, b.y);
   EXPECT_DOUBLE_EQ(a.theta, b.theta);
 }
 
-void matchTwist(const nav_2d_msgs::Twist2D& a, const double x, const double y, const double theta)
+void matchTwist(const nav_2d_msgs::msg::Twist2D& a, const double x, const double y, const double theta)
 {
   EXPECT_DOUBLE_EQ(a.x, x);
   EXPECT_DOUBLE_EQ(a.y, y);
@@ -248,12 +263,12 @@ void matchTwist(const nav_2d_msgs::Twist2D& a, const double x, const double y, c
 
 TEST(TrajectoryGenerator, basic)
 {
-  ros::NodeHandle nh("basic");
+  auto nh = rclcpp::Node::make_shared("basic");
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
+  gen.initialize(*nh);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
   int n = res.poses.size();
   EXPECT_EQ(n, 2);
   ASSERT_GT(n, 0);
@@ -264,14 +279,14 @@ TEST(TrajectoryGenerator, basic)
 
 TEST(TrajectoryGenerator, too_slow)
 {
-  ros::NodeHandle nh("too_slow");
+  auto nh = rclcpp::Node::make_shared("too_slow");
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  nav_2d_msgs::Twist2D cmd;
+  gen.initialize(*nh);
+  nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.2;
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
   int n = res.poses.size();
   EXPECT_EQ(n, 1);
   ASSERT_GT(n, 0);
@@ -281,15 +296,15 @@ TEST(TrajectoryGenerator, too_slow)
 
 TEST(TrajectoryGenerator, holonomic)
 {
-  ros::NodeHandle nh("holonomic");
+  auto nh = rclcpp::Node::make_shared("holonomic");
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  nav_2d_msgs::Twist2D cmd;
+  gen.initialize(*nh);
+  nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.3;
   cmd.y = 0.2;
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
   int n = res.poses.size();
   EXPECT_EQ(n, 2);
   ASSERT_GT(n, 0);
@@ -300,16 +315,16 @@ TEST(TrajectoryGenerator, holonomic)
 
 TEST(TrajectoryGenerator, twisty)
 {
-  ros::NodeHandle nh("twisty");
+  auto nh = rclcpp::Node::make_shared("twisty");
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  nav_2d_msgs::Twist2D cmd;
+  gen.initialize(*nh);
+  nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.3;
   cmd.y = -0.2;
   cmd.theta = 0.111;
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
   int n = res.poses.size();
   EXPECT_EQ(n, 8);
   ASSERT_GT(n, 0);
@@ -320,13 +335,14 @@ TEST(TrajectoryGenerator, twisty)
 
 TEST(TrajectoryGenerator, sim_time)
 {
-  ros::NodeHandle nh("sim_time");
-  nh.setParam("sim_time", 2.5);
+  auto nh = rclcpp::Node::make_shared("sim_time");
+  // TODO(crdelsey): handle params
+  // nh.setParam("sim_time", 2.5);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
+  gen.initialize(*nh);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 2.5);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 2.5);
   int n = res.poses.size();
   EXPECT_EQ(n, 2);
   ASSERT_GT(n, 0);
@@ -337,18 +353,19 @@ TEST(TrajectoryGenerator, sim_time)
 
 TEST(TrajectoryGenerator, accel)
 {
-  ros::NodeHandle nh("accel");
-  nh.setParam("sim_time", 5.0);
-  nh.setParam("discretize_by_time", true);
-  nh.setParam("sim_granularity", 1.0);
-  nh.setParam("acc_lim_x", 0.1);
-  nh.setParam("min_speed_xy", -1.0);
+  auto nh = rclcpp::Node::make_shared("accel");
+  // TODO(crdelsey): handle params
+  // nh.setParam("sim_time", 5.0);
+  // nh.setParam("discretize_by_time", true);
+  // nh.setParam("sim_granularity", 1.0);
+  // nh.setParam("acc_lim_x", 0.1);
+  // nh.setParam("min_speed_xy", -1.0);
   StandardTrajectoryGenerator gen;
-  gen.initialize(nh);
+  gen.initialize(*nh);
 
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 5.0);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 5.0);
   ASSERT_EQ(res.poses.size(), 5);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.1, 0, 0);
@@ -359,20 +376,21 @@ TEST(TrajectoryGenerator, accel)
 
 TEST(TrajectoryGenerator, dwa)
 {
-  ros::NodeHandle nh("dwa");
-  nh.setParam("use_dwa", true);
-  nh.setParam("sim_period", 1.0);
-  nh.setParam("sim_time", 5.0);
-  nh.setParam("discretize_by_time", true);
-  nh.setParam("sim_granularity", 1.0);
-  nh.setParam("acc_lim_x", 0.1);
-  nh.setParam("min_speed_xy", -1.0);
+  auto nh = rclcpp::Node::make_shared("dwa");
+  // TODO(crdelsey): handle params
+  // nh.setParam("use_dwa", true);
+  // nh.setParam("sim_period", 1.0);
+  // nh.setParam("sim_time", 5.0);
+  // nh.setParam("discretize_by_time", true);
+  // nh.setParam("sim_granularity", 1.0);
+  // nh.setParam("acc_lim_x", 0.1);
+  // nh.setParam("min_speed_xy", -1.0);
   dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
+  gen.initialize(*nh);
 
-  dwb_msgs::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(res.duration.toSec(), 5.0);
+  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 5.0);
   ASSERT_EQ(res.poses.size(), 5);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.3, 0, 0);
@@ -384,7 +402,7 @@ TEST(TrajectoryGenerator, dwa)
 int main(int argc, char **argv)
 {
   forward.x = 0.3;
-  ros::init(argc, argv, "twist_gen");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -40,7 +40,7 @@
 
 namespace dwb_critics
 {
-typedef std::vector<geometry_msgs::Point> Footprint;
+typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
 /**
  * @brief Transform the footprint spec to be centered at the given pose
@@ -48,7 +48,7 @@ typedef std::vector<geometry_msgs::Point> Footprint;
  * @param footprint_spec List of points that make up the footprint spec, centered at 0,0
  * @return oriented footprint
  */
-Footprint getOrientedFootprint(const geometry_msgs::Pose2D& pose, const Footprint& footprint_spec);
+Footprint getOrientedFootprint(const geometry_msgs::msg::Pose2D& pose, const Footprint& footprint_spec);
 
 /**
  * @class ObstacleFootprintCritic
@@ -63,10 +63,10 @@ Footprint getOrientedFootprint(const geometry_msgs::Pose2D& pose, const Footprin
 class ObstacleFootprintCritic : public BaseObstacleCritic
 {
 public:
-  bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-               const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan) override;
-  double scorePose(const geometry_msgs::Pose2D& pose) override;
-  virtual double scorePose(const geometry_msgs::Pose2D& pose, const Footprint& oriented_footprint);
+  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
+  double scorePose(const geometry_msgs::msg::Pose2D& pose) override;
+  virtual double scorePose(const geometry_msgs::msg::Pose2D& pose, const Footprint& oriented_footprint);
   double getScale() const override { return costmap_->getResolution() * scale_; }
 protected:
   /**

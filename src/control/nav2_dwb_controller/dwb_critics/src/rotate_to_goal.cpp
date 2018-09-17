@@ -33,7 +33,7 @@
  */
 #include <dwb_critics/rotate_to_goal.h>
 #include <nav_2d_utils/parameters.h>
-#include <nav_core2/exceptions.h>
+#include <dwb_local_planner/exceptions.h>
 #include <pluginlib/class_list_macros.h>
 #include <angles/angles.h>
 #include <string>
@@ -52,9 +52,9 @@ void RotateToGoalCritic::onInit()
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-bool RotateToGoalCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                                 const geometry_msgs::Pose2D& goal,
-                                 const nav_2d_msgs::Path2D& global_plan)
+bool RotateToGoalCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+                                 const geometry_msgs::msg::Pose2D& goal,
+                                 const nav_2d_msgs::msg::Path2D& global_plan)
 {
   double dx = pose.x - goal.x,
          dy = pose.y - goal.y;
@@ -67,7 +67,7 @@ bool RotateToGoalCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d
   return true;
 }
 
-double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
+double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
 {
   // If we're not sufficiently close to the goal, we don't care what the twist is
   if (!in_window_)

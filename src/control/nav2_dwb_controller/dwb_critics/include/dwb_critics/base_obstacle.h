@@ -54,14 +54,14 @@ class BaseObstacleCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
-  void addGridScores(sensor_msgs::PointCloud& pc) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
+  void addGridScores(sensor_msgs::msg::PointCloud& pc) override;
 
   /**
    * @brief Return the obstacle score for a particular pose
    * @param pose Pose to check
    */
-  virtual double scorePose(const geometry_msgs::Pose2D& pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose2D& pose);
 
   /**
    * @brief Check to see whether a given cell cost is valid for driving through.

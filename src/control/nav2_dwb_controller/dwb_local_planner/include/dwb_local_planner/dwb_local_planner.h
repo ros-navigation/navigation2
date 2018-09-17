@@ -35,14 +35,15 @@
 #ifndef DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
 #define DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
 
-#include <dwb_local_planner/trajectory_generator.h>
-#include <dwb_local_planner/goal_checker.h>
-#include <dwb_local_planner/trajectory_critic.h>
-#include <dwb_local_planner/publisher.h>
-#include <nav_core2/local_planner.h>
 #include <pluginlib/class_loader.h>
+#include <nav_2d_msgs/msg/twist2_d_stamped.hpp>
+#include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
 #include <string>
 #include <vector>
+#include "trajectory_generator.h"
+#include "goal_checker.h"
+#include "trajectory_critic.h"
+#include "publisher.h"
 
 namespace dwb_local_planner
 {
@@ -51,7 +52,7 @@ namespace dwb_local_planner
  * @class DWBLocalPlanner
  * @brief Plugin-based flexible local_planner
  */
-class DWBLocalPlanner: public nav_core2::LocalPlanner
+class DWBLocalPlanner
 {
 public:
   /**
@@ -67,13 +68,13 @@ public:
    * @param tf TFListener pointer
    * @param costmap_ros Costmap pointer
    */
-  void initialize(std::string name, TFListenerPtr tf, CostmapROSPtr costmap_ros) override;
+  void initialize(rclcpp::Node& private_nh, TFListenerPtr tf, CostmapROSPtr costmap_ros);
 
   /**
    * @brief nav_core2 setPlan - Sets the global plan
    * @param path The global plan
    */
-  void setPlan(const nav_2d_msgs::Path2D& path) override;
+  void setPlan(const nav_2d_msgs::msg::Path2D& path);
 
   /**
    * @brief nav_core2 computeVelocityCommands - calculates the best command given the current pose and velocity
@@ -87,8 +88,8 @@ public:
    * @param velocity Current robot velocity
    * @return The best command for the robot to drive
    */
-  nav_2d_msgs::Twist2DStamped computeVelocityCommands(const nav_2d_msgs::Pose2DStamped& pose,
-                                                      const nav_2d_msgs::Twist2D& velocity) override;
+  nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(const nav_2d_msgs::msg::Pose2DStamped& pose,
+                                                      const nav_2d_msgs::msg::Twist2D& velocity);
 
   /**
    * @brief nav_core2 isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
@@ -100,7 +101,7 @@ public:
    * @param velocity Current velocity
    * @return True if the robot should be considered as having reached the goal.
    */
-  bool isGoalReached(const nav_2d_msgs::Pose2DStamped& pose, const nav_2d_msgs::Twist2D& velocity);
+  bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped& pose, const nav_2d_msgs::msg::Twist2D& velocity);
 
   /**
    * @brief Score a given command. Can be used for testing.
@@ -113,7 +114,7 @@ public:
    * @param best_score If positive, the threshold for early termination
    * @return The full scoring of the input trajectory
    */
-  dwb_msgs::TrajectoryScore scoreTrajectory(const dwb_msgs::Trajectory2D& traj,
+  dwb_msgs::msg::TrajectoryScore scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj,
                                             double best_score = -1);
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
@@ -127,9 +128,9 @@ public:
    * @param results   Output param, if not NULL, will be filled in with full evaluation results
    * @return          Best command
    */
-  nav_2d_msgs::Twist2DStamped computeVelocityCommands(const nav_2d_msgs::Pose2DStamped& pose,
-                                                      const nav_2d_msgs::Twist2D& velocity,
-                                                      std::shared_ptr<dwb_msgs::LocalPlanEvaluation>& results);
+  nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(const nav_2d_msgs::msg::Pose2DStamped& pose,
+                                                      const nav_2d_msgs::msg::Twist2D& velocity,
+                                                      std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation>& results);
 
 
 protected:
@@ -140,15 +141,15 @@ protected:
    * transformed_plan and possibly publishes it. Then it takes the last pose and transforms it
    * to match the local costmap's frame
    */
-  void prepareGlobalPlan(const nav_2d_msgs::Pose2DStamped& pose, nav_2d_msgs::Path2D& transformed_plan,
-                         nav_2d_msgs::Pose2DStamped& goal_pose, bool publish_plan = true);
+  void prepareGlobalPlan(const nav_2d_msgs::msg::Pose2DStamped& pose, nav_2d_msgs::msg::Path2D& transformed_plan,
+                         nav_2d_msgs::msg::Pose2DStamped& goal_pose, bool publish_plan = true);
 
   /**
    * @brief Iterate through all the twists and find the best one
    */
-  dwb_msgs::TrajectoryScore coreScoringAlgorithm(const geometry_msgs::Pose2D& pose,
-                                                 const nav_2d_msgs::Twist2D velocity,
-                                                 std::shared_ptr<dwb_msgs::LocalPlanEvaluation>& results);
+  dwb_msgs::msg::TrajectoryScore coreScoringAlgorithm(const geometry_msgs::msg::Pose2D& pose,
+                                                 const nav_2d_msgs::msg::Twist2D velocity,
+                                                 std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation>& results);
 
   /**
    * @brief Transforms global plan into same frame as pose, clips far away poses and possibly prunes passed poses
@@ -160,8 +161,8 @@ protected:
    *     and the saved global_plan_. Technically, it iterates to a pose on the path that is within prune_distance_
    *     of the robot and erases all poses before that.
    */
-  nav_2d_msgs::Path2D transformGlobalPlan(const nav_2d_msgs::Pose2DStamped& pose);
-  nav_2d_msgs::Path2D global_plan_;  ///< Saved Global Plan
+  nav_2d_msgs::msg::Path2D transformGlobalPlan(const nav_2d_msgs::msg::Pose2DStamped& pose);
+  nav_2d_msgs::msg::Path2D global_plan_;  ///< Saved Global Plan
   bool prune_plan_;
   double prune_distance_;
   bool debug_trajectory_details_;
@@ -186,7 +187,7 @@ protected:
    * @brief Load the critic parameters from the namespace
    * @param name The namespace of this planner.
    */
-  void loadCritics(const std::string name);
+  void loadCritics(const rclcpp::Node& private_nh);
 
   std::vector<std::string> default_critic_namespaces_;
 

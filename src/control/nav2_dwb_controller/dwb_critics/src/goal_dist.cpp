@@ -35,12 +35,13 @@
 #include <pluginlib/class_list_macros.h>
 #include <nav_2d_utils/path_ops.h>
 #include <vector>
+#include <costmap_2d/cost_values.h>
 
 namespace dwb_critics
 {
-bool GoalDistCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                             const geometry_msgs::Pose2D& goal,
-                             const nav_2d_msgs::Path2D& global_plan)
+bool GoalDistCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+                             const geometry_msgs::msg::Pose2D& goal,
+                             const nav_2d_msgs::msg::Path2D& global_plan)
 {
   reset();
 
@@ -60,9 +61,9 @@ bool GoalDistCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msg
   return true;
 }
 
-bool GoalDistCritic::getLastPoseOnCostmap(const nav_2d_msgs::Path2D& global_plan, unsigned int& x, unsigned int& y)
+bool GoalDistCritic::getLastPoseOnCostmap(const nav_2d_msgs::msg::Path2D& global_plan, unsigned int& x, unsigned int& y)
 {
-  nav_2d_msgs::Path2D adjusted_global_plan = nav_2d_utils::adjustPlanResolution(global_plan, costmap_->getResolution());
+  nav_2d_msgs::msg::Path2D adjusted_global_plan = nav_2d_utils::adjustPlanResolution(global_plan, costmap_->getResolution());
   bool started_path = false;
 
   // skip global path points until we reach the border of the local map
@@ -92,7 +93,7 @@ bool GoalDistCritic::getLastPoseOnCostmap(const nav_2d_msgs::Path2D& global_plan
   }
   else
   {
-    ROS_ERROR_NAMED("GoalDistCritic", "None of the points of the global plan were in the local costmap.");
+    RCLCPP_ERROR(rclcpp::get_logger("GoalDistCritic"), "None of the points of the global plan were in the local costmap.");
     return false;
   }
 }

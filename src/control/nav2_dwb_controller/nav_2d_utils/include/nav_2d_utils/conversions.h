@@ -35,30 +35,31 @@
 #ifndef NAV_2D_UTILS_CONVERSIONS_H
 #define NAV_2D_UTILS_CONVERSIONS_H
 
-#include <geometry_msgs/Pose.h>
-#include <nav_2d_msgs/Twist2D.h>
-#include <nav_2d_msgs/Path2D.h>
-#include <nav_2d_msgs/Pose2DStamped.h>
-#include <nav_msgs/Path.h>
-#include <tf/tf.h>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <nav_2d_msgs/msg/twist2_d.hpp>
+#include <nav_2d_msgs/msg/path2_d.hpp>
+#include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <tf2/convert.h>
 #include <vector>
 #include <string>
 
 namespace nav_2d_utils
 {
-
-geometry_msgs::Twist twist2Dto3D(const nav_2d_msgs::Twist2D& cmd_vel_2d);
-nav_2d_msgs::Pose2DStamped stampedPoseToPose2D(const tf::Stamped<tf::Pose>& pose);
-nav_2d_msgs::Pose2DStamped poseStampedToPose2D(const geometry_msgs::PoseStamped& pose);
-geometry_msgs::Pose pose2DToPose(const geometry_msgs::Pose2D& pose2d);
-geometry_msgs::PoseStamped pose2DToPoseStamped(const nav_2d_msgs::Pose2DStamped& pose2d);
-geometry_msgs::PoseStamped pose2DToPoseStamped(const geometry_msgs::Pose2D& pose2d,
-                                               const std::string& frame, const ros::Time& stamp);
-nav_msgs::Path posesToPath(const std::vector<geometry_msgs::PoseStamped>& poses);
-nav_2d_msgs::Path2D posesToPath2D(const std::vector<geometry_msgs::PoseStamped>& poses);
-nav_msgs::Path poses2DToPath(const std::vector<geometry_msgs::Pose2D>& poses,
-                             const std::string& frame, const ros::Time& stamp);
-nav_msgs::Path pathToPath(const nav_2d_msgs::Path2D& path2d);
+// TODO(crdelsey): Do we need these still?
+// geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D& cmd_vel_2d);
+// nav_2d_msgs::msg::Pose2DStamped stampedPoseToPose2D(const tf2::Stamped<tf2::Pose>& pose);
+// nav_2d_msgs::msg::Pose2DStamped poseStampedToPose2D(const geometry_msgs::msg::PoseStamped& pose);
+// geometry_msgs::Pose pose2DToPose(const geometry_msgs::msg::Pose2D& pose2d);
+// geometry_msgs::msg::PoseStamped pose2DToPoseStamped(const nav_2d_msgs::msg::Pose2DStamped& pose2d);
+// geometry_msgs::msg::PoseStamped pose2DToPoseStamped(const geometry_msgs::msg::Pose2D& pose2d,
+//                                                const std::string& frame, const ros::Time& stamp);
+// nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped>& poses);
+// nav_2d_msgs::msg::Path2D posesToPath2D(const std::vector<geometry_msgs::msg::PoseStamped>& poses);
+// nav_msgs::msg::Path poses2DToPath(const std::vector<geometry_msgs::msg::Pose2D>& poses,
+//                              const std::string& frame, const ros::Time& stamp);
+// nav_msgs::msg::Path pathToPath(const nav_2d_msgs::msg::Path2D& path2d);
 
 }  // namespace nav_2d_utils
 

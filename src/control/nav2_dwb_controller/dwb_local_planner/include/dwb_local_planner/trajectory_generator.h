@@ -35,9 +35,9 @@
 #ifndef DWB_LOCAL_PLANNER_TRAJECTORY_GENERATOR_H
 #define DWB_LOCAL_PLANNER_TRAJECTORY_GENERATOR_H
 
-#include <ros/ros.h>
-#include <nav_2d_msgs/Twist2D.h>
-#include <dwb_msgs/Trajectory2D.h>
+#include <rclcpp/rclcpp.hpp>
+#include <nav_2d_msgs/msg/twist2_d.hpp>
+#include <dwb_msgs/msg/trajectory2_d.hpp>
 #include <vector>
 
 namespace dwb_local_planner
@@ -69,13 +69,13 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(ros::NodeHandle& nh) = 0;
+  virtual void initialize(const rclcpp::Node& nh) = 0;
 
   /**
    * @brief Start a new iteration based on the current velocity
    * @param current_velocity
    */
-  virtual void startNewIteration(const nav_2d_msgs::Twist2D& current_velocity) = 0;
+  virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity) = 0;
 
   /**
    * @brief Test to see whether there are more twists to test
@@ -87,7 +87,7 @@ public:
    * @brief Return the next twist and advance the iteration
    * @return The Twist!
    */
-  virtual nav_2d_msgs::Twist2D nextTwist() = 0;
+  virtual nav_2d_msgs::msg::Twist2D nextTwist() = 0;
 
   /**
    * @brief Get all the twists for an iteration.
@@ -97,9 +97,9 @@ public:
    * @param current_velocity
    * @return all the twists
    */
-  virtual std::vector<nav_2d_msgs::Twist2D> getTwists(const nav_2d_msgs::Twist2D& current_velocity)
+  virtual std::vector<nav_2d_msgs::msg::Twist2D> getTwists(const nav_2d_msgs::msg::Twist2D& current_velocity)
   {
-    std::vector<nav_2d_msgs::Twist2D> twists;
+    std::vector<nav_2d_msgs::msg::Twist2D> twists;
     startNewIteration(current_velocity);
     while (hasMoreTwists())
     {
@@ -114,9 +114,9 @@ public:
    * @param start_vel Current robot velocity
    * @param cmd_vel The desired command velocity
    */
-  virtual dwb_msgs::Trajectory2D generateTrajectory(const geometry_msgs::Pose2D& start_pose,
-                                                    const nav_2d_msgs::Twist2D& start_vel,
-                                                    const nav_2d_msgs::Twist2D& cmd_vel) = 0;
+  virtual dwb_msgs::msg::Trajectory2D generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
+                                                    const nav_2d_msgs::msg::Twist2D& start_vel,
+                                                    const nav_2d_msgs::msg::Twist2D& cmd_vel) = 0;
 };
 
 }  // namespace dwb_local_planner

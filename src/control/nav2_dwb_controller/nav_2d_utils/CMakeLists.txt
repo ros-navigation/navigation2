@@ -1,35 +1,56 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(nav_2d_utils)
 
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "-std=c++11;-Wall;-Werror")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-find_package(catkin REQUIRED
-    COMPONENTS geometry_msgs nav_2d_msgs nav_core2 nav_msgs roscpp tf xmlrpcpp
-)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-catkin_package(
-    CATKIN_DEPENDS geometry_msgs nav_2d_msgs nav_core2 nav_msgs roscpp tf xmlrpcpp
-    INCLUDE_DIRS include
-    LIBRARIES conversions path_ops
+find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_2d_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
+set(PROJECT_DEPENDENCIES
+  geometry_msgs
+  nav_2d_msgs
+  nav_msgs
+  rclcpp
+  tf2
+  tf2_geometry_msgs
 )
 
 include_directories(
-    include ${catkin_INCLUDE_DIRS}
+    include
 )
 
 add_library(conversions src/conversions.cpp)
-target_link_libraries(conversions ${catkin_LIBRARIES})
-add_dependencies(conversions ${catkin_EXPORTED_TARGETS})
+ament_target_dependencies(conversions
+  ${PROJECT_DEPENDENCIES}
+)
 
 add_library(path_ops src/path_ops.cpp)
-target_link_libraries(path_ops ${catkin_LIBRARIES})
-add_dependencies(path_ops ${catkin_EXPORTED_TARGETS})
+ament_target_dependencies(path_ops
+  ${PROJECT_DEPENDENCIES}
+)
 
 install(TARGETS conversions path_ops
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+install(DIRECTORY include/
+        DESTINATION include/
 )
+
+ament_export_include_directories(include)
+ament_export_libraries(conversions path_ops)
+
+ament_package()

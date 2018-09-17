@@ -50,10 +50,10 @@ namespace dwb_critics
 class GoalDistCritic: public MapGridCritic
 {
 public:
-  bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-               const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan) override;
+  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
+               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
 protected:
-  bool getLastPoseOnCostmap(const nav_2d_msgs::Path2D& global_plan, unsigned int& x, unsigned int& y);
+  bool getLastPoseOnCostmap(const nav_2d_msgs::msg::Path2D& global_plan, unsigned int& x, unsigned int& y);
 };
 
 }  // namespace dwb_critics
