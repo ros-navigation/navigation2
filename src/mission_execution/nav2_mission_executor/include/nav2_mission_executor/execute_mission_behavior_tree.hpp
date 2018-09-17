@@ -15,6 +15,7 @@
 #ifndef NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 #define NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree.h"
 #include "nav2_tasks/execute_mission_task.hpp"
@@ -28,6 +29,7 @@ class ExecuteMissionBehaviorTree
 public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node * node);
   ExecuteMissionBehaviorTree() = delete;
+  ~ExecuteMissionBehaviorTree();
 
   nav2_tasks::TaskStatus run(
     nav2_tasks::NavigateToPoseCommand::SharedPtr command /*, loop rate*/);

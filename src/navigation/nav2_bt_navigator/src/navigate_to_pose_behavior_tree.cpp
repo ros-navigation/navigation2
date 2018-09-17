@@ -26,6 +26,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node * node)
   // Create the input and output data
   computePathToPoseCommand_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   computePathToPoseResult_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
+
   followPathCommand_ = std::make_shared<nav2_tasks::FollowPathCommand>();
   followPathResult_ = std::make_shared<nav2_tasks::FollowPathResult>();
 

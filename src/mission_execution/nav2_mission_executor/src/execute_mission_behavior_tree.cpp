@@ -29,9 +29,19 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
   // Create the nodes of the tree
   root_ = new BT::SequenceNodeWithMemory("Sequence");
 
+  navigateToPoseAction1_ = new nav2_tasks::NavigateToPoseAction(node_, "NavigateToPoseAction1", navigateToPoseCommand_, navigateToPoseResult_);
+  navigateToPoseAction2_ = new nav2_tasks::NavigateToPoseAction(node_, "NavigateToPoseAction2", navigateToPoseCommand_, navigateToPoseResult_);
+
   // Add the nodes to the tree, creating the tree structure
   root_->AddChild(navigateToPoseAction1_);
   root_->AddChild(navigateToPoseAction2_);
+}
+
+ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
+{
+  delete navigateToPoseAction1_;
+  delete navigateToPoseAction2_;
+  delete root_;
 }
 
 nav2_tasks::TaskStatus

@@ -41,12 +41,12 @@ public:
   {
     if (!taskClient_.waitForServer(nav2_tasks::defaultServerTimeout)) {
       throw std::runtime_error("BtActionNode: server not running");
-	}
+	  }
   }
 
   BtActionNode() = delete;
 
-  ~BtActionNode()
+  virtual ~BtActionNode()
   {
   }
 

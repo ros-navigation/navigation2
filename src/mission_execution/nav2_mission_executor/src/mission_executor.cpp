@@ -26,18 +26,15 @@ namespace nav2_mission_executor
 MissionExecutor::MissionExecutor()
 : nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
 {
-  RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
 }
 
 MissionExecutor::~MissionExecutor()
 {
-  RCLCPP_INFO(get_logger(), "MissionExecutor::~MissionExecutor");
 }
 
 TaskStatus
 MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "MissionExecutor:execute");
   RCLCPP_INFO(get_logger(), "MissionExecutor:execute: plan: %s",
     command->mission_plan.c_str());
 
@@ -47,9 +44,10 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
   ExecuteMissionBehaviorTree bt(this);
 
   // Compose the NavigateToPose message for the Navigation module
-  // TODO(mjeronimo): Get the goal pose from the task in the mission plan
   auto navigateToPoseCommand = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
 
+  // TODO(mjeronimo): Get the goal pose from the task in the mission plan. For now,
+  // fake out some values
   navigateToPoseCommand->pose.position.x = 0;
   navigateToPoseCommand->pose.position.y = 1;
   navigateToPoseCommand->pose.position.z = 2;

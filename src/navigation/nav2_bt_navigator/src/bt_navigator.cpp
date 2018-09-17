@@ -24,12 +24,10 @@ namespace nav2_bt_navigator
 BtNavigator::BtNavigator()
 : nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
 {
-  RCLCPP_INFO(get_logger(), "BtNavigator::BtNavigator");
 }
 
 BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "BtNavigator::~BtNavigator");
 }
 
 TaskStatus
@@ -37,7 +35,6 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "BtNavigator::execute");
 
-  // TODO(mjeronimo): Can make this a member variable instead
   NavigateToPoseBehaviorTree bt(this);
 
   TaskStatus result = bt.run(command);
