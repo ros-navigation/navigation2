@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nav_2d_utils</name>
+  <version>0.1.0</version>
+  <description>A handful of useful utility functions for nav_2d packages.</description>
+
+  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>nav_core2</depend>
+  <depend>nav_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>tf</depend>
+  <depend>xmlrpcpp</depend>
+
+</package>

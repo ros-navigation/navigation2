@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>costmap_queue</name>
+  <version>0.1.0</version>
+  <description>The costmap_queue package</description>
+
+  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>costmap_2d</depend>
+  <depend>roscpp</depend>
+  <test_depend>roslint</test_depend>
+  <test_depend>rosunit</test_depend>
+
+</package>

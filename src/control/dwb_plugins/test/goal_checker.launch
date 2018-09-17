@@ -1,0 +1,3 @@
+<launch>
+  <test test-name="goal_checker" pkg="dwb_plugins" type="goal_checker" />
+</launch>

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dwb_msgs</name>
+  <version>0.1.0</version>
+  <description>Message/Service definitions specifically for the dwb_local_planner</description>
+
+  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>message_generation</depend>
+  <depend>nav_msgs</depend>
+  <exec_depend>message_runtime</exec_depend>
+
+</package>
