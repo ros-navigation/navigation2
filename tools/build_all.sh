@@ -6,6 +6,21 @@
 # sourced before ROS 1, so we need to make sure that no ROS 2 variables are
 # set at the time we start the last step, the ros1_bridge build.
 
+if [ "$ROS1_DISTRO" = "" ]; then
+	export ROS1_DISTRO=kinetic
+fi
+if [ "$ROS2_DISTRO" = "" ]; then
+	export ROS2_DISTRO=bouncy
+fi
+if test "$ROS1_DISTRO" != "kinetic" && test "$ROS1_DISTRO" != "melodic" ; then
+	echo "ROS1_DISTRO variable must be set to either kinetic or melodic"
+	exit 1
+fi
+if [ "$ROS2_DISTRO" != "bouncy" ]; then
+	echo "ROS2_DISTRO variable must be set to bouncy"
+	exit 1
+fi
+
 set -e
 
 CWD=`pwd`
@@ -22,14 +37,14 @@ if [ -d "ros2_ws" ]; then
   ROS2_SETUP_FILE=$CWD/ros2_ws/install/setup.sh
 else
   ENABLE_ROS2=false
-  ROS2_SETUP_FILE=/opt/ros/bouncy/setup.sh
+  ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.sh
 fi
 
 
 # Build ROS 1 dependencies
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
-  (. /opt/ros/kinetic/setup.sh &&
+  (. /opt/ros/$ROS1_DISTRO/setup.sh &&
    catkin_make)
  fi
 

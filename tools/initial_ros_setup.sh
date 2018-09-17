@@ -3,6 +3,21 @@
 ENABLE_ROS1=true
 ENABLE_BUILD=true
 ENABLE_ROS2=true
+if [ "$ROS1_DISTRO" = "" ]; then
+	export ROS1_DISTRO=kinetic
+fi
+if [ "$ROS2_DISTRO" = "" ]; then
+	export ROS2_DISTRO=bouncy
+fi
+if test "$ROS1_DISTRO" != "kinetic" && test "$ROS1_DISTRO" != "melodic" ; then
+	echo "ROS1_DISTRO variable must be set to either kinetic or melodic"
+	exit 1
+fi
+if [ "$ROS2_DISTRO" != "bouncy" ]; then
+	echo "ROS2_DISTRO variable must be set to bouncy"
+	exit 1
+fi
+
 for opt in "$@" ; do
 	case $opt in
 		--no-ros1)
@@ -67,7 +82,7 @@ download_ros1_dependencies() {
 	echo "Downloading the ROS 1 dependencies workspace"
 	mkdir -p ros1_dependencies_ws/src
 	cd ros1_dependencies_ws
-	vcs import src < ${CWD}/navigation2/tools/ros1_dependencies.repos
+	vcs import src < ${CWD}/navigation2/tools/ros1_dependencies.repos.${ROS1_DISTRO}
 	return_to_root_dir
 }
 

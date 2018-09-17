@@ -1,13 +1,13 @@
 repositories:
-  src/turtlebot3_simulations:
+  turtlebot3_simulations:
     type: git
     url:  https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
-    version: master
-  src/turtlebot3_msgs:
+    version: kinetic-devel
+  turtlebot3_msgs:
     type: git
     url:  https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
-    version: master
-  src/turtlebot3:
+    version: kinetic-devel
+  turtlebot3:
     type: git
     url:  https://github.com/ROBOTIS-GIT/turtlebot3.git
-    version: master
+    version: kinetic-devel
