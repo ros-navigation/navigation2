@@ -567,44 +567,52 @@ void AmclNode::updatePoseFromServer()
   double tmp_pos;
 
   tmp_pos = parameters_client->get_parameter("initial_pose_x",init_pose_[0]);
-  if (!std::isnan(tmp_pos))
+
+  if (!std::isnan(tmp_pos)) {
     init_pose_[0] = tmp_pos;
-  else 
-    RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose X position");
+  } else {
+     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose X position");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_pose_y",init_pose_[1]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_pose_[1] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose Y position");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_pose_a",init_pose_[2]);
-  if (!std::isnan(tmp_pos))
+
+  if (!std::isnan(tmp_pos)) {
     init_pose_[2] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose Yaw");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_xx",init_cov_[0]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[0] =tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance XX");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_yy",init_cov_[1]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[1] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance YY");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_aa",init_cov_[2]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[2] = tmp_pos;
-  else
-    RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");	
+  } else {
+    RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");
+  }
 }
 
 void 
