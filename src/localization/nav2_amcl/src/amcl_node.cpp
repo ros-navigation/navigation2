@@ -115,16 +115,16 @@ AmclNode::AmclNode()
   first_map_only_ = parameters_client->get_parameter("first_map_only_",false);
 
   double tmp;
-  tmp = parameters_client->get_parameter("gui_publish_rate",-1.0);
+  tmp = parameters_client->get_parameter("gui_publish_rate",10.0);
   gui_publish_period = tf2::durationFromSec(1.0/tmp);
   tmp = parameters_client->get_parameter("save_pose_rate",0.5);
   save_pose_period = tf2::durationFromSec(1.0/tmp);
   laser_min_range_ = parameters_client->get_parameter("laser_min_range",-1.0);
-  laser_max_range_ = parameters_client->get_parameter("laser_max_range",-1.0);
-  max_beams_ = parameters_client->get_parameter("max_beams",30);
-  min_particles_ = parameters_client->get_parameter("min_particles",100);
-  max_particles_ = parameters_client->get_parameter("max_particles",5000);
-  pf_err_ = parameters_client->get_parameter("pf_err",0.01);
+  laser_max_range_ = parameters_client->get_parameter("laser_max_range",12.0);
+  max_beams_ = parameters_client->get_parameter("max_beams",60);
+  min_particles_ = parameters_client->get_parameter("min_particles",500);
+  max_particles_ = parameters_client->get_parameter("max_particles",2000);
+  pf_err_ = parameters_client->get_parameter("pf_err",0.05);
   pf_z_ = parameters_client->get_parameter("pf_z",0.99);
   alpha1_ = parameters_client->get_parameter("alpha1",0.2);
   alpha2_ = parameters_client->get_parameter("alpha2",0.2);
@@ -135,10 +135,10 @@ AmclNode::AmclNode()
   beam_skip_distance_ = parameters_client->get_parameter("beam_skip_distance",0.5);
   beam_skip_threshold_ = parameters_client->get_parameter("beam_skip_threshold",0.3);
   beam_skip_error_threshold_ = parameters_client->get_parameter("beam_skip_error_threshold",0.9);
-  z_hit_ = parameters_client->get_parameter("z_hit",0.95);
-  z_short_ = parameters_client->get_parameter("z_short",0.1);
+  z_hit_ = parameters_client->get_parameter("z_hit",0.5);
+  z_short_ = parameters_client->get_parameter("z_short",0.05);
   z_max_ = parameters_client->get_parameter("z_max",0.05);
-  z_rand_ = parameters_client->get_parameter("z_rand",0.05);
+  z_rand_ = parameters_client->get_parameter("z_rand",0.5);
   sigma_hit_ = parameters_client->get_parameter("sigma_hit",0.2);
   lambda_short_ = parameters_client->get_parameter("lambda_short",0.1);
   laser_likelihood_max_dist_ = parameters_client->get_parameter("laser_likelihood_max_dist",2.0);
@@ -175,16 +175,16 @@ AmclNode::AmclNode()
     odom_model_type_ = ODOM_MODEL_DIFF;
   }
  
-  d_thresh_ = parameters_client->get_parameter("update_min_d",0.2);
-  a_thresh_ = parameters_client->get_parameter("update_min_a",M_PI/6.0);
+  d_thresh_ = parameters_client->get_parameter("update_min_d",0.25);
+  a_thresh_ = parameters_client->get_parameter("update_min_a",0.2);
   odom_frame_id_ = parameters_client->get_parameter("odom_frame_id",std::string("odom"));
-  base_frame_id_ = parameters_client->get_parameter("base_frame_id",std::string("base_link"));
+  base_frame_id_ = parameters_client->get_parameter("base_frame_id",std::string("base_footprint"));
   global_frame_id_ = parameters_client->get_parameter("global_frame_id",std::string("map"));
-  resample_interval_ = parameters_client->get_parameter("resample_interval",2);
+  resample_interval_ = parameters_client->get_parameter("resample_interval",1);
   double tmp_tol;
-  tmp_tol = parameters_client->get_parameter("transform_tolerance",0.1);
-  alpha_slow_ = parameters_client->get_parameter("recovery_alpha_slow",0.001);
-  alpha_fast_ = parameters_client->get_parameter("recovery_alpha_fast",0.1);
+  tmp_tol = parameters_client->get_parameter("transform_tolerance",1.0);
+  alpha_slow_ = parameters_client->get_parameter("recovery_alpha_slow",0.0);
+  alpha_fast_ = parameters_client->get_parameter("recovery_alpha_fast",0.0);
   tf_broadcast_ = parameters_client->get_parameter("tf_broadcast",true);
 
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
