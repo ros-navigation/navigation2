@@ -21,7 +21,6 @@
 #ifndef LOCALIZATION__AMCLNODE_HPP_
 #define LOCALIZATION__AMCLNODE_HPP_
 
-#include <boost/thread/recursive_mutex.hpp>
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
