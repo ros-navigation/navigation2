@@ -106,7 +106,7 @@ AmclNode::AmclNode()
     first_reconfigure_call_(true)
 {
 
-  boost::recursive_mutex::scoped_lock l(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
   parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(this));
   
@@ -247,7 +247,7 @@ AmclNode::AmclNode()
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
   */
   laser_scan_filter_ = this->create_subscription<sensor_msgs::msg::LaserScan>(scan_topic_,
@@ -268,7 +268,7 @@ AmclNode::AmclNode()
 
 #if 0
   dsrv_ = new dynamic_reconfigure::Server<amcl::AMCLConfig>(ros::NodeHandle("~"));
-  dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = boost::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
+  dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = std::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
   dsrv_->setCallback(cb);
 #endif
 
@@ -289,7 +289,7 @@ AmclNode::~AmclNode()
 #if 0
 void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
 {
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_gaurd<std::recursive_mutex> cfl(configuration_mutex_);
 
   //we don't want to do anything on the first call
   //which corresponds to startup
@@ -433,7 +433,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
   */
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
@@ -463,7 +463,7 @@ void AmclNode::runFromBag(const std::string &/*in_bag_fn*/)
   while (ros::ok())
   {
     {
-      boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+      std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
       if (map_)
       {
         ROS_INFO("Map is ready");
@@ -623,7 +623,7 @@ AmclNode::checkLaserReceived()
 void
 AmclNode::requestMap()
 {
-boost::recursive_mutex::scoped_lock ml(configuration_mutex_);
+std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
   // get map via RPC
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
@@ -674,7 +674,7 @@ void
 AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid& msg)
 {
 
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix\n",
            msg.info.width,
@@ -887,7 +887,7 @@ AmclNode::globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> /*r
     return;
   }
 
-  boost::recursive_mutex::scoped_lock gl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
   pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, (void *) map_);
@@ -929,7 +929,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     return;
   }
 
-  boost::recursive_mutex::scoped_lock lr(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
 
   // Do we have the base->base_laser Tx yet?
@@ -1320,7 +1320,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped& msg)
 {
-  boost::recursive_mutex::scoped_lock prl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> prl(configuration_mutex_);
 
   if (msg.header.frame_id == "")
   {
@@ -1398,7 +1398,7 @@ AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceS
 void
 AmclNode::applyInitialPose()
 {
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
   // If initial_pose_hyp_ and map_ are both non-null, apply the initial
   // pose to the particle filter state.

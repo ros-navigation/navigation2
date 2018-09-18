@@ -204,7 +204,7 @@ private:
   bool first_map_received_;
   bool first_reconfigure_call_;
 
-  boost::recursive_mutex configuration_mutex_;
+  std::recursive_mutex configuration_mutex_;
 
 // 4. Dynamic reconfigure
   //dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
