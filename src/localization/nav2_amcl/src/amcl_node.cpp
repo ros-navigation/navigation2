@@ -650,7 +650,7 @@ std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
   while(!map_received)
   {
     auto result_future = client->async_send_request(req);
-    if (rclcpp::spin_until_future_complete(std::shared_ptr<rclcpp::Node>(this), result_future, std::chrono::seconds(1)) !=
+    if (rclcpp::spin_until_future_complete(std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node*){}), result_future, std::chrono::seconds(1)) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
       RCLCPP_WARN(get_logger(), "Request for map failed; trying again...");
