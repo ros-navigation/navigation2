@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ENABLE_ROS1=true
 ENABLE_BUILD=true

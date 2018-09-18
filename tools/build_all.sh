@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # All the parenthesis around the calls to setup.bash and the build are to
 # prevent the ROS variables from entering the global scope of this script.
@@ -34,17 +34,17 @@ else
 fi
 if [ -d "ros2_ws" ]; then
   ENABLE_ROS2=true
-  ROS2_SETUP_FILE=$CWD/ros2_ws/install/setup.sh
+  ROS2_SETUP_FILE=$CWD/ros2_ws/install/setup.bash
 else
   ENABLE_ROS2=false
-  ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.sh
+  ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.bash
 fi
 
 
 # Build ROS 1 dependencies
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
-  (. /opt/ros/$ROS1_DISTRO/setup.sh &&
+  (. /opt/ros/$ROS1_DISTRO/setup.bash &&
    catkin_make)
  fi
 
@@ -61,14 +61,14 @@ cd $CWD/navstack_dependencies_ws
 
 # Build our code
 cd $CWD/navigation2
-(. $CWD/navstack_dependencies_ws/install/setup.sh &&
+(. $CWD/navstack_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
 if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
-  . ros1_dependencies_ws/devel/setup.sh
-  . navigation2/install/setup.sh
+  . ros1_dependencies_ws/devel/setup.bash
+  . navigation2/install/setup.bash
   cd $CWD/ros2_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi
