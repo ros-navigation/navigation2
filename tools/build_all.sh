@@ -61,7 +61,7 @@ cd $CWD/navstack_dependencies_ws
 
 # Build our code
 cd $CWD/navigation2
-(. $CWD/navstack_dependencies_ws/install/setup.bash &&
+(. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash && 
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
