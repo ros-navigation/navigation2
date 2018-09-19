@@ -78,7 +78,7 @@ protected:
   nav_2d_msgs::msg::Pose2DStamped robot_pose;
 };
 
-TEST_F(UninitializedTransform, NoPlan)
+TEST_F(UninitializedTransform, DISABLED_NoPlan)
 {
   planner.setPlan(nav_2d_msgs::msg::Path2D());
   ASSERT_THROW(planner.computeVelocityCommands(
@@ -101,7 +101,7 @@ TEST_F(UninitializedTransform, DISABLED_NoTransform)
     nav_core2::PlannerTFException);
 }
 
-TEST_F(UninitializedTransform, GoToOneOne)
+TEST_F(UninitializedTransform, DISABLED_GoToOneOne)
 {
   geometry_msgs::msg::Pose2D goal;
   goal.x = 0.5;

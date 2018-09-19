@@ -19,7 +19,7 @@ import signal
 import subprocess
 import sys
 
-from nav2_tasks.msg import Path
+from nav2_planning_msgs.msg import Path
 import pytest
 import rclpy
 from rclpy.node import Node
@@ -32,10 +32,10 @@ class DwaControllerTestNode(Node):
         super().__init__('dwa_controller_test')
         self.path_publisher_ = self.create_publisher(
             Path,
-            'DwaController_command')
+            'FollowPathTask_command')
         self.result_subscription_ = self.create_subscription(
             Empty,
-            'DwaController_result',
+            'FollowPathTask_result',
             self.result_callback)
         self.result_received = False
 
@@ -61,7 +61,7 @@ def testNode(plannerNode):
 
 
 def test_result_returned(testNode):
-    while(testNode.count_subscribers('DwaController_command') < 1):
+    while(testNode.count_subscribers('FollowPathTask_command') < 1):
         rclpy.spin_once(testNode, timeout_sec=0.1)
 
     testNode.path_publisher_.publish(Path())
