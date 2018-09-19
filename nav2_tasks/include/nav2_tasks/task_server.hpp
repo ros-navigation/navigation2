@@ -95,9 +95,7 @@ protected:
         [&] {return commandReceived_ == true;}))
       {
         // Call the user's overridden method
-        printf("TaskServer: workerThread: calling execute\n");
         TaskStatus status = execute(commandMsg_);
-        printf("TaskServer: workerThread: after calling execute: %d\n", status);
 
         // Reset the execution flag now that we've executed the task
         commandReceived_ = false;
@@ -108,7 +106,6 @@ protected:
         // appropriate message
 
         if (status == TaskStatus::SUCCEEDED) {
-          printf("TaskServer: execute() returned SUCCEEDED\n");
           // If the task succeeded, first publish the result message
           resultPub_->publish(resultMsg_);
 
@@ -116,7 +113,6 @@ protected:
           statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
           statusPub_->publish(statusMsg);
         } else if (status == TaskStatus::FAILED) {
-          printf("TaskServer: execute() returned FAILED\n");
           // Otherwise, send the failure code
           statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
@@ -172,7 +168,6 @@ protected:
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
-    printf("TaskServer: onCancelReceived\n");
     cancelReceived_ = true;
     cvCancel_.notify_one();
   }
