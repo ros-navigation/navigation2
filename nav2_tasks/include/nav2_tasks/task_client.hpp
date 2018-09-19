@@ -166,6 +166,7 @@ protected:
   // Called when the TaskServer has sent its result
   void onResultReceived(const typename ResultMsg::SharedPtr resultMsg)
   {
+    printf("TaskClient: onResultReceived\n");
     {
       std::lock_guard<std::mutex> lock(resultMutex_);
       resultMsg_ = resultMsg;
@@ -178,6 +179,7 @@ protected:
   // Called when the TaskServer sends it status code (success or failure)
   void onStatusReceived(const StatusMsg::SharedPtr statusMsg)
   {
+    printf("TaskClient: onStatusReceived\n");
     {
       std::lock_guard<std::mutex> lock(statusMutex_);
       statusMsg_ = statusMsg;

@@ -27,6 +27,17 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
   navigateToPoseCommand_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
   navigateToPoseResult_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
+  // Compose the NavigateToPose message for the Navigation module. Fake out some values
+  // for now. The goal pose would actually come from the Mission Plan. Could pass the mission
+  // plan in the constructor and then use the values from there to instance each of the nodes. 
+  navigateToPoseCommand_->pose.position.x = 0;
+  navigateToPoseCommand_->pose.position.y = 1;
+  navigateToPoseCommand_->pose.position.z = 2;
+  navigateToPoseCommand_->pose.orientation.x = 0;
+  navigateToPoseCommand_->pose.orientation.y = 1;
+  navigateToPoseCommand_->pose.orientation.z = 2;
+  navigateToPoseCommand_->pose.orientation.w = 3;
+
   // Create the nodes of the tree
   root_ = std::make_unique<BT::SequenceNodeWithMemory>("Sequence");
 
@@ -38,21 +49,25 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
   root_->AddChild(navigateToPoseAction2_.get());
 }
 
-nav2_tasks::TaskStatus
-ExecuteMissionBehaviorTree::run(nav2_tasks::NavigateToPoseCommand::SharedPtr command, std::function<bool ()>cancelRequested)
+ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
 {
-  navigateToPoseCommand_ = command;
+  printf("~ExecuteMissionBehaviorTree\n");
+}
 
+nav2_tasks::TaskStatus
+ExecuteMissionBehaviorTree::run(std::function<bool ()>cancelRequested)
+{
   rclcpp::WallRate loop_rate(100ms);
   BT::ReturnStatus result = root_->get_status();
 
   while (rclcpp::ok() && !(result == BT::SUCCESS || result == BT::FAILURE)) {
     result = root_->Tick();
 
+    // Check if this task server has received a cancel message
     if (cancelRequested())
-    //if (result == BT::HALTED)
     {
-      printf("ExecuteMissionBehaviorTree: cancelRequested\n");
+      printf("ExecuteMissionBehaviorTree: cancelRequested, halting the behavior tree\n");
+      root_->Halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 

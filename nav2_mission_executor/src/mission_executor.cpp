@@ -26,18 +26,11 @@ namespace nav2_mission_executor
 MissionExecutor::MissionExecutor()
 : nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
 {
-  RCLCPP_INFO(get_logger(), "MissionExecutor::MissionExecutor");
-
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
       std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
 
   plan_pub_ = create_publisher<nav2_msgs::msg::MissionPlan>(
     "ExecuteMissionTask_command");
-}
-
-MissionExecutor::~MissionExecutor()
-{
-  RCLCPP_INFO(get_logger(), "MissionExecutor::~MissionExecutor");
 }
 
 void
@@ -62,7 +55,7 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan. For now, we're
   // using the one received from rviz via the move_base_simple/goal topic.
 
-  // Create the behavior tree for this mission
+  // Create and run the behavior tree for this mission
   ExecuteMissionBehaviorTree bt(this);
   TaskStatus result = bt.run(goal_pose_, std::bind(&MissionExecutor::cancelRequested, this));
 

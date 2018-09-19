@@ -30,9 +30,9 @@ class ExecuteMissionBehaviorTree
 public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node * node);
   ExecuteMissionBehaviorTree() = delete;
+  ~ExecuteMissionBehaviorTree();
 
   nav2_tasks::TaskStatus run(
-    nav2_tasks::NavigateToPoseCommand::SharedPtr command,
     std::function<bool ()> cancelRequested
     /*, loop rate*/);
 

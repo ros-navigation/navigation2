@@ -17,6 +17,8 @@
 
 #include <string>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include "BTpp/action_node.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/logger.hpp"
@@ -53,6 +55,8 @@ public:
   {
     taskClient_.sendCommand(command_);
 
+    CommandMsg foo = *command_;
+
     // Loop until the task has completed
     while (get_status() != BT::HALTED) {
       nav2_tasks::TaskStatus status =
@@ -60,12 +64,16 @@ public:
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
+          printf("TaskClient: Tick: received SUCCEEDED message\n");
           return BT::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
+          printf("TaskClient: Tick: received FAILED message\n");
           return BT::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
+          printf("TaskClient: Tick: received CANCELED message\n");
+          cvCancel_.notify_one();
           return BT::HALTED;
 
         case nav2_tasks::TaskStatus::RUNNING:
@@ -83,6 +91,12 @@ public:
   {
     printf("TaskClient: Halt\n");
     taskClient_.cancel();
+
+    std::unique_lock<std::mutex> lock(cancelMutex_);
+
+    printf("TaskClient: waiting for CANCELED message\n");
+    cvCancel_.wait(lock);
+    printf("TaskClient: after waiting for CANCELED message\n");
   }
 
 private:
@@ -90,6 +104,9 @@ private:
 
   typename CommandMsg::SharedPtr command_;
   typename ResultMsg::SharedPtr result_;
+
+  std::mutex cancelMutex_;
+  std::condition_variable cvCancel_;
 };
 
 }  // namespace nav2_tasks
