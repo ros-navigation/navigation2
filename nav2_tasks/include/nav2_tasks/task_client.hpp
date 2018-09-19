@@ -35,7 +35,7 @@ template<class CommandMsg, class ResultMsg>
 class TaskClient
 {
 public:
-  explicit TaskClient(rclcpp::Node * node)
+  explicit TaskClient(rclcpp::Node::SharedPtr node)
   : node_(node)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
@@ -81,7 +81,7 @@ public:
 
     // TODO(mjeronimo): Replace this with a legit way to wait for the server
     while (node_->count_subscribers(taskName) < 1) {
-      rclcpp::spin_some(node_->get_node_base_interface());
+      rclcpp::spin_some(node_);
 
       auto t1 = std::chrono::high_resolution_clock::now();
       auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
@@ -188,7 +188,7 @@ protected:
   }
 
   // The TaskClient isn't itself a node, so needs to know which one to use
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
 
   // The client's publishers: the command and cancel messages
   typename rclcpp::Publisher<CommandMsg>::SharedPtr commandPub_;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__NAVIGATETOPOSEACTION_HPP_
-#define NAV2_TASKS__NAVIGATETOPOSEACTION_HPP_
+#ifndef NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
+#define NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
@@ -22,8 +22,8 @@ namespace nav2_tasks
 {
 
 using NavigateToPoseAction =
-    BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>;
+  BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__NAVIGATETOPOSEACTION_HPP_
+#endif  // NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_

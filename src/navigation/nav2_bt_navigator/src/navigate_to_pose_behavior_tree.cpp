@@ -20,7 +20,7 @@ using namespace std::chrono_literals;
 namespace nav2_bt_navigator
 {
 
-NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node * node)
+NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
   // Create the input and output data
@@ -47,7 +47,9 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node * node)
 }
 
 nav2_tasks::TaskStatus
-NavigateToPoseBehaviorTree::run(nav2_tasks::NavigateToPoseCommand::SharedPtr command, std::function<bool ()>cancelRequested)
+NavigateToPoseBehaviorTree::run(
+  nav2_tasks::NavigateToPoseCommand::SharedPtr command,
+  std::function<bool()> cancelRequested)
 {
   rclcpp::WallRate loop_rate(100ms);
 

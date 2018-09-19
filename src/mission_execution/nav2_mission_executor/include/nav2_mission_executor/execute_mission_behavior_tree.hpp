@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
-#define NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
+#ifndef NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
+#define NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 
 #include <functional>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "behavior_tree.h"
+#include "BTpp/behavior_tree.h"
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 
@@ -28,14 +28,14 @@ namespace nav2_mission_executor
 class ExecuteMissionBehaviorTree
 {
 public:
-  explicit ExecuteMissionBehaviorTree(rclcpp::Node * node);
+  explicit ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node);
   ExecuteMissionBehaviorTree() = delete;
 
-  nav2_tasks::TaskStatus run(std::function<bool ()> cancelRequested /*, loop rate*/);
+  nav2_tasks::TaskStatus run(std::function<bool()> cancelRequested /*, loop rate*/);
 
 private:
   // The ROS node to use for any task clients
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
 
   // The root node of the behavior tree
   std::unique_ptr<BT::SequenceNodeWithMemory> root_;
@@ -51,4 +51,4 @@ private:
 
 }  // namespace nav2_mission_executor
 
-#endif //  NAV2_MISSION_PLANNING__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
+#endif  // NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_

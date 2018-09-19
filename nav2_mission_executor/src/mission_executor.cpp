@@ -54,6 +54,7 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // Create and run the behavior tree for this mission
   ExecuteMissionBehaviorTree bt(this);
+  //ExecuteMissionBehaviorTree bt(shared_from_this());
   TaskStatus result = bt.run(goal_pose_, std::bind(&MissionExecutor::cancelRequested, this));
 
   RCLCPP_INFO(get_logger(), "MissionExecutor::execute: completed: %d", result);

@@ -18,7 +18,7 @@
 #include <functional>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "behavior_tree.h"
+#include "BTpp/behavior_tree.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
@@ -29,17 +29,17 @@ namespace nav2_bt_navigator
 class NavigateToPoseBehaviorTree
 {
 public:
-  explicit NavigateToPoseBehaviorTree(rclcpp::Node * node);
+  explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
   NavigateToPoseBehaviorTree() = delete;
 
   nav2_tasks::TaskStatus run(
     nav2_tasks::NavigateToPoseCommand::SharedPtr command,
-    std::function<bool ()> cancelRequested
-     /*, loop rate*/);
+    std::function<bool()> cancelRequested
+    /*, loop rate*/);
 
 private:
   // The ROS node to use for any task clients
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
 
   // The root node of the behavior tree
   std::unique_ptr<BT::SequenceNodeWithMemory> root_;
