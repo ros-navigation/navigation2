@@ -1,0 +1,12 @@
+sudo: required
+
+language: none
+
+services:
+  - docker
+
+before_install:
+  - docker build -t nav2/latest .
+
+script:
+  - docker run nav2/latest /bin/bash -c echo "Testing"
