@@ -7,8 +7,16 @@ FROM osrf/ros2:bouncy-desktop
 SHELL ["/bin/bash", "-c"]
 
 # setup keys 
-# TODO: check if $http_proxy is set first
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --keyserver-options http-proxy=$http_proxy  --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116
+# check if proxy is set and get keys, using proxy if it is set
+RUN if [ "$http_proxy" == "" ]; \ 
+      then \
+      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
+      --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
+      else \
+      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
+      --keyserver-options http-proxy=$http_proxy \
+      --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
+    fi
 
 # setup sources.list 
 RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list
