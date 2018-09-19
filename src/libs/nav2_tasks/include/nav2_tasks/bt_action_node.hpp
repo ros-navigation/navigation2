@@ -55,8 +55,6 @@ public:
   {
     taskClient_.sendCommand(command_);
 
-    CommandMsg foo = *command_;
-
     // Loop until the task has completed
     while (get_status() != BT::HALTED) {
       nav2_tasks::TaskStatus status =
@@ -64,15 +62,12 @@ public:
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
-          printf("TaskClient: Tick: received SUCCEEDED message\n");
           return BT::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
-          printf("TaskClient: Tick: received FAILED message\n");
           return BT::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
-          printf("TaskClient: Tick: received CANCELED message\n");
           cvCancel_.notify_one();
           return BT::HALTED;
 
@@ -89,14 +84,12 @@ public:
 
   void Halt()
   {
-    printf("TaskClient: Halt\n");
-    taskClient_.cancel();
+    // Send a cancel message to the task server
+   taskClient_.cancel();
 
+    // Then wait for the response before continuing
     std::unique_lock<std::mutex> lock(cancelMutex_);
-
-    printf("TaskClient: waiting for CANCELED message\n");
     cvCancel_.wait(lock);
-    printf("TaskClient: after waiting for CANCELED message\n");
   }
 
 private:

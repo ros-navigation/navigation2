@@ -49,11 +49,6 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
   root_->AddChild(navigateToPoseAction2_.get());
 }
 
-ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
-{
-  printf("~ExecuteMissionBehaviorTree\n");
-}
-
 nav2_tasks::TaskStatus
 ExecuteMissionBehaviorTree::run(std::function<bool ()>cancelRequested)
 {
@@ -64,9 +59,7 @@ ExecuteMissionBehaviorTree::run(std::function<bool ()>cancelRequested)
     result = root_->Tick();
 
     // Check if this task server has received a cancel message
-    if (cancelRequested())
-    {
-      printf("ExecuteMissionBehaviorTree: cancelRequested, halting the behavior tree\n");
+    if (cancelRequested()) {
       root_->Halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }

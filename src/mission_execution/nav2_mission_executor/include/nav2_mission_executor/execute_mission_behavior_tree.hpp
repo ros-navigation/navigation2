@@ -30,7 +30,6 @@ class ExecuteMissionBehaviorTree
 public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node * node);
   ExecuteMissionBehaviorTree() = delete;
-  ~ExecuteMissionBehaviorTree();
 
   nav2_tasks::TaskStatus run(
     std::function<bool ()> cancelRequested
