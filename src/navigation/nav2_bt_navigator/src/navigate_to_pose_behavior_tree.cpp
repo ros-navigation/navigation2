@@ -49,9 +49,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 nav2_tasks::TaskStatus
 NavigateToPoseBehaviorTree::run(
   nav2_tasks::NavigateToPoseCommand::SharedPtr command,
-  std::function<bool()> cancelRequested)
+  std::function<bool()> cancelRequested,
+  std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loop_rate(100ms);
+  rclcpp::WallRate loop_rate(loopTimeout);
 
   // Compose the PathEndPoints message for the Navigation module
   // TODO(mjeronimo): starting pose needs to come from localization

@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <chrono>
 #include "rclcpp/rclcpp.hpp"
 #include "BTpp/behavior_tree.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
@@ -34,8 +35,8 @@ public:
 
   nav2_tasks::TaskStatus run(
     nav2_tasks::NavigateToPoseCommand::SharedPtr command,
-    std::function<bool()> cancelRequested
-    /*, loop rate*/);
+    std::function<bool()> cancelRequested,
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
 private:
   // The ROS node to use for any task clients

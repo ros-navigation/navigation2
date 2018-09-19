@@ -52,9 +52,10 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
 }
 
 nav2_tasks::TaskStatus
-ExecuteMissionBehaviorTree::run(std::function<bool()> cancelRequested)
+ExecuteMissionBehaviorTree::run(
+  std::function<bool()> cancelRequested, std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loop_rate(100ms);
+  rclcpp::WallRate loopRate(loopTimeout);
   BT::ReturnStatus result = root_->get_status();
 
   while (rclcpp::ok() && !(result == BT::SUCCESS || result == BT::FAILURE)) {
@@ -66,7 +67,7 @@ ExecuteMissionBehaviorTree::run(std::function<bool()> cancelRequested)
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
-    loop_rate.sleep();
+    loopRate.sleep();
   }
 
   return (result ==
