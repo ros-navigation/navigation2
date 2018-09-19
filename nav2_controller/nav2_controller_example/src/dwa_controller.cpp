@@ -54,7 +54,9 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
     }
   }
 
+  // Stop the robot after having it move forward for a bit
   sendVelocity(0);
+
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
 

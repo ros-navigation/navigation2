@@ -18,18 +18,25 @@ find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
+  /usr/local/include/BTpp
 )
 
 set(executable_name bt_navigator)
 
 add_executable(${executable_name}
+  src/bt_navigator.cpp
   src/main.cpp
+)
+
+target_link_libraries(${executable_name}
+  /usr/local/BTpp/lib/libBTppLib.a
 )
 
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/bt_navigator.cpp
+  src/navigate_to_pose_behavior_tree.cpp
 )
 
 set(dependencies

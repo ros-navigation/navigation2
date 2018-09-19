@@ -90,6 +90,10 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
         RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: planning task failed");
         return TaskStatus::FAILED;
 
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task canceled");
+        break;
+
       case TaskStatus::RUNNING:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task still running");
         break;
@@ -145,6 +149,10 @@ planning_succeeded:
       case TaskStatus::FAILED:
         RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: control task failed");
         return TaskStatus::FAILED;
+
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task canceled");
+        break;
 
       case TaskStatus::RUNNING:
         break;
