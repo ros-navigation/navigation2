@@ -125,6 +125,7 @@ protected:
         // Check the result of the user's function and send the
         // appropriate message
         if (status == TaskStatus::SUCCEEDED) {
+          printf("TaskServer: execute() returned SUCCEEDED\n");
           // If the task succeeded, first publish the result message
           resultPub_->publish(resultMsg_);
 
@@ -132,6 +133,7 @@ protected:
           statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
           statusPub_->publish(statusMsg);
         } else if (status == TaskStatus::FAILED) {
+          printf("TaskServer: execute() returned FAILED\n");
           // Otherwise, send the failure code
           statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
@@ -191,6 +193,7 @@ protected:
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
+    printf("TaskServer: onCancelReceived\n");
     cancelReceived_ = true;
     cvCancel_.notify_one();
   }
