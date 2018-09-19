@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 
@@ -26,21 +25,17 @@ BtNavigator::BtNavigator()
 {
 }
 
-BtNavigator::~BtNavigator()
-{
-}
-
 TaskStatus
 BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "BtNavigator: Received new navigation goal to (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
 
+  // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(this);
-
   TaskStatus result = bt.run(command, std::bind(&BtNavigator::cancelRequested, this));
-  RCLCPP_INFO(get_logger(), "BtNavigator::execute: completed: %d", result);
 
+  RCLCPP_INFO(get_logger(), "BtNavigator::execute: completed: %d", result);
   return result;
 }
 

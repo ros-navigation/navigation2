@@ -43,13 +43,8 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {
     // Do a bit of the task
-    RCLCPP_DEBUG(get_logger(), "AStarPlanner::execute: doing work: %d", i);
+    RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
     std::this_thread::sleep_for(100ms);
-
-    // if (failed_to_plan)
-    // {
-    //   RCLCPP_WARN(get_logger(), "AStarPlanner: Failed to generate path.");
-    // }
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {

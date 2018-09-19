@@ -16,6 +16,7 @@
 #define NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
 
 #include <functional>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"

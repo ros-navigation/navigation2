@@ -61,10 +61,8 @@ NavigateToPoseBehaviorTree::run(nav2_tasks::NavigateToPoseCommand::SharedPtr com
   while (rclcpp::ok() && !(result == BT::SUCCESS || result == BT::FAILURE)) {
     result = root_->Tick();
 
-    //if (cancelRequested())
-    if (result == BT::HALTED)
-    {
-      printf("NavigateToPoseBehaviorTree: cancelRequested\n");
+    if (cancelRequested()) {
+      root_->Halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
