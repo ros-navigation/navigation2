@@ -1,0 +1,13 @@
+repositories:
+  turtlebot3_simulations:
+    type: git
+    url:  https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
+    version: melodic-devel
+  turtlebot3_msgs:
+    type: git
+    url:  https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
+    version: melodic-devel
+  turtlebot3:
+    type: git
+    url:  https://github.com/ROBOTIS-GIT/turtlebot3.git
+    version: melodic-devel
