@@ -25,8 +25,8 @@ set -e
 
 CWD=`pwd`
 
-# Determin which repos to build. If the ROS 1 and ROS 2 base directories are not
-# present, then don't build
+# Determine which repos to build. If the ROS 1 and ROS 2 base directories are
+# not present, then don't build
 if [ -d "ros1_dependencies_ws" ]; then
   ENABLE_ROS1=true
 else
@@ -61,7 +61,7 @@ cd $CWD/navstack_dependencies_ws
 
 # Build our code
 cd $CWD/navigation2
-(. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash && 
+(. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
