@@ -7,3 +7,6 @@ The ROS 2 Navigation System is the control system that enables a robot to autono
 
 # Contributing
 We are currently in the requirements analysis phase, and are accepting input and requirements. To contribute, see the [documentation README](doc/README.md).
+
+# Building the source
+For instructions on how to download and build this repo, see the [BUILD.md](doc/BUILD.md) file.
