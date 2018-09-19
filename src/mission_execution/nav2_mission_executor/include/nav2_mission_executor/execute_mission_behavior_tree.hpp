@@ -31,9 +31,7 @@ public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node * node);
   ExecuteMissionBehaviorTree() = delete;
 
-  nav2_tasks::TaskStatus run(
-    std::function<bool ()> cancelRequested
-    /*, loop rate*/);
+  nav2_tasks::TaskStatus run(std::function<bool ()> cancelRequested /*, loop rate*/);
 
 private:
   // The ROS node to use for any task clients

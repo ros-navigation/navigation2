@@ -19,7 +19,6 @@
 #include <memory>
 #include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/execute_mission_task.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_mission_executor

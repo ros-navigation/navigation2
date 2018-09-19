@@ -25,7 +25,8 @@ class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
 public:
   BtNavigator();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus execute(
+    const nav2_tasks::NavigateToPoseCommand::SharedPtr command) override;
 };
 
 }  // namespace nav2_bt_navigator
