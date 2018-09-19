@@ -29,7 +29,6 @@ class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
 {
 public:
   MissionExecutor();
-  ~MissionExecutor();
 
   nav2_tasks::TaskStatus execute(
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
