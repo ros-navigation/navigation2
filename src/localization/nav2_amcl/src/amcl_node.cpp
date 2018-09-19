@@ -108,7 +108,8 @@ AmclNode::AmclNode()
 
   std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
-  parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(this));
+  parameters_node_ = rclcpp::Node::make_shared("ParametersNode");
+  parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(parameters_node_));
   
   // Grab params off the param server
   use_map_topic_ = parameters_client->get_parameter("use_map_topic_",false);
@@ -203,7 +204,7 @@ AmclNode::AmclNode()
   
   cloud_pub_interval = std::chrono::duration<double> { 1.0 };
   
-  tfb_.reset(new tf2_ros::TransformBroadcaster(shared_from_this()));
+  tfb_.reset(new tf2_ros::TransformBroadcaster(parameters_node_));
   tf_.reset(new tf2_ros::Buffer());
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
   

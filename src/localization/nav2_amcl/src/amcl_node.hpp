@@ -110,6 +110,7 @@ private:
 
 private:
   rclcpp::SyncParametersClient::SharedPtr parameters_client;
+  rclcpp::Node::SharedPtr parameters_node_;
 
   bool sent_first_transform_;
 
