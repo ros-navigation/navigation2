@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
-#define NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
+#ifndef NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
+#define NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
@@ -22,8 +22,8 @@ namespace nav2_tasks
 {
 
 using ComputePathToPoseAction =
-    BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>;
+  BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__COMPUTEPATHTOPOSEACTION_HPP_
+#endif  // NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_

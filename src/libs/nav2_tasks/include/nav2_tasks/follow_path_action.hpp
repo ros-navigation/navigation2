@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__FOLLOWPATHACTION_HPP_
-#define NAV2_TASKS__FOLLOWPATHACTION_HPP_
+#ifndef NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
+#define NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
@@ -22,8 +22,8 @@ namespace nav2_tasks
 {
 
 using FollowPathAction =
-    BtActionNode<FollowPathCommand, FollowPathResult>;
+  BtActionNode<FollowPathCommand, FollowPathResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__FOLLOWPATHACTION_HPP_
+#endif  // NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_

@@ -32,7 +32,7 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
     command->pose.position.x, command->pose.position.y);
 
   // Create and run the behavior tree
-  NavigateToPoseBehaviorTree bt(this);
+  NavigateToPoseBehaviorTree bt(shared_from_this());
   TaskStatus result = bt.run(command, std::bind(&BtNavigator::cancelRequested, this));
 
   RCLCPP_INFO(get_logger(), "BtNavigator::execute: completed: %d", result);

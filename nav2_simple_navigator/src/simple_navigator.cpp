@@ -31,14 +31,15 @@ SimpleNavigator::SimpleNavigator()
 {
   RCLCPP_INFO(get_logger(), "Initializing");
 
-  plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  plannerTaskClient_ =
+    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(shared_from_this());
 
   if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Global planner is not running");
     throw std::runtime_error("Global planner not running");
   }
 
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(shared_from_this());
 
   if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Controller is not running");

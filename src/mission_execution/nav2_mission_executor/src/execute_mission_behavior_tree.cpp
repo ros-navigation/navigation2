@@ -20,7 +20,7 @@ using namespace std::chrono_literals;
 namespace nav2_mission_executor
 {
 
-ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
+ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
   // Create the input and output messages
@@ -29,7 +29,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
 
   // Compose the NavigateToPose message for the Navigation module. Fake out some values
   // for now. The goal pose would actually come from the Mission Plan. Could pass the mission
-  // plan in the constructor and then use the values from there to instance each of the nodes. 
+  // plan in the constructor and then use the values from there to instance each of the nodes.
   navigateToPoseCommand_->pose.position.x = 0;
   navigateToPoseCommand_->pose.position.y = 1;
   navigateToPoseCommand_->pose.position.z = 2;
@@ -41,8 +41,10 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
   // Create the nodes of the tree
   root_ = std::make_unique<BT::SequenceNodeWithMemory>("Sequence");
 
-  navigateToPoseAction1_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_, "NavigateToPoseAction1", navigateToPoseCommand_, navigateToPoseResult_);
-  navigateToPoseAction2_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_, "NavigateToPoseAction2", navigateToPoseCommand_, navigateToPoseResult_);
+  navigateToPoseAction1_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_,
+      "NavigateToPoseAction1", navigateToPoseCommand_, navigateToPoseResult_);
+  navigateToPoseAction2_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_,
+      "NavigateToPoseAction2", navigateToPoseCommand_, navigateToPoseResult_);
 
   // Add the nodes to the tree, creating the tree structure
   root_->AddChild(navigateToPoseAction1_.get());
@@ -50,7 +52,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node * node)
 }
 
 nav2_tasks::TaskStatus
-ExecuteMissionBehaviorTree::run(std::function<bool ()>cancelRequested)
+ExecuteMissionBehaviorTree::run(std::function<bool()> cancelRequested)
 {
   rclcpp::WallRate loop_rate(100ms);
   BT::ReturnStatus result = root_->get_status();

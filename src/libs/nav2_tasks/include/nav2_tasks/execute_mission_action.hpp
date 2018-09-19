@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__EXECUTEMISSIONACTION_HPP_
-#define NAV2_TASKS__EXECUTEMISSIONACTION_HPP_
+#ifndef NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_
+#define NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_
 
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/execute_mission_task.hpp"
@@ -22,8 +22,8 @@ namespace nav2_tasks
 {
 
 using ExecuteMissionAction =
-    BtActionNode<ExecuteMissionCommand, ExecuteMissionResult>;
+  BtActionNode<ExecuteMissionCommand, ExecuteMissionResult>;
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__EXECUTEMISSIONACTION_HPP_
+#endif  // NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_

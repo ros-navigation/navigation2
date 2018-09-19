@@ -32,17 +32,19 @@ class BtActionNode : public BT::ActionNode
 {
 public:
   BtActionNode(
-    rclcpp::Node * node, const std::string & actionName,
+    rclcpp::Node::SharedPtr node, const std::string & actionName,
     typename CommandMsg::SharedPtr command,
-    typename ResultMsg::SharedPtr result)
+    typename ResultMsg::SharedPtr result,
+    std::chrono::milliseconds tickTimeout = std::chrono::milliseconds(100))
   : BT::ActionNode(actionName),
     taskClient_(node),
     command_(command),
-    result_(result)
+    result_(result),
+    tickTimeout_(tickTimeout)
   {
     if (!taskClient_.waitForServer(nav2_tasks::defaultServerTimeout)) {
       throw std::runtime_error("BtActionNode: server not running");
-	  }
+    }
   }
 
   BtActionNode() = delete;
@@ -57,8 +59,7 @@ public:
 
     // Loop until the task has completed
     while (get_status() != BT::HALTED) {
-      nav2_tasks::TaskStatus status =
-        taskClient_.waitForResult(result_, std::chrono::milliseconds(100));
+      nav2_tasks::TaskStatus status = taskClient_.waitForResult(result_, tickTimeout_);
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
@@ -85,7 +86,7 @@ public:
   void Halt()
   {
     // Send a cancel message to the task server
-   taskClient_.cancel();
+    taskClient_.cancel();
 
     // Then wait for the response before continuing
     std::unique_lock<std::mutex> lock(cancelMutex_);
@@ -98,8 +99,13 @@ private:
   typename CommandMsg::SharedPtr command_;
   typename ResultMsg::SharedPtr result_;
 
+  // Allow for signaling receipt of the cancel message
   std::mutex cancelMutex_;
   std::condition_variable cvCancel_;
+
+  // The timeout value while to use in the tick loop while waiting for
+  // a result from the server
+  std::chrono::milliseconds tickTimeout_;
 };
 
 }  // namespace nav2_tasks
