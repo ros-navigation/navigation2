@@ -68,7 +68,8 @@ void CostmapQueue::enqueueCell(
 {
   if (seen_[index]) {return;}
 
-  // we compute our distance table one cell further than the inflation radius dictates so we can make the check below
+  // we compute our distance table one cell further than the inflation radius
+  // dictates so we can make the check below
   double distance = distanceLookup(cur_x, cur_y, src_x, src_y);
   CellData data(distance, index, cur_x, cur_y, src_x, src_y);
   if (validCellToQueue(data)) {

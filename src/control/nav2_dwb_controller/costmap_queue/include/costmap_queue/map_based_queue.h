@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE_MAP_BASED_QUEUE_H
-#define COSTMAP_QUEUE_MAP_BASED_QUEUE_H
+#ifndef COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
+#define COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
 
 #include <algorithm>
 #include <map>
@@ -89,8 +89,9 @@ public:
    */
   void enqueue(const double priority, item_t item)
   {
-    // We keep track of the last priority we inserted. If this items priority matches the previous insertion
-    // we can avoid searching through all the bins.
+    // We keep track of the last priority we inserted. If this items priority
+    // matches the previous insertion we can avoid searching through all the
+    // bins.
     if (last_insert_iter_ == item_bins_.end() || last_insert_iter_->first != priority) {
       last_insert_iter_ = item_bins_.find(priority);
 
@@ -98,7 +99,8 @@ public:
       if (last_insert_iter_ == item_bins_.end()) {
         auto map_item = std::make_pair(priority, std::move(std::vector<item_t>()));
 
-        // Inserts an item if it doesn't exist. Returns an iterator to the item whether it existed or was inserted.
+        // Inserts an item if it doesn't exist. Returns an iterator to the item
+        // whether it existed or was inserted.
         std::pair<ItemMapIterator, bool> insert_result = item_bins_.insert(std::move(map_item));
         last_insert_iter_ = insert_result.first;
       }
@@ -167,4 +169,4 @@ protected:
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE_MAP_BASED_QUEUE_H
+#endif  // COSTMAP_QUEUE__MAP_BASED_QUEUE_H_

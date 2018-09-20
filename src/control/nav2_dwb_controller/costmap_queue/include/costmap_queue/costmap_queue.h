@@ -32,13 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE_COSTMAP_QUEUE_H
-#define COSTMAP_QUEUE_COSTMAP_QUEUE_H
+#ifndef COSTMAP_QUEUE__COSTMAP_QUEUE_H_
+#define COSTMAP_QUEUE__COSTMAP_QUEUE_H_
 
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_queue/map_based_queue.h>
 #include <vector>
 #include <limits>
+#include <memory>
+#include "costmap_2d/costmap_2d.h"
+#include "costmap_queue/map_based_queue.h"
 
 namespace costmap_queue
 {
@@ -182,4 +183,4 @@ protected:
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE_COSTMAP_QUEUE_H
+#endif  // COSTMAP_QUEUE__COSTMAP_QUEUE_H_
