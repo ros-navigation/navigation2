@@ -23,6 +23,7 @@
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "nav2_bt_navigator/reached_goal_condition_node.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -42,10 +43,10 @@ private:
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
-  // The root node of the behavior tree
-  std::unique_ptr<BT::SequenceNodeWithMemory> root_;
-
-  // The actions that will be composed into a tree
+  // The nodes of the behavior tree
+  std::unique_ptr<BT::FallbackNode> root_;
+  std::unique_ptr<ReachedGoalConditionNode> reachedGoalNode_;
+  std::unique_ptr<BT::ParallelNode> parNode_;
   std::unique_ptr<nav2_tasks::ComputePathToPoseAction> computePathToPoseAction_;
   std::unique_ptr<nav2_tasks::FollowPathAction> followPathAction_;
 

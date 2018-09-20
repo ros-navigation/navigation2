@@ -38,6 +38,11 @@ public:
   explicit TaskClient(rclcpp::Node::SharedPtr node)
   : node_(node)
   {
+    resultReceived_ = false;
+    statusReceived_ = false;
+
+    statusMsg_ = std::make_shared<StatusMsg>();
+
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
 
     // Create the publishers
@@ -175,7 +180,7 @@ protected:
     cvResult_.notify_one();
   }
 
-  // Called when the TaskServer sends it status code (success or failure)
+  // Called when the TaskServer sends its status code (success or failure)
   void onStatusReceived(const StatusMsg::SharedPtr statusMsg)
   {
     {
