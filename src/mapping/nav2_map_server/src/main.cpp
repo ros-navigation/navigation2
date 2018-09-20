@@ -15,11 +15,9 @@
 #include <string>
 #include "nav2_map_server/map_server_ros.hpp"
 
-
 #define USAGE    "\nUSAGE: map_server <map.yaml> <map_type>\n" \
   "  map.yaml: map description file\n" \
   "  map_type: the type of map to load (i.e. occupancy)\n"
-
 
 int main(int argc, char ** argv)
 {

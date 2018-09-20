@@ -24,14 +24,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/base_map_server.hpp"
 
+namespace nav2_map_server
+{
+
 enum MapMode
 {
   TRINARY,
   SCALE,
   RAW
 };
-namespace nav2_map_server
-{
 
 class OccGridServer : public BaseMapServer
 {

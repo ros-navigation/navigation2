@@ -47,17 +47,16 @@
 
 #include "yaml-cpp/yaml.h"
 
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+namespace nav2_map_server
+{
 
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
 template<typename T>
 void operator>>(const YAML::Node & node, T & i)
 {
   i = node.as<T>();
 }
-
-namespace nav2_map_server
-{
 
 void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
 {

@@ -53,15 +53,17 @@ public:
 
 class MapServerTest : public ::testing::Test
 {
-protected:
-  OccGridTest * OccTest;
-  nav_msgs::srv::GetMap::Response map_resp;
+public:
   MapServerTest()
   {
     OccTest = new OccGridTest;
     auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
     OccTest->LoadMapInfoFromFile(test_yaml.string());
   }
+
+protected:
+  OccGridTest * OccTest;
+  nav_msgs::srv::GetMap::Response map_resp;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
