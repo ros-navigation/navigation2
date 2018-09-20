@@ -13,33 +13,42 @@
 // limitations under the License.
 
 #include <iostream>
-#include <gtest/gtest.h>
-#include <dwb_local_planner/dwb_local_planner.h>
-#include <dwb_local_planner/exceptions.h>
-#include <dwb_plugins/simple_goal_checker.h>
-#include <dwb_plugins/limited_accel_generator.h>
-#include <dwb_critics/alignment_util.h>
-#include <dwb_critics/line_iterator.h>
-#include <dwb_critics/path_align.h>
-#include <dwb_critics/twirling.h>
-#include <dwb_critics/base_obstacle.h>
-#include <dwb_critics/map_grid.h>
-#include <dwb_critics/path_dist.h>
-#include <dwb_critics/goal_align.h>
-#include <dwb_critics/obstacle_footprint.h>
-#include <dwb_critics/prefer_forward.h>
-#include <dwb_critics/goal_dist.h>
-#include <dwb_critics/oscillation.h>
-#include <dwb_critics/rotate_to_goal.h>
+#include <vector>
+#include <memory>
+#include "gtest/gtest.h"
+#include "dwb_local_planner/dwb_local_planner.h"
+#include "dwb_local_planner/exceptions.h"
+#include "dwb_plugins/simple_goal_checker.h"
+#include "dwb_plugins/limited_accel_generator.h"
+#include "dwb_critics/alignment_util.h"
+#include "dwb_critics/line_iterator.h"
+#include "dwb_critics/path_align.h"
+#include "dwb_critics/twirling.h"
+#include "dwb_critics/base_obstacle.h"
+#include "dwb_critics/map_grid.h"
+#include "dwb_critics/path_dist.h"
+#include "dwb_critics/goal_align.h"
+#include "dwb_critics/obstacle_footprint.h"
+#include "dwb_critics/prefer_forward.h"
+#include "dwb_critics/goal_dist.h"
+#include "dwb_critics/oscillation.h"
+#include "dwb_critics/rotate_to_goal.h"
 
-dwb_local_planner::TrajectoryGenerator::Ptr g_trajectoryGenerator =
-  std::make_shared<dwb_plugins::LimitedAccelGenerator>();
-dwb_local_planner::GoalChecker::Ptr g_goalChecker =
-  std::make_shared<dwb_plugins::SimpleGoalChecker>();
-std::vector<dwb_local_planner::TrajectoryCritic::Ptr> g_trajectoryCritics;
+using std::vector;
+using std::make_shared;
+using std::shared_ptr;
+using dwb_local_planner::TFListenerPtr;
+using dwb_local_planner::CostmapROSPtr;
+using dwb_local_planner::TrajectoryGenerator;
+using dwb_local_planner::GoalChecker;
+using dwb_local_planner::TrajectoryCritic;
+using dwb_local_planner::DWBLocalPlanner;
 
-using namespace dwb_local_planner;
-using namespace std;
+TrajectoryGenerator::Ptr g_trajectoryGenerator =
+  make_shared<dwb_plugins::LimitedAccelGenerator>();
+GoalChecker::Ptr g_goalChecker = make_shared<dwb_plugins::SimpleGoalChecker>();
+vector<TrajectoryCritic::Ptr> g_trajectoryCritics;
+
 class rclFixture
 {
 public:
@@ -75,7 +84,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<rclcpp::Node> nh;
+  shared_ptr<rclcpp::Node> nh;
   TFListenerPtr tf;
   CostmapROSPtr cm;
   DWBLocalPlanner planner;
@@ -117,8 +126,5 @@ TEST_F(UninitializedTransform, DISABLED_GoToOneOne)
   planner.setPlan(plan);
   nav_2d_msgs::msg::Twist2D cmdVel;
   planner.computeVelocityCommands(robot_pose, cmdVel);
-  cout << cmdVel.x << "\n";
-  cout << cmdVel.y << "\n";
-  cout << cmdVel.theta << "\n";
   FAIL();
 }

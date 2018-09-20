@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COMMON_TYPES_H_
-#define COMMON_TYPES_H_
+#ifndef NAV2_DWA_CONTROLLER__COMMON_TYPES_H_
+#define NAV2_DWA_CONTROLLER__COMMON_TYPES_H_
 
 #include "geometry_msgs/msg/pose.hpp"
 
@@ -26,4 +26,4 @@ typedef geometry_msgs::msg::Pose Pose;
 }
 
 
-#endif  // COMMON_TYPES_H_
+#endif  // NAV2_DWA_CONTROLLER__COMMON_TYPES_H_
