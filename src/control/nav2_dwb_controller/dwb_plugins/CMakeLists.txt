@@ -43,7 +43,7 @@ add_library(standard_traj_generator SHARED
             src/xy_theta_iterator.cpp)
 ament_target_dependencies(standard_traj_generator ${dependencies})
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
@@ -59,7 +59,7 @@ if (BUILD_TESTING)
   target_link_libraries(twist_gen_test standard_traj_generator ${GTEST_LIBRARIES})
   #add_rostest(test/twist_gen.launch DEPENDENCIES twist_gen_test)
 
-endif (BUILD_TESTING)
+endif()
 
 install(TARGETS simple_goal_checker stopped_goal_checker standard_traj_generator
         ARCHIVE DESTINATION lib
