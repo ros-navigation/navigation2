@@ -14,6 +14,8 @@
 
 #include <string>
 #include <chrono>
+#include <ctime>
+#include <cstdlib>
 #include "nav2_astar_planner/astar_planner.hpp"
 
 using namespace std::chrono_literals;
@@ -40,11 +42,14 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
+  // Let's use a random number of iterations (at least one)
+  int iterations = (rand() % 7) + 1;
+
   // Spin here for a bit to fake out some processing time
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < iterations; i++) {
     // Do a bit of the task
     RCLCPP_INFO(get_logger(), "AStarPlanner::execute: doing work: %d", i);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {

@@ -14,6 +14,8 @@
 
 #include <string>
 #include <chrono>
+#include <ctime>
+#include <cstdlib>
 #include "nav2_controller_example/dwa_controller.hpp"
 
 using namespace std::chrono_literals;
@@ -41,8 +43,11 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
     " size %i ending at (%.2f, %.2f)", (int)command->poses.size(), command->poses.back().position.x,
     command->poses.back().position.y);
 
+  // Let's use a random number of iterations (from 10 to 30)
+  int iterations = (rand() % 20) + 10;
+
   // Spin here for a bit to fake out some processing time
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < iterations; i++) {
     // Do a bit of the task
     const double cmd_vel = 0.1;
     sendVelocity(cmd_vel);

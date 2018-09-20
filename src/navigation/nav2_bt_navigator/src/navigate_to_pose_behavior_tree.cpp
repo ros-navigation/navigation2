@@ -31,7 +31,9 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   followPathResult_ = std::make_shared<nav2_tasks::FollowPathResult>();
 
   // Create the nodes of the tree
-  root_ = std::make_unique<BT::SequenceNodeWithMemory>("Sequence");
+  root_ = std::make_unique<BT::FallbackNode>("Fallback");
+  reachedGoalNode_ = std::make_unique<ReachedGoalConditionNode>(node);
+  parNode_ = std::make_unique<BT::ParallelNode>("Parallel", 3); // TODO: Will never fire
 
   computePathToPoseAction_ = std::make_unique<nav2_tasks::ComputePathToPoseAction>(
     node_, "ComputePathToPoseAction",
@@ -42,8 +44,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
     followPathCommand_, followPathResult_);
 
   // Add the nodes to the tree, creating the tree structure
-  root_->AddChild(computePathToPoseAction_.get());
-  root_->AddChild(followPathAction_.get());
+  root_->AddChild(reachedGoalNode_.get());
+  root_->AddChild(parNode_.get());
+  parNode_->AddChild(computePathToPoseAction_.get());
+  parNode_->AddChild(followPathAction_.get());
 }
 
 nav2_tasks::TaskStatus
