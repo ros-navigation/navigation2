@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
-#define DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
+#ifndef DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_
+#define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_
 
-#include <dwb_plugins/standard_traj_generator.h>
+#include "dwb_plugins/standard_traj_generator.h"
 
 namespace dwb_plugins
 {
@@ -59,4 +59,4 @@ protected:
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
+#endif  // DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_

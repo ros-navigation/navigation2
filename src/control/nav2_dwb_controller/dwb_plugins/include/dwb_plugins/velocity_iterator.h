@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_VELOCITY_ITERATOR_H
-#define DWB_PLUGINS_VELOCITY_ITERATOR_H
+#ifndef DWB_PLUGINS__VELOCITY_ITERATOR_H_
+#define DWB_PLUGINS__VELOCITY_ITERATOR_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav_2d_msgs/msg/twist2_d.hpp>
-#include <dwb_plugins/kinematic_parameters.h>
+#include "rclcpp/rclcpp.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
+#include "dwb_plugins/kinematic_parameters.h"
 
 namespace dwb_plugins
 {
@@ -52,4 +52,4 @@ public:
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_VELOCITY_ITERATOR_H
+#endif  // DWB_PLUGINS__VELOCITY_ITERATOR_H_

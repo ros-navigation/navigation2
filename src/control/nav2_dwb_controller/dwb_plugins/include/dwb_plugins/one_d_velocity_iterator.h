@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_ONE_D_VELOCITY_ITERATOR_H
-#define DWB_PLUGINS_ONE_D_VELOCITY_ITERATOR_H
+#ifndef DWB_PLUGINS__ONE_D_VELOCITY_ITERATOR_H_
+#define DWB_PLUGINS__ONE_D_VELOCITY_ITERATOR_H_
 
 #include <algorithm>
 #include <cmath>
@@ -162,4 +162,4 @@ private:
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_ONE_D_VELOCITY_ITERATOR_H
+#endif  // DWB_PLUGINS__ONE_D_VELOCITY_ITERATOR_H_

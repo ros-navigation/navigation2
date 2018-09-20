@@ -32,11 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_XY_THETA_ITERATOR_H
-#define DWB_PLUGINS_XY_THETA_ITERATOR_H
+#ifndef DWB_PLUGINS__XY_THETA_ITERATOR_H_
+#define DWB_PLUGINS__XY_THETA_ITERATOR_H_
 
-#include <dwb_plugins/velocity_iterator.h>
-#include <dwb_plugins/one_d_velocity_iterator.h>
+#include <memory>
+#include "dwb_plugins/velocity_iterator.h"
+#include "dwb_plugins/one_d_velocity_iterator.h"
 
 namespace dwb_plugins
 {
@@ -60,4 +61,4 @@ protected:
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_XY_THETA_ITERATOR_H
+#endif  // DWB_PLUGINS__XY_THETA_ITERATOR_H_

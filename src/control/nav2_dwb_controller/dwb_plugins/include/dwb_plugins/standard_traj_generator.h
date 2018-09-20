@@ -32,15 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_STANDARD_TRAJ_GENERATOR_H
-#define DWB_PLUGINS_STANDARD_TRAJ_GENERATOR_H
+#ifndef DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_
+#define DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <dwb_local_planner/trajectory_generator.h>
-#include <dwb_plugins/velocity_iterator.h>
-#include <dwb_plugins/kinematic_parameters.h>
 #include <vector>
 #include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "dwb_local_planner/trajectory_generator.h"
+#include "dwb_plugins/velocity_iterator.h"
+#include "dwb_plugins/kinematic_parameters.h"
 
 namespace dwb_plugins
 {
@@ -124,12 +124,18 @@ protected:
 
   // Sampling Parameters
   bool discretize_by_time_;
-  double time_granularity_;     ///< If discretizing by time, the amount of time between each point in the traj
-  double linear_granularity_;   ///< If not discretizing by time, the amount of linear space between points
-  double angular_granularity_;  ///< If not discretizing by time, the amount of angular space between points
+
+  /// @brief If discretizing by time, the amount of time between each point in the traj
+  double time_granularity_;
+
+  /// @brief If not discretizing by time, the amount of linear space between points
+  double linear_granularity_;
+
+  /// @brief If not discretizing by time, the amount of angular space between points
+  double angular_granularity_;
 };
 
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_STANDARD_TRAJ_GENERATOR_H
+#endif  // DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_

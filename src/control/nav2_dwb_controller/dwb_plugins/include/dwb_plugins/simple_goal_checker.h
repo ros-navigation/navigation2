@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_SIMPLE_GOAL_CHECKER_H
-#define DWB_PLUGINS_SIMPLE_GOAL_CHECKER_H
+#ifndef DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_
+#define DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <dwb_local_planner/goal_checker.h>
+#include "rclcpp/rclcpp.hpp"
+#include "dwb_local_planner/goal_checker.h"
 
 namespace dwb_plugins
 {
@@ -64,4 +64,4 @@ protected:
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_SIMPLE_GOAL_CHECKER_H
+#endif  // DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_

@@ -32,14 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_plugins/standard_traj_generator.h>
-#include <dwb_plugins/xy_theta_iterator.h>
-#include <nav_2d_utils/parameters.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <dwb_local_planner/exceptions.h>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include "dwb_plugins/standard_traj_generator.h"
+#include "dwb_plugins/xy_theta_iterator.h"
+#include "nav_2d_utils/parameters.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "dwb_local_planner/exceptions.h"
 
 using nav_2d_utils::loadParameterWithDeprecation;
 
@@ -75,12 +76,15 @@ void StandardTrajectoryGenerator::initialize(const rclcpp::Node & nh)
   // nh.param("discretize_by_time", discretize_by_time_, false);
   // if (discretize_by_time_)
   // {
-  //   time_granularity_ = loadParameterWithDeprecation(nh, "time_granularity", "sim_granularity", 0.5);
+  //   time_granularity_ = loadParameterWithDeprecation(
+  //     nh, "time_granularity", "sim_granularity", 0.5);
   // }
   // else
   // {
-  //   linear_granularity_ = loadParameterWithDeprecation(nh, "linear_granularity", "sim_granularity", 0.5);
-  //   angular_granularity_ = loadParameterWithDeprecation(nh, "angular_granularity", "angular_sim_granularity", 0.025);
+  //   linear_granularity_ = loadParameterWithDeprecation(
+  //     nh, "linear_granularity", "sim_granularity", 0.5);
+  //   angular_granularity_ = loadParameterWithDeprecation(
+  //     nh, "angular_granularity", "angular_sim_granularity", 0.025);
   // }
 }
 
@@ -98,7 +102,7 @@ void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node & nh)
   // if (use_dwa)
   // {
   //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
-  //                                     "Please use LimitedAccelGenerator for that functionality.");
+  //     "Please use LimitedAccelGenerator for that functionality.");
   // }
 }
 
@@ -124,7 +128,7 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(
   std::vector<double> steps;
   if (discretize_by_time_) {
     steps.resize(ceil(sim_time_ / time_granularity_));
-  } else { // discretize by distance
+  } else {  // discretize by distance
     double vmag = hypot(cmd_vel.x, cmd_vel.y);
 
     // the distance the robot would travel in sim_time if it did not change velocity

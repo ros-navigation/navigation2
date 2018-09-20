@@ -55,15 +55,17 @@ void LimitedAccelGenerator::initialize(const rclcpp::Node & nh)
   // }
   // else
   // {
-  //   double controller_frequency = nav_2d_utils::searchAndGetParam(nh, "controller_frequency", 20.0);
+  //   double controller_frequency = nav_2d_utils::searchAndGetParam(
+  //     nh, "controller_frequency", 20.0);
   //   if (controller_frequency > 0)
   //   {
   //     acceleration_time_ = 1.0 / controller_frequency;
   //   }
   //   else
   //   {
-  //     ROS_WARN_NAMED("LimitedAccelGenerator", "A controller_frequency less than or equal to 0 has been set. "
-  //                                             "Ignoring the parameter, assuming a rate of 20Hz");
+  //     ROS_WARN_NAMED("LimitedAccelGenerator",
+  //       "A controller_frequency less than or equal to 0 has been set. "
+  //       "Ignoring the parameter, assuming a rate of 20Hz");
   //     acceleration_time_ = 0.05;
   //   }
   // }
@@ -77,7 +79,7 @@ void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node & nh)
   // if (!use_dwa)
   // {
   //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
-  //                                     "Please use StandardTrajectoryGenerator for that functionality.");
+  //     "Please use StandardTrajectoryGenerator for that functionality.");
   // }
 }
 

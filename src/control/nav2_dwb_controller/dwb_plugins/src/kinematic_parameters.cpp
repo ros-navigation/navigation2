@@ -80,7 +80,8 @@ void KinematicParameters::initialize(const rclcpp::Node & nh)
   moveDeprecatedParameter<double>(nh, "max_speed_xy", "max_trans_vel");
   moveDeprecatedParameter<double>(nh, "min_speed_theta", "min_rot_vel");
 
-  // Set the deceleration parameters to negative the acceleration if the deceleration not already specified
+  // Set the deceleration parameters to negative the acceleration if the
+  // deceleration not already specified
   setDecelerationAsNeeded(nh, "x");
   setDecelerationAsNeeded(nh, "y");
   setDecelerationAsNeeded(nh, "theta");
