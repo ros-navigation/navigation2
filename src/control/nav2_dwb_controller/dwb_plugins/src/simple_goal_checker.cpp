@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_plugins/simple_goal_checker.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <angles/angles.h>
+#include "dwb_plugins/simple_goal_checker.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "angles/angles.h"
 
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push

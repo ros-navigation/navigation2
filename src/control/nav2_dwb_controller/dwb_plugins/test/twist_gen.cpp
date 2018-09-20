@@ -31,12 +31,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <dwb_plugins/standard_traj_generator.h>
-#include <dwb_plugins/limited_accel_generator.h>
-#include <dwb_local_planner/exceptions.h>
+
 #include <vector>
 #include <algorithm>
+#include "gtest/gtest.h"
+#include "dwb_plugins/standard_traj_generator.h"
+#include "dwb_plugins/limited_accel_generator.h"
+#include "dwb_local_planner/exceptions.h"
 
 using dwb_plugins::StandardTrajectoryGenerator;
 

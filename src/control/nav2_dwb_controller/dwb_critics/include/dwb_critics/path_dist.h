@@ -34,7 +34,7 @@
 #ifndef DWB_CRITICS__PATH_DIST_H_
 #define DWB_CRITICS__PATH_DIST_H_
 
-#include <dwb_critics/map_grid.h>
+#include "dwb_critics/map_grid.h"
 
 namespace dwb_critics
 {

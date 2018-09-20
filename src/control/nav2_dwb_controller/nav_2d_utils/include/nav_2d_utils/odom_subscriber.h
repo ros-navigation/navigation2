@@ -35,11 +35,11 @@
 #ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 #define NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_2d_msgs/Twist2DStamped.h>
-#include <boost/thread/mutex.hpp>
 #include <string>
+#include "ros/ros.h"
+#include "nav_msgs/Odometry.h"
+#include "nav_2d_msgs/Twist2DStamped.h"
+#include "boost/thread/mutex.hpp"
 
 namespace nav_2d_utils
 {

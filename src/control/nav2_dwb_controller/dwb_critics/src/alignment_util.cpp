@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_critics/alignment_util.h>
+#include "dwb_critics/alignment_util.h"
 
 namespace dwb_critics
 {

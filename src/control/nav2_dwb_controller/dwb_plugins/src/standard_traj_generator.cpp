@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dwb_plugins/standard_traj_generator.h"
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <memory>
-#include "dwb_plugins/standard_traj_generator.h"
 #include "dwb_plugins/xy_theta_iterator.h"
 #include "nav_2d_utils/parameters.h"
 #include "pluginlib/class_list_macros.hpp"

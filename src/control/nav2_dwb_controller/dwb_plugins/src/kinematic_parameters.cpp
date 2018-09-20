@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_plugins/kinematic_parameters.h>
-#include <nav_2d_utils/parameters.h>
+#include "dwb_plugins/kinematic_parameters.h"
 #include <string>
+#include "nav_2d_utils/parameters.h"
 
 using nav_2d_utils::moveDeprecatedParameter;
 namespace dwb_plugins

@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_plugins/stopped_goal_checker.h>
-#include <pluginlib/class_list_macros.hpp>
+#include "dwb_plugins/stopped_goal_checker.h"
+#include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_plugins
 {

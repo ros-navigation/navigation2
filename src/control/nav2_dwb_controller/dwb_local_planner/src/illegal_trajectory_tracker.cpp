@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_local_planner/illegal_trajectory_tracker.h>
+#include "dwb_local_planner/illegal_trajectory_tracker.h"
 #include <map>
 #include <utility>
 #include <string>

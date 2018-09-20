@@ -31,7 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <nav_2d_utils/conversions.h>
+
+#include "nav_2d_utils/conversions.h"
 #include <vector>
 #include <string>
 

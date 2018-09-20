@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <nav_2d_utils/path_ops.h>
+#include "nav_2d_utils/path_ops.h"
 
 namespace nav_2d_utils
 {

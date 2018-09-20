@@ -35,7 +35,7 @@
 #ifndef NAV_2D_UTILS__PATH_OPS_H_
 #define NAV_2D_UTILS__PATH_OPS_H_
 
-#include <nav_2d_msgs/msg/path2_d.hpp>
+#include "nav_2d_msgs/msg/path2_d.hpp"
 
 namespace nav_2d_utils
 {

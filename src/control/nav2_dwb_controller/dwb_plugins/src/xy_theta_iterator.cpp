@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <memory>
 #include "dwb_plugins/xy_theta_iterator.h"
+#include <memory>
 #include "nav_2d_utils/parameters.h"
 
 namespace dwb_plugins

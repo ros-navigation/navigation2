@@ -34,9 +34,9 @@
 #ifndef DWB_CRITICS__PATH_ALIGN_H_
 #define DWB_CRITICS__PATH_ALIGN_H_
 
-#include <dwb_critics/path_dist.h>
 #include <vector>
 #include <string>
+#include "dwb_critics/path_dist.h"
 
 namespace dwb_critics
 {

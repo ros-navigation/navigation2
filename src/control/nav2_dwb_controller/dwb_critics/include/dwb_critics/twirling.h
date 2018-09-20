@@ -35,7 +35,7 @@
 #ifndef DWB_CRITICS__TWIRLING_H_
 #define DWB_CRITICS__TWIRLING_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {

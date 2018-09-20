@@ -35,7 +35,7 @@
 #ifndef COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
 #define COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
 
-#include <costmap_queue/costmap_queue.h>
+#include "costmap_queue/costmap_queue.h"
 
 namespace costmap_queue
 {

@@ -31,8 +31,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <dwb_plugins/one_d_velocity_iterator.h>
+
+#include "gtest/gtest.h"
+#include "dwb_plugins/one_d_velocity_iterator.h"
 
 using dwb_plugins::OneDVelocityIterator;
 

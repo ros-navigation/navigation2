@@ -31,12 +31,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <dwb_critics/path_align.h>
-#include <dwb_critics/alignment_util.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <nav_2d_utils/parameters.h>
+
+#include "dwb_critics/path_align.h"
 #include <vector>
 #include <string>
+#include "dwb_critics/alignment_util.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "nav_2d_utils/parameters.h"
 
 namespace dwb_critics
 {

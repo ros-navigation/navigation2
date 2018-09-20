@@ -35,8 +35,8 @@
 #ifndef NAV_2D_UTILS__PARAMETERS_H_
 #define NAV_2D_UTILS__PARAMETERS_H_
 
-#include <rclcpp/rclcpp.hpp>
 #include <string>
+#include "rclcpp/rclcpp.hpp"
 
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push

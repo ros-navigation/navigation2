@@ -32,13 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <nav_2d_utils/parameters.h>
-#include <dwb_critics/oscillation.h>
-#include <dwb_local_planner/exceptions.h>
-#include <pluginlib/class_list_macros.hpp>
+#include "dwb_critics/oscillation.h"
 #include <cmath>
 #include <string>
 #include <vector>
+#include "nav_2d_utils/parameters.h"
+#include "dwb_local_planner/exceptions.h"
+#include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::OscillationCritic, dwb_local_planner::TrajectoryCritic)
 

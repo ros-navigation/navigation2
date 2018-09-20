@@ -34,9 +34,9 @@
 #ifndef DWB_CRITICS__ROTATE_TO_GOAL_H_
 #define DWB_CRITICS__ROTATE_TO_GOAL_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
 #include <string>
 #include <vector>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {

@@ -31,9 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <costmap_queue/map_based_queue.h>
+
 #include <string>
+#include "gtest/gtest.h"
+#include "costmap_queue/map_based_queue.h"
 
 using costmap_queue::MapBasedQueue;
 

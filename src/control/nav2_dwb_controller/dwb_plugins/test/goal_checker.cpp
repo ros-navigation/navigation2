@@ -31,9 +31,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <dwb_plugins/simple_goal_checker.h>
-#include <dwb_plugins/stopped_goal_checker.h>
+#include "gtest/gtest.h"
+#include "dwb_plugins/simple_goal_checker.h"
+#include "dwb_plugins/stopped_goal_checker.h"
 
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;

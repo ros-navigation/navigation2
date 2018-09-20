@@ -31,12 +31,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <costmap_queue/costmap_queue.h>
-#include <costmap_queue/limited_costmap_queue.h>
-#include <rclcpp/rclcpp.hpp>
+
 #include <memory>
 #include <algorithm>
+#include "gtest/gtest.h"
+#include "costmap_queue/costmap_queue.h"
+#include "costmap_queue/limited_costmap_queue.h"
+#include "rclcpp/rclcpp.hpp"
 
 costmap_2d::Costmap2D costmap(5, 5, 1.0, 0.0, 0.0);
 

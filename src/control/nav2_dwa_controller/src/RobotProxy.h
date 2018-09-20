@@ -15,7 +15,7 @@
 #ifndef ROBOTPROXY_H_
 #define ROBOTPROXY_H_
 
-#include <nav2_dwa_controller/common_types.h>
+#include "nav2_dwa_controller/common_types.h"
 
 namespace DwaController
 {

@@ -31,7 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <costmap_queue/limited_costmap_queue.h>
+
+#include "costmap_queue/limited_costmap_queue.h"
 
 namespace costmap_queue
 {
