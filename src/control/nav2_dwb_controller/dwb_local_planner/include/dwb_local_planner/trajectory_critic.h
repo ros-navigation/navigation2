@@ -32,18 +32,19 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_TRAJECTORY_CRITIC_H
-#define DWB_LOCAL_PLANNER_TRAJECTORY_CRITIC_H
+#ifndef DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_
+#define DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <dwb_local_planner/common_types.h>
-#include <geometry_msgs/msg/pose2_d.hpp>
-#include <nav_2d_msgs/msg/twist2_d.hpp>
-#include <nav_2d_msgs/msg/path2_d.hpp>
-#include <dwb_msgs/msg/trajectory2_d.hpp>
-#include <sensor_msgs/msg/point_cloud.hpp>
 #include <string>
 #include <vector>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "dwb_local_planner/common_types.h"
+#include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
+#include "nav_2d_msgs/msg/path2_d.hpp"
+#include "dwb_msgs/msg/trajectory2_d.hpp"
+#include "sensor_msgs/msg/point_cloud.hpp"
 
 namespace dwb_local_planner
 {
@@ -178,4 +179,4 @@ protected:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_TRAJECTORY_CRITIC_H
+#endif  // DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_

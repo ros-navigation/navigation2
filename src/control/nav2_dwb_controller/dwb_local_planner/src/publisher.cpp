@@ -31,13 +31,15 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include "dwb_local_planner/publisher.h"
-#include <visualization_msgs/msg/marker.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-//#include <sensor_msgs/point_cloud_conversion.hpp>
-#include <nav_2d_utils/conversions.h>
+
 #include <vector>
+#include <memory>
+#include "dwb_local_planner/publisher.h"
+#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "nav_2d_utils/conversions.h"
+//#include <sensor_msgs/point_cloud_conversion.hpp> // NOLINT cpplint doesn't like commented out header file
 
 namespace dwb_local_planner
 {
@@ -137,7 +139,9 @@ void DWBPublisher::publishLocalPlan(
 {
   if (!publish_local_plan_) {return;}
 
-  // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
+  // TODO(crdelsey):
+  // nav_msgs::msg::Path path =
+  //   nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
   // local_pub_->publish(path);
 }
 

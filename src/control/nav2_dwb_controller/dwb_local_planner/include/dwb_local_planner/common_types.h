@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COMMON_TYPES_H_
-#define COMMON_TYPES_H_
+#ifndef DWB_LOCAL_PLANNER__COMMON_TYPES_H_
+#define DWB_LOCAL_PLANNER__COMMON_TYPES_H_
 
-#include <costmap_2d/costmap_2d_ros.h>
-#include <tf2_ros/transform_listener.h>
 #include <memory>
+#include "costmap_2d/costmap_2d_ros.h"
+#include "tf2_ros/transform_listener.h"
 
 
 namespace dwb_local_planner
@@ -28,4 +28,4 @@ typedef std::shared_ptr<costmap_2d::Costmap2DROS> CostmapROSPtr;
 
 }
 
-#endif  // COMMON_TYPES_H_
+#endif  // DWB_LOCAL_PLANNER__COMMON_TYPES_H_

@@ -31,8 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef NAV_CORE2_EXCEPTIONS_H
-#define NAV_CORE2_EXCEPTIONS_H
+#ifndef DWB_LOCAL_PLANNER__EXCEPTIONS_H_
+#define DWB_LOCAL_PLANNER__EXCEPTIONS_H_
 
 #include <stdexcept>
 #include <string>
@@ -88,4 +88,4 @@ public:
 
 }  // namespace nav_core2
 
-#endif  // NAV_CORE2_EXCEPTIONS_H
+#endif  // DWB_LOCAL_PLANNER__EXCEPTIONS_H_

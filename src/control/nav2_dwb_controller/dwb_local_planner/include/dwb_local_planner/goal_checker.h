@@ -32,12 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_GOAL_CHECKER_H
-#define DWB_LOCAL_PLANNER_GOAL_CHECKER_H
+#ifndef DWB_LOCAL_PLANNER__GOAL_CHECKER_H_
+#define DWB_LOCAL_PLANNER__GOAL_CHECKER_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/pose2_d.hpp>
-#include <nav_2d_msgs/msg/twist2_d.hpp>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
 
 namespace dwb_local_planner
 {
@@ -78,4 +79,4 @@ public:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_GOAL_CHECKER_H
+#endif  // DWB_LOCAL_PLANNER__GOAL_CHECKER_H_

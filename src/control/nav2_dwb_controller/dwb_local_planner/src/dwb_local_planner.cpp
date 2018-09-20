@@ -32,17 +32,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_local_planner/dwb_local_planner.h>
-#include <dwb_local_planner/illegal_trajectory_tracker.h>
-#include <nav_2d_utils/conversions.h>
-#include <nav_2d_utils/tf_help.h>
-#include <nav_2d_msgs/msg/twist2_d.hpp>
-#include <dwb_msgs/msg/critic_score.hpp>
-#include <pluginlib/class_list_macros.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <dwb_local_planner/exceptions.h>
+#include <memory>
+#include "dwb_local_planner/dwb_local_planner.h"
+#include "dwb_local_planner/illegal_trajectory_tracker.h"
+#include "nav_2d_utils/conversions.h"
+#include "nav_2d_utils/tf_help.h"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
+#include "dwb_msgs/msg/critic_score.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "dwb_local_planner/exceptions.h"
 
 namespace dwb_local_planner
 {
@@ -75,7 +76,10 @@ void DWBLocalPlanner::initialize(
   traj_generator_->initialize(private_nh);
 
   std::string goal_checker_name("dwb_plugins::SimpleGoalChecker");
-  // private_nh.param("goal_checker_name", goal_checker_name, std::string("dwb_plugins::SimpleGoalChecker"));
+  // private_nh.param(
+  //  "goal_checker_name",
+  //  goal_checker_name,
+  //  std::string("dwb_plugins::SimpleGoalChecker"));
   // goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
   goal_checker_->initialize(private_nh);
 
@@ -395,8 +399,9 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
   }
 
   // Prune both plans based on robot position
-  // Note that this part of the algorithm assumes that the global plan starts near the robot (at one point)
-  // Otherwise it may take a few iterations to converge to the proper behavior
+  // Note that this part of the algorithm assumes that the global plan starts
+  // near the robot (at one point) Otherwise it may take a few iterations to
+  // converge to the proper behavior
   if (prune_plan_) {
     assert(global_plan_.poses.size() >= transformed_plan.poses.size());
     std::vector<geometry_msgs::msg::Pose2D>::iterator it = transformed_plan.poses.begin();
@@ -404,10 +409,15 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
     double sq_prune_dist = prune_distance_ * prune_distance_;
     while (it != transformed_plan.poses.end()) {
       const geometry_msgs::msg::Pose2D & w = *it;
-      // Fixed error bound of 1 meter for now. Can reduce to a portion of the map size or based on the resolution
+      // Fixed error bound of 1 meter for now. Can reduce to a portion of the
+      // map size or based on the resolution
       if (getSquareDistance(robot_pose.pose, w) < sq_prune_dist) {
-        RCLCPP_DEBUG(rclcpp::get_logger(
-            "DWBLocalPlanner"), "Nearest waypoint to <%f, %f> is <%f, %f>\n", robot_pose.pose.x, robot_pose.pose.y, w.x,
+        RCLCPP_DEBUG(
+          rclcpp::get_logger("DWBLocalPlanner"),
+          "Nearest waypoint to <%f, %f> is <%f, %f>\n",
+          robot_pose.pose.x,
+          robot_pose.pose.y,
+          w.x,
           w.y);
         break;
       }

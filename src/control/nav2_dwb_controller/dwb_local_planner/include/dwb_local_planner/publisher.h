@@ -32,17 +32,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_PUBLISHER_H
-#define DWB_LOCAL_PLANNER_PUBLISHER_H
+#ifndef DWB_LOCAL_PLANNER__PUBLISHER_H_
+#define DWB_LOCAL_PLANNER__PUBLISHER_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <dwb_local_planner/common_types.h>
-#include <dwb_local_planner/trajectory_critic.h>
-#include <dwb_msgs/msg/local_plan_evaluation.hpp>
-#include <nav_msgs/msg/path.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <vector>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "dwb_local_planner/common_types.h"
+#include "dwb_local_planner/trajectory_critic.h"
+#include "dwb_msgs/msg/local_plan_evaluation.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 
 namespace dwb_local_planner
 {
@@ -115,4 +116,4 @@ protected:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_PUBLISHER_H
+#endif  // DWB_LOCAL_PLANNER__PUBLISHER_H_

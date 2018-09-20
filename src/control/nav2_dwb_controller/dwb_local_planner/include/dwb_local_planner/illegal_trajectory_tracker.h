@@ -32,13 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
-#define DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
+#ifndef DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_
+#define DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_
 
 #include <map>
 #include <utility>
 #include <string>
-#include "exceptions.h"
+#include "dwb_local_planner/exceptions.h"
 
 namespace dwb_local_planner
 {
@@ -74,4 +74,4 @@ public:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
+#endif  // DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_

@@ -32,13 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_TRAJECTORY_GENERATOR_H
-#define DWB_LOCAL_PLANNER_TRAJECTORY_GENERATOR_H
+#ifndef DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_
+#define DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav_2d_msgs/msg/twist2_d.hpp>
-#include <dwb_msgs/msg/trajectory2_d.hpp>
 #include <vector>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
+#include "dwb_msgs/msg/trajectory2_d.hpp"
 
 namespace dwb_local_planner
 {
@@ -122,4 +123,4 @@ public:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_TRAJECTORY_GENERATOR_H
+#endif  // DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_

@@ -32,18 +32,19 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
-#define DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
+#ifndef DWB_LOCAL_PLANNER__DWB_LOCAL_PLANNER_H_
+#define DWB_LOCAL_PLANNER__DWB_LOCAL_PLANNER_H_
 
-#include <pluginlib/class_loader.hpp>
-#include <nav_2d_msgs/msg/twist2_d_stamped.hpp>
-#include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
 #include <string>
 #include <vector>
-#include "trajectory_generator.h"
-#include "goal_checker.h"
-#include "trajectory_critic.h"
-#include "publisher.h"
+#include <memory>
+#include "pluginlib/class_loader.hpp"
+#include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
+#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
+#include "dwb_local_planner/trajectory_generator.h"
+#include "dwb_local_planner/goal_checker.h"
+#include "dwb_local_planner/trajectory_critic.h"
+#include "dwb_local_planner/publisher.h"
 
 namespace dwb_local_planner
 {
@@ -204,4 +205,4 @@ protected:
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
+#endif  // DWB_LOCAL_PLANNER__DWB_LOCAL_PLANNER_H_
