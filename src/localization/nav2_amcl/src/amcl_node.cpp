@@ -27,7 +27,12 @@
 // For transform support
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/convert.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
+
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
 //#include "tf2_ros/message_filter.h"
@@ -106,25 +111,26 @@ AmclNode::AmclNode()
     first_reconfigure_call_(true)
 {
 
-  boost::recursive_mutex::scoped_lock l(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
-  parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(this));
+  parameters_node_ = rclcpp::Node::make_shared("ParametersNode");
+  parameters_client = std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(parameters_node_));
   
   // Grab params off the param server
   use_map_topic_ = parameters_client->get_parameter("use_map_topic_",false);
   first_map_only_ = parameters_client->get_parameter("first_map_only_",false);
 
   double tmp;
-  tmp = parameters_client->get_parameter("gui_publish_rate",-1.0);
+  tmp = parameters_client->get_parameter("gui_publish_rate",10.0);
   gui_publish_period = tf2::durationFromSec(1.0/tmp);
   tmp = parameters_client->get_parameter("save_pose_rate",0.5);
   save_pose_period = tf2::durationFromSec(1.0/tmp);
   laser_min_range_ = parameters_client->get_parameter("laser_min_range",-1.0);
-  laser_max_range_ = parameters_client->get_parameter("laser_max_range",-1.0);
-  max_beams_ = parameters_client->get_parameter("max_beams",30);
-  min_particles_ = parameters_client->get_parameter("min_particles",100);
-  max_particles_ = parameters_client->get_parameter("max_particles",5000);
-  pf_err_ = parameters_client->get_parameter("pf_err",0.01);
+  laser_max_range_ = parameters_client->get_parameter("laser_max_range",12.0);
+  max_beams_ = parameters_client->get_parameter("max_beams",60);
+  min_particles_ = parameters_client->get_parameter("min_particles",500);
+  max_particles_ = parameters_client->get_parameter("max_particles",2000);
+  pf_err_ = parameters_client->get_parameter("pf_err",0.05);
   pf_z_ = parameters_client->get_parameter("pf_z",0.99);
   alpha1_ = parameters_client->get_parameter("alpha1",0.2);
   alpha2_ = parameters_client->get_parameter("alpha2",0.2);
@@ -135,10 +141,10 @@ AmclNode::AmclNode()
   beam_skip_distance_ = parameters_client->get_parameter("beam_skip_distance",0.5);
   beam_skip_threshold_ = parameters_client->get_parameter("beam_skip_threshold",0.3);
   beam_skip_error_threshold_ = parameters_client->get_parameter("beam_skip_error_threshold",0.9);
-  z_hit_ = parameters_client->get_parameter("z_hit",0.95);
-  z_short_ = parameters_client->get_parameter("z_short",0.1);
+  z_hit_ = parameters_client->get_parameter("z_hit",0.5);
+  z_short_ = parameters_client->get_parameter("z_short",0.05);
   z_max_ = parameters_client->get_parameter("z_max",0.05);
-  z_rand_ = parameters_client->get_parameter("z_rand",0.05);
+  z_rand_ = parameters_client->get_parameter("z_rand",0.5);
   sigma_hit_ = parameters_client->get_parameter("sigma_hit",0.2);
   lambda_short_ = parameters_client->get_parameter("lambda_short",0.1);
   laser_likelihood_max_dist_ = parameters_client->get_parameter("laser_likelihood_max_dist",2.0);
@@ -175,16 +181,16 @@ AmclNode::AmclNode()
     odom_model_type_ = ODOM_MODEL_DIFF;
   }
  
-  d_thresh_ = parameters_client->get_parameter("update_min_d",0.2);
-  a_thresh_ = parameters_client->get_parameter("update_min_a",M_PI/6.0);
+  d_thresh_ = parameters_client->get_parameter("update_min_d",0.25);
+  a_thresh_ = parameters_client->get_parameter("update_min_a",0.2);
   odom_frame_id_ = parameters_client->get_parameter("odom_frame_id",std::string("odom"));
-  base_frame_id_ = parameters_client->get_parameter("base_frame_id",std::string("base_link"));
+  base_frame_id_ = parameters_client->get_parameter("base_frame_id",std::string("base_footprint"));
   global_frame_id_ = parameters_client->get_parameter("global_frame_id",std::string("map"));
-  resample_interval_ = parameters_client->get_parameter("resample_interval",2);
+  resample_interval_ = parameters_client->get_parameter("resample_interval",1);
   double tmp_tol;
-  tmp_tol = parameters_client->get_parameter("transform_tolerance",0.1);
-  alpha_slow_ = parameters_client->get_parameter("recovery_alpha_slow",0.001);
-  alpha_fast_ = parameters_client->get_parameter("recovery_alpha_fast",0.1);
+  tmp_tol = parameters_client->get_parameter("transform_tolerance",1.0);
+  alpha_slow_ = parameters_client->get_parameter("recovery_alpha_slow",0.0);
+  alpha_fast_ = parameters_client->get_parameter("recovery_alpha_fast",0.0);
   tf_broadcast_ = parameters_client->get_parameter("tf_broadcast",true);
 
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -203,7 +209,7 @@ AmclNode::AmclNode()
   
   cloud_pub_interval = std::chrono::duration<double> { 1.0 };
   
-  tfb_.reset(new tf2_ros::TransformBroadcaster(shared_from_this()));
+  tfb_.reset(new tf2_ros::TransformBroadcaster(parameters_node_));
   tf_.reset(new tf2_ros::Buffer());
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
   
@@ -247,7 +253,7 @@ AmclNode::AmclNode()
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
   */
   laser_scan_filter_ = this->create_subscription<sensor_msgs::msg::LaserScan>(scan_topic_,
@@ -268,7 +274,7 @@ AmclNode::AmclNode()
 
 #if 0
   dsrv_ = new dynamic_reconfigure::Server<amcl::AMCLConfig>(ros::NodeHandle("~"));
-  dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = boost::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
+  dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = std::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
   dsrv_->setCallback(cb);
 #endif
 
@@ -289,7 +295,7 @@ AmclNode::~AmclNode()
 #if 0
 void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
 {
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_gaurd<std::recursive_mutex> cfl(configuration_mutex_);
 
   //we don't want to do anything on the first call
   //which corresponds to startup
@@ -433,7 +439,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(boost::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
   */
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
@@ -463,7 +469,7 @@ void AmclNode::runFromBag(const std::string &/*in_bag_fn*/)
   while (ros::ok())
   {
     {
-      boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+      std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
       if (map_)
       {
         ROS_INFO("Map is ready");
@@ -567,44 +573,52 @@ void AmclNode::updatePoseFromServer()
   double tmp_pos;
 
   tmp_pos = parameters_client->get_parameter("initial_pose_x",init_pose_[0]);
-  if (!std::isnan(tmp_pos))
+
+  if (!std::isnan(tmp_pos)) {
     init_pose_[0] = tmp_pos;
-  else 
-    RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose X position");
+  } else {
+     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose X position");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_pose_y",init_pose_[1]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_pose_[1] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose Y position");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_pose_a",init_pose_[2]);
-  if (!std::isnan(tmp_pos))
+
+  if (!std::isnan(tmp_pos)) {
     init_pose_[2] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial pose Yaw");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_xx",init_cov_[0]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[0] =tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance XX");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_yy",init_cov_[1]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[1] = tmp_pos;
-  else
+  } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance YY");
+  }
 
   tmp_pos = parameters_client->get_parameter("initial_cov_aa",init_cov_[2]);
 
-  if (!std::isnan(tmp_pos))
+  if (!std::isnan(tmp_pos)) {
     init_cov_[2] = tmp_pos;
-  else
-    RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");	
+  } else {
+    RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");
+  }
 }
 
 void 
@@ -623,7 +637,7 @@ AmclNode::checkLaserReceived()
 void
 AmclNode::requestMap()
 {
-boost::recursive_mutex::scoped_lock ml(configuration_mutex_);
+std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
   // get map via RPC
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
@@ -642,7 +656,7 @@ boost::recursive_mutex::scoped_lock ml(configuration_mutex_);
   while(!map_received)
   {
     auto result_future = client->async_send_request(req);
-    if (rclcpp::spin_until_future_complete(std::shared_ptr<rclcpp::Node>(this), result_future, std::chrono::seconds(1)) !=
+    if (rclcpp::spin_until_future_complete(std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node*){}), result_future, std::chrono::seconds(1)) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
       RCLCPP_WARN(get_logger(), "Request for map failed; trying again...");
@@ -674,7 +688,7 @@ void
 AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid& msg)
 {
 
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix\n",
            msg.info.width,
@@ -887,7 +901,7 @@ AmclNode::globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> /*r
     return;
   }
 
-  boost::recursive_mutex::scoped_lock gl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
   pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, (void *) map_);
@@ -929,7 +943,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     return;
   }
 
-  boost::recursive_mutex::scoped_lock lr(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
 
   // Do we have the base->base_laser Tx yet?
@@ -1320,7 +1334,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped& msg)
 {
-  boost::recursive_mutex::scoped_lock prl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> prl(configuration_mutex_);
 
   if (msg.header.frame_id == "")
   {
@@ -1398,7 +1412,7 @@ AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceS
 void
 AmclNode::applyInitialPose()
 {
-  boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
   // If initial_pose_hyp_ and map_ are both non-null, apply the initial
   // pose to the particle filter state.

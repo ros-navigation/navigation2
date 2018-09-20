@@ -21,7 +21,6 @@
 #ifndef LOCALIZATION__AMCLNODE_HPP_
 #define LOCALIZATION__AMCLNODE_HPP_
 
-#include <boost/thread/recursive_mutex.hpp>
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
@@ -111,6 +110,7 @@ private:
 
 private:
   rclcpp::SyncParametersClient::SharedPtr parameters_client;
+  rclcpp::Node::SharedPtr parameters_node_;
 
   bool sent_first_transform_;
 
@@ -204,7 +204,7 @@ private:
   bool first_map_received_;
   bool first_reconfigure_call_;
 
-  boost::recursive_mutex configuration_mutex_;
+  std::recursive_mutex configuration_mutex_;
 
 // 4. Dynamic reconfigure
   //dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
