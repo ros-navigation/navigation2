@@ -10,6 +10,8 @@ struct MapLocation
   unsigned int y;
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 class Costmap2D
 {
 public:
@@ -17,7 +19,7 @@ public:
   Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, double resolution,
             double origin_x, double origin_y, unsigned char default_value = 0) {}
   Costmap2D(const Costmap2D& map) {}
-  Costmap2D& operator=(const Costmap2D& map) {}
+  Costmap2D& operator=(const Costmap2D& map) { return *this; }
   virtual ~Costmap2D() {}
 
   // @brief  Turn this costmap into a copy of a window of a costmap passed in
@@ -36,7 +38,7 @@ public:
   void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const {}
 
   // @brief  Convert from world coordinates to map coordinates
-  bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const {}
+  bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const { return false; }
 
   // @brief  Convert from world coordinates to map coordinates without checking for legal bounds
   void worldToMapNoBounds(double wx, double wy, int& mx, int& my) const {}
@@ -116,5 +118,6 @@ protected:
   unsigned char default_value_;
 
 };
+#pragma GCC diagnostic pop
 
 }

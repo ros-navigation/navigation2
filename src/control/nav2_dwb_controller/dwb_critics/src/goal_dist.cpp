@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 #include <dwb_critics/goal_dist.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <nav_2d_utils/path_ops.h>
 #include <vector>
 #include <costmap_2d/cost_values.h>

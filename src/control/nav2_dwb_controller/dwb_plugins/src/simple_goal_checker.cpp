@@ -36,6 +36,9 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <angles/angles.h>
 
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 namespace dwb_plugins
 {
 
@@ -66,5 +69,6 @@ bool SimpleGoalChecker::isGoalReached(const geometry_msgs::msg::Pose2D& query_po
 }
 
 }  // namespace dwb_plugins
+#pragma GCC diagnostic pop
 
 PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, dwb_local_planner::GoalChecker)

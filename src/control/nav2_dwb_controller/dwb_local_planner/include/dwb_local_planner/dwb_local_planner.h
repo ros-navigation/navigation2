@@ -35,7 +35,7 @@
 #ifndef DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
 #define DWB_LOCAL_PLANNER_DWB_LOCAL_PLANNER_H
 
-#include <pluginlib/class_loader.h>
+#include <pluginlib/class_loader.hpp>
 #include <nav_2d_msgs/msg/twist2_d_stamped.hpp>
 #include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
 #include <string>

@@ -35,7 +35,7 @@
 #include <nav_2d_utils/parameters.h>
 #include <dwb_critics/oscillation.h>
 #include <dwb_local_planner/exceptions.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <cmath>
 #include <string>
 #include <vector>

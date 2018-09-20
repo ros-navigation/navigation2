@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -26,7 +26,7 @@ include_directories(
   include
 )
 
-set(PROJECT_DEPENDENCIES
+set(dependencies
   rclcpp
   std_msgs
   geometry_msgs
@@ -45,7 +45,7 @@ add_library(dwb_local_planner
   src/illegal_trajectory_tracker.cpp
 )
 ament_target_dependencies(dwb_local_planner
-  ${PROJECT_DEPENDENCIES}
+  ${dependencies}
 )
 
 install(TARGETS dwb_local_planner
@@ -59,25 +59,12 @@ install(DIRECTORY include/
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_cppcheck REQUIRED)
-  find_package(ament_cmake_cpplint REQUIRED)
-  find_package(ament_cmake_lint_cmake REQUIRED)
-  find_package(ament_cmake_uncrustify REQUIRED)
-  # This forces cppcheck to consider all files in this project to be C++,
-  # including the headers which end with .h, which cppcheck would normally
-  # consider to be C instead.
-  ament_cppcheck(LANGUAGE "c++")
-  ament_cpplint()
-  ament_lint_cmake()
-  ament_uncrustify()
-
-  find_package(ament_cmake_pytest REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
-  #add_subdirectory(test)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(dwb_local_planner)
-ament_export_dependencies(${PROJECT_DEPENDENCIES})
+ament_export_dependencies(${dependencies})
 
 ament_package()

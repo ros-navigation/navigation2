@@ -34,7 +34,7 @@
 
 #include <dwb_critics/prefer_forward.h>
 #include <math.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::PreferForwardCritic, dwb_local_planner::TrajectoryCritic)
 

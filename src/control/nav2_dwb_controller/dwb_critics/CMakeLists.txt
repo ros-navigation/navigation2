@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project(dwb_critics)
 
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "-std=c++14;-Wall")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
@@ -33,7 +40,8 @@ add_library(${PROJECT_NAME}
     src/rotate_to_goal.cpp
     src/twirling.cpp
 )
-ament_target_dependencies(${PROJECT_NAME}
+
+set(dependencies
   angles
   costmap_2d
   costmap_queue
@@ -44,6 +52,10 @@ ament_target_dependencies(${PROJECT_NAME}
   pluginlib
   rclcpp
   sensor_msgs
+)
+
+ament_target_dependencies(${PROJECT_NAME}
+  ${dependencies}
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -58,19 +70,17 @@ install(FILES default_critics.xml
         DESTINATION share
 )
 
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(
-  angles
-  costmap_2d
-  costmap_queue
-  dwb_local_planner
-  geometry_msgs
-  nav_2d_msgs
-  nav_2d_utils
-  pluginlib
-  rclcpp
-  sensor_msgs)
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(dwb_local_planner default_critics.xml)
 
 ament_package()

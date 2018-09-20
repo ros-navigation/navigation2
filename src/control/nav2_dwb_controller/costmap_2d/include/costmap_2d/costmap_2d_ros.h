@@ -56,6 +56,8 @@ class Costmap2DConfig{
 
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
@@ -161,70 +163,12 @@ public:
    */
   void getOrientedFootprint(std::vector<geometry_msgs::msg::Point>& oriented_footprint) const {}
 
-  /** @brief Set the footprint of the robot to be the given set of
-   * points, padded by footprint_padding.
-   *
-   * Should be a convex polygon, though this is not enforced.
-   *protected:
-  LayeredCostmap* layered_costmap_;
-  std::string name_;
-  tf2_ros::Buffer& tf_;  ///< @brief Used for transforming point clouds
-  std::string global_frame_;  ///< @brief The global frame for the costmap
-  std::string robot_base_frame_;  ///< @brief The frame_id of the robot base
-  double transform_tolerance_;  ///< timeout before transform errors
 
-//private:
-//  /** @brief Set the footprint from the new_config object.
-//   *
-//   * If the values of footprint and robot_radius are the same in
-//   * new_config and old_config, nothing is changed. */
-//  void readFootprintFromConfig(const costmap_2d::Costmap2DConfig &new_config,
-//                               const costmap_2d::Costmap2DConfig &old_config);
-//
-//  void resetOldParameters(rclcpp::Node::SharedPtr);
-//  void reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level);
-//  void movementCB(const rclcpp::TimerBase &event);
-//  void mapUpdateLoop(double frequency);
-//  bool map_update_thread_shutdown_;
-//  bool stop_updates_, initialized_, stopped_, robot_stopped_;
-//  boost::thread* map_update_thread_;  ///< @brief A thread for updating the map
-//  ros::Timer timer_;
-//  ros::Time last_publish_;
-//  ros::Duration publish_cycle;
-//  pluginlib::ClassLoader<Layer> plugin_loader_;
-//  geometry_msgs::msg::PoseStamped old_pose_;
-//  Costmap2DPublisher* publisher_;
-//  dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
-//
-//  boost::recursive_mutex configuration_mutex_;
-//
-//  ros::Subscriber footprint_sub_;
-//  ros::Publisher footprint_pub_;
-//  std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
-//  std::vector<geometry_msgs::msg::Point> padded_footprint_;
-//  float footprint_padding_;
-//  costmap_2d::Costmap2DConfig old_config_;
-//   * First expands the given polygon by footprint_padding_ and then
-//   * sets padded_footprint_ and calls
-//   * layered_costmap_->setFootprint().  Also saves the unpadded
-//   * footprint, which is available from
-//   * getUnpaddedRobotFootprint(). */
-//  void setUnpaddedRobotFootprint(const std::vector<geometry_msgs::msg::Point>& points) {}
-//
-//  /** @brief Set the footprint of the robot to be the given polygon,
-//   * padded by footprint_padding.
-//   *
-//   * Should be a convex polygon, though this is not enforced.
-//   *
-//   * First expands the given polygon by footprint_padding_ and then
-//   * sets padded_footprint_ and calls
-//   * layered_costmap_->setFootprint().  Also saves the unpadded
-//   * footprint, which is available from
-//   * getUnpaddedRobotFootprint(). */
-//  void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon& footprint) {}
 
 };
 // class Costmap2DROS
+#pragma GCC diagnostic pop
+
 }  // namespace costmap_2d
 
 #endif  // COSTMAP_2D_COSTMAP_2D_ROS_H

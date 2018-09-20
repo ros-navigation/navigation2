@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -18,7 +18,7 @@ find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
-set(PROJECT_DEPENDENCIES
+set(dependencies
   geometry_msgs
   nav_2d_msgs
   nav_msgs
@@ -33,12 +33,12 @@ include_directories(
 
 add_library(conversions src/conversions.cpp)
 ament_target_dependencies(conversions
-  ${PROJECT_DEPENDENCIES}
+  ${dependencies}
 )
 
 add_library(path_ops src/path_ops.cpp)
 ament_target_dependencies(path_ops
-  ${PROJECT_DEPENDENCIES}
+  ${dependencies}
 )
 
 install(TARGETS conversions path_ops
@@ -49,6 +49,11 @@ install(TARGETS conversions path_ops
 install(DIRECTORY include/
         DESTINATION include/
 )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(conversions path_ops)

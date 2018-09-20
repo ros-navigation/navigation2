@@ -132,8 +132,10 @@ public:
    * @param cell The cell to check
    * @return True, unless overriden
    */
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-parameter"
   virtual bool validCellToQueue(const CellData& cell) { return true; }
-
+  #pragma GCC diagnostic pop
   /**
    * @brief convenience typedef for a pointer
    */

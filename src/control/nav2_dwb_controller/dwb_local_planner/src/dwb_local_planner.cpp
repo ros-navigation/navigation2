@@ -38,7 +38,7 @@
 #include <nav_2d_utils/tf_help.h>
 #include <nav_2d_msgs/msg/twist2_d.hpp>
 #include <dwb_msgs/msg/critic_score.hpp>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>

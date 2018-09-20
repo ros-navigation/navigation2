@@ -34,7 +34,7 @@
 
 #include <dwb_critics/base_obstacle.h>
 #include <dwb_local_planner/exceptions.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <costmap_2d/cost_values.h>
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::BaseObstacleCritic, dwb_local_planner::TrajectoryCritic)

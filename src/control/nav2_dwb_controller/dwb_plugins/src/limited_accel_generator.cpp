@@ -41,6 +41,9 @@
 namespace dwb_plugins
 {
 
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void LimitedAccelGenerator::initialize(const rclcpp::Node& nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
@@ -104,6 +107,7 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(const geom
 
   return traj;
 }
+#pragma GCC diagnostic pop
 
 }  // namespace dwb_plugins
 

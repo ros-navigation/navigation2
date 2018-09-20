@@ -46,6 +46,9 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void StandardTrajectoryGenerator::initialize(const rclcpp::Node& nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
@@ -191,6 +194,7 @@ geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(const
   new_pose.theta = start_pose.theta + vel.theta * dt;
   return new_pose;
 }
+#pragma GCC diagnostic pop
 
 }  // namespace dwb_plugins
 

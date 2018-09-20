@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project(dwb_plugins)
 
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "-std=c++14;-Wall;-Werror")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
@@ -11,7 +18,7 @@ find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 
-set(PROJECT_DEPENDENCIES
+set(dependencies
   angles
   dwb_local_planner
   nav_2d_msgs
@@ -24,19 +31,22 @@ include_directories(
 )
 
 add_library(simple_goal_checker SHARED src/simple_goal_checker.cpp)
-ament_target_dependencies(simple_goal_checker ${PROJECT_DEPENDENCIES})
+ament_target_dependencies(simple_goal_checker ${dependencies})
 
 add_library(stopped_goal_checker SHARED src/stopped_goal_checker.cpp)
-ament_target_dependencies(stopped_goal_checker simple_goal_checker ${PROJECT_DEPENDENCIES})
+ament_target_dependencies(stopped_goal_checker simple_goal_checker ${dependencies})
 
 add_library(standard_traj_generator SHARED
             src/standard_traj_generator.cpp
             src/limited_accel_generator.cpp
             src/kinematic_parameters.cpp
             src/xy_theta_iterator.cpp)
-ament_target_dependencies(standard_traj_generator ${PROJECT_DEPENDENCIES})
+ament_target_dependencies(standard_traj_generator ${dependencies})
 
 if (BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+
   find_package(ament_cmake_gtest REQUIRED)
   ament_add_gtest(vtest test/velocity_iterator_test.cpp)
 

@@ -38,6 +38,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 namespace nav_2d_utils
 {
 
@@ -150,5 +153,6 @@ void moveParameter(const rclcpp::Node& nh, std::string old_name,
 
 
 }  // namespace nav_2d_utils
+#pragma GCC diagnostic pop
 
 #endif  // NAV_2D_UTILS_PARAMETERS_H

@@ -88,6 +88,9 @@ public:
    * @param parent_namespace The namespace of the planner
    * @param costmap_ros Pointer to the costmap
    */
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
   void initialize(const rclcpp::Node& nh, std::string parent_namespace, CostmapROSPtr costmap_ros)
   {
     // TODO(crdelsey): How to port?
@@ -98,7 +101,7 @@ public:
     // nh_->param("scale", scale_, 1.0);
     onInit();
   }
-
+#pragma GCC diagnostic push
   virtual void onInit() {}
 
   /**

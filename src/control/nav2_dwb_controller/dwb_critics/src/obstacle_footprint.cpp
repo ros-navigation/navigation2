@@ -35,7 +35,7 @@
 #include <dwb_critics/obstacle_footprint.h>
 #include <dwb_critics/line_iterator.h>
 #include <dwb_local_planner/exceptions.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <algorithm>
 #include <vector>
 #include <costmap_2d/cost_values.h>
