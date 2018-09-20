@@ -27,7 +27,12 @@
 // For transform support
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/convert.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
+
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
 //#include "tf2_ros/message_filter.h"
