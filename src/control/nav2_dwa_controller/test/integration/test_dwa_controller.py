@@ -17,7 +17,6 @@
 import os
 import signal
 import subprocess
-import sys
 
 from nav2_planning_msgs.msg import Path
 import pytest
@@ -69,6 +68,7 @@ def test_result_returned(testNode):
     while(not testNode.result_received):
         rclpy.spin_once(testNode, timeout_sec=0.1)
     assert(True)
+
 
 def test_passing():
     assert(True)
