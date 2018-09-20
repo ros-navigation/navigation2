@@ -32,13 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_TF_HELP_H
-#define NAV_2D_UTILS_TF_HELP_H
+#ifndef NAV_2D_UTILS__TF_HELP_H_
+#define NAV_2D_UTILS__TF_HELP_H_
 
-#include <nav_2d_utils/conversions.h>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_2d_msgs/msg/pose2_d_stamped.hpp>
 #include <string>
+#include <memory>
+#include "nav_2d_utils/conversions.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 
 namespace nav_2d_utils
 {
@@ -108,4 +109,4 @@ bool transformPose(
 
 }  // namespace nav_2d_utils
 
-#endif  // NAV_2D_UTILS_TF_HELP_H
+#endif  // NAV_2D_UTILS__TF_HELP_H_

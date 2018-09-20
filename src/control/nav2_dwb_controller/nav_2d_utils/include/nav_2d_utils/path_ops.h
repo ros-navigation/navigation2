@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_PATH_OPS_H
-#define NAV_2D_UTILS_PATH_OPS_H
+#ifndef NAV_2D_UTILS__PATH_OPS_H_
+#define NAV_2D_UTILS__PATH_OPS_H_
 
 #include <nav_2d_msgs/msg/path2_d.hpp>
 
@@ -51,4 +51,4 @@ nav_2d_msgs::msg::Path2D adjustPlanResolution(
   double resolution);
 }  // namespace nav_2d_utils
 
-#endif  // NAV_2D_UTILS_PATH_OPS_H
+#endif  // NAV_2D_UTILS__PATH_OPS_H_

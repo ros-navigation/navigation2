@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_ODOM_SUBSCRIBER_H
-#define NAV_2D_UTILS_ODOM_SUBSCRIBER_H
+#ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
+#define NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
@@ -87,4 +87,4 @@ protected:
 
 }  // namespace nav_2d_utils
 
-#endif  // NAV_2D_UTILS_ODOM_SUBSCRIBER_H
+#endif  // NAV_2D_UTILS__ODOM_SUBSCRIBER_H_

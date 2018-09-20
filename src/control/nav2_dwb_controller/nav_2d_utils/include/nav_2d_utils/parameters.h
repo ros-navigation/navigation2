@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_PARAMETERS_H
-#define NAV_2D_UTILS_PARAMETERS_H
+#ifndef NAV_2D_UTILS__PARAMETERS_H_
+#define NAV_2D_UTILS__PARAMETERS_H_
 
 #include <rclcpp/rclcpp.hpp>
 #include <string>
@@ -93,7 +93,8 @@ param_t loadParameterWithDeprecation(
   // }
   // if (nh.hasParam(old_name))
   // {
-  //   ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
+  //   ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.",
+  //     old_name.c_str(), current_name.c_str());
   //   nh.getParam(old_name, value);
   //   return value;
   // }
@@ -115,7 +116,8 @@ void moveDeprecatedParameter(
   // if (!nh.hasParam(old_name)) return;
   //
   // param_t value;
-  // ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
+  // ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.",
+  //   old_name.c_str(), current_name.c_str());
   // nh.getParam(old_name, value);
   // nh.setParam(current_name, value);
 }
@@ -161,4 +163,4 @@ void moveParameter(
 }  // namespace nav_2d_utils
 #pragma GCC diagnostic pop
 
-#endif  // NAV_2D_UTILS_PARAMETERS_H
+#endif  // NAV_2D_UTILS__PARAMETERS_H_
