@@ -96,6 +96,7 @@ protected:
    * Sum returns the sum of all the scores
    * Product returns the product of all the (non-zero) scores
    */
+  // cppcheck-suppress syntaxError
   enum class ScoreAggregationType {Last, Sum, Product};
 
   /**

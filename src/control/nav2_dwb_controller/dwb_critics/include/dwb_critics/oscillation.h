@@ -120,6 +120,7 @@ public:
 
 private:
     // Simple Enum for Tracking
+    // cppcheck-suppress syntaxError
     enum class Sign { ZERO, POSITIVE, NEGATIVE };
 
     Sign sign_;
