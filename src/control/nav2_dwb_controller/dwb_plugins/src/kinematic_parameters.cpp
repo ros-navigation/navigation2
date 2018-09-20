@@ -48,7 +48,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void setDecelerationAsNeeded(const rclcpp::Node& nh, const std::string dimension)
+void setDecelerationAsNeeded(const rclcpp::Node & nh, const std::string dimension)
 {
   // TODO(crdelsey): Handle params
   // std::string decel_param = "decel_lim_" + dimension;
@@ -63,8 +63,8 @@ void setDecelerationAsNeeded(const rclcpp::Node& nh, const std::string dimension
 }
 #pragma GCC diagnostic pop
 
-KinematicParameters::KinematicParameters() :
-  min_vel_x_(0.0), min_vel_y_(0.0), max_vel_x_(0.0), max_vel_y_(0.0), max_vel_theta_(0.0),
+KinematicParameters::KinematicParameters()
+: min_vel_x_(0.0), min_vel_y_(0.0), max_vel_x_(0.0), max_vel_y_(0.0), max_vel_theta_(0.0),
   min_speed_xy_(0.0), max_speed_xy_(0.0), min_speed_theta_(0.0),
   acc_lim_x_(0.0), acc_lim_y_(0.0), acc_lim_theta_(0.0),
   decel_lim_x_(0.0), decel_lim_y_(0.0), decel_lim_theta_(0.0),
@@ -72,7 +72,7 @@ KinematicParameters::KinematicParameters() :
 {
 }
 
-void KinematicParameters::initialize(const rclcpp::Node& nh)
+void KinematicParameters::initialize(const rclcpp::Node & nh)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");
@@ -118,10 +118,10 @@ void KinematicParameters::initialize(const rclcpp::Node& nh)
 bool KinematicParameters::isValidSpeed(double x, double y, double theta)
 {
   double vmag_sq = x * x + y * y;
-  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_) return false;
+  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_) {return false;}
   if (min_speed_xy_ >= 0.0 && vmag_sq < min_speed_xy_sq_ &&
-      min_speed_theta_ >= 0.0 && fabs(theta) < min_speed_theta_) return false;
-  if (vmag_sq == 0.0 && theta == 0.0) return false;
+    min_speed_theta_ >= 0.0 && fabs(theta) < min_speed_theta_) {return false;}
+  if (vmag_sq == 0.0 && theta == 0.0) {return false;}
   return true;
 }
 

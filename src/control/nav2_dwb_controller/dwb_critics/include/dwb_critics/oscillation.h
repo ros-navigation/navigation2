@@ -76,15 +76,16 @@ namespace dwb_critics
  * This assumes that oscillation_reset_dist_ or oscillation_reset_angle_ are positive. Otherwise,
  * it uses a time based delay reset function.
  */
-class OscillationCritic: public dwb_local_planner::TrajectoryCritic
+class OscillationCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
-  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
   void reset() override;
-  void debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel) override;
+  void debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
 
 private:
   /**
@@ -93,7 +94,7 @@ private:
    */
   class CommandTrend
   {
-  public:
+public:
     CommandTrend();
     void reset();
 
@@ -117,7 +118,7 @@ private:
      */
     bool hasSignFlipped();
 
-  private:
+private:
     // Simple Enum for Tracking
     enum class Sign { ZERO, POSITIVE, NEGATIVE };
 
@@ -130,7 +131,7 @@ private:
    * @param cmd_vel The command velocity selected by the algorithm
    * @return True if the sign on any of the components flipped
    */
-  bool setOscillationFlags(const nav_2d_msgs::msg::Twist2D& cmd_vel);
+  bool setOscillationFlags(const nav_2d_msgs::msg::Twist2D & cmd_vel);
 
   /**
    * @brief Return true if the robot has travelled far enough or waited long enough

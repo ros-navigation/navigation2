@@ -50,9 +50,11 @@ class StoppedGoalChecker : public SimpleGoalChecker
 public:
   StoppedGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const rclcpp::Node& nh) override;
-  bool isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
-                     const nav_2d_msgs::msg::Twist2D& velocity) override;
+  void initialize(const rclcpp::Node & nh) override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+    const nav_2d_msgs::msg::Twist2D & velocity) override;
+
 protected:
   double rot_stopped_velocity_, trans_stopped_velocity_;
 };

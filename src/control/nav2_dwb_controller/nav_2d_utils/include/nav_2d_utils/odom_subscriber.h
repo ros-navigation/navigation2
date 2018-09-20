@@ -57,18 +57,20 @@ public:
    * @param nh NodeHandle for creating subscriber
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
-  explicit OdomSubscriber(ros::NodeHandle& nh, std::string default_topic = "odom")
+  explicit OdomSubscriber(ros::NodeHandle & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
     nh.param("odom_topic", odom_topic, default_topic);
-    odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, boost::bind(&OdomSubscriber::odomCallback, this, _1));
+    odom_sub_ =
+      nh.subscribe<nav_msgs::Odometry>(odom_topic, 1,
+        boost::bind(&OdomSubscriber::odomCallback, this, _1));
   }
 
-  inline nav_2d_msgs::msg::Twist2D getTwist() { return odom_vel_.velocity; }
-  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() { return odom_vel_; }
+  inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
+  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() {return odom_vel_;}
 
 protected:
-  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+  void odomCallback(const nav_msgs::Odometry::ConstPtr & msg)
   {
     ROS_INFO_ONCE("odom received!");
     boost::mutex::scoped_lock lock(odom_mutex_);

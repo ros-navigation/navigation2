@@ -66,32 +66,39 @@ public:
    * @brief Load the parameters and advertise topics as needed
    * @param nh NodeHandle to load parameters from
    */
-  void initialize(rclcpp::Node& nh);
+  void initialize(rclcpp::Node & nh);
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved
    * @return True if the Evaluation is needed to publish either directly or as trajectories
    */
-  bool shouldRecordEvaluation() { return publish_evaluation_ || publish_trajectories_; }
+  bool shouldRecordEvaluation() {return publish_evaluation_ || publish_trajectories_;}
 
   /**
    * @brief If the pointer is not null, publish the evaluation and trajectories as needed
    */
   void publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results);
-  void publishLocalPlan(const std_msgs::msg::Header& header, const dwb_msgs::msg::Trajectory2D& traj);
-  void publishCostGrid(const CostmapROSPtr costmap_ros, const std::vector<TrajectoryCritic::Ptr> critics);
+  void publishLocalPlan(
+    const std_msgs::msg::Header & header,
+    const dwb_msgs::msg::Trajectory2D & traj);
+  void publishCostGrid(
+    const CostmapROSPtr costmap_ros,
+    const std::vector<TrajectoryCritic::Ptr> critics);
   void publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan);
   void publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan);
   void publishLocalPlan(const nav_2d_msgs::msg::Path2D plan);
 
 protected:
-  void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation& results);
+  void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results);
 
   // Helper function for publishing other plans
-  void publishGenericPlan(const nav_2d_msgs::msg::Path2D plan, const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
+  void publishGenericPlan(
+    const nav_2d_msgs::msg::Path2D plan,
+    const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
 
   // Flags for turning on/off publishing specific components
-  bool publish_evaluation_, publish_global_plan_, publish_transformed_, publish_local_plan_, publish_trajectories_;
+  bool publish_evaluation_, publish_global_plan_, publish_transformed_, publish_local_plan_,
+    publish_trajectories_;
   bool publish_cost_grid_pc_;
 
   // Previously published marker count for removing markers as needed

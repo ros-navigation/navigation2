@@ -58,17 +58,18 @@ public:
    * @param sx The x coordinate of the closest source cell in the costmap
    * @param sy The y coordinate of the closest source cell in the costmap
    */
-  CellData(const double d, const unsigned int i, const unsigned int x, const unsigned int y,
-           const unsigned int sx, const unsigned int sy) :
-    distance_(d), index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
+  CellData(
+    const double d, const unsigned int i, const unsigned int x, const unsigned int y,
+    const unsigned int sx, const unsigned int sy)
+  : distance_(d), index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
   {
   }
 
   /**
    * @brief Default Constructor - Should be used sparingly
    */
-  CellData() :
-    distance_(std::numeric_limits<double>::max()), index_(0), x_(0), y_(0), src_x_(0), src_y_(0)
+  CellData()
+  : distance_(std::numeric_limits<double>::max()), index_(0), x_(0), y_(0), src_x_(0), src_y_(0)
   {
   }
 
@@ -105,7 +106,7 @@ public:
    * @param costmap Costmap which defines the size/number of cells
    * @param manhattan If true, sort cells by Manhattan distance, otherwise use Euclidean distance
    */
-  explicit CostmapQueue(costmap_2d::Costmap2D& costmap, bool manhattan = false);
+  explicit CostmapQueue(costmap_2d::Costmap2D & costmap, bool manhattan = false);
 
   /**
    * @brief Clear the queue
@@ -134,27 +135,31 @@ public:
    */
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wunused-parameter"
-  virtual bool validCellToQueue(const CellData& cell) { return true; }
+  virtual bool validCellToQueue(const CellData & cell) {return true;}
   #pragma GCC diagnostic pop
   /**
    * @brief convenience typedef for a pointer
    */
   typedef std::shared_ptr<CostmapQueue> Ptr;
+
 protected:
   /**
    * @brief Enqueue a cell with the given coordinates and the given source cell
    */
-  void enqueueCell(unsigned int index, unsigned int cur_x, unsigned int cur_y, unsigned int src_x, unsigned int src_y);
+  void enqueueCell(
+    unsigned int index, unsigned int cur_x, unsigned int cur_y, unsigned int src_x,
+    unsigned int src_y);
 
   /**
    * @brief Compute the cached distances
    */
   void computeCache();
 
-  costmap_2d::Costmap2D& costmap_;
+  costmap_2d::Costmap2D & costmap_;
   std::vector<bool> seen_;
   int max_distance_;
   bool manhattan_;
+
 protected:
   /**
    * @brief  Lookup pre-computed distances
@@ -164,14 +169,15 @@ protected:
    * @param src_y The y coordinate of the source cell
    * @return
    */
-  inline double distanceLookup(const unsigned int cur_x, const unsigned int cur_y,
-                               const unsigned int src_x, const unsigned int src_y)
+  inline double distanceLookup(
+    const unsigned int cur_x, const unsigned int cur_y,
+    const unsigned int src_x, const unsigned int src_y)
   {
     unsigned int dx = abs(cur_x - src_x);
     unsigned int dy = abs(cur_y - src_y);
     return cached_distances_[dx][dy];
   }
-  std::vector<std::vector<double> > cached_distances_;
+  std::vector<std::vector<double>> cached_distances_;
   int cached_max_distance_;
 };
 }  // namespace costmap_queue

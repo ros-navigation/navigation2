@@ -38,12 +38,12 @@
 namespace dwb_plugins
 {
 
-StoppedGoalChecker::StoppedGoalChecker() :
-  SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
+StoppedGoalChecker::StoppedGoalChecker()
+: SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
 {
 }
 
-void StoppedGoalChecker::initialize(const rclcpp::Node& nh)
+void StoppedGoalChecker::initialize(const rclcpp::Node & nh)
 {
   SimpleGoalChecker::initialize(nh);
   // TODO(crdelsey): handle params
@@ -51,16 +51,16 @@ void StoppedGoalChecker::initialize(const rclcpp::Node& nh)
   // nh.param("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
 }
 
-bool StoppedGoalChecker::isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
-                                       const nav_2d_msgs::msg::Twist2D& velocity)
+bool StoppedGoalChecker::isGoalReached(
+  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+  const nav_2d_msgs::msg::Twist2D & velocity)
 {
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
-  if (!ret)
-  {
+  if (!ret) {
     return ret;
   }
-  return fabs(velocity.theta) <= rot_stopped_velocity_
-         && fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
+  return fabs(velocity.theta) <= rot_stopped_velocity_ &&
+         fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
 }
 
 }  // namespace dwb_plugins

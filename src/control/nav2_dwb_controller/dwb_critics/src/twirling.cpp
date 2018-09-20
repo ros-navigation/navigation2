@@ -48,7 +48,7 @@ void TwirlingCritic::onInit()
   // }
 }
 
-double TwirlingCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
+double TwirlingCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   return fabs(traj.velocity.theta);  // add cost for making the robot spin
 }

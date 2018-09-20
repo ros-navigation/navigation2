@@ -42,53 +42,52 @@
 namespace dwb_local_planner
 {
 
-void DWBPublisher::initialize(rclcpp::Node& nh)
+void DWBPublisher::initialize(rclcpp::Node & nh)
 {
   // TODO(crdelsey): How to publish
   // Load Publishers
   // nh.param("publish_evaluation", publish_evaluation_, true);
   // if (publish_evaluation_)
-    eval_pub_ = nh.create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
+  eval_pub_ = nh.create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
   //
   // nh.param("publish_global_plan", publish_global_plan_, true);
   // if (publish_global_plan_)
-    global_pub_ = nh.create_publisher<nav_msgs::msg::Path>("global_plan", 1);
+  global_pub_ = nh.create_publisher<nav_msgs::msg::Path>("global_plan", 1);
   //
   // nh.param("publish_transformed_plan", publish_transformed_, true);
   // if (publish_transformed_)
-    transformed_pub_ = nh.create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+  transformed_pub_ = nh.create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   //
   // nh.param("publish_local_plan", publish_local_plan_, true);
   // if (publish_local_plan_)
-    local_pub_ = nh.create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+  local_pub_ = nh.create_publisher<nav_msgs::msg::Path>("local_plan", 1);
   //
   // nh.param("publish_trajectories", publish_trajectories_, true);
   // if (publish_trajectories_)
-    marker_pub_ = nh.create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
+  marker_pub_ = nh.create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
   // prev_marker_count_ = 0;
   //
   // nh.param("publish_cost_grid_pc", publish_cost_grid_pc_, false);
   // if (publish_cost_grid_pc_)
-    cost_grid_pc_pub_ = nh.create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
+  cost_grid_pc_pub_ = nh.create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
 }
 
 void DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
-  if (results == nullptr) return;
-  if (publish_evaluation_)
-  {
+  if (results == nullptr) {return;}
+  if (publish_evaluation_) {
     eval_pub_->publish(*results);
   }
   publishTrajectories(*results);
 }
 
-void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation& results)
+void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
-  if (!publish_trajectories_) return;
+  if (!publish_trajectories_) {return;}
   visualization_msgs::msg::MarkerArray ma;
   visualization_msgs::msg::Marker m;
 
-  if (results.twists.size() == 0) return;
+  if (results.twists.size() == 0) {return;}
 
   geometry_msgs::msg::Point pt;
 
@@ -99,26 +98,21 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation&
   m.color.a = 1.0;
 
   double best_cost = results.twists[results.best_index].total,
-         worst_cost = results.twists[results.worst_index].total;
+    worst_cost = results.twists[results.worst_index].total;
 
-  for (unsigned int i = 0; i < results.twists.size(); i++)
-  {
-    const dwb_msgs::msg::TrajectoryScore& twist = results.twists[i];
-    if (twist.total >= 0)
-    {
+  for (unsigned int i = 0; i < results.twists.size(); i++) {
+    const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
+    if (twist.total >= 0) {
       m.color.r = 1 - (twist.total - best_cost) / (worst_cost - best_cost);
       m.color.g = 1 - (twist.total - best_cost) / (worst_cost - best_cost);
       m.color.b = 1;
       m.ns = "ValidTrajectories";
-    }
-    else
-    {
+    } else {
       m.color.b = 0;
       m.ns = "InvalidTrajectories";
     }
     m.points.clear();
-    for (unsigned int j = 0; j < twist.traj.poses.size(); ++j)
-    {
+    for (unsigned int j = 0; j < twist.traj.poses.size(); ++j) {
       pt.x = twist.traj.poses[j].x;
       pt.y = twist.traj.poses[j].y;
       pt.z = 0;
@@ -128,8 +122,7 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation&
     m.id += 1;
   }
   int temp = ma.markers.size();
-  for (int i = temp; i < prev_marker_count_; i++)
-  {
+  for (int i = temp; i < prev_marker_count_; i++) {
     m.action = m.DELETE;
     m.id = i;
     ma.markers.push_back(m);
@@ -138,33 +131,34 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation&
   marker_pub_->publish(ma);
 }
 
-void DWBPublisher::publishLocalPlan(const std_msgs::msg::Header& header,
-                                    const dwb_msgs::msg::Trajectory2D& traj)
+void DWBPublisher::publishLocalPlan(
+  const std_msgs::msg::Header & header,
+  const dwb_msgs::msg::Trajectory2D & traj)
 {
-  if (!publish_local_plan_) return;
+  if (!publish_local_plan_) {return;}
 
   // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
   // local_pub_->publish(path);
 }
 
-void DWBPublisher::publishCostGrid(const CostmapROSPtr costmap_ros, const std::vector<TrajectoryCritic::Ptr> critics)
+void DWBPublisher::publishCostGrid(
+  const CostmapROSPtr costmap_ros,
+  const std::vector<TrajectoryCritic::Ptr> critics)
 {
-  if (!publish_cost_grid_pc_) return;
+  if (!publish_cost_grid_pc_) {return;}
 
   sensor_msgs::msg::PointCloud cost_grid_pc;
   cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
   cost_grid_pc.header.stamp = rclcpp::Clock().now();
 
-  costmap_2d::Costmap2D* costmap = costmap_ros->getCostmap();
+  costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
   cost_grid_pc.points.resize(size_x * size_y);
   unsigned int i = 0;
-  for (unsigned int cy = 0; cy < size_y; cy++)
-  {
-    for (unsigned int cx = 0; cx < size_x; cx++)
-    {
+  for (unsigned int cy = 0; cy < size_y; cy++) {
+    for (unsigned int cx = 0; cx < size_x; cx++) {
       costmap->mapToWorld(cx, cy, x_coord, y_coord);
       cost_grid_pc.points[i].x = x_coord;
       cost_grid_pc.points[i].y = y_coord;
@@ -176,18 +170,15 @@ void DWBPublisher::publishCostGrid(const CostmapROSPtr costmap_ros, const std::v
   totals.name = "total_cost";
   totals.values.resize(size_x * size_y);
 
-  for (TrajectoryCritic::Ptr critic : critics)
-  {
+  for (TrajectoryCritic::Ptr critic : critics) {
     unsigned int channel_index = cost_grid_pc.channels.size();
     critic->addGridScores(cost_grid_pc);
-    if (channel_index == cost_grid_pc.channels.size())
-    {
+    if (channel_index == cost_grid_pc.channels.size()) {
       // No channels were added, so skip to next critic
       continue;
     }
     double scale = critic->getScale();
-    for (i = 0; i < size_x * size_y; i++)
-    {
+    for (i = 0; i < size_x * size_y; i++) {
       totals.values[i] = cost_grid_pc.channels[channel_index].values[i] * scale;
     }
   }
@@ -213,9 +204,11 @@ void DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
   publishGenericPlan(plan, *local_pub_, publish_local_plan_);
 }
 
-void DWBPublisher::publishGenericPlan(const nav_2d_msgs::msg::Path2D plan, const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
+void DWBPublisher::publishGenericPlan(
+  const nav_2d_msgs::msg::Path2D plan,
+  const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
-  if (!flag) return;
+  if (!flag) {return;}
   // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
   // pub.publish(path);
 }

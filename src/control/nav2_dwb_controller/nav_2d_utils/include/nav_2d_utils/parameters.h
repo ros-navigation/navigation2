@@ -56,7 +56,9 @@ namespace nav_2d_utils
  * @return Value of parameter if found, otherwise the default_value
  */
 template<class param_t>
-param_t searchAndGetParam(const rclcpp::Node& nh, const std::string& param_name, const param_t& default_value)
+param_t searchAndGetParam(
+  const rclcpp::Node & nh, const std::string & param_name,
+  const param_t & default_value)
 {
   // TODO(crdelsey): Handle params
   // std::string resolved_name;
@@ -78,8 +80,9 @@ param_t searchAndGetParam(const rclcpp::Node& nh, const std::string& param_name,
  * @return The value of the parameter or the default value
  */
 template<class param_t>
-param_t loadParameterWithDeprecation(const rclcpp::Node& nh, const std::string current_name,
-                                     const std::string old_name, const param_t& default_value)
+param_t loadParameterWithDeprecation(
+  const rclcpp::Node & nh, const std::string current_name,
+  const std::string old_name, const param_t & default_value)
 {
   // TODO(crdelsey): Handle params
   // param_t value;
@@ -104,7 +107,9 @@ param_t loadParameterWithDeprecation(const rclcpp::Node& nh, const std::string c
  * @param old_name Deprecated parameter name
  */
 template<class param_t>
-void moveDeprecatedParameter(const rclcpp::Node& nh, const std::string current_name, const std::string old_name)
+void moveDeprecatedParameter(
+  const rclcpp::Node & nh, const std::string current_name,
+  const std::string old_name)
 {
   // TODO(crdelsey): Handle params
   // if (!nh.hasParam(old_name)) return;
@@ -129,8 +134,9 @@ void moveDeprecatedParameter(const rclcpp::Node& nh, const std::string current_n
  * @param should_delete If true, whether to delete the parameter from the old name
  */
 template<class param_t>
-void moveParameter(const rclcpp::Node& nh, std::string old_name,
-                   std::string current_name, param_t default_value, bool should_delete = true)
+void moveParameter(
+  const rclcpp::Node & nh, std::string old_name,
+  std::string current_name, param_t default_value, bool should_delete = true)
 {
   // TODO(crdelsey): Handle params
   // if (nh.hasParam(current_name))

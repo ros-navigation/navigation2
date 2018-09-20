@@ -37,7 +37,7 @@
 
 using costmap_queue::MapBasedQueue;
 
-void letter_test(MapBasedQueue<char>& q, const char test_letter)
+void letter_test(MapBasedQueue<char> & q, const char test_letter)
 {
   ASSERT_FALSE(q.isEmpty());
   char c = q.front();
@@ -63,8 +63,7 @@ TEST(MapBasedQueue, checkOrdering)
   q.enqueue(0.0, 'E');
 
   std::string expected = "EACBD";
-  for (unsigned int i = 0; i < expected.size(); i++)
-  {
+  for (unsigned int i = 0; i < expected.size(); i++) {
     letter_test(q, expected[i]);
   }
   EXPECT_TRUE(q.isEmpty());
@@ -79,8 +78,7 @@ TEST(MapBasedQueue, checkDynamicOrdering)
   q.enqueue(5.0, 'D');
 
   std::string expected = "ACB";
-  for (unsigned int i = 0; i < expected.size(); i++)
-  {
+  for (unsigned int i = 0; i < expected.size(); i++) {
     letter_test(q, expected[i]);
   }
 
@@ -111,7 +109,7 @@ TEST(MapBasedQueue, checkDynamicOrdering3)
   letter_test(q, 'D');
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

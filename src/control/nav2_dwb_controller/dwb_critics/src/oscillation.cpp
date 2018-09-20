@@ -60,19 +60,14 @@ void OscillationCritic::CommandTrend::reset()
 bool OscillationCritic::CommandTrend::update(double velocity)
 {
   bool flag_set = false;
-  if (velocity < 0.0)
-  {
-    if (sign_ == Sign::POSITIVE)
-    {
+  if (velocity < 0.0) {
+    if (sign_ == Sign::POSITIVE) {
       negative_only_ = true;
       flag_set = true;
     }
     sign_ = Sign::NEGATIVE;
-  }
-  else if (velocity > 0.0)
-  {
-    if (sign_ == Sign::NEGATIVE)
-    {
+  } else if (velocity > 0.0) {
+    if (sign_ == Sign::NEGATIVE) {
       positive_only_ = true;
       flag_set = true;
     }
@@ -130,29 +125,27 @@ void OscillationCritic::onInit()
   reset();
 }
 
-bool OscillationCritic::prepare(const geometry_msgs::msg::Pose2D& pose,
-                                const nav_2d_msgs::msg::Twist2D& vel,
-                                const geometry_msgs::msg::Pose2D& goal,
-                                const nav_2d_msgs::msg::Path2D& global_plan)
+bool OscillationCritic::prepare(
+  const geometry_msgs::msg::Pose2D & pose,
+  const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose2D & goal,
+  const nav_2d_msgs::msg::Path2D & global_plan)
 {
   pose_ = pose;
   return true;
 }
 
-void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel)
+void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
-  if (setOscillationFlags(cmd_vel))
-  {
+  if (setOscillationFlags(cmd_vel)) {
     prev_stationary_pose_ = pose_;
     prev_reset_time_ = rclcpp::Clock().now();
   }
 
   // if we've got restrictions... check if we can reset any oscillation flags
-  if (x_trend_.hasSignFlipped() || y_trend_.hasSignFlipped() || theta_trend_.hasSignFlipped())
-  {
+  if (x_trend_.hasSignFlipped() || y_trend_.hasSignFlipped() || theta_trend_.hasSignFlipped()) {
     // Reset flags if enough time or distance has passed
-    if (resetAvailable())
-    {
+    if (resetAvailable()) {
       reset();
     }
   }
@@ -160,29 +153,23 @@ void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel)
 
 bool OscillationCritic::resetAvailable()
 {
-  if (oscillation_reset_dist_ >= 0.0)
-  {
+  if (oscillation_reset_dist_ >= 0.0) {
     double x_diff = pose_.x - prev_stationary_pose_.x;
     double y_diff = pose_.y - prev_stationary_pose_.y;
     double sq_dist = x_diff * x_diff + y_diff * y_diff;
-    if (sq_dist > oscillation_reset_dist_sq_)
-    {
+    if (sq_dist > oscillation_reset_dist_sq_) {
       return true;
     }
   }
-  if (oscillation_reset_angle_ >= 0.0)
-  {
+  if (oscillation_reset_angle_ >= 0.0) {
     double th_diff = pose_.theta - prev_stationary_pose_.theta;
-    if (fabs(th_diff) > oscillation_reset_angle_)
-    {
+    if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;
     }
   }
-  if (oscillation_reset_time_ >= 0.0)
-  {
+  if (oscillation_reset_time_ >= 0.0) {
     auto t_diff = (rclcpp::Clock().now() - prev_reset_time_);
-    if (t_diff > rclcpp::Duration(oscillation_reset_time_))
-    {
+    if (t_diff > rclcpp::Duration(oscillation_reset_time_)) {
       return true;
     }
   }
@@ -196,26 +183,25 @@ void OscillationCritic::reset()
   theta_trend_.reset();
 }
 
-bool OscillationCritic::setOscillationFlags(const nav_2d_msgs::msg::Twist2D& cmd_vel)
+bool OscillationCritic::setOscillationFlags(const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   bool flag_set = false;
   // set oscillation flags for moving forward and backward
   flag_set |= x_trend_.update(cmd_vel.x);
 
   // we'll only set flags for strafing and rotating when we're not moving forward at all
-  if (x_only_threshold_ < 0.0 || fabs(cmd_vel.x) <= x_only_threshold_)
-  {
+  if (x_only_threshold_ < 0.0 || fabs(cmd_vel.x) <= x_only_threshold_) {
     flag_set |= y_trend_.update(cmd_vel.y);
     flag_set |= theta_trend_.update(cmd_vel.theta);
   }
   return flag_set;
 }
 
-double OscillationCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
+double OscillationCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   if (x_trend_.isOscillating(traj.velocity.x) ||
-      y_trend_.isOscillating(traj.velocity.y) ||
-      theta_trend_.isOscillating(traj.velocity.theta))
+    y_trend_.isOscillating(traj.velocity.y) ||
+    theta_trend_.isOscillating(traj.velocity.theta))
   {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory is oscillating.");
   }

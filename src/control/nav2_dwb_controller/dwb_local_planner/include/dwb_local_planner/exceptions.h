@@ -41,10 +41,11 @@
 namespace nav_core2
 {
 
-class PlannerException: public std::runtime_error
+class PlannerException : public std::runtime_error
 {
 public:
-  explicit PlannerException(const std::string description) : std::runtime_error(description) {}
+  explicit PlannerException(const std::string description)
+  : std::runtime_error(description) {}
   typedef std::shared_ptr<PlannerException> Ptr;
 };
 
@@ -52,22 +53,24 @@ public:
  * @class PlannerTFException
  * @brief Thrown when the planner cannot complete its operation due to TF errors
  */
-class PlannerTFException: public PlannerException
+class PlannerTFException : public PlannerException
 {
 public:
-  explicit PlannerTFException(const std::string description) : PlannerException(description) {}
+  explicit PlannerTFException(const std::string description)
+  : PlannerException(description) {}
 };
 
 /**
  * @class IllegalTrajectoryException
  * @brief Thrown when one of the critics encountered a fatal error
  */
-class IllegalTrajectoryException: public PlannerException
+class IllegalTrajectoryException : public PlannerException
 {
 public:
   IllegalTrajectoryException(const std::string critic_name, const std::string description)
-    : PlannerException(description), critic_name_(critic_name) {}
-  std::string getCriticName() const { return critic_name_; }
+  : PlannerException(description), critic_name_(critic_name) {}
+  std::string getCriticName() const {return critic_name_;}
+
 protected:
   std::string critic_name_;
 };
@@ -76,10 +79,11 @@ protected:
  * @class NoLegalTrajectoriesException
  * @brief Thrown when all the trajectories explored are illegal
  */
-class NoLegalTrajectoriesException: public PlannerException
+class NoLegalTrajectoriesException : public PlannerException
 {
 public:
-  explicit NoLegalTrajectoriesException(const std::string description) : PlannerException(description) {}
+  explicit NoLegalTrajectoriesException(const std::string description)
+  : PlannerException(description) {}
 };
 
 }  // namespace nav_core2

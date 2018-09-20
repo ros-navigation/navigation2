@@ -52,8 +52,9 @@ namespace nav_2d_utils
  * @param out_pose Place to store the resulting transformed pose
  * @return True if successful transform
  */
-bool transformPose(const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
-                   const geometry_msgs::msg::PoseStamped& in_pose, geometry_msgs::msg::PoseStamped& out_pose)
+bool transformPose(
+  const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+  const geometry_msgs::msg::PoseStamped & in_pose, geometry_msgs::msg::PoseStamped & out_pose)
 {
   // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
   out_pose = in_pose;
@@ -87,8 +88,9 @@ bool transformPose(const std::shared_ptr<tf2_ros::TransformListener> tf, const s
  * @param out_pose Place to store the resulting transformed pose
  * @return True if successful transform
  */
-bool transformPose(const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
-                   const nav_2d_msgs::msg::Pose2DStamped& in_pose, nav_2d_msgs::msg::Pose2DStamped& out_pose)
+bool transformPose(
+  const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+  const nav_2d_msgs::msg::Pose2DStamped & in_pose, nav_2d_msgs::msg::Pose2DStamped & out_pose)
 {
   // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
   out_pose = in_pose;

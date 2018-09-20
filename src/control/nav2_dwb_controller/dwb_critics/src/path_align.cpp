@@ -48,19 +48,17 @@ void PathAlignCritic::onInit()
   forward_point_distance_ = nav_2d_utils::searchAndGetParam(*nh_, "forward_point_distance", 0.325);
 }
 
-bool PathAlignCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-                              const geometry_msgs::msg::Pose2D& goal,
-                              const nav_2d_msgs::msg::Path2D& global_plan)
+bool PathAlignCritic::prepare(
+  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose2D & goal,
+  const nav_2d_msgs::msg::Path2D & global_plan)
 {
   double dx = pose.x - goal.x;
   double dy = pose.y - goal.y;
   double sq_dist = dx * dx + dy * dy;
-  if (sq_dist > forward_point_distance_ * forward_point_distance_)
-  {
+  if (sq_dist > forward_point_distance_ * forward_point_distance_) {
     zero_scale_ = false;
-  }
-  else
-  {
+  } else {
     // once we are close to goal, trying to keep the nose close to anything destabilizes behavior.
     zero_scale_ = true;
     return true;
@@ -71,13 +69,14 @@ bool PathAlignCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_
 
 double PathAlignCritic::getScale() const
 {
-  if (zero_scale_)
+  if (zero_scale_) {
     return 0.0;
-  else
+  } else {
     return costmap_->getResolution() * 0.5 * scale_;
+  }
 }
 
-double PathAlignCritic::scorePose(const geometry_msgs::msg::Pose2D& pose)
+double PathAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 {
   return PathDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }

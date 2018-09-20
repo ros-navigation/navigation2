@@ -91,13 +91,13 @@ public:
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-  void initialize(const rclcpp::Node& nh, std::string parent_namespace, CostmapROSPtr costmap_ros)
+  void initialize(const rclcpp::Node & nh, std::string parent_namespace, CostmapROSPtr costmap_ros)
   {
     // TODO(crdelsey): How to port?
     costmap_ros_ = costmap_ros;
     nh_ = &nh;
     // TODO(crdelsey): Port parameter
-    scale_=1.0;
+    scale_ = 1.0;
     // nh_->param("scale", scale_, 1.0);
     onInit();
   }
@@ -122,9 +122,10 @@ public:
    * @param goal The final goal (costmap frame)
    * @param global_plan Transformed global plan in costmap frame, possibly cropped to nearby points
    */
-  virtual bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-                       const geometry_msgs::msg::Pose2D& goal,
-                       const nav_2d_msgs::msg::Path2D& global_plan)
+  virtual bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal,
+    const nav_2d_msgs::msg::Path2D & global_plan)
   {
     return true;
   }
@@ -135,12 +136,12 @@ public:
    * scores < 0 are considered invalid/errors, such as collisions
    * This is the raw score in that the scale should not be applied to it.
    */
-  virtual double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) = 0;
+  virtual double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) = 0;
 
   /**
    * @brief debrief informs the critic what the chosen cmd_vel was (if it cares)
    */
-  virtual void debrief(const nav_2d_msgs::msg::Twist2D& cmd_vel) {}
+  virtual void debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel) {}
 
   /**
    * @brief Add information to the given pointcloud for debugging costmap-grid based scores
@@ -158,15 +159,16 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addGridScores(sensor_msgs::msg::PointCloud& pc) {}
+  virtual void addGridScores(sensor_msgs::msg::PointCloud & pc) {}
 
   std::string getName()
   {
     return name_;
   }
 
-  virtual double getScale() const { return scale_; }
-  void setScale(const double scale) { scale_ = scale; }
+  virtual double getScale() const {return scale_;}
+  void setScale(const double scale) {scale_ = scale;}
+
 protected:
   std::string name_;
   CostmapROSPtr costmap_ros_;

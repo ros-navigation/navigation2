@@ -42,11 +42,12 @@ namespace dwb_critics
  * @class PathDistCritic
  * @brief Scores trajectories based on how far from the global path they end up.
  */
-class PathDistCritic: public MapGridCritic
+class PathDistCritic : public MapGridCritic
 {
 public:
-  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
 };
 
 }  // namespace dwb_critics

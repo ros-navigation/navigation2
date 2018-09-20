@@ -37,7 +37,7 @@
 
 namespace dwb_plugins
 {
-void XYThetaIterator::initialize(const rclcpp::Node& nh, KinematicParameters::Ptr kinematics)
+void XYThetaIterator::initialize(const rclcpp::Node & nh, KinematicParameters::Ptr kinematics)
 {
   kinematics_ = kinematics;
   // TODO(crdelsey): handle params
@@ -45,28 +45,33 @@ void XYThetaIterator::initialize(const rclcpp::Node& nh, KinematicParameters::Pt
   vy_samples_ = 5;
   // nh.param("vx_samples", vx_samples_, 20);
   // nh.param("vy_samples", vy_samples_, 5);
-  vtheta_samples_ = nav_2d_utils::loadParameterWithDeprecation(nh, "vtheta_samples", "vth_samples", 20);
+  vtheta_samples_ = nav_2d_utils::loadParameterWithDeprecation(nh, "vtheta_samples", "vth_samples",
+      20);
 }
 
-void XYThetaIterator::startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity, double dt)
+void XYThetaIterator::startNewIteration(
+  const nav_2d_msgs::msg::Twist2D & current_velocity,
+  double dt)
 {
-  x_it_ = std::make_shared<OneDVelocityIterator>(current_velocity.x, kinematics_->getMinX(), kinematics_->getMaxX(),
-                                                 kinematics_->getAccX(), kinematics_->getDecelX(), dt, vx_samples_);
-  y_it_ = std::make_shared<OneDVelocityIterator>(current_velocity.y, kinematics_->getMinY(), kinematics_->getMaxY(),
-                                                 kinematics_->getAccY(), kinematics_->getDecelY(), dt, vy_samples_);
+  x_it_ = std::make_shared<OneDVelocityIterator>(current_velocity.x,
+      kinematics_->getMinX(), kinematics_->getMaxX(),
+      kinematics_->getAccX(), kinematics_->getDecelX(), dt, vx_samples_);
+  y_it_ = std::make_shared<OneDVelocityIterator>(current_velocity.y,
+      kinematics_->getMinY(), kinematics_->getMaxY(),
+      kinematics_->getAccY(), kinematics_->getDecelY(), dt, vy_samples_);
   th_it_ = std::make_shared<OneDVelocityIterator>(current_velocity.theta,
-                                                  kinematics_->getMinTheta(), kinematics_->getMaxTheta(),
-                                                  kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
-                                                  dt, vtheta_samples_);
-  if (!isValidVelocity())
-  {
+      kinematics_->getMinTheta(), kinematics_->getMaxTheta(),
+      kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
+      dt, vtheta_samples_);
+  if (!isValidVelocity()) {
     iterateToValidVelocity();
   }
 }
 
 bool XYThetaIterator::isValidVelocity()
 {
-  return kinematics_->isValidSpeed(x_it_->getVelocity(), y_it_->getVelocity(), th_it_->getVelocity());
+  return kinematics_->isValidSpeed(x_it_->getVelocity(), y_it_->getVelocity(),
+           th_it_->getVelocity());
 }
 
 bool XYThetaIterator::hasMoreTwists()
@@ -90,15 +95,12 @@ nav_2d_msgs::msg::Twist2D XYThetaIterator::nextTwist()
 void XYThetaIterator::iterateToValidVelocity()
 {
   bool valid = false;
-  while (!valid && hasMoreTwists())
-  {
+  while (!valid && hasMoreTwists()) {
     ++(*th_it_);
-    if (th_it_->isFinished())
-    {
+    if (th_it_->isFinished()) {
       th_it_->reset();
       ++(*y_it_);
-      if (y_it_->isFinished())
-      {
+      if (y_it_->isFinished()) {
         y_it_->reset();
         ++(*x_it_);
       }

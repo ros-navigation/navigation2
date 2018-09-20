@@ -49,8 +49,8 @@ public:
   /**
    * @brief  Creates an empty observation
    */
-  Observation() :
-    cloud_(new sensor_msgs::msg::PointCloud2()), obstacle_range_(0.0), raytrace_range_(0.0)
+  Observation()
+  : cloud_(new sensor_msgs::msg::PointCloud2()), obstacle_range_(0.0), raytrace_range_(0.0)
   {
   }
 
@@ -66,10 +66,11 @@ public:
    * @param obstacle_range The range out to which an observation should be able to insert obstacles
    * @param raytrace_range The range out to which an observation should be able to clear via raytracing
    */
-  Observation(geometry_msgs::msg::Point& origin, const sensor_msgs::msg::PointCloud2 &cloud,
-              double obstacle_range, double raytrace_range) :
-      origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)),
-      obstacle_range_(obstacle_range), raytrace_range_(raytrace_range)
+  Observation(
+    geometry_msgs::msg::Point & origin, const sensor_msgs::msg::PointCloud2 & cloud,
+    double obstacle_range, double raytrace_range)
+  : origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)),
+    obstacle_range_(obstacle_range), raytrace_range_(raytrace_range)
   {
   }
 
@@ -77,9 +78,9 @@ public:
    * @brief  Copy constructor
    * @param obs The observation to copy
    */
-  Observation(const Observation& obs) :
-      origin_(obs.origin_), cloud_(new sensor_msgs::msg::PointCloud2(*(obs.cloud_))),
-      obstacle_range_(obs.obstacle_range_), raytrace_range_(obs.raytrace_range_)
+  Observation(const Observation & obs)
+  : origin_(obs.origin_), cloud_(new sensor_msgs::msg::PointCloud2(*(obs.cloud_))),
+    obstacle_range_(obs.obstacle_range_), raytrace_range_(obs.raytrace_range_)
   {
   }
 
@@ -88,13 +89,14 @@ public:
    * @param cloud The point cloud of the observation
    * @param obstacle_range The range out to which an observation should be able to insert obstacles
    */
-  Observation(const sensor_msgs::msg::PointCloud2 &cloud, double obstacle_range) :
-      cloud_(new sensor_msgs::msg::PointCloud2(cloud)), obstacle_range_(obstacle_range), raytrace_range_(0.0)
+  Observation(const sensor_msgs::msg::PointCloud2 & cloud, double obstacle_range)
+  : cloud_(new sensor_msgs::msg::PointCloud2(cloud)), obstacle_range_(obstacle_range),
+    raytrace_range_(0.0)
   {
   }
 
   geometry_msgs::msg::Point origin_;
-  sensor_msgs::msg::PointCloud2* cloud_;
+  sensor_msgs::msg::PointCloud2 * cloud_;
   double obstacle_range_, raytrace_range_;
 };
 

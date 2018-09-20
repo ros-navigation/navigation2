@@ -54,14 +54,14 @@ namespace dwb_critics
  * This approach was chosen for computational efficiency, such that each trajectory
  * need not be compared to the list of source points.
  */
-class MapGridCritic: public dwb_local_planner::TrajectoryCritic
+class MapGridCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   // Standard TrajectoryCritic Interface
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
-  void addGridScores(sensor_msgs::msg::PointCloud& pc) override;
-  double getScale() const override { return costmap_->getResolution() * 0.5 * scale_; }
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
+  void addGridScores(sensor_msgs::msg::PointCloud & pc) override;
+  double getScale() const override {return costmap_->getResolution() * 0.5 * scale_;}
 
   // Helper Functions
   /**
@@ -69,7 +69,7 @@ public:
    * @param pose The pose to score, assumed to be in the same frame as the costmap
    * @return The score associated with the cell of the costmap where the pose lies
    */
-  virtual double scorePose(const geometry_msgs::msg::Pose2D& pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose2D & pose);
 
   /**
    * @brief Retrieve the score for a particular cell of the costmap
@@ -77,7 +77,10 @@ public:
    * @param y y-coordinate within the costmap
    * @return the score associated with that cell.
    */
-  inline double getScore(unsigned int x, unsigned int y) { return cell_values_[costmap_->getIndex(x, y)]; }
+  inline double getScore(unsigned int x, unsigned int y)
+  {
+    return cell_values_[costmap_->getIndex(x, y)];
+  }
 
   /**
    * @brief Sets the score of a particular cell to the obstacle cost
@@ -101,12 +104,13 @@ protected:
    */
   class MapGridQueue : public costmap_queue::CostmapQueue
   {
-  public:
-    MapGridQueue(costmap_2d::Costmap2D& costmap, MapGridCritic& parent)
-      : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
-    bool validCellToQueue(const costmap_queue::CellData& cell) override;
-  protected:
-    MapGridCritic& parent_;
+public:
+    MapGridQueue(costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
+    : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
+    bool validCellToQueue(const costmap_queue::CellData & cell) override;
+
+protected:
+    MapGridCritic & parent_;
   };
 
   /**
@@ -120,7 +124,7 @@ protected:
   void propogateManhattanDistances();
 
   std::shared_ptr<MapGridQueue> queue_;
-  costmap_2d::Costmap2D* costmap_;
+  costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;

@@ -32,8 +32,10 @@
 #include <dwb_critics/oscillation.h>
 #include <dwb_critics/rotate_to_goal.h>
 
-dwb_local_planner::TrajectoryGenerator::Ptr g_trajectoryGenerator = std::make_shared<dwb_plugins::LimitedAccelGenerator>();
-dwb_local_planner::GoalChecker::Ptr g_goalChecker = std::make_shared<dwb_plugins::SimpleGoalChecker>();
+dwb_local_planner::TrajectoryGenerator::Ptr g_trajectoryGenerator =
+  std::make_shared<dwb_plugins::LimitedAccelGenerator>();
+dwb_local_planner::GoalChecker::Ptr g_goalChecker =
+  std::make_shared<dwb_plugins::SimpleGoalChecker>();
 std::vector<dwb_local_planner::TrajectoryCritic::Ptr> g_trajectoryCritics;
 
 using namespace dwb_local_planner;
@@ -53,7 +55,8 @@ rclFixture g_rclFixture;
 class UninitializedTransform : public ::testing::Test
 {
 public:
-  UninitializedTransform() {
+  UninitializedTransform()
+  {
     nh = rclcpp::Node::make_shared("dwa");
     planner.initialize(*nh, tf, cm);
     robot_pose.pose.x = 0;
@@ -70,6 +73,7 @@ public:
     ADD_CRITIC(dwb_critics::ObstacleFootprintCritic);
     ADD_CRITIC(dwb_critics::TwirlingCritic);
   }
+
 protected:
   std::shared_ptr<rclcpp::Node> nh;
   TFListenerPtr tf;
@@ -82,7 +86,7 @@ TEST_F(UninitializedTransform, DISABLED_NoPlan)
 {
   planner.setPlan(nav_2d_msgs::msg::Path2D());
   ASSERT_THROW(planner.computeVelocityCommands(
-    robot_pose, nav_2d_msgs::msg::Twist2D()),
+      robot_pose, nav_2d_msgs::msg::Twist2D()),
     nav_core2::PlannerException);
 }
 
@@ -97,7 +101,7 @@ TEST_F(UninitializedTransform, DISABLED_NoTransform)
   plan.poses = path;
   planner.setPlan(plan);
   ASSERT_THROW(planner.computeVelocityCommands(
-    robot_pose, nav_2d_msgs::msg::Twist2D()),
+      robot_pose, nav_2d_msgs::msg::Twist2D()),
     nav_core2::PlannerTFException);
 }
 

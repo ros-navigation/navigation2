@@ -42,11 +42,11 @@ namespace dwb_critics
 {
 
 // Customization of the CostmapQueue validCellToQueue method
-bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData& cell)
+bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & cell)
 {
   unsigned char cost = costmap_.getCost(cell.x_, cell.y_);
   if (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-      cost == costmap_2d::NO_INFORMATION)
+    cost == costmap_2d::NO_INFORMATION)
   {
     parent_.setAsObstacle(cell.index_);
     return false;
@@ -67,21 +67,16 @@ void MapGridCritic::onInit()
   // TODO(crdelsey): handle params
   //nh_->param("aggregation_type", aggro_str, std::string("last"));
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
-  if (aggro_str == "last")
-  {
+  if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;
-  }
-  else if (aggro_str == "sum")
-  {
+  } else if (aggro_str == "sum") {
     aggregationType_ = ScoreAggregationType::Sum;
-  }
-  else if (aggro_str == "product")
-  {
+  } else if (aggro_str == "product") {
     aggregationType_ = ScoreAggregationType::Product;
-  }
-  else
-  {
-    RCLCPP_ERROR(rclcpp::get_logger("MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.", aggro_str.c_str());
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger(
+        "MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.",
+      aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
   }
 }
@@ -102,87 +97,73 @@ void MapGridCritic::reset()
 
 void MapGridCritic::propogateManhattanDistances()
 {
-  while (!queue_->isEmpty())
-  {
+  while (!queue_->isEmpty()) {
     costmap_queue::CellData cell = queue_->getNextCell();
     cell_values_[cell.index_] = abs(cell.src_x_ - cell.x_) + abs(cell.src_y_ - cell.y_);
   }
 }
 
-double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
+double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   double score = 0.0;
   unsigned int start_index = 0;
-  if (aggregationType_ == ScoreAggregationType::Product)
-  {
+  if (aggregationType_ == ScoreAggregationType::Product) {
     score = 1.0;
-  }
-  else if (aggregationType_ == ScoreAggregationType::Last && !stop_on_failure_)
-  {
+  } else if (aggregationType_ == ScoreAggregationType::Last && !stop_on_failure_) {
     start_index = traj.poses.size() - 1;
   }
   double grid_dist;
 
-  for (unsigned int i = start_index; i < traj.poses.size(); ++i)
-  {
+  for (unsigned int i = start_index; i < traj.poses.size(); ++i) {
     grid_dist = scorePose(traj.poses[i]);
-    if (stop_on_failure_)
-    {
-      if (grid_dist == obstacle_score_)
-      {
+    if (stop_on_failure_) {
+      if (grid_dist == obstacle_score_) {
         throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
-      }
-      else if (grid_dist == unreachable_score_)
-      {
+      } else if (grid_dist == unreachable_score_) {
         throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Unreachable Area.");
       }
     }
 
-    switch (aggregationType_)
-    {
-    case ScoreAggregationType::Last:
-      score = grid_dist;
-      break;
-    case ScoreAggregationType::Sum:
-      score += grid_dist;
-      break;
-    case ScoreAggregationType::Product:
-      if (score > 0)
-      {
-        score *= grid_dist;
-      }
-      break;
+    switch (aggregationType_) {
+      case ScoreAggregationType::Last:
+        score = grid_dist;
+        break;
+      case ScoreAggregationType::Sum:
+        score += grid_dist;
+        break;
+      case ScoreAggregationType::Product:
+        if (score > 0) {
+          score *= grid_dist;
+        }
+        break;
     }
   }
 
   return score;
 }
 
-double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D& pose)
+double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 {
   unsigned int cell_x, cell_y;
   // we won't allow trajectories that go off the map... shouldn't happen that often anyways
-  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y))
-  {
+  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
   }
   return getScore(cell_x, cell_y);
 }
 
-void MapGridCritic::addGridScores(sensor_msgs::msg::PointCloud& pc)
+void MapGridCritic::addGridScores(sensor_msgs::msg::PointCloud & pc)
 {
   sensor_msgs::msg::ChannelFloat32 grid_scores;
   grid_scores.name = name_;
 
-  costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
+  costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
   grid_scores.values.resize(size_x * size_y);
   unsigned int i = 0;
-  for (unsigned int cy = 0; cy < size_y; cy++)
-  {
-    for (unsigned int cx = 0; cx < size_x; cx++)
-    {
+  for (unsigned int cy = 0; cy < size_y; cy++) {
+    for (unsigned int cx = 0; cx < size_x; cx++) {
       grid_scores.values[i] = getScore(cx, cy);
       i++;
     }

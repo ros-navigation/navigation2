@@ -49,7 +49,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void StandardTrajectoryGenerator::initialize(const rclcpp::Node& nh)
+void StandardTrajectoryGenerator::initialize(const rclcpp::Node & nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
@@ -70,7 +70,7 @@ void StandardTrajectoryGenerator::initialize(const rclcpp::Node& nh)
    */
   // TODO(crdelsey): handle params
   discretize_by_time_ = false;
-  linear_granularity_= 0.5;
+  linear_granularity_ = 0.5;
   angular_granularity_ = 0.025;
   // nh.param("discretize_by_time", discretize_by_time_, false);
   // if (discretize_by_time_)
@@ -84,13 +84,13 @@ void StandardTrajectoryGenerator::initialize(const rclcpp::Node& nh)
   // }
 }
 
-void StandardTrajectoryGenerator::initializeIterator(const rclcpp::Node& nh)
+void StandardTrajectoryGenerator::initializeIterator(const rclcpp::Node & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
 }
 
-void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node& nh)
+void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node & nh)
 {
   // TODO(crdelsey): handle params
   // bool use_dwa;
@@ -102,7 +102,8 @@ void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node& nh)
   // }
 }
 
-void StandardTrajectoryGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity)
+void StandardTrajectoryGenerator::startNewIteration(
+  const nav_2d_msgs::msg::Twist2D & current_velocity)
 {
   velocity_iterator_->startNewIteration(current_velocity, sim_time_);
 }
@@ -117,15 +118,13 @@ nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::nextTwist()
   return velocity_iterator_->nextTwist();
 }
 
-std::vector<double> StandardTrajectoryGenerator::getTimeSteps(const nav_2d_msgs::msg::Twist2D& cmd_vel)
+std::vector<double> StandardTrajectoryGenerator::getTimeSteps(
+  const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   std::vector<double> steps;
-  if (discretize_by_time_)
-  {
+  if (discretize_by_time_) {
     steps.resize(ceil(sim_time_ / time_granularity_));
-  }
-  else  // discretize by distance
-  {
+  } else { // discretize by distance
     double vmag = hypot(cmd_vel.x, cmd_vel.y);
 
     // the distance the robot would travel in sim_time if it did not change velocity
@@ -136,20 +135,20 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(const nav_2d_msgs:
 
     // Pick the maximum of the two
     int num_steps = ceil(std::max(projected_linear_distance / linear_granularity_,
-                                  projected_angular_distance / angular_granularity_));
+        projected_angular_distance / angular_granularity_));
     steps.resize(num_steps);
   }
-  if (steps.size() == 0)
-  {
+  if (steps.size() == 0) {
     steps.resize(1);
   }
   std::fill(steps.begin(), steps.end(), sim_time_ / steps.size());
   return steps;
 }
 
-dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
-    const nav_2d_msgs::msg::Twist2D& start_vel,
-    const nav_2d_msgs::msg::Twist2D& cmd_vel)
+dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
+  const geometry_msgs::msg::Pose2D & start_pose,
+  const nav_2d_msgs::msg::Twist2D & start_vel,
+  const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
@@ -158,8 +157,7 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(cons
   geometry_msgs::msg::Pose2D pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
   std::vector<double> steps = getTimeSteps(cmd_vel);
-  for (double dt : steps)
-  {
+  for (double dt : steps) {
     traj.poses.push_back(pose);
     //  calculate velocities
     vel = computeNewVelocity(cmd_vel, vel, dt);
@@ -174,23 +172,30 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(cons
 /**
  * change vel using acceleration limits to converge towards sample_target-vel
  */
-nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(const nav_2d_msgs::msg::Twist2D& cmd_vel,
-    const nav_2d_msgs::msg::Twist2D& start_vel, const double dt)
+nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(
+  const nav_2d_msgs::msg::Twist2D & cmd_vel,
+  const nav_2d_msgs::msg::Twist2D & start_vel, const double dt)
 {
   nav_2d_msgs::msg::Twist2D new_vel;
-  new_vel.x = projectVelocity(start_vel.x, kinematics_->getAccX(), kinematics_->getDecelX(), dt, cmd_vel.x);
-  new_vel.y = projectVelocity(start_vel.y, kinematics_->getAccY(), kinematics_->getDecelY(), dt, cmd_vel.y);
-  new_vel.theta = projectVelocity(start_vel.theta, kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
-                                  dt, cmd_vel.theta);
+  new_vel.x = projectVelocity(start_vel.x, kinematics_->getAccX(),
+      kinematics_->getDecelX(), dt, cmd_vel.x);
+  new_vel.y = projectVelocity(start_vel.y, kinematics_->getAccY(),
+      kinematics_->getDecelY(), dt, cmd_vel.y);
+  new_vel.theta = projectVelocity(start_vel.theta,
+      kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
+      dt, cmd_vel.theta);
   return new_vel;
 }
 
-geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(const geometry_msgs::msg::Pose2D start_pose,
-                                                                      const nav_2d_msgs::msg::Twist2D& vel, const double dt)
+geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(
+  const geometry_msgs::msg::Pose2D start_pose,
+  const nav_2d_msgs::msg::Twist2D & vel, const double dt)
 {
   geometry_msgs::msg::Pose2D new_pose;
-  new_pose.x = start_pose.x + (vel.x * cos(start_pose.theta) + vel.y * cos(M_PI_2 + start_pose.theta)) * dt;
-  new_pose.y = start_pose.y + (vel.x * sin(start_pose.theta) + vel.y * sin(M_PI_2 + start_pose.theta)) * dt;
+  new_pose.x = start_pose.x +
+    (vel.x * cos(start_pose.theta) + vel.y * cos(M_PI_2 + start_pose.theta)) * dt;
+  new_pose.y = start_pose.y +
+    (vel.x * sin(start_pose.theta) + vel.y * sin(M_PI_2 + start_pose.theta)) * dt;
   new_pose.theta = start_pose.theta + vel.theta * dt;
   return new_pose;
 }
@@ -198,4 +203,5 @@ geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(const
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::StandardTrajectoryGenerator, dwb_local_planner::TrajectoryGenerator)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::StandardTrajectoryGenerator,
+  dwb_local_planner::TrajectoryGenerator)

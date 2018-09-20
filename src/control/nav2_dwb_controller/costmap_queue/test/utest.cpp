@@ -45,8 +45,7 @@ TEST(CostmapQueue, basicQueue)
   costmap_queue::CostmapQueue q(costmap);
   int count = 0;
   q.enqueueCell(0, 0);
-  while (!q.isEmpty())
-  {
+  while (!q.isEmpty()) {
     costmap_queue::CellData cell = q.getNextCell();
     EXPECT_EQ(cell.distance_, hypot(cell.x_, cell.y_));
     count++;
@@ -60,8 +59,7 @@ TEST(CostmapQueue, bigTest)
   costmap_queue::CostmapQueue q(big_map);
   int count = 0;
   q.enqueueCell(0, 0);
-  while (!q.isEmpty())
-  {
+  while (!q.isEmpty()) {
     costmap_queue::CellData cell = q.getNextCell();
     EXPECT_EQ(cell.distance_, hypot(cell.x_, cell.y_));
     count++;
@@ -78,8 +76,7 @@ TEST(CostmapQueue, linearQueue)
   q.enqueueCell(0, 2);
   q.enqueueCell(0, 3);
   q.enqueueCell(0, 4);
-  while (!q.isEmpty())
-  {
+  while (!q.isEmpty()) {
     costmap_queue::CellData cell = q.getNextCell();
     EXPECT_EQ(cell.distance_, cell.x_);
     count++;
@@ -94,18 +91,15 @@ TEST(CostmapQueue, crossQueue)
   int xs[] = {1, 2, 2, 3};
   int ys[] = {2, 1, 3, 2};
   int N = 4;
-  for (int i = 0; i < N; i++)
-  {
+  for (int i = 0; i < N; i++) {
     q.enqueueCell(xs[i], ys[i]);
   }
 
-  while (!q.isEmpty())
-  {
+  while (!q.isEmpty()) {
     costmap_queue::CellData cell = q.getNextCell();
     double min_d = 1000;
 
-    for (int i = 0; i < N; i++)
-    {
+    for (int i = 0; i < N; i++) {
       double dd = hypot(xs[i] - static_cast<float>(cell.x_), ys[i] - static_cast<float>(cell.y_));
       min_d = std::min(min_d, dd);
     }
@@ -120,8 +114,7 @@ TEST(CostmapQueue, limitedQueue)
   costmap_queue::LimitedCostmapQueue q(costmap, 5);
   int count = 0;
   q.enqueueCell(0, 0);
-  while (!q.isEmpty())
-  {
+  while (!q.isEmpty()) {
     costmap_queue::CellData cell = q.getNextCell();
     EXPECT_EQ(cell.distance_, hypot(cell.x_, cell.y_));
     count++;
@@ -131,15 +124,14 @@ TEST(CostmapQueue, limitedQueue)
   costmap_queue::LimitedCostmapQueue q2(costmap, 3);
   count = 0;
   q2.enqueueCell(0, 0);
-  while (!q2.isEmpty())
-  {
+  while (!q2.isEmpty()) {
     q2.getNextCell();
     count++;
   }
   EXPECT_EQ(count, 11);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

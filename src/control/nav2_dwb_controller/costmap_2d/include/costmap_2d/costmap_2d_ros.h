@@ -48,11 +48,13 @@
 namespace costmap_2d
 {
 
-class LayeredCostmap{
+class LayeredCostmap
+{
 
 };
 
-class Costmap2DConfig{
+class Costmap2DConfig
+{
 
 };
 
@@ -69,7 +71,7 @@ public:
    * @param name The name for this costmap
    * @param tf A reference to a TransformListener
    */
-   Costmap2DROS(const std::string &name, tf2_ros::Buffer& tf) {}
+  Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf) {}
   ~Costmap2DROS() {}
 
   /**
@@ -92,7 +94,7 @@ public:
   /**
    * @brief  Resumes costmap updates
    */
-  void resume(){}
+  void resume() {}
 
   void updateMap() {}
 
@@ -102,14 +104,14 @@ public:
   void resetLayers() {}
 
   /** @brief Same as getLayeredCostmap()->isCurrent(). */
-  bool isCurrent() {return false; }
+  bool isCurrent() {return false;}
 
   /**
    * @brief Get the pose of the robot in the global frame of the costmap
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped& global_pose) const {return false;}
+  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const {return false;}
 
   /** @brief Returns costmap name */
   std::string getName() const {return std::string();}
@@ -120,7 +122,7 @@ public:
   /** @brief Return a pointer to the "master" costmap which receives updates from all the layers.
    *
    * Same as calling getLayeredCostmap()->getCostmap(). */
-  Costmap2D* getCostmap() {return nullptr;}
+  Costmap2D * getCostmap() {return nullptr;}
 
   /**
    * @brief  Returns the global frame of the costmap
@@ -133,7 +135,7 @@ public:
    * @return The local frame of the costmap
    */
   std::string getBaseFrameID() {return std::string();}
-  LayeredCostmap* getLayeredCostmap() {return nullptr;}
+  LayeredCostmap * getLayeredCostmap() {return nullptr;}
 
   /** @brief Returns the current padded footprint as a geometry_msgs::msg::Polygon. */
   geometry_msgs::msg::Polygon getRobotFootprintPolygon() {return geometry_msgs::msg::Polygon();}
@@ -146,7 +148,10 @@ public:
    * The footprint initially comes from the rosparam "footprint" but
    * can be overwritten by dynamic reconfigure or by messages received
    * on the "footprint" topic. */
-  std::vector<geometry_msgs::msg::Point> getRobotFootprint() {return std::vector<geometry_msgs::msg::Point>();}
+  std::vector<geometry_msgs::msg::Point> getRobotFootprint()
+  {
+    return std::vector<geometry_msgs::msg::Point>();
+  }
 
   /** @brief Return the current unpadded footprint of the robot as a vector of points.
    *
@@ -155,14 +160,16 @@ public:
    * The footprint initially comes from the rosparam "footprint" but
    * can be overwritten by dynamic reconfigure or by messages received
    * on the "footprint" topic. */
-  std::vector<geometry_msgs::msg::Point> getUnpaddedRobotFootprint() {return std::vector<geometry_msgs::msg::Point>();}
+  std::vector<geometry_msgs::msg::Point> getUnpaddedRobotFootprint()
+  {
+    return std::vector<geometry_msgs::msg::Point>();
+  }
 
   /**
    * @brief  Build the oriented footprint of the robot at the robot's current pose
    * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
    */
-  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point>& oriented_footprint) const {}
-
+  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & oriented_footprint) const {}
 
 
 };

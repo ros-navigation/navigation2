@@ -49,14 +49,17 @@ namespace dwb_critics
  * that is still on the costmap and then evaluates how far the front of the robot is from that point.
  * This works as a proxy to calculating which way the robot should be pointing.
  */
-class GoalAlignCritic: public GoalDistCritic
+class GoalAlignCritic : public GoalDistCritic
 {
 public:
-  GoalAlignCritic() : forward_point_distance_(0.0) {}
+  GoalAlignCritic()
+  : forward_point_distance_(0.0) {}
   void onInit() override;
-  bool prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-               const geometry_msgs::msg::Pose2D& goal, const nav_2d_msgs::msg::Path2D& global_plan) override;
-  double scorePose(const geometry_msgs::msg::Pose2D& pose) override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+  double scorePose(const geometry_msgs::msg::Pose2D & pose) override;
+
 protected:
   double forward_point_distance_;
 };

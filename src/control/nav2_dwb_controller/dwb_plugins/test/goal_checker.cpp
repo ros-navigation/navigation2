@@ -38,11 +38,12 @@
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;
 
-void checkMacro(dwb_local_planner::GoalChecker& gc,
-                double x0, double y0, double theta0,
-                double x1, double y1, double theta1,
-                double xv, double yv, double thetav,
-                bool expected_result)
+void checkMacro(
+  dwb_local_planner::GoalChecker & gc,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav,
+  bool expected_result)
 {
   geometry_msgs::msg::Pose2D pose0, pose1;
   pose0.x = x0;
@@ -55,26 +56,29 @@ void checkMacro(dwb_local_planner::GoalChecker& gc,
   v.x = xv;
   v.y = yv;
   v.theta = thetav;
-  if (expected_result)
+  if (expected_result) {
     EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
-  else
+  } else {
     EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
+  }
 }
 
-void sameResult(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalChecker& gc1,
-                double x0, double y0, double theta0,
-                double x1, double y1, double theta1,
-                double xv, double yv, double thetav,
-                bool expected_result)
+void sameResult(
+  dwb_local_planner::GoalChecker & gc0, dwb_local_planner::GoalChecker & gc1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav,
+  bool expected_result)
 {
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
 }
 
-void trueFalse(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalChecker& gc1,
-               double x0, double y0, double theta0,
-               double x1, double y1, double theta1,
-               double xv, double yv, double thetav)
+void trueFalse(
+  dwb_local_planner::GoalChecker & gc0, dwb_local_planner::GoalChecker & gc1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav)
 {
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
@@ -98,7 +102,7 @@ TEST(VelocityIterator, two_checks)
   trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);

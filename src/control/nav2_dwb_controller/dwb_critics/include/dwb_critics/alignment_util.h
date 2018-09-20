@@ -47,7 +47,7 @@ namespace dwb_critics
  *
  * (used in both path_align and dist_align)
  */
-geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D& pose, double distance);
+geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D & pose, double distance);
 
 }  // namespace dwb_critics
 

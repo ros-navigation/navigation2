@@ -50,11 +50,10 @@ void BaseObstacleCritic::onInit()
   // nh_->param("sum_scores", sum_scores_, false);
 }
 
-double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
+double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   double score = 0.0;
-  for (unsigned int i = 0; i < traj.poses.size(); ++i)
-  {
+  for (unsigned int i = 0; i < traj.poses.size(); ++i) {
     double pose_score = scorePose(traj.poses[i]);
     // Optimized/branchless version of if (sum_scores_) score += pose_score, else score = pose_score;
     score = static_cast<double>(sum_scores_) * score + pose_score;
@@ -62,24 +61,26 @@ double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& tr
   return score;
 }
 
-double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose2D& pose)
+double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 {
   unsigned int cell_x, cell_y;
-  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y))
+  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
+  }
   unsigned char cost = costmap_->getCost(cell_x, cell_y);
-  if (!isValidCost(cost))
+  if (!isValidCost(cost)) {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
+  }
   return cost;
 }
 
 bool BaseObstacleCritic::isValidCost(const unsigned char cost)
 {
-  return cost != costmap_2d::LETHAL_OBSTACLE && cost != costmap_2d::INSCRIBED_INFLATED_OBSTACLE
-                                             && cost != costmap_2d::NO_INFORMATION;
+  return cost != costmap_2d::LETHAL_OBSTACLE && cost != costmap_2d::INSCRIBED_INFLATED_OBSTACLE &&
+         cost != costmap_2d::NO_INFORMATION;
 }
 
-void BaseObstacleCritic::addGridScores(sensor_msgs::msg::PointCloud& pc)
+void BaseObstacleCritic::addGridScores(sensor_msgs::msg::PointCloud & pc)
 {
   sensor_msgs::msg::ChannelFloat32 grid_scores;
   grid_scores.name = name_;
@@ -88,10 +89,8 @@ void BaseObstacleCritic::addGridScores(sensor_msgs::msg::PointCloud& pc)
   unsigned int size_y = costmap_->getSizeInCellsY();
   grid_scores.values.resize(size_x * size_y);
   unsigned int i = 0;
-  for (unsigned int cy = 0; cy < size_y; cy++)
-  {
-    for (unsigned int cx = 0; cx < size_x; cx++)
-    {
+  for (unsigned int cy = 0; cy < size_y; cy++) {
+    for (unsigned int cx = 0; cx < size_x; cx++) {
       grid_scores.values[i] = costmap_->getCost(cx, cy);
       i++;
     }

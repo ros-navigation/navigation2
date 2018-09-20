@@ -44,11 +44,12 @@ geometry_msgs::msg::Pose2D origin;
 nav_2d_msgs::msg::Twist2D zero;
 nav_2d_msgs::msg::Twist2D forward;
 
-void checkLimits(const std::vector<nav_2d_msgs::msg::Twist2D>& twists,
-                 double exp_min_x, double exp_max_x, double exp_min_y, double exp_max_y,
-                 double exp_min_theta, double exp_max_theta,
-                 double exp_max_xy = -1.0,
-                 double exp_min_xy = -1.0, double exp_min_speed_theta = -1.0)
+void checkLimits(
+  const std::vector<nav_2d_msgs::msg::Twist2D> & twists,
+  double exp_min_x, double exp_max_x, double exp_min_y, double exp_max_y,
+  double exp_min_theta, double exp_max_theta,
+  double exp_max_xy = -1.0,
+  double exp_min_xy = -1.0, double exp_min_speed_theta = -1.0)
 {
   ASSERT_GT(twists.size(), 0);
   nav_2d_msgs::msg::Twist2D first = twists[0];
@@ -57,8 +58,7 @@ void checkLimits(const std::vector<nav_2d_msgs::msg::Twist2D>& twists,
   double min_theta = first.theta, max_theta = first.theta;
   double max_xy = hypot(first.x, first.y);
 
-  for (nav_2d_msgs::msg::Twist2D twist : twists)
-  {
+  for (nav_2d_msgs::msg::Twist2D twist : twists) {
     min_x = std::min(min_x, twist.x);
     min_y = std::min(min_y, twist.y);
     min_theta = std::min(min_theta, twist.theta);
@@ -68,8 +68,7 @@ void checkLimits(const std::vector<nav_2d_msgs::msg::Twist2D>& twists,
     double hyp = hypot(twist.x, twist.y);
     max_xy = std::max(max_xy, hyp);
 
-    if (exp_min_xy >= 0 && exp_min_speed_theta >= 0)
-    {
+    if (exp_min_xy >= 0 && exp_min_speed_theta >= 0) {
       EXPECT_TRUE(fabs(twist.theta) >= exp_min_speed_theta || hyp >= exp_min_xy);
     }
   }
@@ -79,8 +78,9 @@ void checkLimits(const std::vector<nav_2d_msgs::msg::Twist2D>& twists,
   EXPECT_DOUBLE_EQ(max_y, exp_max_y);
   EXPECT_DOUBLE_EQ(min_theta, exp_min_theta);
   EXPECT_DOUBLE_EQ(max_theta, exp_max_theta);
-  if (exp_max_xy >= 0)
+  if (exp_max_xy >= 0) {
     EXPECT_DOUBLE_EQ(max_xy, exp_max_xy);
+  }
 }
 
 double durationToSec(builtin_interfaces::msg::Duration d)
@@ -230,31 +230,35 @@ TEST(VelocityIterator, nonzero)
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(initial);
   EXPECT_EQ(twists.size(), 2519);
   checkLimits(twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
-                      0.24622144504490268, 0.0, 0.1);
+    0.24622144504490268, 0.0, 0.1);
 }
 
-void matchPose(const geometry_msgs::msg::Pose2D& a, const geometry_msgs::msg::Pose2D& b)
+void matchPose(const geometry_msgs::msg::Pose2D & a, const geometry_msgs::msg::Pose2D & b)
 {
   EXPECT_DOUBLE_EQ(a.x, b.x);
   EXPECT_DOUBLE_EQ(a.y, b.y);
   EXPECT_DOUBLE_EQ(a.theta, b.theta);
 }
 
-void matchPose(const geometry_msgs::msg::Pose2D& a, const double x, const double y, const double theta)
+void matchPose(
+  const geometry_msgs::msg::Pose2D & a, const double x, const double y,
+  const double theta)
 {
   EXPECT_DOUBLE_EQ(a.x, x);
   EXPECT_DOUBLE_EQ(a.y, y);
   EXPECT_DOUBLE_EQ(a.theta, theta);
 }
 
-void matchTwist(const nav_2d_msgs::msg::Twist2D& a, const nav_2d_msgs::msg::Twist2D& b)
+void matchTwist(const nav_2d_msgs::msg::Twist2D & a, const nav_2d_msgs::msg::Twist2D & b)
 {
   EXPECT_DOUBLE_EQ(a.x, b.x);
   EXPECT_DOUBLE_EQ(a.y, b.y);
   EXPECT_DOUBLE_EQ(a.theta, b.theta);
 }
 
-void matchTwist(const nav_2d_msgs::msg::Twist2D& a, const double x, const double y, const double theta)
+void matchTwist(
+  const nav_2d_msgs::msg::Twist2D & a, const double x, const double y,
+  const double theta)
 {
   EXPECT_DOUBLE_EQ(a.x, x);
   EXPECT_DOUBLE_EQ(a.y, y);
@@ -399,7 +403,7 @@ TEST(TrajectoryGenerator, dwa)
   matchPose(res.poses[4], 1.2, 0, 0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   forward.x = 0.3;
   rclcpp::init(argc, argv);

@@ -39,15 +39,15 @@
 
 namespace dwb_critics
 {
-bool GoalDistCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2d_msgs::msg::Twist2D& vel,
-                             const geometry_msgs::msg::Pose2D& goal,
-                             const nav_2d_msgs::msg::Path2D& global_plan)
+bool GoalDistCritic::prepare(
+  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose2D & goal,
+  const nav_2d_msgs::msg::Path2D & global_plan)
 {
   reset();
 
   unsigned int local_goal_x, local_goal_y;
-  if (!getLastPoseOnCostmap(global_plan, local_goal_x, local_goal_y))
-  {
+  if (!getLastPoseOnCostmap(global_plan, local_goal_x, local_goal_y)) {
     return false;
   }
 
@@ -61,39 +61,38 @@ bool GoalDistCritic::prepare(const geometry_msgs::msg::Pose2D& pose, const nav_2
   return true;
 }
 
-bool GoalDistCritic::getLastPoseOnCostmap(const nav_2d_msgs::msg::Path2D& global_plan, unsigned int& x, unsigned int& y)
+bool GoalDistCritic::getLastPoseOnCostmap(
+  const nav_2d_msgs::msg::Path2D & global_plan,
+  unsigned int & x, unsigned int & y)
 {
-  nav_2d_msgs::msg::Path2D adjusted_global_plan = nav_2d_utils::adjustPlanResolution(global_plan, costmap_->getResolution());
+  nav_2d_msgs::msg::Path2D adjusted_global_plan = nav_2d_utils::adjustPlanResolution(global_plan,
+      costmap_->getResolution());
   bool started_path = false;
 
   // skip global path points until we reach the border of the local map
-  for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i)
-  {
+  for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i) {
     double g_x = adjusted_global_plan.poses[i].x;
     double g_y = adjusted_global_plan.poses[i].y;
     unsigned int map_x, map_y;
-    if (costmap_->worldToMap(g_x, g_y, map_x, map_y) && costmap_->getCost(map_x, map_y) != costmap_2d::NO_INFORMATION)
+    if (costmap_->worldToMap(g_x, g_y, map_x,
+      map_y) && costmap_->getCost(map_x, map_y) != costmap_2d::NO_INFORMATION)
     {
       // Still on the costmap. Continue.
       x = map_x;
       y = map_y;
       started_path = true;
-    }
-    else if (started_path)
-    {
+    } else if (started_path) {
       // Off the costmap after being on the costmap. Return the last saved indices.
       return true;
     }
     // else, we have not yet found a point on the costmap, so we just continue
   }
 
-  if (started_path)
-  {
+  if (started_path) {
     return true;
-  }
-  else
-  {
-    RCLCPP_ERROR(rclcpp::get_logger("GoalDistCritic"), "None of the points of the global plan were in the local costmap.");
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger(
+        "GoalDistCritic"), "None of the points of the global plan were in the local costmap.");
     return false;
   }
 }

@@ -38,7 +38,7 @@
 namespace nav_2d_utils
 {
 
-geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D& cmd_vel_2d)
+geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_2d)
 {
   geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.x = cmd_vel_2d.x;

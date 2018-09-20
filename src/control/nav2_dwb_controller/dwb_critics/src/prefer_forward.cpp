@@ -50,16 +50,14 @@ void PreferForwardCritic::onInit()
   // nh_->param("theta_scale", theta_scale_, 10.0);
 }
 
-double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj)
+double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   // backward motions bad on a robot without backward sensors
-  if (traj.velocity.x < 0.0)
-  {
+  if (traj.velocity.x < 0.0) {
     return penalty_;
   }
   // strafing motions also bad on such a robot
-  if (traj.velocity.x < strafe_x_ && fabs(traj.velocity.theta) < strafe_theta_)
-  {
+  if (traj.velocity.x < strafe_x_ && fabs(traj.velocity.theta) < strafe_theta_) {
     return penalty_;
   }
 

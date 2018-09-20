@@ -48,25 +48,25 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const rclcpp::Node& nh);
+  void initialize(const rclcpp::Node & nh);
 
-  inline double getMinX() { return min_vel_x_; }
-  inline double getMaxX() { return max_vel_x_; }
-  inline double getAccX() { return acc_lim_x_; }
-  inline double getDecelX() { return decel_lim_x_; }
+  inline double getMinX() {return min_vel_x_;}
+  inline double getMaxX() {return max_vel_x_;}
+  inline double getAccX() {return acc_lim_x_;}
+  inline double getDecelX() {return decel_lim_x_;}
 
-  inline double getMinY() { return min_vel_y_; }
-  inline double getMaxY() { return max_vel_y_; }
-  inline double getAccY() { return acc_lim_y_; }
-  inline double getDecelY() { return decel_lim_y_; }
+  inline double getMinY() {return min_vel_y_;}
+  inline double getMaxY() {return max_vel_y_;}
+  inline double getAccY() {return acc_lim_y_;}
+  inline double getDecelY() {return decel_lim_y_;}
 
-  inline double getMinSpeedXY() { return min_speed_xy_; }
+  inline double getMinSpeedXY() {return min_speed_xy_;}
 
-  inline double getMinTheta() { return -max_vel_theta_; }
-  inline double getMaxTheta() { return max_vel_theta_; }
-  inline double getAccTheta() { return acc_lim_theta_; }
-  inline double getDecelTheta() { return decel_lim_theta_; }
-  inline double getMinSpeedTheta() { return min_speed_theta_; }
+  inline double getMinTheta() {return -max_vel_theta_;}
+  inline double getMaxTheta() {return max_vel_theta_;}
+  inline double getAccTheta() {return acc_lim_theta_;}
+  inline double getDecelTheta() {return decel_lim_theta_;}
+  inline double getMinSpeedTheta() {return min_speed_theta_;}
 
   /**
    * @brief Check to see whether the combined x/y/theta velocities are valid
@@ -87,6 +87,7 @@ public:
   bool isValidSpeed(double x, double y, double theta);
 
   typedef std::shared_ptr<KinematicParameters> Ptr;
+
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
   double min_vel_x_, min_vel_y_;

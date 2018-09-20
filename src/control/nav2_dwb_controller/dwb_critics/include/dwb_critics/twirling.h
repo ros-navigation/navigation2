@@ -48,11 +48,11 @@ namespace dwb_critics
  * sometimes a robot spins more than you'd like on its way to a goal. This class provides a way
  * to assign a penalty purely to rotational velocities.
  */
-class TwirlingCritic: public dwb_local_planner::TrajectoryCritic
+class TwirlingCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D& traj) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 };
 }  // namespace dwb_critics
 

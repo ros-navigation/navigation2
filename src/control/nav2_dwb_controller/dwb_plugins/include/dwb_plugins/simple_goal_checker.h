@@ -50,9 +50,11 @@ class SimpleGoalChecker : public dwb_local_planner::GoalChecker
 public:
   SimpleGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const rclcpp::Node& nh) override;
-  bool isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
-                     const nav_2d_msgs::msg::Twist2D& velocity) override;
+  void initialize(const rclcpp::Node & nh) override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+    const nav_2d_msgs::msg::Twist2D & velocity) override;
+
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
 

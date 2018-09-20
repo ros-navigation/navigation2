@@ -42,12 +42,12 @@
 namespace dwb_plugins
 {
 
-SimpleGoalChecker::SimpleGoalChecker() :
-  xy_goal_tolerance_(0.25), yaw_goal_tolerance_(0.25), xy_goal_tolerance_sq_(0.0625)
+SimpleGoalChecker::SimpleGoalChecker()
+: xy_goal_tolerance_(0.25), yaw_goal_tolerance_(0.25), xy_goal_tolerance_sq_(0.0625)
 {
 }
 
-void SimpleGoalChecker::initialize(const rclcpp::Node& nh)
+void SimpleGoalChecker::initialize(const rclcpp::Node & nh)
 {
   // TODO(crdelsey): Handle params
   // nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.25);
@@ -55,13 +55,13 @@ void SimpleGoalChecker::initialize(const rclcpp::Node& nh)
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-bool SimpleGoalChecker::isGoalReached(const geometry_msgs::msg::Pose2D& query_pose, const geometry_msgs::msg::Pose2D& goal_pose,
-                                      const nav_2d_msgs::msg::Twist2D& velocity)
+bool SimpleGoalChecker::isGoalReached(
+  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+  const nav_2d_msgs::msg::Twist2D & velocity)
 {
   double dx = query_pose.x - goal_pose.x,
-         dy = query_pose.y - goal_pose.y;
-  if (dx * dx + dy * dy > xy_goal_tolerance_sq_)
-  {
+    dy = query_pose.y - goal_pose.y;
+  if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
     return false;
   }
   double dyaw = angles::shortest_angular_distance(query_pose.theta, goal_pose.theta);

@@ -44,7 +44,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void LimitedAccelGenerator::initialize(const rclcpp::Node& nh)
+void LimitedAccelGenerator::initialize(const rclcpp::Node & nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
   acceleration_time_ = 0.05;
@@ -69,7 +69,7 @@ void LimitedAccelGenerator::initialize(const rclcpp::Node& nh)
   // }
 }
 
-void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node& nh)
+void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node & nh)
 {
   // TODO(crdelsey): Handle params
   // bool use_dwa;
@@ -81,15 +81,16 @@ void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node& nh)
   // }
 }
 
-void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity)
+void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity)
 {
   // Limit our search space to just those within the limited acceleration_time
   velocity_iterator_->startNewIteration(current_velocity, acceleration_time_);
 }
 
-dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(const geometry_msgs::msg::Pose2D& start_pose,
-    const nav_2d_msgs::msg::Twist2D& start_vel,
-    const nav_2d_msgs::msg::Twist2D& cmd_vel)
+dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
+  const geometry_msgs::msg::Pose2D & start_pose,
+  const nav_2d_msgs::msg::Twist2D & start_vel,
+  const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
@@ -97,8 +98,7 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(const geom
   geometry_msgs::msg::Pose2D pose = start_pose;
 
   std::vector<double> steps = getTimeSteps(cmd_vel);
-  for (double dt : steps)
-  {
+  for (double dt : steps) {
     traj.poses.push_back(pose);
 
     //  update the position using the constant cmd_vel
