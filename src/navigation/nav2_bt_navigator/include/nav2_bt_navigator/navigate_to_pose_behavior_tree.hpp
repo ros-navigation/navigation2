@@ -44,7 +44,9 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   // The nodes of the behavior tree
-  std::unique_ptr<BT::FallbackNode> root_;
+  std::unique_ptr<BT::SequenceNodeWithMemory> root_;
+  std::unique_ptr<nav2_tasks::ComputePathToPoseAction> firstPath_;
+  std::unique_ptr<BT::FallbackNode> sel_;
   std::unique_ptr<ReachedGoalConditionNode> reachedGoalNode_;
   std::unique_ptr<BT::ParallelNode> parNode_;
   std::unique_ptr<nav2_tasks::ComputePathToPoseAction> computePathToPoseAction_;
