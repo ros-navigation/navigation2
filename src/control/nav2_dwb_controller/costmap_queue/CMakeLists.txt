@@ -24,13 +24,13 @@ add_library(${PROJECT_NAME}
 set(dependencies
   costmap_2d
   rclcpp
-  )
+)
 
 ament_target_dependencies(${PROJECT_NAME}
   ${dependencies}
 )
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
@@ -42,7 +42,7 @@ if (BUILD_TESTING)
   ament_add_gtest(utest test/utest.cpp)
   target_link_libraries(utest ${PROJECT_NAME})
   ament_target_dependencies(utest ${dependencies})
-endif (BUILD_TESTING)
+endif()
 
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION lib
