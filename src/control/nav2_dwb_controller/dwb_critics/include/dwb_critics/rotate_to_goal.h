@@ -31,8 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_ROTATE_TO_GOAL_H_
-#define DWB_CRITICS_ROTATE_TO_GOAL_H_
+#ifndef DWB_CRITICS__ROTATE_TO_GOAL_H_
+#define DWB_CRITICS__ROTATE_TO_GOAL_H_
 
 #include <dwb_local_planner/trajectory_critic.h>
 #include <string>
@@ -67,4 +67,4 @@ private:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_ROTATE_TO_GOAL_H_
+#endif  // DWB_CRITICS__ROTATE_TO_GOAL_H_

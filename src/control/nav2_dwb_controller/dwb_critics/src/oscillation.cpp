@@ -113,8 +113,9 @@ void OscillationCritic::onInit()
   // }
   // else if (nh_->searchParam("min_trans_vel", resolved_name))
   // {
-  //   ROS_WARN_NAMED("OscillationCritic", "Parameter min_trans_vel is deprecated. "
-  //                                       "Please use the name min_speed_xy or x_only_threshold instead.");
+  //   ROS_WARN_NAMED("OscillationCritic",
+  //     "Parameter min_trans_vel is deprecated. "
+  //     "Please use the name min_speed_xy or x_only_threshold instead.");
   //   nh_->param(resolved_name, x_only_threshold_);
   // }
   // else

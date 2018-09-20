@@ -65,4 +65,4 @@ double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & 
   return fabs(traj.velocity.theta) * theta_scale_;
 }
 
-} /* namespace dwb_critics */
+}  // namespace dwb_critics

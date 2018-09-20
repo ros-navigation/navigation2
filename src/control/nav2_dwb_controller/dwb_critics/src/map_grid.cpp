@@ -32,11 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_critics/map_grid.h>
-#include <dwb_local_planner/exceptions.h>
+#include "dwb_critics/map_grid.h"
 #include <string>
 #include <algorithm>
-#include <costmap_2d/cost_values.h>
+#include <memory>
+#include "dwb_local_planner/exceptions.h"
+#include "costmap_2d/cost_values.h"
 
 namespace dwb_critics
 {
@@ -65,7 +66,7 @@ void MapGridCritic::onInit()
 
   std::string aggro_str("last");
   // TODO(crdelsey): handle params
-  //nh_->param("aggregation_type", aggro_str, std::string("last"));
+  // nh_->param("aggregation_type", aggro_str, std::string("last"));
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;

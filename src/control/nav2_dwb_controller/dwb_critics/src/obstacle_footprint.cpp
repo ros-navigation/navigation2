@@ -32,13 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_critics/obstacle_footprint.h>
-#include <dwb_critics/line_iterator.h>
-#include <dwb_local_planner/exceptions.h>
-#include <pluginlib/class_list_macros.hpp>
+#include "dwb_critics/obstacle_footprint.h"
 #include <algorithm>
 #include <vector>
-#include <costmap_2d/cost_values.h>
+#include "dwb_critics/line_iterator.h"
+#include "dwb_local_planner/exceptions.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "costmap_2d/cost_values.h"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::ObstacleFootprintCritic, dwb_local_planner::TrajectoryCritic)
 
@@ -66,7 +66,8 @@ bool ObstacleFootprintCritic::prepare(
 {
   footprint_spec_ = costmap_ros_->getRobotFootprint();
   if (footprint_spec_.size() == 0) {
-    // ROS_ERROR_NAMED("ObstacleFootprintCritic", "Footprint spec is empty, maybe missing call to setFootprint?");
+    // ROS_ERROR_NAMED("ObstacleFootprintCritic",
+    //   "Footprint spec is empty, maybe missing call to setFootprint?");
     return false;
   }
   return true;

@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_OSCILLATION_H_
-#define DWB_CRITICS_OSCILLATION_H_
+#ifndef DWB_CRITICS__OSCILLATION_H_
+#define DWB_CRITICS__OSCILLATION_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
 #include <vector>
 #include <string>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -153,4 +153,4 @@ private:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_OSCILLATION_H_
+#endif  // DWB_CRITICS__OSCILLATION_H_

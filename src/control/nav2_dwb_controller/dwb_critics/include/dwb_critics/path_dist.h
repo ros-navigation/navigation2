@@ -31,8 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_PATH_DIST_H_
-#define DWB_CRITICS_PATH_DIST_H_
+#ifndef DWB_CRITICS__PATH_DIST_H_
+#define DWB_CRITICS__PATH_DIST_H_
 
 #include <dwb_critics/map_grid.h>
 
@@ -51,4 +51,4 @@ public:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_PATH_DIST_H_
+#endif  // DWB_CRITICS__PATH_DIST_H_

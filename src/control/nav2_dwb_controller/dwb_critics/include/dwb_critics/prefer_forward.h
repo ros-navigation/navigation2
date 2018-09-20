@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_PREFER_FORWARD_H_
-#define DWB_CRITICS_PREFER_FORWARD_H_
+#ifndef DWB_CRITICS__PREFER_FORWARD_H_
+#define DWB_CRITICS__PREFER_FORWARD_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
 #include <string>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -62,5 +62,5 @@ private:
   double penalty_, strafe_x_, strafe_theta_, theta_scale_;
 };
 
-} /* namespace dwb_critics */
-#endif /* DWB_CRITICS_PREFER_FORWARD_H_ */
+}  // namespace dwb_critics
+#endif  // DWB_CRITICS__PREFER_FORWARD_H_

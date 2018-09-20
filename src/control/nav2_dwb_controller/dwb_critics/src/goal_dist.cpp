@@ -31,11 +31,12 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <dwb_critics/goal_dist.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <nav_2d_utils/path_ops.h>
+
+#include "dwb_critics/goal_dist.h"
 #include <vector>
-#include <costmap_2d/cost_values.h>
+#include "pluginlib/class_list_macros.hpp"
+#include "nav_2d_utils/path_ops.h"
+#include "costmap_2d/cost_values.h"
 
 namespace dwb_critics
 {

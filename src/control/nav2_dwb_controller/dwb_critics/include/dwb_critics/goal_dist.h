@@ -31,11 +31,11 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_GOAL_DIST_H_
-#define DWB_CRITICS_GOAL_DIST_H_
+#ifndef DWB_CRITICS__GOAL_DIST_H_
+#define DWB_CRITICS__GOAL_DIST_H_
 
-#include <dwb_critics/map_grid.h>
 #include <vector>
+#include "dwb_critics/map_grid.h"
 
 namespace dwb_critics
 {
@@ -61,4 +61,4 @@ protected:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_GOAL_DIST_H_
+#endif  // DWB_CRITICS__GOAL_DIST_H_

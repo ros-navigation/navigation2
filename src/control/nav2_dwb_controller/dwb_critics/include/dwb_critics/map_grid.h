@@ -32,12 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_MAP_GRID_H
-#define DWB_CRITICS_MAP_GRID_H
+#ifndef DWB_CRITICS__MAP_GRID_H_
+#define DWB_CRITICS__MAP_GRID_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
-#include <costmap_queue/costmap_queue.h>
 #include <vector>
+#include <memory>
+#include "dwb_local_planner/trajectory_critic.h"
+#include "costmap_queue/costmap_queue.h"
 
 namespace dwb_critics
 {
@@ -115,7 +116,7 @@ protected:
   };
 
   /**
-   * @brief Clear the queue and set cell_values_ to the appropriate number of unreachableCellScore
+   * @brief Clear the queuDWB_CRITICS_MAP_GRID_He and set cell_values_ to the appropriate number of unreachableCellScore
    */
   void reset();
 
@@ -133,4 +134,4 @@ protected:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS_MAP_GRID_H
+#endif  // DWB_CRITICS__MAP_GRID_H_

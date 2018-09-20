@@ -31,11 +31,12 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <dwb_critics/path_dist.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <nav_2d_utils/path_ops.h>
+
+#include "dwb_critics/path_dist.h"
 #include <vector>
-#include <costmap_2d/cost_values.h>
+#include "pluginlib/class_list_macros.hpp"
+#include "nav_2d_utils/path_ops.h"
+#include "costmap_2d/cost_values.h"
 
 namespace dwb_critics
 {
@@ -74,9 +75,10 @@ bool PathDistCritic::prepare(
     }
   }
   if (!started_path) {
-    RCLCPP_ERROR(rclcpp::get_logger(
-        "PathDistCritic"),
-      "None of the %d first of %zu (%zu) points of the global plan were in the local costmap and free",
+    RCLCPP_ERROR(
+      rclcpp::get_logger("PathDistCritic"),
+      "None of the %d first of %zu (%zu) points of the global plan were in "
+      "the local costmap and free",
       i, adjusted_global_plan.poses.size(), global_plan.poses.size());
     return false;
   }

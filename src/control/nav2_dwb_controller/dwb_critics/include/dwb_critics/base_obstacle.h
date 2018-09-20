@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_BASE_OBSTACLE_H
-#define DWB_CRITICS_BASE_OBSTACLE_H
+#ifndef DWB_CRITICS__BASE_OBSTACLE_H_
+#define DWB_CRITICS__BASE_OBSTACLE_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -76,4 +76,4 @@ protected:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS_BASE_OBSTACLE_H
+#endif  // DWB_CRITICS__BASE_OBSTACLE_H_

@@ -31,8 +31,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_PATH_ALIGN_H_
-#define DWB_CRITICS_PATH_ALIGN_H_
+#ifndef DWB_CRITICS__PATH_ALIGN_H_
+#define DWB_CRITICS__PATH_ALIGN_H_
 
 #include <dwb_critics/path_dist.h>
 #include <vector>
@@ -71,4 +71,4 @@ protected:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_PATH_ALIGN_H_
+#endif  // DWB_CRITICS__PATH_ALIGN_H_

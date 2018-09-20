@@ -31,12 +31,12 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_GOAL_ALIGN_H_
-#define DWB_CRITICS_GOAL_ALIGN_H_
+#ifndef DWB_CRITICS__GOAL_ALIGN_H_
+#define DWB_CRITICS__GOAL_ALIGN_H_
 
-#include <dwb_critics/goal_dist.h>
 #include <vector>
 #include <string>
+#include "dwb_critics/goal_dist.h"
 
 namespace dwb_critics
 {
@@ -65,4 +65,4 @@ protected:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_GOAL_ALIGN_H_
+#endif  // DWB_CRITICS__GOAL_ALIGN_H_

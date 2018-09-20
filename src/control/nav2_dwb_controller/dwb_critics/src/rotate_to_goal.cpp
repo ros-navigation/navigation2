@@ -87,4 +87,4 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   return angles::shortest_angular_distance(end_yaw, goal_yaw_);
 }
 
-} /* namespace dwb_critics */
+}  // namespace dwb_critics
