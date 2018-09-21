@@ -9,10 +9,10 @@ SHELL ["/bin/bash", "-c"]
 # setup keys 
 # check if proxy is set and get keys, using proxy if it is set
 RUN if [ "$http_proxy" == "" ]; \ 
-      then \
+    then \
       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
       --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
-      else \
+    else \
       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
       --keyserver-options http-proxy=$http_proxy \
       --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
@@ -24,17 +24,27 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy 
 
-# install dependencies packages 
+# install basic build script dependencies 
 RUN apt-get update
 RUN apt-get install -y \
     python3-colcon-common-extensions \
     git \
     wget \
-    python3-vcstool \
+    python3-vcstool
+
+# install ROS1 dependencies
+RUN apt-get install -y \
     ros-$ROS1_DISTRO-desktop \ 
     ros-$ROS1_DISTRO-urdf \
     ros-$ROS1_DISTRO-interactive-markers \
     ros-$ROS1_DISTRO-gazebo-ros
+
+# install map_server dependencies
+RUN apt-get install -y \
+    libsdl-image1.2 \
+    libsdl-image1.2-dev \
+    libsdl1.2debian \
+    libsdl1.2-dev
 
 WORKDIR /ros2_ws
 
@@ -43,6 +53,24 @@ WORKDIR /ros2_ws
 ARG SCRIPTPATH=./tools
 COPY $SCRIPTPATH/initial_ros_setup.sh init/
 COPY $SCRIPTPATH/*.repos ./
-RUN chmod +x init/initial_ros_setup.sh 
-RUN yes | ./init/initial_ros_setup.sh --no-ros2
+
+# run setup script to download source
+RUN chmod +x init/initial_ros_setup.sh
+RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
+
+# change to correct branch if $BRANCH is not = master
+ARG BRANCH=master
+RUN if [ "$BRANCH" == "master" ]; \
+    then \
+      echo "On master branch"; \
+    else \
+      cd navigation2; \
+      git fetch origin $BRANCH:temp_branch; \
+      git checkout temp_branch; \
+      cd -; \
+    fi
+
+# build
+RUN chmod +x navigation2/tools/build_all.sh
+RUN ./navigation2/tools/build_all.sh
 CMD ["bash"]
