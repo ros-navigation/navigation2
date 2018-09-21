@@ -42,46 +42,32 @@
 namespace dwb_plugins
 {
 
-// TODO(crdelsey): Remove when code is re-enabled
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void LimitedAccelGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
-  acceleration_time_ = 0.05;
-  // TODO(crdelsey): Handle params
-  // if (nh.hasParam("sim_period"))
-  // {
-  //   nh.param("sim_period", acceleration_time_);
-  // }
-  // else
-  // {
-  //   double controller_frequency = nav_2d_utils::searchAndGetParam(
-  //     nh, "controller_frequency", 20.0);
-  //   if (controller_frequency > 0)
-  //   {
-  //     acceleration_time_ = 1.0 / controller_frequency;
-  //   }
-  //   else
-  //   {
-  //     ROS_WARN_NAMED("LimitedAccelGenerator",
-  //       "A controller_frequency less than or equal to 0 has been set. "
-  //       "Ignoring the parameter, assuming a rate of 20Hz");
-  //     acceleration_time_ = 0.05;
-  //   }
-  // }
+  if (nh->get_parameter("sim_period", acceleration_time_)) {
+  } else {
+    double controller_frequency = nav_2d_utils::searchAndGetParam(
+      nh, "controller_frequency", 20.0);
+    if (controller_frequency > 0) {
+      acceleration_time_ = 1.0 / controller_frequency;
+    } else {
+      RCLCPP_WARN(rclcpp::get_logger("LimitedAccelGenerator"),
+        "A controller_frequency less than or equal to 0 has been set. "
+        "Ignoring the parameter, assuming a rate of 20Hz");
+      acceleration_time_ = 0.05;
+    }
+  }
 }
 
 void LimitedAccelGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
 {
-  // TODO(crdelsey): Handle params
-  // bool use_dwa;
-  // nh.param("use_dwa", use_dwa, true);
-  // if (!use_dwa)
-  // {
-  //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
-  //     "Please use StandardTrajectoryGenerator for that functionality.");
-  // }
+  bool use_dwa;
+  nh->get_parameter_or("use_dwa", use_dwa, true);
+  if (!use_dwa) {
+    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
+            "Please use StandardTrajectoryGenerator for that functionality.");
+  }
 }
 
 void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity)
@@ -92,7 +78,7 @@ void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & 
 
 dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
   const geometry_msgs::msg::Pose2D & start_pose,
-  const nav_2d_msgs::msg::Twist2D & start_vel,
+  const nav_2d_msgs::msg::Twist2D &,
   const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   dwb_msgs::msg::Trajectory2D traj;
@@ -110,7 +96,6 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
 
   return traj;
 }
-#pragma GCC diagnostic pop
 
 }  // namespace dwb_plugins
 

@@ -47,9 +47,8 @@ StoppedGoalChecker::StoppedGoalChecker()
 void StoppedGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   SimpleGoalChecker::initialize(nh);
-  // TODO(crdelsey): handle params
-  // nh.param("rot_stopped_velocity", rot_stopped_velocity_, 0.25);
-  // nh.param("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
+  nh->get_parameter_or("rot_stopped_velocity", rot_stopped_velocity_, 0.25);
+  nh->get_parameter_or("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
 }
 
 bool StoppedGoalChecker::isGoalReached(

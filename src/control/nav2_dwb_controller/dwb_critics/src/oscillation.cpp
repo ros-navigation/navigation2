@@ -100,9 +100,9 @@ void OscillationCritic::onInit()
    * If min_trans_vel is set in the namespace, as it used to be used for trajectory generation, complain then use that.
    * Otherwise, set x_only_threshold_ to 0.05
    */
-  std::string resolved_name;
-  // TODO(crdelsey): handle params
-  x_only_threshold_ = 0.05;
+  nh_->get_parameter_or("x_only_threshold", x_only_threshold_, 0.05);
+  // TODO(crdelsey): How to handle searchParam?
+  // std::string resolved_name;
   // if (nh_->hasParam("x_only_threshold"))
   // {
   //   nh_->param("x_only_threshold", x_only_threshold_);

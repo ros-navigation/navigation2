@@ -43,11 +43,8 @@ void XYThetaIterator::initialize(
   KinematicParameters::Ptr kinematics)
 {
   kinematics_ = kinematics;
-  // TODO(crdelsey): handle params
-  vx_samples_ = 20;
-  vy_samples_ = 5;
-  // nh.param("vx_samples", vx_samples_, 20);
-  // nh.param("vy_samples", vy_samples_, 5);
+  nh->get_parameter_or("vx_samples", vx_samples_, 20);
+  nh->get_parameter_or("vy_samples", vy_samples_, 5);
   vtheta_samples_ = nav_2d_utils::loadParameterWithDeprecation(nh, "vtheta_samples", "vth_samples",
       20);
 }

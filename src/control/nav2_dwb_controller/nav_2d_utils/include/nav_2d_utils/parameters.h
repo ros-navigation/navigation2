@@ -36,6 +36,7 @@
 #define NAV_2D_UTILS__PARAMETERS_H_
 
 #include <string>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 
 // TODO(crdelsey): Remove when code is re-enabled
@@ -60,15 +61,17 @@ param_t searchAndGetParam(
   const std::shared_ptr<rclcpp::Node> & nh, const std::string & param_name,
   const param_t & default_value)
 {
-  // TODO(crdelsey): Handle params
+  // TODO(crdelsey): Handle searchParam
   // std::string resolved_name;
-  // if (nh.searchParam(param_name, resolved_name))
+  // if (nh->searchParam(param_name, resolved_name))
   // {
   //   param_t value = 0;
-  //   nh.param(resolved_name, value, default_value);
+  //   nh->param(resolved_name, value, default_value);
   //   return value;
   // }
-  return default_value;
+  param_t value = 0;
+  nh->get_parameter_or(param_name, value, default_value);
+  return value;
 }
 
 /**
@@ -84,20 +87,16 @@ param_t loadParameterWithDeprecation(
   const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
-  // TODO(crdelsey): Handle params
-  // param_t value;
-  // if (nh.hasParam(current_name))
-  // {
-  //   nh.getParam(current_name, value);
-  //   return value;
-  // }
-  // if (nh.hasParam(old_name))
-  // {
-  //   ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.",
-  //     old_name.c_str(), current_name.c_str());
-  //   nh.getParam(old_name, value);
-  //   return value;
-  // }
+  param_t value;
+  if (nh->get_parameter(current_name, value)) {
+    return value;
+  }
+  if (nh->get_parameter(old_name, value)) {
+    RCLCPP_WARN(nh->get_logger(),
+      "Parameter %s is deprecated. Please use the name %s instead.",
+      old_name.c_str(), current_name.c_str());
+    return value;
+  }
   return default_value;
 }
 
@@ -109,17 +108,17 @@ param_t loadParameterWithDeprecation(
  */
 template<class param_t>
 void moveDeprecatedParameter(
-  const std::shared_ptr<rclcpp::Node> &, const std::string current_name,
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
   const std::string old_name)
 {
-  // TODO(crdelsey): Handle params
-  // if (!nh.hasParam(old_name)) return;
-  //
-  // param_t value;
-  // ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.",
-  //   old_name.c_str(), current_name.c_str());
-  // nh.getParam(old_name, value);
-  // nh.setParam(current_name, value);
+  param_t value;
+  if (!nh->get_parameter(old_name, value)) {return;}
+
+  RCLCPP_WARN(nh->get_logger(),
+    "Parameter %s is deprecated. Please use the name %s instead.",
+    old_name.c_str(), current_name.c_str());
+  nh->get_parameter(old_name, value);
+  nh->set_parameters({rclcpp::Parameter(current_name, value)});
 }
 
 /**
@@ -140,23 +139,20 @@ void moveParameter(
   const std::shared_ptr<rclcpp::Node> & nh, std::string old_name,
   std::string current_name, param_t default_value, bool should_delete = true)
 {
-  // TODO(crdelsey): Handle params
-  // if (nh.hasParam(current_name))
-  // {
-  //   if (should_delete)
-  //     nh.deleteParam(old_name);
-  //   return;
-  // }
-  // XmlRpc::XmlRpcValue value;
-  // if (nh.hasParam(old_name))
-  // {
-  //   nh.getParam(old_name, value);
-  //   if (should_delete) nh.deleteParam(old_name);
-  // }
-  // else
-  //   value = default_value;
-  //
-  // nh.setParam(current_name, value);
+  param_t value;
+  if (nh->get_parameter(current_name, value)) {
+    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
+    // if (should_delete)
+    //   nh->deleteParam(old_name);
+    return;
+  }
+  if (nh->get_parameter(old_name, value)) {
+    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
+    // if (should_delete) nh->deleteParam(old_name);
+  } else {
+    value = default_value;
+  }
+  nh->set_parameters({rclcpp::Parameter(current_name, value)});
 }
 
 

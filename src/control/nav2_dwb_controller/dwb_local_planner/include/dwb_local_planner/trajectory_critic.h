@@ -92,15 +92,11 @@ public:
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-  void initialize(
-    const std::shared_ptr<rclcpp::Node> & nh, std::string parent_namespace,
-    CostmapROSPtr costmap_ros)
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh, CostmapROSPtr costmap_ros)
   {
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    // TODO(crdelsey): Port parameter
-    scale_ = 1.0;
-    // nh_->param("scale", scale_, 1.0);
+    nh_->get_parameter_or("scale", scale_, 1.0);
     onInit();
   }
 #pragma GCC diagnostic push

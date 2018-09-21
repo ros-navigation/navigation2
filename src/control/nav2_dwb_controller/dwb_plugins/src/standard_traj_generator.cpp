@@ -47,18 +47,13 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-// TODO(crdelsey): Remove when code is re-enabled
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void StandardTrajectoryGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
   initializeIterator(nh);
 
-  // TODO(crdelsey): handle params
-  sim_time_ = 1.7;
-  // nh.param("sim_time", sim_time_, 1.7);
+  nh->get_parameter_or("sim_time", sim_time_, 1.7);
   checkUseDwaParam(nh);
 
   /*
@@ -69,23 +64,16 @@ void StandardTrajectoryGenerator::initialize(const std::shared_ptr<rclcpp::Node>
    *  two successive points on the trajectory, and angular_sim_granularity is the maximum amount of
    *  angular distance between two successive points.
    */
-  // TODO(crdelsey): handle params
-  discretize_by_time_ = false;
-  linear_granularity_ = 0.5;
-  angular_granularity_ = 0.025;
-  // nh.param("discretize_by_time", discretize_by_time_, false);
-  // if (discretize_by_time_)
-  // {
-  //   time_granularity_ = loadParameterWithDeprecation(
-  //     nh, "time_granularity", "sim_granularity", 0.5);
-  // }
-  // else
-  // {
-  //   linear_granularity_ = loadParameterWithDeprecation(
-  //     nh, "linear_granularity", "sim_granularity", 0.5);
-  //   angular_granularity_ = loadParameterWithDeprecation(
-  //     nh, "angular_granularity", "angular_sim_granularity", 0.025);
-  // }
+  nh->get_parameter_or("discretize_by_time", discretize_by_time_, false);
+  if (discretize_by_time_) {
+    time_granularity_ = loadParameterWithDeprecation(
+      nh, "time_granularity", "sim_granularity", 0.5);
+  } else {
+    linear_granularity_ = loadParameterWithDeprecation(
+      nh, "linear_granularity", "sim_granularity", 0.5);
+    angular_granularity_ = loadParameterWithDeprecation(
+      nh, "angular_granularity", "angular_sim_granularity", 0.025);
+  }
 }
 
 void StandardTrajectoryGenerator::initializeIterator(const std::shared_ptr<rclcpp::Node> & nh)
@@ -96,14 +84,12 @@ void StandardTrajectoryGenerator::initializeIterator(const std::shared_ptr<rclcp
 
 void StandardTrajectoryGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
 {
-  // TODO(crdelsey): handle params
-  // bool use_dwa;
-  // nh.param("use_dwa", use_dwa, false);
-  // if (use_dwa)
-  // {
-  //   throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
-  //     "Please use LimitedAccelGenerator for that functionality.");
-  // }
+  bool use_dwa;
+  nh->get_parameter_or("use_dwa", use_dwa, false);
+  if (use_dwa) {
+    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
+            "Please use LimitedAccelGenerator for that functionality.");
+  }
 }
 
 void StandardTrajectoryGenerator::startNewIteration(
@@ -203,7 +189,6 @@ geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(
   new_pose.theta = start_pose.theta + vel.theta * dt;
   return new_pose;
 }
-#pragma GCC diagnostic pop
 
 }  // namespace dwb_plugins
 

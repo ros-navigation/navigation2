@@ -36,9 +36,11 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <utility>
 #include "dwb_local_planner/dwb_local_planner.h"
 #include "dwb_local_planner/illegal_trajectory_tracker.h"
 #include "nav_2d_utils/conversions.h"
+#include "nav_2d_utils/parameters.h"
 #include "nav_2d_utils/tf_help.h"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_msgs/msg/critic_score.hpp"
@@ -47,6 +49,35 @@
 
 namespace dwb_local_planner
 {
+
+void loadBackwardsCompatibleParameters(const std::shared_ptr<rclcpp::Node> & nh)
+{
+  std::vector<std::string> critic_names;
+  RCLCPP_INFO(nh->get_logger(),
+    "DWBLocalPlanner", "No critics configured! Using the default set.");
+  critic_names.push_back("RotateToGoal");       // discards trajectories that move forward when
+                                                //   already at goal
+  critic_names.push_back("Oscillation");        // discards oscillating motions (assisgns cost -1)
+  critic_names.push_back("ObstacleFootprint");  // discards trajectories that move into obstacles
+  critic_names.push_back("GoalAlign");          // prefers trajectories that make the
+                                                //   nose go towards (local) nose goal
+  critic_names.push_back("PathAlign");          // prefers trajectories that keep the
+                                                //   robot nose on nose path
+  critic_names.push_back("PathDist");           // prefers trajectories on global path
+  critic_names.push_back("GoalDist");           // prefers trajectories that go towards
+                                                //   (local) goal, based on wave propagation
+  nh->set_parameters({rclcpp::Parameter("critics", critic_names)});
+  /* *INDENT-OFF* */
+  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathAlign/scale", 32.0, false);
+  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalAlign/scale", 24.0, false);
+  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathDist/scale", 32.0);
+  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalDist/scale", 24.0);
+  nav_2d_utils::moveParameter(nh, "occdist_scale",      "ObstacleFootprint/scale", 0.01);
+
+  nav_2d_utils::moveParameter(nh, "max_scaling_factor", "ObstacleFootprint/max_scaling_factor", 0.2);  // NOLINT
+  nav_2d_utils::moveParameter(nh, "scaling_speed",      "ObstacleFootprint/scaling_speed", 0.25);
+  /* *INDENT-ON* */
+}
 
 DWBLocalPlanner::DWBLocalPlanner()
 : traj_gen_loader_("dwb_local_planner", "dwb_local_planner::TrajectoryGenerator"),
@@ -61,26 +92,21 @@ void DWBLocalPlanner::initialize(
 {
   tf_ = tf;
   costmap_ros_ = costmap_ros;
-  // TODO(crdelsey): Load parameters
-  prune_plan_ = true;
-  // private_nh.param("prune_plan", prune_plan_, true);
-  prune_distance_ = 1.0;
-  // private_nh.param("prune_distance", prune_distance_, 1.0);
+  private_nh->get_parameter_or("prune_plan", prune_plan_, true);
+  private_nh->get_parameter_or("prune_distance", prune_distance_, 1.0);
   pub_.initialize(private_nh);
 
   // Plugins
-  std::string traj_generator_name("dwb_plugins::LimitedAccelGenerator");
-  // private_nh.param("trajectory_generator_name", traj_generator_name,
-  //                  getBackwardsCompatibleDefaultGenerator(private_nh));
-  // traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
+  std::string traj_generator_name;
+  private_nh->get_parameter_or("trajectory_generator_name", traj_generator_name,
+    std::string("dwb_plugins::LimitedAccelGenerator"));
+  traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
   traj_generator_->initialize(private_nh);
 
-  std::string goal_checker_name("dwb_plugins::SimpleGoalChecker");
-  // private_nh.param(
-  //  "goal_checker_name",
-  //  goal_checker_name,
-  //  std::string("dwb_plugins::SimpleGoalChecker"));
-  // goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
+  std::string goal_checker_name;
+  private_nh->get_parameter_or("goal_checker_name", goal_checker_name,
+    std::string("dwb_plugins::SimpleGoalChecker"));
+  goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
   goal_checker_->initialize(private_nh);
 
   loadCritics(private_nh);
@@ -105,32 +131,29 @@ std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
 
 void DWBLocalPlanner::loadCritics(const std::shared_ptr<rclcpp::Node> & private_nh)
 {
-  // TODO(crdelsey): How to load critics?
-  // private_nh.param("default_critic_namespaces", default_critic_namespaces_);
-  // if (default_critic_namespaces_.size() == 0)
-  // {
-  //   default_critic_namespaces_.push_back("dwb_critics");
-  // }
-  //
-  // if (!private_nh.hasParam("critics"))
-  // {
-  //   loadBackwardsCompatibleParameters(private_nh);
-  // }
-  //
-  // std::vector<std::string> critic_names;
-  // private_nh.getParam("critics", critic_names);
-  // for (unsigned int i = 0; i < critic_names.size(); i++)
-  // {
-  //   std::string plugin_name = critic_names[i];
-  //   std::string plugin_class;
-  //   private_nh.param(plugin_name + "/class", plugin_class, plugin_name);
-  //   plugin_class = resolveCriticClassName(plugin_class);
-  //
-  //   TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
-  //   ROS_INFO("Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
-  //   critics_.push_back(plugin);
-  //   plugin->initialize(private_nh, name, costmap_ros_);
-  // }
+  private_nh->get_parameter("default_critic_namespaces", default_critic_namespaces_);
+  if (default_critic_namespaces_.size() == 0) {
+    default_critic_namespaces_.push_back("dwb_critics");
+  }
+
+  std::vector<std::string> critic_names;
+  if (!private_nh->get_parameter("critics", critic_names)) {
+    loadBackwardsCompatibleParameters(private_nh);
+  }
+
+  private_nh->get_parameter("critics", critic_names);
+  for (unsigned int i = 0; i < critic_names.size(); i++) {
+    std::string plugin_name = critic_names[i];
+    std::string plugin_class;
+    private_nh->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
+    plugin_class = resolveCriticClassName(plugin_class);
+
+    TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
+    RCLCPP_INFO(private_nh->get_logger(),
+      "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
+    critics_.push_back(plugin);
+    plugin->initialize(private_nh, costmap_ros_);
+  }
 }
 
 bool DWBLocalPlanner::isGoalReached(

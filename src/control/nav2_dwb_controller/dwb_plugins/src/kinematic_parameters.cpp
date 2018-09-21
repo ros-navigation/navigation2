@@ -46,23 +46,18 @@ namespace dwb_plugins
  * @param nh NodeHandle
  * @param dimension String representing the dimension, used in constructing parameter names
  */
-// TODO(crdelsey): Remove when code is re-enabled
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void setDecelerationAsNeeded(const std::shared_ptr<rclcpp::Node> & nh, const std::string dimension)
 {
-  // TODO(crdelsey): Handle params
-  // std::string decel_param = "decel_lim_" + dimension;
-  // if (nh.hasParam(decel_param)) return;
-  //
-  // std::string accel_param = "acc_lim_" + dimension;
-  // if (!nh.hasParam(accel_param)) return;
-  //
-  // double accel;
-  // nh.getParam(accel_param, accel);
-  // nh.setParam(decel_param, -accel);
+  std::string decel_param = "decel_lim_" + dimension;
+  double temp;
+  if (nh->get_parameter(decel_param, temp)) {return;}
+
+  std::string accel_param = "acc_lim_" + dimension;
+  double accel;
+  if (!nh->get_parameter(accel_param, accel)) {return;}
+
+  nh->set_parameters({rclcpp::Parameter(decel_param, -accel)});
 }
-#pragma GCC diagnostic pop
 
 KinematicParameters::KinematicParameters()
 : min_vel_x_(0.0), min_vel_y_(0.0), max_vel_x_(0.0), max_vel_y_(0.0), max_vel_theta_(0.0),

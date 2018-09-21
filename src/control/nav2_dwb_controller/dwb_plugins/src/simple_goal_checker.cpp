@@ -37,9 +37,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 
-// TODO(crdelsey): Remove when code is re-enabled
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 namespace dwb_plugins
 {
 
@@ -50,15 +47,14 @@ SimpleGoalChecker::SimpleGoalChecker()
 
 void SimpleGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
-  // TODO(crdelsey): Handle params
-  // nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.25);
-  // nh.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.25);
+  nh->get_parameter_or("xy_goal_tolerance", xy_goal_tolerance_, 0.25);
+  nh->get_parameter_or("yaw_goal_tolerance", yaw_goal_tolerance_, 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-  const nav_2d_msgs::msg::Twist2D & velocity)
+  const nav_2d_msgs::msg::Twist2D &)
 {
   double dx = query_pose.x - goal_pose.x,
     dy = query_pose.y - goal_pose.y;
@@ -70,6 +66,5 @@ bool SimpleGoalChecker::isGoalReached(
 }
 
 }  // namespace dwb_plugins
-#pragma GCC diagnostic pop
 
 PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, dwb_local_planner::GoalChecker)

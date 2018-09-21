@@ -60,7 +60,7 @@ public:
   explicit OdomSubscriber(ros::NodeHandle & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
-    nh.param("odom_topic", odom_topic, default_topic);
+    nh->get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
       nh.subscribe<nav_msgs::Odometry>(odom_topic, 1,
         boost::bind(&OdomSubscriber::odomCallback, this, _1));
