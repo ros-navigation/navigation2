@@ -89,8 +89,8 @@ TEST(VelocityIterator, two_checks)
   auto x = rclcpp::Node::make_shared("goal_checker");
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  gc.initialize(*x);
-  sgc.initialize(*x);
+  gc.initialize(x);
+  sgc.initialize(x);
   sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
   sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
   sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);

@@ -69,7 +69,9 @@ public:
    * @param tf TFListener pointer
    * @param costmap_ros Costmap pointer
    */
-  void initialize(rclcpp::Node & private_nh, TFListenerPtr tf, CostmapROSPtr costmap_ros);
+  void initialize(
+    std::shared_ptr<rclcpp::Node> & private_nh, TFListenerPtr tf,
+    CostmapROSPtr costmap_ros);
 
   /**
    * @brief nav_core2 setPlan - Sets the global plan
@@ -194,7 +196,7 @@ protected:
    * @brief Load the critic parameters from the namespace
    * @param name The namespace of this planner.
    */
-  void loadCritics(const rclcpp::Node & private_nh);
+  void loadCritics(const std::shared_ptr<rclcpp::Node> & private_nh);
 
   std::vector<std::string> default_critic_namespaces_;
 

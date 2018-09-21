@@ -92,11 +92,12 @@ public:
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-  void initialize(const rclcpp::Node & nh, std::string parent_namespace, CostmapROSPtr costmap_ros)
+  void initialize(
+    const std::shared_ptr<rclcpp::Node> & nh, std::string parent_namespace,
+    CostmapROSPtr costmap_ros)
   {
-    // TODO(crdelsey): How to port?
     costmap_ros_ = costmap_ros;
-    nh_ = &nh;
+    nh_ = nh;
     // TODO(crdelsey): Port parameter
     scale_ = 1.0;
     // nh_->param("scale", scale_, 1.0);
@@ -174,7 +175,7 @@ protected:
   std::string name_;
   CostmapROSPtr costmap_ros_;
   double scale_;
-  const rclcpp::Node * nh_;
+  std::shared_ptr<rclcpp::Node> nh_;
 };
 
 }  // namespace dwb_local_planner

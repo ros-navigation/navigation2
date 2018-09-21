@@ -67,7 +67,7 @@ public:
    * @brief Load the parameters and advertise topics as needed
    * @param nh NodeHandle to load parameters from
    */
-  void initialize(rclcpp::Node & nh);
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh);
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved

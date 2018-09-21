@@ -67,7 +67,7 @@ public:
   UninitializedTransform()
   {
     nh = rclcpp::Node::make_shared("dwa");
-    planner.initialize(*nh, tf, cm);
+    planner.initialize(nh, tf, cm);
     robot_pose.pose.x = 0;
     robot_pose.pose.y = 0;
     robot_pose.pose.theta = 0;

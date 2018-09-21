@@ -46,7 +46,9 @@ class XYThetaIterator : public VelocityIterator
 public:
   XYThetaIterator()
   : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
-  void initialize(const rclcpp::Node & nh, KinematicParameters::Ptr kinematics) override;
+  void initialize(
+    const std::shared_ptr<rclcpp::Node> & nh,
+    KinematicParameters::Ptr kinematics) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;

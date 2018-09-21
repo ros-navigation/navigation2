@@ -46,7 +46,7 @@ void GoalAlignCritic::onInit()
 {
   GoalDistCritic::onInit();
   stop_on_failure_ = false;
-  forward_point_distance_ = nav_2d_utils::searchAndGetParam(*nh_, "forward_point_distance", 0.325);
+  forward_point_distance_ = nav_2d_utils::searchAndGetParam(nh_, "forward_point_distance", 0.325);
 }
 
 bool GoalAlignCritic::prepare(

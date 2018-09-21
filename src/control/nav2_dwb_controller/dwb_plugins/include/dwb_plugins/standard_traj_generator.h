@@ -53,7 +53,7 @@ class StandardTrajectoryGenerator : public dwb_local_planner::TrajectoryGenerato
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const rclcpp::Node & nh) override;
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
@@ -67,7 +67,7 @@ protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding
    */
-  virtual void initializeIterator(const rclcpp::Node & nh);
+  virtual void initializeIterator(const std::shared_ptr<rclcpp::Node> & nh);
 
   /**
    * @brief Check if the deprecated use_dwa parameter is set to the functionality that matches this class
@@ -76,7 +76,7 @@ protected:
    * LimitedAccelGenerator. If use_dwa was false, this class should be used. If it was true, then LimitedAccelGenerator.
    * If this is NOT the case, this function will throw an exception.
    */
-  virtual void checkUseDwaParam(const rclcpp::Node & nh);
+  virtual void checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh);
 
   /**
    * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits

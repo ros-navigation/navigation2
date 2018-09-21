@@ -70,7 +70,7 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(const rclcpp::Node & nh) = 0;
+  virtual void initialize(const std::shared_ptr<rclcpp::Node> & nh) = 0;
 
   /**
    * @brief Start a new iteration based on the current velocity

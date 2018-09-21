@@ -33,6 +33,7 @@
  */
 
 #include "dwb_plugins/stopped_goal_checker.h"
+#include <memory>
 #include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_plugins
@@ -43,7 +44,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const rclcpp::Node & nh)
+void StoppedGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   SimpleGoalChecker::initialize(nh);
   // TODO(crdelsey): handle params

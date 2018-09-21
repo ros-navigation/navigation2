@@ -57,7 +57,7 @@ namespace nav_2d_utils
  */
 template<class param_t>
 param_t searchAndGetParam(
-  const rclcpp::Node & nh, const std::string & param_name,
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string & param_name,
   const param_t & default_value)
 {
   // TODO(crdelsey): Handle params
@@ -81,7 +81,7 @@ param_t searchAndGetParam(
  */
 template<class param_t>
 param_t loadParameterWithDeprecation(
-  const rclcpp::Node & nh, const std::string current_name,
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
   // TODO(crdelsey): Handle params
@@ -109,7 +109,7 @@ param_t loadParameterWithDeprecation(
  */
 template<class param_t>
 void moveDeprecatedParameter(
-  const rclcpp::Node & nh, const std::string current_name,
+  const std::shared_ptr<rclcpp::Node> &, const std::string current_name,
   const std::string old_name)
 {
   // TODO(crdelsey): Handle params
@@ -137,7 +137,7 @@ void moveDeprecatedParameter(
  */
 template<class param_t>
 void moveParameter(
-  const rclcpp::Node & nh, std::string old_name,
+  const std::shared_ptr<rclcpp::Node> & nh, std::string old_name,
   std::string current_name, param_t default_value, bool should_delete = true)
 {
   // TODO(crdelsey): Handle params

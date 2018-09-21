@@ -33,6 +33,7 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.h"
+#include <memory>
 #include <string>
 #include "nav_2d_utils/parameters.h"
 
@@ -48,7 +49,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void setDecelerationAsNeeded(const rclcpp::Node & nh, const std::string dimension)
+void setDecelerationAsNeeded(const std::shared_ptr<rclcpp::Node> & nh, const std::string dimension)
 {
   // TODO(crdelsey): Handle params
   // std::string decel_param = "decel_lim_" + dimension;
@@ -72,7 +73,7 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const rclcpp::Node & nh)
+void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");

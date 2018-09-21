@@ -88,10 +88,10 @@ bool OscillationCritic::CommandTrend::hasSignFlipped()
 
 void OscillationCritic::onInit()
 {
-  oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(*nh_, "oscillation_reset_dist", 0.05);
+  oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
-  oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(*nh_, "oscillation_reset_angle", 0.2);
-  oscillation_reset_time_ = nav_2d_utils::searchAndGetParam(*nh_, "oscillation_reset_time", -1.0);
+  oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_angle", 0.2);
+  oscillation_reset_time_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0);
 
   /**
    * Historical Parameter Loading

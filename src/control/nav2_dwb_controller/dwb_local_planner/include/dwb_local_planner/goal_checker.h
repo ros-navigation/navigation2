@@ -63,7 +63,7 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param nh NodeHandle for grabbing parameters
    */
-  virtual void initialize(const rclcpp::Node & nh) = 0;
+  virtual void initialize(const std::shared_ptr<rclcpp::Node> & nh) = 0;
 
   /**
    * @brief Check whether the goal should be considered reached

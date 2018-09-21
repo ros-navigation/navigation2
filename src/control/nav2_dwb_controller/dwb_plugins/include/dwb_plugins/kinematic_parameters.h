@@ -49,7 +49,7 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const rclcpp::Node & nh);
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh);
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}

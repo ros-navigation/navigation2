@@ -34,6 +34,7 @@
 
 #include "dwb_plugins/limited_accel_generator.h"
 #include <vector>
+#include <memory>
 #include "nav_2d_utils/parameters.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_local_planner/exceptions.h"
@@ -44,7 +45,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void LimitedAccelGenerator::initialize(const rclcpp::Node & nh)
+void LimitedAccelGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
   acceleration_time_ = 0.05;
@@ -71,7 +72,7 @@ void LimitedAccelGenerator::initialize(const rclcpp::Node & nh)
   // }
 }
 
-void LimitedAccelGenerator::checkUseDwaParam(const rclcpp::Node & nh)
+void LimitedAccelGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
 {
   // TODO(crdelsey): Handle params
   // bool use_dwa;

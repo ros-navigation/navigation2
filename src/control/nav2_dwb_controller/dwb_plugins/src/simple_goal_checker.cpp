@@ -33,6 +33,7 @@
  */
 
 #include "dwb_plugins/simple_goal_checker.h"
+#include <memory>
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 
@@ -47,7 +48,7 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
-void SimpleGoalChecker::initialize(const rclcpp::Node & nh)
+void SimpleGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   // TODO(crdelsey): Handle params
   // nh.param("xy_goal_tolerance", xy_goal_tolerance_, 0.25);

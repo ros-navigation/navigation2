@@ -56,7 +56,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 }
 
 void DWBLocalPlanner::initialize(
-  rclcpp::Node & private_nh, TFListenerPtr tf,
+  std::shared_ptr<rclcpp::Node> & private_nh, TFListenerPtr tf,
   CostmapROSPtr costmap_ros)
 {
   tf_ = tf;
@@ -103,7 +103,7 @@ std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
   return base_name;
 }
 
-void DWBLocalPlanner::loadCritics(const rclcpp::Node & private_nh)
+void DWBLocalPlanner::loadCritics(const std::shared_ptr<rclcpp::Node> & private_nh)
 {
   // TODO(crdelsey): How to load critics?
   // private_nh.param("default_critic_namespaces", default_critic_namespaces_);

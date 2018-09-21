@@ -38,7 +38,9 @@
 
 namespace dwb_plugins
 {
-void XYThetaIterator::initialize(const rclcpp::Node & nh, KinematicParameters::Ptr kinematics)
+void XYThetaIterator::initialize(
+  const std::shared_ptr<rclcpp::Node> & nh,
+  KinematicParameters::Ptr kinematics)
 {
   kinematics_ = kinematics;
   // TODO(crdelsey): handle params

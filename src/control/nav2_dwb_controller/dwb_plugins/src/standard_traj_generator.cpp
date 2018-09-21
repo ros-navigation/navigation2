@@ -50,7 +50,7 @@ namespace dwb_plugins
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void StandardTrajectoryGenerator::initialize(const rclcpp::Node & nh)
+void StandardTrajectoryGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
@@ -88,13 +88,13 @@ void StandardTrajectoryGenerator::initialize(const rclcpp::Node & nh)
   // }
 }
 
-void StandardTrajectoryGenerator::initializeIterator(const rclcpp::Node & nh)
+void StandardTrajectoryGenerator::initializeIterator(const std::shared_ptr<rclcpp::Node> & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
 }
 
-void StandardTrajectoryGenerator::checkUseDwaParam(const rclcpp::Node & nh)
+void StandardTrajectoryGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
 {
   // TODO(crdelsey): handle params
   // bool use_dwa;
