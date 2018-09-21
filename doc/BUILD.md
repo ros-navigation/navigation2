@@ -11,7 +11,7 @@ Quickstart
 ```sh
 mkdir <workspace_dir>
 cd <workspace_dir>
-wget https://raw.githubusercontent.com/ros-planning/navigation2/buildscript/tools/initial_ros_setup.sh
+wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
 chmod a+x initial_ros_setup.sh
 ./initial_ros_setup.sh
 ```
