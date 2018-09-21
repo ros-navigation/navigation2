@@ -1,0 +1,14 @@
+<launch>
+    <node name="plan_node" pkg="dwb_local_planner" type="planner_node" output="screen">
+        <rosparam ns="costmap">
+            wait_for_transform: false
+            pose_update_frequency: -1.0
+            update_frequency: -1.0
+            origin_x: -5.0
+            origin_y: -5.0
+            global_frame: /odom
+        </rosparam>
+        <rosparam ns="dwb_local_planner">
+        </rosparam>
+    </node>
+</launch>

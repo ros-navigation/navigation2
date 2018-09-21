@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dwb_local_planner</name>
+  <version>0.1.0</version>
+  <description>The dwb_local_planner package</description>
+
+  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <author email="davidvlu@gmail.com">David V. Lu!!</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>costmap_2d</depend>
+  <depend>dwb_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>nav_2d_utils</depend>
+  <depend>nav_core2</depend>
+  <depend>nav_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf</depend>
+  <depend>visualization_msgs</depend>
+  <test_depend>roslint</test_depend>
+  <export>
+    <nav_core2 plugin="${prefix}/plugins.xml"/>
+  </export>
+
+</package>
