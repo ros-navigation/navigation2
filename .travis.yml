@@ -6,7 +6,8 @@ services:
   - docker
 
 before_install:
-  - docker build -t nav2/latest .
+  - echo Branch is $TRAVIS_PULL_REQUEST_BRANCH
+  - docker build -t nav2/latest --build-arg BRANCH=$TRAVIS_PULL_REQUEST_BRANCH .
 
 script:
   - docker run nav2/latest /bin/bash -c echo "Testing"
