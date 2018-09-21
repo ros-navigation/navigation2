@@ -10,3 +10,13 @@ We are currently in the requirements analysis phase, and are accepting input and
 
 # Building the source
 For instructions on how to download and build this repo, see the [BUILD.md](doc/BUILD.md) file.
+
+# Creating a docker image
+To build an image from the Dockerfile in the navigation2 folder: First, clone the repo to your local system (or see Building the source above)
+```
+docker build -t nav2/latest .
+```
+If proxies are needed:
+```
+docker build -t nav2/latest --build-arg http://your.proxy.com:### .
+```
