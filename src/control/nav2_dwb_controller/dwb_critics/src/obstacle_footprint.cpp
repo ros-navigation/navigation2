@@ -61,13 +61,13 @@ Footprint getOrientedFootprint(
 }
 
 bool ObstacleFootprintCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-  const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan)
+  const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Path2D &)
 {
   footprint_spec_ = costmap_ros_->getRobotFootprint();
   if (footprint_spec_.size() == 0) {
-    // ROS_ERROR_NAMED("ObstacleFootprintCritic",
-    //   "Footprint spec is empty, maybe missing call to setFootprint?");
+    RCLCPP_ERROR(rclcpp::get_logger("ObstacleFootprintCritic"),
+      "Footprint spec is empty, maybe missing call to setFootprint?");
     return false;
   }
   return true;
@@ -83,7 +83,7 @@ double ObstacleFootprintCritic::scorePose(const geometry_msgs::msg::Pose2D & pos
 }
 
 double ObstacleFootprintCritic::scorePose(
-  const geometry_msgs::msg::Pose2D & pose,
+  const geometry_msgs::msg::Pose2D &,
   const Footprint & footprint)
 {
   // now we really have to lay down the footprint in the costmap grid

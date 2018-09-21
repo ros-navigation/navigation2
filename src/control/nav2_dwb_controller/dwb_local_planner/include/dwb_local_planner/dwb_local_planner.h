@@ -70,7 +70,7 @@ public:
    * @param costmap_ros Costmap pointer
    */
   void initialize(
-    std::shared_ptr<rclcpp::Node> & private_nh, TFListenerPtr tf,
+    std::shared_ptr<rclcpp::Node> & private_nh, TFBufferPtr tf,
     CostmapROSPtr costmap_ros);
 
   /**
@@ -201,7 +201,7 @@ protected:
   std::vector<std::string> default_critic_namespaces_;
 
   CostmapROSPtr costmap_ros_;
-  TFListenerPtr tf_;
+  TFBufferPtr tf_;
   DWBPublisher pub_;
 };
 

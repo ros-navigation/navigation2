@@ -40,6 +40,7 @@
 #include "nav_2d_utils/conversions.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace nav_2d_utils
 {
@@ -54,29 +55,23 @@ namespace nav_2d_utils
  * @return True if successful transform
  */
 bool transformPose(
-  const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+  const std::shared_ptr<tf2_ros::Buffer> tf, const std::string frame,
   const geometry_msgs::msg::PoseStamped & in_pose, geometry_msgs::msg::PoseStamped & out_pose)
 {
-  // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
-  out_pose = in_pose;
-  return true;
-  // if (in_pose.header.frame_id == frame)
-  // {
-  //   out_pose = in_pose;
-  //   return true;
-  // }
-  //
-  // try
-  // {
-  //   tf->transformPose(frame, in_pose, out_pose);
-  //   return true;
-  // }
-  // catch (tf2::TransformException& ex)
-  // {
-  //   ROS_ERROR("Exception in transformPose: %s", ex.what());
-  //   return false;
-  // }
-  // return false;
+  if (in_pose.header.frame_id == frame) {
+    out_pose = in_pose;
+    return true;
+  }
+
+  try {
+    tf->transform(in_pose, out_pose, frame);
+    return true;
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+      "Exception in transformPose: %s", ex.what());
+    return false;
+  }
+  return false;
 }
 
 /**
@@ -90,21 +85,17 @@ bool transformPose(
  * @return True if successful transform
  */
 bool transformPose(
-  const std::shared_ptr<tf2_ros::TransformListener> tf, const std::string frame,
+  const std::shared_ptr<tf2_ros::Buffer> tf, const std::string frame,
   const nav_2d_msgs::msg::Pose2DStamped & in_pose, nav_2d_msgs::msg::Pose2DStamped & out_pose)
 {
-  // TODO(crdelsey): Need to implement, for now all transforms are as if they are in the same frame
-  out_pose = in_pose;
-  return true;
-  // geometry_msgs::msg::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
-  // geometry_msgs::msg::PoseStamped out_3d_pose;
-  //
-  // bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose);
-  // if (ret)
-  // {
-  //   out_pose = poseStampedToPose2D(out_3d_pose);
-  // }
-  // return ret;
+  geometry_msgs::msg::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
+  geometry_msgs::msg::PoseStamped out_3d_pose;
+
+  bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose);
+  if (ret) {
+    out_pose = poseStampedToPose2D(out_3d_pose);
+  }
+  return ret;
 }
 
 }  // namespace nav_2d_utils

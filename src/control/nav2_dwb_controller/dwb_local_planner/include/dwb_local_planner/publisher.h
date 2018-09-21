@@ -95,7 +95,7 @@ protected:
   // Helper function for publishing other plans
   void publishGenericPlan(
     const nav_2d_msgs::msg::Path2D plan,
-    const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
+    rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_, publish_global_plan_, publish_transformed_, publish_local_plan_,
@@ -111,7 +111,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> transformed_pub_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
 };
 
 }  // namespace dwb_local_planner

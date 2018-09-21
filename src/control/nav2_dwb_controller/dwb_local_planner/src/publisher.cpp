@@ -75,7 +75,7 @@ void DWBPublisher::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 
   nh->get_parameter_or("publish_cost_grid_pc", publish_cost_grid_pc_, false);
   if (publish_cost_grid_pc_) {
-    cost_grid_pc_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
+    cost_grid_pc_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
   }
 }
 
@@ -144,10 +144,9 @@ void DWBPublisher::publishLocalPlan(
 {
   if (!publish_local_plan_) {return;}
 
-  // TODO(crdelsey):
-  // nav_msgs::msg::Path path =
-  //   nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  // local_pub_->publish(path);
+  nav_msgs::msg::Path path =
+    nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
+  local_pub_->publish(path);
 }
 
 void DWBPublisher::publishCostGrid(
@@ -193,9 +192,10 @@ void DWBPublisher::publishCostGrid(
   }
   cost_grid_pc.channels.push_back(totals);
 
-  sensor_msgs::msg::PointCloud2 cost_grid_pc2;
-  // TODO(crdelsey): convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
-  cost_grid_pc_pub_->publish(cost_grid_pc2);
+  // TODO(crdelsey): convert pc to pc2
+  // sensor_msgs::msg::PointCloud2 cost_grid_pc2;
+  // convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
+  cost_grid_pc_pub_->publish(cost_grid_pc);
 }
 
 void DWBPublisher::publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan)
@@ -215,11 +215,11 @@ void DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
 
 void DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
-  const rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
+  rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
   if (!flag) {return;}
-  // TODO(crdelsey): nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
-  // pub.publish(path);
+  nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
+  pub.publish(path);
 }
 
 }  // namespace dwb_local_planner

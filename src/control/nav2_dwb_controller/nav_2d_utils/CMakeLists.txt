@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(-Wall -Wextra -Wpedantic) # TODO(crdelsey): add -Werror once tf2/utils.h is fixed
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -57,5 +57,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(conversions path_ops)
+ament_export_dependencies(${dependencies})
 
 ament_package()

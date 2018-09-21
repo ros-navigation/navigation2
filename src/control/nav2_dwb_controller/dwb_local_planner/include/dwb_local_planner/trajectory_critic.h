@@ -89,9 +89,6 @@ public:
    * @param parent_namespace The namespace of the planner
    * @param costmap_ros Pointer to the costmap
    */
-// TODO(crdelsey): Remove when code is re-enabled
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
   void initialize(const std::shared_ptr<rclcpp::Node> & nh, CostmapROSPtr costmap_ros)
   {
     costmap_ros_ = costmap_ros;
@@ -99,7 +96,6 @@ public:
     nh_->get_parameter_or("scale", scale_, 1.0);
     onInit();
   }
-#pragma GCC diagnostic push
   virtual void onInit() {}
 
   /**
@@ -121,9 +117,9 @@ public:
    * @param global_plan Transformed global plan in costmap frame, possibly cropped to nearby points
    */
   virtual bool prepare(
-    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose2D & goal,
-    const nav_2d_msgs::msg::Path2D & global_plan)
+    const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
+    const geometry_msgs::msg::Pose2D &,
+    const nav_2d_msgs::msg::Path2D &)
   {
     return true;
   }
@@ -139,7 +135,7 @@ public:
   /**
    * @brief debrief informs the critic what the chosen cmd_vel was (if it cares)
    */
-  virtual void debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel) {}
+  virtual void debrief(const nav_2d_msgs::msg::Twist2D &) {}
 
   /**
    * @brief Add information to the given pointcloud for debugging costmap-grid based scores
@@ -157,7 +153,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addGridScores(sensor_msgs::msg::PointCloud & pc) {}
+  virtual void addGridScores(sensor_msgs::msg::PointCloud &) {}
 
   std::string getName()
   {

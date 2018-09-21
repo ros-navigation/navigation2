@@ -37,7 +37,7 @@
 using std::vector;
 using std::make_shared;
 using std::shared_ptr;
-using dwb_local_planner::TFListenerPtr;
+using dwb_local_planner::TFBufferPtr;
 using dwb_local_planner::CostmapROSPtr;
 using dwb_local_planner::TrajectoryGenerator;
 using dwb_local_planner::GoalChecker;
@@ -85,7 +85,7 @@ public:
 
 protected:
   shared_ptr<rclcpp::Node> nh;
-  TFListenerPtr tf;
+  TFBufferPtr tf;
   CostmapROSPtr cm;
   DWBLocalPlanner planner;
   nav_2d_msgs::msg::Pose2DStamped robot_pose;

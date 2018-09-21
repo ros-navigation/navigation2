@@ -87,7 +87,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 }
 
 void DWBLocalPlanner::initialize(
-  std::shared_ptr<rclcpp::Node> & private_nh, TFListenerPtr tf,
+  std::shared_ptr<rclcpp::Node> & private_nh, TFBufferPtr tf,
   CostmapROSPtr costmap_ros)
 {
   tf_ = tf;

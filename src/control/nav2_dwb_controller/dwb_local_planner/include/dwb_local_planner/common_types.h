@@ -23,7 +23,7 @@
 namespace dwb_local_planner
 {
 
-typedef std::shared_ptr<tf2_ros::TransformListener> TFListenerPtr;
+typedef std::shared_ptr<tf2_ros::Buffer> TFBufferPtr;
 typedef std::shared_ptr<costmap_2d::Costmap2DROS> CostmapROSPtr;
 
 }
