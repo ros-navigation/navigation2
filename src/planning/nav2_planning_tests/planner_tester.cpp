@@ -379,7 +379,9 @@ TaskStatus PlannerTester::sendRequest(
   const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
   nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
 {
-  while (this->count_subscribers("/DijkstraPlanner_command") < 1) {
+  if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    printf("PlannerTester::sendRequest: planner not running\n");
+    throw std::runtime_error("PlannerTester::sendRequest: planner not running");
   }
 
   planner_client_->sendCommand(endpoints);

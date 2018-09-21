@@ -50,7 +50,15 @@ ament_add_test(test_planner_node
     TEST_MAP=${CMAKE_CURRENT_SOURCE_DIR}/maps/map.pgm
 )
 
+install(TARGETS test_planner_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_package()

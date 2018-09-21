@@ -68,6 +68,7 @@ DijkstraPlanner::DijkstraPlanner()
   planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   // Plan publisher for visualization purposes
+printf("DijkstraPlanner::DijkstraPlanner: publish a plan (Path)\n");
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
 }
 
@@ -110,6 +111,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
   setResult(result);
 
   // Publish the plan for visualization purposes
+printf("DijkstraPlanner::execute: publish a plan (Path)\n");
   plan_publisher_->publish(result);
 
   // TODO(orduno): Enable potential visualization

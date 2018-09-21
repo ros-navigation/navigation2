@@ -30,7 +30,7 @@ def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([launch_ros.actions.Node(
-      package='planning',
+      package='nav2_dijkstra_planner',
       node_executable='dijkstra_planner',
       output='screen'),
     ])
@@ -47,7 +47,6 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return lts.run(ls)
-
 
 if __name__ == '__main__':
     sys.exit(main())
