@@ -1,7 +1,7 @@
 # This dockerfile expects proxies to be set via --build-arg if needed
 # It also expects to be contained in the /navigation2 root folder for file copy
 # Example build command:
-# sudo docker build -t nav2:latest --build-arg http_proxy=http://my.proxy.com:### --build-arg https_proxy=https://my.proxy.com:### .
+# sudo docker build -t nav2:latest --build-arg http_proxy=http://my.proxy.com:### .
 FROM osrf/ros2:bouncy-desktop 
 
 SHELL ["/bin/bash", "-c"]
@@ -23,8 +23,6 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/
 
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy 
-ENV HTTP_PROXY $http_proxy
-ENV HTTPS_PROXY $https_proxy
 
 # install dependencies packages 
 RUN apt-get update
@@ -41,7 +39,7 @@ RUN apt-get install -y \
 WORKDIR /ros2_ws
 
 # setup build script and run it
-# assume script is in tools on build system unless ARG is set
+# assume script is in tools on build system unless SCRIPTPATH is set
 ARG SCRIPTPATH=./tools
 COPY $SCRIPTPATH/initial_ros_setup.sh init/
 COPY $SCRIPTPATH/*.repos ./
