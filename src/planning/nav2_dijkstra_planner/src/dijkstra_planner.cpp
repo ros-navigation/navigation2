@@ -68,7 +68,7 @@ DijkstraPlanner::DijkstraPlanner()
   planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   // Plan publisher for visualization purposes
-printf("DijkstraPlanner::DijkstraPlanner: publish a plan (Path)\n");
+  printf("DijkstraPlanner::DijkstraPlanner: publish a plan (Path)\n");
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
 }
 
@@ -82,6 +82,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute");
 
+  // MJ: This is not initialized:
   nav2_tasks::ComputePathToPoseResult result;
   try {
     // TODO(orduno): Get an updated costmap
@@ -111,7 +112,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
   setResult(result);
 
   // Publish the plan for visualization purposes
-printf("DijkstraPlanner::execute: publish a plan (Path)\n");
+  printf("DijkstraPlanner::execute: publish a plan (Path)\n");
   plan_publisher_->publish(result);
 
   // TODO(orduno): Enable potential visualization
@@ -132,6 +133,9 @@ DijkstraPlanner::makePlan(
 
   double wx = start.position.x;
   double wy = start.position.y;
+
+  printf("wx, wy: %f,%f\n", wx, wy);
+  printf("start x, y: %f,%f\n", start.position.x, start.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {

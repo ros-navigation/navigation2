@@ -43,8 +43,7 @@ PlannerTester::PlannerTester()
   // TODO(orduno): get service name from param server
   startCostmapServer("CostmapService");
 
-  // TODO(orduno): get planner name from param server
-  createPlannerClient("DijkstraPlanner");
+  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
 
   map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
 
@@ -214,13 +213,6 @@ void PlannerTester::startCostmapServer(std::string serviceName)
     serviceName, costmap_service_callback);
 
   costmap_server_running_ = true;
-}
-
-void PlannerTester::createPlannerClient(std::string plannerName)
-{
-  RCLCPP_INFO(this->get_logger(), "PlannerTester::createPlannerClient");
-
-  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(/*plannerName,*/ this);
 }
 
 bool PlannerTester::defaultPlannerTest(

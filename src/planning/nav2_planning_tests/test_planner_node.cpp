@@ -71,6 +71,7 @@ TEST_F(PlannerTester, testWithOnFixedEndpoints)
   EXPECT_EQ(true, defaultPlannerTest(result));
 }
 
+#if 0
 // TODO(orduno): refine a bit more this test
 //               for example, check the output after each point, not only after the whole batch
 TEST_F(PlannerTester, testWithThousandRandomEndPoints)
@@ -79,3 +80,4 @@ TEST_F(PlannerTester, testWithThousandRandomEndPoints)
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   EXPECT_EQ(true, defaultPlannerRandomTests(1)); // 000));
 }
+#endif

@@ -14,11 +14,10 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_libs_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-
-# TODO: check these
 find_package(geometry_msgs REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 include_directories(include)
 
@@ -29,7 +28,9 @@ add_library(costmap_lib SHARED
 ament_target_dependencies(costmap_lib
   rclcpp
   nav2_libs_msgs
-  tf2)
+  tf2
+  nav_msgs
+)
 
 add_library(map_lib SHARED
   src/map/map.c

@@ -46,9 +46,6 @@ public:
   // Alternatively, use a preloaded 10x10 costmap
   void loadSimpleCostmap(const TestCostmap & testCostmapType);
 
-  // Planner client initialization
-  void createPlannerClient(std::string plannerName);
-
   // Sends the request to the planner and gets the result.
   // Uses the user provided map and endpoints.
   // Sucess criteria is a collision free path.
