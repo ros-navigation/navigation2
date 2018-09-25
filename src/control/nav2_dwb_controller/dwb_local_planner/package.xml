@@ -15,7 +15,7 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_2d_msgs</build_depend>
   <build_depend>dwb_msgs</build_depend>
-  <build_depend>costmap_2d</build_depend>
+  <build_depend>fake_costmap_2d</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
@@ -27,7 +27,7 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>dwb_msgs</exec_depend>
-  <exec_depend>costmap_2d</exec_depend>
+  <exec_depend>fake_costmap_2d</exec_depend>
   <exec_depend>nav_2d_utils</exec_depend>
   <exec_depend>pluginlib</exec_depend>
 

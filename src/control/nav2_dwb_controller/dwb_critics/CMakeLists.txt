@@ -12,7 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
-find_package(costmap_2d REQUIRED)
+find_package(fake_costmap_2d REQUIRED)
 find_package(costmap_queue REQUIRED)
 find_package(dwb_local_planner REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -43,7 +43,7 @@ add_library(${PROJECT_NAME}
 
 set(dependencies
   angles
-  costmap_2d
+  fake_costmap_2d
   costmap_queue
   dwb_local_planner
   geometry_msgs

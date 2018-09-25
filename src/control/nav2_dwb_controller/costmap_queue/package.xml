@@ -9,7 +9,7 @@
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>costmap_2d</depend>
+  <depend>fake_costmap_2d</depend>
   <depend>rclcpp</depend>
 
   <test_depend>ament_lint_common</test_depend>

@@ -11,7 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(costmap_2d REQUIRED)
+find_package(fake_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(include)
@@ -22,7 +22,7 @@ add_library(${PROJECT_NAME}
 )
 
 set(dependencies
-  costmap_2d
+  fake_costmap_2d
   rclcpp
 )
 

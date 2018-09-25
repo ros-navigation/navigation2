@@ -16,7 +16,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(dwb_msgs REQUIRED)
-find_package(costmap_2d REQUIRED)
+find_package(fake_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -32,7 +32,7 @@ set(dependencies
   geometry_msgs
   nav_2d_msgs
   dwb_msgs
-  costmap_2d
+  fake_costmap_2d
   pluginlib
   sensor_msgs
   visualization_msgs
