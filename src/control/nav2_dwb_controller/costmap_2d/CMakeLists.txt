@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(costmap_2d)
+project(fake_costmap_2d)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -18,17 +18,17 @@ include_directories(
   include
 )
 
-add_library(costmap_2d
+add_library(fake_costmap_2d
   src/mock_costmap_2d.cpp
 )
 
-ament_target_dependencies(costmap_2d
+ament_target_dependencies(fake_costmap_2d
   geometry_msgs
   tf2_ros
   tf2
 )
 
-install(TARGETS costmap_2d
+install(TARGETS fake_costmap_2d
        ARCHIVE DESTINATION lib
        LIBRARY DESTINATION lib
        )
@@ -38,7 +38,7 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(costmap_2d)
+ament_export_libraries(fake_costmap_2d)
 ament_export_dependencies(tf2_ros)
 ament_export_dependencies(tf2)
 ament_package()
