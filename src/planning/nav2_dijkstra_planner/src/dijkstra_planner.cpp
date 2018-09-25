@@ -53,19 +53,19 @@ DijkstraPlanner::DijkstraPlanner()
 
   // TODO(orduno): Enable parameter server
 
+  // Create a ROS node that will be used to spin the service calls
   costmap_client_node_ = std::make_shared<rclcpp::Node>("CostmapServiceClientNode");
+
+  // Create a service client for the GetCostmap service and wait for the service to be running
   costmap_client_ = costmap_client_node_->create_client<nav2_world_model_msgs::srv::GetCostmap>(
     "CostmapService");
-
   waitForCostmapServer();
 
-  planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
-
-  // Plan publisher for visualization purposes
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner: publish a plan (Path)");
+  // Create a plan publisher for visualization purposes
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
   // plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
 
+  // Start listening for incoming ComputePathToPose task requests
   startWorkerThread();
 }
 
@@ -83,6 +83,12 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
   try {
     // Get an updated costmap
     getCostmap(costmap_);
+
+    RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: costmap size: %d,%d",
+      costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+    // Create a planner based on the new costmap size
+    planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     makePlan(command->start, command->goal, command->tolerance, result);
 
@@ -117,7 +123,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
   } catch (...) {
     RCLCPP_WARN(get_logger(), "DijkstraPlanner::execute: plan calculation failed");
 
-    // TODO(orduno): provide information about fail error to parent task,
+    // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   }
@@ -439,10 +445,6 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 void
 DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
 {
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::printCostmap: size: %d,%d",
-    costmap.metadata.size_x, costmap.metadata.size_y);
-
-#if 0
   std::cout << "Costmap:" << std::endl;
   std::cout << "  size:       " <<
     costmap.metadata.size_x << "," << costmap.metadata.size_x << std::endl;
@@ -465,7 +467,6 @@ DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
     std::cout << std::endl << "    ";
   }
   std::cout << std::endl;
-#endif
 }
 
 }  // namespace nav2_dijkstra_planner

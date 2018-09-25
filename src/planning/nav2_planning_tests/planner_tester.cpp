@@ -45,6 +45,11 @@ PlannerTester::PlannerTester()
 
   planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
 
+  if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+    RCLCPP_ERROR(this->get_logger(), "PlannerTester::PlannerTester: planner not running");
+    throw std::runtime_error("PlannerTester::sendRequest: planner not running");
+  }
+
   // For visualization, we'll publish the map and the path endpoints
   map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
   endpoints_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("endpoints", 1);
@@ -371,11 +376,6 @@ TaskStatus PlannerTester::sendRequest(
   const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
   nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
 {
-  if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(this->get_logger(), "PlannerTester::sendRequest: planner not running");
-    throw std::runtime_error("PlannerTester::sendRequest: planner not running");
-  }
-
   planner_client_->sendCommand(endpoints);
 
   // Loop until the subtask is completed

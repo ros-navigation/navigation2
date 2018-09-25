@@ -93,7 +93,7 @@ private:
   void printCostmap(const nav2_libs_msgs::msg::Costmap & costmap);
 
   // Planner based on ROS1 NavFn algorithm
-  std::shared_ptr<NavFn> planner_;
+  std::unique_ptr<NavFn> planner_;
 
   // Client for getting the costmap
   rclcpp::Client<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
