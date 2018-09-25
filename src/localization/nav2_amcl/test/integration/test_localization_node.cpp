@@ -76,12 +76,9 @@ bool TestAmclPose::defaultAmclTest()
   {
     rclcpp::spin_some(node);
   }
-  if (!std::isnan(amcl_pose_x) && !std::isnan(amcl_pose_y))
-  {
+  if (!std::isnan(amcl_pose_x) && !std::isnan(amcl_pose_y)) {
     return true;
-  }
-  else
-  {
+  } else {
     return false;
   }
 }
@@ -90,4 +87,3 @@ TEST_F(TestAmclPose, SimpleAmclTest)
 {
   EXPECT_EQ(true, defaultAmclTest());
 }
-
