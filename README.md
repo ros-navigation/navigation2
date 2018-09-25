@@ -12,9 +12,10 @@ We are currently in the pre-release development phase, contributions are welcome
 For instructions on how to download and build this repo, see the [BUILD.md](doc/BUILD.md) file.
 
 # Creating a docker image
-To build an image from the Dockerfile in the navigation2 folder: First, clone the repo to your local system (or see Building the source above)
+To build an image from the Dockerfile in the navigation2 folder: 
+First, clone the repo to your local system (or see Building the source above)
 ```
-docker build -t nav2/latest .
+sudo docker build -t nav2/latest .
 ```
 If proxies are needed:
 ```
