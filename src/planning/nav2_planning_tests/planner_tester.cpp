@@ -45,8 +45,8 @@ PlannerTester::PlannerTester()
 
   planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
 
+  // For visualization, we'll publish the map and the path endpoints
   map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-
   endpoints_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("endpoints", 1);
 
   spinning_ok_ = true;
@@ -56,7 +56,6 @@ PlannerTester::PlannerTester()
 PlannerTester::~PlannerTester()
 {
   RCLCPP_INFO(this->get_logger(), "PlannerTester::~PlannerTester");
-
   spinning_ok_ = false;
   spin_thread_->join();
   delete spin_thread_;
@@ -67,8 +66,8 @@ void PlannerTester::spinThread()
 {
   while (spinning_ok_) {
     rclcpp::spin_some(this->get_node_base_interface());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
-  // rclcpp::spin(this->get_node_base_interface());
 }
 
 void PlannerTester::loadMap(const std::string image_file_path, const std::string yaml_file_name)
@@ -101,11 +100,13 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
     // User can set an environment variable to the location of the test src
     char const * path = getenv("TEST_MAP");
     if (path == NULL) {
-      file_path = "../../../src/navigation2/src/planning/test/maps/map.pgm";
+      file_path = "../../src/planning/nav2_planning_tests/maps/map.pgm";
     } else {
       file_path = std::string(path);
     }
   }
+
+  RCLCPP_INFO(this->get_logger(), "PlannerTester::loadMap: file_path: %s", file_path.c_str());
 
   if (!yaml_file_name.empty()) {
     // TODO(orduno): parse yaml file
@@ -121,7 +122,7 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
         occupancy_threshold, free_threshold, origin, mode));
   } catch (...) {
     RCLCPP_ERROR(this->get_logger(),
-      "PlannerTester::loadDefaultMap: failed to load image from file");
+      "PlannerTester::loadDefaultMap: failed to load image from file: %s", file_path.c_str());
     throw;
   }
 
@@ -202,7 +203,6 @@ void PlannerTester::startCostmapServer(std::string serviceName)
     std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
     {
       RCLCPP_INFO(this->get_logger(), "PlannerTester: Incoming costmap request");
-
       response->map = costmap_->getCostmap(request->specs);
     };
 
@@ -372,7 +372,7 @@ TaskStatus PlannerTester::sendRequest(
   nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
 {
   if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    printf("PlannerTester::sendRequest: planner not running\n");
+    RCLCPP_ERROR(this->get_logger(), "PlannerTester::sendRequest: planner not running");
     throw std::runtime_error("PlannerTester::sendRequest: planner not running");
   }
 
@@ -406,7 +406,7 @@ bool PlannerTester::isCollisionFree(const nav2_tasks::ComputePathToPoseResult & 
     }
   }
 
-  RCLCPP_INFO(this->get_logger(), "PathTester::isCollisionFree: path no has collisions :)");
+  RCLCPP_INFO(this->get_logger(), "PathTester::isCollisionFree: path has no collisions :)");
   return true;
 }
 

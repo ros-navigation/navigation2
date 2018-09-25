@@ -35,8 +35,7 @@ Costmap::Costmap(
 : node_(node), trinary_costmap_(trinary_costmap), track_unknown_space_(track_unknown_space),
   lethal_threshold_(lethal_threshold), unknown_cost_value_(unknown_cost_value)
 {
-  RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
-
+  //RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
   lethal_threshold_ = std::max(std::min(lethal_threshold_, 100), 0);
 }
 
@@ -109,7 +108,7 @@ void Costmap::setTestCostmap(const TestCostmap & testCostmapType)
 nav2_libs_msgs::msg::Costmap Costmap::getCostmap(
   const nav2_libs_msgs::msg::CostmapMetaData & /*specifications*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Costmap::getCostmap");
+  //RCLCPP_INFO(node_->get_logger(), "Costmap::getCostmap");
 
   if (!map_provided_ && !using_test_map_) {
     throw std::runtime_error("Costmap has not been set.");
@@ -121,11 +120,8 @@ nav2_libs_msgs::msg::Costmap Costmap::getCostmap(
   nav2_libs_msgs::msg::Costmap costmap;
 
   costmap.header.stamp = node_->now();
-  // costmap.header.frame_id = "/map";
   costmap.header.frame_id = "map";
-
   costmap.metadata = costmap_properties_;
-
   costmap.data = costs_;
 
   return costmap;

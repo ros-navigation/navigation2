@@ -50,7 +50,7 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,
-    TestCostmap::top_left_obstacle,
+    // TestCostmap::top_left_obstacle,
     TestCostmap::bottom_left_obstacle,
     TestCostmap::maze1,
     TestCostmap::maze2
@@ -71,13 +71,11 @@ TEST_F(PlannerTester, testWithOnFixedEndpoints)
   EXPECT_EQ(true, defaultPlannerTest(result));
 }
 
-#if 0
 // TODO(orduno): refine a bit more this test
 //               for example, check the output after each point, not only after the whole batch
 TEST_F(PlannerTester, testWithThousandRandomEndPoints)
 {
   loadMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  EXPECT_EQ(true, defaultPlannerRandomTests(1)); // 000));
+  EXPECT_EQ(true, defaultPlannerRandomTests(1000));
 }
-#endif

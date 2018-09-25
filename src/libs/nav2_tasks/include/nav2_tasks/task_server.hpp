@@ -47,7 +47,7 @@ public:
     resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
     statusPub_ = this->create_publisher<StatusMsg>(taskName + "_status");
 
-    startWorkerThread();
+    //startWorkerThread();
   }
 
   virtual ~TaskServer()
@@ -89,7 +89,7 @@ protected:
   {
     do {
       std::unique_lock<std::mutex> lock(commandMutex_);
-      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(10),
+      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(100),
         [&] {return commandReceived_ == true;}))
       {
         // Call the user's overridden method

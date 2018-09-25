@@ -35,6 +35,8 @@
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
+// #include "nav_msgs/msg/path.hpp"
+
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
@@ -43,33 +45,28 @@ namespace nav2_dijkstra_planner
 
 DijkstraPlanner::DijkstraPlanner()
 : nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode"),
-  global_frame_("/map"), allow_unknown_(true), default_tolerance_(1.0)
+  global_frame_("/map"),
+  allow_unknown_(true),
+  default_tolerance_(1.0)
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 
   // TODO(orduno): Enable parameter server
 
-  costmap_client_ = this->create_client<nav2_world_model_msgs::srv::GetCostmap>("CostmapService");
+  costmap_client_node_ = std::make_shared<rclcpp::Node>("CostmapServiceClientNode");
+  costmap_client_ = costmap_client_node_->create_client<nav2_world_model_msgs::srv::GetCostmap>(
+    "CostmapService");
+
   waitForCostmapServer();
-
-  // TODO(orduno): Service for getting the costmap sometimes fails,
-  //               check how the parent task can handle this. Might need to pull out
-  //               the getCostmap() method out of the constructor and have an initialize() one.
-  try {
-    getCostmap(costmap_);
-  } catch (...) {
-    RCLCPP_ERROR(this->get_logger(),
-      "DijkstraPlanner::makePlan: failed to obtain costmap from server");
-    throw std::runtime_error("makePlan: failed to obtain costmap from server");
-  }
-
-  printCostmap(costmap_);
 
   planner_ = std::make_shared<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   // Plan publisher for visualization purposes
-  printf("DijkstraPlanner::DijkstraPlanner: publish a plan (Path)\n");
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner: publish a plan (Path)");
   plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
+  // plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
+
+  startWorkerThread();
 }
 
 DijkstraPlanner::~DijkstraPlanner()
@@ -80,44 +77,50 @@ DijkstraPlanner::~DijkstraPlanner()
 TaskStatus
 DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute");
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: begin");
 
-  // MJ: This is not initialized:
   nav2_tasks::ComputePathToPoseResult result;
   try {
-    // TODO(orduno): Get an updated costmap
-    // getCostmap(costmap_);
+    // Get an updated costmap
+    getCostmap(costmap_);
+
     makePlan(command->start, command->goal, command->tolerance, result);
+
+    // TODO(orduno): should check for cancel within the makePlan() method?
+    if (cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: task has been canceled");
+      setCanceled();
+      return TaskStatus::CANCELED;
+    }
+
+    RCLCPP_INFO(get_logger(),
+      "DijkstraPlanner::execute: calculated path of size %u", result.poses.size());
+
+    // Publish the plan for visualization purposes
+    RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: publishing the resulting path");
+    plan_publisher_->publish(result);
+
+    // TODO(orduno): Enable potential visualization
+
+    // Set the result of the successful execution so that it can be send to the client
+    setResult(result);
+
+    // Return success, which causes the result message to be sent to the client
+    return TaskStatus::SUCCEEDED;
+  } catch (std::exception & ex) {
+    RCLCPP_WARN(get_logger(), "DijkstraPlanner::execute: plan calculation failed: \"%s\"",
+      ex.what());
+
+    // TODO(orduno): provide information about fail error to parent task,
+    //               for example: couldn't get costmap update
+    return TaskStatus::FAILED;
   } catch (...) {
-    RCLCPP_WARN(this->get_logger(), "DijkstraPlanner::execute: plan calculation failed");
+    RCLCPP_WARN(get_logger(), "DijkstraPlanner::execute: plan calculation failed");
+
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   }
-
-  if (cancelRequested()) {
-    RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: task has been canceled");
-    setCanceled();
-    return TaskStatus::CANCELED;
-  }
-  // TODO(orduno): should check for cancel within the makePlan() method?
-
-  RCLCPP_INFO(get_logger(),
-    "DijkstraPlanner::execute: calculated path of size %u", result.poses.size());
-
-  // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: task completed");
-
-  // Pass the output to the Task Client
-  setResult(result);
-
-  // Publish the plan for visualization purposes
-  printf("DijkstraPlanner::execute: publish a plan (Path)\n");
-  plan_publisher_->publish(result);
-
-  // TODO(orduno): Enable potential visualization
-
-  return TaskStatus::SUCCEEDED;
 }
 
 bool
@@ -134,13 +137,13 @@ DijkstraPlanner::makePlan(
   double wx = start.position.x;
   double wy = start.position.y;
 
-  printf("wx, wy: %f,%f\n", wx, wy);
-  printf("start x, y: %f,%f\n", start.position.x, start.position.y);
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::makePlan: from %.2f,%.2f to %.2f,%.2f",
+    start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      this->get_logger(),
+      get_logger(),
       "DijkstraPlanner::makePlan: The robot's start position is off the global costmap."
       " Planning will always fail, are you sure the robot has been properly localized?");
     return false;
@@ -165,7 +168,7 @@ DijkstraPlanner::makePlan(
     if (tolerance <= 0.0) {
       std::cout << "tolerance: " << tolerance << std::endl;
       RCLCPP_WARN(
-        this->get_logger(),
+        get_logger(),
         "DijkstraPlanner::makePlan: The goal sent to the planner is off the global costmap."
         " Planning will always fail to this goal.");
       return false;
@@ -216,7 +219,7 @@ DijkstraPlanner::makePlan(
       plan.poses.push_back(goal_copy);
     } else {
       RCLCPP_ERROR(
-        this->get_logger(),
+        get_logger(),
         "DijkstraPlanner::makePlan: Failed to get a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
@@ -271,7 +274,7 @@ DijkstraPlanner::getPlanFromPotential(
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      this->get_logger(),
+      get_logger(),
       "The goal sent to the navfn planner is off the global costmap."
       " Planning will always fail to this goal.");
     return false;
@@ -336,9 +339,7 @@ DijkstraPlanner::validPointPotential(
 {
   double resolution = costmap_.metadata.resolution;
 
-  geometry_msgs::msg::Point p;
-  p = world_point;
-
+  geometry_msgs::msg::Point p = world_point;
   p.y = world_point.y - tolerance;
 
   while (p.y <= world_point.y + tolerance) {
@@ -360,6 +361,7 @@ bool
 DijkstraPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_.metadata.origin.position.x || wy < costmap_.metadata.origin.position.y) {
+    RCLCPP_ERROR(get_logger(), "wordToMap failed: wx,wy: %f,%f", wx, wy);
     return false;
   }
 
@@ -369,6 +371,9 @@ DijkstraPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned in
   if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
     return true;
   }
+
+  RCLCPP_ERROR(get_logger(), "wordToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+    costmap_.metadata.size_x, costmap_.metadata.size_y);
 
   return false;
 }
@@ -392,22 +397,25 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 void
 DijkstraPlanner::getCostmap(
   nav2_libs_msgs::msg::Costmap & costmap, const std::string /*layer*/,
-  const std::chrono::milliseconds waitTime)
+  const std::chrono::milliseconds /*waitTime*/)
 {
-  RCLCPP_INFO(this->get_logger(), "DijkstraPlanner::getCostmap: requesting a new costmap");
-
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggreate) layer
-  auto costmapServiceResult = costmap_client_->async_send_request(
-    std::make_shared<nav2_world_model_msgs::srv::GetCostmap::Request>());
+  auto request = std::make_shared<nav2_world_model_msgs::srv::GetCostmap::Request>();
+  request->specs.resolution = 1.0;
 
-  if (rclcpp::spin_until_future_complete(
-      this->get_node_base_interface(), costmapServiceResult, waitTime) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_ERROR(this->get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed");
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::getCostmap: sending async request to costmap server");
+  auto costmapServiceResult = costmap_client_->async_send_request(request);
+
+  // MJ: Omitting waitTime to wait forever
+  auto rc = rclcpp::spin_until_future_complete(costmap_client_node_, costmapServiceResult);
+
+  if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed!");
     throw std::runtime_error("getCostmap: service call failed");
   }
+
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::getCostmap: costmap service succeeded");
   costmap = costmapServiceResult.get()->map;
 }
 
@@ -417,13 +425,13 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
   while (!costmap_client_->wait_for_service(waitTime)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(
-        this->get_logger(),
+        get_logger(),
         "DijkstraPlanner::waitForCostmapServer:"
         " costmap client interrupted while waiting for the service to appear.");
       throw std::runtime_error(
               "waitForCostmapServer: interrupted while waiting for costmap server to appear");
     }
-    RCLCPP_INFO(this->get_logger(),
+    RCLCPP_INFO(get_logger(),
       "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")
   }
 }
@@ -431,7 +439,11 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 void
 DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
 {
-  std::cout << "Costmap" << std::endl;
+  RCLCPP_INFO(get_logger(), "DijkstraPlanner::printCostmap: size: %d,%d",
+    costmap.metadata.size_x, costmap.metadata.size_y);
+
+#if 0
+  std::cout << "Costmap:" << std::endl;
   std::cout << "  size:       " <<
     costmap.metadata.size_x << "," << costmap.metadata.size_x << std::endl;
   std::cout << "  origin:     " <<
@@ -453,6 +465,7 @@ DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
     std::cout << std::endl << "    ";
   }
   std::cout << std::endl;
+#endif
 }
 
 }  // namespace nav2_dijkstra_planner
