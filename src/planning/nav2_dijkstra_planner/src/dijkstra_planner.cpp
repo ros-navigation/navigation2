@@ -27,15 +27,16 @@
 #include <iomanip>
 #include <algorithm>
 #include <exception>
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/point.hpp"
 #include "nav2_dijkstra_planner/dijkstra_planner.hpp"
 #include "nav2_dijkstra_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/point.hpp"
+//#include "visualization_msgs/msg/marker.hpp"
+#include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
-
-// #include "nav_msgs/msg/path.hpp"
+//#include "nav_msgs/msg/path.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -45,16 +46,16 @@ namespace nav2_dijkstra_planner
 
 DijkstraPlanner::DijkstraPlanner()
 : nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode"),
-  global_frame_("/map"),
+  global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0)
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::DijkstraPlanner");
 
-  // TODO(orduno): Enable parameter server
+  // TODO(orduno): Enable parameter server and get costmap service name from there
 
   // Create a ROS node that will be used to spin the service calls
-  costmap_client_node_ = std::make_shared<rclcpp::Node>("CostmapServiceClientNode");
+  costmap_client_node_ = rclcpp::Node::make_shared("CostmapServiceClientNode");
 
   // Create a service client for the GetCostmap service and wait for the service to be running
   costmap_client_ = costmap_client_node_->create_client<nav2_world_model_msgs::srv::GetCostmap>(
@@ -445,7 +446,7 @@ DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
 void
 DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
 {
-  std::cout << "Costmap:" << std::endl;
+  std::cout << "Costmap" << std::endl;
   std::cout << "  size:       " <<
     costmap.metadata.size_x << "," << costmap.metadata.size_x << std::endl;
   std::cout << "  origin:     " <<
