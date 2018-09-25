@@ -18,5 +18,7 @@ docker build -t nav2/latest .
 ```
 If proxies are needed:
 ```
-docker build -t nav2/latest --build-arg http://your.proxy.com:### .
+sudo docker build -t nav2/latest --build-arg http_proxy=http://proxy.my.com:### --build-arg https_proxy=http://proxy.my.com:### .
 ```
+Note: You may also need to configure your docker for DNS to work. See article here for details:
+https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/
