@@ -11,7 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_libs_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 
@@ -23,7 +23,7 @@ add_library(costmap_lib SHARED
 
 ament_target_dependencies(costmap_lib
   rclcpp
-  nav2_libs_msgs
+  nav2_msgs
   tf2)
 
 add_library(map_lib SHARED

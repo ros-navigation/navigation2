@@ -17,13 +17,13 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_mission_execution_msgs/msg/mission_plan.hpp"
+#include "nav2_msgs/msg/mission_plan.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using ExecuteMissionCommand = nav2_mission_execution_msgs::msg::MissionPlan;
+using ExecuteMissionCommand = nav2_msgs::msg::MissionPlan;
 using ExecuteMissionResult = std_msgs::msg::Empty;
 
 using ExecuteMissionTaskClient = TaskClient<ExecuteMissionCommand, ExecuteMissionResult>;

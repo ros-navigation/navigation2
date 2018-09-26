@@ -15,9 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_planning_msgs REQUIRED)
-find_package(nav2_libs_msgs REQUIRED)
-find_package(nav2_world_model_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -43,9 +41,7 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_util
-  nav2_planning_msgs
-  nav2_libs_msgs
-  nav2_world_model_msgs
+  nav2_msgs
 )
 
 ament_target_dependencies(${executable_name}

@@ -17,8 +17,8 @@
 
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_libs_msgs/msg/costmap.hpp"
-#include "nav2_libs_msgs/msg/costmap_meta_data.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 namespace nav2_util
 {
@@ -29,8 +29,8 @@ public:
   explicit Costmap(rclcpp::Node * node);
   Costmap() = delete;
 
-  nav2_libs_msgs::msg::Costmap getCostmap(
-    const nav2_libs_msgs::msg::CostmapMetaData & specifications);
+  nav2_msgs::msg::Costmap getCostmap(
+    const nav2_msgs::msg::CostmapMetaData & specifications);
 
   typedef uint8_t CostValue;
 

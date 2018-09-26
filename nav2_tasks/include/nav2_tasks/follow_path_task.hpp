@@ -17,13 +17,13 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_planning_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using FollowPathCommand = nav2_planning_msgs::msg::Path;
+using FollowPathCommand = nav2_msgs::msg::Path;
 using FollowPathResult = std_msgs::msg::Empty;
 
 using FollowPathTaskClient = TaskClient<FollowPathCommand, FollowPathResult>;

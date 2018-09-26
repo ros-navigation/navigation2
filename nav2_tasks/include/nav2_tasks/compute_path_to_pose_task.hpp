@@ -17,14 +17,14 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_planning_msgs/msg/path_end_points.hpp"
-#include "nav2_planning_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
+#include "nav2_msgs/msg/path.hpp"
 
 namespace nav2_tasks
 {
 
-using ComputePathToPoseCommand = nav2_planning_msgs::msg::PathEndPoints;
-using ComputePathToPoseResult = nav2_planning_msgs::msg::Path;
+using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
+using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
 using ComputePathToPoseTaskClient =
   TaskClient<ComputePathToPoseCommand, ComputePathToPoseResult>;

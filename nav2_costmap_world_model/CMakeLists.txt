@@ -15,8 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util)
-find_package(nav2_libs_msgs)
-find_package(nav2_world_model_msgs)
+find_package(nav2_msgs)
 
 include_directories(
   include
@@ -39,8 +38,7 @@ set(dependencies
   rclcpp
   std_msgs
   nav2_util
-  nav2_libs_msgs
-  nav2_world_model_msgs
+  nav2_msgs
   tf2_ros
   tf2
 )

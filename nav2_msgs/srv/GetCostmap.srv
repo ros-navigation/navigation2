@@ -1,6 +1,6 @@
 # Get the costmap
 
 # Specifications for the requested costmap
-nav2_libs_msgs/CostmapMetaData specs
+nav2_msgs/CostmapMetaData specs
 ---
-nav2_libs_msgs/Costmap map
+nav2_msgs/Costmap map
