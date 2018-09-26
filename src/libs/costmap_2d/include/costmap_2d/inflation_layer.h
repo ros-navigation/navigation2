@@ -38,11 +38,12 @@
 #ifndef COSTMAP_2D_INFLATION_LAYER_H_
 #define COSTMAP_2D_INFLATION_LAYER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/InflationPluginConfig.h>
-#include <dynamic_reconfigure/server.h>
+// TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+//#include <costmap_2d/InflationPluginConfig.h>
+//#include <dynamic_reconfigure/server.h>
 #include <boost/thread.hpp>
 
 namespace costmap_2d
@@ -80,8 +81,9 @@ public:
   virtual ~InflationLayer()
   {
     deleteKernels();
-    if (dsrv_)
-        delete dsrv_;
+    // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+    // if (dsrv_)
+    //    delete dsrv_;
   }
 
   virtual void onInitialize();
@@ -99,7 +101,7 @@ public:
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
    * @return A cost value for the distance */
-  virtual inline unsigned char computeCost(double distance) const
+  inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
     if (distance == 0)
@@ -126,12 +128,6 @@ public:
 protected:
   virtual void onFootprintChanged();
   boost::recursive_mutex* inflation_access_;
-
-  double resolution_;
-  double inflation_radius_;
-  double inscribed_radius_;
-  double weight_;
-  bool inflate_unknown_;
 
 private:
   /**
@@ -176,9 +172,13 @@ private:
   inline void enqueue(unsigned int index, unsigned int mx, unsigned int my,
                       unsigned int src_x, unsigned int src_y);
 
+  double inflation_radius_, inscribed_radius_, weight_;
+  bool inflate_unknown_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;
   std::map<double, std::vector<CellData> > inflation_cells_;
+
+  double resolution_;
 
   bool* seen_;
   int seen_size_;
@@ -186,9 +186,10 @@ private:
   unsigned char** cached_costs_;
   double** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
-
-  dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *dsrv_;
-  void reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level);
+    
+  // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+  //dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *dsrv_;
+  //void reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level);
 
   bool need_reinflation_;  ///< Indicates that the entire costmap should be reinflated next time around.
 };

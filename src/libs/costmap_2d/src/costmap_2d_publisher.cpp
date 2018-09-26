@@ -44,14 +44,19 @@ namespace costmap_2d
 
 char* Costmap2DPublisher::cost_translation_table_ = NULL;
 
-Costmap2DPublisher::Costmap2DPublisher(ros::NodeHandle * ros_node, Costmap2D* costmap, std::string global_frame,
+Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D* costmap, std::string global_frame,
                                        std::string topic_name, bool always_send_full_costmap) :
     node(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
     always_send_full_costmap_(always_send_full_costmap)
 {
-  costmap_pub_ = ros_node->advertise<nav_msgs::OccupancyGrid>(topic_name, 1,
-                                                    boost::bind(&Costmap2DPublisher::onNewSubscription, this, _1));
-  costmap_update_pub_ = ros_node->advertise<map_msgs::OccupancyGridUpdate>(topic_name + "_updates", 1);
+  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
+  custom_qos_profile.depth = 1;
+  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+
+  // TODO(bpwilcox): port onNewSubscription functionality for publisher
+  costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name, custom_qos_profile);
+  costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(topic_name + "_updates", custom_qos_profile);
 
   if (cost_translation_table_ == NULL)
   {
@@ -76,15 +81,15 @@ Costmap2DPublisher::Costmap2DPublisher(ros::NodeHandle * ros_node, Costmap2D* co
   y0_ = costmap_->getSizeInCellsY();
 }
 
-Costmap2DPublisher::~Costmap2DPublisher()
-{
-}
+Costmap2DPublisher::~Costmap2DPublisher(){}
 
+// TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublishr
+/* 
 void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher& pub)
 {
   prepareGrid();
   pub.publish(grid_);
-}
+} */
 
 // prepare grid_ message for publication.
 void Costmap2DPublisher::prepareGrid()
@@ -93,7 +98,8 @@ void Costmap2DPublisher::prepareGrid()
   double resolution = costmap_->getResolution();
 
   grid_.header.frame_id = global_frame_;
-  grid_.header.stamp = ros::Time::now();
+  grid_.header.stamp = rclcpp::Time();
+
   grid_.info.resolution = resolution;
 
   grid_.info.width = costmap_->getSizeInCellsX();
@@ -119,12 +125,14 @@ void Costmap2DPublisher::prepareGrid()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if (costmap_pub_.getNumSubscribers() == 0)
+  // TODO(bpwilcox): port getNumSubscribers for publisher
+  /* 
+  if (costmap_pub_->getNumSubscribers() == 0)
   {
     // No subscribers, so why do any work?
     return;
   }
-
+  */
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||
@@ -134,14 +142,14 @@ void Costmap2DPublisher::publishCostmap()
       saved_origin_y_ != costmap_->getOriginY())
   {
     prepareGrid();
-    costmap_pub_.publish(grid_);
+    costmap_pub_->publish(grid_);
   }
   else if (x0_ < xn_)
   {
     boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     // Publish Just an Update
-    map_msgs::OccupancyGridUpdate update;
-    update.header.stamp = ros::Time::now();
+    map_msgs::msg::OccupancyGridUpdate update;
+    update.header.stamp = rclcpp::Time();
     update.header.frame_id = global_frame_;
     update.x = x0_;
     update.y = y0_;
@@ -158,7 +166,7 @@ void Costmap2DPublisher::publishCostmap()
         update.data[i++] = cost_translation_table_[ cost ];
       }
     }
-    costmap_update_pub_.publish(update);
+    costmap_update_pub_->publish(update);
   }
 
   xn_ = yn_ = 0;

@@ -37,7 +37,8 @@
  *********************************************************************/
 #ifndef COSTMAP_2D_COSTMAP_LAYER_H_
 #define COSTMAP_2D_COSTMAP_LAYER_H_
-#include <ros/ros.h>
+
+#include <rclcpp/rclcpp.hpp>
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
 
@@ -146,4 +147,4 @@ private:
 };
 
 }  // namespace costmap_2d
-#endif  // COSTMAP_2D_COSTMAP_LAYER_H_
+#endif // COSTMAP_2D_COSTMAP_LAYER_H_

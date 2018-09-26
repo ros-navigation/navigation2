@@ -40,7 +40,7 @@
 #include <costmap_2d/costmap_math.h>
 #include <costmap_2d/footprint.h>
 #include <boost/thread.hpp>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::InflationLayer, costmap_2d::Layer)
 
@@ -57,7 +57,7 @@ InflationLayer::InflationLayer()
   , inflate_unknown_(false)
   , cell_inflation_radius_(0)
   , cached_cell_inflation_radius_(0)
-  , dsrv_(NULL)
+  //, dsrv_(NULL)
   , seen_(NULL)
   , cached_costs_(NULL)
   , cached_distances_(NULL)
@@ -73,7 +73,11 @@ void InflationLayer::onInitialize()
 {
   {
     boost::unique_lock < boost::recursive_mutex > lock(*inflation_access_);
-    ros::NodeHandle nh("~/" + name_), g_nh;
+    //ros::NodeHandle nh("~/" + name_), g_nh;
+
+    auto private_nh = rclcpp::Node::make_shared(name_);
+    rclcpp::Node::SharedPtr g_nh;
+
     current_ = true;
     if (seen_)
       delete[] seen_;
@@ -81,10 +85,12 @@ void InflationLayer::onInitialize()
     seen_size_ = 0;
     need_reinflation_ = false;
 
+  // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+  /*  
     dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = boost::bind(
-        &InflationLayer::reconfigureCB, this, _1, _2);
+      &InflationLayer::reconfigureCB, this, _1, _2);
 
-    if (dsrv_ != NULL){
+     if (dsrv_ != NULL){
       dsrv_->clearCallback();
       dsrv_->setCallback(cb);
     }
@@ -92,12 +98,13 @@ void InflationLayer::onInitialize()
     {
       dsrv_ = new dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>(ros::NodeHandle("~/" + name_));
       dsrv_->setCallback(cb);
-    }
+    } */
   }
 
   matchSize();
 }
-
+// TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+/* 
 void InflationLayer::reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level)
 {
   setInflationParameters(config.inflation_radius, config.cost_scaling_factor);
@@ -107,7 +114,7 @@ void InflationLayer::reconfigureCB(costmap_2d::InflationPluginConfig &config, ui
     inflate_unknown_ = config.inflate_unknown;
     need_reinflation_ = true;
   }
-}
+} */
 
 void InflationLayer::matchSize()
 {
@@ -166,9 +173,9 @@ void InflationLayer::onFootprintChanged()
   computeCaches();
   need_reinflation_ = true;
 
-  ROS_DEBUG("InflationLayer::onFootprintChanged(): num footprint points: %lu,"
-            " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
-            layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
+  RCLCPP_DEBUG(rclcpp::get_logger("costmap_2d"),"InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
+    layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
 
 void InflationLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
@@ -178,19 +185,19 @@ void InflationLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, 
     return;
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  ROS_ASSERT_MSG(inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
+  RCLCPP_FATAL_EXPRESSION(rclcpp::get_logger("costmap_2d"),!inflation_cells_.empty(),"The inflation list must be empty at the beginning of inflation");
 
   unsigned char* master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
 
   if (seen_ == NULL) {
-    ROS_WARN("InflationLayer::updateCosts(): seen_ array is NULL");
+    RCLCPP_WARN(rclcpp::get_logger("costmap_2d"),"InflationLayer::updateCosts(): seen_ array is NULL");
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];
   }
   else if (seen_size_ != size_x * size_y)
   {
-    ROS_WARN("InflationLayer::updateCosts(): seen_ array size is wrong");
+    RCLCPP_WARN(rclcpp::get_logger("costmap_2d"),"InflationLayer::updateCosts(): seen_ array size is wrong");
     delete[] seen_;
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];

@@ -40,7 +40,7 @@
 
 #include <vector>
 #include <queue>
-#include <geometry_msgs/Point.h>
+#include <geometry_msgs/msg/point.hpp>
 #include <boost/thread.hpp>
 
 namespace costmap_2d
@@ -249,7 +249,7 @@ public:
    * @param cost_value The value to set costs to
    * @return True if the polygon was filled... false if it could not be filled
    */
-  bool setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value);
+  bool setConvexPolygonCost(const std::vector<geometry_msgs::msg::Point>& polygon, unsigned char cost_value);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
@@ -466,4 +466,4 @@ protected:
 };
 }  // namespace costmap_2d
 
-#endif  // COSTMAP_2D_COSTMAP_2D_H
+#endif // COSTMAP_2D_COSTMAP_2D_H

@@ -48,7 +48,7 @@ void Layer::initialize(LayeredCostmap* parent, std::string name, tf2_ros::Buffer
   onInitialize();
 }
 
-const std::vector<geometry_msgs::Point>& Layer::getFootprint() const
+const std::vector<geometry_msgs::msg::Point>& Layer::getFootprint() const
 {
   return layered_costmap_->getFootprint();
 }
