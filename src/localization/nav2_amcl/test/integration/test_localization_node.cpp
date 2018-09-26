@@ -37,6 +37,7 @@ class TestAmclPose : public ::testing::Test
 public:
   TestAmclPose()
   {
+    //Initializing amcl_pose x and y to NaN
     amcl_pose_x = 0.0/0.0;
     amcl_pose_y = 0.0/0.0;
     pose_callback_ = false;
