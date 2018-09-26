@@ -105,11 +105,9 @@ private:
   rclcpp::Client<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
   rclcpp::Node::SharedPtr costmap_client_node_;
 
-  // Computed path publisher
-  //rclcpp::Publisher<nav2_planning_msgs::msg::Path>::SharedPtr plan_publisher_;
+  // Publishers for the path and endpoints
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr plan_marker_publisher_;
-
 
   // The costmap to use
   nav2_libs_msgs::msg::Costmap costmap_;

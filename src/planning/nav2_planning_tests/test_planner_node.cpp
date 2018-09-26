@@ -50,7 +50,7 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,
-    // TestCostmap::top_left_obstacle,
+    TestCostmap::top_left_obstacle,
     TestCostmap::bottom_left_obstacle,
     TestCostmap::maze1,
     TestCostmap::maze2

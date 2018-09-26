@@ -62,10 +62,8 @@ DijkstraPlanner::DijkstraPlanner()
     "CostmapService");
   waitForCostmapServer();
 
-  // Create a plan publisher for visualization purposes
-  //plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
+  // Create publishers for visualization of the path and endpoints
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
-
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "plan_marker", 1);
 
@@ -87,14 +85,14 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
   try {
     // Get an updated costmap
     getCostmap(costmap_);
-
     RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Create a planner based on the new costmap size
     planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-	bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
+    // Make the plan for the provided goal pose
+    bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
@@ -105,7 +103,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "DijkstraPlanner::executeAsync: planning algorithm failed")
-	  return TaskStatus::FAILED;
+      return TaskStatus::FAILED;
     }
 
     RCLCPP_INFO(get_logger(),
@@ -113,8 +111,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
 
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: publishing the resulting path");
-    //plan_publisher_->publish(result);
-	publishPlan(result);
+    publishPlan(result);
 
     // TODO(orduno): Enable potential visualization
 
@@ -423,7 +420,7 @@ DijkstraPlanner::getCostmap(
   RCLCPP_INFO(get_logger(), "DijkstraPlanner::getCostmap: sending async request to costmap server");
   auto costmapServiceResult = costmap_client_->async_send_request(request);
 
-  // MJ: Omitting waitTime to wait forever
+  // Wait for the service result
   auto rc = rclcpp::spin_until_future_complete(costmap_client_node_, costmapServiceResult);
 
   if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {

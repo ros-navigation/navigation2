@@ -16,29 +16,29 @@
 
 import os
 import sys
-import launch_ros.actions
+
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+import launch_ros.actions
+
 from launch_testing import LaunchTestService
-from launch.substitutions import ThisLaunchFileDir
+
 
 def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'planner_node.launch.py')
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([launch_ros.actions.Node(
-      package='nav2_dijkstra_planner',
-      node_executable='dijkstra_planner',
-      output='screen'),
+        package='nav2_dijkstra_planner',
+        node_executable='dijkstra_planner',
+        output='screen'),
     ])
 
     test1_action = ExecuteProcess(
-      cmd=[testExecutable],
-      name='test_planner_node',
-      output='screen'
+        cmd=[testExecutable],
+        name='test_planner_node',
+        output='screen'
     )
 
     ld.add_action(test1_action)
@@ -47,6 +47,7 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return lts.run(ls)
+
 
 if __name__ == '__main__':
     sys.exit(main())
