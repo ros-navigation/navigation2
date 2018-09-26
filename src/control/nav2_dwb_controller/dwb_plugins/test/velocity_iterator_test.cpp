@@ -31,8 +31,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <dwb_plugins/one_d_velocity_iterator.h>
+
+#include "gtest/gtest.h"
+#include "dwb_plugins/one_d_velocity_iterator.h"
 
 using dwb_plugins::OneDVelocityIterator;
 
@@ -135,7 +136,7 @@ TEST(VelocityIterator, around_zero2)
   ++it;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -31,25 +31,61 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_LOCAL_PLANNER_BACKWARDS_COMPATIBILITY_H
-#define DWB_LOCAL_PLANNER_BACKWARDS_COMPATIBILITY_H
+#ifndef DWB_LOCAL_PLANNER__EXCEPTIONS_H_
+#define DWB_LOCAL_PLANNER__EXCEPTIONS_H_
 
-#include <ros/ros.h>
+#include <stdexcept>
 #include <string>
+#include <memory>
 
-namespace dwb_local_planner
+namespace nav_core2
 {
 
-std::string getBackwardsCompatibleDefaultGenerator(const ros::NodeHandle& nh);
+class PlannerException : public std::runtime_error
+{
+public:
+  explicit PlannerException(const std::string description)
+  : std::runtime_error(description) {}
+  typedef std::shared_ptr<PlannerException> Ptr;
+};
 
 /**
- * @brief Load parameters to emulate dwa_local_planner
- *
- * If no critic parameters are specified, this function should be called
- * to load/move parameters that will emulate the behavior of dwa_local_planner
- *
- * @param nh NodeHandle to load parameters from
+ * @class PlannerTFException
+ * @brief Thrown when the planner cannot complete its operation due to TF errors
  */
-void loadBackwardsCompatibleParameters(const ros::NodeHandle& nh);
-}  // namespace dwb_local_planner
-#endif  // DWB_LOCAL_PLANNER_BACKWARDS_COMPATIBILITY_H
+class PlannerTFException : public PlannerException
+{
+public:
+  explicit PlannerTFException(const std::string description)
+  : PlannerException(description) {}
+};
+
+/**
+ * @class IllegalTrajectoryException
+ * @brief Thrown when one of the critics encountered a fatal error
+ */
+class IllegalTrajectoryException : public PlannerException
+{
+public:
+  IllegalTrajectoryException(const std::string critic_name, const std::string description)
+  : PlannerException(description), critic_name_(critic_name) {}
+  std::string getCriticName() const {return critic_name_;}
+
+protected:
+  std::string critic_name_;
+};
+
+/**
+ * @class NoLegalTrajectoriesException
+ * @brief Thrown when all the trajectories explored are illegal
+ */
+class NoLegalTrajectoriesException : public PlannerException
+{
+public:
+  explicit NoLegalTrajectoriesException(const std::string description)
+  : PlannerException(description) {}
+};
+
+}  // namespace nav_core2
+
+#endif  // DWB_LOCAL_PLANNER__EXCEPTIONS_H_

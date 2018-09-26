@@ -31,12 +31,12 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_GOAL_ALIGN_H_
-#define DWB_CRITICS_GOAL_ALIGN_H_
+#ifndef DWB_CRITICS__GOAL_ALIGN_H_
+#define DWB_CRITICS__GOAL_ALIGN_H_
 
-#include <dwb_critics/goal_dist.h>
 #include <vector>
 #include <string>
+#include "dwb_critics/goal_dist.h"
 
 namespace dwb_critics
 {
@@ -49,17 +49,20 @@ namespace dwb_critics
  * that is still on the costmap and then evaluates how far the front of the robot is from that point.
  * This works as a proxy to calculating which way the robot should be pointing.
  */
-class GoalAlignCritic: public GoalDistCritic
+class GoalAlignCritic : public GoalDistCritic
 {
 public:
-  GoalAlignCritic() : forward_point_distance_(0.0) {}
+  GoalAlignCritic()
+  : forward_point_distance_(0.0) {}
   void onInit() override;
-  bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-               const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan) override;
-  double scorePose(const geometry_msgs::Pose2D& pose) override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+  double scorePose(const geometry_msgs::msg::Pose2D & pose) override;
+
 protected:
   double forward_point_distance_;
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_GOAL_ALIGN_H_
+#endif  // DWB_CRITICS__GOAL_ALIGN_H_

@@ -32,22 +32,27 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_XY_THETA_ITERATOR_H
-#define DWB_PLUGINS_XY_THETA_ITERATOR_H
+#ifndef DWB_PLUGINS__XY_THETA_ITERATOR_H_
+#define DWB_PLUGINS__XY_THETA_ITERATOR_H_
 
-#include <dwb_plugins/velocity_iterator.h>
-#include <dwb_plugins/one_d_velocity_iterator.h>
+#include <memory>
+#include "dwb_plugins/velocity_iterator.h"
+#include "dwb_plugins/one_d_velocity_iterator.h"
 
 namespace dwb_plugins
 {
 class XYThetaIterator : public VelocityIterator
 {
 public:
-  XYThetaIterator() : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
-  void initialize(ros::NodeHandle& nh, KinematicParameters::Ptr kinematics) override;
-  void startNewIteration(const nav_2d_msgs::Twist2D& current_velocity, double dt) override;
+  XYThetaIterator()
+  : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
+  void initialize(
+    const std::shared_ptr<rclcpp::Node> & nh,
+    KinematicParameters::Ptr kinematics) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
   bool hasMoreTwists() override;
-  nav_2d_msgs::Twist2D nextTwist() override;
+  nav_2d_msgs::msg::Twist2D nextTwist() override;
+
 protected:
   virtual bool isValidVelocity();
   void iterateToValidVelocity();
@@ -58,4 +63,4 @@ protected:
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_XY_THETA_ITERATOR_H
+#endif  // DWB_PLUGINS__XY_THETA_ITERATOR_H_

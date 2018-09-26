@@ -32,29 +32,31 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
-#define DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
+#ifndef DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_
+#define DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_
 
-#include <nav_core2/exceptions.h>
 #include <map>
 #include <utility>
 #include <string>
+#include "dwb_local_planner/exceptions.h"
 
 namespace dwb_local_planner
 {
 class IllegalTrajectoryTracker
 {
 public:
-  IllegalTrajectoryTracker() : legal_count_(0), illegal_count_(0) {}
+  IllegalTrajectoryTracker()
+  : legal_count_(0), illegal_count_(0) {}
 
-  void addIllegalTrajectory(const nav_core2::IllegalTrajectoryException& e);
+  void addIllegalTrajectory(const nav_core2::IllegalTrajectoryException & e);
   void addLegalTrajectory();
 
-  std::map< std::pair<std::string, std::string>, double> getPercentages() const;
+  std::map<std::pair<std::string, std::string>, double> getPercentages() const;
 
   std::string getMessage() const;
+
 protected:
-  std::map< std::pair<std::string, std::string>, unsigned int> counts_;
+  std::map<std::pair<std::string, std::string>, unsigned int> counts_;
   unsigned int legal_count_, illegal_count_;
 };
 
@@ -62,14 +64,14 @@ protected:
  * @class NoLegalTrajectoriesException
  * @brief Thrown when all the trajectories explored are illegal
  */
-class NoLegalTrajectoriesException: public nav_core2::NoLegalTrajectoriesException
+class NoLegalTrajectoriesException : public nav_core2::NoLegalTrajectoriesException
 {
 public:
-  explicit NoLegalTrajectoriesException(const IllegalTrajectoryTracker& tracker)
-    : nav_core2::NoLegalTrajectoriesException(tracker.getMessage()), tracker_(tracker) {}
+  explicit NoLegalTrajectoriesException(const IllegalTrajectoryTracker & tracker)
+  : nav_core2::NoLegalTrajectoriesException(tracker.getMessage()), tracker_(tracker) {}
   IllegalTrajectoryTracker tracker_;
 };
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_ILLEGAL_TRAJECTORY_TRACKER_H
+#endif  // DWB_LOCAL_PLANNER__ILLEGAL_TRAJECTORY_TRACKER_H_

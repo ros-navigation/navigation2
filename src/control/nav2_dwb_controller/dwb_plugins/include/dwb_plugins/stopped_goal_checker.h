@@ -32,11 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_STOPPED_GOAL_CHECKER_H
-#define DWB_PLUGINS_STOPPED_GOAL_CHECKER_H
+#ifndef DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_
+#define DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_
 
-#include <ros/ros.h>
-#include <dwb_plugins/simple_goal_checker.h>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "dwb_plugins/simple_goal_checker.h"
 
 namespace dwb_plugins
 {
@@ -50,13 +51,15 @@ class StoppedGoalChecker : public SimpleGoalChecker
 public:
   StoppedGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const ros::NodeHandle& nh) override;
-  bool isGoalReached(const geometry_msgs::Pose2D& query_pose, const geometry_msgs::Pose2D& goal_pose,
-                     const nav_2d_msgs::Twist2D& velocity) override;
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+    const nav_2d_msgs::msg::Twist2D & velocity) override;
+
 protected:
   double rot_stopped_velocity_, trans_stopped_velocity_;
 };
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_STOPPED_GOAL_CHECKER_H
+#endif  // DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_

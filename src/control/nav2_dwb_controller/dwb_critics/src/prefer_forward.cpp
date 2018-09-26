@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_critics/prefer_forward.h>
+#include "dwb_critics/prefer_forward.h"
 #include <math.h>
-#include <pluginlib/class_list_macros.h>
+#include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::PreferForwardCritic, dwb_local_planner::TrajectoryCritic)
 
@@ -43,22 +43,20 @@ namespace dwb_critics
 
 void PreferForwardCritic::onInit()
 {
-  nh_->param("penalty", penalty_, 1.0);
-  nh_->param("strafe_x", strafe_x_, 0.1);
-  nh_->param("strafe_theta", strafe_theta_, 0.2);
-  nh_->param("theta_scale", theta_scale_, 10.0);
+  nh_->get_parameter_or("penalty", penalty_, 1.0);
+  nh_->get_parameter_or("strafe_x", strafe_x_, 0.1);
+  nh_->get_parameter_or("strafe_theta", strafe_theta_, 0.2);
+  nh_->get_parameter_or("theta_scale", theta_scale_, 10.0);
 }
 
-double PreferForwardCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
+double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   // backward motions bad on a robot without backward sensors
-  if (traj.velocity.x < 0.0)
-  {
+  if (traj.velocity.x < 0.0) {
     return penalty_;
   }
   // strafing motions also bad on such a robot
-  if (traj.velocity.x < strafe_x_ && fabs(traj.velocity.theta) < strafe_theta_)
-  {
+  if (traj.velocity.x < strafe_x_ && fabs(traj.velocity.theta) < strafe_theta_) {
     return penalty_;
   }
 
@@ -66,4 +64,4 @@ double PreferForwardCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
   return fabs(traj.velocity.theta) * theta_scale_;
 }
 
-} /* namespace dwb_critics */
+}  // namespace dwb_critics

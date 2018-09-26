@@ -32,14 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_ODOM_SUBSCRIBER_H
-#define NAV_2D_UTILS_ODOM_SUBSCRIBER_H
+#ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
+#define NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_2d_msgs/Twist2DStamped.h>
-#include <boost/thread/mutex.hpp>
 #include <string>
+#include "ros/ros.h"
+#include "nav_msgs/Odometry.h"
+#include "nav_2d_msgs/Twist2DStamped.h"
+#include "boost/thread/mutex.hpp"
 
 namespace nav_2d_utils
 {
@@ -57,18 +57,20 @@ public:
    * @param nh NodeHandle for creating subscriber
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
-  explicit OdomSubscriber(ros::NodeHandle& nh, std::string default_topic = "odom")
+  explicit OdomSubscriber(ros::NodeHandle & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
-    nh.param("odom_topic", odom_topic, default_topic);
-    odom_sub_ = nh.subscribe<nav_msgs::Odometry>(odom_topic, 1, boost::bind(&OdomSubscriber::odomCallback, this, _1));
+    nh->get_parameter_or("odom_topic", odom_topic, default_topic);
+    odom_sub_ =
+      nh.subscribe<nav_msgs::Odometry>(odom_topic, 1,
+        boost::bind(&OdomSubscriber::odomCallback, this, _1));
   }
 
-  inline nav_2d_msgs::Twist2D getTwist() { return odom_vel_.velocity; }
-  inline nav_2d_msgs::Twist2DStamped getTwistStamped() { return odom_vel_; }
+  inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
+  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() {return odom_vel_;}
 
 protected:
-  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+  void odomCallback(const nav_msgs::Odometry::ConstPtr & msg)
   {
     ROS_INFO_ONCE("odom received!");
     boost::mutex::scoped_lock lock(odom_mutex_);
@@ -79,10 +81,10 @@ protected:
   }
 
   ros::Subscriber odom_sub_;
-  nav_2d_msgs::Twist2DStamped odom_vel_;
+  nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   boost::mutex odom_mutex_;
 };
 
 }  // namespace nav_2d_utils
 
-#endif  // NAV_2D_UTILS_ODOM_SUBSCRIBER_H
+#endif  // NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
