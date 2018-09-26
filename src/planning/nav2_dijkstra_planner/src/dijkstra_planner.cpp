@@ -32,11 +32,11 @@
 #include "nav2_util/costmap.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
-//#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
-//#include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -63,8 +63,11 @@ DijkstraPlanner::DijkstraPlanner()
   waitForCostmapServer();
 
   // Create a plan publisher for visualization purposes
-  plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
-  // plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
+  //plan_publisher_ = this->create_publisher<nav2_planning_msgs::msg::Path>("plan", 1);
+  plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
+
+  plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
+    "plan_marker", 1);
 
   // Start listening for incoming ComputePathToPose task requests
   startWorkerThread();
@@ -91,7 +94,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     // Create a planner based on the new costmap size
     planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-    makePlan(command->start, command->goal, command->tolerance, result);
+	bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
@@ -100,12 +103,18 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
       return TaskStatus::CANCELED;
     }
 
+    if (!foundPath) {
+      RCLCPP_WARN(get_logger(), "DijkstraPlanner::executeAsync: planning algorithm failed")
+	  return TaskStatus::FAILED;
+    }
+
     RCLCPP_INFO(get_logger(),
       "DijkstraPlanner::execute: calculated path of size %u", result.poses.size());
 
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: publishing the resulting path");
-    plan_publisher_->publish(result);
+    //plan_publisher_->publish(result);
+	publishPlan(result);
 
     // TODO(orduno): Enable potential visualization
 
@@ -468,6 +477,82 @@ DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
     std::cout << std::endl << "    ";
   }
   std::cout << std::endl;
+}
+
+void
+DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path path)
+{
+  // Need to translate to visualization marker msg for rviz
+  visualization_msgs::msg::Marker marker;
+
+  // marker.header = path.header;
+  builtin_interfaces::msg::Time time;
+  time.sec = 0;
+  time.nanosec = 0;
+  marker.header.stamp = time;
+  marker.header.frame_id = "map";
+
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  // Any marker sent with the same namespace and id will overwrite the old one
+  marker.ns = "planner_path";
+  marker.id = 0;
+
+  marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+
+  // Set the marker action.
+  marker.action = visualization_msgs::msg::Marker::ADD;
+
+  // Set the pose of the marker.
+  // This is a full 6DOF pose relative to the frame/time specified in the header
+  geometry_msgs::msg::Pose pose;
+  pose.orientation.w = 1.0;
+
+  marker.pose.orientation = pose.orientation;
+
+  // Set the scale of the marker -- 1x1x1 here means 1m on a side
+  marker.scale.x = 3.0;
+  marker.scale.y = 3.0;
+  marker.scale.z = 3.0;
+
+  // Set the color -- be sure to set alpha to something non-zero!
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 1.0;
+
+  builtin_interfaces::msg::Duration duration;
+  duration.sec = 0;
+  duration.nanosec = 0;
+
+  // 0 indicates the object should last forever
+  marker.lifetime = duration;
+
+  marker.frame_locked = false;
+
+  // omitting the first point since it was already considered on marker.pose
+  marker.points.resize(path.poses.size() - 1);
+
+  // Assuming path is already provided in world coordinates
+  for (unsigned int i = 0; i < path.poses.size() - 1; i++) {
+    marker.points[i] = path.poses[i + 1].position;
+  }
+
+  // TODO(orduno): issue with visualizing the markers on rviz2
+  plan_marker_publisher_->publish(marker);
+
+  // Also publish as a nav1 path msg
+  nav_msgs::msg::Path rviz_path;
+
+  rviz_path.header = path.header;
+  rviz_path.poses.resize(path.poses.size());
+
+  // Assuming path is already provided in world coordinates
+  for (unsigned int i = 0; i < path.poses.size(); i++) {
+    rviz_path.poses[i].header = path.header;
+    rviz_path.poses[i].pose = path.poses[i];
+  }
+
+  plan_publisher_->publish(rviz_path);
 }
 
 }  // namespace nav2_dijkstra_planner

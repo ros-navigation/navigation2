@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_planning_msgs REQUIRED)
@@ -42,6 +43,7 @@ add_library(${library_name}
 set(dependencies
   rclcpp
   std_msgs
+  visualization_msgs
   nav2_tasks
   nav2_util
   nav2_planning_msgs
