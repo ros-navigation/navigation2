@@ -104,12 +104,12 @@ public:
     return costmap_.getDefaultValue() == costmap_2d::NO_INFORMATION;
   }
 
-  std::vector<boost::shared_ptr<Layer> >* getPlugins()
+  std::vector<std::shared_ptr<Layer> >* getPlugins()
   {
     return &plugins_;
   }
 
-  void addPlugin(boost::shared_ptr<Layer> plugin)
+  void addPlugin(std::shared_ptr<Layer> plugin)
   {
     plugins_.push_back(plugin);
   }
@@ -135,10 +135,10 @@ public:
   /** @brief Updates the stored footprint, updates the circumscribed
    * and inscribed radii, and calls onFootprintChanged() in all
    * layers. */
-  void setFootprint(const std::vector<geometry_msgs::Point>& footprint_spec);
+  void setFootprint(const std::vector<geometry_msgs::msg::Point>& footprint_spec);
 
   /** @brief Returns the latest footprint stored with setFootprint(). */
-  const std::vector<geometry_msgs::Point>& getFootprint() { return footprint_; }
+  const std::vector<geometry_msgs::msg::Point>& getFootprint() { return footprint_; }
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which just surrounds all points on the robot's
@@ -164,12 +164,12 @@ private:
   double minx_, miny_, maxx_, maxy_;
   unsigned int bx0_, bxn_, by0_, byn_;
 
-  std::vector<boost::shared_ptr<Layer> > plugins_;
+  std::vector<std::shared_ptr<Layer> > plugins_;
 
   bool initialized_;
   bool size_locked_;
   double circumscribed_radius_, inscribed_radius_;
-  std::vector<geometry_msgs::Point> footprint_;
+  std::vector<geometry_msgs::msg::Point> footprint_;
 };
 
 }  // namespace costmap_2d

@@ -104,7 +104,7 @@ public:
   }
 
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
-  const std::vector<geometry_msgs::Point>& getFootprint() const;
+  const std::vector<geometry_msgs::msg::Point>& getFootprint() const;
 
   /** @brief LayeredCostmap calls this whenever the footprint there
    * changes (via LayeredCostmap::setFootprint()).  Override to be
@@ -123,9 +123,8 @@ protected:
   bool enabled_;  ///< Currently this var is managed by subclasses. TODO: make this managed by this class and/or container class.
   std::string name_;
   tf2_ros::Buffer *tf_;
-
 private:
-  std::vector<geometry_msgs::Point> footprint_spec_;
+  std::vector<geometry_msgs::msg::Point> footprint_spec_;
 };
 
 }  // namespace costmap_2d

@@ -308,7 +308,7 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_map;
 }
 
-bool Costmap2D::setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value)
+bool Costmap2D::setConvexPolygonCost(const std::vector<geometry_msgs::msg::Point>& polygon, unsigned char cost_value)
 {
   // we assume the polygon is given in the global_frame... we need to transform it to map coordinates
   std::vector<MapLocation> map_polygon;
