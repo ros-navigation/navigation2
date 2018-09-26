@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_mission_execution_msgs)
+project(nav2_msgs)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -17,7 +17,12 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Costmap.msg"
+  "msg/CostmapMetaData.msg"
+  "msg/Path.msg"
+  "msg/PathEndPoints.msg"
   "msg/MissionPlan.msg"
+  "srv/GetCostmap.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
