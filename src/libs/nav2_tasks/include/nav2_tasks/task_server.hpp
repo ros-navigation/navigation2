@@ -34,7 +34,7 @@ template<class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
 {
 public:
-  explicit TaskServer(const std::string & name)
+  TaskServer(const std::string & name, bool autoStart = true)
   : Node(name), workerThread_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
@@ -47,7 +47,9 @@ public:
     resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
     statusPub_ = this->create_publisher<StatusMsg>(taskName + "_status");
 
-    //startWorkerThread();
+    if (autoStart) {
+      startWorkerThread();
+    }
   }
 
   virtual ~TaskServer()

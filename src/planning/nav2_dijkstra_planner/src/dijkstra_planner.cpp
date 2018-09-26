@@ -45,7 +45,7 @@ namespace nav2_dijkstra_planner
 {
 
 DijkstraPlanner::DijkstraPlanner()
-: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode"),
+: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode", false),
   global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0)
