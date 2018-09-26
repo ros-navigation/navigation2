@@ -642,7 +642,7 @@ std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
   // get map via RPC
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
   std::shared_ptr<nav_msgs::srv::GetMap::Response> resp;
-  auto client = this->create_client<nav_msgs::srv::GetMap>("static_map");
+  auto client = this->create_client<nav_msgs::srv::GetMap>("occ_grid");
   bool map_received = false;
 
   while (!client->wait_for_service(std::chrono::seconds(1))) {

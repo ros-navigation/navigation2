@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from launch import LaunchDescription
 import launch_ros.actions
 
 def generate_launch_description():
-    return LaunchDescription([
-        launch_ros.actions.Node(
-            package='nav2_amcl',
-            node_executable='amcl',
-            output='screen')
-    ])
+    mapFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), '../maps/test_map.yaml')
+    run_amcl = launch_ros.actions.Node(package='nav2_amcl', node_executable='amcl', output='screen')
+    run_map_server = launch_ros.actions.Node(package='nav2_map_server', node_executable='map_server', output='screen',
+                    arguments = [ [mapFile] , 'occupancy'])
+    return LaunchDescription([run_amcl, run_map_server])
 
