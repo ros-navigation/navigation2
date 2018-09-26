@@ -35,7 +35,6 @@ Costmap::Costmap(
 : node_(node), trinary_costmap_(trinary_costmap), track_unknown_space_(track_unknown_space),
   lethal_threshold_(lethal_threshold), unknown_cost_value_(unknown_cost_value)
 {
-  //RCLCPP_INFO(node_->get_logger(), "Costmap::Costmap");
   lethal_threshold_ = std::max(std::min(lethal_threshold_, 100), 0);
 }
 
@@ -108,8 +107,6 @@ void Costmap::setTestCostmap(const TestCostmap & testCostmapType)
 nav2_libs_msgs::msg::Costmap Costmap::getCostmap(
   const nav2_libs_msgs::msg::CostmapMetaData & /*specifications*/)
 {
-  //RCLCPP_INFO(node_->get_logger(), "Costmap::getCostmap");
-
   if (!map_provided_ && !using_test_map_) {
     throw std::runtime_error("Costmap has not been set.");
   }
@@ -138,82 +135,82 @@ vector<uint8_t> Costmap::getTestData(const TestCostmap testCostmapType)
   const uint8_t o = free_space;
 
   vector<uint8_t> costmapFree =
-  // 0 1 2 3 4 5 6 7 8 9
-    {o,o,o,o,o,o,o,o,o,o,   //0
-     o,o,o,o,o,o,o,o,o,o,   //1
-     o,o,o,o,o,o,o,o,o,o,   //2
-     o,o,o,o,o,o,o,o,o,o,   //3
-     o,o,o,o,o,o,o,o,o,o,   //4
-     o,o,o,o,o,o,o,o,o,o,   //5
-     o,o,o,o,o,o,o,o,o,o,   //6
-     o,o,o,o,o,o,o,o,o,o,   //7
-     o,o,o,o,o,o,o,o,o,o,   //8
-     o,o,o,o,o,o,o,o,o,o,}; //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {o, o, o, o, o, o, o, o, o, o,   // 0
+     o, o, o, o, o, o, o, o, o, o,   // 1
+     o, o, o, o, o, o, o, o, o, o,   // 2
+     o, o, o, o, o, o, o, o, o, o,   // 3
+     o, o, o, o, o, o, o, o, o, o,   // 4
+     o, o, o, o, o, o, o, o, o, o,   // 5
+     o, o, o, o, o, o, o, o, o, o,   // 6
+     o, o, o, o, o, o, o, o, o, o,   // 7
+     o, o, o, o, o, o, o, o, o, o,   // 8
+     o, o, o, o, o, o, o, o, o, o};  // 9
 
   vector<uint8_t> costmapBounded =
-  // 0 1 2 3 4 5 6 7 8 9
-    {n,n,n,n,n,n,n,n,n,n,   //0
-     n,o,o,o,o,o,o,o,o,n,   //1
-     n,o,o,o,o,o,o,o,o,n,   //2
-     n,o,o,o,o,o,o,o,o,n,   //3
-     n,o,o,o,o,o,o,o,o,n,   //4
-     n,o,o,o,o,o,o,o,o,n,   //5
-     n,o,o,o,o,o,o,o,o,n,   //6
-     n,o,o,o,o,o,o,o,o,n,   //7
-     n,o,o,o,o,o,o,o,o,n,   //8
-     n,n,n,n,n,n,n,n,n,n};  //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {n, n, n, n, n, n, n, n, n, n,   // 0
+     n, o, o, o, o, o, o, o, o, n,   // 1
+     n, o, o, o, o, o, o, o, o, n,   // 2
+     n, o, o, o, o, o, o, o, o, n,   // 3
+     n, o, o, o, o, o, o, o, o, n,   // 4
+     n, o, o, o, o, o, o, o, o, n,   // 5
+     n, o, o, o, o, o, o, o, o, n,   // 6
+     n, o, o, o, o, o, o, o, o, n,   // 7
+     n, o, o, o, o, o, o, o, o, n,   // 8
+     n, n, n, n, n, n, n, n, n, n};  // 9
 
   vector<uint8_t> costmapObstacleBL =
-  // 0 1 2 3 4 5 6 7 8 9
-    {n,n,n,n,n,n,n,n,n,n,   //0
-     n,o,o,o,o,o,o,o,o,n,   //1
-     n,o,o,o,o,o,o,o,o,n,   //2
-     n,o,o,o,o,o,o,o,o,n,   //3
-     n,o,o,o,o,o,o,o,o,n,   //4
-     n,o,x,x,x,o,o,o,o,n,   //5
-     n,o,x,x,x,o,o,o,o,n,   //6
-     n,o,x,x,x,o,o,o,o,n,   //7
-     n,o,o,o,o,o,o,o,o,n,   //8
-     n,n,n,n,n,n,n,n,n,n};  //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {n, n, n, n, n, n, n, n, n, n,   // 0
+     n, o, o, o, o, o, o, o, o, n,   // 1
+     n, o, o, o, o, o, o, o, o, n,   // 2
+     n, o, o, o, o, o, o, o, o, n,   // 3
+     n, o, o, o, o, o, o, o, o, n,   // 4
+     n, o, x, x, x, o, o, o, o, n,   // 5
+     n, o, x, x, x, o, o, o, o, n,   // 6
+     n, o, x, x, x, o, o, o, o, n,   // 7
+     n, o, o, o, o, o, o, o, o, n,   // 8
+     n, n, n, n, n, n, n, n, n, n};  // 9
 
   vector<uint8_t> costmapObstacleTL =
-  // 0 1 2 3 4 5 6 7 8 9
-    {n,n,n,n,n,n,n,n,n,n,   //0
-     n,o,o,o,o,o,o,o,o,n,   //1
-     n,o,x,x,x,o,o,o,o,n,   //2
-     n,o,x,x,x,o,o,o,o,n,   //3
-     n,o,x,x,x,o,o,o,o,n,   //4
-     n,o,o,o,o,o,o,o,o,n,   //5
-     n,o,o,o,o,o,o,o,o,n,   //6
-     n,o,o,o,o,o,o,o,o,n,   //7
-     n,o,o,o,o,o,o,o,o,n,   //8
-     n,n,n,n,n,n,n,n,n,n};  //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {n, n, n, n, n, n, n, n, n, n,   // 0
+     n, o, o, o, o, o, o, o, o, n,   // 1
+     n, o, x, x, x, o, o, o, o, n,   // 2
+     n, o, x, x, x, o, o, o, o, n,   // 3
+     n, o, x, x, x, o, o, o, o, n,   // 4
+     n, o, o, o, o, o, o, o, o, n,   // 5
+     n, o, o, o, o, o, o, o, o, n,   // 6
+     n, o, o, o, o, o, o, o, o, n,   // 7
+     n, o, o, o, o, o, o, o, o, n,   // 8
+     n, n, n, n, n, n, n, n, n, n};  // 9
 
   vector<uint8_t> costmapMaze =
-  // 0 1 2 3 4 5 6 7 8 9
-    {n,n,n,n,n,n,n,n,n,n,   //0
-     n,o,o,o,o,o,o,o,o,n,   //1
-     n,x,x,o,x,x,x,o,x,n,   //2
-     n,o,o,o,o,x,o,o,o,n,   //3
-     n,o,x,x,o,x,o,x,o,n,   //4
-     n,o,x,x,o,x,o,x,o,n,   //5
-     n,o,o,x,o,x,o,x,o,n,   //6
-     n,x,o,x,o,x,o,x,o,n,   //7
-     n,o,o,o,o,o,o,x,o,n,   //8
-     n,n,n,n,n,n,n,n,n,n};  //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {n, n, n, n, n, n, n, n, n, n,   // 0
+     n, o, o, o, o, o, o, o, o, n,   // 1
+     n, x, x, o, x, x, x, o, x, n,   // 2
+     n, o, o, o, o, x, o, o, o, n,   // 3
+     n, o, x, x, o, x, o, x, o, n,   // 4
+     n, o, x, x, o, x, o, x, o, n,   // 5
+     n, o, o, x, o, x, o, x, o, n,   // 6
+     n, x, o, x, o, x, o, x, o, n,   // 7
+     n, o, o, o, o, o, o, x, o, n,   // 8
+     n, n, n, n, n, n, n, n, n, n};  // 9
 
   vector<uint8_t> costmapMaze2 =
-  // 0 1 2 3 4 5 6 7 8 9
-    {n,n,n,n,n,n,n,n,n,n,   //0
-     n,o,o,o,o,o,o,o,o,n,   //1
-     n,x,x,u,x,x,x,o,x,n,   //2
-     n,o,o,o,o,o,o,o,u,n,   //3
-     n,o,x,x,o,x,x,x,u,n,   //4
-     n,o,x,x,o,o,o,x,u,n,   //5
-     n,o,o,x,u,x,o,x,u,n,   //6
-     n,x,o,x,u,x,i,x,u,n,   //7
-     n,o,o,o,o,o,o,o,o,n,   //8
-     n,n,n,n,n,n,n,n,n,n};  //9
+  // 0  1  2  3  4  5  6  7  8  9
+    {n, n, n, n, n, n, n, n, n, n,   // 0
+     n, o, o, o, o, o, o, o, o, n,   // 1
+     n, x, x, u, x, x, x, o, x, n,   // 2
+     n, o, o, o, o, o, o, o, u, n,   // 3
+     n, o, x, x, o, x, x, x, u, n,   // 4
+     n, o, x, x, o, o, o, x, u, n,   // 5
+     n, o, o, x, u, x, o, x, u, n,   // 6
+     n, x, o, x, u, x, i, x, u, n,   // 7
+     n, o, o, o, o, o, o, o, o, n,   // 8
+     n, n, n, n, n, n, n, n, n, n};  // 9
 
   switch (testCostmapType) {
     case TestCostmap::open_space:
