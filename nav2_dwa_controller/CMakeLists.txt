@@ -34,7 +34,7 @@ add_library(${library_name}
   src/dwa_controller.cpp
 )
 
-set(dependencies 
+set(dependencies
   rclcpp
   std_msgs
   nav2_tasks

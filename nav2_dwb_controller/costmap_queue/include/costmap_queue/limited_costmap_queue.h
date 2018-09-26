@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE_LIMITED_COSTMAP_QUEUE_H
-#define COSTMAP_QUEUE_LIMITED_COSTMAP_QUEUE_H
+#ifndef COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
+#define COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
 
-#include <costmap_queue/costmap_queue.h>
+#include "costmap_queue/costmap_queue.h"
 
 namespace costmap_queue
 {
@@ -50,9 +50,9 @@ public:
   /**
    * @brief Constructor with limit as an integer number of cells.
    */
-  LimitedCostmapQueue(costmap_2d::Costmap2D& costmap, const int cell_distance_limit);
-  bool validCellToQueue(const CellData& cell) override;
+  LimitedCostmapQueue(costmap_2d::Costmap2D & costmap, const int cell_distance_limit);
+  bool validCellToQueue(const CellData & cell) override;
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE_LIMITED_COSTMAP_QUEUE_H
+#endif  // COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_

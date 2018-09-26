@@ -31,50 +31,54 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <gtest/gtest.h>
-#include <dwb_plugins/simple_goal_checker.h>
-#include <dwb_plugins/stopped_goal_checker.h>
+#include "gtest/gtest.h"
+#include "dwb_plugins/simple_goal_checker.h"
+#include "dwb_plugins/stopped_goal_checker.h"
 
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;
 
-void checkMacro(dwb_local_planner::GoalChecker& gc,
-                double x0, double y0, double theta0,
-                double x1, double y1, double theta1,
-                double xv, double yv, double thetav,
-                bool expected_result)
+void checkMacro(
+  dwb_local_planner::GoalChecker & gc,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav,
+  bool expected_result)
 {
-  geometry_msgs::Pose2D pose0, pose1;
+  geometry_msgs::msg::Pose2D pose0, pose1;
   pose0.x = x0;
   pose0.y = y0;
   pose0.theta = theta0;
   pose1.x = x1;
   pose1.y = y1;
   pose1.theta = theta1;
-  nav_2d_msgs::Twist2D v;
+  nav_2d_msgs::msg::Twist2D v;
   v.x = xv;
   v.y = yv;
   v.theta = thetav;
-  if (expected_result)
+  if (expected_result) {
     EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
-  else
+  } else {
     EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
+  }
 }
 
-void sameResult(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalChecker& gc1,
-                double x0, double y0, double theta0,
-                double x1, double y1, double theta1,
-                double xv, double yv, double thetav,
-                bool expected_result)
+void sameResult(
+  dwb_local_planner::GoalChecker & gc0, dwb_local_planner::GoalChecker & gc1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav,
+  bool expected_result)
 {
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
 }
 
-void trueFalse(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalChecker& gc1,
-               double x0, double y0, double theta0,
-               double x1, double y1, double theta1,
-               double xv, double yv, double thetav)
+void trueFalse(
+  dwb_local_planner::GoalChecker & gc0, dwb_local_planner::GoalChecker & gc1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
+  double xv, double yv, double thetav)
 {
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
@@ -82,7 +86,7 @@ void trueFalse(dwb_local_planner::GoalChecker& gc0, dwb_local_planner::GoalCheck
 
 TEST(VelocityIterator, two_checks)
 {
-  ros::NodeHandle x;
+  auto x = rclcpp::Node::make_shared("goal_checker");
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
   gc.initialize(x);
@@ -98,9 +102,9 @@ TEST(VelocityIterator, two_checks)
   trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "goal_checker");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

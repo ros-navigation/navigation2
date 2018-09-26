@@ -32,12 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS_PARAMETERS_H
-#define NAV_2D_UTILS_PARAMETERS_H
+#ifndef NAV_2D_UTILS__PARAMETERS_H_
+#define NAV_2D_UTILS__PARAMETERS_H_
 
-#include <ros/ros.h>
 #include <string>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
 
+// TODO(crdelsey): Remove when code is re-enabled
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 namespace nav_2d_utils
 {
 
@@ -53,16 +57,21 @@ namespace nav_2d_utils
  * @return Value of parameter if found, otherwise the default_value
  */
 template<class param_t>
-param_t searchAndGetParam(const ros::NodeHandle& nh, const std::string& param_name, const param_t& default_value)
+param_t searchAndGetParam(
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string & param_name,
+  const param_t & default_value)
 {
-  std::string resolved_name;
-  if (nh.searchParam(param_name, resolved_name))
-  {
-    param_t value = 0;
-    nh.param(resolved_name, value, default_value);
-    return value;
-  }
-  return default_value;
+  // TODO(crdelsey): Handle searchParam
+  // std::string resolved_name;
+  // if (nh->searchParam(param_name, resolved_name))
+  // {
+  //   param_t value = 0;
+  //   nh->param(resolved_name, value, default_value);
+  //   return value;
+  // }
+  param_t value = 0;
+  nh->get_parameter_or(param_name, value, default_value);
+  return value;
 }
 
 /**
@@ -74,19 +83,18 @@ param_t searchAndGetParam(const ros::NodeHandle& nh, const std::string& param_na
  * @return The value of the parameter or the default value
  */
 template<class param_t>
-param_t loadParameterWithDeprecation(const ros::NodeHandle& nh, const std::string current_name,
-                                     const std::string old_name, const param_t& default_value)
+param_t loadParameterWithDeprecation(
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const std::string old_name, const param_t & default_value)
 {
   param_t value;
-  if (nh.hasParam(current_name))
-  {
-    nh.getParam(current_name, value);
+  if (nh->get_parameter(current_name, value)) {
     return value;
   }
-  if (nh.hasParam(old_name))
-  {
-    ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
-    nh.getParam(old_name, value);
+  if (nh->get_parameter(old_name, value)) {
+    RCLCPP_WARN(nh->get_logger(),
+      "Parameter %s is deprecated. Please use the name %s instead.",
+      old_name.c_str(), current_name.c_str());
     return value;
   }
   return default_value;
@@ -99,14 +107,18 @@ param_t loadParameterWithDeprecation(const ros::NodeHandle& nh, const std::strin
  * @param old_name Deprecated parameter name
  */
 template<class param_t>
-void moveDeprecatedParameter(const ros::NodeHandle& nh, const std::string current_name, const std::string old_name)
+void moveDeprecatedParameter(
+  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const std::string old_name)
 {
-  if (!nh.hasParam(old_name)) return;
-
   param_t value;
-  ROS_WARN("Parameter %s is deprecated. Please use the name %s instead.", old_name.c_str(), current_name.c_str());
-  nh.getParam(old_name, value);
-  nh.setParam(current_name, value);
+  if (!nh->get_parameter(old_name, value)) {return;}
+
+  RCLCPP_WARN(nh->get_logger(),
+    "Parameter %s is deprecated. Please use the name %s instead.",
+    old_name.c_str(), current_name.c_str());
+  nh->get_parameter(old_name, value);
+  nh->set_parameters({rclcpp::Parameter(current_name, value)});
 }
 
 /**
@@ -123,28 +135,28 @@ void moveDeprecatedParameter(const ros::NodeHandle& nh, const std::string curren
  * @param should_delete If true, whether to delete the parameter from the old name
  */
 template<class param_t>
-void moveParameter(const ros::NodeHandle& nh, std::string old_name,
-                   std::string current_name, param_t default_value, bool should_delete = true)
+void moveParameter(
+  const std::shared_ptr<rclcpp::Node> & nh, std::string old_name,
+  std::string current_name, param_t default_value, bool should_delete = true)
 {
-  if (nh.hasParam(current_name))
-  {
-    if (should_delete)
-      nh.deleteParam(old_name);
+  param_t value;
+  if (nh->get_parameter(current_name, value)) {
+    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
+    // if (should_delete)
+    //   nh->deleteParam(old_name);
     return;
   }
-  XmlRpc::XmlRpcValue value;
-  if (nh.hasParam(old_name))
-  {
-    nh.getParam(old_name, value);
-    if (should_delete) nh.deleteParam(old_name);
-  }
-  else
+  if (nh->get_parameter(old_name, value)) {
+    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
+    // if (should_delete) nh->deleteParam(old_name);
+  } else {
     value = default_value;
-
-  nh.setParam(current_name, value);
+  }
+  nh->set_parameters({rclcpp::Parameter(current_name, value)});
 }
 
 
 }  // namespace nav_2d_utils
+#pragma GCC diagnostic pop
 
-#endif  // NAV_2D_UTILS_PARAMETERS_H
+#endif  // NAV_2D_UTILS__PARAMETERS_H_

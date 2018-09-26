@@ -32,12 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_KINEMATIC_PARAMETERS_H
-#define DWB_PLUGINS_KINEMATIC_PARAMETERS_H
+#ifndef DWB_PLUGINS__KINEMATIC_PARAMETERS_H_
+#define DWB_PLUGINS__KINEMATIC_PARAMETERS_H_
 
-#include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
-#include <dwb_plugins/KinematicParamsConfig.h>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
 
 namespace dwb_plugins
 {
@@ -50,25 +49,25 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const ros::NodeHandle& nh);
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh);
 
-  inline double getMinX() { return min_vel_x_; }
-  inline double getMaxX() { return max_vel_x_; }
-  inline double getAccX() { return acc_lim_x_; }
-  inline double getDecelX() { return decel_lim_x_; }
+  inline double getMinX() {return min_vel_x_;}
+  inline double getMaxX() {return max_vel_x_;}
+  inline double getAccX() {return acc_lim_x_;}
+  inline double getDecelX() {return decel_lim_x_;}
 
-  inline double getMinY() { return min_vel_y_; }
-  inline double getMaxY() { return max_vel_y_; }
-  inline double getAccY() { return acc_lim_y_; }
-  inline double getDecelY() { return decel_lim_y_; }
+  inline double getMinY() {return min_vel_y_;}
+  inline double getMaxY() {return max_vel_y_;}
+  inline double getAccY() {return acc_lim_y_;}
+  inline double getDecelY() {return decel_lim_y_;}
 
-  inline double getMinSpeedXY() { return min_speed_xy_; }
+  inline double getMinSpeedXY() {return min_speed_xy_;}
 
-  inline double getMinTheta() { return -max_vel_theta_; }
-  inline double getMaxTheta() { return max_vel_theta_; }
-  inline double getAccTheta() { return acc_lim_theta_; }
-  inline double getDecelTheta() { return decel_lim_theta_; }
-  inline double getMinSpeedTheta() { return min_speed_theta_; }
+  inline double getMinTheta() {return -max_vel_theta_;}
+  inline double getMaxTheta() {return max_vel_theta_;}
+  inline double getAccTheta() {return acc_lim_theta_;}
+  inline double getDecelTheta() {return decel_lim_theta_;}
+  inline double getMinSpeedTheta() {return min_speed_theta_;}
 
   /**
    * @brief Check to see whether the combined x/y/theta velocities are valid
@@ -89,6 +88,7 @@ public:
   bool isValidSpeed(double x, double y, double theta);
 
   typedef std::shared_ptr<KinematicParameters> Ptr;
+
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
   double min_vel_x_, min_vel_y_;
@@ -103,10 +103,10 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_, max_speed_xy_sq_;
 
-  void reconfigureCB(KinematicParamsConfig &config, uint32_t level);
-  std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
+  // void reconfigureCB(KinematicParamsConfig &config, uint32_t level);
+  // std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
 };
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_KINEMATIC_PARAMETERS_H
+#endif  // DWB_PLUGINS__KINEMATIC_PARAMETERS_H_

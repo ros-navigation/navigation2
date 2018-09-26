@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE_MAP_BASED_QUEUE_H
-#define COSTMAP_QUEUE_MAP_BASED_QUEUE_H
+#ifndef COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
+#define COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
 
 #include <algorithm>
 #include <map>
@@ -57,14 +57,15 @@ namespace costmap_queue
  * set reset_bins = false, such that the priority bins are not reset and will not have to be recreated
  * on each iteration.
  */
-template <class item_t>
+template<class item_t>
 class MapBasedQueue
 {
 public:
   /**
    * @brief Default Constructor
    */
-  explicit MapBasedQueue(bool reset_bins = true) : reset_bins_(reset_bins), item_count_(0)
+  explicit MapBasedQueue(bool reset_bins = true)
+  : reset_bins_(reset_bins), item_count_(0)
   {
     reset();
   }
@@ -74,8 +75,7 @@ public:
    */
   virtual void reset()
   {
-    if (reset_bins_ || item_count_ > 0)
-    {
+    if (reset_bins_ || item_count_ > 0) {
       item_bins_.clear();
       item_count_ = 0;
     }
@@ -89,18 +89,18 @@ public:
    */
   void enqueue(const double priority, item_t item)
   {
-    // We keep track of the last priority we inserted. If this items priority matches the previous insertion
-    // we can avoid searching through all the bins.
-    if (last_insert_iter_ == item_bins_.end() || last_insert_iter_->first != priority)
-    {
+    // We keep track of the last priority we inserted. If this items priority
+    // matches the previous insertion we can avoid searching through all the
+    // bins.
+    if (last_insert_iter_ == item_bins_.end() || last_insert_iter_->first != priority) {
       last_insert_iter_ = item_bins_.find(priority);
 
       // If not found, create a new bin
-      if (last_insert_iter_ == item_bins_.end())
-      {
+      if (last_insert_iter_ == item_bins_.end()) {
         auto map_item = std::make_pair(priority, std::move(std::vector<item_t>()));
 
-        // Inserts an item if it doesn't exist. Returns an iterator to the item whether it existed or was inserted.
+        // Inserts an item if it doesn't exist. Returns an iterator to the item
+        // whether it existed or was inserted.
         std::pair<ItemMapIterator, bool> insert_result = item_bins_.insert(std::move(map_item));
         last_insert_iter_ = insert_result.first;
       }
@@ -111,8 +111,7 @@ public:
     item_count_++;
 
     // Use short circuiting to check if we want to update the iterator
-    if (iter_ == item_bins_.end() || priority < iter_->first)
-    {
+    if (iter_ == item_bins_.end() || priority < iter_->first) {
       iter_ = last_insert_iter_;
     }
   }
@@ -132,10 +131,9 @@ public:
    * @brief Return the item at the front of the queue
    * @return The item at the front of the queue
    */
-  item_t& front()
+  item_t & front()
   {
-    if (iter_ == item_bins_.end())
-    {
+    if (iter_ == item_bins_.end()) {
       throw std::out_of_range("front() called on empty costmap_queue::MapBasedQueue!");
     }
 
@@ -147,13 +145,14 @@ public:
    */
   void pop()
   {
-    if (iter_ != item_bins_.end() && !iter_->second.empty())
-    {
+    if (iter_ != item_bins_.end() && !iter_->second.empty()) {
       iter_->second.pop_back();
       item_count_--;
     }
 
-    auto not_empty = [](const typename ItemMap::value_type& key_val) { return !key_val.second.empty(); };
+    auto not_empty = [](const typename ItemMap::value_type & key_val) {
+        return !key_val.second.empty();
+      };
     iter_ = std::find_if(iter_, item_bins_.end(), not_empty);
   }
 
@@ -170,4 +169,4 @@ protected:
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE_MAP_BASED_QUEUE_H
+#endif  // COSTMAP_QUEUE__MAP_BASED_QUEUE_H_

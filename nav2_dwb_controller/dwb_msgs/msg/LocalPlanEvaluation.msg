@@ -1,7 +1,7 @@
 # Full Scoring for running the local planner
 
 # Header, used for timestamp
-Header header
+std_msgs/Header header
 # All the trajectories evaluated and their scores
 TrajectoryScore[] twists
 # Convenience index of the best (lowest) score in the twists array
