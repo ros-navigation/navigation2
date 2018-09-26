@@ -38,12 +38,7 @@ PlannerTester::PlannerTester()
 {
   RCLCPP_INFO(this->get_logger(), "PlannerTester::PlannerTester");
 
-  // We start with a 10x10 grid with no obstacles
-  loadSimpleCostmap(TestCostmap::open_space);
-
-  // TODO(orduno): get service name from param server
-  startCostmapServer("CostmapService");
-
+  // Our client used to invoke the services of the global planner (ComputePathToPose)
   planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
 
   if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
@@ -55,6 +50,13 @@ PlannerTester::PlannerTester()
   map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
   endpoints_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("endpoints", 1);
 
+  // We start with a 10x10 grid with no obstacles
+  loadSimpleCostmap(TestCostmap::open_space);
+
+  // TODO(orduno): get service name from param server
+  startCostmapServer("CostmapService");
+
+  // Launch a thread to process the messages for this node
   spinning_ok_ = true;
   spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
 }
