@@ -332,7 +332,7 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
     //               i.e. some points are around the corner are actually inside the obstacle
     bool pathIsCollisionFree = plannerTest(endpoints, path);
 
-    //publishEndpoints(*endpoints, test_num);
+    publishEndpoints(*endpoints, test_num);
 
     if (!pathIsCollisionFree) {
       RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
