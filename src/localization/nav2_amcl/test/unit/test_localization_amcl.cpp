@@ -18,4 +18,3 @@ TEST(SimplePassingTest, SimplePassingTest)
 {
   SUCCEED();
 }
-

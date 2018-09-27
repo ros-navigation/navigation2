@@ -58,7 +58,7 @@ public:
   /**
    * @brief Uses TF and LaserScan messages from bag file to drive AMCL instead
    */
-  void runFromBag(const std::string &in_bag_fn);
+  void runFromBag(const std::string & in_bag_fn);
 
   int process();
   void savePoseToServer();
@@ -69,38 +69,43 @@ private:
   void requestMap();
 
   // Callbacks
-  void globalLocalizationCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                  const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-                                  std::shared_ptr<std_srvs::srv::Empty::Response> res);                           
-  void nomotionUpdateCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                              const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-                              std::shared_ptr<std_srvs::srv::Empty::Response> res);
-  void setMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                      const std::shared_ptr<nav_msgs::srv::SetMap::Request> req,
-                      std::shared_ptr<nav_msgs::srv::SetMap::Response> res);
+  void globalLocalizationCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+    std::shared_ptr<std_srvs::srv::Empty::Response> res);
+  void nomotionUpdateCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+    std::shared_ptr<std_srvs::srv::Empty::Response> res);
+  void setMapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav_msgs::srv::SetMap::Request> req,
+    std::shared_ptr<nav_msgs::srv::SetMap::Response> res);
 
   void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
-  void handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
+  void handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-  void handleMapMessage(const nav_msgs::msg::OccupancyGrid& msg);
+  void handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg);
   void freeMapDependentMemory();
-  map_t *convertMap(const nav_msgs::msg::OccupancyGrid& map_msg);
+  map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
   void applyInitialPose();
 
   // Helper to get odometric pose from transform system
-  bool getOdomPose(geometry_msgs::msg::PoseStamped& pose,
-                     double& x, double& y, double& yaw,
-                     const rclcpp::Time& t, const std::string& f);
+  bool getOdomPose(
+    geometry_msgs::msg::PoseStamped & pose,
+    double & x, double & y, double & yaw,
+    const rclcpp::Time & t, const std::string & f);
 
 // 1. Reconfigure stuff
-  //void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
+//void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
 private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_; // "amcl_pose"
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_; // "particlecloud"
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    initial_pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 
 private:
@@ -119,10 +124,10 @@ private:
 
   // Pose-generating function used to uniformly distribute particles over
   // the map
-  static pf_vector_t uniformPoseGenerator(void* arg);
+  static pf_vector_t uniformPoseGenerator(void * arg);
 
 #if NEW_UNIFORM_SAMPLING
-  static std::vector<std::pair<int,int> > free_space_indices;
+  static std::vector<std::pair<int, int>> free_space_indices;
 #endif
 
   // Parameter for what odom to use
@@ -144,13 +149,13 @@ private:
 
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose;
 
-  map_t *map_;
-  char *mapdata;
+  map_t * map_;
+  char * mapdata;
   int sx;
   int sy;
   double resolution;
 
-  message_filters::Subscriber<sensor_msgs::msg::LaserScan> *laser_scan_sub_;
+  message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
   //Disabling MessageFilter Subscriber and creating a regular sub without filtering
   //tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
@@ -160,7 +165,7 @@ private:
   std::map<std::string, int> frame_to_laser_;
 
   // Particle filter
-  pf_t *pf_;
+  pf_t * pf_;
   double pf_err_;
   double pf_z_;
   bool pf_init_;
@@ -174,10 +179,10 @@ private:
 
   // Nomotion update control
   // Used to temporarily let amcl update samples even when no motion occurs
-  bool m_force_update;  
+  bool m_force_update;
 
-  amcl::AMCLOdom *odom_;
-  amcl::AMCLLaser *laser_;
+  amcl::AMCLOdom * odom_;
+  amcl::AMCLLaser * laser_;
 
   std::chrono::duration<double> cloud_pub_interval;
 
@@ -207,9 +212,9 @@ private:
   std::recursive_mutex configuration_mutex_;
 
 // 4. Dynamic reconfigure
-  //dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
+//dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
 // AMCLConfig automatically generated (how?)
-  //amcl::AMCLConfig default_config_;
+//amcl::AMCLConfig default_config_;
 
   rclcpp::Time last_laser_received_ts_;
   std::chrono::seconds laser_check_interval_;
