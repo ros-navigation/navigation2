@@ -49,7 +49,6 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
-#include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
 #include <costmap_2d/VoxelPluginConfig.h>

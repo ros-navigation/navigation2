@@ -37,10 +37,13 @@
 #include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 using namespace costmap_2d;
 
-tf::TransformListener* tf_;
+tf2_ros::TransformListener* tfl_;
+tf2_ros::Buffer* tf_;
 
 TEST( Costmap2DROS, unpadded_footprint_from_string_param )
 {
@@ -161,17 +164,18 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "footprint_tests_node");
 
-  tf_ = new tf::TransformListener( ros::Duration( 10 ));
+  tf_ = new tf2_ros::Buffer( ros::Duration( 10 ));
+  tfl_ = new tf2_ros::TransformListener(*tf_);
 
   // This empty transform is added to satisfy the constructor of
   // Costmap2DROS, which waits for the transform from map to base_link
   // to become available.
-  tf::StampedTransform base_rel_map;
-  base_rel_map.child_frame_id_ = "/base_link";
-  base_rel_map.frame_id_ = "/map";
-  base_rel_map.stamp_ = ros::Time::now();
-  base_rel_map.setIdentity();
-  tf_->setTransform( base_rel_map );
+  geometry_msgs::TransformStamped base_rel_map;
+  base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
+  base_rel_map.child_frame_id = "base_link";
+  base_rel_map.header.frame_id = "map";
+  base_rel_map.header.stamp = ros::Time::now();
+  tf_->setTransform( base_rel_map, "footprint_tests" );
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

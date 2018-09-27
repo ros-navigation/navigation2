@@ -40,7 +40,6 @@
 #include <costmap_2d/testing_helper.h>
 #include <set>
 #include <gtest/gtest.h>
-#include <tf/transform_listener.h>
 
 using namespace costmap_2d;
 

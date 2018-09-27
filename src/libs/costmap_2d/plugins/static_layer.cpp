@@ -39,6 +39,8 @@
 #include <costmap_2d/static_layer.h>
 #include <costmap_2d/costmap_math.h>
 #include <pluginlib/class_list_macros.h>
+#include <tf2/convert.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::StaticLayer, costmap_2d::Layer)
 
@@ -310,17 +312,19 @@ void StaticLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int
     unsigned int mx, my;
     double wx, wy;
     // Might even be in a different frame
-    tf::StampedTransform transform;
+    geometry_msgs::TransformStamped transform;
     try
     {
-      tf_->lookupTransform(map_frame_, global_frame_, ros::Time(0), transform);
+      transform = tf_->lookupTransform(map_frame_, global_frame_, ros::Time(0));
     }
-    catch (tf::TransformException ex)
+    catch (tf2::TransformException ex)
     {
       ROS_ERROR("%s", ex.what());
       return;
     }
     // Copy map data given proper transformations
+    tf2::Transform tf2_transform;
+    tf2::convert(transform.transform, tf2_transform);
     for (unsigned int i = min_i; i < max_i; ++i)
     {
       for (unsigned int j = min_j; j < max_j; ++j)
@@ -328,8 +332,8 @@ void StaticLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int
         // Convert master_grid coordinates (i,j) into global_frame_(wx,wy) coordinates
         layered_costmap_->getCostmap()->mapToWorld(i, j, wx, wy);
         // Transform from global_frame_ to map_frame_
-        tf::Point p(wx, wy, 0);
-        p = transform(p);
+        tf2::Vector3 p(wx, wy, 0);
+        p = tf2_transform*p;
         // Set master_grid with cell from map
         if (worldToMap(p.x(), p.y(), mx, my))
         {

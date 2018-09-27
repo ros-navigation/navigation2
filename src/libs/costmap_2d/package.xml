@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
     <name>costmap_2d</name>
-    <version>1.15.2</version>
+    <version>1.16.2</version>
     <description>
         This package provides an implementation of a 2D costmap that takes in sensor
         data from the world, builds a 2D or 3D occupancy grid of the data (depending
@@ -26,6 +26,8 @@
 
     <build_depend>cmake_modules</build_depend>
     <build_depend>message_generation</build_depend>
+    <build_depend>tf2_geometry_msgs</build_depend>
+    <build_depend>tf2_sensor_msgs</build_depend>
 
     <depend>dynamic_reconfigure</depend>
     <depend>geometry_msgs</depend>
@@ -33,21 +35,18 @@
     <depend>map_msgs</depend>
     <depend>message_filters</depend>
     <depend>nav_msgs</depend>
-    <depend>pcl_conversions</depend>
-    <depend>pcl_ros</depend>
     <depend>pluginlib</depend>
-    <depend>libpcl-all-dev</depend>
     <depend>roscpp</depend>
     <depend>rostest</depend>
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>
-    <depend>tf</depend>
+    <depend>tf2</depend>
+    <depend>tf2_ros</depend>
     <depend>visualization_msgs</depend>
     <depend>voxel_grid</depend>
 
     <exec_depend>message_runtime</exec_depend>
     <exec_depend>rosconsole</exec_depend>
-
     <test_depend>map_server</test_depend>
     <test_depend>rosbag</test_depend>
     <test_depend>rostest</test_depend>

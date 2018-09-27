@@ -41,7 +41,6 @@
 #include <costmap_2d/costmap_2d.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
-#include <tf/transform_datatypes.h>
 
 namespace costmap_2d
 {

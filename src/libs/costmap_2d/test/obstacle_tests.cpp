@@ -38,7 +38,6 @@
 #include <costmap_2d/testing_helper.h>
 #include <set>
 #include <gtest/gtest.h>
-#include <tf/transform_listener.h>
 
 using namespace costmap_2d;
 
@@ -72,7 +71,7 @@ using namespace costmap_2d;
  * Test for ray tracing free space
  */
 TEST(costmap, testRaytracing){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
 
   LayeredCostmap layers("frame", false, false);  // Not rolling window, not tracking unknown
   addStaticLayer(layers, tf);  // This adds the static map
@@ -95,7 +94,7 @@ TEST(costmap, testRaytracing){
  * Test for ray tracing free space
  */
 TEST(costmap, testRaytracing2){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf);
   ObstacleLayer* olayer = addObstacleLayer(layers, tf);
@@ -151,7 +150,7 @@ TEST(costmap, testRaytracing2){
  * Test for wave interference
  */
 TEST(costmap, testWaveInterference){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
 
   // Start with an empty map, no rolling window, tracking unknown
   LayeredCostmap layers("frame", false, true);
@@ -180,7 +179,7 @@ TEST(costmap, testWaveInterference){
  * Make sure we ignore points outside of our z threshold
  */
 TEST(costmap, testZThreshold){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   // Start with an empty map
   LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -202,7 +201,7 @@ TEST(costmap, testZThreshold){
  * Verify that dynamic obstacles are added
  */
 TEST(costmap, testDynamicObstacles){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf);
 
@@ -228,7 +227,7 @@ TEST(costmap, testDynamicObstacles){
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
 TEST(costmap, testMultipleAdditions){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf);
 

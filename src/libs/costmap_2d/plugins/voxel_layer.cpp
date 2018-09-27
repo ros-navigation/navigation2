@@ -37,7 +37,7 @@
  *********************************************************************/
 #include <costmap_2d/voxel_layer.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 #define VOXEL_BITS 16
 PLUGINLIB_EXPORT_CLASS(costmap_2d::VoxelLayer, costmap_2d::Layer)
@@ -145,20 +145,24 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
   {
     const Observation& obs = *it;
 
-    const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
+    const sensor_msgs::PointCloud2& cloud = *(obs.cloud_);
 
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
-    for (unsigned int i = 0; i < cloud.points.size(); ++i)
+    sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
+
+    for (unsigned int i = 0; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
     {
       // if the obstacle is too high or too far away from the robot we won't add it
-      if (cloud.points[i].z > max_obstacle_height_)
+      if (*iter_z > max_obstacle_height_)
         continue;
 
       // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
+      double sq_dist = (*iter_x - obs.origin_.x) * (*iter_x - obs.origin_.x)
+                       + (*iter_y - obs.origin_.y) * (*iter_y - obs.origin_.y)
+                       + (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range)
@@ -166,12 +170,12 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
 
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my, mz;
-      if (cloud.points[i].z < origin_z_)
+      if (*iter_z < origin_z_)
       {
-        if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz))
+        if (!worldToMap3D(*iter_x, *iter_y, origin_z_, mx, my, mz))
           continue;
       }
-      else if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz))
+      else if (!worldToMap3D(*iter_x, *iter_y, *iter_z, mx, my, mz))
       {
         continue;
       }
@@ -182,7 +186,7 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
-        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        touch(double(*iter_x), double(*iter_y), min_x, min_y, max_x, max_y);
       }
     }
   }
@@ -266,7 +270,8 @@ void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_
 void VoxelLayer::raytraceFreespace(const Observation& clearing_observation, double* min_x, double* min_y,
                                            double* max_x, double* max_y)
 {
-  if (clearing_observation.cloud_->points.size() == 0)
+  size_t clearing_observation_cloud_size = clearing_observation.cloud_->height * clearing_observation.cloud_->width;
+  if (clearing_observation_cloud_size == 0)
     return;
 
   double sensor_x, sensor_y, sensor_z;
@@ -287,18 +292,22 @@ void VoxelLayer::raytraceFreespace(const Observation& clearing_observation, doub
   if (publish_clearing_points)
   {
     clearing_endpoints_.points.clear();
-    clearing_endpoints_.points.reserve(clearing_observation.cloud_->points.size());
+    clearing_endpoints_.points.reserve(clearing_observation_cloud_size);
   }
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
   double map_end_y = origin_y_ + getSizeInMetersY();
 
-  for (unsigned int i = 0; i < clearing_observation.cloud_->points.size(); ++i)
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
+
+  for (;iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
   {
-    double wpx = clearing_observation.cloud_->points[i].x;
-    double wpy = clearing_observation.cloud_->points[i].y;
-    double wpz = clearing_observation.cloud_->points[i].z;
+    double wpx = *iter_x;
+    double wpy = *iter_y;
+    double wpz = *iter_z;
 
     double distance = dist(ox, oy, oz, wpx, wpy, wpz);
     double scaling_fact = 1.0;
@@ -375,7 +384,7 @@ void VoxelLayer::raytraceFreespace(const Observation& clearing_observation, doub
   if (publish_clearing_points)
   {
     clearing_endpoints_.header.frame_id = global_frame_;
-    clearing_endpoints_.header.stamp = pcl_conversions::fromPCL(clearing_observation.cloud_->header).stamp;
+    clearing_endpoints_.header.stamp = clearing_observation.cloud_->header.stamp;
     clearing_endpoints_.header.seq = clearing_observation.cloud_->header.seq;
 
     clearing_endpoints_pub_.publish(clearing_endpoints_);
