@@ -13,13 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-
-#include "amcl_node.hpp"
 #include <rclcpp/rclcpp.hpp>
+#include <memory>
+#include "amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include <memory>
 
 using std::placeholders::_1;
 
@@ -37,7 +36,7 @@ class TestAmclPose : public ::testing::Test
 public:
   TestAmclPose()
   {
-    //Initializing amcl_pose x and y to NaN
+    // Initializing amcl_pose x and y to NaN
     amcl_pose_x = 0.0 / 0.0;
     amcl_pose_y = 0.0 / 0.0;
     pose_callback_ = false;

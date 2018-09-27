@@ -18,9 +18,14 @@
  *
  */
 
-#ifndef LOCALIZATION__AMCLNODE_HPP_
-#define LOCALIZATION__AMCLNODE_HPP_
+#ifndef AMCL_NODE_HPP_
+#define AMCL_NODE_HPP_
 
+#include <vector>
+#include <string>
+#include <map>
+#include <utility>
+#include <memory>
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
@@ -46,7 +51,6 @@ typedef struct
 
   // Covariance of pose estimate
   pf_matrix_t pf_pose_cov;
-
 } amcl_hyp_t;
 
 class AmclNode : public rclcpp::Node
@@ -98,11 +102,11 @@ private:
     const rclcpp::Time & t, const std::string & f);
 
 // 1. Reconfigure stuff
-//void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
+// void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
 private:
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_; // "amcl_pose"
-  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_; // "particlecloud"
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;
@@ -156,8 +160,8 @@ private:
   double resolution;
 
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
-  //Disabling MessageFilter Subscriber and creating a regular sub without filtering
-  //tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
+  // Disabling MessageFilter Subscriber and creating a regular sub without filtering
+  // tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
 
   std::vector<amcl::AMCLLaser *> lasers_;
@@ -193,16 +197,17 @@ private:
 
   // Time for tolerance on the published transform,
   // basically defines how long a map->odom transform is good for
-  //std::chrono::duration<double> transform_tolerance_;
+  // std::chrono::duration<double> transform_tolerance_;
   tf2::Duration transform_tolerance_;
 
-  //ros::NodeHandle nh_;
-  //ros::NodeHandle private_nh_;
-  //ros::Publisher pose_pub_;
-  //ros::Publisher particlecloud_pub_;
+  // ros::NodeHandle nh_;
+  // ros::NodeHandle private_nh_;
+  // ros::Publisher pose_pub_;
+  // ros::Publisher particlecloud_pub_;
 // 3. Service server
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr global_loc_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_; //to let amcl update samples without requiring motion
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;  // to let amcl update
+  // samples without requiring motion
   rclcpp::Service<nav_msgs::srv::SetMap>::SharedPtr set_map_srv_;
 
   amcl_hyp_t * initial_pose_hyp_;
@@ -212,9 +217,9 @@ private:
   std::recursive_mutex configuration_mutex_;
 
 // 4. Dynamic reconfigure
-//dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
+// dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
 // AMCLConfig automatically generated (how?)
-//amcl::AMCLConfig default_config_;
+// amcl::AMCLConfig default_config_;
 
   rclcpp::Time last_laser_received_ts_;
   std::chrono::seconds laser_check_interval_;
@@ -256,4 +261,4 @@ private:
   bool tf_broadcast_;
 };
 
-#endif // LOCALIZATION__AMCLNODE_HPP_
+#endif  // AMCL_NODE_HPP_

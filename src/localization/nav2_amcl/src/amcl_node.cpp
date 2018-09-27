@@ -20,9 +20,15 @@
 
 /* Author: Brian Gerkey */
 
+#include <boost/foreach.hpp>
+#include <memory>
+#include <string>
+#include <utility>
+#include <algorithm>
+#include <vector>
 #include "amcl_node.hpp"
-#include "nav2_util/pf/pf.h" // pf_vector_t
-//#include "util/strutils.h" // TODO (mhpanah): put strutils in util directory
+#include "nav2_util/pf/pf.h"  // pf_vector_t
+//  #include "util/strutils.h" // TODO (mhpanah): put strutils in util directory
 
 // For transform support
 #include "tf2/LinearMath/Transform.h"
@@ -35,22 +41,32 @@
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
-//#include "tf2_ros/message_filter.h"
+// #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "message_filters/subscriber.h"
 
 // Dynamic_reconfigure
-//#include "dynamic_reconfigure/server.h"
+// #include "dynamic_reconfigure/server.h"
 
 // Allows AMCL to run from bag file
-//#include <rosbag/bag.h>
-//#include <rosbag/view.h>
-#include <boost/foreach.hpp>
+// #include <rosbag/bag.h>
+// #include <rosbag/view.h>
 
-using namespace amcl;
+using amcl::LASER_MODEL_BEAM;
+using amcl::LASER_MODEL_LIKELIHOOD_FIELD;
+using amcl::LASER_MODEL_LIKELIHOOD_FIELD_PROB;
+using amcl::ODOM_MODEL_DIFF;
+using amcl::AMCLOdom;
+using amcl::AMCLLaser;
+using amcl::ODOM_MODEL_OMNI;
+using amcl::ODOM_MODEL_DIFF_CORRECTED;
+using amcl::AMCLOdomData;
+using amcl::ODOM_MODEL_OMNI_CORRECTED;
+using amcl::AMCLSensorData;
+using amcl::AMCLLaserData;
 
-// TODO (mhpanah): Factor out strutils and put it in util directory
+// TODO(mhpanah): Factor out strutils and put it in util directory
 class strutils
 {
 public:
@@ -92,7 +108,7 @@ angle_diff(double a, double b)
   }
 }
 
-static const std::string scan_topic_ = "scan";
+static const char scan_topic_[] = "scan";
 
 #if NEW_UNIFORM_SAMPLING
 std::vector<std::pair<int, int>> AmclNode::free_space_indices;
@@ -113,7 +129,6 @@ AmclNode::AmclNode()
   first_map_received_(false),
   first_reconfigure_call_(true)
 {
-
   std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
   parameters_node_ = rclcpp::Node::make_shared("ParametersNode");
@@ -253,8 +268,9 @@ AmclNode::AmclNode()
 
 
   custom_qos_profile.depth = 100;
-  //laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this, scan_topic_, custom_qos_profile);
-  //Disabling laser_scan_filter
+  // laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this,
+  //                   scan_topic_, custom_qos_profile);
+  // Disabling laser_scan_filter
   /*
   laser_scan_filter_ =
           new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_,
@@ -296,11 +312,11 @@ AmclNode::AmclNode()
 
 AmclNode::~AmclNode()
 {
-  //delete dsrv_;
+  // delete dsrv_;
   freeMapDependentMemory();
-  //delete laser_scan_filter_;
+  // delete laser_scan_filter_;
   delete laser_scan_sub_;
-  // TODO: delete everything allocated in constructor
+  // TODO(mhpanah): delete everything allocated in constructor
 }
 
 #if 0
@@ -308,8 +324,8 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
 {
   std::lock_gaurd<std::recursive_mutex> cfl(configuration_mutex_);
 
-  //we don't want to do anything on the first call
-  //which corresponds to startup
+  // we don't want to do anything on the first call
+  // which corresponds to startup
   if (first_reconfigure_call_) {
     first_reconfigure_call_ = false;
     default_config_ = config;
@@ -318,7 +334,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
 
   if (config.restore_defaults) {
     config = default_config_;
-    //avoid looping
+    // avoid looping
     config.restore_defaults = false;
   }
 
@@ -370,7 +386,8 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
 
   if (config.min_particles > config.max_particles) {
     ROS_WARN(
-      "You've set min_particles to be greater than max particles, this isn't allowed so they'll be set to be equal.");
+      "You've set min_particles to be greater than max particles, this isn't allowed so they'll"
+      " be set to be equal.");
     config.max_particles = config.min_particles;
   }
 
@@ -391,7 +408,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   pf_ = pf_alloc(min_particles_, max_particles_,
       alpha_slow_, alpha_fast_,
       (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-      (void *)map_);
+      <void *>(map_));
   pf_err_ = config.kld_err;
   pf_z_ = config.kld_z;
   pf_->pop_err = pf_err_;
@@ -440,7 +457,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   base_frame_id_ = strutils::stripLeadingSlash(config.base_frame_id);
   global_frame_id_ = strutils::stripLeadingSlash(config.global_frame_id);
 
-  //Disabling laser_scan_filter
+  // Disabling laser_scan_filter
   /*
   delete laser_scan_filter_;
   laser_scan_filter_ =
@@ -464,7 +481,7 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
   bag.open(in_bag_fn, rosbag::bagmode::Read);
   std::vector<std::string> topics;
   topics.push_back(std::string("tf"));
-  std::string scan_topic_name = "base_scan"; // TODO determine what topic this actually is from ROS
+  std::string scan_topic_name = "base_scan";  // TODO(?): determine what topic this actually is
   topics.push_back(scan_topic_name);
   rosbag::View view(bag, rosbag::TopicQuery(topics));
   ros::Publisher laser_pub = nh_.advertise<sensor_msgs::LaserScan>(scan_topic_name, 100);
@@ -509,8 +526,8 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
     sensor_msgs::LaserScan::ConstPtr base_scan = msg.instantiate<sensor_msgs::LaserScan>();
     if (base_scan != NULL) {
       laser_pub.publish(msg);
-      //Disabling laser_scan_filter
-      //laser_scan_filter_->add(base_scan);
+      // Disabling laser_scan_filter
+      // laser_scan_filter_->add(base_scan);
       if (bag_scan_period_ > ros::WallDuration(0)) {
         bag_scan_period_.sleep();
       }
@@ -631,11 +648,11 @@ AmclNode::checkLaserReceived()
   rclcpp::Duration d = this->now() - last_laser_received_ts_;
   if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
     RCLCPP_WARN(
-      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f seconds.  Verify that data is being published on the %s topic.",
+      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
+      " seconds.  Verify that data is being published on the %s topic.",
       d.nanoseconds() * 1e-9,
       scan_topic_);
   }
-
 }
 
 void
@@ -690,7 +707,6 @@ AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 void
 AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 {
-
   std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix\n",
@@ -699,7 +715,8 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
     msg.info.resolution);
   if (msg.header.frame_id != global_frame_id_) {
     RCLCPP_WARN(
-      get_logger(), "Frame_id of map received:'%s' doesn't match global_frame_id:'%s'. This could cause issues with reading published topics",
+      get_logger(), "Frame_id of map received:'%s' doesn't match global_frame_id:'%s'. This could"
+      " cause issues with reading published topics",
       msg.header.frame_id.c_str(),
       global_frame_id_.c_str());
   }
@@ -728,7 +745,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   pf_ = pf_alloc(min_particles_, max_particles_,
       alpha_slow_, alpha_fast_,
       (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-      (void *)map_);
+      reinterpret_cast<void *>(map_));  // (void *)map_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -779,7 +796,6 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // In case the initial pose message arrived before the first map,
   // try to apply the initial pose now that the map has arrived.
   applyInitialPose();
-
 }
 
 void
@@ -810,7 +826,7 @@ map_t *
 AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 {
   map_t * map = map_alloc();
-  //ROS_ASSERT(map);
+  // ROS_ASSERT(map);
 
   map->size_x = map_msg.info.width;
   map->size_y = map_msg.info.height;
@@ -818,9 +834,10 @@ AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
   map->origin_x = map_msg.info.origin.position.x + (map->size_x / 2) * map->scale;
   map->origin_y = map_msg.info.origin.position.y + (map->size_y / 2) * map->scale;
   // Convert to player format
-  map->cells = (map_cell_t *) malloc(sizeof(map_cell_t) * map->size_x * map->size_y);
+  map->cells =
+    reinterpret_cast<map_cell_t *>(malloc(sizeof(map_cell_t) * map->size_x * map->size_y));
 
-  //ROS_ASSERT(map->cells);
+  // ROS_ASSERT(map->cells);
   for (int i = 0; i < map->size_x * map->size_y; i++) {
     if (map_msg.data[i] == 0) {
       map->cells[i].occ_state = -1;
@@ -863,7 +880,7 @@ AmclNode::getOdomPose(
 pf_vector_t
 AmclNode::uniformPoseGenerator(void * arg)
 {
-  map_t * map = (map_t *)arg;
+  map_t * map = reinterpret_cast<map_t *>(arg);
 
 #if NEW_UNIFORM_SAMPLING
   unsigned int rand_index = drand48() * free_space_indices.size();
@@ -897,7 +914,6 @@ AmclNode::uniformPoseGenerator(void * arg)
   }
 #endif
   return p;
-
 }
 
 void
@@ -913,11 +929,11 @@ AmclNode::globalLocalizationCallback(
   std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
-  pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, (void *) map_);
+  pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
+    reinterpret_cast<void *>(map_));
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
 
   pf_init_ = false;
-
 }
 
 // force nomotion updates (amcl updating without requiring motion)
@@ -1009,7 +1025,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
   if (pf_init_) {
     // Compute change in pose
-    //delta = pf_vector_coord_sub(pose, pf_odom_pose_);
+    // delta = pf_vector_coord_sub(pose, pf_odom_pose_);
     delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
     delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
     delta.v[2] = angle_diff(pose.v[2], pf_odom_pose_.v[2]);
@@ -1045,11 +1061,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     force_publication = true;
 
     resample_count_ = 0;
-  }
-  // If the robot has moved, update the filter
-  else if (pf_init_ && lasers_update_[laser_index]) {
-    //printf("pose\n");
-    //pf_vector_fprintf(pose, stdout, "%.3f");
+  } else if (pf_init_ && lasers_update_[laser_index]) {  // If the robot has moved update the filter
+    // printf("pose\n");
+    // pf_vector_fprintf(pose, stdout, "%.3f");
 
     AMCLOdomData odata;
     odata.pose = pose;
@@ -1059,10 +1073,10 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     odata.delta = delta;
 
     // Use the action data to update the filter
-    odom_->UpdateAction(pf_, (AMCLSensorData *)&odata);
+    odom_->UpdateAction(pf_, reinterpret_cast<AMCLSensorData *>(&odata));
 
     // Pose at last filter update
-    //this->pf_odom_pose = pose;
+    // this->pf_odom_pose = pose;
   }
 
   bool resampled = false;
@@ -1107,13 +1121,13 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     // Apply range min/max thresholds, if the user supplied them
     if (laser_max_range_ > 0.0) {
-      ldata.range_max = std::min(laser_scan->range_max, (float)laser_max_range_);
+      ldata.range_max = std::min(laser_scan->range_max, static_cast<float>(laser_max_range_));
     } else {
       ldata.range_max = laser_scan->range_max;
     }
     double range_min;
     if (laser_min_range_ > 0.0) {
-      range_min = std::max(laser_scan->range_min, (float)laser_min_range_);
+      range_min = std::max(laser_scan->range_min, static_cast<float>(laser_min_range_));
     } else {
       range_min = laser_scan->range_min;
     }
@@ -1133,7 +1147,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         (i * angle_increment);
     }
 
-    lasers_[laser_index]->UpdateSensor(pf_, (AMCLSensorData *)&ldata);
+    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<AMCLSensorData *>(&ldata));
 
     lasers_update_[laser_index] = false;
 
@@ -1149,7 +1163,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
 
     // Publish the resulting cloud
-    // TODO: set maximum rate for publishing
+    // TODO(?): set maximum rate for publishing
     if (!m_force_update) {
       geometry_msgs::msg::PoseArray cloud_msg;
       cloud_msg.header.stamp = this->now();
@@ -1222,13 +1236,13 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         for (int j = 0; j < 2; j++) {
           // Report the overall filter covariance, rather than the
           // covariance for the highest-weight cluster
-          //p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+          // p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
           p.pose.covariance[6 * i + j] = set->cov.m[i][j];
         }
       }
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
-      //p.covariance[6*5+5] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
+      // p.covariance[6*5+5] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
       p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
 
       /*
@@ -1328,11 +1342,10 @@ AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceS
     RCLCPP_WARN(
       get_logger(),
       "Received initial pose with empty frame_id. You should always supply a frame_id.");
-  }
-  // We only accept initial pose estimates in the global frame, #5148.
-  else if (strutils::stripLeadingSlash(msg.header.frame_id) != global_frame_id_) {
+  } else if (strutils::stripLeadingSlash(msg.header.frame_id) != global_frame_id_) {
     RCLCPP_WARN(
-      get_logger(), "Ignoring initial pose in frame \"%s\"; initial poses must be in the global frame, \"%s\"",
+      get_logger(), "Ignoring initial pose in frame \"%s\"; initial poses must be in the global"
+      " frame, \"%s\"",
       strutils::stripLeadingSlash(msg.header.frame_id).c_str(),
       global_frame_id_.c_str());
     return;
