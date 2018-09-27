@@ -65,10 +65,6 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-find_package(ament_cmake_pytest REQUIRED)
-find_package(ament_cmake_gtest REQUIRED)
-add_subdirectory(test)
-
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -76,8 +72,11 @@ install(TARGETS ${executable_name} ${library_name}
   )
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
