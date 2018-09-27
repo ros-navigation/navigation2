@@ -127,7 +127,10 @@ protected:
     } while (rclcpp::ok());
   }
 
-  // Convenience routes for starting and stopping the worker thread (used from the ctor and dtor)
+  // TODO(mjeronimo): Make an explicit start and stop calls to control 
+  // the worker thread
+  
+  // Convenience routines for starting and stopping the worker thread.
   void startWorkerThread()
   {
     workerThread_ = new std::thread(&TaskServer::workerThread, this);
