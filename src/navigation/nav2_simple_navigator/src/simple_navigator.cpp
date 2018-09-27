@@ -104,7 +104,8 @@ planning_succeeded:
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: got path of size %u",
     path->poses.size());
-  int index;
+
+  int index = 0;
   for (auto pose : path->poses) {
     RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: point %u x: %0.2f, y: %0.2f",
       index, pose.position.x, pose.position.y);
