@@ -7,6 +7,8 @@
 #include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/inflation_layer.h>
 
+#include <sensor_msgs/point_cloud2_iterator.h>
+
 const double MAX_Z(1.0);
 
 void setValues(costmap_2d::Costmap2D& costmap, const unsigned char* map)
@@ -57,14 +59,14 @@ unsigned int countValues(costmap_2d::Costmap2D& costmap, unsigned char value, bo
   return count;
 }
 
-void addStaticLayer(costmap_2d::LayeredCostmap& layers, tf::TransformListener& tf)
+void addStaticLayer(costmap_2d::LayeredCostmap& layers, tf2_ros::Buffer& tf)
 {
   costmap_2d::StaticLayer* slayer = new costmap_2d::StaticLayer();
   layers.addPlugin(boost::shared_ptr<costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf);
 }
 
-costmap_2d::ObstacleLayer* addObstacleLayer(costmap_2d::LayeredCostmap& layers, tf::TransformListener& tf)
+costmap_2d::ObstacleLayer* addObstacleLayer(costmap_2d::LayeredCostmap& layers, tf2_ros::Buffer& tf)
 {
   costmap_2d::ObstacleLayer* olayer = new costmap_2d::ObstacleLayer();
   olayer->initialize(&layers, "obstacles", &tf);
@@ -74,11 +76,16 @@ costmap_2d::ObstacleLayer* addObstacleLayer(costmap_2d::LayeredCostmap& layers, 
 
 void addObservation(costmap_2d::ObstacleLayer* olayer, double x, double y, double z = 0.0,
                     double ox = 0.0, double oy = 0.0, double oz = MAX_Z){
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-  cloud.points.resize(1);
-  cloud.points[0].x = x;
-  cloud.points[0].y = y;
-  cloud.points[0].z = z;
+  sensor_msgs::PointCloud2 cloud;
+  sensor_msgs::PointCloud2Modifier modifier(cloud);
+  modifier.setPointCloud2FieldsByString(1, "xyz");
+  modifier.resize(1);
+  sensor_msgs::PointCloud2Iterator<float> iter_x(cloud, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(cloud, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(cloud, "z");
+  *iter_x = x;
+  *iter_y = y;
+  *iter_z = z;
 
   geometry_msgs::Point p;
   p.x = ox;
@@ -89,7 +96,7 @@ void addObservation(costmap_2d::ObstacleLayer* olayer, double x, double y, doubl
   olayer->addStaticObservation(obs, true, true);
 }
 
-costmap_2d::InflationLayer* addInflationLayer(costmap_2d::LayeredCostmap& layers, tf::TransformListener& tf)
+costmap_2d::InflationLayer* addInflationLayer(costmap_2d::LayeredCostmap& layers, tf2_ros::Buffer& tf)
 {
   costmap_2d::InflationLayer* ilayer = new costmap_2d::InflationLayer();
   ilayer->initialize(&layers, "inflation", &tf);

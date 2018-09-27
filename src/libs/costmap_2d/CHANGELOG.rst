@@ -2,6 +2,48 @@
 Changelog for package costmap_2d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.16.2 (2018-07-31)
+-------------------
+* Merge pull request `#773 <https://github.com/ros-planning/navigation/issues/773>`_ from ros-planning/packaging_fixes
+  packaging fixes
+* update costmap_2d cmake
+  * explicit dependency on tf2
+  * remove old PCL disable crap
+* Contributors: Michael Ferguson
+
+1.16.1 (2018-07-28)
+-------------------
+* Merge pull request `#770 <https://github.com/ros-planning/navigation/issues/770>`_ from ros-planning/fix_debians
+  Fix debian builds (closes `#769 <https://github.com/ros-planning/navigation/issues/769>`_)
+* add tf2_geometry_msgs depend to costmap_2d
+* Contributors: Michael Ferguson
+
+1.16.0 (2018-07-25)
+-------------------
+* Switch to TF2 `#755 <https://github.com/ros-planning/navigation/issues/755>`_
+* unify combination_method dynamic reconfig, closes `#402 <https://github.com/ros-planning/navigation/issues/402>`_
+* Merge pull request `#723 <https://github.com/ros-planning/navigation/issues/723>`_ from moriarty/melodic-buildfarm-errors
+  Melodic buildfarm errors
+* [costmap_2d/test] set empty transform to Identity
+* fix test: abs(unsigned int) is ambiguous
+  Instead, compare values and subtract smaller from larger to find
+  the dx and dy.
+* fixes pluginlib deprecated header warnings
+* Merge pull request `#694 <https://github.com/ros-planning/navigation/issues/694>`_ from ros-planning/lunar_691
+  costmap variable init & cleanup (forward port of `#691 <https://github.com/ros-planning/navigation/issues/691>`_)
+* remove unused got_footprint\_
+* initialize all costmap variables
+* Merge pull request `#686 <https://github.com/ros-planning/navigation/issues/686>`_ from ros-planning/lunar_675
+  Fixed race condition with costmaps in LayeredCostmap::resizeMap()
+* Fixed race condition with costmaps in LayeredCostmap::resizeMap()
+  LayeredCostmap::updateMap() and LayeredCostmap::resizeMap() write to the master grid costmap.
+  And these two functions can be called by different threads at the same time.
+  One example of these cases is a race condition between subscriber callback thread
+  dealing with dynamically-size-changing static_layer and periodical updateMap() calls from Costmap2DROS thread.
+  Under the situation the master grid costmap is not thread-safe.
+  LayeredCostmap::updateMap() already used the master grid costmap's lock.
+* Contributors: Alexander Moriarty, David V. Lu, Jaeyoung Lee, Michael Ferguson, Vincent Rabaud
+
 1.15.2 (2018-03-22)
 -------------------
 * Merge pull request `#673 <https://github.com/ros-planning/navigation/issues/673>`_ from ros-planning/email_update_lunar

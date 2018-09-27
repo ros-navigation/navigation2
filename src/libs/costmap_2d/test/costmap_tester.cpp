@@ -36,15 +36,15 @@
 *********************************************************************/
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/cost_values.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace costmap_2d {
 
 class CostmapTester : public testing::Test {
   public:
-    CostmapTester(tf::TransformListener& tf);
+    CostmapTester(tf2_ros::Buffer& tf);
     void checkConsistentCosts();
     void compareCellToNeighbors(costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y);
     void compareCells(costmap_2d::Costmap2D& costmap, 
@@ -55,7 +55,7 @@ class CostmapTester : public testing::Test {
     costmap_2d::Costmap2DROS costmap_ros_;
 };
 
-CostmapTester::CostmapTester(tf::TransformListener& tf): costmap_ros_("test_costmap", tf){}
+CostmapTester::CostmapTester(tf2_ros::Buffer& tf): costmap_ros_("test_costmap", tf){}
 
 void CostmapTester::checkConsistentCosts(){
   costmap_2d::Costmap2D* costmap = costmap_ros_.getCostmap();
@@ -132,7 +132,8 @@ int main(int argc, char** argv){
   ros::NodeHandle n;
   ros::NodeHandle private_nh("~");
 
-  tf::TransformListener tf(ros::Duration(10));
+  tf2_ros::Buffer tf(ros::Duration(10));
+  tf2_ros::TransformListener tfl(tf);
   map_tester = new costmap_2d::CostmapTester(tf);
 
   double wait_time;

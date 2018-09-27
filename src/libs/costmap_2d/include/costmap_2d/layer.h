@@ -40,8 +40,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/layered_costmap.h>
 #include <string>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 namespace costmap_2d
 {
@@ -52,7 +51,7 @@ class Layer
 public:
   Layer();
 
-  void initialize(LayeredCostmap* parent, std::string name, tf::TransformListener *tf);
+  void initialize(LayeredCostmap* parent, std::string name, tf2_ros::Buffer *tf);
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -123,7 +122,7 @@ protected:
   bool current_;
   bool enabled_;  ///< Currently this var is managed by subclasses. TODO: make this managed by this class and/or container class.
   std::string name_;
-  tf::TransformListener* tf_;
+  tf2_ros::Buffer *tf_;
 
 private:
   std::vector<geometry_msgs::Point> footprint_spec_;

@@ -36,7 +36,6 @@
 #include <costmap_2d/observation_buffer.h>
 #include <set>
 #include <gtest/gtest.h>
-#include <tf/transform_listener.h>
 
 using namespace costmap_2d;
 

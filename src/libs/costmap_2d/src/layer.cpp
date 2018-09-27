@@ -40,7 +40,7 @@ Layer::Layer()
   , tf_(NULL)
 {}
 
-void Layer::initialize(LayeredCostmap* parent, std::string name, tf::TransformListener *tf)
+void Layer::initialize(LayeredCostmap* parent, std::string name, tf2_ros::Buffer *tf)
 {
   layered_costmap_ = parent;
   name_ = name;

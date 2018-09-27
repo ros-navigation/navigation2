@@ -41,7 +41,6 @@
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/testing_helper.h>
 #include <gtest/gtest.h>
-#include <tf/transform_listener.h>
 
 using namespace costmap_2d;
 using geometry_msgs::Point;
@@ -129,7 +128,7 @@ void validatePointInflation(unsigned int mx, unsigned int my, Costmap2D* costmap
 }
 
 TEST(costmap, testAdjacentToObstacleCanStillMove){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -155,7 +154,7 @@ TEST(costmap, testAdjacentToObstacleCanStillMove){
 }
 
 TEST(costmap, testInflationShouldNotCreateUnknowns){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -180,7 +179,7 @@ TEST(costmap, testInflationShouldNotCreateUnknowns){
  * Test for the cost function correctness with a larger range and different values
  */
 TEST(costmap, testCostFunctionCorrectness){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   layers.resizeMap(100, 100, 1, 0, 0);
 
@@ -248,7 +247,7 @@ TEST(costmap, testCostFunctionCorrectness){
  * test of the cost function being correctly applied.
  */
 TEST(costmap, testInflationOrderCorrectness){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -277,7 +276,7 @@ TEST(costmap, testInflationOrderCorrectness){
  */
 TEST(costmap, testInflation){
 
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -341,7 +340,7 @@ TEST(costmap, testInflation){
  */
 TEST(costmap, testInflation2){
 
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -369,7 +368,7 @@ TEST(costmap, testInflation2){
  * Test inflation behavior, starting with an empty map
  */
 TEST(costmap, testInflation3){
-  tf::TransformListener tf;
+  tf2_ros::Buffer tf;
   LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
