@@ -51,7 +51,7 @@ class Layer
 public:
   Layer();
 
-  void initialize(LayeredCostmap* parent, std::string name, tf2_ros::Buffer *tf);
+  void initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf);
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -61,14 +61,16 @@ public:
    * For more details, see "Layered Costmaps for Context-Sensitive Navigation",
    * by Lu et. Al, IROS 2014.
    */
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                            double* max_x, double* max_y) {}
+  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
+      double * min_y,
+      double * max_x,
+      double * max_y) {}
 
   /**
    * @brief Actually update the underlying costmap, only within the bounds
    *        calculated during UpdateBounds().
    */
-  virtual void updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {}
+  virtual void updateCosts(Costmap2D & master_grid, int min_i, int min_j, int max_i, int max_j) {}
 
   /** @brief Stop publishers. */
   virtual void deactivate() {}
@@ -104,7 +106,7 @@ public:
   }
 
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
-  const std::vector<geometry_msgs::msg::Point>& getFootprint() const;
+  const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
   /** @brief LayeredCostmap calls this whenever the footprint there
    * changes (via LayeredCostmap::setFootprint()).  Override to be
@@ -118,11 +120,12 @@ protected:
    * tf_, name_, and layered_costmap_ will all be set already when this is called. */
   virtual void onInitialize() {}
 
-  LayeredCostmap* layered_costmap_;
+  LayeredCostmap * layered_costmap_;
   bool current_;
   bool enabled_;  ///< Currently this var is managed by subclasses. TODO: make this managed by this class and/or container class.
   std::string name_;
-  tf2_ros::Buffer *tf_;
+  tf2_ros::Buffer * tf_;
+
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;
 };

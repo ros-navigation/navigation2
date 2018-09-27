@@ -76,10 +76,11 @@ public:
     return global_frame_;
   }
 
-  void resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x, double origin_y,
-                 bool size_locked = false);
+  void resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
+      double origin_y,
+      bool size_locked = false);
 
-  void getUpdatedBounds(double& minx, double& miny, double& maxx, double& maxy)
+  void getUpdatedBounds(double & minx, double & miny, double & maxx, double & maxy)
   {
     minx = minx_;
     miny = miny_;
@@ -89,7 +90,7 @@ public:
 
   bool isCurrent();
 
-  Costmap2D* getCostmap()
+  Costmap2D * getCostmap()
   {
     return &costmap_;
   }
@@ -104,7 +105,7 @@ public:
     return costmap_.getDefaultValue() == costmap_2d::NO_INFORMATION;
   }
 
-  std::vector<std::shared_ptr<Layer> >* getPlugins()
+  std::vector<std::shared_ptr<Layer> > * getPlugins()
   {
     return &plugins_;
   }
@@ -119,7 +120,7 @@ public:
     return size_locked_;
   }
 
-  void getBounds(unsigned int* x0, unsigned int* xn, unsigned int* y0, unsigned int* yn)
+  void getBounds(unsigned int * x0, unsigned int * xn, unsigned int * y0, unsigned int * yn)
   {
     *x0 = bx0_;
     *xn = bxn_;
@@ -129,30 +130,30 @@ public:
 
   bool isInitialized()
   {
-      return initialized_;
+    return initialized_;
   }
 
   /** @brief Updates the stored footprint, updates the circumscribed
    * and inscribed radii, and calls onFootprintChanged() in all
    * layers. */
-  void setFootprint(const std::vector<geometry_msgs::msg::Point>& footprint_spec);
+  void setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec);
 
   /** @brief Returns the latest footprint stored with setFootprint(). */
-  const std::vector<geometry_msgs::msg::Point>& getFootprint() { return footprint_; }
+  const std::vector<geometry_msgs::msg::Point> & getFootprint() {return footprint_; }
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which just surrounds all points on the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getCircumscribedRadius() { return circumscribed_radius_; }
+  double getCircumscribedRadius() {return circumscribed_radius_; }
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which is just within all points and edges of the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getInscribedRadius() { return inscribed_radius_; }
+  double getInscribedRadius() {return inscribed_radius_; }
 
 private:
   Costmap2D costmap_;

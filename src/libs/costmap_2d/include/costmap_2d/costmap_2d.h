@@ -60,6 +60,7 @@ struct MapLocation
 class Costmap2D
 {
   friend class CostmapTester;  // Need this for gtest to work correctly
+
 public:
   /**
    * @brief  Constructor for a costmap
@@ -71,20 +72,20 @@ public:
    * @param  default_value Default Value
    */
   Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, double resolution,
-            double origin_x, double origin_y, unsigned char default_value = 0);
+      double origin_x, double origin_y, unsigned char default_value = 0);
 
   /**
    * @brief  Copy constructor for a costmap, creates a copy efficiently
    * @param map The costmap to copy
    */
-  Costmap2D(const Costmap2D& map);
+  Costmap2D(const Costmap2D & map);
 
   /**
    * @brief  Overloaded assignment operator
    * @param  map The costmap to copy
    * @return A reference to the map after the copy has finished
    */
-  Costmap2D& operator=(const Costmap2D& map);
+  Costmap2D & operator=(const Costmap2D & map);
 
   /**
    * @brief  Turn this costmap into a copy of a window of a costmap passed in
@@ -94,8 +95,9 @@ public:
    * @param win_size_x The x size of the window, in meters
    * @param win_size_y The y size of the window, in meters
    */
-  bool copyCostmapWindow(const Costmap2D& map, double win_origin_x, double win_origin_y, double win_size_x,
-                         double win_size_y);
+  bool copyCostmapWindow(const Costmap2D & map, double win_origin_x, double win_origin_y,
+      double win_size_x,
+      double win_size_y);
 
   /**
    * @brief  Default constructor
@@ -130,7 +132,7 @@ public:
    * @param  wx Will be set to the associated world x coordinate
    * @param  wy Will be set to the associated world y coordinate
    */
-  void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
+  void mapToWorld(unsigned int mx, unsigned int my, double & wx, double & wy) const;
 
   /**
    * @brief  Convert from world coordinates to map coordinates
@@ -140,7 +142,7 @@ public:
    * @param  my Will be set to the associated map y coordinate
    * @return True if the conversion was successful (legal bounds) false otherwise
    */
-  bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const;
 
   /**
    * @brief  Convert from world coordinates to map coordinates without checking for legal bounds
@@ -150,7 +152,7 @@ public:
    * @param  my Will be set to the associated map y coordinate
    * @note   The returned map coordinates <b>are not guaranteed to lie within the map.</b>
    */
-  void worldToMapNoBounds(double wx, double wy, int& mx, int& my) const;
+  void worldToMapNoBounds(double wx, double wy, int & mx, int & my) const;
 
   /**
    * @brief  Convert from world coordinates to map coordinates, constraining results to legal bounds.
@@ -160,7 +162,7 @@ public:
    * @param  my Will be set to the associated map y coordinate
    * @note   The returned map coordinates are guaranteed to lie within the map.
    */
-  void worldToMapEnforceBounds(double wx, double wy, int& mx, int& my) const;
+  void worldToMapEnforceBounds(double wx, double wy, int & mx, int & my) const;
 
   /**
    * @brief  Given two map coordinates... compute the associated index
@@ -179,7 +181,7 @@ public:
    * @param  mx Will be set to the x coordinate
    * @param  my Will be set to the y coordinate
    */
-  inline void indexToCells(unsigned int index, unsigned int& mx, unsigned int& my) const
+  inline void indexToCells(unsigned int index, unsigned int & mx, unsigned int & my) const
   {
     my = index / size_x_;
     mx = index - (my * size_x_);
@@ -189,7 +191,7 @@ public:
    * @brief  Will return a pointer to the underlying unsigned char array used as the costmap
    * @return A pointer to the underlying unsigned char array storing cost values
    */
-  unsigned char* getCharMap() const;
+  unsigned char * getCharMap() const;
 
   /**
    * @brief  Accessor for the x size of the costmap in cells
@@ -249,21 +251,24 @@ public:
    * @param cost_value The value to set costs to
    * @return True if the polygon was filled... false if it could not be filled
    */
-  bool setConvexPolygonCost(const std::vector<geometry_msgs::msg::Point>& polygon, unsigned char cost_value);
+  bool setConvexPolygonCost(const std::vector<geometry_msgs::msg::Point> & polygon,
+      unsigned char cost_value);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
    * @param polygon The polygon in map coordinates to rasterize
    * @param polygon_cells Will be set to the cells contained in the outline of the polygon
    */
-  void polygonOutlineCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells);
+  void polygonOutlineCells(const std::vector<MapLocation> & polygon,
+      std::vector<MapLocation> & polygon_cells);
 
   /**
    * @brief  Get the map cells that fill a convex polygon
    * @param polygon The polygon in map coordinates to rasterize
    * @param polygon_cells Will be set to the cells that fill the polygon
    */
-  void convexFillCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells);
+  void convexFillCells(const std::vector<MapLocation> & polygon,
+      std::vector<MapLocation> & polygon_cells);
 
   /**
    * @brief  Move the origin of the costmap to a new location.... keeping data when it can
@@ -279,7 +284,7 @@ public:
   bool saveMap(std::string file_name);
 
   void resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
-                 double origin_y);
+      double origin_y);
 
   void resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn);
 
@@ -292,7 +297,7 @@ public:
 
   // Provide a typedef to ease future code maintenance
   typedef boost::recursive_mutex mutex_t;
-  mutex_t* getMutex()
+  mutex_t * getMutex()
   {
     return access_;
   }
@@ -312,23 +317,23 @@ protected:
    * @param region_size_y The y size of the region to copy
    */
   template<typename data_type>
-    void copyMapRegion(data_type* source_map, unsigned int sm_lower_left_x, unsigned int sm_lower_left_y,
-                       unsigned int sm_size_x, data_type* dest_map, unsigned int dm_lower_left_x,
-                       unsigned int dm_lower_left_y, unsigned int dm_size_x, unsigned int region_size_x,
-                       unsigned int region_size_y)
-    {
-      // we'll first need to compute the starting points for each map
-      data_type* sm_index = source_map + (sm_lower_left_y * sm_size_x + sm_lower_left_x);
-      data_type* dm_index = dest_map + (dm_lower_left_y * dm_size_x + dm_lower_left_x);
+  void copyMapRegion(data_type * source_map, unsigned int sm_lower_left_x,
+      unsigned int sm_lower_left_y,
+      unsigned int sm_size_x, data_type * dest_map, unsigned int dm_lower_left_x,
+      unsigned int dm_lower_left_y, unsigned int dm_size_x, unsigned int region_size_x,
+      unsigned int region_size_y)
+  {
+    // we'll first need to compute the starting points for each map
+    data_type * sm_index = source_map + (sm_lower_left_y * sm_size_x + sm_lower_left_x);
+    data_type * dm_index = dest_map + (dm_lower_left_y * dm_size_x + dm_lower_left_x);
 
-      // now, we'll copy the source map into the destination map
-      for (unsigned int i = 0; i < region_size_y; ++i)
-      {
-        memcpy(dm_index, sm_index, region_size_x * sizeof(data_type));
-        sm_index += sm_size_x;
-        dm_index += dm_size_x;
-      }
+    // now, we'll copy the source map into the destination map
+    for (unsigned int i = 0; i < region_size_y; ++i) {
+      memcpy(dm_index, sm_index, region_size_x * sizeof(data_type));
+      sm_index += sm_size_x;
+      dm_index += dm_size_x;
     }
+  }
 
   /**
    * @brief  Deletes the costmap, static_map, and markers data structures
@@ -357,96 +362,101 @@ protected:
    * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
    */
   template<class ActionType>
-    inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1,
-                             unsigned int max_length = UINT_MAX)
-    {
-      int dx = x1 - x0;
-      int dy = y1 - y0;
+  inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1,
+      unsigned int y1,
+      unsigned int max_length = UINT_MAX)
+  {
+    int dx = x1 - x0;
+    int dy = y1 - y0;
 
-      unsigned int abs_dx = abs(dx);
-      unsigned int abs_dy = abs(dy);
+    unsigned int abs_dx = abs(dx);
+    unsigned int abs_dy = abs(dy);
 
-      int offset_dx = sign(dx);
-      int offset_dy = sign(dy) * size_x_;
+    int offset_dx = sign(dx);
+    int offset_dy = sign(dy) * size_x_;
 
-      unsigned int offset = y0 * size_x_ + x0;
+    unsigned int offset = y0 * size_x_ + x0;
 
-      // we need to chose how much to scale our dominant dimension, based on the maximum length of the line
-      double dist = hypot(dx, dy);
-      double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
+    // we need to chose how much to scale our dominant dimension, based on the maximum length of the line
+    double dist = hypot(dx, dy);
+    double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
 
-      // if x is dominant
-      if (abs_dx >= abs_dy)
-      {
-        int error_y = abs_dx / 2;
-        bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset, (unsigned int)(scale * abs_dx));
-        return;
-      }
-
-      // otherwise y is dominant
-      int error_x = abs_dy / 2;
-      bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, (unsigned int)(scale * abs_dy));
+    // if x is dominant
+    if (abs_dx >= abs_dy) {
+      int error_y = abs_dx / 2;
+      bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
+          (unsigned int)(scale * abs_dx));
+      return;
     }
+
+    // otherwise y is dominant
+    int error_x = abs_dy / 2;
+    bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
+        (unsigned int)(scale * abs_dy));
+  }
 
 private:
   /**
    * @brief  A 2D implementation of Bresenham's raytracing algorithm... applies an action at each step
    */
   template<class ActionType>
-    inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a,
-                            int offset_b, unsigned int offset, unsigned int max_length)
-    {
-      unsigned int end = std::min(max_length, abs_da);
-      for (unsigned int i = 0; i < end; ++i)
-      {
-        at(offset);
-        offset += offset_a;
-        error_b += abs_db;
-        if ((unsigned int)error_b >= abs_da)
-        {
-          offset += offset_b;
-          error_b -= abs_da;
-        }
-      }
+  inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b,
+      int offset_a,
+      int offset_b, unsigned int offset,
+      unsigned int max_length)
+  {
+    unsigned int end = std::min(max_length, abs_da);
+    for (unsigned int i = 0; i < end; ++i) {
       at(offset);
+      offset += offset_a;
+      error_b += abs_db;
+      if ((unsigned int)error_b >= abs_da) {
+        offset += offset_b;
+        error_b -= abs_da;
+      }
     }
+    at(offset);
+  }
 
   inline int sign(int x)
   {
     return x > 0 ? 1.0 : -1.0;
   }
 
-  mutex_t* access_;
+  mutex_t * access_;
+
 protected:
   unsigned int size_x_;
   unsigned int size_y_;
   double resolution_;
   double origin_x_;
   double origin_y_;
-  unsigned char* costmap_;
+  unsigned char * costmap_;
   unsigned char default_value_;
 
   class MarkCell
   {
-  public:
-    MarkCell(unsigned char* costmap, unsigned char value) :
-        costmap_(costmap), value_(value)
+public:
+    MarkCell(unsigned char * costmap, unsigned char value)
+      : costmap_(costmap), value_(value)
     {
     }
     inline void operator()(unsigned int offset)
     {
       costmap_[offset] = value_;
     }
-  private:
-    unsigned char* costmap_;
+
+private:
+    unsigned char * costmap_;
     unsigned char value_;
   };
 
   class PolygonOutlineCells
   {
-  public:
-    PolygonOutlineCells(const Costmap2D& costmap, const unsigned char* char_map, std::vector<MapLocation>& cells) :
-        costmap_(costmap), char_map_(char_map), cells_(cells)
+public:
+    PolygonOutlineCells(const Costmap2D & costmap, const unsigned char * char_map,
+        std::vector<MapLocation> & cells)
+      : costmap_(costmap), char_map_(char_map), cells_(cells)
     {
     }
 
@@ -458,10 +468,10 @@ protected:
       cells_.push_back(loc);
     }
 
-  private:
-    const Costmap2D& costmap_;
-    const unsigned char* char_map_;
-    std::vector<MapLocation>& cells_;
+private:
+    const Costmap2D & costmap_;
+    const unsigned char * char_map_;
+    std::vector<MapLocation> & cells_;
   };
 };
 }  // namespace costmap_2d

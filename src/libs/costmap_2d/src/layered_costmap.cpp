@@ -47,40 +47,42 @@ using std::vector;
 namespace costmap_2d
 {
 
-LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bool track_unknown) :
-    costmap_(),
-    global_frame_(global_frame),
-    rolling_window_(rolling_window),
-    current_(false),
-    minx_(0.0),
-    miny_(0.0),
-    maxx_(0.0),
-    maxy_(0.0),
-    bx0_(0),
-    bxn_(0),
-    by0_(0),
-    byn_(0),
-    initialized_(false),
-    size_locked_(false),
-    circumscribed_radius_(1.0),
-    inscribed_radius_(0.1)
+LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bool track_unknown)
+  : costmap_(),
+  global_frame_(global_frame),
+  rolling_window_(rolling_window),
+  current_(false),
+  minx_(0.0),
+  miny_(0.0),
+  maxx_(0.0),
+  maxy_(0.0),
+  bx0_(0),
+  bxn_(0),
+  by0_(0),
+  byn_(0),
+  initialized_(false),
+  size_locked_(false),
+  circumscribed_radius_(1.0),
+  inscribed_radius_(0.1)
 {
-  if (track_unknown)
+  if (track_unknown) {
     costmap_.setDefaultValue(255);
-  else
+  } else {
     costmap_.setDefaultValue(0);
+  }
 }
 
 LayeredCostmap::~LayeredCostmap()
 {
-  while (plugins_.size() > 0)
-  {
+  while (plugins_.size() > 0) {
     plugins_.pop_back();
   }
 }
 
-void LayeredCostmap::resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
-                               double origin_y, bool size_locked)
+void LayeredCostmap::resizeMap(unsigned int size_x, unsigned int size_y, double resolution,
+    double origin_x,
+    double origin_y,
+    bool size_locked)
 {
   boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
   size_locked_ = size_locked;
@@ -99,34 +101,34 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
 
   // if we're using a rolling buffer costmap... we need to update the origin using the robot's position
-  if (rolling_window_)
-  {
+  if (rolling_window_) {
     double new_origin_x = robot_x - costmap_.getSizeInMetersX() / 2;
     double new_origin_y = robot_y - costmap_.getSizeInMetersY() / 2;
     costmap_.updateOrigin(new_origin_x, new_origin_y);
   }
 
-  if (plugins_.size() == 0)
+  if (plugins_.size() == 0) {
     return;
+  }
 
   minx_ = miny_ = 1e30;
   maxx_ = maxy_ = -1e30;
 
   for (vector<std::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
-       ++plugin)
+      ++plugin)
   {
     double prev_minx = minx_;
     double prev_miny = miny_;
     double prev_maxx = maxx_;
     double prev_maxy = maxy_;
     (*plugin)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
-    if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy)
-    {
-      RCLCPP_WARN(rclcpp::get_logger("costmap_2d"),"Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
-        "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
-        prev_minx, prev_miny, prev_maxx , prev_maxy,
-        minx_, miny_, maxx_ , maxy_,
-        (*plugin)->getName().c_str());
+    if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
+      RCLCPP_WARN(rclcpp::get_logger(
+            "costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
+          "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
+          prev_minx, prev_miny, prev_maxx, prev_maxy,
+          minx_, miny_, maxx_, maxy_,
+          (*plugin)->getName().c_str());
     }
   }
 
@@ -139,14 +141,16 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   y0 = std::max(0, y0);
   yn = std::min(int(costmap_.getSizeInCellsY()), yn + 1);
 
-  RCLCPP_DEBUG(rclcpp::get_logger("costmap_2d"),"Updating area x: [%d, %d] y: [%d, %d]", x0, xn, y0, yn);
+  RCLCPP_DEBUG(rclcpp::get_logger(
+        "costmap_2d"), "Updating area x: [%d, %d] y: [%d, %d]", x0, xn, y0, yn);
 
-  if (xn < x0 || yn < y0)
+  if (xn < x0 || yn < y0) {
     return;
+  }
 
   costmap_.resetMap(x0, y0, xn, yn);
   for (vector<std::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
-       ++plugin)
+      ++plugin)
   {
     (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
   }
@@ -170,7 +174,7 @@ bool LayeredCostmap::isCurrent()
   return current_;
 }
 
-void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point>& footprint_spec)
+void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec)
 {
   footprint_ = footprint_spec;
   costmap_2d::calculateMinAndMaxDistances(footprint_spec, inscribed_radius_, circumscribed_radius_);

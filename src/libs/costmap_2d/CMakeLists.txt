@@ -24,12 +24,12 @@ find_package(visualization_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_sensor_msgs REQUIRED)
 find_package(xmlrpcpp REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 
 #	TODO(bpwilcox): port remaining packages
+#find_package(tf2_sensor_msgs REQUIRED)
 #find_package(dynamic_reconfigure REQUIRED) 
 #find_package(message_filters REQUIRED)
 #find_package(voxel_grid REQUIRED)

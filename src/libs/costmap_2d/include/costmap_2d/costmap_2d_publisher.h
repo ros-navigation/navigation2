@@ -56,8 +56,10 @@ public:
   /**
    * @brief  Constructor for the Costmap2DPublisher
    */
-  Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D* costmap, std::string global_frame,
-                     std::string topic_name, bool always_send_full_costmap = false);
+  Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+      std::string global_frame,
+      std::string topic_name,
+      bool always_send_full_costmap = false);
 
   /**
    * @brief  Destructor
@@ -95,7 +97,7 @@ private:
   //void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
   rclcpp::Node::SharedPtr node;
-  Costmap2D* costmap_;
+  Costmap2D * costmap_;
   std::string global_frame_;
   unsigned int x0_, xn_, y0_, yn_;
   double saved_origin_x_, saved_origin_y_;
@@ -105,7 +107,7 @@ private:
   rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr costmap_update_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
-  static char* cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
+  static char * cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
 };
 }  // namespace costmap_2d
 #endif // COSTMAP_2D_COSTMAP_2D_PUBLISHER_H
