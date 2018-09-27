@@ -61,8 +61,8 @@ namespace costmap_2d
 class VoxelLayer : public ObstacleLayer
 {
 public:
-  VoxelLayer() :
-      voxel_grid_(0, 0, 0)
+  VoxelLayer()
+    : voxel_grid_(0, 0, 0)
   {
     costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D.
   }
@@ -70,8 +70,10 @@ public:
   virtual ~VoxelLayer();
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                            double* max_x, double* max_y);
+  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
+      double * min_y,
+      double * max_x,
+      double * max_y);
 
   void updateOrigin(double new_origin_x, double new_origin_y);
   bool isDiscretized()
@@ -81,19 +83,20 @@ public:
   virtual void matchSize();
   virtual void reset();
 
-
 protected:
-  virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
+  virtual void setupDynamicReconfigure(ros::NodeHandle & nh);
 
   virtual void resetMaps();
 
 private:
-  void reconfigureCB(costmap_2d::VoxelPluginConfig &config, uint32_t level);
+  void reconfigureCB(costmap_2d::VoxelPluginConfig & config, uint32_t level);
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  virtual void raytraceFreespace(const costmap_2d::Observation& clearing_observation, double* min_x, double* min_y,
-                                 double* max_x, double* max_y);
+  virtual void raytraceFreespace(const costmap_2d::Observation & clearing_observation,
+      double * min_x, double * min_y,
+      double * max_x,
+      double * max_y);
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *voxel_dsrv_;
+  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> * voxel_dsrv_;
 
   bool publish_voxel_;
   ros::Publisher voxel_pub_;
@@ -103,35 +106,43 @@ private:
   ros::Publisher clearing_endpoints_pub_;
   sensor_msgs::PointCloud clearing_endpoints_;
 
-  inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
+  inline bool worldToMap3DFloat(double wx, double wy, double wz, double & mx, double & my,
+      double & mz)
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
+    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
+    }
     mx = ((wx - origin_x_) / resolution_);
     my = ((wy - origin_y_) / resolution_);
     mz = ((wz - origin_z_) / z_resolution_);
-    if (mx < size_x_ && my < size_y_ && mz < size_z_)
+    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
+    }
 
     return false;
   }
 
-  inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz)
+  inline bool worldToMap3D(double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
+      unsigned int & mz)
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
+    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
+    }
 
     mx = (int)((wx - origin_x_) / resolution_);
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_)
+    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
+    }
 
     return false;
   }
 
-  inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz)
+  inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double & wx,
+      double & wy,
+      double & wz)
   {
     // returns the center point of the cell
     wx = origin_x_ + (mx + 0.5) * resolution_;

@@ -72,10 +72,12 @@ public:
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
-  ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate,
-                    double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-                    double raytrace_range, tf2_ros::Buffer& tf2_buffer, std::string global_frame,
-                    std::string sensor_frame, double tf_tolerance);
+  ObservationBuffer(std::string topic_name, double observation_keep_time,
+      double expected_update_rate,
+      double min_obstacle_height, double max_obstacle_height, double obstacle_range,
+      double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
+      std::string sensor_frame,
+      double tf_tolerance);
 
   /**
    * @brief  Destructor... cleans up
@@ -96,13 +98,13 @@ public:
    * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
    * @param  cloud The cloud to be buffered
    */
-  void bufferCloud(const sensor_msgs::PointCloud2& cloud);
+  void bufferCloud(const sensor_msgs::PointCloud2 & cloud);
 
   /**
    * @brief  Pushes copies of all current observations onto the end of the vector passed in
    * @param  observations The vector to be filled
    */
-  void getObservations(std::vector<Observation>& observations);
+  void getObservations(std::vector<Observation> & observations);
 
   /**
    * @brief  Check if the observation buffer is being update at its expected rate
@@ -137,7 +139,7 @@ private:
    */
   void purgeStaleObservations();
 
-  tf2_ros::Buffer& tf2_buffer_;
+  tf2_ros::Buffer & tf2_buffer_;
   const ros::Duration observation_keep_time_;
   const ros::Duration expected_update_rate_;
   ros::Time last_updated_;

@@ -64,8 +64,8 @@ public:
    * @param  sy The y coordinate of the closest obstacle cell in the costmap
    * @return
    */
-  CellData(double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) :
-      index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
+  CellData(double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy)
+    : index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
   {
   }
   unsigned int index_;
@@ -87,16 +87,19 @@ public:
   }
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                            double* max_x, double* max_y);
-  virtual void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
+  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
+      double * min_y,
+      double * max_x,
+      double * max_y);
+  virtual void updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+      int max_j);
   virtual bool isDiscretized()
   {
     return true;
   }
   virtual void matchSize();
 
-  virtual void reset() { onInitialize(); }
+  virtual void reset() {onInitialize(); }
 
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
@@ -104,12 +107,11 @@ public:
   inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
-    if (distance == 0)
+    if (distance == 0) {
       cost = LETHAL_OBSTACLE;
-    else if (distance * resolution_ <= inscribed_radius_)
+    } else if (distance * resolution_ <= inscribed_radius_) {
       cost = INSCRIBED_INFLATED_OBSTACLE;
-    else
-    {
+    } else {
       // make sure cost falls off by Euclidean distance
       double euclidean_distance = distance * resolution_;
       double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
@@ -127,7 +129,7 @@ public:
 
 protected:
   virtual void onFootprintChanged();
-  boost::recursive_mutex* inflation_access_;
+  boost::recursive_mutex * inflation_access_;
 
 private:
   /**
@@ -162,7 +164,7 @@ private:
 
   void computeCaches();
   void deleteKernels();
-  void inflate_area(int min_i, int min_j, int max_i, int max_j, unsigned char* master_grid);
+  void inflate_area(int min_i, int min_j, int max_i, int max_j, unsigned char * master_grid);
 
   unsigned int cellDistance(double world_dist)
   {
@@ -170,7 +172,7 @@ private:
   }
 
   inline void enqueue(unsigned int index, unsigned int mx, unsigned int my,
-                      unsigned int src_x, unsigned int src_y);
+      unsigned int src_x, unsigned int src_y);
 
   double inflation_radius_, inscribed_radius_, weight_;
   bool inflate_unknown_;
@@ -180,13 +182,13 @@ private:
 
   double resolution_;
 
-  bool* seen_;
+  bool * seen_;
   int seen_size_;
 
-  unsigned char** cached_costs_;
-  double** cached_distances_;
+  unsigned char ** cached_costs_;
+  double ** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
-    
+
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
   //dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *dsrv_;
   //void reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level);

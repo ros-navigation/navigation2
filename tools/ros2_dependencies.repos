@@ -15,3 +15,7 @@ repositories:
     type: git
     url: https://github.com/ros2/launch.git
     version: 4ec284ad96534a044e69213db9a335057945d1b9
+  xmlrpcpp:
+    type: git
+    url: https://github.com/bpwilcox/xmlrpcpp.git
+    version: master

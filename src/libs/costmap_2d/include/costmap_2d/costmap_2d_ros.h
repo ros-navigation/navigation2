@@ -48,7 +48,7 @@
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
 //#include <dynamic_reconfigure/server.h>
 #include <pluginlib/class_loader.hpp>
-#include <XmlRpcValue.h>
+#include <xmlrpcpp/XmlRpcValue.h>
 #include <tf2/transform_datatypes.h>
 #include "tf2/utils.h"
 #include "tf2_ros/buffer.h"
@@ -60,12 +60,12 @@
 class SuperValue : public XmlRpc::XmlRpcValue
 {
 public:
-  void setStruct(XmlRpc::XmlRpcValue::ValueStruct* a)
+  void setStruct(XmlRpc::XmlRpcValue::ValueStruct * a)
   {
     _type = TypeStruct;
     _value.asStruct = new XmlRpc::XmlRpcValue::ValueStruct(*a);
   }
-  void setArray(XmlRpc::XmlRpcValue::ValueArray* a)
+  void setArray(XmlRpc::XmlRpcValue::ValueArray * a)
   {
     _type = TypeArray;
     _value.asArray = new std::vector<XmlRpc::XmlRpcValue>(*a);
@@ -86,7 +86,7 @@ public:
    * @param name The name for this costmap
    * @param tf A reference to a TransformListener
    */
-  Costmap2DROS(const std::string &name, tf2_ros::Buffer& tf);
+  Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf);
   ~Costmap2DROS();
 
   /**
@@ -120,58 +120,58 @@ public:
 
   /** @brief Same as getLayeredCostmap()->isCurrent(). */
   bool isCurrent()
-    {
-      return layered_costmap_->isCurrent();
-    }
+  {
+    return layered_costmap_->isCurrent();
+  }
 
   /**
    * @brief Get the pose of the robot in the global frame of the costmap
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped& global_pose) const;
+  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const;
 
   /** @brief Returns costmap name */
   std::string getName() const
-    {
-      return name_;
-    }
+  {
+    return name_;
+  }
 
   /** @brief Returns the delay in transform (tf) data that is tolerable in seconds */
   double getTransformTolerance() const
-    {
-      return transform_tolerance_;
-    }
+  {
+    return transform_tolerance_;
+  }
 
   /** @brief Return a pointer to the "master" costmap which receives updates from all the layers.
    *
    * Same as calling getLayeredCostmap()->getCostmap(). */
-  Costmap2D* getCostmap()
-    {
-      return layered_costmap_->getCostmap();
-    }
+  Costmap2D * getCostmap()
+  {
+    return layered_costmap_->getCostmap();
+  }
 
   /**
    * @brief  Returns the global frame of the costmap
    * @return The global frame of the costmap
    */
   std::string getGlobalFrameID()
-    {
-      return global_frame_;
-    }
+  {
+    return global_frame_;
+  }
 
   /**
    * @brief  Returns the local frame of the costmap
    * @return The local frame of the costmap
    */
   std::string getBaseFrameID()
-    {
-      return robot_base_frame_;
-    }
-  LayeredCostmap* getLayeredCostmap()
-    {
-      return layered_costmap_;
-    }
+  {
+    return robot_base_frame_;
+  }
+  LayeredCostmap * getLayeredCostmap()
+  {
+    return layered_costmap_;
+  }
 
   /** @brief Returns the current padded footprint as a geometry_msgs::msg::Polygon. */
   geometry_msgs::msg::Polygon getRobotFootprintPolygon()
@@ -208,7 +208,7 @@ public:
    * @brief  Build the oriented footprint of the robot at the robot's current pose
    * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
    */
-  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point>& oriented_footprint) const;
+  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & oriented_footprint) const;
 
   /** @brief Set the footprint of the robot to be the given set of
    * points, padded by footprint_padding.
@@ -220,7 +220,7 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
-  void setUnpaddedRobotFootprint(const std::vector<geometry_msgs::msg::Point>& points);
+  void setUnpaddedRobotFootprint(const std::vector<geometry_msgs::msg::Point> & points);
 
   /** @brief Set the footprint of the robot to be the given polygon,
    * padded by footprint_padding.
@@ -235,9 +235,9 @@ public:
   void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
 
 protected:
-  LayeredCostmap* layered_costmap_;
+  LayeredCostmap * layered_costmap_;
   std::string name_;
-  tf2_ros::Buffer& tf_;  ///< @brief Used for transforming point clouds
+  tf2_ros::Buffer & tf_;  ///< @brief Used for transforming point clouds
   std::string global_frame_;  ///< @brief The global frame for the costmap
   std::string robot_base_frame_;  ///< @brief The frame_id of the robot base
   double transform_tolerance_;  ///< timeout before transform errors
@@ -259,14 +259,14 @@ private:
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_;
   bool stop_updates_, initialized_, stopped_, robot_stopped_;
-  boost::thread* map_update_thread_;  ///< @brief A thread for updating the map
+  boost::thread * map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Time last_publish_;
   rclcpp::Duration publish_cycle_;
   pluginlib::ClassLoader<Layer> plugin_loader_;
   geometry_msgs::msg::PoseStamped old_pose_;
-  Costmap2DPublisher* publisher_;
-  
+  Costmap2DPublisher * publisher_;
+
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
   //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
   //costmap_2d::Costmap2DConfig old_config_;

@@ -42,12 +42,14 @@
 namespace costmap_2d
 {
 
-char* Costmap2DPublisher::cost_translation_table_ = NULL;
+char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
-Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D* costmap, std::string global_frame,
-                                       std::string topic_name, bool always_send_full_costmap) :
-    node(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
-    always_send_full_costmap_(always_send_full_costmap)
+Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+    std::string global_frame,
+    std::string topic_name,
+    bool always_send_full_costmap)
+  : node(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
+  always_send_full_costmap_(always_send_full_costmap)
 {
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
@@ -55,11 +57,12 @@ Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap
   custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
-  costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name, custom_qos_profile);
-  costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(topic_name + "_updates", custom_qos_profile);
+  costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
+      custom_qos_profile);
+  costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
+      topic_name + "_updates", custom_qos_profile);
 
-  if (cost_translation_table_ == NULL)
-  {
+  if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];
 
     // special values:
@@ -70,9 +73,8 @@ Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap
 
     // regular cost values scale the range 1 to 252 (inclusive) to fit
     // into 1 to 98 (inclusive).
-    for (int i = 1; i < 253; i++)
-    {
-      cost_translation_table_[ i ] = char(1 + (97 * (i - 1)) / 251);
+    for (int i = 1; i < 253; i++) {
+      cost_translation_table_[i] = char(1 + (97 * (i - 1)) / 251);
     }
   }
 
@@ -81,10 +83,10 @@ Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap
   y0_ = costmap_->getSizeInCellsY();
 }
 
-Costmap2DPublisher::~Costmap2DPublisher(){}
+Costmap2DPublisher::~Costmap2DPublisher() {}
 
 // TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublishr
-/* 
+/*
 void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher& pub)
 {
   prepareGrid();
@@ -116,17 +118,16 @@ void Costmap2DPublisher::prepareGrid()
 
   grid_.data.resize(grid_.info.width * grid_.info.height);
 
-  unsigned char* data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < grid_.data.size(); i++)
-  {
-    grid_.data[i] = cost_translation_table_[ data[ i ]];
+  unsigned char * data = costmap_->getCharMap();
+  for (unsigned int i = 0; i < grid_.data.size(); i++) {
+    grid_.data[i] = cost_translation_table_[data[i]];
   }
 }
 
 void Costmap2DPublisher::publishCostmap()
 {
   // TODO(bpwilcox): port getNumSubscribers for publisher
-  /* 
+  /*
   if (costmap_pub_->getNumSubscribers() == 0)
   {
     // No subscribers, so why do any work?
@@ -143,9 +144,7 @@ void Costmap2DPublisher::publishCostmap()
   {
     prepareGrid();
     costmap_pub_->publish(grid_);
-  }
-  else if (x0_ < xn_)
-  {
+  } else if (x0_ < xn_) {
     boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     // Publish Just an Update
     map_msgs::msg::OccupancyGridUpdate update;
@@ -158,12 +157,10 @@ void Costmap2DPublisher::publishCostmap()
     update.data.resize(update.width * update.height);
 
     unsigned int i = 0;
-    for (unsigned int y = y0_; y < yn_; y++)
-    {
-      for (unsigned int x = x0_; x < xn_; x++)
-      {
+    for (unsigned int y = y0_; y < yn_; y++) {
+      for (unsigned int x = x0_; x < xn_; x++) {
         unsigned char cost = costmap_->getCost(x, y);
-        update.data[i++] = cost_translation_table_[ cost ];
+        update.data[i++] = cost_translation_table_[cost];
       }
     }
     costmap_update_pub_->publish(update);

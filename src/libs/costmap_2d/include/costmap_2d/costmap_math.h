@@ -62,8 +62,9 @@ inline double distance(double x0, double y0, double x1, double y1)
 
 double distanceToLine(double pX, double pY, double x0, double y0, double x1, double y1);
 
-bool intersects(std::vector<geometry_msgs::msg::Point>& polygon, float testx, float testy);
+bool intersects(std::vector<geometry_msgs::msg::Point> & polygon, float testx, float testy);
 
-bool intersects(std::vector<geometry_msgs::msg::Point>& polygon1, std::vector<geometry_msgs::msg::Point>& polygon2);
+bool intersects(std::vector<geometry_msgs::msg::Point> & polygon1,
+  std::vector<geometry_msgs::msg::Point> & polygon2);
 
 #endif  // COSTMAP_2D_COSTMAP_MATH_H_
