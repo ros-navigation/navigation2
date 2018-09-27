@@ -38,7 +38,7 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_planning_msgs
-) 
+)
 
 ament_target_dependencies(${executable_name}
   ${dependencies}

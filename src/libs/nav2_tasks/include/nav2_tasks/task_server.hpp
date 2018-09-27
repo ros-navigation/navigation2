@@ -34,7 +34,7 @@ template<class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
 {
 public:
-  TaskServer(const std::string & name, bool autoStart = true)
+  explicit TaskServer(const std::string & name, bool autoStart = true)
   : Node(name), workerThread_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();

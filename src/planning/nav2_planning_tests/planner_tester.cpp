@@ -48,7 +48,6 @@ PlannerTester::PlannerTester()
 
   // For visualization, we'll publish the map and the path endpoints
   map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-  endpoints_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("endpoints", 1);
 
   // We start with a 10x10 grid with no obstacles
   loadSimpleCostmap(TestCostmap::open_space);
@@ -302,7 +301,6 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       while (!point_is_free) {
         x = distribution_x(generator);
         y = distribution_y(generator);
-        // publishPoint(x, y, 0);
         point_is_free = costmap_->isFree(x, y);
       }
       return std::make_pair(x, y);
@@ -333,8 +331,6 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
     //               Current Dijkstra planner will sometimes produce paths that cut corners
     //               i.e. some points are around the corner are actually inside the obstacle
     bool pathIsCollisionFree = plannerTest(endpoints, path);
-
-    publishEndpoints(*endpoints, test_num);
 
     if (!pathIsCollisionFree) {
       RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
@@ -428,122 +424,6 @@ bool PlannerTester::sendCancel()
 
   // TODO(orduno)
   return false;
-}
-
-void PlannerTester::publishEndpoints(
-  const nav2_tasks::ComputePathToPoseCommand & endpoints, const int index)
-{
-  visualization_msgs::msg::Marker marker;
-
-  builtin_interfaces::msg::Time time;
-  time.sec = 0;
-  time.nanosec = 0;
-  marker.header.stamp = time;
-  marker.header.frame_id = "map";
-
-  // Set the namespace and id for this marker.  This serves to create a unique ID
-  // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "endpoints";
-  marker.id = index;
-
-  marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-
-  // Set the marker action.
-  marker.action = visualization_msgs::msg::Marker::ADD;
-
-  // Set the pose of the marker.
-  // This is a full 6DOF pose relative to the frame/time specified in the header
-  geometry_msgs::msg::Pose pose;
-  pose.orientation.w = 1.0;
-
-  marker.pose.orientation = pose.orientation;
-
-  // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 3.0;
-  marker.scale.y = 3.0;
-  marker.scale.z = 3.0;
-
-  builtin_interfaces::msg::Duration duration;
-  duration.sec = 0;
-  duration.nanosec = 0;
-
-  // 0 indicates the object should last forever
-  marker.lifetime = duration;
-
-  marker.frame_locked = false;
-
-  marker.points.resize(2);
-  marker.points[0] = endpoints.start.position;
-  marker.points[1] = endpoints.goal.position;
-
-  // Set the color -- be sure to set alpha to something non-zero!
-  std_msgs::msg::ColorRGBA start_color;
-  start_color.r = 0.0;
-  start_color.g = 0.0;
-  start_color.b = 1.0;
-  start_color.a = 1.0;
-  std_msgs::msg::ColorRGBA goal_color;
-  goal_color.r = 0.0;
-  goal_color.g = 1.0;
-  goal_color.b = 0.0;
-  goal_color.a = 1.0;
-
-  marker.colors.resize(2);
-  marker.colors[0] = start_color;
-  marker.colors[1] = goal_color;
-
-  endpoints_publisher_->publish(marker);
-}
-
-void PlannerTester::publishPoint(const int x, const int y, const int index)
-{
-  visualization_msgs::msg::Marker marker;
-
-  builtin_interfaces::msg::Time time;
-  time.sec = 0;
-  time.nanosec = 0;
-  marker.header.stamp = time;
-  marker.header.frame_id = "map";
-
-  // Set the namespace and id for this marker.  This serves to create a unique ID
-  // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "endpoints";
-  marker.id = index;
-
-  marker.type = visualization_msgs::msg::Marker::SPHERE;
-
-  // Set the marker action.
-  marker.action = visualization_msgs::msg::Marker::ADD;
-
-  // Set the pose of the marker.
-  // This is a full 6DOF pose relative to the frame/time specified in the header
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = x;
-  pose.position.y = y;
-  pose.orientation.w = 1.0;
-
-  marker.pose = pose;
-
-  // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 3.0;
-  marker.scale.y = 3.0;
-  marker.scale.z = 3.0;
-
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
-  marker.color.a = 1.0;
-
-  builtin_interfaces::msg::Duration duration;
-  duration.sec = 0;
-  duration.nanosec = 0;
-
-  // 0 indicates the object should last forever
-  marker.lifetime = duration;
-
-  marker.frame_locked = false;
-
-  endpoints_publisher_->publish(marker);
 }
 
 }  // namespace nav2_util

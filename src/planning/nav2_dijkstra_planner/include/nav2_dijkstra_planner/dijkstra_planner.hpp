@@ -96,7 +96,8 @@ private:
   void printCostmap(const nav2_libs_msgs::msg::Costmap & costmap);
 
   // Publish a path for visualization purposes
-  void publishPlan(const nav2_planning_msgs::msg::Path path);
+  void publishPlan(const nav2_planning_msgs::msg::Path & path);
+  void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints);
 
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;

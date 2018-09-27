@@ -65,7 +65,7 @@ DijkstraPlanner::DijkstraPlanner()
   // Create publishers for visualization of the path and endpoints
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
-    "plan_marker", 1);
+    "endpoints", 1);
 
   // Start listening for incoming ComputePathToPose task requests
   startWorkerThread();
@@ -112,6 +112,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "DijkstraPlanner::execute: publishing the resulting path");
     publishPlan(result);
+    publishEndpoints(command);
 
     // TODO(orduno): Enable potential visualization
 
@@ -477,12 +478,10 @@ DijkstraPlanner::printCostmap(const nav2_libs_msgs::msg::Costmap & costmap)
 }
 
 void
-DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path path)
+DijkstraPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints)
 {
-  // Need to translate to visualization marker msg for rviz
   visualization_msgs::msg::Marker marker;
 
-  // marker.header = path.header;
   builtin_interfaces::msg::Time time;
   time.sec = 0;
   time.nanosec = 0;
@@ -491,8 +490,9 @@ DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path path)
 
   // Set the namespace and id for this marker.  This serves to create a unique ID
   // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "planner_path";
-  marker.id = 0;
+  marker.ns = "endpoints";
+  static int index;
+  marker.id = index++;
 
   marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
 
@@ -511,12 +511,6 @@ DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path path)
   marker.scale.y = 3.0;
   marker.scale.z = 3.0;
 
-  // Set the color -- be sure to set alpha to something non-zero!
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 0.0;
-  marker.color.a = 1.0;
-
   builtin_interfaces::msg::Duration duration;
   duration.sec = 0;
   duration.nanosec = 0;
@@ -526,18 +520,34 @@ DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path path)
 
   marker.frame_locked = false;
 
-  // omitting the first point since it was already considered on marker.pose
-  marker.points.resize(path.poses.size() - 1);
+  marker.points.resize(2);
+  marker.points[0] = endpoints->start.position;
+  marker.points[1] = endpoints->goal.position;
 
-  // Assuming path is already provided in world coordinates
-  for (unsigned int i = 0; i < path.poses.size() - 1; i++) {
-    marker.points[i] = path.poses[i + 1].position;
-  }
+  // Set the color -- be sure to set alpha to something non-zero!
+  std_msgs::msg::ColorRGBA start_color;
+  start_color.r = 0.0;
+  start_color.g = 0.0;
+  start_color.b = 1.0;
+  start_color.a = 1.0;
 
-  // TODO(orduno): issue with visualizing the markers on rviz2
+  std_msgs::msg::ColorRGBA goal_color;
+  goal_color.r = 0.0;
+  goal_color.g = 1.0;
+  goal_color.b = 0.0;
+  goal_color.a = 1.0;
+
+  marker.colors.resize(2);
+  marker.colors[0] = start_color;
+  marker.colors[1] = goal_color;
+
   plan_marker_publisher_->publish(marker);
+}
 
-  // Also publish as a nav1 path msg
+void
+DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path & path)
+{
+  // Publish as a nav1 path msg
   nav_msgs::msg::Path rviz_path;
 
   rviz_path.header = path.header;

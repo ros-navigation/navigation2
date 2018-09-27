@@ -103,11 +103,6 @@ private:
   rclcpp::WallRate map_publish_rate_;
   void mapCallback();
 
-  // Markers for start and end points
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr endpoints_publisher_;
-  void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand & endpoints, const int index);
-  void publishPoint(const int x, const int y, const int index);
-
   bool map_set_;
   bool costmap_set_;
   bool using_fake_costmap_;

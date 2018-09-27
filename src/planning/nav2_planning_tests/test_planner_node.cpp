@@ -64,7 +64,7 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   }
 }
 
-TEST_F(PlannerTester, testWithOnFixedEndpoints)
+TEST_F(PlannerTester, testWithOneFixedEndpoint)
 {
   loadMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
