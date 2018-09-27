@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>navigation2</name>
+  <version>0.0.1</version>
+  <description>
+    ROS2 Navigation Stack
+  </description>
+  <author>Brian Gerkey, Tony Pratkanis, Steve Macenski</author>
+  <author email="oregon.robotics.team@intel.com">Oregon Robotics Team</author>
+  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>nav2_amcl</depend>
+  <depend>nav2_astar_planner</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>nav2_costmap_world_model</depend>
+  <depend>nav2_dijkstra_planner</depend>
+  <depend>nav2_dwa_controller</depend>
+  <depend>nav2_dwb_controller</depend>
+  <depend>nav2_gazebo_localizer</depend>
+  <depend>nav2_map_server</depend>
+  <depend>nav2_mission_executor</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_robot</depend>
+  <depend>nav2_simple_navigator</depend>
+  <depend>nav2_tasks</depend>
+  <depend>nav2_util</depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
