@@ -19,8 +19,8 @@ RUN apt-get install -y \
 Third, ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
 
 ```sh
-mkdir <workspace_dir>
-cd <workspace_dir>
+mkdir <directory_for_workspaces>
+cd <directory_for_workspaces>
 wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
 chmod a+x initial_ros_setup.sh
 ./initial_ros_setup.sh
@@ -38,7 +38,7 @@ The `initial_ros_setup.sh` script downloads four ROS workspaces and then builds 
 
  * Navigation 2 - This repo.
 
- After all the workspaces are downloaded, the `navigtion2/tools/build_all.sh` script is run which builds each repo in the order listed above using the `colcon build --symlink-install` command (except ROS 1 dependencies which are built using `catkin_make`)
+ After all the workspaces are downloaded, the `navigation2/tools/build_all.sh` script is run which builds each repo in the order listed above using the `colcon build --symlink-install` command (except ROS 1 dependencies which are built using `catkin_make`)
 
 ### Options
 
@@ -58,13 +58,13 @@ Most work will be done in the `navigation2` workspace, so just building that wil
 
 To build just `navigation2`,
 ```sh
-cd <workspace_dir>/navigation2
+cd <directory_for_workspaces>/navigation2_ws
 source ../navstack_dependencies_ws/install/setup.sh
 colcon build --symlink-install
 ```
 
 In the case that the developer changes any dependencies, they can run
-`<workspace_dir>/navigation2/tools/build_all.sh` in a clean environment to get everything rebuilt easily
+`<directory_for_workspaces>/navigation2_ws/src/navigation2/tools/build_all.sh` in a clean environment to get everything rebuilt easily
 
 ### Build System
 
@@ -75,9 +75,9 @@ Instead, it would be better to do an initial download of all the source and depe
 ./initial_ros_setup.sh --no-ros1 --download-only
 ```
 
-Then the CI tool can monitor the `navigation2` repo, update it as necessary, and rebuild using either the `<workspace_dir>/navigation2/tools/build_all.sh` script or by running
+Then the CI tool can monitor the `navigation2` repo, update it as necessary, and rebuild using either the `<directory_for_workspaces>/navigation2_ws/src/navigation2/tools/build_all.sh` script or by running
 ```sh
-cd <workspace_dir>/navigation2
+cd <directory_for_workspaces>/navigation2_ws/src/navigation2
 source ../navstack_dependencies_ws/install/setup.sh
 colcon build --symlink-install
 ```

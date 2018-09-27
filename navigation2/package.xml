@@ -6,8 +6,7 @@
   <description>
     ROS2 Navigation Stack
   </description>
-  <author>Brian Gerkey, Tony Pratkanis, Steve Macenski</author>
-  <author email="oregon.robotics.team@intel.com">Oregon Robotics Team</author>
+  <author>Oregon Robotics Team, Steve Macenski</author>
   <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
