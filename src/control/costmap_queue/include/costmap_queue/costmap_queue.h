@@ -175,8 +175,8 @@ protected:
     const unsigned int cur_x, const unsigned int cur_y,
     const unsigned int src_x, const unsigned int src_y)
   {
-    unsigned int dx = std::abs(int(cur_x - src_x));
-    unsigned int dy = std::abs(int(cur_y - src_y));
+    unsigned int dx = std::abs<int>(cur_x - src_x);
+    unsigned int dy = std::abs<int>(cur_y - src_y);
     return cached_distances_[dx][dy];
   }
   std::vector<std::vector<double>> cached_distances_;
