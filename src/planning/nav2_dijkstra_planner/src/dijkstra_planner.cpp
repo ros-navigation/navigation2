@@ -54,18 +54,12 @@ DijkstraPlanner::DijkstraPlanner()
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
 
-  // Create a ROS node that will be used to spin the service calls
-  costmap_client_node_ = rclcpp::Node::make_shared("CostmapServiceClientNode");
-
-  // Create a service client for the GetCostmap service and wait for the service to be running
-  costmap_client_ = costmap_client_node_->create_client<nav2_world_model_msgs::srv::GetCostmap>(
-    "CostmapService");
-  waitForCostmapServer();
-
   // Create publishers for visualization of the path and endpoints
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
+
+  costmap_client__.waitForServer(std::chrono::seconds(2));
 
   // Start listening for incoming ComputePathToPose task requests
   startWorkerThread();
@@ -415,39 +409,12 @@ DijkstraPlanner::getCostmap(
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggreate) layer
-  auto request = std::make_shared<nav2_world_model_msgs::srv::GetCostmap::Request>();
+
+  auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::getCostmap: sending async request to costmap server");
-  auto costmapServiceResult = costmap_client_->async_send_request(request);
-
-  // Wait for the service result
-  auto rc = rclcpp::spin_until_future_complete(costmap_client_node_, costmapServiceResult);
-
-  if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "DijkstraPlanner::getCostmap: costmap service call failed!");
-    throw std::runtime_error("getCostmap: service call failed");
-  }
-
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner::getCostmap: costmap service succeeded");
-  costmap = costmapServiceResult.get()->map;
-}
-
-void
-DijkstraPlanner::waitForCostmapServer(const std::chrono::seconds waitTime)
-{
-  while (!costmap_client_->wait_for_service(waitTime)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(
-        get_logger(),
-        "DijkstraPlanner::waitForCostmapServer:"
-        " costmap client interrupted while waiting for the service to appear.");
-      throw std::runtime_error(
-              "waitForCostmapServer: interrupted while waiting for costmap server to appear");
-    }
-    RCLCPP_INFO(get_logger(),
-      "DijkstraPlanner::waitForCostmapServer: waiting for the costmap service to appear...")
-  }
+  auto result = costmap_client__.invoke(request);
+  costmap = result.get()->map;
 }
 
 void

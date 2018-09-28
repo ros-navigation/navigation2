@@ -19,15 +19,16 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_dijkstra_planner/navfn.hpp"
 
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_libs_msgs/msg/costmap.hpp"
+//#include "nav2_world_model_msgs/srv/get_costmap.hpp"
+#include "nav2_dijkstra_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
-#include "nav2_libs_msgs/msg/costmap.hpp"
-#include "nav2_world_model_msgs/srv/get_costmap.hpp"
 
 namespace nav2_dijkstra_planner
 {
@@ -89,9 +90,6 @@ private:
     nav2_libs_msgs::msg::Costmap & costmap, const std::string layer = "master",
     const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
 
-  // Wait for costmap server to appear
-  void waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
-
   // Print costmap to terminal
   void printCostmap(const nav2_libs_msgs::msg::Costmap & costmap);
 
@@ -102,9 +100,8 @@ private:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
-  // Client for getting the costmap
-  rclcpp::Client<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
-  rclcpp::Node::SharedPtr costmap_client_node_;
+  // Service client for getting the costmap
+  nav2_tasks::CostmapServiceClient costmap_client__;
 
   // Publishers for the path and endpoints
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

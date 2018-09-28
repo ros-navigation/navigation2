@@ -50,17 +50,24 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr /*command*/)
+SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
   // Compose the PathEndPoints message for Navigation
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+
   // TODO(mjeronimo): get the starting pose from Localization (fake it out for now)
-  endpoints->start.position.x = 1.0;
-  endpoints->start.position.y = 1.0;
-  endpoints->goal.position.x = 9.0;
-  endpoints->goal.position.y = 9.0;
+  endpoints->start.position.x = 299.0;
+  endpoints->start.position.y = 9.0;
+  endpoints->start.position.z = 0.0;
+  endpoints->start.orientation.x = 0.0;
+  endpoints->start.orientation.y = 0.0;
+  endpoints->start.orientation.z = 0.0;
+  endpoints->start.orientation.w = 1.0;
+
+  // Get the goal pose from the incoming command
+  endpoints->goal = command->pose;
   endpoints->tolerance = 2.0;
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");

@@ -11,11 +11,13 @@
 
   <build_depend>rclcpp</build_depend>
   <build_depend>nav2_tasks</build_depend>
+  <build_depend>nav2_tasks</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_util_msgs</build_depend>
   <build_depend>nav2_world_model_msgs</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
+  <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util_msgs</exec_depend>
   <exec_depend>nav2_world_model_msgs</exec_depend>

@@ -80,6 +80,7 @@ void PlannerTester::spinThread()
 void PlannerTester::loadMap(const std::string image_file_path, const std::string yaml_file_name)
 {
   RCLCPP_INFO(this->get_logger(), "PlannerTester::loadMap");
+  RCLCPP_INFO(this->get_logger(), "PlannerTester::loadMap: image_file: %s, yaml_file: %s", image_file_path.c_str(), yaml_file_name.c_str());
 
   // Specs for the default map
   // double resolution = 0.05;
@@ -195,6 +196,7 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 
 void PlannerTester::startCostmapServer(std::string serviceName)
 {
+#if 0
   RCLCPP_INFO(this->get_logger(), "PlannerTester::startCostmapServer");
 
   if (!costmap_set_) {
@@ -218,7 +220,7 @@ void PlannerTester::startCostmapServer(std::string serviceName)
   // Create a service that will use the callback function to handle requests.
   costmap_server_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(
     serviceName, costmap_service_callback);
-
+#endif
   costmap_server_running_ = true;
 }
 
@@ -340,6 +342,9 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       all_tests_OK = false;
       ++num_fail;
     }
+
+	printf("Press ENTER to continue...");
+	getchar();
   }
 
   RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
@@ -356,6 +361,8 @@ bool PlannerTester::plannerTest(
     " getting the path from the planner");
 
   TaskStatus status = sendRequest(endpoints, path);
+
+  RCLCPP_INFO(this->get_logger(), "PlannerTester::plannerTest: status: %d", status);
 
   if (status == TaskStatus::FAILED) {
     return false;

@@ -25,7 +25,7 @@ namespace nav2_costmap_world_model
 {
 
 CostmapWorldModel::CostmapWorldModel(const string & name)
-: Node(name)
+: Node(name + "_Node")
 {
   costmap_ = std::make_unique<nav2_util::Costmap>(this);
 
@@ -40,12 +40,23 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
     };
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name,
+  costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name + "_GetCostmap",
       costmap_service_callback);
+
+  // Get the current map from the map server. 
+  //
+  // TODO(mjeronimo): Instead of using a service call, the map server should push any
+  // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
+  map_client_.waitForServer(std::chrono::seconds(2));
+
+  auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
+  auto response = map_client_.invoke(request);
+
+  costmap_->setStaticMap(response->map);
 }
 
 CostmapWorldModel::CostmapWorldModel()
-: CostmapWorldModel("CostmapWorldModel")
+: CostmapWorldModel("WorldModel")
 {
 }
 

@@ -51,6 +51,14 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan
   auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
+  goalPose->pose.position.x = 11.0;
+  goalPose->pose.position.y = 391.0;
+  goalPose->pose.position.z = 0.0;
+  goalPose->pose.orientation.x = 0.0;
+  goalPose->pose.orientation.y = 0.0;
+  goalPose->pose.orientation.z = 0.0;
+  goalPose->pose.orientation.w = 1.0;
+
   navTaskClient_->sendCommand(goalPose);
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();

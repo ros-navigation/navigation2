@@ -175,6 +175,11 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
 
     throw std::runtime_error(errmsg);
   }
+
+// TODO:
+  map_msg_.header.frame_id = "map";
+  map_msg_.info.map_load_time = node_->now();
+
   // Copy the image data into the map structure
   map_msg_.info.width = img->w;
   map_msg_.info.height = img->h;
@@ -314,7 +319,11 @@ void OccGridServer::OccMapCallback(
 {
   (void)request_header;
   (void)req;
+//  occ_resp_.map = map_msg_;
   res->map = occ_resp_.map;
+
+  RCLCPP_INFO(node_->get_logger(), "OccGridServer::OccMapCallback");
+  occ_pub_->publish(map_msg_);
 }
 
 }  // namespace nav2_map_server
