@@ -46,8 +46,6 @@
 
 #include <sensor_msgs/PointCloud2.h>
 
-// Thread support
-#include <boost/thread.hpp>
 
 namespace costmap_2d
 {
@@ -148,7 +146,7 @@ private:
   std::list<Observation> observation_list_;
   std::string topic_name_;
   double min_obstacle_height_, max_obstacle_height_;
-  boost::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
+  std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double obstacle_range_, raytrace_range_;
   double tf_tolerance_;
 };

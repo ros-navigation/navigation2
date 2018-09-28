@@ -36,13 +36,12 @@ find_package(message_filters REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system thread)
+#find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
-  include
-  ${ament_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
+	include
+	${ament_INCLUDE_DIRS}
+	${EIGEN3_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -87,15 +86,11 @@ ament_target_dependencies(nav2_costmap_2d
   ${dependencies}
 )
 
-target_link_libraries(nav2_costmap_2d
-  ${Boost_LIBRARIES}
-)
-
 add_library(layers
   plugins/inflation_layer.cpp
 
 	#	TODO(bpwilcox): port additional plugin layers
-  plugins/static_layer.cpp
+  #plugins/static_layer.cpp
   #plugins/obstacle_layer.cpp
   #plugins/voxel_layer.cpp
   #src/observation_buffer.cpp
@@ -105,7 +100,6 @@ ament_target_dependencies(layers
  )
 target_link_libraries(layers
   nav2_costmap_2d
-  ${Boost_LIBRARIES}
 )
 
 #	TODO(bpwilcox): port costmap_2d_markers

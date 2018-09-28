@@ -29,9 +29,6 @@
 #include <string>
 
 #include <costmap_2d/costmap_math.h>
-#include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
-#include <boost/algorithm/string.hpp>
 #include <costmap_2d/footprint.h>
 #include <costmap_2d/array_parser.h>
 #include <geometry_msgs/msg/point32.hpp>

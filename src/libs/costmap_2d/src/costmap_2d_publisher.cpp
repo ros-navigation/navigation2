@@ -35,7 +35,6 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <boost/bind.hpp>
 #include <costmap_2d/costmap_2d_publisher.h>
 #include <costmap_2d/cost_values.h>
 
@@ -96,7 +95,7 @@ void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher&
 // prepare grid_ message for publication.
 void Costmap2DPublisher::prepareGrid()
 {
-  boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   double resolution = costmap_->getResolution();
 
   grid_.header.frame_id = global_frame_;
@@ -145,7 +144,7 @@ void Costmap2DPublisher::publishCostmap()
     prepareGrid();
     costmap_pub_->publish(grid_);
   } else if (x0_ < xn_) {
-    boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+    std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     // Publish Just an Update
     map_msgs::msg::OccupancyGridUpdate update;
     update.header.stamp = rclcpp::Time();

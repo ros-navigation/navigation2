@@ -39,6 +39,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <cstdio>
 #include <string>
+#include <sys/time.h>
 #include <algorithm>
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -183,7 +184,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
   //dsrv_ = new dynamic_reconfigure::Server<Costmap2DConfig>(ros::NodeHandle("~/" + name));
-  //dynamic_reconfigure::Server<Costmap2DConfig>::CallbackType cb = boost::bind(&Costmap2DROS::reconfigureCB, this, _1,
+  //dynamic_reconfigure::Server<Costmap2DConfig>::CallbackType cb = std::bind(&Costmap2DROS::reconfigureCB, this, _1,
   //                                                                            _2);
   //dsrv_->setCallback(cb);
 }
@@ -340,7 +341,7 @@ void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t l
 
   old_config_ = config;
 
-  map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
+  map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 } */
 
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
@@ -392,7 +393,7 @@ void Costmap2DROS::setUnpaddedRobotFootprint(const std::vector<geometry_msgs::ms
 void Costmap2DROS::movementCB()
 {
   // don't allow configuration to happen while this check occurs
-  // boost::recursive_mutex::scoped_lock mcl(configuration_mutex_);
+  // std::recursive_mutex::scoped_lock mcl(configuration_mutex_);
 
   geometry_msgs::msg::PoseStamped new_pose;
   if (!getRobotPose(new_pose)) {

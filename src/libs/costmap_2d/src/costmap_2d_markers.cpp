@@ -142,7 +142,7 @@ int main(int argc, char ** argv)
 
   ros::Publisher pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   ros::Subscriber sub =
-    n.subscribe<costmap_2d::VoxelGrid>("voxel_grid", 1, boost::bind(voxelCallback, pub, _1));
+    n.subscribe<costmap_2d::VoxelGrid>("voxel_grid", 1, std::bind(voxelCallback, pub, _1));
   g_marker_ns = n.resolveName("voxel_grid");
 
   ros::spin();

@@ -39,7 +39,6 @@
 #include <costmap_2d/inflation_layer.h>
 #include <costmap_2d/costmap_math.h>
 #include <costmap_2d/footprint.h>
-#include <boost/thread.hpp>
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::InflationLayer, costmap_2d::Layer)
@@ -66,13 +65,13 @@ InflationLayer::InflationLayer()
   last_max_x_(std::numeric_limits<float>::max()),
   last_max_y_(std::numeric_limits<float>::max())
 {
-  inflation_access_ = new boost::recursive_mutex();
+  inflation_access_ = new std::recursive_mutex();
 }
 
 void InflationLayer::onInitialize()
 {
   {
-    boost::unique_lock<boost::recursive_mutex> lock(*inflation_access_);
+    std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
     //ros::NodeHandle nh("~/" + name_), g_nh;
 
     auto private_nh = rclcpp::Node::make_shared(name_);
@@ -88,7 +87,7 @@ void InflationLayer::onInitialize()
 
     // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
     /*
-      dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = boost::bind(
+      dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = std::bind(
         &InflationLayer::reconfigureCB, this, _1, _2);
 
        if (dsrv_ != NULL){
@@ -119,7 +118,7 @@ void InflationLayer::reconfigureCB(costmap_2d::InflationPluginConfig &config, ui
 
 void InflationLayer::matchSize()
 {
-  boost::unique_lock<boost::recursive_mutex> lock(*inflation_access_);
+  std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
   costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
@@ -182,7 +181,7 @@ void InflationLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i,
     int max_i,
     int max_j)
 {
-  boost::unique_lock<boost::recursive_mutex> lock(*inflation_access_);
+  std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
@@ -376,7 +375,7 @@ void InflationLayer::setInflationParameters(double inflation_radius, double cost
   if (weight_ != cost_scaling_factor || inflation_radius_ != inflation_radius) {
     // Lock here so that reconfiguring the inflation radius doesn't cause segfaults
     // when accessing the cached arrays
-    boost::unique_lock<boost::recursive_mutex> lock(*inflation_access_);
+    std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
 
     inflation_radius_ = inflation_radius;
     cell_inflation_radius_ = cellDistance(inflation_radius_);
