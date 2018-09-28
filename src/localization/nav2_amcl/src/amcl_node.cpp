@@ -408,7 +408,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   pf_ = pf_alloc(min_particles_, max_particles_,
       alpha_slow_, alpha_fast_,
       (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-      <void *>(map_));
+      reinterpret_cast<void *>(map_));
   pf_err_ = config.kld_err;
   pf_z_ = config.kld_z;
   pf_->pop_err = pf_err_;
