@@ -60,7 +60,7 @@ unsigned int countValues(costmap_2d::Costmap2D & costmap, unsigned char value, b
 void addStaticLayer(costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf)
 {
   costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
-  layers.addPlugin(boost::shared_ptr<costmap_2d::Layer>(slayer));
+  layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf);
 }
 
@@ -69,7 +69,7 @@ costmap_2d::ObstacleLayer * addObstacleLayer(costmap_2d::LayeredCostmap & layers
 {
   costmap_2d::ObstacleLayer * olayer = new costmap_2d::ObstacleLayer();
   olayer->initialize(&layers, "obstacles", &tf);
-  layers.addPlugin(boost::shared_ptr<costmap_2d::Layer>(olayer));
+  layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(olayer));
   return olayer;
 }
 
@@ -101,7 +101,7 @@ costmap_2d::InflationLayer * addInflationLayer(costmap_2d::LayeredCostmap & laye
 {
   costmap_2d::InflationLayer * ilayer = new costmap_2d::InflationLayer();
   ilayer->initialize(&layers, "inflation", &tf);
-  boost::shared_ptr<costmap_2d::Layer> ipointer(ilayer);
+  std::shared_ptr<costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
   return ilayer;
 }

@@ -57,14 +57,14 @@ Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, doubl
 void Costmap2D::deleteMaps()
 {
   // clean up data
-  boost::unique_lock<mutex_t> lock(*access_);
+  std::unique_lock<mutex_t> lock(*access_);
   delete[] costmap_;
   costmap_ = NULL;
 }
 
 void Costmap2D::initMaps(unsigned int size_x, unsigned int size_y)
 {
-  boost::unique_lock<mutex_t> lock(*access_);
+  std::unique_lock<mutex_t> lock(*access_);
   delete[] costmap_;
   costmap_ = new unsigned char[size_x * size_y];
 }
@@ -86,13 +86,13 @@ void Costmap2D::resizeMap(unsigned int size_x, unsigned int size_y, double resol
 
 void Costmap2D::resetMaps()
 {
-  boost::unique_lock<mutex_t> lock(*access_);
+  std::unique_lock<mutex_t> lock(*access_);
   memset(costmap_, default_value_, size_x_ * size_y_ * sizeof(unsigned char));
 }
 
 void Costmap2D::resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn)
 {
-  boost::unique_lock<mutex_t> lock(*(access_));
+  std::unique_lock<mutex_t> lock(*(access_));
   unsigned int len = xn - x0;
   for (unsigned int y = y0 * size_x_ + x0; y < yn * size_x_ + x0; y += size_x_) {
     memset(costmap_ + y, default_value_, len * sizeof(unsigned char));

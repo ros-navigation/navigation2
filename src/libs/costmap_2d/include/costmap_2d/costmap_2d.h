@@ -40,8 +40,11 @@
 
 #include <vector>
 #include <queue>
+#include <mutex>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
 #include <geometry_msgs/msg/point.hpp>
-#include <boost/thread.hpp>
 
 namespace costmap_2d
 {
@@ -296,7 +299,7 @@ public:
   unsigned int cellDistance(double world_dist);
 
   // Provide a typedef to ease future code maintenance
-  typedef boost::recursive_mutex mutex_t;
+  typedef std::recursive_mutex mutex_t;
   mutex_t * getMutex()
   {
     return access_;

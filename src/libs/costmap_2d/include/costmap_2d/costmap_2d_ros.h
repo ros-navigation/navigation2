@@ -262,7 +262,7 @@ private:
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_;
   bool stop_updates_, initialized_, stopped_, robot_stopped_;
-  boost::thread * map_update_thread_;  ///< @brief A thread for updating the map
+  std::thread * map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Time last_publish_;
   rclcpp::Duration publish_cycle_;
@@ -274,7 +274,7 @@ private:
   //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
   //costmap_2d::Costmap2DConfig old_config_;
 
-  boost::recursive_mutex configuration_mutex_;
+  std::recursive_mutex configuration_mutex_;
 
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;

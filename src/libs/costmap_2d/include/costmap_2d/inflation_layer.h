@@ -44,7 +44,6 @@
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
 //#include <costmap_2d/InflationPluginConfig.h>
 //#include <dynamic_reconfigure/server.h>
-#include <boost/thread.hpp>
 
 namespace costmap_2d
 {
@@ -129,7 +128,7 @@ public:
 
 protected:
   virtual void onFootprintChanged();
-  boost::recursive_mutex * inflation_access_;
+  std::recursive_mutex * inflation_access_;
 
 private:
   /**

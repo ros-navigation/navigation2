@@ -128,7 +128,7 @@ void ObstacleLayer::onInitialize()
 
     // create an observation buffer
     observation_buffers_.push_back(
-        boost::shared_ptr<ObservationBuffer
+        std::shared_ptr<ObservationBuffer
         >(new ObservationBuffer(topic, observation_keep_time, expected_update_rate,
             min_obstacle_height,
             max_obstacle_height, obstacle_range, raytrace_range, *tf_, global_frame_,
@@ -152,17 +152,17 @@ void ObstacleLayer::onInitialize()
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
-      boost::shared_ptr<message_filters::Subscriber<sensor_msgs::LaserScan>
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::LaserScan>
       > sub(new message_filters::Subscriber<sensor_msgs::LaserScan>(g_nh, topic, 50));
 
-      boost::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > filter(
+      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > filter(
           new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*sub, *tf_, global_frame_, 50, g_nh));
 
       if (inf_is_valid) {
-        filter->registerCallback(boost::bind(&ObstacleLayer::laserScanValidInfCallback, this, _1,
+        filter->registerCallback(std::bind(&ObstacleLayer::laserScanValidInfCallback, this, _1,
               observation_buffers_.back()));
       } else {
-        filter->registerCallback(boost::bind(&ObstacleLayer::laserScanCallback, this, _1,
+        filter->registerCallback(std::bind(&ObstacleLayer::laserScanCallback, this, _1,
               observation_buffers_.back()));
       }
 
@@ -171,7 +171,7 @@ void ObstacleLayer::onInitialize()
 
       observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
     } else if (data_type == "PointCloud") {
-      boost::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud>
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud>
       > sub(new message_filters::Subscriber<sensor_msgs::PointCloud>(g_nh, topic, 50));
 
       if (inf_is_valid) {
@@ -179,16 +179,16 @@ void ObstacleLayer::onInitialize()
             "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
-      boost::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::PointCloud>
+      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::PointCloud>
       > filter(new tf2_ros::MessageFilter<sensor_msgs::PointCloud>(*sub, *tf_, global_frame_, 50,
             g_nh));
       filter->registerCallback(
-          boost::bind(&ObstacleLayer::pointCloudCallback, this, _1, observation_buffers_.back()));
+          std::bind(&ObstacleLayer::pointCloudCallback, this, _1, observation_buffers_.back()));
 
       observation_subscribers_.push_back(sub);
       observation_notifiers_.push_back(filter);
     } else {
-      boost::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>
       > sub(new message_filters::Subscriber<sensor_msgs::PointCloud2>(g_nh, topic, 50));
 
       if (inf_is_valid) {
@@ -196,11 +196,11 @@ void ObstacleLayer::onInitialize()
             "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
-      boost::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::PointCloud2>
+      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::PointCloud2>
       > filter(new tf2_ros::MessageFilter<sensor_msgs::PointCloud2>(*sub, *tf_, global_frame_, 50,
             g_nh));
       filter->registerCallback(
-          boost::bind(&ObstacleLayer::pointCloud2Callback, this, _1, observation_buffers_.back()));
+          std::bind(&ObstacleLayer::pointCloud2Callback, this, _1, observation_buffers_.back()));
 
       observation_subscribers_.push_back(sub);
       observation_notifiers_.push_back(filter);
@@ -221,7 +221,7 @@ void ObstacleLayer::onInitialize()
 void ObstacleLayer::setupDynamicReconfigure(ros::NodeHandle & nh)
 {
   dsrv_ = new dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>::CallbackType cb = boost::bind(
+  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>::CallbackType cb = std::bind(
       &ObstacleLayer::reconfigureCB, this, _1, _2);
   dsrv_->setCallback(cb);
 }
@@ -241,7 +241,7 @@ void ObstacleLayer::reconfigureCB(costmap_2d::ObstaclePluginConfig & config, uin
 }
 
 void ObstacleLayer::laserScanCallback(const sensor_msgs::LaserScanConstPtr & message,
-    const boost::shared_ptr<ObservationBuffer> & buffer)
+    const std::shared_ptr<ObservationBuffer> & buffer)
 {
   // project the laser into a point cloud
   sensor_msgs::PointCloud2 cloud;
@@ -264,7 +264,7 @@ void ObstacleLayer::laserScanCallback(const sensor_msgs::LaserScanConstPtr & mes
 }
 
 void ObstacleLayer::laserScanValidInfCallback(const sensor_msgs::LaserScanConstPtr & raw_message,
-    const boost::shared_ptr<ObservationBuffer> & buffer)
+    const std::shared_ptr<ObservationBuffer> & buffer)
 {
   // Filter positive infinities ("Inf"s) to max_range.
   float epsilon = 0.0001;  // a tenth of a millimeter
@@ -296,7 +296,7 @@ void ObstacleLayer::laserScanValidInfCallback(const sensor_msgs::LaserScanConstP
 }
 
 void ObstacleLayer::pointCloudCallback(const sensor_msgs::PointCloudConstPtr & message,
-    const boost::shared_ptr<ObservationBuffer> & buffer)
+    const std::shared_ptr<ObservationBuffer> & buffer)
 {
   sensor_msgs::PointCloud2 cloud2;
 
@@ -312,7 +312,7 @@ void ObstacleLayer::pointCloudCallback(const sensor_msgs::PointCloudConstPtr & m
 }
 
 void ObstacleLayer::pointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr & message,
-    const boost::shared_ptr<ObservationBuffer> & buffer)
+    const std::shared_ptr<ObservationBuffer> & buffer)
 {
   // buffer the point cloud
   buffer->lock();

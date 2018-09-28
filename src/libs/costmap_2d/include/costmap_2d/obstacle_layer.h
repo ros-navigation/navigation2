@@ -86,7 +86,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void laserScanCallback(const sensor_msgs::LaserScanConstPtr & message,
-      const boost::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief A callback to handle buffering LaserScan messages which need filtering to turn Inf values into range_max.
@@ -94,7 +94,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void laserScanValidInfCallback(const sensor_msgs::LaserScanConstPtr & message,
-      const boost::shared_ptr<ObservationBuffer> & buffer);
+      const std::shared_ptr<ObservationBuffer> & buffer);
 
   /**
    * @brief  A callback to handle buffering PointCloud messages
@@ -102,7 +102,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void pointCloudCallback(const sensor_msgs::PointCloudConstPtr & message,
-      const boost::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief  A callback to handle buffering PointCloud2 messages
@@ -110,7 +110,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void pointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr & message,
-      const boost::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
   void addStaticObservation(costmap_2d::Observation & obs, bool marking, bool clearing);
@@ -163,11 +163,11 @@ protected:
 
   laser_geometry::LaserProjection projector_;  ///< @brief Used to project laser scans into point clouds
 
-  std::vector<boost::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
-  std::vector<boost::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
-  std::vector<boost::shared_ptr<costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
-  std::vector<boost::shared_ptr<costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
-  std::vector<boost::shared_ptr<costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
+  std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
+  std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
+  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
+  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
+  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
 
   // Used only for testing purposes
   std::vector<costmap_2d::Observation> static_clearing_observations_, static_marking_observations_;
