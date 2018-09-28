@@ -34,7 +34,7 @@ template<class CommandMsg, class ResultMsg>
 class TaskServer : public rclcpp::Node
 {
 public:
-  explicit TaskServer(const std::string & name)
+  explicit TaskServer(const std::string & name, bool autoStart = true)
   : Node(name), workerThread_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
@@ -47,7 +47,9 @@ public:
     resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
     statusPub_ = this->create_publisher<StatusMsg>(taskName + "_status");
 
-    startWorkerThread();
+    if (autoStart) {
+      startWorkerThread();
+    }
   }
 
   virtual ~TaskServer()
@@ -89,7 +91,7 @@ protected:
   {
     do {
       std::unique_lock<std::mutex> lock(commandMutex_);
-      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(10),
+      if (cvCommand_.wait_for(lock, std::chrono::milliseconds(100),
         [&] {return commandReceived_ == true;}))
       {
         // Call the user's overridden method
@@ -125,7 +127,10 @@ protected:
     } while (rclcpp::ok());
   }
 
-  // Convenience routes for starting and stopping the worker thread (used from the ctor and dtor)
+  // TODO(mjeronimo): Make an explicit start and stop calls to control 
+  // the worker thread
+  
+  // Convenience routines for starting and stopping the worker thread.
   void startWorkerThread()
   {
     workerThread_ = new std::thread(&TaskServer::workerThread, this);

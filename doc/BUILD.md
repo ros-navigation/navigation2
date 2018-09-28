@@ -5,13 +5,23 @@ Quickstart
 ----------
 
 ### Steps
+First, install all ROS2 dependencies from the ROS2 Installation page: https://github.com/ros2/ros2/wiki/Linux-Development-Setup
 
-*Ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
+Second, install the dependencies for this repository:
+```sh
+RUN apt-get install -y \
+    libsdl-image1.2 \
+    libsdl-image1.2-dev \
+    libsdl1.2debian \
+    libsdl1.2-dev
+```
+
+Third, ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
 
 ```sh
 mkdir <workspace_dir>
 cd <workspace_dir>
-wget https://raw.githubusercontent.com/ros-planning/navigation2/buildscript/tools/initial_ros_setup.sh
+wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
 chmod a+x initial_ros_setup.sh
 ./initial_ros_setup.sh
 ```

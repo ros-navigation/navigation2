@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_TWIRLING_H
-#define DWB_CRITICS_TWIRLING_H
+#ifndef DWB_CRITICS__TWIRLING_H_
+#define DWB_CRITICS__TWIRLING_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -48,12 +48,12 @@ namespace dwb_critics
  * sometimes a robot spins more than you'd like on its way to a goal. This class provides a way
  * to assign a penalty purely to rotational velocities.
  */
-class TwirlingCritic: public dwb_local_planner::TrajectoryCritic
+class TwirlingCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS_TWIRLING_H
+#endif  // DWB_CRITICS__TWIRLING_H_

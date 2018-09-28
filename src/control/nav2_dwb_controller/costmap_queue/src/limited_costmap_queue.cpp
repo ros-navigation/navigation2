@@ -31,19 +31,20 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <costmap_queue/limited_costmap_queue.h>
+
+#include "costmap_queue/limited_costmap_queue.h"
 
 namespace costmap_queue
 {
 
-LimitedCostmapQueue::LimitedCostmapQueue(costmap_2d::Costmap2D& costmap, const int distance_limit) :
-  CostmapQueue(costmap)
+LimitedCostmapQueue::LimitedCostmapQueue(costmap_2d::Costmap2D & costmap, const int distance_limit)
+: CostmapQueue(costmap)
 {
   max_distance_ = distance_limit;
   reset();
 }
 
-bool LimitedCostmapQueue::validCellToQueue(const CellData& cell)
+bool LimitedCostmapQueue::validCellToQueue(const CellData & cell)
 {
   return cell.distance_ <= max_distance_;
 }

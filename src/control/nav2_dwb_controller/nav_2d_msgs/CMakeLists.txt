@@ -1,23 +1,20 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(nav_2d_msgs)
 
-find_package(catkin REQUIRED COMPONENTS
-    geometry_msgs
-    message_generation
-    std_msgs
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(nav_2d_msgs
+    "msg/Path2D.msg"
+    "msg/Pose2D32.msg"
+    "msg/Pose2DStamped.msg"
+    "msg/Twist2D.msg"
+    "msg/Twist2D32.msg"
+    "msg/Twist2DStamped.msg"
+    DEPENDENCIES geometry_msgs std_msgs
 )
 
-add_message_files(FILES
-    Path2D.msg
-    Pose2D32.msg
-    Pose2DStamped.msg
-    Twist2D.msg
-    Twist2D32.msg
-    Twist2DStamped.msg
-)
+ament_export_dependencies(rosidl_default_runtime)
 
-generate_messages(DEPENDENCIES geometry_msgs std_msgs)
-
-catkin_package(
-    CATKIN_DEPENDS geometry_msgs message_runtime std_msgs
-)
+ament_package()

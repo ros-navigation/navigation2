@@ -32,10 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
-#define DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
+#ifndef DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_
+#define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_
 
-#include <dwb_plugins/standard_traj_generator.h>
+#include <memory>
+#include "dwb_plugins/standard_traj_generator.h"
 
 namespace dwb_plugins
 {
@@ -46,15 +47,17 @@ namespace dwb_plugins
 class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  void initialize(ros::NodeHandle& nh) override;
-  void checkUseDwaParam(const ros::NodeHandle& nh) override;
-  void startNewIteration(const nav_2d_msgs::Twist2D& current_velocity) override;
-  dwb_msgs::Trajectory2D generateTrajectory(const geometry_msgs::Pose2D& start_pose,
-                                            const nav_2d_msgs::Twist2D& start_vel,
-                                            const nav_2d_msgs::Twist2D& cmd_vel) override;
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
+  dwb_msgs::msg::Trajectory2D generateTrajectory(
+    const geometry_msgs::msg::Pose2D & start_pose,
+    const nav_2d_msgs::msg::Twist2D & start_vel,
+    const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
+
 protected:
   double acceleration_time_;
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS_LIMITED_ACCEL_GENERATOR_H
+#endif  // DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_H_

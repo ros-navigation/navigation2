@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+    <name>costmap_2d</name>
+    <version>1.16.2</version>
+    <description>
+        This package provides an implementation of a 2D costmap that takes in sensor
+        data from the world, builds a 2D or 3D occupancy grid of the data (depending
+        on whether a voxel based implementation is used), and inflates costs in a
+        2D costmap based on the occupancy grid and a user specified inflation radius.
+        This package also provides support for map_server based initialization of a
+        costmap, rolling window based costmaps, and parameter based subscription to
+        and configuration of sensor topics.
+    </description>
+    <author>Eitan Marder-Eppstein</author>
+    <author>David V. Lu!!</author>
+    <author>Dave Hershberger</author>
+    <author>contradict@gmail.com</author>
+    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+    <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
+    <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
+    <license>BSD</license>
+    <url>http://wiki.ros.org/costmap_2d</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>message_generation</build_depend>
+    <build_depend>tf2_geometry_msgs</build_depend>
+    <build_depend>tf2_sensor_msgs</build_depend>
+
+    <depend>dynamic_reconfigure</depend>
+    <depend>geometry_msgs</depend>
+    <depend>laser_geometry</depend>
+    <depend>map_msgs</depend>
+    <depend>message_filters</depend>
+    <depend>nav_msgs</depend>
+    <depend>pluginlib</depend>
+    <depend>roscpp</depend>
+    <depend>rostest</depend>
+    <depend>sensor_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>tf2</depend>
+    <depend>tf2_ros</depend>
+    <depend>visualization_msgs</depend>
+    <depend>voxel_grid</depend>
+
+    <exec_depend>message_runtime</exec_depend>
+    <exec_depend>rosconsole</exec_depend>
+    <test_depend>map_server</test_depend>
+    <test_depend>rosbag</test_depend>
+    <test_depend>rostest</test_depend>
+    <test_depend>rosunit</test_depend>
+
+    <export>
+      <costmap_2d plugin="${prefix}/costmap_plugins.xml"/>
+    </export>
+</package>

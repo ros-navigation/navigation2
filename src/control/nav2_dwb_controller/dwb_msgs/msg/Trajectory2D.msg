@@ -3,6 +3,6 @@
 # Input Velocity
 nav_2d_msgs/Twist2D velocity
 # Time difference between first and last poses
-duration duration
+builtin_interfaces/Duration duration
 # Poses the robot will go to, given our kinematic model
 geometry_msgs/Pose2D[] poses

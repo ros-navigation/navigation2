@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(nav2_util)
 find_package(nav2_libs_msgs)
 find_package(nav2_world_model_msgs)
+find_package(nav_msgs)
 
 include_directories(
   include
@@ -43,6 +44,7 @@ set(dependencies
   nav2_world_model_msgs
   tf2_ros
   tf2
+  nav_msgs
 )
 
 ament_target_dependencies(${executable_name}

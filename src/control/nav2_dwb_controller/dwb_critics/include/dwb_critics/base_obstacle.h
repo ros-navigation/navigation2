@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_BASE_OBSTACLE_H
-#define DWB_CRITICS_BASE_OBSTACLE_H
+#ifndef DWB_CRITICS__BASE_OBSTACLE_H_
+#define DWB_CRITICS__BASE_OBSTACLE_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -54,26 +54,26 @@ class BaseObstacleCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
-  void addGridScores(sensor_msgs::PointCloud& pc) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
+  void addGridScores(sensor_msgs::msg::PointCloud & pc) override;
 
   /**
    * @brief Return the obstacle score for a particular pose
    * @param pose Pose to check
    */
-  virtual double scorePose(const geometry_msgs::Pose2D& pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose2D & pose);
 
   /**
    * @brief Check to see whether a given cell cost is valid for driving through.
    * @param cost Cost of the cell
    * @return Return true if valid cell
    */
-   virtual bool isValidCost(const unsigned char cost);
+  virtual bool isValidCost(const unsigned char cost);
 
 protected:
-  costmap_2d::Costmap2D* costmap_;
+  costmap_2d::Costmap2D * costmap_;
   bool sum_scores_;
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS_BASE_OBSTACLE_H
+#endif  // DWB_CRITICS__BASE_OBSTACLE_H_

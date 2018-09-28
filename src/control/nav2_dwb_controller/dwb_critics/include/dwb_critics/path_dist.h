@@ -31,10 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS_PATH_DIST_H_
-#define DWB_CRITICS_PATH_DIST_H_
+#ifndef DWB_CRITICS__PATH_DIST_H_
+#define DWB_CRITICS__PATH_DIST_H_
 
-#include <dwb_critics/map_grid.h>
+#include "dwb_critics/map_grid.h"
 
 namespace dwb_critics
 {
@@ -42,12 +42,13 @@ namespace dwb_critics
  * @class PathDistCritic
  * @brief Scores trajectories based on how far from the global path they end up.
  */
-class PathDistCritic: public MapGridCritic
+class PathDistCritic : public MapGridCritic
 {
 public:
-  bool prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-               const geometry_msgs::Pose2D& goal, const nav_2d_msgs::Path2D& global_plan) override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS_PATH_DIST_H_
+#endif  // DWB_CRITICS__PATH_DIST_H_

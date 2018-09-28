@@ -32,34 +32,35 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dwb_plugins/stopped_goal_checker.h>
-#include <pluginlib/class_list_macros.h>
+#include "dwb_plugins/stopped_goal_checker.h"
+#include <memory>
+#include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_plugins
 {
 
-StoppedGoalChecker::StoppedGoalChecker() :
-  SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
+StoppedGoalChecker::StoppedGoalChecker()
+: SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
 {
 }
 
-void StoppedGoalChecker::initialize(const ros::NodeHandle& nh)
+void StoppedGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
   SimpleGoalChecker::initialize(nh);
-  nh.param("rot_stopped_velocity", rot_stopped_velocity_, 0.25);
-  nh.param("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
+  nh->get_parameter_or("rot_stopped_velocity", rot_stopped_velocity_, 0.25);
+  nh->get_parameter_or("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
 }
 
-bool StoppedGoalChecker::isGoalReached(const geometry_msgs::Pose2D& query_pose, const geometry_msgs::Pose2D& goal_pose,
-                                       const nav_2d_msgs::Twist2D& velocity)
+bool StoppedGoalChecker::isGoalReached(
+  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
+  const nav_2d_msgs::msg::Twist2D & velocity)
 {
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
-  if (!ret)
-  {
+  if (!ret) {
     return ret;
   }
-  return fabs(velocity.theta) <= rot_stopped_velocity_
-         && fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
+  return fabs(velocity.theta) <= rot_stopped_velocity_ &&
+         fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
 }
 
 }  // namespace dwb_plugins

@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS_PREFER_FORWARD_H_
-#define DWB_CRITICS_PREFER_FORWARD_H_
+#ifndef DWB_CRITICS__PREFER_FORWARD_H_
+#define DWB_CRITICS__PREFER_FORWARD_H_
 
-#include <dwb_local_planner/trajectory_critic.h>
 #include <string>
+#include "dwb_local_planner/trajectory_critic.h"
 
 namespace dwb_critics
 {
@@ -50,16 +50,17 @@ namespace dwb_critics
  * 2) If the trajectory's x is low and the theta is also low, return the penalty.
  * 3) Otherwise, return a scaled version of the trajectory's theta.
  */
-class PreferForwardCritic: public dwb_local_planner::TrajectoryCritic
+class PreferForwardCritic : public dwb_local_planner::TrajectoryCritic
 {
 public:
-  PreferForwardCritic() : penalty_(1.0), strafe_x_(0.1), strafe_theta_(0.2), theta_scale_(10.0) {}
+  PreferForwardCritic()
+  : penalty_(1.0), strafe_x_(0.1), strafe_theta_(0.2), theta_scale_(10.0) {}
   void onInit() override;
-  double scoreTrajectory(const dwb_msgs::Trajectory2D& traj) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 
 private:
   double penalty_, strafe_x_, strafe_theta_, theta_scale_;
 };
 
-} /* namespace dwb_critics */
-#endif /* DWB_CRITICS_PREFER_FORWARD_H_ */
+}  // namespace dwb_critics
+#endif  // DWB_CRITICS__PREFER_FORWARD_H_

@@ -31,13 +31,14 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include <dwb_critics/rotate_to_goal.h>
-#include <nav_2d_utils/parameters.h>
-#include <nav_core2/exceptions.h>
-#include <pluginlib/class_list_macros.h>
-#include <angles/angles.h>
+
+#include "dwb_critics/rotate_to_goal.h"
 #include <string>
 #include <vector>
+#include "nav_2d_utils/parameters.h"
+#include "dwb_local_planner/exceptions.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "angles/angles.h"
 
 const double EPSILON = 1E-5;
 
@@ -48,41 +49,38 @@ namespace dwb_critics
 
 void RotateToGoalCritic::onInit()
 {
-  xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(*nh_, "xy_goal_tolerance", 0.25);
+  xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(nh_, "xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-bool RotateToGoalCritic::prepare(const geometry_msgs::Pose2D& pose, const nav_2d_msgs::Twist2D& vel,
-                                 const geometry_msgs::Pose2D& goal,
-                                 const nav_2d_msgs::Path2D& global_plan)
+bool RotateToGoalCritic::prepare(
+  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose2D & goal,
+  const nav_2d_msgs::msg::Path2D &)
 {
   double dx = pose.x - goal.x,
-         dy = pose.y - goal.y;
+    dy = pose.y - goal.y;
   double dxy_sq = dx * dx + dy * dy;
-  if (dxy_sq > xy_goal_tolerance_sq_)
-  {
+  if (dxy_sq > xy_goal_tolerance_sq_) {
     in_window_ = false;
   }
   goal_yaw_ = goal.theta;
   return true;
 }
 
-double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
+double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
 {
   // If we're not sufficiently close to the goal, we don't care what the twist is
-  if (!in_window_)
-  {
+  if (!in_window_) {
     return 0.0;
   }
 
   // If we're sufficiently close to the goal, any transforming velocity is invalid
-  if (fabs(traj.velocity.x) > EPSILON || fabs(traj.velocity.y) > EPSILON)
-  {
+  if (fabs(traj.velocity.x) > EPSILON || fabs(traj.velocity.y) > EPSILON) {
     throw nav_core2::IllegalTrajectoryException(name_, "Nonrotation command near goal.");
   }
 
-  if (traj.poses.empty())
-  {
+  if (traj.poses.empty()) {
     throw nav_core2::IllegalTrajectoryException(name_, "Empty trajectory.");
   }
 
@@ -90,4 +88,4 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::Trajectory2D& traj)
   return angles::shortest_angular_distance(end_yaw, goal_yaw_);
 }
 
-} /* namespace dwb_critics */
+}  // namespace dwb_critics

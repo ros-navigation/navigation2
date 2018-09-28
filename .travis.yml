@@ -1,0 +1,14 @@
+sudo: required
+
+language: none
+
+services:
+  - docker
+
+before_install:
+  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+  - echo Branch is $BRANCH
+  - docker build -t nav2/latest --build-arg BRANCH=$BRANCH .
+
+script:
+  - docker run nav2/latest /bin/bash -c echo "Testing"

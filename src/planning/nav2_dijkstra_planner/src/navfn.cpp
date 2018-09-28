@@ -43,10 +43,8 @@
 //
 
 #include <algorithm>
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_dijkstra_planner/navfn.hpp"
-
-// TODO(orduno): Define how to pass the node handle for ROS logging
-#include "Logger.h"
 
 //
 // function to perform nav fn calculation
@@ -85,9 +83,9 @@ create_nav_plan_astar(
   int len = nav->calcPath(nplan);
 
   if (len > 0) {  // found plan
-    ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Path found, %d steps\n", len);
   } else {
-    ROS_DEBUG("[NavFn] No path found\n");
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] No path found\n");
   }
 
   if (len > 0) {
@@ -182,7 +180,7 @@ NavFn::setGoal(int * g)
 {
   goal[0] = g[0];
   goal[1] = g[1];
-  ROS_DEBUG("[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
 }
 
 void
@@ -190,7 +188,8 @@ NavFn::setStart(int * g)
 {
   start[0] = g[0];
   start[1] = g[1];
-  ROS_DEBUG("[NavFn] Setting start to %d,%d\n", start[0], start[1]);
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Setting start to %d,%d\n", start[0],
+    start[1]);
 }
 
 //
@@ -200,7 +199,7 @@ NavFn::setStart(int * g)
 void
 NavFn::setNavArr(int xs, int ys)
 {
-  ROS_DEBUG("[NavFn] Array is %d x %d\n", xs, ys);
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Array is %d x %d\n", xs, ys);
 
   nx = xs;
   ny = ys;
@@ -299,10 +298,10 @@ NavFn::calcNavFnDijkstra(bool atStart)
   int len = calcPath(nx * ny / 2);
 
   if (len > 0) {  // found plan
-    ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Path found, %d steps\n", len);
     return true;
   } else {
-    ROS_DEBUG("[NavFn] No path found\n");
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] No path found\n");
     return false;
   }
 }
@@ -324,10 +323,10 @@ NavFn::calcNavFnAstar()
   int len = calcPath(nx * 4);
 
   if (len > 0) {  // found plan
-    ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Path found, %d steps\n", len);
     return true;
   } else {
-    ROS_DEBUG("[NavFn] No path found\n");
+    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] No path found\n");
     return false;
   }
 }
@@ -653,14 +652,12 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
     }
   }
 
-  ROS_DEBUG("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+    "[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
-  if (cycle < cycles) {
-    return true;  // finished up here
-  } else {return false;}
+  return (cycle < cycles) ? true : false;
 }
-
 
 //
 // main propagation function
@@ -740,7 +737,8 @@ NavFn::propNavFnAstar(int cycles)
 
   last_path_cost_ = potarr[startCell];
 
-  ROS_DEBUG("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+    "[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
   if (potarr[startCell] < POT_HIGH) {
@@ -806,7 +804,7 @@ NavFn::calcPath(int n, int * st)
     }
 
     if (stc < nx || stc > ns - nx) {  // would be out of bounds
-      ROS_DEBUG("[PathCalc] Out of bounds");
+      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[PathCalc] Out of bounds");
       return 0;
     }
 
@@ -820,7 +818,8 @@ NavFn::calcPath(int n, int * st)
       pathx[npath - 1] == pathx[npath - 3] &&
       pathy[npath - 1] == pathy[npath - 3])
     {
-      ROS_DEBUG("[PathCalc] oscillation detected, attempting fix.");
+      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+        "[PathCalc] oscillation detected, attempting fix.");
       oscillation_detected = true;
     }
 
@@ -839,7 +838,9 @@ NavFn::calcPath(int n, int * st)
       potarr[stcpx - 1] >= POT_HIGH ||
       oscillation_detected)
     {
-      ROS_DEBUG("[Path] Pot fn boundary, following grid (%0.1f/%d)", potarr[stc], npath);
+      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+        "[Path] Pot fn boundary, following grid (%0.1f/%d)", potarr[stc], npath);
+
       // check eight neighbors to find the lowest
       int minc = stc;
       int minp = potarr[stc];
@@ -863,11 +864,11 @@ NavFn::calcPath(int n, int * st)
       dx = 0;
       dy = 0;
 
-      ROS_DEBUG("[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
+      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
         potarr[stc], pathx[npath - 1], pathy[npath - 1]);
 
       if (potarr[stc] >= POT_HIGH) {
-        ROS_DEBUG("[PathCalc] No path found, high potential");
+        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[PathCalc] No path found, high potential");
         // savemap("navfn_highpot");
         return 0;
       }
@@ -887,15 +888,18 @@ NavFn::calcPath(int n, int * st)
       float y2 = (1.0 - dx) * grady[stcnx] + dx * grady[stcnx + 1];
       float y = (1.0 - dy) * y1 + dy * y2;  // interpolated y
 
+#if 0
       // show gradients
-      ROS_DEBUG("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f; final x=%.3f, y=%.3f\n",
+      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+        "[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f; final x=%.3f, y=%.3f\n",
         gradx[stc], grady[stc], gradx[stc + 1], grady[stc + 1],
         gradx[stcnx], grady[stcnx], gradx[stcnx + 1], grady[stcnx + 1],
         x, y);
+#endif
 
       // check for zero gradient, failed
       if (x == 0.0 && y == 0.0) {
-        ROS_DEBUG("[PathCalc] Zero gradient");
+        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[PathCalc] Zero gradient");
         return 0;
       }
 
@@ -916,7 +920,7 @@ NavFn::calcPath(int n, int * st)
   }
 
   //  return npath;  // out of cycles, return failure
-  ROS_DEBUG("[PathCalc] No path found, path too long");
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[PathCalc] No path found, path too long");
   // savemap("navfn_pathlong");
   return 0;  // out of cycles, return failure
 }
@@ -1007,12 +1011,12 @@ NavFn::savemap(const char * fname)
 {
   char fn[4096];
 
-  ROS_DEBUG("[NavFn] Saving costmap and start/goal points");
+  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Saving costmap and start/goal points");
   // write start and goal points
   snprintf(fn, sizeof(fn), "%s.txt", fname);
   FILE * fp = fopen(fn, "w");
   if (!fp) {
-    ROS_WARN("Can't open file %s", fn);
+    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
     return;
   }
   fprintf(fp, "Goal: %d %d\nStart: %d %d\n", goal[0], goal[1], start[0], start[1]);
@@ -1025,7 +1029,7 @@ NavFn::savemap(const char * fname)
   snprintf(fn, sizeof(fn), "%s.pgm", fname);
   fp = fopen(fn, "wb");
   if (!fp) {
-    ROS_WARN("Can't open file %s", fn);
+    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
     return;
   }
   fprintf(fp, "P5\n%d\n%d\n%d\n", nx, ny, 0xff);
