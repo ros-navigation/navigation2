@@ -35,6 +35,7 @@
 #ifndef COSTMAP_QUEUE__COSTMAP_QUEUE_H_
 #define COSTMAP_QUEUE__COSTMAP_QUEUE_H_
 
+#include <cmath>
 #include <vector>
 #include <limits>
 #include <memory>
@@ -72,6 +73,11 @@ public:
   CellData()
   : distance_(std::numeric_limits<double>::max()), index_(0), x_(0), y_(0), src_x_(0), src_y_(0)
   {
+  }
+
+  static unsigned absolute_difference(const unsigned x, const unsigned y)
+  {
+    return (x > y) ? (x - y) : (y - x);
   }
 
   double distance_;
@@ -174,8 +180,8 @@ protected:
     const unsigned int cur_x, const unsigned int cur_y,
     const unsigned int src_x, const unsigned int src_y)
   {
-    unsigned int dx = abs(cur_x - src_x);
-    unsigned int dy = abs(cur_y - src_y);
+    unsigned int dx = CellData::absolute_difference(cur_x, src_x);
+    unsigned int dy = CellData::absolute_difference(cur_y, src_y);
     return cached_distances_[dx][dy];
   }
   std::vector<std::vector<double>> cached_distances_;

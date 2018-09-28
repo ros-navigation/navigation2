@@ -32,12 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
 #include <memory>
 #include <algorithm>
 #include "gtest/gtest.h"
 #include "costmap_queue/costmap_queue.h"
 #include "costmap_queue/limited_costmap_queue.h"
 #include "rclcpp/rclcpp.hpp"
+
+using std::hypot;
 
 costmap_2d::Costmap2D costmap(5, 5, 1.0, 0.0, 0.0);
 

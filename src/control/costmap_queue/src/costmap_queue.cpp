@@ -33,7 +33,10 @@
  */
 #include "costmap_queue/costmap_queue.h"
 #include <algorithm>
+#include <cmath>
 #include <vector>
+
+using std::hypot;
 
 namespace costmap_queue
 {

@@ -33,8 +33,11 @@
  */
 
 #include "dwb_plugins/stopped_goal_checker.h"
+#include <cmath>
 #include <memory>
 #include "pluginlib/class_list_macros.hpp"
+
+using std::fabs;
 
 namespace dwb_plugins
 {

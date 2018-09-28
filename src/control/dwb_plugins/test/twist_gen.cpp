@@ -32,6 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include "gtest/gtest.h"
@@ -39,6 +40,8 @@
 #include "dwb_plugins/limited_accel_generator.h"
 #include "dwb_core/exceptions.h"
 
+using std::hypot;
+using std::fabs;
 using dwb_plugins::StandardTrajectoryGenerator;
 
 geometry_msgs::msg::Pose2D origin;
