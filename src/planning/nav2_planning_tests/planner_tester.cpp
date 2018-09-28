@@ -344,6 +344,9 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       all_tests_OK = false;
       ++num_fail;
     }
+
+	printf("Press ENTER to continue...");
+	getchar();
   }
 
   RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"

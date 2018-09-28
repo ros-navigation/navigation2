@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License. Reserved.
+// limitations under the License.
 
 #ifndef NAV2_TASKS__SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__SERVICE_CLIENT_HPP_
