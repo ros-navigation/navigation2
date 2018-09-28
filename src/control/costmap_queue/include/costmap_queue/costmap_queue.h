@@ -75,6 +75,11 @@ public:
   {
   }
 
+  static unsigned absolute_difference(const unsigned x, const unsigned y)
+  {
+    return (x > y) ? (x - y) : (y - x);
+  }
+
   double distance_;
   unsigned int index_;
   unsigned int x_, y_;
@@ -175,8 +180,8 @@ protected:
     const unsigned int cur_x, const unsigned int cur_y,
     const unsigned int src_x, const unsigned int src_y)
   {
-    unsigned int dx = std::abs<int>(cur_x - src_x);
-    unsigned int dy = std::abs<int>(cur_y - src_y);
+    unsigned int dx = CellData::absolute_difference(cur_x, src_x);
+    unsigned int dy = CellData::absolute_difference(cur_y, src_y);
     return cached_distances_[dx][dy];
   }
   std::vector<std::vector<double>> cached_distances_;
