@@ -33,6 +33,10 @@
  */
 
 #include "dwb_critics/alignment_util.h"
+#include <cmath>
+
+using std::cos;
+using std::sin;
 
 namespace dwb_critics
 {

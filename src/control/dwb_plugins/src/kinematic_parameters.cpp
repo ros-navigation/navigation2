@@ -33,9 +33,12 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.h"
+#include <cmath>
 #include <memory>
 #include <string>
 #include "nav_2d_utils/parameters.h"
+
+using std::fabs;
 
 using nav_2d_utils::moveDeprecatedParameter;
 namespace dwb_plugins

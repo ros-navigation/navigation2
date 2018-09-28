@@ -33,11 +33,14 @@
  */
 
 #include "dwb_critics/map_grid.h"
+#include <cmath>
 #include <string>
 #include <algorithm>
 #include <memory>
 #include "dwb_core/exceptions.h"
 #include "costmap_2d/cost_values.h"
+
+using std::abs;
 
 namespace dwb_critics
 {
@@ -99,7 +102,7 @@ void MapGridCritic::propogateManhattanDistances()
 {
   while (!queue_->isEmpty()) {
     costmap_queue::CellData cell = queue_->getNextCell();
-    cell_values_[cell.index_] = abs(cell.src_x_ - cell.x_) + abs(cell.src_y_ - cell.y_);
+    cell_values_[cell.index_] = abs(int(cell.src_x_ - cell.x_)) + abs(int(cell.src_y_ - cell.y_));
   }
 }
 

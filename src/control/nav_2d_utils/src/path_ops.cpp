@@ -33,6 +33,9 @@
  */
 
 #include "nav_2d_utils/path_ops.h"
+#include <cmath>
+
+using std::sqrt;
 
 namespace nav_2d_utils
 {
