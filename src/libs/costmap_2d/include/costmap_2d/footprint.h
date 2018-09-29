@@ -76,7 +76,6 @@ geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts
 /**
  * @brief Convert Polygon msg to vector of Points.
  */
-std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon polygon);
 std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon);
 
 /**

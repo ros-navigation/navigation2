@@ -94,15 +94,6 @@ geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts
   return polygon;
 }
 
-std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon polygon)
-{
-  std::vector<geometry_msgs::msg::Point> pts;
-  for (int i = 0; i < polygon.points.size(); i++) {
-    pts.push_back(toPoint(polygon.points[i]));
-  }
-  return pts;
-}
-
 std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
 {
   std::vector<geometry_msgs::msg::Point> pts;

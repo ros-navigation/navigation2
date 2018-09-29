@@ -95,8 +95,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       private_parameters_client->get_parameter<std::string>("robot_base_frame", std::string(
         "base_link"));
 
-  auto clock = new rclcpp::Clock();
-  rclcpp::Time last_error = clock->now();
+  //auto clock = new rclcpp::Clock();
+  rclcpp::Clock clock;
+  rclcpp::Time last_error = clock.now();
   std::string tf_error;
 
   // we need to make sure that the transform between the robot base frame and the global frame is available
@@ -105,12 +106,12 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
         tf2::durationFromSec(0.1), &tf_error))
   {
     rclcpp::spin_some(private_nh);
-    if (last_error + rclcpp::Duration(5.0) < clock->now()) {
+    if (last_error + rclcpp::Duration(5.0) < clock.now()) {
       RCLCPP_WARN(rclcpp::get_logger(
             "costmap_2d"),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
           robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
-      last_error = clock->now();
+      last_error = clock.now();
     }
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
@@ -463,7 +464,8 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
 void Costmap2DROS::updateMap()
 {
-  auto clock = new rclcpp::Clock();
+  //auto clock = new rclcpp::Clock();
+  rclcpp::Clock clock;
   if (!stop_updates_) {
     // get global pose
     geometry_msgs::msg::PoseStamped pose;
@@ -476,7 +478,7 @@ void Costmap2DROS::updateMap()
 
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
-      footprint.header.stamp = clock->now();
+      footprint.header.stamp = clock.now();
       transformFootprint(x, y, yaw, padded_footprint_, footprint);
       footprint_pub_->publish(footprint);
 
@@ -554,7 +556,8 @@ void Costmap2DROS::resetLayers()
 
 bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
 {
-  auto clock = new rclcpp::Clock();
+  //auto clock = new rclcpp::Clock();
+  rclcpp::Clock clock;
   tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
   geometry_msgs::msg::PoseStamped robot_pose;
   tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
@@ -562,7 +565,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   robot_pose.header.frame_id = robot_base_frame_;
   robot_pose.header.stamp = rclcpp::Time();
 
-  rclcpp::Time current_time = clock->now();  // save time for checking tf delay later
+  rclcpp::Time current_time = clock.now();  // save time for checking tf delay later
   // get the global pose of the robot
   try {
     tf_.transform(robot_pose, global_pose, global_frame_);

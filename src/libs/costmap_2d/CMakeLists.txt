@@ -39,10 +39,10 @@ find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
-	include
-	${ament_INCLUDE_DIRS}
-	${EIGEN3_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIRS}
+  include
+  ${ament_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -65,7 +65,7 @@ add_library(nav2_costmap_2d
   src/costmap_math.cpp
   src/footprint.cpp
   src/costmap_layer.cpp	
-  #	TODO(bpwilcox): need ROS PCL dependencies to port
+  # TODO(bpwilcox): need ROS PCL dependencies to port
   #src/observation_buffer.cpp
   
 )
@@ -84,7 +84,7 @@ set(dependencies
 )
 
 ament_target_dependencies(nav2_costmap_2d 
-${dependencies}
+  ${dependencies}
 )
 
 target_link_libraries(nav2_costmap_2d
@@ -95,14 +95,14 @@ target_link_libraries(nav2_costmap_2d
 add_library(layers
   plugins/inflation_layer.cpp
 
-	#	TODO(bpwilcox): port additional plugin layers
+  # TODO(bpwilcox): port additional plugin layers
   #plugins/static_layer.cpp
   #plugins/obstacle_layer.cpp
   #plugins/voxel_layer.cpp
   #src/observation_buffer.cpp
 )
 ament_target_dependencies(layers
-${dependencies}
+  ${dependencies}
  )
 target_link_libraries(layers
   nav2_costmap_2d
@@ -125,11 +125,11 @@ target_link_libraries(layers
 
 add_executable(costmap_2d_node src/costmap_2d_node.cpp)
 ament_target_dependencies(costmap_2d_node 
-${dependencies}
+  ${dependencies}
 )
 
 target_link_libraries(costmap_2d_node
-	nav2_costmap_2d
+  nav2_costmap_2d
 )
 
 install(TARGETS nav2_costmap_2d layers costmap_2d_node
