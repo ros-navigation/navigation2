@@ -254,14 +254,26 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
   }
 
   SDL_FreeSurface(img);
+
+  rclcpp::Clock clock;
+  map_msg_.info.map_load_time = clock.now();
+  map_msg_.header.frame_id = frame_id;
+  map_msg_.header.stamp = clock.now();
+  RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read a %d X %d map @ %.3lf m/cell",
+      map_msg_.info.width,
+      map_msg_.info.height,
+      map_msg_.info.resolution);  
 }
 
 void OccGridServer::ConnectROS()
 {
   // Create a publisher
-  // TODO(bpwilcox): publish a latched topic
+  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
+  custom_qos_profile.depth = 1;
+  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    "occ_grid", rmw_qos_profile_default);
+    "occ_grid", custom_qos_profile);
 
   // Create a service callback handle
   auto handle_occ_callback = [this](
