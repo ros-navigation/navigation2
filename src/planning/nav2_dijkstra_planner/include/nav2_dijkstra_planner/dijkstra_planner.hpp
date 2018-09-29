@@ -23,7 +23,6 @@
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/costmap_service_client.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
-//#include "nav2_world_model_msgs/srv/get_costmap.hpp"
 #include "nav2_dijkstra_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
