@@ -13,13 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-
-#include "amcl_node.hpp"
 #include <rclcpp/rclcpp.hpp>
+#include <memory>
+#include "amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include <memory>
 
 using std::placeholders::_1;
 
@@ -27,8 +26,8 @@ using std::placeholders::_1;
 class RclCppFixture
 {
 public:
-  RclCppFixture() { rclcpp::init(0, nullptr); }
-  ~RclCppFixture() { rclcpp::shutdown(); }
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 RclCppFixture g_rclcppfixture;
 
@@ -37,20 +36,20 @@ class TestAmclPose : public ::testing::Test
 public:
   TestAmclPose()
   {
-    //Initializing amcl_pose x and y to NaN
-    amcl_pose_x = 0.0/0.0;
-    amcl_pose_y = 0.0/0.0;
+    // Initializing amcl_pose x and y to NaN
+    amcl_pose_x = 0.0 / 0.0;
+    amcl_pose_y = 0.0 / 0.0;
     pose_callback_ = false;
 
     node = rclcpp::Node::make_shared("localization_test");
 
-    while (node->count_subscribers("/scan")  < 1)
-    {
+    while (node->count_subscribers("/scan") < 1) {
       rclcpp::spin_some(node);
     }
 
-    subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-                    std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
+    subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "amcl_pose",
+      std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
   }
   bool defaultAmclTest();
 
@@ -73,8 +72,7 @@ private:
 
 bool TestAmclPose::defaultAmclTest()
 {
-  while (!pose_callback_)
-  {
+  while (!pose_callback_) {
     rclcpp::spin_some(node);
   }
   if (!std::isnan(amcl_pose_x) && !std::isnan(amcl_pose_y)) {

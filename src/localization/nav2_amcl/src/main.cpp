@@ -37,7 +37,7 @@
 #include "amcl_node.hpp"
 
 int
-main(int argc, char** argv)
+main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<AmclNode>());

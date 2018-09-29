@@ -25,7 +25,7 @@ find_package(nav2_util REQUIRED)
 include_directories(
   include
   ${Boost_INCLUDE_DIRS}
-  )
+)
 
 set(executable_name amcl)
 
@@ -43,7 +43,7 @@ add_library(${library_name}
 target_link_libraries(${executable_name}
   ${Boost_LIBRARIES}
   boost_system
-  )
+)
 
 set(dependencies
   rclcpp
@@ -69,7 +69,7 @@ install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-  )
+)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
