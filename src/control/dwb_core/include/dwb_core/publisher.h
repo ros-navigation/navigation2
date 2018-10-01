@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER__PUBLISHER_H_
-#define DWB_LOCAL_PLANNER__PUBLISHER_H_
+#ifndef DWB_CORE__PUBLISHER_H_
+#define DWB_CORE__PUBLISHER_H_
 
 #include <vector>
 #include <memory>
@@ -116,4 +116,4 @@ protected:
 
 }  // namespace dwb_core
 
-#endif  // DWB_LOCAL_PLANNER__PUBLISHER_H_
+#endif  // DWB_CORE__PUBLISHER_H_

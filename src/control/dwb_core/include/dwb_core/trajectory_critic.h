@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_
-#define DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_
+#ifndef DWB_CORE__TRAJECTORY_CRITIC_H_
+#define DWB_CORE__TRAJECTORY_CRITIC_H_
 
 #include <string>
 #include <vector>
@@ -172,4 +172,4 @@ protected:
 
 }  // namespace dwb_core
 
-#endif  // DWB_LOCAL_PLANNER__TRAJECTORY_CRITIC_H_
+#endif  // DWB_CORE__TRAJECTORY_CRITIC_H_

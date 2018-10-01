@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER__GOAL_CHECKER_H_
-#define DWB_LOCAL_PLANNER__GOAL_CHECKER_H_
+#ifndef DWB_CORE__GOAL_CHECKER_H_
+#define DWB_CORE__GOAL_CHECKER_H_
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
@@ -79,4 +79,4 @@ public:
 
 }  // namespace dwb_core
 
-#endif  // DWB_LOCAL_PLANNER__GOAL_CHECKER_H_
+#endif  // DWB_CORE__GOAL_CHECKER_H_

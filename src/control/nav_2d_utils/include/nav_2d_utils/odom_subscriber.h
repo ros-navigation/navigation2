@@ -64,7 +64,7 @@ public:
     nh.get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
       nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
-        [&](const nav_msgs::msg::Odometry::SharedPtr msg){odomCallback(msg);},
+        [&](const nav_msgs::msg::Odometry::SharedPtr msg) {odomCallback(msg);},
         1);
   }
 

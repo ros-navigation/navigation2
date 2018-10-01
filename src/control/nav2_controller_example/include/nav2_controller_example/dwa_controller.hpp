@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DWA_CONTROLLER__DWA_CONTROLLER_HPP_
-#define NAV2_DWA_CONTROLLER__DWA_CONTROLLER_HPP_
+#ifndef NAV2_CONTROLLER_EXAMPLE__DWA_CONTROLLER_HPP_
+#define NAV2_CONTROLLER_EXAMPLE__DWA_CONTROLLER_HPP_
 
 #include <string>
 #include "nav2_tasks/follow_path_task.hpp"
@@ -32,4 +32,4 @@ public:
 
 }  // namespace nav2_controller_example
 
-#endif  // NAV2_DWA_CONTROLLER__DWA_CONTROLLER_HPP_
+#endif  // NAV2_CONTROLLER_EXAMPLE__DWA_CONTROLLER_HPP_
