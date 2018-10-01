@@ -13,8 +13,12 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
-include_directories(include)
+include_directories(
+  include
+  ${Boost_INCLUDE_DIRS}
+)
 
 add_library(${PROJECT_NAME}
   src/costmap_queue.cpp
@@ -41,7 +45,7 @@ if(BUILD_TESTING)
 
   ament_add_gtest(utest test/utest.cpp)
   ament_target_dependencies(utest ${dependencies})
-  target_link_libraries(utest ${PROJECT_NAME})
+  target_link_libraries(utest ${PROJECT_NAME} ${Boost_LIBRARIES})
 endif()
 
 install(TARGETS ${PROJECT_NAME}

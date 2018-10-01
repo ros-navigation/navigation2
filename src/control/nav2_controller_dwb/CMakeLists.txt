@@ -17,9 +17,11 @@ find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav2_planning_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
   include
+  ${Boost_INCLUDE_DIRS}
 )
 
 set(library_name ${executable_name}_core)
@@ -46,11 +48,12 @@ set(dependencies
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+target_link_libraries(${library_name} ${Boost_LIBRARIES})
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
-target_link_libraries(${executable_name} ${library_name})
+target_link_libraries(${executable_name} ${library_name} ${Boost_LIBRARIES})
 
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
