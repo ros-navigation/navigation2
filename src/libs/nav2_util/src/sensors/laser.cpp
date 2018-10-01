@@ -33,7 +33,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "nav2_util/sensors/amcl_laser.h"
+#include "nav2_util/sensors/laser.h"
 
 using namespace amcl;
 
