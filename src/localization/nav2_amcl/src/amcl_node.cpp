@@ -58,13 +58,13 @@ using amcl::LASER_MODEL_LIKELIHOOD_FIELD;
 using amcl::LASER_MODEL_LIKELIHOOD_FIELD_PROB;
 using amcl::ODOM_MODEL_DIFF;
 using amcl::AMCLOdom;
-using amcl::AMCLLaser;
+using amcl::Laser;
 using amcl::ODOM_MODEL_OMNI;
 using amcl::ODOM_MODEL_DIFF_CORRECTED;
 using amcl::AMCLOdomData;
 using amcl::ODOM_MODEL_OMNI_CORRECTED;
 using amcl::AMCLSensorData;
-using amcl::AMCLLaserData;
+using amcl::LaserData;
 
 static double
 normalize(double z)
@@ -416,7 +416,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
   // Laser
   delete laser_;
-  laser_ = new AMCLLaser(max_beams_, map_);
+  laser_ = new Laser(max_beams_, map_);
   ROS_ASSERT(laser_);
   if (laser_model_type_ == LASER_MODEL_BEAM) {
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
@@ -752,7 +752,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
   // Laser
   delete laser_;
-  laser_ = new AMCLLaser(max_beams_, map_);
+  laser_ = new Laser(max_beams_, map_);
   assert(laser_);
   if (laser_model_type_ == LASER_MODEL_BEAM) {
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
@@ -956,7 +956,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
     RCLCPP_DEBUG(get_logger(), "Setting up laser %d (frame_id=%s)\n",
       (int)frame_to_laser_.size(), laser_scan_frame_id.c_str());
-    lasers_.push_back(new AMCLLaser(*laser_));
+    lasers_.push_back(new Laser(*laser_));
     lasers_update_.push_back(true);
     laser_index = frame_to_laser_.size();
 
@@ -1064,7 +1064,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   bool resampled = false;
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
-    AMCLLaserData ldata;
+    LaserData ldata;
     ldata.sensor = lasers_[laser_index];
     ldata.range_count = laser_scan->ranges.size();
 
@@ -1113,7 +1113,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     } else {
       range_min = laser_scan->range_min;
     }
-    // The AMCLLaserData destructor will free this memory
+    // The LaserData destructor will free this memory
     ldata.ranges = new double[ldata.range_count][2];
     assert(ldata.ranges);
     for (int i = 0; i < ldata.range_count; i++) {
