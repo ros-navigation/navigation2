@@ -57,11 +57,11 @@ using amcl::LASER_MODEL_BEAM;
 using amcl::LASER_MODEL_LIKELIHOOD_FIELD;
 using amcl::LASER_MODEL_LIKELIHOOD_FIELD_PROB;
 using amcl::ODOM_MODEL_DIFF;
-using amcl::AMCLOdom;
+using amcl::Odom;
 using amcl::Laser;
 using amcl::ODOM_MODEL_OMNI;
 using amcl::ODOM_MODEL_DIFF_CORRECTED;
-using amcl::AMCLOdomData;
+using amcl::OdomData;
 using amcl::ODOM_MODEL_OMNI_CORRECTED;
 using amcl::AMCLSensorData;
 using amcl::LaserData;
@@ -411,7 +411,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   // Instantiate the sensor objects
   // Odometry
   delete odom_;
-  odom_ = new AMCLOdom();
+  odom_ = new Odom();
   ROS_ASSERT(odom_);
   odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
   // Laser
@@ -747,7 +747,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Instantiate the sensor objects
   // Odometry
   delete odom_;
-  odom_ = new AMCLOdom();
+  odom_ = new Odom();
   assert(odom_);
   odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
   // Laser
@@ -1047,7 +1047,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // printf("pose\n");
     // pf_vector_fprintf(pose, stdout, "%.3f");
 
-    AMCLOdomData odata;
+    OdomData odata;
     odata.pose = pose;
     // HACK
     // Modify the delta in the action data so the filter gets

@@ -44,7 +44,7 @@ typedef enum
 } odom_model_t;
 
 // Odometric sensor data
-class AMCLOdomData : public AMCLSensorData
+class OdomData : public AMCLSensorData
 {
   // Odometric pose
   public: pf_vector_t pose;
@@ -55,10 +55,10 @@ class AMCLOdomData : public AMCLSensorData
 
 
 // Odometric sensor model
-class AMCLOdom : public AMCLSensor
+class Odom : public AMCLSensor
 {
   // Default constructor
-  public: AMCLOdom();
+  public: Odom();
 
   public: void SetModelDiff(double alpha1, 
                             double alpha2, 

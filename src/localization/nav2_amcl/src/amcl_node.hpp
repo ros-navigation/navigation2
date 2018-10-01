@@ -185,7 +185,7 @@ private:
   // Used to temporarily let amcl update samples even when no motion occurs
   bool m_force_update;
 
-  amcl::AMCLOdom * odom_;
+  amcl::Odom * odom_;
   amcl::Laser * laser_;
 
   std::chrono::duration<double> cloud_pub_interval;

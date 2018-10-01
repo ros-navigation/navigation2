@@ -59,13 +59,13 @@ angle_diff(double a, double b)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-AMCLOdom::AMCLOdom() : AMCLSensor()
+Odom::Odom() : AMCLSensor()
 {
   this->time = 0.0;
 }
 
 void
-AMCLOdom::SetModelDiff(double alpha1, 
+Odom::SetModelDiff(double alpha1, 
                        double alpha2, 
                        double alpha3, 
                        double alpha4)
@@ -78,7 +78,7 @@ AMCLOdom::SetModelDiff(double alpha1,
 }
 
 void
-AMCLOdom::SetModelOmni(double alpha1, 
+Odom::SetModelOmni(double alpha1, 
                        double alpha2, 
                        double alpha3, 
                        double alpha4,
@@ -93,7 +93,7 @@ AMCLOdom::SetModelOmni(double alpha1,
 }
 
 void
-AMCLOdom::SetModel( odom_model_t type,
+Odom::SetModel( odom_model_t type,
                     double alpha1,
                     double alpha2,
                     double alpha3,
@@ -110,10 +110,10 @@ AMCLOdom::SetModel( odom_model_t type,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the action model
-bool AMCLOdom::UpdateAction(pf_t *pf, AMCLSensorData *data)
+bool Odom::UpdateAction(pf_t *pf, AMCLSensorData *data)
 {
-  AMCLOdomData *ndata;
-  ndata = (AMCLOdomData*) data;
+  OdomData *ndata;
+  ndata = (OdomData*) data;
 
   // Compute the new sample poses
   pf_sample_set_t *set;
