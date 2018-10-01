@@ -22,8 +22,8 @@ add_library(${PROJECT_NAME}
 )
 
 set(dependencies
-  costmap_2d
   rclcpp
+  costmap_2d
 )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -40,8 +40,8 @@ if(BUILD_TESTING)
   ament_target_dependencies(mbq_test ${dependencies})
 
   ament_add_gtest(utest test/utest.cpp)
-  target_link_libraries(utest ${PROJECT_NAME})
   ament_target_dependencies(utest ${dependencies})
+  target_link_libraries(utest ${PROJECT_NAME})
 endif()
 
 install(TARGETS ${PROJECT_NAME}
