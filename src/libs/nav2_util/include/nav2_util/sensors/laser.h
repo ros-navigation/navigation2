@@ -29,7 +29,7 @@
 #ifndef AMCL_LASER_H
 #define AMCL_LASER_H
 
-#include "nav2_util/sensors/amcl_sensor.h"
+#include "nav2_util/sensors/sensor.h"
 #include "nav2_util/map/map.h"
 
 namespace amcl
@@ -43,7 +43,7 @@ typedef enum
 } laser_model_t;
 
 // Laser sensor data
-class LaserData : public AMCLSensorData
+class LaserData : public SensorData
 {
   public:
     LaserData () {ranges=NULL;};
@@ -56,7 +56,7 @@ class LaserData : public AMCLSensorData
 
 
 // Laseretric sensor model
-class Laser : public AMCLSensor
+class Laser : public Sensor
 {
   // Default constructor
   public: Laser(size_t max_beams, map_t* map);
@@ -88,7 +88,7 @@ class Laser : public AMCLSensor
 
   // Update the filter based on the sensor model.  Returns true if the
   // filter has been updated.
-  public: virtual bool UpdateSensor(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool UpdateSensor(pf_t *pf, SensorData *data);
 
   // Set the laser's pose after construction
   public: void SetLaserPose(pf_vector_t& laser_pose) 

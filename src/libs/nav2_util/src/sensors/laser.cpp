@@ -39,7 +39,7 @@ using namespace amcl;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-Laser::Laser(size_t max_beams, map_t* map) : AMCLSensor(), 
+Laser::Laser(size_t max_beams, map_t* map) : Sensor(), 
 						     max_samples(0), max_obs(0), 
 						     temp_obs(NULL)
 {
@@ -118,7 +118,7 @@ Laser::SetModelLikelihoodFieldProb(double z_hit,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the laser sensor model
-bool Laser::UpdateSensor(pf_t *pf, AMCLSensorData *data)
+bool Laser::UpdateSensor(pf_t *pf, SensorData *data)
 {
   if (this->max_beams < 2)
     return false;

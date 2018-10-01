@@ -63,7 +63,7 @@ using amcl::ODOM_MODEL_OMNI;
 using amcl::ODOM_MODEL_DIFF_CORRECTED;
 using amcl::OdomData;
 using amcl::ODOM_MODEL_OMNI_CORRECTED;
-using amcl::AMCLSensorData;
+using amcl::SensorData;
 using amcl::LaserData;
 
 static double
@@ -1055,7 +1055,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     odata.delta = delta;
 
     // Use the action data to update the filter
-    odom_->UpdateAction(pf_, reinterpret_cast<AMCLSensorData *>(&odata));
+    odom_->UpdateAction(pf_, reinterpret_cast<SensorData *>(&odata));
 
     // Pose at last filter update
     // this->pf_odom_pose = pose;
@@ -1129,7 +1129,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         (i * angle_increment);
     }
 
-    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<AMCLSensorData *>(&ldata));
+    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<SensorData *>(&ldata));
 
     lasers_update_[laser_index] = false;
 

@@ -59,7 +59,7 @@ angle_diff(double a, double b)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-Odom::Odom() : AMCLSensor()
+Odom::Odom() : Sensor()
 {
   this->time = 0.0;
 }
@@ -110,7 +110,7 @@ Odom::SetModel( odom_model_t type,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the action model
-bool Odom::UpdateAction(pf_t *pf, AMCLSensorData *data)
+bool Odom::UpdateAction(pf_t *pf, SensorData *data)
 {
   OdomData *ndata;
   ndata = (OdomData*) data;

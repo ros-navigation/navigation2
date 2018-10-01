@@ -34,29 +34,29 @@ namespace amcl
 {
 
 // Forward declarations
-class AMCLSensorData;
+class SensorData;
 
 
 // Base class for all AMCL sensors
-class AMCLSensor
+class Sensor
 {
   // Default constructor
-  public: AMCLSensor();
+  public: Sensor();
          
   // Default destructor
-  public: virtual ~AMCLSensor();
+  public: virtual ~Sensor();
 
   // Update the filter based on the action model.  Returns true if the filter
   // has been updated.
-  public: virtual bool UpdateAction(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool UpdateAction(pf_t *pf, SensorData *data);
 
   // Initialize the filter based on the sensor model.  Returns true if the
   // filter has been initialized.
-  public: virtual bool InitSensor(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool InitSensor(pf_t *pf, SensorData *data);
 
   // Update the filter based on the sensor model.  Returns true if the
   // filter has been updated.
-  public: virtual bool UpdateSensor(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool UpdateSensor(pf_t *pf, SensorData *data);
 
   // Flag is true if this is the action sensor
   public: bool is_action;
@@ -75,18 +75,18 @@ class AMCLSensor
   public: virtual void ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig);
 
   // Draw sensor data
-  public: virtual void UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, AMCLSensorData *data);
+  public: virtual void UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, SensorData *data);
 #endif
 };
 
 
 
 // Base class for all AMCL sensor measurements
-class AMCLSensorData
+class SensorData
 {
   // Pointer to sensor that generated the data
-  public: AMCLSensor *sensor;
-          virtual ~AMCLSensorData() {}
+  public: Sensor *sensor;
+          virtual ~SensorData() {}
 
   // Data timestamp
   public: double time;
