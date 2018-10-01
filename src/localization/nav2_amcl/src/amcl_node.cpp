@@ -28,7 +28,7 @@
 #include <vector>
 #include "amcl_node.hpp"
 #include "nav2_util/pf/pf.h"  // pf_vector_t
-//  #include "util/strutils.h" // TODO (mhpanah): put strutils in util directory
+#include "nav2_util/strutils.hpp"
 
 // For transform support
 #include "tf2/LinearMath/Transform.h"
@@ -65,24 +65,6 @@ using amcl::AMCLOdomData;
 using amcl::ODOM_MODEL_OMNI_CORRECTED;
 using amcl::AMCLSensorData;
 using amcl::AMCLLaserData;
-
-// TODO(mhpanah): Factor out strutils and put it in util directory
-class strutils
-{
-public:
-  static std::string stripLeadingSlash(const std::string & in);
-};
-
-std::string strutils::stripLeadingSlash(const std::string & in)
-{
-  std::string out = in;
-
-  if ((!in.empty()) && (in[0] == '/')) {
-    out.erase(0, 1);
-  }
-
-  return out;
-}
 
 static double
 normalize(double z)
