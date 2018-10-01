@@ -51,7 +51,7 @@ add_library(pf_lib SHARED
 
 add_library(sensors_lib SHARED
   src/sensors/amcl_sensor.cpp
-  src/sensors/amcl_odom.cpp
+  src/sensors/odom.cpp
   src/sensors/laser.cpp
 )
 
