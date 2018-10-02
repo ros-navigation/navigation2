@@ -24,16 +24,16 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-set(library_name ${executable_name}_core)
-
-add_library(${library_name}
-  src/dwb_controller.cpp
-)
-
 set(executable_name nav2_controller_dwb)
 
 add_executable(${executable_name}
   src/main.cpp
+)
+
+set(library_name ${executable_name}_core)
+
+add_library(${library_name}
+  src/dwb_controller.cpp
 )
 
 set(dependencies
