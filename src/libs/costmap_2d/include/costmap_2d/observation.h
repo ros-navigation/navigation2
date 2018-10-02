@@ -32,8 +32,8 @@
 #ifndef COSTMAP_2D_OBSERVATION_H_
 #define COSTMAP_2D_OBSERVATION_H_
 
-#include <geometry_msgs/Point.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/msg/point.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace costmap_2d
 {
@@ -66,7 +66,7 @@ public:
    * @param obstacle_range The range out to which an observation should be able to insert obstacles
    * @param raytrace_range The range out to which an observation should be able to clear via raytracing
    */
-  Observation(geometry_msgs::Point & origin, const sensor_msgs::PointCloud2 & cloud,
+  Observation(geometry_msgs::msg::Point & origin, const sensor_msgs::msg::PointCloud2 & cloud,
       double obstacle_range, double raytrace_range)
     : origin_(origin), cloud_(new sensor_msgs::PointCloud2(cloud)),
     obstacle_range_(obstacle_range), raytrace_range_(raytrace_range)
@@ -88,14 +88,14 @@ public:
    * @param cloud The point cloud of the observation
    * @param obstacle_range The range out to which an observation should be able to insert obstacles
    */
-  Observation(const sensor_msgs::PointCloud2 & cloud, double obstacle_range)
+  Observation(const sensor_msgs::msg::PointCloud2 & cloud, double obstacle_range)
     : cloud_(new sensor_msgs::PointCloud2(cloud)), obstacle_range_(obstacle_range),
     raytrace_range_(0.0)
   {
   }
 
-  geometry_msgs::Point origin_;
-  sensor_msgs::PointCloud2 * cloud_;
+  geometry_msgs::msg::Point origin_;
+  sensor_msgs::msg::PointCloud2 * cloud_;
   double obstacle_range_, raytrace_range_;
 };
 

@@ -66,13 +66,13 @@ InflationLayer::InflationLayer()
   last_max_y_(std::numeric_limits<float>::max())
 {
   inflation_access_ = new std::recursive_mutex();
+  enabled_ = true;
 }
 
 void InflationLayer::onInitialize()
 {
   {
     std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
-    //ros::NodeHandle nh("~/" + name_), g_nh;
 
     auto private_nh = rclcpp::Node::make_shared(name_);
     rclcpp::Node::SharedPtr g_nh;
@@ -102,6 +102,9 @@ void InflationLayer::onInitialize()
   }
 
   matchSize();
+  //TODO(bpwilcox): Values hard-coded from config file default, replace with dynamic approach
+  setInflationParameters(0.55, 10);
+
 }
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
 /*

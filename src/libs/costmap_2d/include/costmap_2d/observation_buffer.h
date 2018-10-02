@@ -40,11 +40,11 @@
 #include <vector>
 #include <list>
 #include <string>
-#include <ros/time.h>
+#include "rclcpp/time.hpp"
 #include <costmap_2d/observation.h>
 #include <tf2_ros/buffer.h>
 
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 
 namespace costmap_2d
@@ -96,7 +96,7 @@ public:
    * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
    * @param  cloud The cloud to be buffered
    */
-  void bufferCloud(const sensor_msgs::PointCloud2 & cloud);
+  void bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud);
 
   /**
    * @brief  Pushes copies of all current observations onto the end of the vector passed in
@@ -138,9 +138,10 @@ private:
   void purgeStaleObservations();
 
   tf2_ros::Buffer & tf2_buffer_;
-  const ros::Duration observation_keep_time_;
-  const ros::Duration expected_update_rate_;
-  ros::Time last_updated_;
+  const rclcpp::Duration observation_keep_time_;
+  const rclcpp::Duration expected_update_rate_;
+  rclcpp::Clock clock_;
+  rclcpp::Time last_updated_;
   std::string global_frame_;
   std::string sensor_frame_;
   std::list<Observation> observation_list_;
