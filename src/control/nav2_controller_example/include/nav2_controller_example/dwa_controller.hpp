@@ -31,7 +31,7 @@ public:
 
 protected:
   nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
-  void sendVelocity(double speed, double angle);
+  void sendVelocity(double speed);
   std::shared_ptr<rclcpp::Publisher<CmdVel>> vel_pub_;
 };
 

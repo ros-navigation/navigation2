@@ -43,7 +43,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
   for (int i = 0; i < 10; i++) {
     // Do a bit of the task
     RCLCPP_INFO(get_logger(), "DwaController::execute: doing work: %d", i);
-    sendVelocity(0.1, 0);
+    sendVelocity(0.1);
     std::this_thread::sleep_for(250ms);
 
     // Before we loop again to do more work, check if we've been canceled
@@ -54,7 +54,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
     }
   }
 
-  sendVelocity(0, 0);
+  sendVelocity(0);
   // We've successfully completed the task, so return the result
   RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
 
@@ -64,7 +64,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
   return TaskStatus::SUCCEEDED;
 }
 
-void DwaController::sendVelocity(double speed, double angle)
+void DwaController::sendVelocity(double speed)
 {
   CmdVel v;
   v.linear.x = speed;
@@ -72,7 +72,7 @@ void DwaController::sendVelocity(double speed, double angle)
   v.linear.z = 0;
   v.angular.x = 0;
   v.angular.y = 0;
-  v.angular.z = angle;
+  v.angular.z = 0;
   vel_pub_->publish(v);
 }
 
