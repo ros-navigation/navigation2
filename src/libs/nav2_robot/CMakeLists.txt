@@ -12,6 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -23,6 +24,7 @@ add_library(nav2_robot STATIC
 
 ament_target_dependencies(nav2_robot
   rclcpp
+  geometry_msgs
 )
 
 install(TARGETS ${PROJECT_NAME}
