@@ -232,9 +232,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
       super_map.setStruct(&map);
       plugins.push_back(super_map);
 
-      //ros::NodeHandle map_layer(nh, "static_layer");
-      //auto map_layer = rclcpp::Node::make_shared("static_layer",nh->get_name);
-      auto map_layer = rclcpp::Node::make_shared("static_layer");
+      auto map_layer = rclcpp::Node::make_shared("static_layer", std::string(nh->get_name()));
 
       move_parameter(nh, map_layer, "map_topic");
       move_parameter(nh, map_layer, "unknown_cost_value");
@@ -242,7 +240,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
       move_parameter(nh, map_layer, "track_unknown_space", false);
     }
   }
-  auto obstacles = rclcpp::Node::make_shared("obstacle_layer");
+  auto obstacles = rclcpp::Node::make_shared("obstacle_layer", std::string(nh->get_name()));
   //ros::NodeHandle obstacles(nh, "obstacle_layer");
 
   if (parameters_client->has_parameter("map_type")) {
@@ -280,7 +278,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
   }
   move_parameter(nh, obstacles, "observation_sources");
 
-  auto inflation = rclcpp::Node::make_shared("obstacle_layer");
+  auto inflation = rclcpp::Node::make_shared("obstacle_layer", std::string(nh->get_name()));
   //ros::NodeHandle inflation(nh, "inflation_layer");
 
   move_parameter(nh, inflation, "cost_scaling_factor");

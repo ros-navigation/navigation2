@@ -1,13 +1,14 @@
 #ifndef COSTMAP_2D_TESTING_HELPER_H
 #define COSTMAP_2D_TESTING_HELPER_H
 
+#include "rclcpp/rclcpp.hpp"
 #include <costmap_2d/cost_values.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/static_layer.h>
 #include <costmap_2d/obstacle_layer.h>
 #include <costmap_2d/inflation_layer.h>
 
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 const double MAX_Z(1.0);
 
@@ -34,6 +35,7 @@ char printableCost(unsigned char cost)
 
 void printMap(costmap_2d::Costmap2D & costmap)
 {
+
   printf("map:\n");
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
     for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
@@ -59,9 +61,13 @@ unsigned int countValues(costmap_2d::Costmap2D & costmap, unsigned char value, b
 
 void addStaticLayer(costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf)
 {
+
   costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
+
   layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
+
   slayer->initialize(&layers, "static", &tf);
+
 }
 
 costmap_2d::ObstacleLayer * addObstacleLayer(costmap_2d::LayeredCostmap & layers,

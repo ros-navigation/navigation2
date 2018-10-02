@@ -63,10 +63,9 @@ add_library(nav2_costmap_2d
   src/costmap_2d_publisher.cpp
   src/costmap_math.cpp
   src/footprint.cpp
-  src/costmap_layer.cpp
-  # TODO(bpwilcox): need ROS PCL dependencies to port
-  #src/observation_buffer.cpp
-
+  src/costmap_layer.cpp	
+  #	TODO(bpwilcox): need tf2_sensor_msgs ported
+  # src/observation_buffer.cpp  
 )
 
 set(dependencies
@@ -90,7 +89,7 @@ add_library(layers
   plugins/inflation_layer.cpp
 
 	#	TODO(bpwilcox): port additional plugin layers
-  #plugins/static_layer.cpp
+  plugins/static_layer.cpp
   #plugins/obstacle_layer.cpp
   #plugins/voxel_layer.cpp
   #src/observation_buffer.cpp
