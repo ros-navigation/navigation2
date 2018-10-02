@@ -33,13 +33,13 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "nav2_util/sensors/amcl_laser.h"
+#include "nav2_util/sensors/laser.h"
 
 using namespace amcl;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-AMCLLaser::AMCLLaser(size_t max_beams, map_t* map) : AMCLSensor(), 
+Laser::Laser(size_t max_beams, map_t* map) : Sensor(), 
 						     max_samples(0), max_obs(0), 
 						     temp_obs(NULL)
 {
@@ -51,7 +51,7 @@ AMCLLaser::AMCLLaser(size_t max_beams, map_t* map) : AMCLSensor(),
   return;
 }
 
-AMCLLaser::~AMCLLaser()
+Laser::~Laser()
 {
   if(temp_obs){
 	for(int k=0; k < max_samples; k++){
@@ -62,7 +62,7 @@ AMCLLaser::~AMCLLaser()
 }
 
 void 
-AMCLLaser::SetModelBeam(double z_hit,
+Laser::SetModelBeam(double z_hit,
                         double z_short,
                         double z_max,
                         double z_rand,
@@ -81,7 +81,7 @@ AMCLLaser::SetModelBeam(double z_hit,
 }
 
 void 
-AMCLLaser::SetModelLikelihoodField(double z_hit,
+Laser::SetModelLikelihoodField(double z_hit,
                                    double z_rand,
                                    double sigma_hit,
                                    double max_occ_dist)
@@ -95,7 +95,7 @@ AMCLLaser::SetModelLikelihoodField(double z_hit,
 }
 
 void 
-AMCLLaser::SetModelLikelihoodFieldProb(double z_hit,
+Laser::SetModelLikelihoodFieldProb(double z_hit,
 				       double z_rand,
 				       double sigma_hit,
 				       double max_occ_dist,
@@ -118,7 +118,7 @@ AMCLLaser::SetModelLikelihoodFieldProb(double z_hit,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the laser sensor model
-bool AMCLLaser::UpdateSensor(pf_t *pf, AMCLSensorData *data)
+bool Laser::UpdateSensor(pf_t *pf, SensorData *data)
 {
   if (this->max_beams < 2)
     return false;
@@ -139,9 +139,9 @@ bool AMCLLaser::UpdateSensor(pf_t *pf, AMCLSensorData *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Determine the probability for the given pose
-double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
+double Laser::BeamModel(LaserData *data, pf_sample_set_t* set)
 {
-  AMCLLaser *self;
+  Laser *self;
   int i, j, step;
   double z, pz;
   double p;
@@ -151,7 +151,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   pf_sample_t *sample;
   pf_vector_t pose;
 
-  self = (AMCLLaser*) data->sensor;
+  self = (Laser*) data->sensor;
 
   total_weight = 0.0;
 
@@ -210,9 +210,9 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   return(total_weight);
 }
 
-double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set)
+double Laser::LikelihoodFieldModel(LaserData *data, pf_sample_set_t* set)
 {
-  AMCLLaser *self;
+  Laser *self;
   int i, j, step;
   double z, pz;
   double p;
@@ -222,7 +222,7 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = (AMCLLaser*) data->sensor;
+  self = (Laser*) data->sensor;
 
   total_weight = 0.0;
 
@@ -300,9 +300,9 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
   return(total_weight);
 }
 
-double AMCLLaser::LikelihoodFieldModelProb(AMCLLaserData *data, pf_sample_set_t* set)
+double Laser::LikelihoodFieldModelProb(LaserData *data, pf_sample_set_t* set)
 {
-  AMCLLaser *self;
+  Laser *self;
   int i, j, step;
   double z, pz;
   double log_p;
@@ -312,7 +312,7 @@ double AMCLLaser::LikelihoodFieldModelProb(AMCLLaserData *data, pf_sample_set_t*
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = (AMCLLaser*) data->sensor;
+  self = (Laser*) data->sensor;
 
   total_weight = 0.0;
 
@@ -491,7 +491,7 @@ double AMCLLaser::LikelihoodFieldModelProb(AMCLLaserData *data, pf_sample_set_t*
   return(total_weight);
 }
 
-void AMCLLaser::reallocTempData(int new_max_samples, int new_max_obs){
+void Laser::reallocTempData(int new_max_samples, int new_max_obs){
   if(temp_obs){
     for(int k=0; k < max_samples; k++){
       delete [] temp_obs[k];

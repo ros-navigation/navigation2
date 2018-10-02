@@ -28,24 +28,24 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-#include "nav2_util/sensors/amcl_sensor.h"
+#include "nav2_util/sensors/sensor.h"
 
 using namespace amcl;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-AMCLSensor::AMCLSensor()
+Sensor::Sensor()
 {
   return;
 }
 
-AMCLSensor::~AMCLSensor()
+Sensor::~Sensor()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the action model
-bool AMCLSensor::UpdateAction(pf_t * /*pf*/, AMCLSensorData * /*data*/)
+bool Sensor::UpdateAction(pf_t * /*pf*/, SensorData * /*data*/)
 {
   return false;
 }
@@ -53,7 +53,7 @@ bool AMCLSensor::UpdateAction(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the filter
-bool AMCLSensor::InitSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
+bool Sensor::InitSensor(pf_t * /*pf*/, SensorData * /*data*/)
 {
   return false;
 }
@@ -61,7 +61,7 @@ bool AMCLSensor::InitSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the sensor model
-bool AMCLSensor::UpdateSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
+bool Sensor::UpdateSensor(pf_t * /*pf*/, SensorData * /*data*/)
 {
   return false;
 }
@@ -71,7 +71,7 @@ bool AMCLSensor::UpdateSensor(pf_t * /*pf*/, AMCLSensorData * /*data*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Setup the GUI
-void AMCLSensor::SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
+void Sensor::SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
 {
   return;
 }
@@ -79,7 +79,7 @@ void AMCLSensor::SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Shutdown the GUI
-void AMCLSensor::ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
+void Sensor::ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
 {
   return;
 }
@@ -87,7 +87,7 @@ void AMCLSensor::ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Draw sensor data
-void AMCLSensor::UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, AMCLSensorData *data)
+void Sensor::UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, SensorData *data)
 {
   return;
 }

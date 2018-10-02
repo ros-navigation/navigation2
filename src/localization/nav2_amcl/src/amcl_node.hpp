@@ -35,8 +35,8 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/sensors/amcl_laser.h"
-#include "nav2_util/sensors/amcl_odom.h"
+#include "nav2_util/sensors/laser.h"
+#include "nav2_util/sensors/odom.h"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -164,7 +164,7 @@ private:
   // tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
 
-  std::vector<amcl::AMCLLaser *> lasers_;
+  std::vector<amcl::Laser *> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
 
@@ -185,8 +185,8 @@ private:
   // Used to temporarily let amcl update samples even when no motion occurs
   bool m_force_update;
 
-  amcl::AMCLOdom * odom_;
-  amcl::AMCLLaser * laser_;
+  amcl::Odom * odom_;
+  amcl::Laser * laser_;
 
   std::chrono::duration<double> cloud_pub_interval;
 

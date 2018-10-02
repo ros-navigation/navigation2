@@ -29,7 +29,7 @@
 #ifndef AMCL_ODOM_H
 #define AMCL_ODOM_H
 
-#include "nav2_util/sensors/amcl_sensor.h"
+#include "nav2_util/sensors/sensor.h"
 #include "nav2_util/pf/pf_pdf.h"
 
 namespace amcl
@@ -44,7 +44,7 @@ typedef enum
 } odom_model_t;
 
 // Odometric sensor data
-class AMCLOdomData : public AMCLSensorData
+class OdomData : public SensorData
 {
   // Odometric pose
   public: pf_vector_t pose;
@@ -55,10 +55,10 @@ class AMCLOdomData : public AMCLSensorData
 
 
 // Odometric sensor model
-class AMCLOdom : public AMCLSensor
+class Odom : public Sensor
 {
   // Default constructor
-  public: AMCLOdom();
+  public: Odom();
 
   public: void SetModelDiff(double alpha1, 
                             double alpha2, 
@@ -80,7 +80,7 @@ class AMCLOdom : public AMCLSensor
 
   // Update the filter based on the action model.  Returns true if the filter
   // has been updated.
-  public: virtual bool UpdateAction(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool UpdateAction(pf_t *pf, SensorData *data);
 
   // Current data timestamp
   private: double time;

@@ -29,7 +29,7 @@
 #ifndef AMCL_LASER_H
 #define AMCL_LASER_H
 
-#include "nav2_util/sensors/amcl_sensor.h"
+#include "nav2_util/sensors/sensor.h"
 #include "nav2_util/map/map.h"
 
 namespace amcl
@@ -43,11 +43,11 @@ typedef enum
 } laser_model_t;
 
 // Laser sensor data
-class AMCLLaserData : public AMCLSensorData
+class LaserData : public SensorData
 {
   public:
-    AMCLLaserData () {ranges=NULL;};
-    virtual ~AMCLLaserData() {delete [] ranges;};
+    LaserData () {ranges=NULL;};
+    virtual ~LaserData() {delete [] ranges;};
   // Laser range data (range, bearing tuples)
   public: int range_count;
   public: double range_max;
@@ -56,12 +56,12 @@ class AMCLLaserData : public AMCLSensorData
 
 
 // Laseretric sensor model
-class AMCLLaser : public AMCLSensor
+class Laser : public Sensor
 {
   // Default constructor
-  public: AMCLLaser(size_t max_beams, map_t* map);
+  public: Laser(size_t max_beams, map_t* map);
 
-  public: virtual ~AMCLLaser(); 
+  public: virtual ~Laser(); 
 
   public: void SetModelBeam(double z_hit,
                             double z_short,
@@ -88,21 +88,21 @@ class AMCLLaser : public AMCLSensor
 
   // Update the filter based on the sensor model.  Returns true if the
   // filter has been updated.
-  public: virtual bool UpdateSensor(pf_t *pf, AMCLSensorData *data);
+  public: virtual bool UpdateSensor(pf_t *pf, SensorData *data);
 
   // Set the laser's pose after construction
   public: void SetLaserPose(pf_vector_t& laser_pose) 
           {this->laser_pose = laser_pose;}
 
   // Determine the probability for the given pose
-  private: static double BeamModel(AMCLLaserData *data, 
+  private: static double BeamModel(LaserData *data, 
                                    pf_sample_set_t* set);
   // Determine the probability for the given pose
-  private: static double LikelihoodFieldModel(AMCLLaserData *data, 
+  private: static double LikelihoodFieldModel(LaserData *data, 
                                               pf_sample_set_t* set);
 
   // Determine the probability for the given pose - more probablistic model 
-  private: static double LikelihoodFieldModelProb(AMCLLaserData *data, 
+  private: static double LikelihoodFieldModelProb(LaserData *data, 
 					     pf_sample_set_t* set);
 
   private: void reallocTempData(int max_samples, int max_obs);
