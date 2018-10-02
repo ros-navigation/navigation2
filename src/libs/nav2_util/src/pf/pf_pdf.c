@@ -43,10 +43,10 @@ static unsigned int pf_pdf_seed;
  *************************************************************************/
 
 // Create a gaussian pdf
-pf_pdf_gaussian_t *pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
+pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
 {
   pf_matrix_t cd;
-  pf_pdf_gaussian_t *pdf;
+  pf_pdf_gaussian_t * pdf;
 
   pdf = calloc(1, sizeof(pf_pdf_gaussian_t));
 
@@ -71,11 +71,10 @@ pf_pdf_gaussian_t *pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
 
 
 // Destroy the pdf
-void pf_pdf_gaussian_free(pf_pdf_gaussian_t *pdf)
+void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf)
 {
   //gsl_rng_free(pdf->rng);
   free(pdf);
-  return;
 }
 
 
@@ -86,7 +85,7 @@ double pf_pdf_gaussian_value(pf_pdf_gaussian_t *pdf, pf_vector_t x)
   int i, j;
   pf_vector_t z;
   double zz, p;
-  
+
   z = pf_vector_sub(x, pdf->x);
 
   zz = 0;
@@ -95,33 +94,32 @@ double pf_pdf_gaussian_value(pf_pdf_gaussian_t *pdf, pf_vector_t x)
       zz += z.v[i] * pdf->cxi.m[i][j] * z.v[j];
 
   p =  1 / (2 * M_PI * pdf->cxdet) * exp(-zz / 2);
-          
+
   return p;
 }
 */
 
 
 // Generate a sample from the pdf.
-pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t *pdf)
+pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t * pdf)
 {
   int i, j;
   pf_vector_t r;
   pf_vector_t x;
 
   // Generate a random vector
-  for (i = 0; i < 3; i++)
-  {
+  for (i = 0; i < 3; i++) {
     //r.v[i] = gsl_ran_gaussian(pdf->rng, pdf->cd.v[i]);
     r.v[i] = pf_ran_gaussian(pdf->cd.v[i]);
   }
 
-  for (i = 0; i < 3; i++)
-  {
+  for (i = 0; i < 3; i++) {
     x.v[i] = pdf->x.v[i];
-    for (j = 0; j < 3; j++)
+    for (j = 0; j < 3; j++) {
       x.v[i] += pdf->cr.m[i][j] * r.v[j];
-  } 
-  
+    }
+  }
+
   return x;
 }
 
@@ -133,14 +131,17 @@ double pf_ran_gaussian(double sigma)
 {
   double x1, x2, w, r;
 
-  do
-  {
-    do { r = drand48(); } while (r==0.0);
+  do {
+    do {
+      r = drand48();
+    } while (r == 0.0);
     x1 = 2.0 * r - 1.0;
-    do { r = drand48(); } while (r==0.0);
+    do {
+      r = drand48();
+    } while (r == 0.0);
     x2 = 2.0 * r - 1.0;
-    w = x1*x1 + x2*x2;
-  } while(w > 1.0 || w==0.0);
+    w = x1 * x1 + x2 * x2;
+  } while (w > 1.0 || w == 0.0);
 
-  return(sigma * x2 * sqrt(-2.0*log(w)/w));
+  return sigma * x2 * sqrt(-2.0 * log(w) / w);
 }

@@ -36,7 +36,6 @@ using namespace amcl;
 // Default constructor
 Sensor::Sensor()
 {
-  return;
 }
 
 Sensor::~Sensor()
@@ -71,25 +70,22 @@ bool Sensor::UpdateSensor(pf_t * /*pf*/, SensorData * /*data*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Setup the GUI
-void Sensor::SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
+void Sensor::SetupGUI(rtk_canvas_t * canvas, rtk_fig_t * robot_fig)
 {
-  return;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Shutdown the GUI
-void Sensor::ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
+void Sensor::ShutdownGUI(rtk_canvas_t * canvas, rtk_fig_t * robot_fig)
 {
-  return;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Draw sensor data
-void Sensor::UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, SensorData *data)
+void Sensor::UpdateGUI(rtk_canvas_t * canvas, rtk_fig_t * robot_fig, SensorData * data)
 {
-  return;
 }
 
 #endif
