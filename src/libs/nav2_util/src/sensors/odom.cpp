@@ -27,14 +27,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-
-#include <sys/types.h> // required by Darwin
+#include <sys/types.h>  // required by Darwin
 #include <math.h>
+#include <algorithm>
 
 #include "nav2_util/sensors/odom.h"
 
-using namespace amcl;
+using amcl::Odom;
 
 static double
 normalize(double z)
@@ -119,7 +118,7 @@ Odom::SetModel(
 bool Odom::UpdateAction(pf_t * pf, SensorData * data)
 {
   OdomData * ndata;
-  ndata = (OdomData *) data;
+  ndata = reinterpret_cast<OdomData *>(data);
 
   // Compute the new sample poses
   pf_sample_set_t * set;

@@ -25,8 +25,8 @@
  * CVS: $Id: map.h 1713 2003-08-23 04:03:43Z inspectorg $
  **************************************************************************/
 
-#ifndef MAP_H
-#define MAP_H
+#ifndef NAV2_UTIL__MAP__MAP_H_
+#define NAV2_UTIL__MAP__MAP_H_
 
 #include <stdint.h>
 
@@ -52,8 +52,7 @@ typedef struct
   double occ_dist;
 
   // Wifi levels
-  //int wifi_levels[MAP_WIFI_MAX_LEVELS];
-
+  // int wifi_levels[MAP_WIFI_MAX_LEVELS];
 } map_cell_t;
 
 
@@ -75,7 +74,6 @@ typedef struct
   // Max distance at which we care about obstacles, for constructing
   // likelihood field
   double max_occ_dist;
-
 } map_t;
 
 
@@ -96,7 +94,7 @@ map_cell_t * map_get_cell(map_t * map, double ox, double oy, double oa);
 int map_load_occ(map_t * map, const char * filename, double scale, int negate);
 
 // Load a wifi signal strength map
-//int map_load_wifi(map_t *map, const char *filename, int index);
+// int map_load_wifi(map_t *map, const char *filename, int index);
 
 // Update the cspace distances
 void map_update_cspace(map_t * map, double max_occ_dist);
@@ -146,4 +144,4 @@ void map_draw_wifi(map_t * map, struct _rtk_fig_t * fig, int index);
 }
 #endif
 
-#endif
+#endif  // NAV2_UTIL__MAP__MAP_H_

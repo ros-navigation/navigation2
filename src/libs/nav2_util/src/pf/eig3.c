@@ -7,8 +7,8 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-//#define n 3
-static int n = 3;
+// #define n 3
+static const int n = 3;
 
 static double hypot2(double x, double y)
 {
@@ -19,7 +19,6 @@ static double hypot2(double x, double y)
 
 static void tred2(double V[n][n], double d[n], double e[n])
 {
-
 //  This is derived from the Algol procedures tred2 by
 //  Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
 //  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
@@ -34,7 +33,6 @@ static void tred2(double V[n][n], double d[n], double e[n])
   // Householder reduction to tridiagonal form.
 
   for (i = n - 1; i > 0; i--) {
-
     // Scale to avoid under/overflow.
 
     double scale = 0.0;
@@ -50,9 +48,7 @@ static void tred2(double V[n][n], double d[n], double e[n])
         V[j][i] = 0.0;
       }
     } else {
-
       // Generate Householder vector.
-
       for (k = 0; k < i; k++) {
         d[k] /= scale;
         h += d[k] * d[k];
@@ -139,12 +135,10 @@ static void tred2(double V[n][n], double d[n], double e[n])
 
 static void tql2(double V[n][n], double d[n], double e[n])
 {
-
 //  This is derived from the Algol procedures tql2, by
 //  Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
 //  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
 //  Fortran subroutine in EISPACK.
-
   int i, j, m, l, k;
   double g, p, r, dl1, h, f, tst1, eps;
   double c, c2, c3, el1, s, s2;
@@ -158,9 +152,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
   tst1 = 0.0;
   eps = pow(2.0, -52.0);
   for (l = 0; l < n; l++) {
-
     // Find small subdiagonal element
-
     tst1 = MAX(tst1, fabs(d[l]) + fabs(e[l]));
     m = l;
     while (m < n) {
@@ -230,13 +222,11 @@ static void tql2(double V[n][n], double d[n], double e[n])
         d[l] = c * p;
 
         // Check for convergence.
-
       } while (fabs(e[l]) > eps * tst1);
     }
     d[l] = d[l] + f;
     e[l] = 0.0;
   }
-
   // Sort eigenvalues and corresponding vectors.
 
   for (i = 0; i < n - 1; i++) {
@@ -263,7 +253,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
 void eigen_decomposition(double A[n][n], double V[n][n], double d[n])
 {
   int i, j;
-  double e[n];
+  double e[n];  // NOLINT
   for (i = 0; i < n; i++) {
     for (j = 0; j < n; j++) {
       V[i][j] = A[i][j];

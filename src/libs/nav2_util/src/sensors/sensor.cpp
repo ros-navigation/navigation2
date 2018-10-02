@@ -30,7 +30,7 @@
 
 #include "nav2_util/sensors/sensor.h"
 
-using namespace amcl;
+using amcl::Sensor;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor

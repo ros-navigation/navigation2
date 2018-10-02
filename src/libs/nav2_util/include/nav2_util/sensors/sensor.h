@@ -25,8 +25,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef AMCL_SENSOR_H
-#define AMCL_SENSOR_H
+#ifndef NAV2_UTIL__SENSORS__SENSOR_H_
+#define NAV2_UTIL__SENSORS__SENSOR_H_
 
 #include "nav2_util/pf/pf.h"
 
@@ -79,7 +79,7 @@ public:
   pf_vector_t pose;
 
   // AMCL Base
-  //protected: AdaptiveMCL & AMCL;
+  // protected: AdaptiveMCL & AMCL;
 
 #ifdef INCLUDE_RTKGUI
   // Setup the GUI
@@ -115,6 +115,6 @@ public:
   double time;
 };
 
-}
+}  // namespace amcl
 
-#endif
+#endif  // NAV2_UTIL__SENSORS__SENSOR_H_

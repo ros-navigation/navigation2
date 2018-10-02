@@ -25,8 +25,8 @@
  * CVS: $Id: pf_vector.h 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
-#ifndef PF_VECTOR_H
-#define PF_VECTOR_H
+#ifndef NAV2_UTIL__PF__PF_VECTOR_H_
+#define NAV2_UTIL__PF__PF_VECTOR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +81,7 @@ void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
 
 // Compute the matrix inverse.  Will also return the determinant,
 // which should be checked for underflow (indicated singular matrix).
-//pf_matrix_t pf_matrix_inverse(pf_matrix_t a, double *det);
+// pf_matrix_t pf_matrix_inverse(pf_matrix_t a, double *det);
 
 // Decompose a covariance matrix [a] into a rotation matrix [r] and a
 // diagonal matrix [d] such that a = r * d * r^T.
@@ -91,4 +91,4 @@ void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a);
 }
 #endif
 
-#endif
+#endif  // NAV2_UTIL__PF__PF_VECTOR_H_

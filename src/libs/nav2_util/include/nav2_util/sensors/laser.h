@@ -26,8 +26,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef AMCL_LASER_H
-#define AMCL_LASER_H
+#ifndef NAV2_UTIL__SENSORS__LASER_H_
+#define NAV2_UTIL__SENSORS__LASER_H_
 
 #include "nav2_util/sensors/sensor.h"
 #include "nav2_util/map/map.h"
@@ -89,7 +89,7 @@ public:
     double sigma_hit,
     double max_occ_dist);
 
-  //a more probabilistically correct model - also with the option to do beam skipping
+  // a more probabilistically correct model - also with the option to do beam skipping
 
 public:
   void SetModelLikelihoodFieldProb(
@@ -170,13 +170,14 @@ private:
 
 private:
   double beam_skip_threshold;
-  //threshold for the ratio of invalid beams - at which all beams are integrated to the likelihoods
-  //this would be an error condition
+  // threshold for the ratio of invalid beams - at which all beams are integrated to the likelihoods
+  // this would be an error condition
 
 private:
   double beam_skip_error_threshold;
 
-  //temp data that is kept before observations are integrated to each particle (requried for beam skipping)
+  // temp data that is kept before observations are integrated to each particle
+  // (requried for beam skipping)
 
 private:
   int max_samples;
@@ -217,7 +218,6 @@ private:
   double chi_outlier;
 };
 
+}  // namespace amcl
 
-}
-
-#endif
+#endif  // NAV2_UTIL__SENSORS__LASER_H_

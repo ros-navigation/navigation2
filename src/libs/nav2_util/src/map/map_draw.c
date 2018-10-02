@@ -65,7 +65,6 @@ void map_draw_occ(map_t * map, rtk_fig_t * fig)
     map->scale, map->size_x, map->size_y, 16, image, NULL);
 
   free(image);
-
 }
 
 
@@ -98,7 +97,6 @@ void map_draw_cspace(map_t * map, rtk_fig_t * fig)
     map->scale, map->size_x, map->size_y, 16, image, NULL);
 
   free(image);
-
 }
 
 
@@ -140,7 +138,6 @@ void map_draw_wifi(map_t * map, rtk_fig_t * fig, int index)
 
   free(mask);
   free(image);
-
 }
 
 

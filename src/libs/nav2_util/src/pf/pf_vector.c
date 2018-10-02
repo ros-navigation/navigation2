@@ -26,9 +26,9 @@
  *************************************************************************/
 
 #include <math.h>
-//#include <gsl/gsl_matrix.h>
-//#include <gsl/gsl_eigen.h>
-//#include <gsl/gsl_linalg.h>
+// #include <gsl/gsl_matrix.h>
+// #include <gsl/gsl_eigen.h>
+// #include <gsl/gsl_linalg.h>
 
 #include "nav2_util/pf/pf_vector.h"
 #include "nav2_util/pf/eig3.h"
@@ -72,7 +72,6 @@ void pf_vector_fprintf(pf_vector_t a, FILE * file, const char * fmt)
     fprintf(file, " ");
   }
   fprintf(file, "\n");
-
 }
 
 
@@ -241,7 +240,7 @@ void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a)
 
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 3; j++) {
-      //gsl_matrix_set(aa, i, j, a.m[i][j]);
+      // gsl_matrix_set(aa, i, j, a.m[i][j]);
       aa[i][j] = a.m[i][j];
     }
   }
@@ -257,16 +256,15 @@ void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a)
 
   *d = pf_matrix_zero();
   for (i = 0; i < 3; i++) {
-    //d->m[i][i] = gsl_vector_get(eval, i);
+    // d->m[i][i] = gsl_vector_get(eval, i);
     d->m[i][i] = eval[i];
     for (j = 0; j < 3; j++) {
-      //r->m[i][j] = gsl_matrix_get(evec, i, j);
+      // r->m[i][j] = gsl_matrix_get(evec, i, j);
       r->m[i][j] = evec[i][j];
     }
   }
 
-  //gsl_matrix_free(evec);
-  //gsl_vector_free(eval);
-  //gsl_matrix_free(aa);
-
+  // gsl_matrix_free(evec);
+  // gsl_vector_free(eval);
+  // gsl_matrix_free(aa);
 }

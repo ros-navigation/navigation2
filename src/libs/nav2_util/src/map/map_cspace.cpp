@@ -19,10 +19,10 @@
  *
  */
 
-#include <queue>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <queue>
 #include "nav2_util/map/map.h"
 
 class CellData
@@ -160,12 +160,12 @@ void map_update_cspace(map_t * map, double max_occ_dist)
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }
-    if ((int)current_cell.i_ < map->size_x - 1) {
+    if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
       enqueue(map, current_cell.i_ + 1, current_cell.j_,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }
-    if ((int)current_cell.j_ < map->size_y - 1) {
+    if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
       enqueue(map, current_cell.i_, current_cell.j_ + 1,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);

@@ -26,8 +26,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef AMCL_ODOM_H
-#define AMCL_ODOM_H
+#ifndef NAV2_UTIL__SENSORS__ODOM_H_
+#define NAV2_UTIL__SENSORS__ODOM_H_
 
 #include "nav2_util/sensors/sensor.h"
 #include "nav2_util/pf/pf_pdf.h"
@@ -113,6 +113,6 @@ private:
 };
 
 
-}
+}  // namespace amcl
 
-#endif
+#endif  // NAV2_UTIL__SENSORS__ODOM_H_

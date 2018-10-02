@@ -25,6 +25,7 @@
  * CVS: $Id: pf.c 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
+#include <float.h>
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -102,7 +103,7 @@ pf_t * pf_alloc(
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
 
-  //set converged to 0
+  // set converged to 0
   pf_init_converged(pf);
 
   return pf;
@@ -119,7 +120,6 @@ void pf_free(pf_t * pf)
     free(pf->sets[i].samples);
   }
   free(pf);
-
 }
 
 // Initialize the filter using a guassian
@@ -156,9 +156,8 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
   // Re-compute cluster statistics
   pf_cluster_stats(pf, set);
 
-  //set converged to 0
+  // set converged to 0
   pf_init_converged(pf);
-
 }
 
 
@@ -191,9 +190,8 @@ void pf_init_model(pf_t * pf, pf_init_model_fn_t init_fn, void * init_data)
   // Re-compute cluster statistics
   pf_cluster_stats(pf, set);
 
-  //set converged to 0
+  // set converged to 0
   pf_init_converged(pf);
-
 }
 
 void pf_init_converged(pf_t * pf)
@@ -245,11 +243,8 @@ void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_d
   set = pf->sets + pf->current_set;
 
   (*action_fn)(action_data, set);
-
 }
 
-
-#include <float.h>
 // Update the filter with some new sensor observation
 void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_data)
 {
@@ -283,8 +278,6 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
     } else {
       pf->w_fast += pf->alpha_fast * (w_avg - pf->w_fast);
     }
-    //printf("w_avg: %e slow: %e fast: %e\n",
-    //w_avg, pf->w_slow, pf->w_fast);
   } else {
     // Handle zero total
     for (i = 0; i < set->sample_count; i++) {
@@ -292,7 +285,6 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
       sample->weight = 1.0 / set->sample_count;
     }
   }
-
 }
 
 
@@ -304,9 +296,9 @@ void pf_update_resample(pf_t * pf)
   pf_sample_set_t * set_a, * set_b;
   pf_sample_t * sample_a, * sample_b;
 
-  //double r,c,U;
-  //int m;
-  //double count_inv;
+  // double r,c,U;
+  // int m;
+  // double count_inv;
   double * c;
 
   double w_diff;
@@ -315,7 +307,7 @@ void pf_update_resample(pf_t * pf)
   set_b = pf->sets + (pf->current_set + 1) % 2;
 
   // Build up cumulative probability table for resampling.
-  // TODO: Replace this with a more efficient procedure
+  // TODO(?): Replace this with a more efficient procedure
   // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
   c = (double *)malloc(sizeof(double) * (set_a->sample_count + 1));
   c[0] = 0.0;
@@ -334,7 +326,7 @@ void pf_update_resample(pf_t * pf)
   if (w_diff < 0.0) {
     w_diff = 0.0;
   }
-  //printf("w_diff: %9.6f\n", w_diff);
+  // printf("w_diff: %9.6f\n", w_diff);
 
   // Can't (easily) combine low-variance sampler with KLD adaptive
   // sampling, so we'll take the more traditional route.
@@ -411,7 +403,7 @@ void pf_update_resample(pf_t * pf)
     pf->w_slow = pf->w_fast = 0.0;
   }
 
-  //fprintf(stderr, "\n\n");
+  // fprintf(stderr, "\n\n");
 
   // Normalize weights
   for (i = 0; i < set_b->sample_count; i++) {
@@ -514,7 +506,7 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
   for (i = 0; i < set->sample_count; i++) {
     sample = set->samples + i;
 
-    //printf("%d %f %f %f\n", i, sample->pose.v[0], sample->pose.v[1], sample->pose.v[2]);
+    // printf("%d %f %f %f\n", i, sample->pose.v[0], sample->pose.v[1], sample->pose.v[2]);
 
     // Get the cluster label for this sample
     cidx = pf_kdtree_get_cluster(set->kdtree, sample->pose);
@@ -577,9 +569,9 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
     cluster->cov.m[2][2] = -2 * log(sqrt(cluster->m[2] * cluster->m[2] +
         cluster->m[3] * cluster->m[3]));
 
-    //printf("cluster %d %d %f (%f %f %f)\n", i, cluster->count, cluster->weight,
-    //cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);
-    //pf_matrix_fprintf(cluster->cov, stdout, "%e");
+    // printf("cluster %d %d %f (%f %f %f)\n", i, cluster->count, cluster->weight,
+    // cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);
+    // pf_matrix_fprintf(cluster->cov, stdout, "%e");
   }
 
   // Compute overall filter stats
@@ -597,7 +589,6 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
   // Covariance in angular components; I think this is the correct
   // formula for circular statistics.
   set->cov.m[2][2] = -2 * log(sqrt(m[2] * m[2] + m[3] * m[3]));
-
 }
 
 
@@ -631,7 +622,6 @@ void pf_get_cep_stats(pf_t * pf, pf_vector_t * mean, double * var)
   mean->v[2] = 0.0;
 
   *var = mrr / mn - (mx * mx / (mn * mn) + my * my / (mn * mn));
-
 }
 
 

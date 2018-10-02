@@ -52,7 +52,7 @@ static pf_kdtree_node_t * pf_kdtree_find_node(
 static void pf_kdtree_cluster_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int depth);
 
 // Recursive node printing
-//static void pf_kdtree_print_node(pf_kdtree_t *self, pf_kdtree_node_t *node);
+// static void pf_kdtree_print_node(pf_kdtree_t *self, pf_kdtree_node_t *node);
 
 
 #ifdef INCLUDE_RTKGUI
@@ -103,7 +103,6 @@ void pf_kdtree_clear(pf_kdtree_t * self)
   self->root = NULL;
   self->leaf_count = 0;
   self->node_count = 0;
-
 }
 
 
@@ -139,7 +138,6 @@ void pf_kdtree_insert(pf_kdtree_t * self, pf_vector_t pose, double value)
   }
   printf("\n\n");
   */
-
 }
 
 
@@ -187,7 +185,7 @@ int pf_kdtree_get_cluster(pf_kdtree_t * self, pf_vector_t pose)
 int pf_kdtree_equal(pf_kdtree_t * self, int key_a[], int key_b[])
 {
   (void)self;
-  //double a, b;
+  // double a, b;
 
   if (key_a[0] != key_b[0]) {
     return 0;
@@ -244,15 +242,11 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
 
     node->value = value;
     self->leaf_count += 1;
-  }
-  // If the node exists, and it is a leaf node...
-  else if (node->leaf) {
+  } else if (node->leaf) {  // If the node exists, and it is a leaf node...
     // If the keys are equal, increment the value
     if (pf_kdtree_equal(self, key, node->key)) {
       node->value += value;
-    }
-    // The keys are not equal, so split this node
-    else {
+    } else {  // The keys are not equal, so split this node
       // Find the dimension with the largest variance and do a mean
       // split
       max_split = 0;
@@ -279,9 +273,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
       node->leaf = 0;
       self->leaf_count -= 1;
     }
-  }
-  // If the node exists, and it has children...
-  else {
+  } else {  // If the node exists, and it has children...
     assert(node->children[0] != NULL);
     assert(node->children[1] != NULL);
 
@@ -301,7 +293,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
 pf_kdtree_node_t * pf_kdtree_find_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int key[])
 {
   if (node->leaf) {
-    //printf("find  : leaf %p %d %d %d\n", node, node->key[0], node->key[1], node->key[2]);
+    // printf("find  : leaf %p %d %d %d\n", node, node->key[0], node->key[1], node->key[2]);
 
     // If the keys are the same...
     if (pf_kdtree_equal(self, key, node->key)) {
@@ -310,7 +302,7 @@ pf_kdtree_node_t * pf_kdtree_find_node(pf_kdtree_t * self, pf_kdtree_node_t * no
       return NULL;
     }
   } else {
-    //printf("find  : brch %p %d %f\n", node, node->pivot_dim, node->pivot_value);
+    // printf("find  : brch %p %d %f\n", node, node->pivot_dim, node->pivot_value);
 
     assert(node->children[0] != NULL);
     assert(node->children[1] != NULL);
@@ -454,8 +446,8 @@ void pf_kdtree_draw_node(pf_kdtree_t * self, pf_kdtree_node_t * node, rtk_fig_t 
 
     rtk_fig_rectangle(fig, ox, oy, 0.0, self->size[0], self->size[1], 0);
 
-    //snprintf(text, sizeof(text), "%0.3f", node->value);
-    //rtk_fig_text(fig, ox, oy, 0.0, text);
+    // snprintf(text, sizeof(text), "%0.3f", node->value);
+    // rtk_fig_text(fig, ox, oy, 0.0, text);
 
     snprintf(text, sizeof(text), "%d", node->cluster);
     rtk_fig_text(fig, ox, oy, 0.0, text);
@@ -465,7 +457,6 @@ void pf_kdtree_draw_node(pf_kdtree_t * self, pf_kdtree_node_t * node, rtk_fig_t 
     pf_kdtree_draw_node(self, node->children[0], fig);
     pf_kdtree_draw_node(self, node->children[1], fig);
   }
-
 }
 
 #endif

@@ -29,8 +29,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <gsl/gsl_rng.h>
-//#include <gsl/gsl_randist.h>
+// #include <gsl/gsl_rng.h>
+// #include <gsl/gsl_randist.h>
 
 #include "nav2_util/pf/pf_pdf.h"
 
@@ -52,7 +52,7 @@ pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
 
   pdf->x = x;
   pdf->cx = cx;
-  //pdf->cxi = pf_matrix_inverse(cx, &pdf->cxdet);
+  // pdf->cxi = pf_matrix_inverse(cx, &pdf->cxdet);
 
   // Decompose the convariance matrix into a rotation
   // matrix and a diagonal matrix.
@@ -62,8 +62,8 @@ pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
   pdf->cd.v[2] = sqrt(cd.m[2][2]);
 
   // Initialize the random number generator
-  //pdf->rng = gsl_rng_alloc(gsl_rng_taus);
-  //gsl_rng_set(pdf->rng, ++pf_pdf_seed);
+  // pdf->rng = gsl_rng_alloc(gsl_rng_taus);
+  // gsl_rng_set(pdf->rng, ++pf_pdf_seed);
   srand48(++pf_pdf_seed);
 
   return pdf;
@@ -73,7 +73,7 @@ pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
 // Destroy the pdf
 void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf)
 {
-  //gsl_rng_free(pdf->rng);
+  // gsl_rng_free(pdf->rng);
   free(pdf);
 }
 
@@ -109,7 +109,7 @@ pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t * pdf)
 
   // Generate a random vector
   for (i = 0; i < 3; i++) {
-    //r.v[i] = gsl_ran_gaussian(pdf->rng, pdf->cd.v[i]);
+    // r.v[i] = gsl_ran_gaussian(pdf->rng, pdf->cd.v[i]);
     r.v[i] = pf_ran_gaussian(pdf->cd.v[i]);
   }
 

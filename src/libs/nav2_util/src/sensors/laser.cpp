@@ -27,7 +27,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-#include <sys/types.h> // required by Darwin
+#include <sys/types.h>  // required by Darwin
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -35,7 +35,8 @@
 
 #include "nav2_util/sensors/laser.h"
 
-using namespace amcl;
+using amcl::LaserData;
+using amcl::Laser;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
@@ -48,7 +49,6 @@ Laser::Laser(size_t max_beams, map_t * map)
 
   this->max_beams = max_beams;
   this->map = map;
-
 }
 
 Laser::~Laser()
@@ -156,7 +156,7 @@ double Laser::BeamModel(LaserData * data, pf_sample_set_t * set)
   pf_sample_t * sample;
   pf_vector_t pose;
 
-  self = (Laser *) data->sensor;
+  self = reinterpret_cast<Laser *>(data->sensor);
 
   total_weight = 0.0;
 
@@ -199,7 +199,7 @@ double Laser::BeamModel(LaserData * data, pf_sample_set_t * set)
         pz += self->z_rand * 1.0 / data->range_max;
       }
 
-      // TODO: outlier rejection for short readings
+      // TODO(?): outlier rejection for short readings
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
@@ -228,7 +228,7 @@ double Laser::LikelihoodFieldModel(LaserData * data, pf_sample_set_t * set)
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = (Laser *) data->sensor;
+  self = reinterpret_cast<Laser *>(data->sensor);
 
   total_weight = 0.0;
 
@@ -291,7 +291,7 @@ double Laser::LikelihoodFieldModel(LaserData * data, pf_sample_set_t * set)
       // Part 2: random measurements
       pz += self->z_rand * z_rand_mult;
 
-      // TODO: outlier rejection for short readings
+      // TODO(?): outlier rejection for short readings
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
@@ -320,7 +320,7 @@ double Laser::LikelihoodFieldModelProb(LaserData * data, pf_sample_set_t * set)
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = (Laser *) data->sensor;
+  self = reinterpret_cast<Laser *>(data->sensor);
 
   total_weight = 0.0;
 
@@ -337,28 +337,29 @@ double Laser::LikelihoodFieldModelProb(LaserData * data, pf_sample_set_t * set)
 
   double max_dist_prob = exp(-(self->map->max_occ_dist * self->map->max_occ_dist) / z_hit_denom);
 
-  //Beam skipping - ignores beams for which a majoirty of particles do not agree with the map
-  //prevents correct particles from getting down weighted because of unexpected obstacles
-  //such as humans
+  // Beam skipping - ignores beams for which a majoirty of particles do not agree with the map
+  // prevents correct particles from getting down weighted because of unexpected obstacles
+  // such as humans
 
   bool do_beamskip = self->do_beamskip;
   double beam_skip_distance = self->beam_skip_distance;
   double beam_skip_threshold = self->beam_skip_threshold;
 
-  //we only do beam skipping if the filter has converged
+  // we only do beam skipping if the filter has converged
   if (do_beamskip && !set->converged) {
     do_beamskip = false;
   }
 
-  //we need a count the no of particles for which the beam agreed with the map
+  // we need a count the no of particles for which the beam agreed with the map
   int * obs_count = new int[self->max_beams]();
 
-  //we also need a mask of which observations to integrate (to decide which beams to integrate to all particles)
+  // we also need a mask of which observations to integrate (to decide which beams to integrate to
+  // all particles)
   bool * obs_mask = new bool[self->max_beams]();
 
   int beam_ind = 0;
 
-  //realloc indicates if we need to reallocate the temp data structure needed to do beamskipping
+  // realloc indicates if we need to reallocate the temp data structure needed to do beamskipping
   bool realloc = false;
 
   if (do_beamskip) {
@@ -435,7 +436,7 @@ double Laser::LikelihoodFieldModelProb(LaserData * data, pf_sample_set_t * set)
       assert(pz <= 1.0);
       assert(pz >= 0.0);
 
-      // TODO: outlier rejection for short readings
+      // TODO(?): outlier rejection for short readings
 
       if (!do_beamskip) {
         log_p += log(pz);
@@ -460,15 +461,16 @@ double Laser::LikelihoodFieldModelProb(LaserData * data, pf_sample_set_t * set)
       }
     }
 
-    //we check if there is at least a critical number of beams that agreed with the map
-    //otherwise it probably indicates that the filter converged to a wrong solution
-    //if that's the case we integrate all the beams and hope the filter might converge to
-    //the right solution
+    // we check if there is at least a critical number of beams that agreed with the map
+    // otherwise it probably indicates that the filter converged to a wrong solution
+    // if that's the case we integrate all the beams and hope the filter might converge to
+    // the right solution
     bool error = false;
 
     if (skipped_beam_count >= (beam_ind * self->beam_skip_error_threshold)) {
       fprintf(stderr,
-        "Over %f%% of the observations were not in the map - pf may have converged to wrong pose - integrating all observations\n",
+        "Over %f%% of the observations were not in the map - pf may have converged to wrong pose -"
+        " integrating all observations\n",
         (100 * self->beam_skip_error_threshold));
       error = true;
     }

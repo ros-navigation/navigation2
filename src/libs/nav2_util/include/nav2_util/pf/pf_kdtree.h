@@ -25,11 +25,11 @@
  * CVS: $Id: pf_kdtree.h 6532 2008-06-11 02:45:56Z gbiggs $
  *************************************************************************/
 
-#ifndef PF_KDTREE_H
-#define PF_KDTREE_H
+#ifndef NAV2_UTIL__PF__PF_KDTREE_H_
+#define NAV2_UTIL__PF__PF_KDTREE_H_
 
 #ifdef INCLUDE_RTKGUI
-#include "rtk.h"
+#include <rtk.h>
 #endif
 
 
@@ -54,7 +54,6 @@ typedef struct pf_kdtree_node
 
   // Child nodes
   struct pf_kdtree_node * children[2];
-
 } pf_kdtree_node_t;
 
 
@@ -73,7 +72,6 @@ typedef struct
 
   // The number of leaf nodes in the tree
   int leaf_count;
-
 } pf_kdtree_t;
 
 
@@ -106,4 +104,4 @@ extern void pf_kdtree_draw(pf_kdtree_t * self, rtk_fig_t * fig);
 
 #endif
 
-#endif
+#endif  // NAV2_UTIL__PF__PF_KDTREE_H_

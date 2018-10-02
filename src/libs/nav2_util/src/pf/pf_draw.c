@@ -33,7 +33,7 @@
 #include <stdlib.h>
 
 
-#include "rtk.h"
+#include <rtk.h>
 
 #include "nav2_util/pf/pf.h"
 #include "nav2_util/pf/pf_pdf.h"
@@ -61,13 +61,12 @@ void pf_draw_samples(pf_t * pf, rtk_fig_t * fig, int max_samples)
     py = sample->pose.v[1];
     pa = sample->pose.v[2];
 
-    //printf("%f %f\n", px, py);
+    // printf("%f %f\n", px, py);
 
     rtk_fig_point(fig, px, py);
     rtk_fig_arrow(fig, px, py, pa, 0.1, 0.02);
-    //rtk_fig_rectangle(fig, px, py, 0, 0.1, 0.1, 0);
+    // rtk_fig_rectangle(fig, px, py, 0, 0.1, 0.1, 0);
   }
-
 }
 
 
@@ -80,7 +79,6 @@ void pf_draw_hist(pf_t * pf, rtk_fig_t * fig)
 
   rtk_fig_color(fig, 0.0, 0.0, 1.0);
   pf_kdtree_draw(set->kdtree, fig);
-
 }
 
 
@@ -95,9 +93,7 @@ void pf_draw_cep_stats(pf_t * pf, rtk_fig_t * fig)
 
   rtk_fig_color(fig, 0, 0, 1);
   rtk_fig_ellipse(fig, mean.v[0], mean.v[1], mean.v[2], 3 * var, 3 * var, 0);
-
 }
-
 
 // Draw the cluster statistics
 void pf_draw_cluster_stats(pf_t * pf, rtk_fig_t * fig)
@@ -150,7 +146,5 @@ void pf_draw_cluster_stats(pf_t * pf, rtk_fig_t * fig)
     rtk_fig_arrow(fig, mean.v[0], mean.v[1], mean.v[2] + 3 * sqrt(cov.m[2][2]), 0.50, 0.10);
     rtk_fig_arrow(fig, mean.v[0], mean.v[1], mean.v[2] - 3 * sqrt(cov.m[2][2]), 0.50, 0.10);
   }
-
 }
-
 #endif

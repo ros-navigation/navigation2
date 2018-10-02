@@ -25,11 +25,11 @@
  * CVS: $Id: pf.h 3293 2005-11-19 08:37:45Z gerkey $
  *************************************************************************/
 
-#ifndef PF_H
-#define PF_H
+#ifndef NAV2_UTIL__PF__PF_H_
+#define NAV2_UTIL__PF__PF_H_
 
-#include "pf_vector.h"
-#include "pf_kdtree.h"
+#include "nav2_util/pf/pf_vector.h"
+#include "nav2_util/pf/pf_kdtree.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +65,6 @@ typedef struct
 
   // Weight for this pose
   double weight;
-
 } pf_sample_t;
 
 
@@ -84,7 +83,6 @@ typedef struct
 
   // Workspace
   double m[4], c[2][2];
-
 } pf_cluster_t;
 
 
@@ -133,7 +131,8 @@ typedef struct _pf_t
   pf_init_model_fn_t random_pose_fn;
   void * random_pose_data;
 
-  double dist_threshold; //distance threshold in each axis over which the pf is considered to not be converged
+  double dist_threshold;  // distance threshold in each axis over which the pf is considered to not
+                          // be converged
   int converged;
 } pf_t;
 
@@ -187,11 +186,11 @@ void pf_draw_cep_stats(pf_t * pf, struct _rtk_fig_t * fig);
 // Draw the cluster statistics
 void pf_draw_cluster_stats(pf_t * pf, struct _rtk_fig_t * fig);
 
-//calculate if the particle filter has converged -
-//and sets the converged flag in the current set and the pf
+// calculate if the particle filter has converged -
+// and sets the converged flag in the current set and the pf
 int pf_update_converged(pf_t * pf);
 
-//sets the current set and pf converged values to zero
+// sets the current set and pf converged values to zero
 void pf_init_converged(pf_t * pf);
 
 #ifdef __cplusplus
@@ -199,4 +198,4 @@ void pf_init_converged(pf_t * pf);
 #endif
 
 
-#endif
+#endif  // NAV2_UTIL__PF__PF_H_
