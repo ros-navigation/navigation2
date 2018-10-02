@@ -23,7 +23,6 @@ include_directories(
 set(executable_name simple_navigator)
 
 add_executable(${executable_name}
-  src/simple_navigator.cpp
   src/main.cpp
 )
 
@@ -43,6 +42,8 @@ set(dependencies
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}

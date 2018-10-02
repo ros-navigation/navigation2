@@ -24,7 +24,6 @@ set(executable_name mission_executor)
 
 add_executable(${executable_name}
   src/main.cpp
-  src/mission_executor.cpp
 )
 
 set(library_name ${executable_name}_core)
@@ -43,6 +42,8 @@ set(dependencies
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}

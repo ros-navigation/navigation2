@@ -24,7 +24,6 @@ include_directories(
 set(executable_name astar_planner)
 
 add_executable(${executable_name}
-  src/astar_planner.cpp
   src/main.cpp
 )
 
@@ -46,6 +45,8 @@ set(dependencies
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}

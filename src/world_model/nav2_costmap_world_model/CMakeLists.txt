@@ -26,7 +26,6 @@ include_directories(
 set(executable_name costmap_world_model)
 
 add_executable(${executable_name}
-  src/costmap_world_model.cpp
   src/main.cpp
 )
 
@@ -50,6 +49,8 @@ set(dependencies
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
