@@ -34,14 +34,16 @@ public:
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
 
 private:
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> navTaskClient_;
 
-  // For now, use the move_base_simple/goal topic (from Gazebo) for the goal pose
-
+  // For now, use the move_base_simple/goal topic (from rviz) for the goal pose
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_pose_;
 
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  // Also, for now, publish a mission plan when receiving a goal pose from rviz
+  rclcpp::Publisher<nav2_mission_execution_msgs::msg::MissionPlan>::SharedPtr plan_pub_;
 };
 
 }  // namespace nav2_mission_execution

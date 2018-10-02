@@ -80,7 +80,9 @@ void PlannerTester::spinThread()
 void PlannerTester::loadMap(const std::string image_file_path, const std::string yaml_file_name)
 {
   RCLCPP_INFO(this->get_logger(), "PlannerTester::loadMap");
-  RCLCPP_INFO(this->get_logger(), "PlannerTester::loadMap: image_file: %s, yaml_file: %s", image_file_path.c_str(), yaml_file_name.c_str());
+  RCLCPP_INFO(
+    this->get_logger(), "PlannerTester::loadMap: image_file: %s, yaml_file: %s",
+    image_file_path.c_str(), yaml_file_name.c_str());
 
   // Specs for the default map
   // double resolution = 0.05;
@@ -342,9 +344,6 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       all_tests_OK = false;
       ++num_fail;
     }
-
-	printf("Press ENTER to continue...");
-	getchar();
   }
 
   RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"

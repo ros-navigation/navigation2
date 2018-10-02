@@ -55,7 +55,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
-  // Compose the PathEndPoints message for Navigation. The starting pose comes from 
+  // Compose the PathEndPoints message for Navigation. The starting pose comes from
   // localization, while the goal pose is from the incoming command
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
 

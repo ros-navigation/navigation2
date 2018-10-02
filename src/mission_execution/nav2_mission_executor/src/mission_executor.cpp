@@ -35,7 +35,10 @@ MissionExecutor::MissionExecutor()
   }
 
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
-    std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
+      std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
+
+  plan_pub_ = create_publisher<nav2_mission_execution_msgs::msg::MissionPlan>(
+    "ExecuteMissionTask_command");
 }
 
 MissionExecutor::~MissionExecutor()
@@ -48,6 +51,12 @@ MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::Share
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::onGoalPoseReceived");
   goal_pose_ = msg;
+
+  auto message = nav2_mission_execution_msgs::msg::MissionPlan();
+  message.mission_plan = "Hello, world!";
+
+  RCLCPP_INFO(this->get_logger(), "MissionExecutor::onGoalPoseReceived: publishing a mission plan");
+  plan_pub_->publish(message);
 }
 
 TaskStatus
@@ -59,21 +68,9 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 
-  // TODO(mjeronimo): Get the goal pose from the task in the mission plan
-#if 0
-  auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  goalPose->pose.position.x = -0.32;
-  goalPose->pose.position.y = -2.47;
-  goalPose->pose.position.z = 0.0;
-  goalPose->pose.orientation.x = 0.0;
-  goalPose->pose.orientation.y = 0.0;
-  goalPose->pose.orientation.z = 0.0;
-  goalPose->pose.orientation.w = -0.30;
-
-  navTaskClient_->sendCommand(goalPose);
-#else
+  // TODO(mjeronimo): Get the goal pose from the task in the mission plan. For now, we're
+  // using the one received from rviz via the move_base_simple/goal topic.
   navTaskClient_->sendCommand(goal_pose_);
-#endif
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 

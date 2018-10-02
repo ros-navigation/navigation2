@@ -43,7 +43,7 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
   costmapServer_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(name + "_GetCostmap",
       costmap_service_callback);
 
-  // Get the current map from the map server. 
+  // Get the current map from the map server
   //
   // TODO(mjeronimo): Instead of using a service call, the map server should push any
   // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
