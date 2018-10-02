@@ -25,7 +25,7 @@ namespace nav2_controller_example
 class DwaController : public nav2_tasks::FollowPathTaskServer
 {
 public:
-  typedef geometry_msgs::msg::Twist CmdVel;
+  using CmdVel = geometry_msgs::msg::Twist;
   DwaController();
   ~DwaController();
 
