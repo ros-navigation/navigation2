@@ -17,6 +17,7 @@
 
 #include <string>
 #include "nav2_tasks/follow_path_task.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
 namespace nav2_controller_example
 {
@@ -24,10 +25,13 @@ namespace nav2_controller_example
 class DwaController : public nav2_tasks::FollowPathTaskServer
 {
 public:
+  typedef geometry_msgs::msg::Twist CmdVel;
   DwaController();
   ~DwaController();
 
+protected:
   nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+  std::shared_ptr<rclcpp::Publisher<CmdVel>> vel_pub_;
 };
 
 }  // namespace nav2_controller_example
