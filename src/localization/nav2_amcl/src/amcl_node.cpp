@@ -644,11 +644,12 @@ AmclNode::requestMap()
   std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
   nav2_tasks::MapServiceClient map_client;
-  map_client.waitForServer(std::chrono::seconds(2));
+  map_client.waitForService(std::chrono::seconds(2));
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
-  auto result = map_client.invoke(request);
 
+  RCLCPP_INFO(get_logger(), "AmclNode::requestMap: invoking service call");
+  auto result = map_client.invoke(request);
   RCLCPP_INFO(get_logger(), "AmclNode::requestMap: after service call");
 
   handleMapMessage(result->map);

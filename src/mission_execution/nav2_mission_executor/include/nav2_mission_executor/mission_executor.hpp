@@ -19,6 +19,7 @@
 #include <memory>
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_mission_execution
 {
@@ -34,6 +35,13 @@ public:
 
 private:
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> navTaskClient_;
+
+  // For now, use the move_base_simple/goal topic (from Gazebo) for the goal pose
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  geometry_msgs::msg::PoseStamped::SharedPtr goal_pose_;
+
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 };
 
 }  // namespace nav2_mission_execution

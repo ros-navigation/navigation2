@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License. Reserved.
 
 #ifndef NAV2_TASKS__SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__SERVICE_CLIENT_HPP_
@@ -48,14 +48,14 @@ public:
     return result_future.get();
   }
 
-  void waitForServer(const std::chrono::seconds timeout = std::chrono::seconds::max())
+  void waitForService(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
-        throw std::runtime_error("waitForServer: interrupted while waiting for server to appear");
+        throw std::runtime_error("waitForServer: interrupted while waiting for service to appear");
       }
       RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
-        "ServiceClient::waitForServer: waiting for server to appear...")
+        "ServiceClient::waitForServer: waiting for service to appear...")
     }
   }
 

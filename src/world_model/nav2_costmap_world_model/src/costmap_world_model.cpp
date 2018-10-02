@@ -47,7 +47,7 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
   //
   // TODO(mjeronimo): Instead of using a service call, the map server should push any
   // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
-  map_client_.waitForServer(std::chrono::seconds(2));
+  map_client_.waitForService(std::chrono::seconds(2));
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
   auto response = map_client_.invoke(request);

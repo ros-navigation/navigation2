@@ -59,7 +59,7 @@ DijkstraPlanner::DijkstraPlanner()
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
-  costmap_client__.waitForServer(std::chrono::seconds(2));
+  costmap_client_.waitForService(std::chrono::seconds(2));
 
   // Start listening for incoming ComputePathToPose task requests
   startWorkerThread();
@@ -413,7 +413,7 @@ DijkstraPlanner::getCostmap(
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
-  auto result = costmap_client__.invoke(request);
+  auto result = costmap_client_.invoke(request);
   costmap = result.get()->map;
 }
 

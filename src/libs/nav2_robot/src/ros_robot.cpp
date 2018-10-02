@@ -13,14 +13,18 @@
 // limitations under the License.
 
 #include <string>
+#include <exception>
 #include "nav2_robot/ros_robot.hpp"
 
 namespace nav2_robot
 {
 
-RosRobot::RosRobot(const std::string & /*urdf_filename*/)
+RosRobot::RosRobot(rclcpp::Node * node /*, const std::string & urdf_filename*/)
+ : node_(node), initial_pose_received_(false)
 {
   // Open and parser the URDF file
+
+  pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
 }
 
 RosRobot::~RosRobot()
@@ -30,6 +34,25 @@ RosRobot::~RosRobot()
 void
 RosRobot::enterSafeState()
 {
+}
+
+void
+RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+{
+   RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceved");
+
+   // TODO: serialize access
+   current_pose_ = msg;
+   initial_pose_received_ = true;
+}
+
+geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr
+RosRobot::getCurrentPose()
+{
+  if (!initial_pose_received_)
+    throw std::runtime_error("RosRobot::getCurrentPose: initial pose not received yet");
+
+  return current_pose_;
 }
 
 }  // namespace nav2_robot

@@ -100,7 +100,7 @@ private:
   std::unique_ptr<NavFn> planner_;
 
   // Service client for getting the costmap
-  nav2_tasks::CostmapServiceClient costmap_client__;
+  nav2_tasks::CostmapServiceClient costmap_client_;
 
   // Publishers for the path and endpoints
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

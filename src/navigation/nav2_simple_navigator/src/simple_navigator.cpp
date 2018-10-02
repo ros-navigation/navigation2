@@ -25,7 +25,8 @@ namespace nav2_simple_navigator
 {
 
 SimpleNavigator::SimpleNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
+: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
+  robot_(this)
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 
@@ -54,19 +55,11 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute");
 
-  // Compose the PathEndPoints message for Navigation
+  // Compose the PathEndPoints message for Navigation. The starting pose comes from 
+  // localization, while the goal pose is from the incoming command
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
 
-  // TODO(mjeronimo): get the starting pose from Localization (fake it out for now)
-  endpoints->start.position.x = 299.0;
-  endpoints->start.position.y = 9.0;
-  endpoints->start.position.z = 0.0;
-  endpoints->start.orientation.x = 0.0;
-  endpoints->start.orientation.y = 0.0;
-  endpoints->start.orientation.z = 0.0;
-  endpoints->start.orientation.w = 1.0;
-
-  // Get the goal pose from the incoming command
+  endpoints->start = robot_.getCurrentPose()->pose.pose;
   endpoints->goal = command->pose;
   endpoints->tolerance = 2.0;
 

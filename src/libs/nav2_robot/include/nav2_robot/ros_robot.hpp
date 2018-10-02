@@ -17,6 +17,8 @@
 
 #include <string>
 #include "nav2_robot/robot.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 namespace nav2_robot
 {
@@ -29,11 +31,22 @@ public:
    *
    * @param[in] filename The filename of the URDF file describing this robot.
    */
-  explicit RosRobot(const std::string & urdf_filename);
+  explicit RosRobot(rclcpp::Node *node/*, const std::string & urdf_filename*/);
   RosRobot() = delete;
   ~RosRobot();
 
   void enterSafeState() override;
+
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
+
+protected:
+  rclcpp::Node * node_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
+  bool initial_pose_received_;
+
+  void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 };
 
 }  // namespace nav2_robot

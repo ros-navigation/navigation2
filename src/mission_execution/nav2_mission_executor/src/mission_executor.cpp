@@ -33,11 +33,21 @@ MissionExecutor::MissionExecutor()
     RCLCPP_ERROR(get_logger(), "MissionExecutor: NavigateToPoseTaskServer not running");
     throw std::runtime_error("MissionExecutor: NavigateToPoseTaskServer not running");
   }
+
+  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
+    std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
 }
 
 MissionExecutor::~MissionExecutor()
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::~MissionExecutor");
+}
+
+void
+MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  RCLCPP_INFO(get_logger(), "MissionExecutor::onGoalPoseReceived");
+  goal_pose_ = msg;
 }
 
 TaskStatus
@@ -50,16 +60,20 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 
   // TODO(mjeronimo): Get the goal pose from the task in the mission plan
+#if 0
   auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  goalPose->pose.position.x = 11.0;
-  goalPose->pose.position.y = 391.0;
+  goalPose->pose.position.x = -0.32;
+  goalPose->pose.position.y = -2.47;
   goalPose->pose.position.z = 0.0;
   goalPose->pose.orientation.x = 0.0;
   goalPose->pose.orientation.y = 0.0;
   goalPose->pose.orientation.z = 0.0;
-  goalPose->pose.orientation.w = 1.0;
+  goalPose->pose.orientation.w = -0.30;
 
   navTaskClient_->sendCommand(goalPose);
+#else
+  navTaskClient_->sendCommand(goal_pose_);
+#endif
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
