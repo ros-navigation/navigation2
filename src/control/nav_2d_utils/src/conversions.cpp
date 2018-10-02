@@ -35,7 +35,10 @@
 #include "nav_2d_utils/conversions.h"
 #include <vector>
 #include <string>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace nav_2d_utils
 {

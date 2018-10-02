@@ -11,10 +11,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(fake_costmap_2d REQUIRED)
+find_package(costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
-include_directories(include)
+include_directories(
+  include
+  ${Boost_INCLUDE_DIRS}
+)
 
 add_library(${PROJECT_NAME}
   src/costmap_queue.cpp
@@ -22,8 +26,8 @@ add_library(${PROJECT_NAME}
 )
 
 set(dependencies
-  fake_costmap_2d
   rclcpp
+  costmap_2d
 )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -40,8 +44,8 @@ if(BUILD_TESTING)
   ament_target_dependencies(mbq_test ${dependencies})
 
   ament_add_gtest(utest test/utest.cpp)
-  target_link_libraries(utest ${PROJECT_NAME})
   ament_target_dependencies(utest ${dependencies})
+  target_link_libraries(utest ${PROJECT_NAME} ${Boost_LIBRARIES})
 endif()
 
 install(TARGETS ${PROJECT_NAME}

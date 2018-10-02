@@ -30,7 +30,7 @@ find_package(pluginlib REQUIRED)
 
 #	TODO(bpwilcox): port remaining packages
 #find_package(tf2_sensor_msgs REQUIRED)
-#find_package(dynamic_reconfigure REQUIRED) 
+#find_package(dynamic_reconfigure REQUIRED)
 #find_package(message_filters REQUIRED)
 #find_package(voxel_grid REQUIRED)
 
@@ -64,10 +64,10 @@ add_library(nav2_costmap_2d
   src/costmap_2d_publisher.cpp
   src/costmap_math.cpp
   src/footprint.cpp
-  src/costmap_layer.cpp	
+  src/costmap_layer.cpp
   # TODO(bpwilcox): need ROS PCL dependencies to port
   #src/observation_buffer.cpp
-  
+
 )
 
 set(dependencies
@@ -77,19 +77,17 @@ set(dependencies
   map_msgs
   tf2_ros
   tf2
-  tf2_sensor_msgs
   xmlrpcpp
   pluginlib
   tf2_geometry_msgs
 )
 
-ament_target_dependencies(nav2_costmap_2d 
+ament_target_dependencies(nav2_costmap_2d
   ${dependencies}
 )
 
 target_link_libraries(nav2_costmap_2d
   ${Boost_LIBRARIES}
-  ${ament_LIBRARIES}
 )
 
 add_library(layers
@@ -124,7 +122,7 @@ target_link_libraries(layers
 #)
 
 add_executable(costmap_2d_node src/costmap_2d_node.cpp)
-ament_target_dependencies(costmap_2d_node 
+ament_target_dependencies(costmap_2d_node
   ${dependencies}
 )
 
@@ -156,6 +154,7 @@ if(BUILD_TESTING)
   #add_subdirectory(test)
 endif()
 
-ament_export_dependencies(rosidl_default_runtime)
 ament_export_include_directories(include)
+ament_export_libraries(nav2_costmap_2d layers)
+ament_export_dependencies(${dependencies})
 ament_package()

@@ -64,13 +64,13 @@ public:
   virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
       double * min_y,
       double * max_x,
-      double * max_y) {}
+      double * max_y) = 0;
 
   /**
    * @brief Actually update the underlying costmap, only within the bounds
    *        calculated during UpdateBounds().
    */
-  virtual void updateCosts(Costmap2D & master_grid, int min_i, int min_j, int max_i, int max_j) {}
+  virtual void updateCosts(Costmap2D & master_grid, int min_i, int min_j, int max_i, int max_j) = 0;
 
   /** @brief Stop publishers. */
   virtual void deactivate() {}

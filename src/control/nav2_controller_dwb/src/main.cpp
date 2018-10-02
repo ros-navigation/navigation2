@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DWB_CORE__COMMON_TYPES_H_
-#define DWB_CORE__COMMON_TYPES_H_
-
 #include <memory>
-#include "costmap_2d/costmap_2d_ros.h"
-#include "tf2_ros/transform_listener.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_controller_dwb/dwb_controller.hpp"
 
-
-namespace dwb_core
+int main(int argc, char ** argv)
 {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<nav2_controller_dwb::DwbController>());
+  rclcpp::shutdown();
 
-typedef std::shared_ptr<tf2_ros::Buffer> TFBufferPtr;
-typedef std::shared_ptr<costmap_2d::Costmap2DROS> CostmapROSPtr;
-
+  return 0;
 }
-
-#endif  // DWB_CORE__COMMON_TYPES_H_

@@ -50,7 +50,10 @@
 #include <pluginlib/class_loader.hpp>
 #include <xmlrpcpp/XmlRpcValue.h>
 #include <tf2/transform_datatypes.h>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
 #include "tf2_ros/buffer.h"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"

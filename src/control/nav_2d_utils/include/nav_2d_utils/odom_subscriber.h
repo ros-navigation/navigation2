@@ -35,11 +35,12 @@
 #ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 #define NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
 
+#include <memory>
+#include <mutex>
 #include <string>
-#include "ros/ros.h"
-#include "nav_msgs/Odometry.h"
-#include "nav_2d_msgs/Twist2DStamped.h"
-#include "boost/thread/mutex.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 
 namespace nav_2d_utils
 {
@@ -57,32 +58,33 @@ public:
    * @param nh NodeHandle for creating subscriber
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
-  explicit OdomSubscriber(ros::NodeHandle & nh, std::string default_topic = "odom")
+  explicit OdomSubscriber(rclcpp::Node & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
-    nh->get_parameter_or("odom_topic", odom_topic, default_topic);
+    nh.get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
-      nh.subscribe<nav_msgs::Odometry>(odom_topic, 1,
-        boost::bind(&OdomSubscriber::odomCallback, this, _1));
+      nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
+        [&](const nav_msgs::msg::Odometry::SharedPtr msg) {odomCallback(msg);},
+        1);
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
   inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() {return odom_vel_;}
 
 protected:
-  void odomCallback(const nav_msgs::Odometry::ConstPtr & msg)
+  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
-    ROS_INFO_ONCE("odom received!");
-    boost::mutex::scoped_lock lock(odom_mutex_);
+    // ROS_INFO_ONCE("odom received!");
+    std::lock_guard<std::mutex> lock(odom_mutex_);
     odom_vel_.header = msg->header;
     odom_vel_.velocity.x = msg->twist.twist.linear.x;
     odom_vel_.velocity.y = msg->twist.twist.linear.y;
     odom_vel_.velocity.theta = msg->twist.twist.angular.z;
   }
 
-  ros::Subscriber odom_sub_;
+  std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry>> odom_sub_;
   nav_2d_msgs::msg::Twist2DStamped odom_vel_;
-  boost::mutex odom_mutex_;
+  std::mutex odom_mutex_;
 };
 
 }  // namespace nav_2d_utils

@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_
-#define DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_
+#ifndef DWB_CORE__TRAJECTORY_GENERATOR_H_
+#define DWB_CORE__TRAJECTORY_GENERATOR_H_
 
 #include <vector>
 #include <memory>
@@ -123,4 +123,4 @@ public:
 
 }  // namespace dwb_core
 
-#endif  // DWB_LOCAL_PLANNER__TRAJECTORY_GENERATOR_H_
+#endif  // DWB_CORE__TRAJECTORY_GENERATOR_H_
