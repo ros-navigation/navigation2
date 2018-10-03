@@ -9,7 +9,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_map_server', node_executable='map_server', output='screen', arguments=[[mapFile], 'occupancy']),
         launch_ros.actions.Node(
-            package='nav2_dwa_controller', node_executable='dwa_controller', output='screen'),
+            package='nav2_controller_example', node_executable='dwa_controller', output='screen'),
         launch_ros.actions.Node(
             package='nav2_simple_navigator', node_executable='simple_navigator', output='screen'),
         launch_ros.actions.Node(

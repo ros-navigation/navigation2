@@ -198,7 +198,6 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 
 void PlannerTester::startCostmapServer(std::string serviceName)
 {
-#if 0
   RCLCPP_INFO(this->get_logger(), "PlannerTester::startCostmapServer");
 
   if (!costmap_set_) {
@@ -222,7 +221,7 @@ void PlannerTester::startCostmapServer(std::string serviceName)
   // Create a service that will use the callback function to handle requests.
   costmap_server_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(
     serviceName, costmap_service_callback);
-#endif
+
   costmap_server_running_ = true;
 }
 

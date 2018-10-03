@@ -1218,7 +1218,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
          }
        */
 
-      printf("Amcl: publishing pose\n");
+      RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
       pose_pub_->publish(p);
       last_published_pose = p;
 
