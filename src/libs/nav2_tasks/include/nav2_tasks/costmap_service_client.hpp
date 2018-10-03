@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ public:
   {
   }
 
-  using CostmapServiceRequest = ServiceClient<nav2_world_model_msgs::srv::GetCostmap>::RequestType;
-  using CostmapServiceResponse = ServiceClient<nav2_world_model_msgs::srv::GetCostmap>::ResponseType;
+  using CostmapServiceRequest =
+    ServiceClient<nav2_world_model_msgs::srv::GetCostmap>::RequestType;
+  using CostmapServiceResponse =
+    ServiceClient<nav2_world_model_msgs::srv::GetCostmap>::ResponseType;
 };
 
 }  // namespace nav2_tasks

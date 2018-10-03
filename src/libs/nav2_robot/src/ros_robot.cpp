@@ -19,12 +19,13 @@
 namespace nav2_robot
 {
 
-RosRobot::RosRobot(rclcpp::Node * node /*, const std::string & urdf_filename*/)
- : node_(node), initial_pose_received_(false)
+RosRobot::RosRobot(rclcpp::Node * node)
+: node_(node), initial_pose_received_(false)
 {
   // Open and parser the URDF file
 
-  pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
+  pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
 }
 
 RosRobot::~RosRobot()
@@ -39,18 +40,20 @@ RosRobot::enterSafeState()
 void
 RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-   RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceved");
+  RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceved");
 
-   // TODO: serialize access
-   current_pose_ = msg;
-   initial_pose_received_ = true;
+  // TODO(mjeronimo): serialize access
+  current_pose_ = msg;
+  initial_pose_received_ = true;
 }
 
 geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr
 RosRobot::getCurrentPose()
 {
-  if (!initial_pose_received_)
+  // TODO(mjeronimo): better to throw an exception or return an empty result/nullptr?
+  if (!initial_pose_received_) {
     throw std::runtime_error("RosRobot::getCurrentPose: initial pose not received yet");
+  }
 
   return current_pose_;
 }

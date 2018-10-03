@@ -54,8 +54,6 @@ public:
       if (!rclcpp::ok()) {
         throw std::runtime_error("waitForServer: interrupted while waiting for service to appear");
       }
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
-        "ServiceClient::waitForServer: waiting for service to appear...")
     }
   }
 

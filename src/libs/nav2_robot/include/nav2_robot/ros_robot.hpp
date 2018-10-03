@@ -31,7 +31,7 @@ public:
    *
    * @param[in] filename The filename of the URDF file describing this robot.
    */
-  explicit RosRobot(rclcpp::Node *node/*, const std::string & urdf_filename*/);
+  explicit RosRobot(rclcpp::Node * node);
   RosRobot() = delete;
   ~RosRobot();
 

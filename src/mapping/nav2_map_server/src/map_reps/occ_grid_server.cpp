@@ -176,11 +176,6 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
     throw std::runtime_error(errmsg);
   }
 
-// TODO(mjeronimo): Replace with Brian's fix /////
-  map_msg_.header.frame_id = "map";
-  map_msg_.info.map_load_time = node_->now();
-//////////////////////////////////////////////////
-
   // Copy the image data into the map structure
   map_msg_.info.width = img->w;
   map_msg_.info.height = img->h;
