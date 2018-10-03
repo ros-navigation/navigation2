@@ -29,6 +29,7 @@
 #include "amcl_node.hpp"
 #include "nav2_util/pf/pf.h"  // pf_vector_t
 #include "nav2_util/strutils.hpp"
+#include "nav2_tasks/map_service_client.hpp"
 
 // For transform support
 #include "tf2/LinearMath/Transform.h"
@@ -271,7 +272,7 @@ AmclNode::AmclNode()
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
   if (use_map_topic_) {
-    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("map",
+    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("occ_grid",
         std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
@@ -642,42 +643,22 @@ AmclNode::requestMap()
 {
   std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
-  // get map via RPC
-  auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  std::shared_ptr<nav_msgs::srv::GetMap::Response> resp;
-  auto client = this->create_client<nav_msgs::srv::GetMap>("occ_grid");
-  bool map_received = false;
+  nav2_tasks::MapServiceClient map_client;
+  map_client.waitForService(std::chrono::seconds(2));
 
-  while (!client->wait_for_service(std::chrono::seconds(1))) {
-    if (!rclcpp::ok()) {
-      return;
-    }
-    RCLCPP_INFO(get_logger(), "Waiting for map service to appear...");
-  }
+  auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
 
-  rclcpp::Rate r(std::chrono::milliseconds(500));
-  while (!map_received) {
-    auto result_future = client->async_send_request(req);
-    if (rclcpp::spin_until_future_complete(std::shared_ptr<rclcpp::Node>(this,
-      [](rclcpp::Node *) {}), result_future, std::chrono::seconds(1)) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_WARN(get_logger(), "Request for map failed; trying again...");
-      r.sleep();
-    } else {
-      resp = result_future.get();
-      map_received = true;
-    }
-    if (!rclcpp::ok()) {
-      return;
-    }
-  }
-  handleMapMessage(resp->map);
+  RCLCPP_INFO(get_logger(), "AmclNode::requestMap: invoking service call");
+  auto result = map_client.invoke(request);
+  RCLCPP_INFO(get_logger(), "AmclNode::requestMap: after service call");
+
+  handleMapMessage(result->map);
 }
 
 void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
+  RCLCPP_INFO(get_logger(), "AmclNode::mapReceived");
   if (first_map_only_ && first_map_received_) {
     return;
   }
@@ -1237,6 +1218,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
          }
        */
 
+      RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
       pose_pub_->publish(p);
       last_published_pose = p;
 

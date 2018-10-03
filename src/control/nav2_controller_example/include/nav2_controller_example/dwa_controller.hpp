@@ -25,13 +25,15 @@ namespace nav2_controller_example
 class DwaController : public nav2_tasks::FollowPathTaskServer
 {
 public:
-  using CmdVel = geometry_msgs::msg::Twist;
   DwaController();
   ~DwaController();
 
-protected:
   nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+
+protected:
   void sendVelocity(double speed);
+
+  using CmdVel = geometry_msgs::msg::Twist;
   std::shared_ptr<rclcpp::Publisher<CmdVel>> vel_pub_;
 };
 

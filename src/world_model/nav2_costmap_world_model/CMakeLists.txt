@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_tasks)
 find_package(nav2_util)
 find_package(nav2_libs_msgs)
 find_package(nav2_world_model_msgs)
@@ -39,6 +40,7 @@ add_library(${library_name}
 set(dependencies
   rclcpp
   std_msgs
+  nav2_tasks
   nav2_util
   nav2_libs_msgs
   nav2_world_model_msgs

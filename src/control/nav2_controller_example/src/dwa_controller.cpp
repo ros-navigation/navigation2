@@ -26,7 +26,7 @@ DwaController::DwaController()
 : nav2_tasks::FollowPathTaskServer("FollowPathNode")
 {
   RCLCPP_INFO(get_logger(), "DwaController::DwaController");
-  vel_pub_ = this->create_publisher<CmdVel>("cmd_vel", 1);
+  vel_pub_ = this->create_publisher<CmdVel>("/mobile_base/commands/velocity", 1);
 }
 
 DwaController::~DwaController()
@@ -66,6 +66,8 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
 
 void DwaController::sendVelocity(double speed)
 {
+  RCLCPP_INFO(get_logger(), "DwaController::sendVelocity: %f", speed);
+
   CmdVel v;
   v.linear.x = speed;
   v.linear.y = 0;

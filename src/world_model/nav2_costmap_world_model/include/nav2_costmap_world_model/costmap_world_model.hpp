@@ -22,6 +22,7 @@
 #include "nav2_util/costmap.hpp"
 #include "nav2_libs_msgs/msg/costmap.hpp"
 #include "nav2_world_model_msgs/srv/get_costmap.hpp"
+#include "nav2_tasks/map_service_client.hpp"
 
 namespace nav2_costmap_world_model
 {
@@ -50,6 +51,8 @@ private:
 
   // TODO(orduno): std::unique_ptr<LayeredCostmap> layeredCostmap_;
   std::unique_ptr<nav2_util::Costmap> costmap_;
+
+  nav2_tasks::MapServiceClient map_client_;
 };
 
 }  // namespace nav2_costmap_world_model

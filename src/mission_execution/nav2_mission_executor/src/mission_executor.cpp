@@ -33,11 +33,30 @@ MissionExecutor::MissionExecutor()
     RCLCPP_ERROR(get_logger(), "MissionExecutor: NavigateToPoseTaskServer not running");
     throw std::runtime_error("MissionExecutor: NavigateToPoseTaskServer not running");
   }
+
+  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
+      std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
+
+  plan_pub_ = create_publisher<nav2_mission_execution_msgs::msg::MissionPlan>(
+    "ExecuteMissionTask_command");
 }
 
 MissionExecutor::~MissionExecutor()
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor::~MissionExecutor");
+}
+
+void
+MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  RCLCPP_INFO(get_logger(), "MissionExecutor::onGoalPoseReceived");
+  goal_pose_ = msg;
+
+  auto message = nav2_mission_execution_msgs::msg::MissionPlan();
+  message.mission_plan = "Hello, world!";
+
+  RCLCPP_INFO(this->get_logger(), "MissionExecutor::onGoalPoseReceived: publishing a mission plan");
+  plan_pub_->publish(message);
 }
 
 TaskStatus
@@ -49,9 +68,9 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 
-  // TODO(mjeronimo): Get the goal pose from the task in the mission plan
-  auto goalPose = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-  navTaskClient_->sendCommand(goalPose);
+  // TODO(mjeronimo): Get the goal pose from the task in the mission plan. For now, we're
+  // using the one received from rviz via the move_base_simple/goal topic.
+  navTaskClient_->sendCommand(goal_pose_);
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
