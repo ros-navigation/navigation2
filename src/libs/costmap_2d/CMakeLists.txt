@@ -10,7 +10,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   #add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -27,11 +26,11 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(xmlrpcpp REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(message_filters REQUIRED)
 
-#	TODO(bpwilcox): port remaining packages
+# TODO(bpwilcox): port remaining packages
 #find_package(tf2_sensor_msgs REQUIRED)
 #find_package(dynamic_reconfigure REQUIRED) 
-find_package(message_filters REQUIRED)
 #find_package(voxel_grid REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
@@ -39,20 +38,19 @@ find_package(Eigen3 REQUIRED)
 #find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
-	include
-	${ament_INCLUDE_DIRS}
-	${EIGEN3_INCLUDE_DIRS}
+  include
+  ${ament_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
-#	TODO(bpwilcox): Separate msgs generation into separate package
+# TODO(bpwilcox): Separate msgs generation into separate package
 #rosidl_generate_interfaces(${PROJECT_NAME}
 #  "msg/VoxelGrid.msg"
 #
 #	DEPENDENCIES std_msgs geometry_msgs map_msgs
 #)
-
 
 add_library(nav2_costmap_2d
   src/array_parser.cpp
@@ -88,7 +86,7 @@ ament_target_dependencies(nav2_costmap_2d
 add_library(layers
   plugins/inflation_layer.cpp
 
-	#	TODO(bpwilcox): port additional plugin layers
+  # TODO(bpwilcox): port additional plugin layers
   plugins/static_layer.cpp
   #plugins/obstacle_layer.cpp
   #plugins/voxel_layer.cpp
@@ -97,18 +95,18 @@ add_library(layers
 ament_target_dependencies(layers
   ${dependencies}
  )
-target_link_libraries(layers
+ target_link_libraries(layers
   nav2_costmap_2d
 )
 
-#	TODO(bpwilcox): port costmap_2d_markers
+# TODO(bpwilcox): port costmap_2d_markers
 #add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
 #ament_target_dependencies(costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
 #target_link_libraries(costmap_2d_markers
   #costmap_2d
 #)
 
-#	TODO(bpwilcox): port costmap_2d_cloud
+# TODO(bpwilcox): port costmap_2d_cloud
 #add_executable(costmap_2d_cloud src/costmap_2d_cloud.cpp)
 #ament_target_dependencies(costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
 #target_link_libraries(costmap_2d_cloud
