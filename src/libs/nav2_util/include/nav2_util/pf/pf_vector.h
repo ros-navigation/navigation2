@@ -25,15 +25,15 @@
  * CVS: $Id: pf_vector.h 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
-#ifndef PF_VECTOR_H
-#define PF_VECTOR_H
+#ifndef NAV2_UTIL__PF__PF_VECTOR_H_
+#define NAV2_UTIL__PF__PF_VECTOR_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdio.h>
-  
+
 // The basic vector
 typedef struct
 {
@@ -55,7 +55,7 @@ pf_vector_t pf_vector_zero();
 int pf_vector_finite(pf_vector_t a);
 
 // Print a vector
-void pf_vector_fprintf(pf_vector_t s, FILE *file, const char *fmt);
+void pf_vector_fprintf(pf_vector_t s, FILE * file, const char * fmt);
 
 // Simple vector addition
 pf_vector_t pf_vector_add(pf_vector_t a, pf_vector_t b);
@@ -77,18 +77,18 @@ pf_matrix_t pf_matrix_zero();
 int pf_matrix_finite(pf_matrix_t a);
 
 // Print a matrix
-void pf_matrix_fprintf(pf_matrix_t s, FILE *file, const char *fmt);
+void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
 
 // Compute the matrix inverse.  Will also return the determinant,
 // which should be checked for underflow (indicated singular matrix).
-//pf_matrix_t pf_matrix_inverse(pf_matrix_t a, double *det);
+// pf_matrix_t pf_matrix_inverse(pf_matrix_t a, double *det);
 
 // Decompose a covariance matrix [a] into a rotation matrix [r] and a
 // diagonal matrix [d] such that a = r * d * r^T.
-void pf_matrix_unitary(pf_matrix_t *r, pf_matrix_t *d, pf_matrix_t a);
+void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif  // NAV2_UTIL__PF__PF_VECTOR_H_

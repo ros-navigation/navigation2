@@ -25,13 +25,13 @@
  * CVS: $Id: pf_pdf.h 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
-#ifndef PF_PDF_H
-#define PF_PDF_H
+#ifndef NAV2_UTIL__PF__PF_PDF_H_
+#define NAV2_UTIL__PF__PF_PDF_H_
 
-#include "pf_vector.h"
+#include "nav2_util/pf/pf_vector.h"
 
-//#include <gsl/gsl_rng.h>
-//#include <gsl/gsl_randist.h>
+// #include <gsl/gsl_rng.h>
+// #include <gsl/gsl_randist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ typedef struct
   // Mean, covariance and inverse covariance
   pf_vector_t x;
   pf_matrix_t cx;
-  //pf_matrix_t cxi;
+  // pf_matrix_t cxi;
   double cxdet;
 
   // Decomposed covariance matrix (rotation * diagonal)
@@ -55,19 +55,18 @@ typedef struct
   pf_vector_t cd;
 
   // A random number generator
-  //gsl_rng *rng;
-
+  // gsl_rng *rng;
 } pf_pdf_gaussian_t;
 
 
 // Create a gaussian pdf
-pf_pdf_gaussian_t *pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx);
+pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx);
 
 // Destroy the pdf
-void pf_pdf_gaussian_free(pf_pdf_gaussian_t *pdf);
+void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf);
 
 // Compute the value of the pdf at some point [z].
-//double pf_pdf_gaussian_value(pf_pdf_gaussian_t *pdf, pf_vector_t z);
+// double pf_pdf_gaussian_value(pf_pdf_gaussian_t *pdf, pf_vector_t z);
 
 // Draw randomly from a zero-mean Gaussian distribution, with standard
 // deviation sigma.
@@ -76,10 +75,10 @@ void pf_pdf_gaussian_free(pf_pdf_gaussian_t *pdf);
 double pf_ran_gaussian(double sigma);
 
 // Generate a sample from the pdf.
-pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t *pdf);
+pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t * pdf);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif  // NAV2_UTIL__PF__PF_PDF_H_
