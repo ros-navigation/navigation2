@@ -267,7 +267,7 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
 
 void OccGridServer::ConnectROS()
 {
-  // Create a publisher
+  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
   custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
