@@ -63,8 +63,6 @@ StaticLayer::~StaticLayer()
 
 void StaticLayer::onInitialize()
 {
-
-
   auto nh = rclcpp::Node::make_shared(name_);
   rclcpp::Node::SharedPtr g_nh;
   g_nh = rclcpp::Node::make_shared("costmap_2d_static");

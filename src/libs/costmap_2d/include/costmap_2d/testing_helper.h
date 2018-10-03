@@ -35,7 +35,6 @@ char printableCost(unsigned char cost)
 
 void printMap(costmap_2d::Costmap2D & costmap)
 {
-
   printf("map:\n");
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
     for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
@@ -61,13 +60,9 @@ unsigned int countValues(costmap_2d::Costmap2D & costmap, unsigned char value, b
 
 void addStaticLayer(costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf)
 {
-
   costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
-
   layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
-
   slayer->initialize(&layers, "static", &tf);
-
 }
 
 costmap_2d::ObstacleLayer * addObstacleLayer(costmap_2d::LayeredCostmap & layers,
