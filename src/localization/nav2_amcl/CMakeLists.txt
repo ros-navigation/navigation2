@@ -31,7 +31,6 @@ include_directories(
 set(executable_name amcl)
 
 add_executable(${executable_name}
-  src/amcl_node.cpp
   src/main.cpp
 )
 
@@ -39,11 +38,6 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/amcl_node.cpp
-)
-
-target_link_libraries(${executable_name}
-  ${Boost_LIBRARIES}
-  boost_system
 )
 
 set(dependencies
@@ -61,6 +55,12 @@ set(dependencies
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
+)
+
+target_link_libraries(${executable_name}
+  ${library_name}
+  ${Boost_LIBRARIES}
+  boost_system
 )
 
 ament_target_dependencies(${library_name}
