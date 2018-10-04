@@ -27,59 +27,48 @@
 namespace nav2_map_server
 {
 
-enum MapMode
-{
-  TRINARY,
-  SCALE,
-  RAW
-};
-
 class OccGridServer : public BaseMapServer
 {
 public:
   explicit OccGridServer(rclcpp::Node::SharedPtr node)
   : node_(node) {}
-
   OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name);
-
   OccGridServer() {}
-
   ~OccGridServer() {}
 
   void LoadMapInfoFromFile(const std::string & file_name);
-
   void LoadMapFromFile(const std::string & map_name);
-
   void PublishMap();
-
   void SetMap();
-
   void ConnectROS();
 
-private:
-  void OccMapCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Response> res);
-
 protected:
-  // Info From YAML file
-  double origin[3];
-  int negate;
-  double occ_th, free_th;
-  double res;
-  MapMode mode = TRINARY;
-  std::string frame_id = "map";
+  enum MapMode { TRINARY, SCALE, RAW };
+
+  // Info from parsing the YAML file
+  double origin_[3];
+  int negate_;
+  double occ_th_;
+  double free_th_;
+  double res_;
+  MapMode mode_ = TRINARY;
+  std::string frame_id_ = "map";
   std::string map_name_;
 
-  // Occupancy Grid ROS Message / Service
-  nav_msgs::msg::OccupancyGrid map_msg_;
+  // The ROS node to use for ROS-related operations such as creating a service
+  rclcpp::Node::SharedPtr node_;
+
+  // A service to provide the ouccpancy grid (GetMap) and the message to return
+  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
   nav_msgs::srv::GetMap::Response occ_resp_;
 
-  // ROS Interfaces
-  rclcpp::Node::SharedPtr node_;
+  // A topic on which the occupance grid will be published and the message to publish
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
-  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
+  nav_msgs::msg::OccupancyGrid map_msg_;
+
+  // For now, publish the map periodically so that its sure to be received on the
+  // ROS1 side across the ROS1 bridge
+  rclcpp::TimerBase::SharedPtr timer_;
 };
 
 }  // namespace nav2_map_server

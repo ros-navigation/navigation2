@@ -15,10 +15,6 @@
 #ifndef NAV2_MAP_SERVER__BASE_MAP_SERVER_HPP_
 #define NAV2_MAP_SERVER__BASE_MAP_SERVER_HPP_
 
-#include <libgen.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
 #include <string>
 
 namespace nav2_map_server
@@ -27,7 +23,6 @@ namespace nav2_map_server
 class BaseMapServer
 {
 public:
-  BaseMapServer() {}
   virtual ~BaseMapServer() {}
 
   virtual void LoadMapInfoFromFile(const std::string & file_name) = 0;
