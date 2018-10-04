@@ -148,6 +148,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2_costmap_2d layers)
+ament_export_libraries(layers nav2_costmap_2d)
 ament_export_dependencies(${dependencies})
 ament_package()
