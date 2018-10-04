@@ -25,38 +25,80 @@ namespace nav2_costmap_world_model
 {
 
 CostmapWorldModel::CostmapWorldModel(const string & name)
-: Node(name + "_Node")
+  : Node(name + "_Node")
 {
-  costmap_ = std::make_unique<nav2_util::Costmap>(this);
+  // Create Costmap with static and inflation layer
+  layered_costmap_ = new costmap_2d::LayeredCostmap("frame", false, false);
+  addStaticLayer();
+  addInflationLayer();
+  // TODO(bpwilcox): add footprint to layered_costmap either manually or from nav2_robot
+  layered_costmap_->updateMap(0, 0, 0);
 
   auto costmap_service_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
-    {
-      RCLCPP_INFO(
-        this->get_logger(), "CostmapWorldModel: Incoming costmap request...");
-      response->map = costmap_->getCostmap(request->specs);
-    };
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
+      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)->void
+  {
+    RCLCPP_INFO(
+        this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
+    costmap_callback(request_header, request, response);
+  };
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       costmap_service_callback);
+}
 
-  // Get the current map from the map server
-  //
-  // TODO(mjeronimo): Instead of using a service call, the map server should push any
-  // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
-  map_client_.waitForService(std::chrono::seconds(2));
+void CostmapWorldModel::costmap_callback(
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)
+{
+  costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
+  rclcpp::Clock clock;
 
-  auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
-  auto response = map_client_.invoke(request);
+  response->map.metadata.size_x = costmap->getSizeInCellsX();
+  response->map.metadata.size_y = costmap->getSizeInCellsY();
+  response->map.metadata.resolution = costmap->getResolution();
+  response->map.metadata.layer = "Master";
+  response->map.metadata.map_load_time = clock.now();
+  response->map.metadata.update_time = clock.now();
 
-  costmap_->setStaticMap(response->map);
+  tf2::Quaternion quaternion;
+  quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
+  response->map.metadata.origin.position.x = costmap->getOriginX();
+  response->map.metadata.origin.position.y = costmap->getOriginY();
+  response->map.metadata.origin.position.z = 0.0;
+  response->map.metadata.origin.orientation.x = quaternion.x();
+  response->map.metadata.origin.orientation.y = quaternion.y();
+  response->map.metadata.origin.orientation.z = quaternion.z();
+  response->map.metadata.origin.orientation.w = quaternion.w();
+
+  response->map.header.stamp = clock.now();
+  response->map.header.frame_id = "map";
+  unsigned char * data = costmap->getCharMap();
+  std::vector<unsigned char> my_map(
+      data, data + response->map.metadata.size_x * response->map.metadata.size_y);
+  response->map.data = my_map;
+}
+
+void CostmapWorldModel::addStaticLayer()
+{
+  costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
+  layered_costmap_->addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
+  slayer->initialize(layered_costmap_, "static", tf_);
+}
+
+void CostmapWorldModel::addInflationLayer()
+{
+  costmap_2d::InflationLayer * ilayer = new costmap_2d::InflationLayer();
+  layered_costmap_->addPlugin(std::shared_ptr<costmap_2d::Layer>(ilayer));
+  ilayer->initialize(layered_costmap_, "inflation", tf_);
+
 }
 
 CostmapWorldModel::CostmapWorldModel()
-: CostmapWorldModel("WorldModel")
+  : CostmapWorldModel("WorldModel")
 {
 }
 
