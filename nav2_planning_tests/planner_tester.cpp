@@ -39,7 +39,7 @@ PlannerTester::PlannerTester()
   RCLCPP_INFO(this->get_logger(), "PlannerTester::PlannerTester");
 
   // Our client used to invoke the services of the global planner (ComputePathToPose)
-  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this->shared_from_this());
 
   if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(this->get_logger(), "PlannerTester::PlannerTester: planner not running");
