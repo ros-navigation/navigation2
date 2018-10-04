@@ -60,10 +60,6 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
     " orientation=\"" <<
     p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z << ";" <<
     p.orientation.w << "\"";
-||||||| merged common ancestors
-  // Create and run the behavior tree for this mission
-  ExecuteMissionBehaviorTree bt(this);
-  TaskStatus result = bt.run(goal_pose_, std::bind(&MissionExecutor::cancelRequested, this));
 
   // Put it all together, trying to make the XML somewhat readable here
   std::stringstream ss;
