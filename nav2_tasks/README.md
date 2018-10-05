@@ -105,3 +105,4 @@ The current implementation uses four topics, one each for **Command**, **Cancel*
 * **Automatic task cancelation**
 
   + For convenience, upon receiving a new command before the previous command has completed, the task server could automatically cancel the current command and take up the new command.
+
