@@ -23,8 +23,8 @@ namespace nav2_robot
 RosRobot::RosRobot(rclcpp::Node * node)
 : node_(node), initial_pose_received_(false)
 {
-  // Open and parser the URDF file
-  if (!(urdf_file_ = std::getenv("URDF_FILE"))) {
+  // Open and parse the URDF file
+  if (!(urdf_file_ = std::getenv("URDF_FILE")).c_str()) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get URDF_FILE environment.");
     throw std::runtime_error("Failed to read URDF file. Please make sure path environment"
             " to urdf file is set correctly.");

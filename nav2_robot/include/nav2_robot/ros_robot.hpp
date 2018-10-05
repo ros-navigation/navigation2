@@ -38,15 +38,15 @@ public:
 
   void enterSafeState() override;
 
-  urdf::Model model_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
 
 protected:
   rclcpp::Node * node_;
-  const char * urdf_file_;
+  std::string urdf_file_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
   bool initial_pose_received_;
+  urdf::Model model_;
 
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 };
