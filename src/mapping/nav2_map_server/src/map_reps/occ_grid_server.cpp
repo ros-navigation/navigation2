@@ -34,6 +34,7 @@
  */
 #include "nav2_map_server/map_reps/occ_grid_server.hpp"
 
+#include <libgen.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -44,7 +45,6 @@
 #include <chrono>
 
 #include "yaml-cpp/yaml.h"
-#include "libgen.h"
 #include "LinearMath/btQuaternion.h"
 #include "SDL/SDL_image.h"
 
@@ -287,7 +287,7 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
   RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read a %d X %d map @ %.3lf m/cell",
     map_msg_.info.width,
     map_msg_.info.height,
-    map_msg_.info.resolution);  
+    map_msg_.info.resolution);
 }
 
 void OccGridServer::ConnectROS()
@@ -302,8 +302,8 @@ void OccGridServer::ConnectROS()
 
   // Create a service callback handle
   auto handle_occ_callback = [this](
-    const std::shared_ptr<rmw_request_id_t> /*request_header*/,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request> /*request*/,
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
       RCLCPP_INFO(node_->get_logger(), "OccGridServer: handle_occ_callback");
       response->map = occ_resp_.map;
@@ -322,10 +322,10 @@ void OccGridServer::PublishMap()
 {
   occ_pub_->publish(map_msg_);
 
-  // For now, periodically publish the map so that the ros1 bridge will be sure the proxy the 
+  // For now, periodically publish the map so that the ros1 bridge will be sure the proxy the
   // message to rviz on the ROS1 side
   // TODO(mjeronimo): Remove this once we've got everything on the ROS2 side
-  auto timer_callback = [this]() -> void { occ_pub_->publish(map_msg_); };
+  auto timer_callback = [this]() -> void {occ_pub_->publish(map_msg_);};
   timer_ = node_->create_wall_timer(2s, timer_callback);
 }
 

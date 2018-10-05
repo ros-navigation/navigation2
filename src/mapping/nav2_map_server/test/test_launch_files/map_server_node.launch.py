@@ -15,9 +15,10 @@
 # limitations under the License.
 
 import os
-import sys
+
 from launch import LaunchDescription
 import launch_ros.actions
+
 
 def generate_launch_description():
     return LaunchDescription([
@@ -25,6 +26,5 @@ def generate_launch_description():
             package='nav2_map_server',
             node_executable='map_server',
             output='screen',
-            arguments = [os.path.join(os.getenv('TEST_DIR'), 'testmap.yaml')])
-            #arguments = [os.path.join(os.getenv('HOME'), 'ros2_overlay_ws/src/navigation2/src/mapping/nav2_map_server/test/testmap.yaml')])
-])
+            arguments=[os.path.join(os.getenv('TEST_DIR'), 'testmap.yaml')])
+    ])
