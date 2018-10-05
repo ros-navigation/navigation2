@@ -24,14 +24,13 @@ RosRobot::RosRobot(rclcpp::Node * node)
 : node_(node), initial_pose_received_(false)
 {
   // Open and parser the URDF file
-  if (!(urdf_file_ = std::getenv("URDF_FILE")))
-  {
+  if (!(urdf_file_ = std::getenv("URDF_FILE"))) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get URDF_FILE environment.");
     throw std::runtime_error("Failed to read URDF file. Please make sure path environment"
-    " to urdf file is set correctly." );
+            " to urdf file is set correctly.");
   }
 
-  if (!model_.initFile(urdf_file_)){
+  if (!model_.initFile(urdf_file_)) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to parse URDF file.");
   } else {
     RCLCPP_INFO(node_->get_logger(), "Parsed URDF file");

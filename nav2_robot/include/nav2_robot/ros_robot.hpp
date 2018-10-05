@@ -43,11 +43,11 @@ public:
 
 protected:
   rclcpp::Node * node_;
-  const char* urdf_file_;
+  const char * urdf_file_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
   bool initial_pose_received_;
-  
+
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 };
 
