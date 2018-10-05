@@ -255,6 +255,8 @@ private:
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
+  void setPluginParams(rclcpp::Node::SharedPtr nh);
+
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
   //void reconfigureCB(nav2_costmap_2d::Costmap2DConfig &config, uint32_t level);
   void movementCB();
