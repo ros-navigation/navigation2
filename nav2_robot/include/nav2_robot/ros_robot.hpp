@@ -18,6 +18,7 @@
 #include <string>
 #include "nav2_robot/robot.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "urdf/model.h"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 namespace nav2_robot
@@ -37,15 +38,16 @@ public:
 
   void enterSafeState() override;
 
+  urdf::Model model_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
 
 protected:
   rclcpp::Node * node_;
-
+  const char* urdf_file_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
   bool initial_pose_received_;
-
+  
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 };
 

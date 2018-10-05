@@ -1,0 +1,29 @@
+robot:
+  robot_specifications:
+    - footprint:
+        footprint_specifications:
+          radius: 0.2552
+          points:
+            []
+    - initial_pose:
+        x: 2.0
+        y: 2.0
+        theta: 0.0
+    - laser:
+        laser_specifications:
+          max_angle: 0.5
+          min_angle: -0.5
+          max_range: 5
+          min_range: 0
+          num_rays: 640
+          frequency: 15
+          frame_id: laser_0
+          pose:
+            x: -0.1
+            y: 0
+            theta: 0
+          noise:
+            noise_specifications:
+              noise_mean: 0.001
+              noise_std: 0.00001
+

@@ -13,14 +13,19 @@
 // limitations under the License.
 
 #include <memory>
+#include <stdexcept>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_simple_navigator/simple_navigator.hpp"
 
 int main(int argc, char ** argv)
 {
+  try {
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<nav2_simple_navigator::SimpleNavigator>());
   rclcpp::shutdown();
 
   return 0;
+  } catch(std::exception& e) {
+    RCLCPP_ERROR(rclcpp::get_logger("simple_navigator"), e.what());
+  }
 }
