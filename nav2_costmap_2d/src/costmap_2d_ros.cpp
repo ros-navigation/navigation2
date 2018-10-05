@@ -71,7 +71,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   : layered_costmap_(NULL),
   name_(name),
   tf_(tf),
-  transform_tolerance_(0.3),
+  transform_tolerance_(3.5),
   map_update_thread_shutdown_(false),
   stop_updates_(false),
   initialized_(true),
@@ -175,6 +175,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       plugin->initialize(layered_costmap_, name + "_" + pname, &tf_);
     }
   }
+  
+
+/*   layered_costmap_->updateMap(0,0,0);
+  auto cm = layered_costmap_->getCostmap();
+  printf("map:\n");
+  for (int i = 0; i < cm->getSizeInCellsY(); i++) {
+    for (int j = 0; j < cm->getSizeInCellsX(); j++) {
+      printf("%4d", int(cm->getCost(j, i)));
+    }
+    printf("\n\n");
+  } */
 
   // subscribe to the footprint topic
   std::string topic_param, topic;
@@ -215,6 +226,12 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   //dynamic_reconfigure::Server<Costmap2DConfig>::CallbackType cb = std::bind(&Costmap2DROS::reconfigureCB, this, _1,
   //                                                                            _2);
   //dsrv_->setCallback(cb);
+
+  map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, 5.0));
+
+  //layered_costmap_->updateMap(0,0,0);
+
+
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
@@ -281,7 +298,6 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
     }
   }
   auto obstacles = rclcpp::Node::make_shared("obstacle_layer", std::string(nh->get_name()));
-  //ros::NodeHandle obstacles(nh, "obstacle_layer");
 
   if (parameters_client->has_parameter("map_type")) {
     s = parameters_client->get_parameter<std::string>("map_type");
@@ -337,8 +353,8 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
 
 }
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
-/*
-void Costmap2DROS::reconfigureCB(nav2_costmap_2d::Costmap2DConfig &config, uint32_t level)
+
+/* void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level)
 {
   transform_tolerance_ = config.transform_tolerance;
   if (map_update_thread_ != NULL)
@@ -502,6 +518,11 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
 void Costmap2DROS::updateMap()
 {
+
+  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Update Map...");
+
+  //auto clock = new rclcpp::Clock();
+  rclcpp::Clock clock;
   if (!stop_updates_) {
     // get global pose
     geometry_msgs::msg::PoseStamped pose;
@@ -511,6 +532,7 @@ void Costmap2DROS::updateMap()
         yaw = tf2::getYaw(pose.pose.orientation);
 
       layered_costmap_->updateMap(x, y, yaw);
+      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Updated...");
 
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
@@ -621,10 +643,13 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   //TODO(bpwilcox): use toSec() function in more recent rclcpp branch
   if ((current_time - rclcpp::Time(global_pose.header.stamp)) > nav2_util::durationFromSeconds(transform_tolerance_))
   {
-    RCLCPP_WARN(rclcpp::get_logger( "nav2_costmap_2d"),
-        "Costmap2DROS transform timeout. Current time: %ld, global_pose stamp: %ld, tolerance: %.4f",
-        current_time.nanoseconds(),
-        rclcpp::Time(global_pose.header.stamp).nanoseconds(), transform_tolerance_);
+    RCLCPP_WARN(rclcpp::get_logger(
+          "costmap_2d"),
+        "Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f, difference: %.4f",
+        tf2::timeToSec(tf2_ros::fromMsg(current_time)),
+        tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)), transform_tolerance_,
+        tf2::timeToSec(tf2_ros::fromMsg(current_time)) -
+          tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)));
 
     return false;
   }
