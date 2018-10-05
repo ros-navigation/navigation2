@@ -127,8 +127,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
-  if (!private_parameters_client->has_parameter("plugins")) {
-    resetOldParameters(private_nh_);
+/*   if (!private_parameters_client->has_parameter("plugins")) {
+    resetOldParameters(private_nh);
   }
 
   if (private_parameters_client->has_parameter("plugins")) {
@@ -143,6 +143,36 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
       layered_costmap_->addPlugin(plugin);
       plugin->initialize(layered_costmap_, name + "/" + pname, &tf_);
+    }
+  } */
+
+  std::vector<std::string> class_names;
+  class_names = plugin_loader_.getDeclaredClasses();
+  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "printing available class names...");
+  for (int i = 0; i < class_names.size(); ++i)
+  {
+    printf("%s\n", class_names[i].c_str());
+  }
+
+  if (!private_parameters_client->has_parameter("plugin_names")) {
+    setPluginParams(private_nh);
+  }
+
+  if (private_parameters_client->has_parameter("plugin_names")) {
+    std::vector<rclcpp::Parameter> param;
+    param = private_nh->get_parameters({"plugin_names", "plugin_types"});
+
+    for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
+      //std::string pname = static_cast<std::string>(param[0][i]);
+      std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
+      //std::string type = static_cast<std::string>(param[1][i]);
+      std::string type = (param[1].get_value<std::vector<std::string>>())[i];
+
+      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Using plugin \"%s\"", pname.c_str());
+
+      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
+      layered_costmap_->addPlugin(plugin);
+      plugin->initialize(layered_costmap_, name + "_" + pname, &tf_);
     }
   }
 
@@ -208,6 +238,18 @@ Costmap2DROS::~Costmap2DROS()
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
   //delete dsrv_;
 }
+
+void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
+{
+  std::vector<rclcpp::Parameter> param;
+
+  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
+  std::vector<std::string> plugin_types = {"costmap_2d::StaticLayer","costmap_2d::InflationLayer"};
+  param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
+  nh->set_parameters(param);
+
+}
+
 
 void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
 {

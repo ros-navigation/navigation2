@@ -87,6 +87,8 @@ ament_target_dependencies(nav2_costmap_2d
 add_library(layers SHARED
   plugins/inflation_layer.cpp
   plugins/static_layer.cpp
+
+	#	TODO(bpwilcox): port additional plugin layers
   #plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
 
@@ -95,8 +97,8 @@ add_library(layers SHARED
 )
 ament_target_dependencies(layers
   ${dependencies}
- )
- target_link_libraries(layers
+)
+target_link_libraries(layers
   nav2_costmap_2d
 )
 
@@ -121,16 +123,17 @@ ament_target_dependencies(nav2_costmap_2d_node
 
 target_link_libraries(nav2_costmap_2d_node
   nav2_costmap_2d
+  layers
 )
 
-install(TARGETS nav2_costmap_2d layers nav2_costmap_2d_node
+install(TARGETS nav2_costmap_2d costmap_2d_node layers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(FILES costmap_plugins.xml
-  DESTINATION share/${PROJECT_NAME}
+  DESTINATION share
 )
 
 install(DIRECTORY include/
@@ -150,4 +153,5 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(layers nav2_costmap_2d)
 ament_export_dependencies(${dependencies})
+pluginlib_export_plugin_description_file(costmap_2d costmap_plugins.xml)
 ament_package()

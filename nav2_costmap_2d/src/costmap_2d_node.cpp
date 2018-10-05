@@ -47,7 +47,15 @@ int main(int argc, char ** argv)
   std::string name = "costmap";
   tf2_ros::Buffer buffer(node->get_clock(), tf2::durationFromSec(10));
   tf2_ros::TransformListener tf(buffer);
-  nav2_costmap_2d::Costmap2DROS lcr(name, buffer);
+
+  rclcpp::Clock clock;
+  geometry_msgs::msg::TransformStamped base_rel_map;
+  base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
+  base_rel_map.child_frame_id = "base_link";
+  base_rel_map.header.frame_id = "map";
+  base_rel_map.header.stamp = clock.now();
+  buffer.setTransform( base_rel_map, "footprint_tests" );
+  costmap_2d::Costmap2DROS lcr(name, buffer);
 
   rclcpp::spin(node);
 
