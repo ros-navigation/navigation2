@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(costmap_2d)
+project(nav2_costmap_2d)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
