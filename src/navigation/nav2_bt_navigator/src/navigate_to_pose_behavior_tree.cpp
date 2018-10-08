@@ -50,12 +50,17 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
     followPathCommand_, followPathResult_);
 
   // Add the nodes to the tree, creating the tree structure
-  root_->AddChild(firstPath_.get());
-  root_->AddChild(sel_.get());
-  sel_->AddChild(reachedGoalNode_.get());
-  sel_->AddChild(parNode_.get());
-  parNode_->AddChild(computePathToPoseAction_.get());
-  parNode_->AddChild(followPathAction_.get());
+  root_->addChild(firstPath_.get());
+  root_->addChild(sel_.get());
+  sel_->addChild(reachedGoalNode_.get());
+  sel_->addChild(parNode_.get());
+  parNode_->addChild(computePathToPoseAction_.get());
+  parNode_->addChild(followPathAction_.get());
+}
+
+NavigateToPoseBehaviorTree::~NavigateToPoseBehaviorTree()
+{
+  BT::haltAllActions(root_.get());
 }
 
 nav2_tasks::TaskStatus
@@ -71,13 +76,13 @@ NavigateToPoseBehaviorTree::run(
   computePathToPoseCommand_->start = command->pose;
   computePathToPoseCommand_->goal = command->pose;
 
-  BT::ReturnStatus result = root_->get_status();
+  BT::NodeStatus result = root_->status();
 
-  while (rclcpp::ok() && !(result == BT::SUCCESS || result == BT::FAILURE)) {
-    result = root_->Tick();
+  while (rclcpp::ok() && !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE)) {
+    result = root_->executeTick();
 
     if (cancelRequested()) {
-      root_->Halt();
+      root_->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
@@ -85,7 +90,7 @@ NavigateToPoseBehaviorTree::run(
   }
 
   return (result ==
-         BT::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
+         BT::NodeStatus::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
 }
 
 }  // namespace nav2_bt_navigator

@@ -18,8 +18,9 @@
 #include <functional>
 #include <memory>
 #include <chrono>
+
 #include "rclcpp/rclcpp.hpp"
-#include "BTpp/behavior_tree.h"
+#include "behavior_tree_core/behavior_tree.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
@@ -33,6 +34,7 @@ class NavigateToPoseBehaviorTree
 public:
   explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
   NavigateToPoseBehaviorTree() = delete;
+  ~NavigateToPoseBehaviorTree();
 
   nav2_tasks::TaskStatus run(
     nav2_tasks::NavigateToPoseCommand::SharedPtr command,

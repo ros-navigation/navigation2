@@ -16,7 +16,7 @@
 #define NAV2_BT_NAVIGATOR__REACHED_GOAL_CONDITION_NODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-#include "BTpp/behavior_tree.h"
+#include "behavior_tree_core/behavior_tree.h"
 #include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_bt_navigator
@@ -28,7 +28,7 @@ public:
   explicit ReachedGoalConditionNode(rclcpp::Node::SharedPtr node);
   ReachedGoalConditionNode() = delete;
 
-  BT::ReturnStatus Tick() override;
+  BT::NodeStatus tick() override;
 
 private:
   // The task that we're monitoring for success

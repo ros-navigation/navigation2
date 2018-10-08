@@ -19,7 +19,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include "BTpp/action_node.h"
+#include "behavior_tree_core/action_node.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/logger.hpp"
 #include "nav2_tasks/task_client.hpp"
@@ -53,24 +53,24 @@ public:
   {
   }
 
-  BT::ReturnStatus Tick()
+  BT::NodeStatus tick() override
   {
     taskClient_.sendCommand(command_);
 
     // Loop until the task has completed
-    while (get_status() != BT::HALTED) {
+    while (!isHalted()) {
       nav2_tasks::TaskStatus status = taskClient_.waitForResult(result_, tickTimeout_);
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
-          return BT::SUCCESS;
+          return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
-          return BT::FAILURE;
+          return BT::NodeStatus::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
           cvCancel_.notify_one();
-          return BT::HALTED;
+          return BT::NodeStatus::IDLE;
 
         case nav2_tasks::TaskStatus::RUNNING:
           break;
@@ -80,10 +80,10 @@ public:
       }
     }
 
-    return BT::HALTED;
+    return BT::NodeStatus::IDLE;
   }
 
-  void Halt()
+  void halt() override
   {
     // Send a cancel message to the task server
     taskClient_.cancel();
