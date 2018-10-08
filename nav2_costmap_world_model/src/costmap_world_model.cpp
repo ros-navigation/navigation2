@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_costmap_world_model/costmap_world_model.hpp"
 
 using std::vector;
@@ -25,24 +26,26 @@ namespace nav2_costmap_world_model
 {
 
 CostmapWorldModel::CostmapWorldModel(const string & name)
-  : Node(name + "_Node")
+: Node(name + "_Node")
 {
-  // Create Costmap with static and inflation layer
+  // Create layered costmap with static and inflation layer
   layered_costmap_ = new costmap_2d::LayeredCostmap("frame", false, false);
-  addStaticLayer();
-  addInflationLayer();
-  // TODO(bpwilcox): add footprint to layered_costmap either manually or from nav2_robot
+  addLayer<costmap_2d::StaticLayer>("static");
+  addLayer<costmap_2d::InflationLayer>("inflation");
+  // TODO(bpwilcox): replace manual footprint to layered_costmap with parameter or from nav2_robot
+  setFootprint(0, 0);
   layered_costmap_->updateMap(0, 0, 0);
 
+
   auto costmap_service_callback = [this](
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
-      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)->void
-  {
-    RCLCPP_INFO(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
+    {
+      RCLCPP_INFO(
         this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
-    costmap_callback(request_header, request, response);
-  };
+      costmap_callback(request_header, request, response);
+    };
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
@@ -50,9 +53,9 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
 }
 
 void CostmapWorldModel::costmap_callback(
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
-    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
+  const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)
 {
   costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   rclcpp::Clock clock;
@@ -61,44 +64,46 @@ void CostmapWorldModel::costmap_callback(
   response->map.metadata.size_y = costmap->getSizeInCellsY();
   response->map.metadata.resolution = costmap->getResolution();
   response->map.metadata.layer = "Master";
-  response->map.metadata.map_load_time = clock.now();
-  response->map.metadata.update_time = clock.now();
+  response->map.metadata.map_load_time = now();
+  response->map.metadata.update_time = now();
 
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
   response->map.metadata.origin.position.x = costmap->getOriginX();
   response->map.metadata.origin.position.y = costmap->getOriginY();
   response->map.metadata.origin.position.z = 0.0;
-  response->map.metadata.origin.orientation.x = quaternion.x();
-  response->map.metadata.origin.orientation.y = quaternion.y();
-  response->map.metadata.origin.orientation.z = quaternion.z();
-  response->map.metadata.origin.orientation.w = quaternion.w();
+  response->map.metadata.origin.orientation = tf2::toMsg(quaternion);
 
-  response->map.header.stamp = clock.now();
+  response->map.header.stamp = now();
   response->map.header.frame_id = "map";
+
   unsigned char * data = costmap->getCharMap();
-  std::vector<unsigned char> my_map(
-      data, data + response->map.metadata.size_x * response->map.metadata.size_y);
-  response->map.data = my_map;
+  auto data_length = response->map.metadata.size_x * response->map.metadata.size_y;
+  response->map.data.resize(data_length);
+  response->map.data.assign(data, data + data_length);
 }
 
-void CostmapWorldModel::addStaticLayer()
+void CostmapWorldModel::setFootprint(double length, double width)
 {
-  costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
-  layered_costmap_->addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
-  slayer->initialize(layered_costmap_, "static", tf_);
-}
-
-void CostmapWorldModel::addInflationLayer()
-{
-  costmap_2d::InflationLayer * ilayer = new costmap_2d::InflationLayer();
-  layered_costmap_->addPlugin(std::shared_ptr<costmap_2d::Layer>(ilayer));
-  ilayer->initialize(layered_costmap_, "inflation", tf_);
-
+  std::vector<geometry_msgs::msg::Point> polygon;
+  geometry_msgs::msg::Point p;
+  p.x = width;
+  p.y = length;
+  polygon.push_back(p);
+  p.x = width;
+  p.y = -length;
+  polygon.push_back(p);
+  p.x = -width;
+  p.y = -length;
+  polygon.push_back(p);
+  p.x = -width;
+  p.y = length;
+  polygon.push_back(p);
+  layered_costmap_->setFootprint(polygon);
 }
 
 CostmapWorldModel::CostmapWorldModel()
-  : CostmapWorldModel("WorldModel")
+: CostmapWorldModel("WorldModel")
 {
 }
 
