@@ -19,8 +19,7 @@
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
   <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
-  <author>email="oregon.robotics.team@intel.com">Oregon Robotics Team</author>
-	<maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+  <maintainer>Oregon Robotics Team</maintainer>
   <license>BSD</license>
   <url>http://wiki.ros.org/costmap_2d</url>
 
