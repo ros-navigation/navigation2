@@ -4,7 +4,6 @@
   <name>nav2_msgs</name>
   <version>0.1.0</version>
   <description>Messages and service files for the navigation2 stack</description>
-  <author>Michael Jeronimo, Steve Macenski</author>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
