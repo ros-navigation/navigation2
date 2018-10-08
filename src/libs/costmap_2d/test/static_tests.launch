@@ -1,5 +1,0 @@
-<launch>
-  <node name="ms" pkg="map_server" type="map_server" args="$(find costmap_2d)/test/TenByTen.yaml"/>
-  <test time-limit="300" test-name="static_tests" pkg="costmap_2d" type="static_tests" />
-
-</launch>

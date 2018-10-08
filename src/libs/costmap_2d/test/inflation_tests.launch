@@ -1,6 +1,0 @@
-<launch>
-  <node name="ms" pkg="map_server" type="map_server" args="$(find costmap_2d)/test/TenByTen.yaml"/>
-  <test time-limit="300" test-name="inflation_tests" pkg="costmap_2d" type="inflation_tests">
-    <param name="inflation/cost_scaling_factor" value="1" />
-  </test>
-</launch>
