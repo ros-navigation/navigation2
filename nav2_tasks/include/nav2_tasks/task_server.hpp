@@ -35,7 +35,7 @@ class TaskServer : public rclcpp::Node
 {
 public:
   explicit TaskServer(const std::string & name, bool autoStart = true)
-  : Node(name), workerThread_(nullptr)
+  : Node(name), workerThread_(nullptr), commandReceived_(false)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
     commandSub_ = create_subscription<CommandMsg>(taskName + "_command",
