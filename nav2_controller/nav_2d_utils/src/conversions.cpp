@@ -73,6 +73,15 @@ nav_2d_msgs::msg::Pose2DStamped poseStampedToPose2D(const geometry_msgs::msg::Po
   return pose2d;
 }
 
+geometry_msgs::msg::Pose2D poseToPose2D(const geometry_msgs::msg::Pose & pose)
+{
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = pose.position.x;
+  pose2d.y = pose.position.y;
+  pose2d.theta = tf2::getYaw(pose.orientation);
+  return pose2d;
+}
+
 geometry_msgs::msg::Pose pose2DToPose(const geometry_msgs::msg::Pose2D & pose2d)
 {
   geometry_msgs::msg::Pose pose;
@@ -123,21 +132,14 @@ nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStampe
   return path;
 }
 
-nav_2d_msgs::msg::Path2D posesToPath2D(const std::vector<geometry_msgs::msg::PoseStamped> & poses)
+nav_2d_msgs::msg::Path2D pathToPath2D(const nav2_msgs::msg::Path & path)
 {
-  nav_2d_msgs::msg::Path2D path;
-  if (poses.empty()) {
-    return path;
+  nav_2d_msgs::msg::Path2D path2d;
+  path2d.header = path.header;
+  for (auto & pose : path.poses) {
+    path2d.poses.push_back(poseToPose2D(pose));
   }
-  nav_2d_msgs::msg::Pose2DStamped pose;
-  path.poses.resize(poses.size());
-  path.header.frame_id = poses[0].header.frame_id;
-  path.header.stamp = poses[0].header.stamp;
-  for (unsigned int i = 0; i < poses.size(); i++) {
-    pose = poseStampedToPose2D(poses[i]);
-    path.poses[i] = pose.pose;
-  }
-  return path;
+  return path2d;
 }
 
 

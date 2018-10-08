@@ -26,7 +26,7 @@ include_directories(
   include
 )
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
     src/alignment_util.cpp
     src/map_grid.cpp
     src/goal_dist.cpp

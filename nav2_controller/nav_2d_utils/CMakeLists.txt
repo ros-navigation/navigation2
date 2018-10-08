@@ -17,6 +17,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 set(dependencies
   geometry_msgs
@@ -25,18 +26,23 @@ set(dependencies
   rclcpp
   tf2
   tf2_geometry_msgs
+  nav2_msgs
 )
 
 include_directories(
     include
 )
 
-add_library(conversions src/conversions.cpp)
+add_library(conversions SHARED
+  src/conversions.cpp)
+
 ament_target_dependencies(conversions
   ${dependencies}
 )
 
-add_library(path_ops src/path_ops.cpp)
+add_library(path_ops SHARED
+  src/path_ops.cpp)
+
 ament_target_dependencies(path_ops
   ${dependencies}
 )
