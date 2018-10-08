@@ -18,9 +18,10 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "costmap_2d/costmap_2d_ros.h"
 #include "costmap_2d/inflation_layer.h"
+#include "costmap_2d/layered_costmap.h"
 #include "costmap_2d/static_layer.h"
+#include "geometry_msgs/msg/point.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
@@ -36,24 +37,24 @@ public:
   explicit CostmapWorldModel(const std::string & name);
   CostmapWorldModel();
 
-  void addStaticLayer();
-  void addInflationLayer();
+  template<class LayerT>
+  void addLayer(std::string layer_name)
+  {
+    auto layer = std::make_shared<LayerT>();
+    layered_costmap_->addPlugin(layer);
+    layer->initialize(layered_costmap_, layer_name, tf_);
+  }
+
+  void setFootprint(double length, double width);
 
 private:
   void costmap_callback(
-      const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
-      const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response);
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
+    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response);
 
   // Server for providing a costmap
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
-
-  // TODO(orduno): Define a server for scoring trajectories
-  // rclcpp::Service<nav2_msgs::srv::ScoreTrajectory>::SharedPtr scoringServer_;
-
-  // TODO(orduno): Define a task for handling trajectory scoring
-  // std::unique_ptr<ScoreTrajectoryClient> scorer;
-
   costmap_2d::LayeredCostmap * layered_costmap_;
   tf2_ros::Buffer * tf_;
 };
