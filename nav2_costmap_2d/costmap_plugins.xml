@@ -1,0 +1,17 @@
+<class_libraries>
+  <library path="liblayers">
+    <class type="costmap_2d::InflationLayer"  base_class_type="costmap_2d::Layer">
+      <description>Inflates obstacles to speed collision checking and to make robot prefer to stay away from obstacles.</description>
+    </class>
+    <class type="costmap_2d::ObstacleLayer"   base_class_type="costmap_2d::Layer">
+      <description>Listens to laser scan and point cloud messages and marks and clears grid cells.</description>
+    </class>
+    <class type="costmap_2d::StaticLayer"     base_class_type="costmap_2d::Layer">
+      <description>Listens to OccupancyGrid messages and copies them in, like from map_server.</description>
+    </class>
+    <class type="costmap_2d::VoxelLayer"     base_class_type="costmap_2d::Layer">
+      <description>Similar to obstacle costmap, but uses 3D voxel grid to store data.</description>
+    </class>
+  </library>
+</class_libraries>
+
