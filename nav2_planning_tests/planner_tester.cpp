@@ -22,10 +22,10 @@
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/map_loader/map_loader.hpp"
-#include "nav2_libs_msgs/msg/costmap_meta_data.hpp"
+#include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
+using nav2_msgs::TaskStatus;
 
 namespace nav2_util
 {
@@ -209,8 +209,8 @@ void PlannerTester::startCostmapServer(std::string serviceName)
 
   auto costmap_service_callback = [this](
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request> request,
-    std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response) -> void
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
     {
       RCLCPP_INFO(this->get_logger(), "PlannerTester: Incoming costmap request");
       response->map = costmap_->getCostmap(request->specs);
@@ -219,7 +219,7 @@ void PlannerTester::startCostmapServer(std::string serviceName)
   // TODO(orduno): Enable parameter server and get costmap service name from there
 
   // Create a service that will use the callback function to handle requests.
-  costmap_server_ = create_service<nav2_world_model_msgs::srv::GetCostmap>(
+  costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
     serviceName, costmap_service_callback);
 
   costmap_server_running_ = true;

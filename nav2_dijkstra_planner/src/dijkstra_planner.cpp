@@ -39,7 +39,7 @@
 #include "nav_msgs/msg/path.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
+using nav2_msgs::TaskStatus;
 
 namespace nav2_dijkstra_planner
 {
@@ -512,7 +512,7 @@ DijkstraPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::Sh
 }
 
 void
-DijkstraPlanner::publishPlan(const nav2_planning_msgs::msg::Path & path)
+DijkstraPlanner::publishPlan(const nav2_msgs::msg::Path & path)
 {
   // Publish as a nav1 path msg
   nav_msgs::msg::Path rviz_path;

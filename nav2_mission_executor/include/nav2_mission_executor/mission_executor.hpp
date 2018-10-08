@@ -30,7 +30,7 @@ public:
   MissionExecutor();
   ~MissionExecutor();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_msgs::TaskStatus execute(
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
 
 private:
@@ -43,7 +43,7 @@ private:
   geometry_msgs::msg::PoseStamped::SharedPtr goal_pose_;
 
   // Also, for now, publish a mission plan when receiving a goal pose from rviz
-  rclcpp::Publisher<nav2_mission_execution_msgs::msg::MissionPlan>::SharedPtr plan_pub_;
+  rclcpp::Publisher<nav2_msgs::msg::MissionPlan>::SharedPtr plan_pub_;
 };
 
 }  // namespace nav2_mission_execution

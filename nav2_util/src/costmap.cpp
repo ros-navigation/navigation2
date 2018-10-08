@@ -105,7 +105,7 @@ void Costmap::setTestCostmap(const TestCostmap & testCostmapType)
 }
 
 nav2_msgs::msg::Costmap Costmap::getCostmap(
-  const nav2_libs_msgs::msg::CostmapMetaData & /*specifications*/)
+  const nav2_msgs::msg::CostmapMetaData & /*specifications*/)
 {
   if (!map_provided_ && !using_test_map_) {
     throw std::runtime_error("Costmap has not been set.");
@@ -114,7 +114,7 @@ nav2_msgs::msg::Costmap Costmap::getCostmap(
   // TODO(orduno): build a costmap given the specifications
   //               for now using the specs of the static map
 
-  nav2_libs_msgs::msg::Costmap costmap;
+  nav2_msgs::msg::Costmap costmap;
 
   costmap.header.stamp = node_->now();
   costmap.header.frame_id = "map";

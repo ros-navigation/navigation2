@@ -38,7 +38,7 @@ public:
   DijkstraPlanner();
   ~DijkstraPlanner();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_msgs::TaskStatus execute(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
 
 private:
@@ -93,7 +93,7 @@ private:
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
 
   // Publish a path for visualization purposes
-  void publishPlan(const nav2_planning_msgs::msg::Path & path);
+  void publishPlan(const nav2_msgs::msg::Path & path);
   void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints);
 
   // Planner based on ROS1 NavFn algorithm

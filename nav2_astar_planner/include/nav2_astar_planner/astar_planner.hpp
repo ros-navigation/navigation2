@@ -27,7 +27,7 @@ public:
   AStarPlanner();
   ~AStarPlanner();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_msgs::TaskStatus execute(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
 };
 

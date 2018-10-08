@@ -21,7 +21,7 @@
 
 using namespace std::chrono_literals;
 using std::shared_ptr;
-using nav2_tasks::TaskStatus;
+using nav2_msgs::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 

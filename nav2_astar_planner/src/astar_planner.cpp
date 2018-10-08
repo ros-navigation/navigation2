@@ -17,7 +17,7 @@
 #include "nav2_astar_planner/astar_planner.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
+using nav2_msgs::TaskStatus;
 
 namespace nav2_astar_planner
 {

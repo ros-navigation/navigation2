@@ -15,7 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
-find_package(nav2_planning_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -41,7 +41,7 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_robot
-  nav2_planning_msgs
+  nav2_msgs
   dwb_core
 )
 

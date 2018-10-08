@@ -23,8 +23,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "nav2_libs_msgs/msg/costmap.hpp"
-#include "nav2_world_model_msgs/srv/get_costmap.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/srv/get_costmap.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
 
@@ -73,7 +73,7 @@ private:
 
   void startCostmapServer(std::string serviceName);
 
-  nav2_tasks::TaskStatus sendRequest(
+  nav2_msgs::TaskStatus sendRequest(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path
   );
@@ -95,7 +95,7 @@ private:
   std::string plannerName_;
 
   // Server for providing a costmap
-  rclcpp::Service<nav2_world_model_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
+  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
 
   // Occupancy grid publisher for visualization
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher_;

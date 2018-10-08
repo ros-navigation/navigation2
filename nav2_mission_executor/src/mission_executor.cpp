@@ -18,7 +18,7 @@
 #include "nav2_mission_executor/mission_executor.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
+using nav2_msgs::TaskStatus;
 
 namespace nav2_mission_execution
 {
@@ -37,7 +37,7 @@ MissionExecutor::MissionExecutor()
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
       std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
 
-  plan_pub_ = create_publisher<nav2_mission_execution_msgs::msg::MissionPlan>(
+  plan_pub_ = create_publisher<nav2_msgs::msg::MissionPlan>(
     "ExecuteMissionTask_command");
 }
 
@@ -52,7 +52,7 @@ MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::Share
   RCLCPP_INFO(get_logger(), "MissionExecutor::onGoalPoseReceived");
   goal_pose_ = msg;
 
-  auto message = nav2_mission_execution_msgs::msg::MissionPlan();
+  auto message = nav2_msgs::msg::MissionPlan();
   message.mission_plan = "Hello, world!";
 
   RCLCPP_INFO(this->get_logger(), "MissionExecutor::onGoalPoseReceived: publishing a mission plan");

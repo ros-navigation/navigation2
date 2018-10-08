@@ -17,9 +17,7 @@ if(BUILD_TESTING)
 find_package(rclcpp REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_libs_msgs REQUIRED)
-find_package(nav2_planning_msgs REQUIRED)
-find_package(nav2_world_model_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
@@ -37,9 +35,7 @@ ament_target_dependencies(test_planner_node
   rclcpp
   nav2_tasks
   nav2_util
-  nav2_libs_msgs
-  nav2_planning_msgs
-  nav2_world_model_msgs
+  nav2_msgs
   nav_msgs
   visualization_msgs
 )
