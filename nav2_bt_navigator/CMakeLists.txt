@@ -16,7 +16,7 @@ find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_planning_msgs REQUIRED)
-find_package(BTpp REQUIRED)
+find_package(behavior_tree_core REQUIRED)
 
 include_directories(
   include
@@ -26,10 +26,6 @@ set(executable_name bt_navigator)
 
 add_executable(${executable_name}
   src/main.cpp
-)
-
-target_link_libraries(${executable_name}
-  ${BTpp_LIBRARIES}
 )
 
 set(library_name ${executable_name}_core)
@@ -45,7 +41,9 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_msgs
-) 
+  nav2_planning_msgs
+  behavior_tree_core
+)
 
 ament_target_dependencies(${executable_name}
   ${dependencies}

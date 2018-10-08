@@ -18,8 +18,9 @@
 #include <functional>
 #include <memory>
 #include <chrono>
+
 #include "rclcpp/rclcpp.hpp"
-#include "BTpp/behavior_tree.h"
+#include "behavior_tree_core/behavior_tree.h"
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 
@@ -31,6 +32,7 @@ class ExecuteMissionBehaviorTree
 public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node);
   ExecuteMissionBehaviorTree() = delete;
+  ~ExecuteMissionBehaviorTree();
 
   nav2_tasks::TaskStatus run(
     std::function<bool()> cancelRequested,

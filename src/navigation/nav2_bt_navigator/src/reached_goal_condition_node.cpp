@@ -27,8 +27,8 @@ ReachedGoalConditionNode::ReachedGoalConditionNode(rclcpp::Node::SharedPtr node)
   result_ = std::make_shared<nav2_tasks::FollowPathResult>();
 }
 
-BT::ReturnStatus 
-ReachedGoalConditionNode::Tick()
+BT::NodeStatus 
+ReachedGoalConditionNode::tick()
 {
   // Quickly get the current status of the task so we can report back
   TaskStatus status = taskClient_.waitForResult(result_, std::chrono::milliseconds(1));
@@ -39,7 +39,7 @@ ReachedGoalConditionNode::Tick()
 
   // A condition node returns only success or failure, depending on whether
   // the condition had been satisfied
-  return (status == TaskStatus::SUCCEEDED)? BT::SUCCESS : BT::FAILURE;
+  return (status == TaskStatus::SUCCEEDED)? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_bt_navigator

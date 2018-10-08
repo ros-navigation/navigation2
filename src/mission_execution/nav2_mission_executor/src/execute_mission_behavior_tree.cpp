@@ -47,8 +47,13 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
       "NavigateToPoseAction2", navigateToPoseCommand_, navigateToPoseResult_);
 
   // Add the nodes to the tree, creating the tree structure
-  root_->AddChild(navigateToPoseAction1_.get());
-  root_->AddChild(navigateToPoseAction2_.get());
+  root_->addChild(navigateToPoseAction1_.get());
+  root_->addChild(navigateToPoseAction2_.get());
+}
+
+ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
+{
+  BT::haltAllActions(root_.get());
 }
 
 nav2_tasks::TaskStatus
@@ -56,14 +61,14 @@ ExecuteMissionBehaviorTree::run(
   std::function<bool()> cancelRequested, std::chrono::milliseconds loopTimeout)
 {
   rclcpp::WallRate loopRate(loopTimeout);
-  BT::ReturnStatus result = root_->get_status();
+  BT::NodeStatus result = root_->status();
 
-  while (rclcpp::ok() && !(result == BT::SUCCESS || result == BT::FAILURE)) {
-    result = root_->Tick();
+  while (rclcpp::ok() && !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE)) {
+    result = root_->executeTick();
 
     // Check if this task server has received a cancel message
     if (cancelRequested()) {
-      root_->Halt();
+      root_->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
@@ -71,7 +76,7 @@ ExecuteMissionBehaviorTree::run(
   }
 
   return (result ==
-         BT::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
+         BT::NodeStatus::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
 }
 
 }  // namespace nav2_mission_executor
