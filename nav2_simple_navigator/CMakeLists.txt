@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 include_directories(
   include
@@ -23,7 +24,6 @@ include_directories(
 set(executable_name simple_navigator)
 
 add_executable(${executable_name}
-  src/simple_navigator.cpp
   src/main.cpp
 )
 
@@ -38,11 +38,14 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_msgs
+  nav2_robot
 )
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}

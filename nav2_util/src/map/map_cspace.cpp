@@ -19,88 +19,90 @@
  *
  */
 
-#include <queue>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <queue>
 #include "nav2_util/map/map.h"
 
 class CellData
 {
-  public:
-    map_t* map_;
-    unsigned int i_, j_;
-    unsigned int src_i_, src_j_;
+public:
+  map_t * map_;
+  unsigned int i_, j_;
+  unsigned int src_i_, src_j_;
 };
 
 class CachedDistanceMap
 {
-  public:
-    CachedDistanceMap(double scale, double max_dist) : 
-      distances_(NULL), scale_(scale), max_dist_(max_dist) 
-    {
-      cell_radius_ = max_dist / scale;
-      distances_ = new double *[cell_radius_+2];
-      for(int i=0; i<=cell_radius_+1; i++)
-      {
-	distances_[i] = new double[cell_radius_+2];
-        for(int j=0; j<=cell_radius_+1; j++)
-	{
-	  distances_[i][j] = sqrt(i*i + j*j);
-	}
+public:
+  CachedDistanceMap(double scale, double max_dist)
+  : distances_(NULL), scale_(scale), max_dist_(max_dist)
+  {
+    cell_radius_ = max_dist / scale;
+    distances_ = new double *[cell_radius_ + 2];
+    for (int i = 0; i <= cell_radius_ + 1; i++) {
+      distances_[i] = new double[cell_radius_ + 2];
+      for (int j = 0; j <= cell_radius_ + 1; j++) {
+        distances_[i][j] = sqrt(i * i + j * j);
       }
     }
-    ~CachedDistanceMap()
-    {
-      if(distances_)
-      {
-	for(int i=0; i<=cell_radius_+1; i++)
-	  delete[] distances_[i];
-	delete[] distances_;
+  }
+  ~CachedDistanceMap()
+  {
+    if (distances_) {
+      for (int i = 0; i <= cell_radius_ + 1; i++) {
+        delete[] distances_[i];
       }
+      delete[] distances_;
     }
-    double** distances_;
-    double scale_;
-    double max_dist_;
-    int cell_radius_;
+  }
+  double ** distances_;
+  double scale_;
+  double max_dist_;
+  int cell_radius_;
 };
 
 
-bool operator<(const CellData& a, const CellData& b)
+bool operator<(const CellData & a, const CellData & b)
 {
-  return a.map_->cells[MAP_INDEX(a.map_, a.i_, a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
+  return a.map_->cells[MAP_INDEX(a.map_, a.i_,
+         a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
 }
 
-CachedDistanceMap*
+CachedDistanceMap *
 get_distance_map(double scale, double max_dist)
 {
-  static CachedDistanceMap* cdm = NULL;
+  static CachedDistanceMap * cdm = NULL;
 
-  if(!cdm || (cdm->scale_ != scale) || (cdm->max_dist_ != max_dist))
-  {
-    if(cdm)
+  if (!cdm || (cdm->scale_ != scale) || (cdm->max_dist_ != max_dist)) {
+    if (cdm) {
       delete cdm;
+    }
     cdm = new CachedDistanceMap(scale, max_dist);
   }
 
   return cdm;
 }
 
-void enqueue(map_t* map, int i, int j,
-	     int src_i, int src_j,
-	     std::priority_queue<CellData>& Q,
-	     CachedDistanceMap* cdm,
-	     unsigned char* marked)
+void enqueue(
+  map_t * map, int i, int j,
+  int src_i, int src_j,
+  std::priority_queue<CellData> & Q,
+  CachedDistanceMap * cdm,
+  unsigned char * marked)
 {
-  if(marked[MAP_INDEX(map, i, j)])
+  if (marked[MAP_INDEX(map, i, j)]) {
     return;
+  }
 
   int di = abs(i - src_i);
   int dj = abs(j - src_j);
   double distance = cdm->distances_[di][dj];
 
-  if(distance > cdm->cell_radius_)
+  if (distance > cdm->cell_radius_) {
     return;
+  }
 
   map->cells[MAP_INDEX(map, i, j)].occ_dist = distance * map->scale;
 
@@ -117,57 +119,57 @@ void enqueue(map_t* map, int i, int j,
 }
 
 // Update the cspace distance values
-void map_update_cspace(map_t *map, double max_occ_dist)
+void map_update_cspace(map_t * map, double max_occ_dist)
 {
-  unsigned char* marked;
+  unsigned char * marked;
   std::priority_queue<CellData> Q;
 
-  marked = new unsigned char[map->size_x*map->size_y];
-  memset(marked, 0, sizeof(unsigned char) * map->size_x*map->size_y);
+  marked = new unsigned char[map->size_x * map->size_y];
+  memset(marked, 0, sizeof(unsigned char) * map->size_x * map->size_y);
 
   map->max_occ_dist = max_occ_dist;
 
-  CachedDistanceMap* cdm = get_distance_map(map->scale, map->max_occ_dist);
+  CachedDistanceMap * cdm = get_distance_map(map->scale, map->max_occ_dist);
 
   // Enqueue all the obstacle cells
   CellData cell;
   cell.map_ = map;
-  for(int i=0; i<map->size_x; i++)
-  {
+  for (int i = 0; i < map->size_x; i++) {
     cell.src_i_ = cell.i_ = i;
-    for(int j=0; j<map->size_y; j++)
-    {
-      if(map->cells[MAP_INDEX(map, i, j)].occ_state == +1)
-      {
-	map->cells[MAP_INDEX(map, i, j)].occ_dist = 0.0;
-	cell.src_j_ = cell.j_ = j;
-	marked[MAP_INDEX(map, i, j)] = 1;
-	Q.push(cell);
+    for (int j = 0; j < map->size_y; j++) {
+      if (map->cells[MAP_INDEX(map, i, j)].occ_state == +1) {
+        map->cells[MAP_INDEX(map, i, j)].occ_dist = 0.0;
+        cell.src_j_ = cell.j_ = j;
+        marked[MAP_INDEX(map, i, j)] = 1;
+        Q.push(cell);
+      } else {
+        map->cells[MAP_INDEX(map, i, j)].occ_dist = max_occ_dist;
       }
-      else
-	map->cells[MAP_INDEX(map, i, j)].occ_dist = max_occ_dist;
     }
   }
 
-  while(!Q.empty())
-  {
+  while (!Q.empty()) {
     CellData current_cell = Q.top();
-    if(current_cell.i_ > 0)
-      enqueue(map, current_cell.i_-1, current_cell.j_, 
-	      current_cell.src_i_, current_cell.src_j_,
-	      Q, cdm, marked);
-    if(current_cell.j_ > 0)
-      enqueue(map, current_cell.i_, current_cell.j_-1, 
-	      current_cell.src_i_, current_cell.src_j_,
-	      Q, cdm, marked);
-    if((int)current_cell.i_ < map->size_x - 1)
-      enqueue(map, current_cell.i_+1, current_cell.j_, 
-	      current_cell.src_i_, current_cell.src_j_,
-	      Q, cdm, marked);
-    if((int)current_cell.j_ < map->size_y - 1)
-      enqueue(map, current_cell.i_, current_cell.j_+1, 
-	      current_cell.src_i_, current_cell.src_j_,
-	      Q, cdm, marked);
+    if (current_cell.i_ > 0) {
+      enqueue(map, current_cell.i_ - 1, current_cell.j_,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
+    }
+    if (current_cell.j_ > 0) {
+      enqueue(map, current_cell.i_, current_cell.j_ - 1,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
+    }
+    if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
+      enqueue(map, current_cell.i_ + 1, current_cell.j_,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
+    }
+    if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
+      enqueue(map, current_cell.i_, current_cell.j_ + 1,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
+    }
 
     Q.pop();
   }

@@ -16,21 +16,21 @@
 
 import os
 import sys
+
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing import LaunchTestService
-from launch.substitutions import ThisLaunchFileDir
 
 
 def main(argv=sys.argv[1:]):
     launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'map_server_node.launch.py')
     testExecutable = os.getenv('TEST_EXECUTABLE')
     ld = LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource( [launchFile] )),
-        ])
+        IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
+    ])
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
         name='test_occ_grid_node',
@@ -45,4 +45,3 @@ def main(argv=sys.argv[1:]):
 
 if __name__ == '__main__':
     sys.exit(main())
-    

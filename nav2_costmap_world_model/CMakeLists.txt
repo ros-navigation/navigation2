@@ -14,8 +14,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_tasks)
 find_package(nav2_util)
 find_package(nav2_msgs)
+find_package(nav_msgs)
 
 include_directories(
   include
@@ -24,7 +26,6 @@ include_directories(
 set(executable_name costmap_world_model)
 
 add_executable(${executable_name}
-  src/costmap_world_model.cpp
   src/main.cpp
 )
 
@@ -37,15 +38,19 @@ add_library(${library_name}
 set(dependencies
   rclcpp
   std_msgs
+  nav2_tasks
   nav2_util
   nav2_msgs
   tf2_ros
   tf2
+  nav_msgs
 )
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}

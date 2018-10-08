@@ -16,23 +16,49 @@
 #define NAV2_UTIL__COSTMAP_HPP_
 
 #include <vector>
+#include <cstdint>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_util
 {
 
+enum class TestCostmap
+{
+  open_space,
+  bounded,
+  bottom_left_obstacle,
+  top_left_obstacle,
+  maze1,
+  maze2
+};
+
+// Class for a single layered costmap initialized from an
+// occupancy grid representing the map.
 class Costmap
 {
 public:
-  explicit Costmap(rclcpp::Node * node);
-  Costmap() = delete;
-
-  nav2_msgs::msg::Costmap getCostmap(
-    const nav2_msgs::msg::CostmapMetaData & specifications);
-
   typedef uint8_t CostValue;
+
+  Costmap(
+    rclcpp::Node * node, bool trinary_costmap = true, bool track_unknown_space = true,
+    int lethal_threshold = 100, int unknown_cost_value = -1);
+  Costmap() = delete;
+  ~Costmap();
+
+  void setStaticMap(const nav_msgs::msg::OccupancyGrid & occupancy_grid);
+
+  void setTestCostmap(const TestCostmap & testCostmapType);
+
+  nav2_msgs::msg::Costmap getCostmap(const nav2_msgs::msg::CostmapMetaData & specifications);
+
+  nav2_msgs::msg::CostmapMetaData getProperties() {return costmap_properties_;}
+
+  bool isFree(const unsigned int x_coordinate, const unsigned int y_coordinate) const;
+  bool isFree(const unsigned int index) const;
 
   // Mapping for often used cost values
   static const CostValue no_information;
@@ -42,10 +68,26 @@ public:
   static const CostValue free_space;
 
 private:
-  // TODO(orduno): For now, the Costmap isn't itself a node
+  std::vector<uint8_t> getTestData(const TestCostmap configuration);
+
+  uint8_t interpretValue(const int8_t value) const;
+
+  // Costmap isn't itself a node
   rclcpp::Node * node_;
 
-  std::vector<uint8_t> getTestData(const int size_x, const int size_y);
+  // TODO(orduno): For now, only holding costs from static map
+  nav2_msgs::msg::CostmapMetaData costmap_properties_;
+  std::vector<uint8_t> costs_;
+
+  // Static layer parameters
+  bool trinary_costmap_;
+  bool track_unknown_space_;
+  int lethal_threshold_;
+  int unknown_cost_value_;
+
+  // Flags to determine the origin of the costmap
+  bool map_provided_;
+  bool using_test_map_;
 };
 
 }  // namespace nav2_util

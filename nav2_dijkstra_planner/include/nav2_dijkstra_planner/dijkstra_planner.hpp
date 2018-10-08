@@ -19,12 +19,15 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_dijkstra_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "nav2_dijkstra_planner/navfn.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_msgs/srv/get_costmap.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 
 namespace nav2_dijkstra_planner
 {
@@ -86,20 +89,22 @@ private:
     nav2_msgs::msg::Costmap & costmap, const std::string layer = "master",
     const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
 
-  // Wait for costmap server to appear
-  void waitForCostmapServer(const std::chrono::seconds waitTime = std::chrono::seconds(10));
-
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
 
+  // Publish a path for visualization purposes
+  void publishPlan(const nav2_planning_msgs::msg::Path & path);
+  void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints);
+
   // Planner based on ROS1 NavFn algorithm
-  std::shared_ptr<NavFn> planner_;
+  std::unique_ptr<NavFn> planner_;
 
-  // Client for getting the costmap
-  rclcpp::Client<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
+  // Service client for getting the costmap
+  nav2_tasks::CostmapServiceClient costmap_client_;
 
-  // Computed path publisher
-  rclcpp::Publisher<nav2_msgs::msg::Path>::SharedPtr plan_publisher_;
+  // Publishers for the path and endpoints
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr plan_marker_publisher_;
 
   // The costmap to use
   nav2_msgs::msg::Costmap costmap_;
