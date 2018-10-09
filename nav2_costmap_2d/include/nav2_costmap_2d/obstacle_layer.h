@@ -35,13 +35,13 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_OBSTACLE_LAYER_H_
-#define COSTMAP_2D_OBSTACLE_LAYER_H_
+#ifndef nav2_costmap_2d_OBSTACLE_LAYER_H_
+#define nav2_costmap_2d_OBSTACLE_LAYER_H_
 
 #include <ros/ros.h>
-#include <costmap_2d/costmap_layer.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/costmap_layer.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/observation_buffer.h>
 
 #include <nav_msgs/OccupancyGrid.h>
 
@@ -53,10 +53,10 @@
 #include <tf2_ros/message_filter.h>
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
-#include <costmap_2d/ObstaclePluginConfig.h>
-#include <costmap_2d/footprint.h>
+#include <nav2_costmap_2d/ObstaclePluginConfig.h>
+#include <nav2_costmap_2d/footprint.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 class ObstacleLayer : public CostmapLayer
@@ -73,7 +73,7 @@ public:
       double * min_y,
       double * max_x,
       double * max_y);
-  virtual void updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  virtual void updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   virtual void activate();
@@ -86,7 +86,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void laserScanCallback(const sensor_msgs::LaserScanConstPtr & message,
-      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief A callback to handle buffering LaserScan messages which need filtering to turn Inf values into range_max.
@@ -102,7 +102,7 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void pointCloudCallback(const sensor_msgs::PointCloudConstPtr & message,
-      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief  A callback to handle buffering PointCloud2 messages
@@ -110,10 +110,10 @@ public:
    * @param buffer A pointer to the observation buffer to update
    */
   void pointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr & message,
-      const std::shared_ptr<costmap_2d::ObservationBuffer> & buffer);
+      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
-  void addStaticObservation(costmap_2d::Observation & obs, bool marking, bool clearing);
+  void addStaticObservation(nav2_costmap_2d::Observation & obs, bool marking, bool clearing);
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
@@ -124,14 +124,14 @@ protected:
    * @param marking_observations A reference to a vector that will be populated with the observations
    * @return True if all the observation buffers are current, false otherwise
    */
-  bool getMarkingObservations(std::vector<costmap_2d::Observation> & marking_observations) const;
+  bool getMarkingObservations(std::vector<nav2_costmap_2d::Observation> & marking_observations) const;
 
   /**
    * @brief  Get the observations used to clear space
    * @param clearing_observations A reference to a vector that will be populated with the observations
    * @return True if all the observation buffers are current, false otherwise
    */
-  bool getClearingObservations(std::vector<costmap_2d::Observation> & clearing_observations) const;
+  bool getClearingObservations(std::vector<nav2_costmap_2d::Observation> & clearing_observations) const;
 
   /**
    * @brief  Clear freespace based on one observation
@@ -141,7 +141,7 @@ protected:
    * @param max_x
    * @param max_y
    */
-  virtual void raytraceFreespace(const costmap_2d::Observation & clearing_observation,
+  virtual void raytraceFreespace(const nav2_costmap_2d::Observation & clearing_observation,
       double * min_x, double * min_y,
       double * max_x,
       double * max_y);
@@ -165,22 +165,22 @@ protected:
 
   std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
-  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
-  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
-  std::vector<std::shared_ptr<costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
 
   // Used only for testing purposes
-  std::vector<costmap_2d::Observation> static_clearing_observations_, static_marking_observations_;
+  std::vector<nav2_costmap_2d::Observation> static_clearing_observations_, static_marking_observations_;
 
   bool rolling_window_;
-  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig> * dsrv_;
+  dynamic_reconfigure::Server<nav2_costmap_2d::ObstaclePluginConfig> * dsrv_;
 
   int combination_method_;
 
 private:
-  void reconfigureCB(costmap_2d::ObstaclePluginConfig & config, uint32_t level);
+  void reconfigureCB(nav2_costmap_2d::ObstaclePluginConfig & config, uint32_t level);
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_OBSTACLE_LAYER_H_
+#endif  // nav2_costmap_2d_OBSTACLE_LAYER_H_

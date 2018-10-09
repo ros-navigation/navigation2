@@ -38,7 +38,7 @@
 #include <algorithm>
 #include <memory>
 #include "dwb_core/exceptions.h"
-#include "costmap_2d/cost_values.h"
+#include "nav2_costmap_2d/cost_values.h"
 
 using std::abs;
 using costmap_queue::CellData;
@@ -50,8 +50,8 @@ namespace dwb_critics
 bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & cell)
 {
   unsigned char cost = costmap_.getCost(cell.x_, cell.y_);
-  if (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-    cost == costmap_2d::NO_INFORMATION)
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+    cost == nav2_costmap_2d::NO_INFORMATION)
   {
     parent_.setAsObstacle(cell.index_);
     return false;
@@ -162,7 +162,7 @@ void MapGridCritic::addGridScores(sensor_msgs::msg::PointCloud & pc)
   sensor_msgs::msg::ChannelFloat32 grid_scores;
   grid_scores.name = name_;
 
-  costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
   grid_scores.values.resize(size_x * size_y);

@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_COSTMAP_2D_H_
-#define COSTMAP_2D_COSTMAP_2D_H_
+#ifndef nav2_costmap_2d_nav2_costmap_2d_H_
+#define nav2_costmap_2d_nav2_costmap_2d_H_
 
 #include <vector>
 #include <queue>
@@ -46,7 +46,7 @@
 #include <string.h>
 #include <geometry_msgs/msg/point.hpp>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 // convenient for storing x/y point pairs
@@ -477,6 +477,6 @@ private:
     std::vector<MapLocation> & cells_;
   };
 };
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif // COSTMAP_2D_COSTMAP_2D_H
+#endif // nav2_costmap_2d_nav2_costmap_2d_H

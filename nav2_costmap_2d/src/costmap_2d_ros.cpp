@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/costmap_2d_ros.h>
 #include <cstdio>
 #include <string>
 #include <sys/time.h>
@@ -46,7 +46,7 @@
 
 using namespace std;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 void move_parameter(rclcpp::Node::SharedPtr old_h, rclcpp::Node::SharedPtr new_h, std::string name,
@@ -78,7 +78,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   robot_stopped_(false),
   map_update_thread_(NULL),
   last_publish_(0),
-  plugin_loader_("costmap_2d", "costmap_2d::Layer"),
+  plugin_loader_("nav2_costmap_2d", "nav2_costmap_2d::Layer"),
   publisher_(NULL),
   publish_cycle_(1),
   footprint_padding_(0.0)
@@ -109,7 +109,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     rclcpp::spin_some(private_nh);
     if (last_error + rclcpp::Duration(5.0) < clock.now()) {
       RCLCPP_WARN(rclcpp::get_logger(
-            "costmap_2d"),
+            "nav2_costmap_2d"),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
           robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
       last_error = clock.now();
@@ -140,7 +140,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     for (int32_t i = 0; i < my_list.size(); ++i) {
       std::string pname = static_cast<std::string>(my_list[i]["name"]);
       std::string type = static_cast<std::string>(my_list[i]["type"]);
-      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Using plugin \"%s\"", pname.c_str());
+      RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Using plugin \"%s\"", pname.c_str());
 
       std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
       layered_costmap_->addPlugin(plugin);
@@ -213,7 +213,7 @@ Costmap2DROS::~Costmap2DROS()
 
 void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
 {
-  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Loading from pre-hydro parameter style");
+  RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Loading from pre-hydro parameter style");
   bool flag;
   std::string s;
   std::vector<XmlRpc::XmlRpcValue> plugins;
@@ -228,7 +228,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
     flag = parameters_client->get_parameter<bool>("static_map");
     if (flag) {
       map["name"] = XmlRpc::XmlRpcValue("static_layer");
-      map["type"] = XmlRpc::XmlRpcValue("costmap_2d::StaticLayer");
+      map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::StaticLayer");
       super_map.setStruct(&map);
       plugins.push_back(super_map);
 
@@ -247,7 +247,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
     s = parameters_client->get_parameter<std::string>("map_type");
     if (s == "voxel") {
       map["name"] = XmlRpc::XmlRpcValue("obstacle_layer");
-      map["type"] = XmlRpc::XmlRpcValue("costmap_2d::VoxelLayer");
+      map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::VoxelLayer");
       super_map.setStruct(&map);
       plugins.push_back(super_map);
 
@@ -260,7 +260,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
     }
   } else {
     map["name"] = XmlRpc::XmlRpcValue("obstacle_layer");
-    map["type"] = XmlRpc::XmlRpcValue("costmap_2d::ObstacleLayer");
+    map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::ObstacleLayer");
     super_map.setStruct(&map);
     plugins.push_back(super_map);
   }
@@ -284,7 +284,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
   move_parameter(nh, inflation, "cost_scaling_factor");
   move_parameter(nh, inflation, "inflation_radius");
   map["name"] = XmlRpc::XmlRpcValue("inflation_layer");
-  map["type"] = XmlRpc::XmlRpcValue("costmap_2d::InflationLayer");
+  map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::InflationLayer");
   super_map.setStruct(&map);
   plugins.push_back(super_map);
 
@@ -298,7 +298,7 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
 }
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
 /*
-void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level)
+void Costmap2DROS::reconfigureCB(nav2_costmap_2d::Costmap2DConfig &config, uint32_t level)
 {
   transform_tolerance_ = config.transform_tolerance;
   if (map_update_thread_ != NULL)
@@ -344,8 +344,8 @@ void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t l
 
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
 /*
-void Costmap2DROS::readFootprintFromConfig(const costmap_2d::Costmap2DConfig &new_config,
-                                           const costmap_2d::Costmap2DConfig &old_config)
+void Costmap2DROS::readFootprintFromConfig(const nav2_costmap_2d::Costmap2DConfig &new_config,
+                                           const nav2_costmap_2d::Costmap2DConfig &old_config)
 {
   // Only change the footprint if footprint or robot_radius has
   // changed.  Otherwise we might overwrite a footprint sent on a
@@ -366,7 +366,7 @@ void Costmap2DROS::readFootprintFromConfig(const costmap_2d::Costmap2DConfig &ne
     }
     else
     {
-        RCLCPP_ERROR(rclcpp::get_logger("costmap_2d"),"Invalid footprint string from dynamic reconfigure");
+        RCLCPP_ERROR(rclcpp::get_logger("nav2_costmap_2d"),"Invalid footprint string from dynamic reconfigure");
     }
   }
   else
@@ -396,7 +396,7 @@ void Costmap2DROS::movementCB()
   geometry_msgs::msg::PoseStamped new_pose;
   if (!getRobotPose(new_pose)) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "costmap_2d"), "Could not get robot pose, cancelling reconfiguration");
+          "nav2_costmap_2d"), "Could not get robot pose, cancelling reconfiguration");
     robot_stopped_ = false;
   }
   // make sure that the robot is not moving
@@ -436,7 +436,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
-    RCLCPP_DEBUG(rclcpp::get_logger("costmap_2d"), "Map update time: %.9f", t_diff);
+    RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"), "Map update time: %.9f", t_diff);
     if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
@@ -453,7 +453,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
     if (r.period() > tf2::durationFromSec(1 / frequency)) {
       RCLCPP_WARN(rclcpp::get_logger(
-            "costmap_2d"),
+            "nav2_costmap_2d"),
           "Map update loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds",
           frequency,
           r.period());
@@ -570,15 +570,15 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
     tf_.transform(robot_pose, global_pose, global_frame_);
   } catch (tf2::LookupException & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "No Transform available Error looking up robot pose: %s\n", ex.what());
+          "nav2_costmap_2d"), "No Transform available Error looking up robot pose: %s\n", ex.what());
     return false;
   } catch (tf2::ConnectivityException & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "Connectivity Error looking up robot pose: %s\n", ex.what());
+          "nav2_costmap_2d"), "Connectivity Error looking up robot pose: %s\n", ex.what());
     return false;
   } catch (tf2::ExtrapolationException & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "Extrapolation Error looking up robot pose: %s\n", ex.what());
+          "nav2_costmap_2d"), "Extrapolation Error looking up robot pose: %s\n", ex.what());
     return false;
   }
   // check global_pose timeout
@@ -588,7 +588,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
       tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)) > transform_tolerance_)
   {
     RCLCPP_WARN(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
         tf2::timeToSec(tf2_ros::fromMsg(current_time)),
         tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)), transform_tolerance_);
@@ -612,4 +612,4 @@ const
       padded_footprint_, oriented_footprint);
 }
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

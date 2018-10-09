@@ -35,17 +35,17 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_INFLATION_LAYER_H_
-#define COSTMAP_2D_INFLATION_LAYER_H_
+#ifndef nav2_costmap_2d_INFLATION_LAYER_H_
+#define nav2_costmap_2d_INFLATION_LAYER_H_
 
 #include <rclcpp/rclcpp.hpp>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/layer.h>
+#include <nav2_costmap_2d/layered_costmap.h>
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-//#include <costmap_2d/InflationPluginConfig.h>
+//#include <nav2_costmap_2d/InflationPluginConfig.h>
 //#include <dynamic_reconfigure/server.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 /**
  * @class CellData
@@ -90,7 +90,7 @@ public:
       double * min_y,
       double * max_x,
       double * max_y);
-  virtual void updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  virtual void updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
   virtual bool isDiscretized()
   {
@@ -189,12 +189,12 @@ private:
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig> *dsrv_;
-  //void reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level);
+  //dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig> *dsrv_;
+  //void reconfigureCB(nav2_costmap_2d::InflationPluginConfig &config, uint32_t level);
 
   bool need_reinflation_;  ///< Indicates that the entire costmap should be reinflated next time around.
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_INFLATION_LAYER_H_
+#endif  // nav2_costmap_2d_INFLATION_LAYER_H_

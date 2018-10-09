@@ -36,18 +36,18 @@
  *         David V. Lu!!
  *********************************************************************/
 #include <algorithm>
-#include <costmap_2d/inflation_layer.h>
-#include <costmap_2d/costmap_math.h>
-#include <costmap_2d/footprint.h>
+#include <nav2_costmap_2d/inflation_layer.h>
+#include <nav2_costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/footprint.h>
 #include <pluginlib/class_list_macros.hpp>
 
-PLUGINLIB_EXPORT_CLASS(costmap_2d::InflationLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 
-using costmap_2d::LETHAL_OBSTACLE;
-using costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-using costmap_2d::NO_INFORMATION;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+using nav2_costmap_2d::NO_INFORMATION;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 InflationLayer::InflationLayer()
@@ -87,7 +87,7 @@ void InflationLayer::onInitialize()
 
     // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
     /*
-      dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = std::bind(
+      dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig>::CallbackType cb = std::bind(
         &InflationLayer::reconfigureCB, this, _1, _2);
 
        if (dsrv_ != NULL){
@@ -96,7 +96,7 @@ void InflationLayer::onInitialize()
       }
       else
       {
-        dsrv_ = new dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>(ros::NodeHandle("~/" + name_));
+        dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig>(ros::NodeHandle("~/" + name_));
         dsrv_->setCallback(cb);
       } */
   }
@@ -108,7 +108,7 @@ void InflationLayer::onInitialize()
 }
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
 /*
-void InflationLayer::reconfigureCB(costmap_2d::InflationPluginConfig &config, uint32_t level)
+void InflationLayer::reconfigureCB(nav2_costmap_2d::InflationPluginConfig &config, uint32_t level)
 {
   setInflationParameters(config.inflation_radius, config.cost_scaling_factor);
 
@@ -122,7 +122,7 @@ void InflationLayer::reconfigureCB(costmap_2d::InflationPluginConfig &config, ui
 void InflationLayer::matchSize()
 {
   std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
-  costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
@@ -175,12 +175,12 @@ void InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(rclcpp::get_logger(
-        "costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+        "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
       " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
       layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
 
-void InflationLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
     int max_i,
     int max_j)
 {
@@ -190,7 +190,7 @@ void InflationLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i,
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  RCLCPP_FATAL_EXPRESSION(rclcpp::get_logger("costmap_2d"),
+  RCLCPP_FATAL_EXPRESSION(rclcpp::get_logger("nav2_costmap_2d"),
       !inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
 
   unsigned char * master_array = master_grid.getCharMap();
@@ -198,12 +198,12 @@ void InflationLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i,
 
   if (seen_ == NULL) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "costmap_2d"), "InflationLayer::updateCosts(): seen_ array is NULL");
+          "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array is NULL");
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];
   } else if (seen_size_ != size_x * size_y) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "costmap_2d"), "InflationLayer::updateCosts(): seen_ array size is wrong");
+          "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array size is wrong");
     delete[] seen_;
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];
@@ -388,4 +388,4 @@ void InflationLayer::setInflationParameters(double inflation_radius, double cost
   }
 }
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

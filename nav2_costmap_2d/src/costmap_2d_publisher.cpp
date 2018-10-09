@@ -35,10 +35,10 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <costmap_2d/costmap_2d_publisher.h>
-#include <costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/costmap_2d_publisher.h>
+#include <nav2_costmap_2d/cost_values.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
@@ -170,4 +170,4 @@ void Costmap2DPublisher::publishCostmap()
   y0_ = costmap_->getSizeInCellsY();
 }
 
-}  // end namespace costmap_2d
+}  // end namespace nav2_costmap_2d

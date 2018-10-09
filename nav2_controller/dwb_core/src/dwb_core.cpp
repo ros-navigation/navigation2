@@ -393,7 +393,7 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
   transformed_plan.header.stamp = pose.header.stamp;
 
   // we'll discard points on the plan that are outside the local costmap
-  costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
   double sq_dist_threshold = dist_threshold * dist_threshold;

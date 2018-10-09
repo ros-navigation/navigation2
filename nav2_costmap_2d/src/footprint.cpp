@@ -28,12 +28,12 @@
  */
 #include <string>
 
-#include <costmap_2d/costmap_math.h>
-#include <costmap_2d/footprint.h>
-#include <costmap_2d/array_parser.h>
+#include <nav2_costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/footprint.h>
+#include <nav2_costmap_2d/array_parser.h>
 #include <geometry_msgs/msg/point32.hpp>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 void calculateMinAndMaxDistances(const std::vector<geometry_msgs::msg::Point> & footprint,
@@ -170,16 +170,16 @@ bool makeFootprintFromString(const std::string & footprint_string,
 
   if (error != "") {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
+          "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
+          "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
     return false;
   }
 
   // convert vvf into points.
   if (vvf.size() < 3) {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "You must specify at least three points for the robot footprint, reverting to previous footprint.");
     return false;
   }
@@ -193,7 +193,7 @@ bool makeFootprintFromString(const std::string & footprint_string,
       footprint.push_back(point);
     } else {
       RCLCPP_ERROR(rclcpp::get_logger(
-            "costmap_2d"),
+            "nav2_costmap_2d"),
           "Points in the footprint specification must be pairs of numbers.  Found a point with %d numbers.",
           int(vvf[i].size()));
       return false;
@@ -280,7 +280,7 @@ double getNumberFromXMLRPC(XmlRpc::XmlRpcValue & value, const std::string & full
   {
     std::string & value_string = value;
     RCLCPP_FATAL(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "Values in the footprint specification (param %s) must be numbers. Found value %s.",
         full_param_name.c_str(), value_string.c_str());
     throw std::runtime_error("Values in the footprint specification must be numbers");
@@ -297,7 +297,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
       footprint_xmlrpc.size() < 3)
   {
     RCLCPP_FATAL(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "The footprint must be specified as list of lists on the parameter server, %s was specified as %s",
         full_param_name.c_str(), std::string(footprint_xmlrpc).c_str());
     throw std::runtime_error(
@@ -315,7 +315,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
         point.size() != 2)
     {
       RCLCPP_FATAL(rclcpp::get_logger(
-            "costmap_2d"),
+            "nav2_costmap_2d"),
           "The footprint (parameter %s) must be specified as list of lists on the parameter server eg: "
           "[[x1, y1], [x2, y2], ..., [xn, yn]], but this spec is not of that form.",
           full_param_name.c_str());
@@ -332,4 +332,4 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
   return footprint;
 }
 
-}  // end namespace costmap_2d
+}  // end namespace nav2_costmap_2d

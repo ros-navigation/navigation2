@@ -35,14 +35,14 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_COSTMAP_2D_ROS_H_
-#define COSTMAP_2D_COSTMAP_2D_ROS_H_
+#ifndef nav2_costmap_2d_nav2_costmap_2d_ROS_H_
+#define nav2_costmap_2d_nav2_costmap_2d_ROS_H_
 
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/costmap_2d_publisher.h>
-//#include <costmap_2d/Costmap2DConfig.h>
-#include <costmap_2d/footprint.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/layer.h>
+#include <nav2_costmap_2d/costmap_2d_publisher.h>
+//#include <nav2_costmap_2d/Costmap2DConfig.h>
+#include <nav2_costmap_2d/footprint.h>
 #include <geometry_msgs/msg/polygon.h>
 #include <geometry_msgs/msg/polygon_stamped.h>
 // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
@@ -75,7 +75,7 @@ public:
   }
 };
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
@@ -179,7 +179,7 @@ public:
   /** @brief Returns the current padded footprint as a geometry_msgs::msg::Polygon. */
   geometry_msgs::msg::Polygon getRobotFootprintPolygon()
   {
-    return costmap_2d::toPolygon(padded_footprint_);
+    return nav2_costmap_2d::toPolygon(padded_footprint_);
   }
 
   /** @brief Return the current footprint of the robot as a vector of points.
@@ -250,13 +250,13 @@ private:
    *
    * If the values of footprint and robot_radius are the same in
    * new_config and old_config, nothing is changed. */
-  //void readFootprintFromConfig(const costmap_2d::Costmap2DConfig &new_config,
-  //                             const costmap_2d::Costmap2DConfig &old_config);
+  //void readFootprintFromConfig(const nav2_costmap_2d::Costmap2DConfig &new_config,
+  //                             const nav2_costmap_2d::Costmap2DConfig &old_config);
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //void reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level);
+  //void reconfigureCB(nav2_costmap_2d::Costmap2DConfig &config, uint32_t level);
   void movementCB();
 
   void mapUpdateLoop(double frequency);
@@ -271,8 +271,8 @@ private:
   Costmap2DPublisher * publisher_;
 
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
-  //costmap_2d::Costmap2DConfig old_config_;
+  //dynamic_reconfigure::Server<nav2_costmap_2d::Costmap2DConfig> *dsrv_;
+  //nav2_costmap_2d::Costmap2DConfig old_config_;
 
   std::recursive_mutex configuration_mutex_;
 
@@ -284,6 +284,6 @@ private:
   float footprint_padding_;
 };
 // class Costmap2DROS
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_COSTMAP_2D_ROS_H
+#endif  // nav2_costmap_2d_nav2_costmap_2d_ROS_H

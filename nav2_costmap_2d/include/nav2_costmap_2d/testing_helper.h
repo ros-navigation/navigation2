@@ -1,18 +1,18 @@
-#ifndef COSTMAP_2D_TESTING_HELPER_H
-#define COSTMAP_2D_TESTING_HELPER_H
+#ifndef nav2_costmap_2d_TESTING_HELPER_H
+#define nav2_costmap_2d_TESTING_HELPER_H
 
 #include "rclcpp/rclcpp.hpp"
-#include <costmap_2d/cost_values.h>
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/static_layer.h>
-#include <costmap_2d/obstacle_layer.h>
-#include <costmap_2d/inflation_layer.h>
+#include <nav2_costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/static_layer.h>
+#include <nav2_costmap_2d/obstacle_layer.h>
+#include <nav2_costmap_2d/inflation_layer.h>
 
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 const double MAX_Z(1.0);
 
-void setValues(costmap_2d::Costmap2D & costmap, const unsigned char * map)
+void setValues(nav2_costmap_2d::Costmap2D & costmap, const unsigned char * map)
 {
   int index = 0;
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
@@ -25,15 +25,15 @@ void setValues(costmap_2d::Costmap2D & costmap, const unsigned char * map)
 char printableCost(unsigned char cost)
 {
   switch (cost) {
-    case costmap_2d::NO_INFORMATION: return '?';
-    case costmap_2d::LETHAL_OBSTACLE: return 'L';
-    case costmap_2d::INSCRIBED_INFLATED_OBSTACLE: return 'I';
-    case costmap_2d::FREE_SPACE: return '.';
+    case nav2_costmap_2d::NO_INFORMATION: return '?';
+    case nav2_costmap_2d::LETHAL_OBSTACLE: return 'L';
+    case nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE: return 'I';
+    case nav2_costmap_2d::FREE_SPACE: return '.';
     default: return '0' + (unsigned char) (10 * cost / 255);
   }
 }
 
-void printMap(costmap_2d::Costmap2D & costmap)
+void printMap(nav2_costmap_2d::Costmap2D & costmap)
 {
   printf("map:\n");
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
@@ -44,7 +44,7 @@ void printMap(costmap_2d::Costmap2D & costmap)
   }
 }
 
-unsigned int countValues(costmap_2d::Costmap2D & costmap, unsigned char value, bool equal = true)
+unsigned int countValues(nav2_costmap_2d::Costmap2D & costmap, unsigned char value, bool equal = true)
 {
   unsigned int count = 0;
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
@@ -58,23 +58,23 @@ unsigned int countValues(costmap_2d::Costmap2D & costmap, unsigned char value, b
   return count;
 }
 
-void addStaticLayer(costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf)
+void addStaticLayer(nav2_costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf)
 {
-  costmap_2d::StaticLayer * slayer = new costmap_2d::StaticLayer();
-  layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(slayer));
+  nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
+  layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf);
 }
 
-costmap_2d::ObstacleLayer * addObstacleLayer(costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::ObstacleLayer * addObstacleLayer(nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf)
 {
-  costmap_2d::ObstacleLayer * olayer = new costmap_2d::ObstacleLayer();
+  nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
   olayer->initialize(&layers, "obstacles", &tf);
-  layers.addPlugin(std::shared_ptr<costmap_2d::Layer>(olayer));
+  layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
   return olayer;
 }
 
-void addObservation(costmap_2d::ObstacleLayer * olayer, double x, double y, double z = 0.0,
+void addObservation(nav2_costmap_2d::ObstacleLayer * olayer, double x, double y, double z = 0.0,
   double ox = 0.0, double oy = 0.0, double oz = MAX_Z)
 {
   sensor_msgs::PointCloud2 cloud;
@@ -93,19 +93,19 @@ void addObservation(costmap_2d::ObstacleLayer * olayer, double x, double y, doub
   p.y = oy;
   p.z = oz;
 
-  costmap_2d::Observation obs(p, cloud, 100.0, 100.0);  // obstacle range = raytrace range = 100.0
+  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);  // obstacle range = raytrace range = 100.0
   olayer->addStaticObservation(obs, true, true);
 }
 
-costmap_2d::InflationLayer * addInflationLayer(costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::InflationLayer * addInflationLayer(nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf)
 {
-  costmap_2d::InflationLayer * ilayer = new costmap_2d::InflationLayer();
+  nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();
   ilayer->initialize(&layers, "inflation", &tf);
-  std::shared_ptr<costmap_2d::Layer> ipointer(ilayer);
+  std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
   return ilayer;
 }
 
 
-#endif  // COSTMAP_2D_TESTING_HELPER_H
+#endif  // nav2_costmap_2d_TESTING_HELPER_H

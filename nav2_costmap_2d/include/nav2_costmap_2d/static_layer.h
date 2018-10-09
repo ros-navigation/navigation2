@@ -35,19 +35,19 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_STATIC_LAYER_H_
-#define COSTMAP_2D_STATIC_LAYER_H_
+#ifndef nav2_costmap_2d_STATIC_LAYER_H_
+#define nav2_costmap_2d_STATIC_LAYER_H_
 
 #include <rclcpp/rclcpp.hpp>
-#include <costmap_2d/costmap_layer.h>
-#include <costmap_2d/layered_costmap.h>
-//#include <costmap_2d/GenericPluginConfig.h>
+#include <nav2_costmap_2d/costmap_layer.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+//#include <nav2_costmap_2d/GenericPluginConfig.h>
 //#include <dynamic_reconfigure/server.h>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <map_msgs/msg/occupancy_grid_update.hpp>
 #include <message_filters/subscriber.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 class StaticLayer : public CostmapLayer
@@ -64,7 +64,7 @@ public:
       double * min_y,
       double * max_x,
       double * max_y);
-  virtual void updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  virtual void updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   virtual void matchSize();
@@ -80,7 +80,7 @@ private:
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
   //TODO(bpwilcox): Replace dynamic_reconfigure functionality
 
-  //void reconfigureCB(costmap_2d::GenericPluginConfig & config, uint32_t level);
+  //void reconfigureCB(nav2_costmap_2d::GenericPluginConfig & config, uint32_t level);
 
   unsigned char interpretValue(unsigned char value);
 
@@ -99,9 +99,9 @@ private:
   unsigned char lethal_threshold_, unknown_cost_value_;
 
   //TODO(bpwilcox): Replace dynamic_reconfigure functionality
-  //dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig> * dsrv_;
+  //dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig> * dsrv_;
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_STATIC_LAYER_H_
+#endif  // nav2_costmap_2d_STATIC_LAYER_H_

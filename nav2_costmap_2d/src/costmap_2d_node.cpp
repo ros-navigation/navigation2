@@ -36,7 +36,7 @@
  *         David V. Lu!!
  *********************************************************************/
 #include <rclcpp/rclcpp.hpp>
-#include <costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/costmap_2d_ros.h>
 #include <tf2_ros/transform_listener.h>
 
 int main(int argc, char ** argv)
@@ -47,7 +47,7 @@ int main(int argc, char ** argv)
   std::string name = "costmap";
   tf2_ros::Buffer buffer(tf2::durationFromSec(10));
   tf2_ros::TransformListener tf(buffer);
-  costmap_2d::Costmap2DROS lcr(name, buffer);
+  nav2_costmap_2d::Costmap2DROS lcr(name, buffer);
 
   rclcpp::spin(node);
 

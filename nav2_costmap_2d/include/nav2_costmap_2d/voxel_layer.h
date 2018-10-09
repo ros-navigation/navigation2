@@ -35,14 +35,14 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_VOXEL_LAYER_H_
-#define COSTMAP_2D_VOXEL_LAYER_H_
+#ifndef nav2_costmap_2d_VOXEL_LAYER_H_
+#define nav2_costmap_2d_VOXEL_LAYER_H_
 
 #include <ros/ros.h>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/observation_buffer.h>
-#include <costmap_2d/VoxelGrid.h>
+#include <nav2_costmap_2d/layer.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/VoxelGrid.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
@@ -51,11 +51,11 @@
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
-#include <costmap_2d/obstacle_layer.h>
+#include <nav2_costmap_2d/VoxelPluginConfig.h>
+#include <nav2_costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 class VoxelLayer : public ObstacleLayer
@@ -89,14 +89,14 @@ protected:
   virtual void resetMaps();
 
 private:
-  void reconfigureCB(costmap_2d::VoxelPluginConfig & config, uint32_t level);
+  void reconfigureCB(nav2_costmap_2d::VoxelPluginConfig & config, uint32_t level);
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  virtual void raytraceFreespace(const costmap_2d::Observation & clearing_observation,
+  virtual void raytraceFreespace(const nav2_costmap_2d::Observation & clearing_observation,
       double * min_x, double * min_y,
       double * max_x,
       double * max_y);
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> * voxel_dsrv_;
+  dynamic_reconfigure::Server<nav2_costmap_2d::VoxelPluginConfig> * voxel_dsrv_;
 
   bool publish_voxel_;
   ros::Publisher voxel_pub_;
@@ -156,6 +156,6 @@ private:
   }
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_VOXEL_LAYER_H_
+#endif  // nav2_costmap_2d_VOXEL_LAYER_H_

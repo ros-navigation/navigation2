@@ -107,7 +107,7 @@ protected:
   class MapGridQueue : public costmap_queue::CostmapQueue
   {
 public:
-    MapGridQueue(costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
+    MapGridQueue(nav2_costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
     : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
     bool validCellToQueue(const costmap_queue::CellData & cell) override;
 
@@ -126,7 +126,7 @@ protected:
   void propogateManhattanDistances();
 
   std::shared_ptr<MapGridQueue> queue_;
-  costmap_2d::Costmap2D * costmap_;
+  nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;

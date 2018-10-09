@@ -39,7 +39,7 @@
 #include <vector>
 #include <limits>
 #include <memory>
-#include "costmap_2d/costmap_2d.h"
+#include "nav2_costmap_2d/costmap_2d.h"
 #include "costmap_queue/map_based_queue.h"
 
 namespace costmap_queue
@@ -113,7 +113,7 @@ public:
    * @param costmap Costmap which defines the size/number of cells
    * @param manhattan If true, sort cells by Manhattan distance, otherwise use Euclidean distance
    */
-  explicit CostmapQueue(costmap_2d::Costmap2D & costmap, bool manhattan = false);
+  explicit CostmapQueue(nav2_costmap_2d::Costmap2D & costmap, bool manhattan = false);
 
   /**
    * @brief Clear the queue
@@ -162,7 +162,7 @@ protected:
    */
   void computeCache();
 
-  costmap_2d::Costmap2D & costmap_;
+  nav2_costmap_2d::Costmap2D & costmap_;
   std::vector<bool> seen_;
   int max_distance_;
   bool manhattan_;

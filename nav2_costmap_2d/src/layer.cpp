@@ -27,9 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "costmap_2d/layer.h"
+#include "nav2_costmap_2d/layer.h"
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 Layer::Layer()
@@ -53,4 +53,4 @@ const std::vector<geometry_msgs::msg::Point> & Layer::getFootprint() const
   return layered_costmap_->getFootprint();
 }
 
-}  // end namespace costmap_2d
+}  // end namespace nav2_costmap_2d

@@ -41,7 +41,7 @@ using std::hypot;
 namespace costmap_queue
 {
 
-CostmapQueue::CostmapQueue(costmap_2d::Costmap2D & costmap, bool manhattan)
+CostmapQueue::CostmapQueue(nav2_costmap_2d::Costmap2D & costmap, bool manhattan)
 : MapBasedQueue(), costmap_(costmap), max_distance_(-1), manhattan_(manhattan),
   cached_max_distance_(-1)
 {

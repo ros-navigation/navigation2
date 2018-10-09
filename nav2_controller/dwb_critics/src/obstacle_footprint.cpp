@@ -38,7 +38,7 @@
 #include "dwb_critics/line_iterator.h"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
-#include "costmap_2d/cost_values.h"
+#include "nav2_costmap_2d/cost_values.h"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::ObstacleFootprintCritic, dwb_core::TrajectoryCritic)
 
@@ -145,9 +145,9 @@ double ObstacleFootprintCritic::pointCost(int x, int y)
 {
   unsigned char cost = costmap_->getCost(x, y);
   // if the cell is in an obstacle the path is invalid or unknown
-  if (cost == costmap_2d::LETHAL_OBSTACLE) {
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
-  } else if (cost == costmap_2d::NO_INFORMATION) {
+  } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
     throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Unknown Region.");
   }
 

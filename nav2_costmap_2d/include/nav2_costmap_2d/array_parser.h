@@ -28,13 +28,13 @@
  *
  * author: Dave Hershberger
  */
-#ifndef COSTMAP_2D_ARRAY_PARSER_H
-#define COSTMAP_2D_ARRAY_PARSER_H
+#ifndef nav2_costmap_2d_ARRAY_PARSER_H
+#define nav2_costmap_2d_ARRAY_PARSER_H
 
 #include <vector>
 #include <string>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 /** @brief Parse a vector of vectors of floats from a string.
@@ -46,6 +46,6 @@ namespace costmap_2d
  * anything, like part of a successful parse. */
 std::vector<std::vector<float> > parseVVF(const std::string & input, std::string & error_return);
 
-}  // end namespace costmap_2d
+}  // end namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_ARRAY_PARSER_H
+#endif  // nav2_costmap_2d_ARRAY_PARSER_H

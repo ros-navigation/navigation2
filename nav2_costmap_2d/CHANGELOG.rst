@@ -1,12 +1,12 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package costmap_2d
+Changelog for package nav2_costmap_2d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.16.2 (2018-07-31)
 -------------------
 * Merge pull request `#773 <https://github.com/ros-planning/navigation/issues/773>`_ from ros-planning/packaging_fixes
   packaging fixes
-* update costmap_2d cmake
+* update nav2_costmap_2d cmake
   * explicit dependency on tf2
   * remove old PCL disable crap
 * Contributors: Michael Ferguson
@@ -15,7 +15,7 @@ Changelog for package costmap_2d
 -------------------
 * Merge pull request `#770 <https://github.com/ros-planning/navigation/issues/770>`_ from ros-planning/fix_debians
   Fix debian builds (closes `#769 <https://github.com/ros-planning/navigation/issues/769>`_)
-* add tf2_geometry_msgs depend to costmap_2d
+* add tf2_geometry_msgs depend to nav2_costmap_2d
 * Contributors: Michael Ferguson
 
 1.16.0 (2018-07-25)
@@ -24,7 +24,7 @@ Changelog for package costmap_2d
 * unify combination_method dynamic reconfig, closes `#402 <https://github.com/ros-planning/navigation/issues/402>`_
 * Merge pull request `#723 <https://github.com/ros-planning/navigation/issues/723>`_ from moriarty/melodic-buildfarm-errors
   Melodic buildfarm errors
-* [costmap_2d/test] set empty transform to Identity
+* [nav2_costmap_2d/test] set empty transform to Identity
 * fix test: abs(unsigned int) is ambiguous
   Instead, compare values and subtract smaller from larger to find
   the dx and dy.
@@ -71,7 +71,7 @@ Changelog for package costmap_2d
 * add missing deps on libpcl
 * import only PCL common
 * pcl proagate -lQt5::Widgets flag so we need to find_package Qt5Widgets (`#578 <https://github.com/ros-planning/navigation/issues/578>`_)
-* Added deps to amcl costmap_2d move_base (`#512 <https://github.com/ros-planning/navigation/issues/512>`_)
+* Added deps to amcl nav2_costmap_2d move_base (`#512 <https://github.com/ros-planning/navigation/issues/512>`_)
 * remove GCC warnings
 * Fix CMake warnings
 * renamed targets for message generation (gencpp -> generate_messages_cpp) in order to avoid warnings for non-existing target dependencies
@@ -116,7 +116,7 @@ Changelog for package costmap_2d
   testing. This fix has never failed in over 1000000 tests. Instead of
   calling activate and deactivate, the publisher is only recreated if the
   topic has changed. Otherwise, it reuses the old setup.
-* fix related to issue `#408 <https://github.com/ros-planning/navigation/issues/408>`_ - With Rolling Window on, costmap_2d not properly updating bounds and costs in the static layer
+* fix related to issue `#408 <https://github.com/ros-planning/navigation/issues/408>`_ - With Rolling Window on, nav2_costmap_2d not properly updating bounds and costs in the static layer
 * No more ghosts in the inflation layer
   Previous bounds would fit the sensor measurements, and the inflation layer would clear
   out to these, but leave 'ghosts' behind. These ghosts are from two sources - 1) the
@@ -178,15 +178,15 @@ Changelog for package costmap_2d
 
 1.11.12 (2014-10-01)
 --------------------
-* costmap_2d: export library layers
+* nav2_costmap_2d: export library layers
 * Merge pull request `#198 <https://github.com/ros-planning/navigation/issues/198>`_ from kmhallen/hydro-devel
-  Fixed costmap_2d clearing from service /move_base/clear_costmaps
+  Fixed nav2_costmap_2d clearing from service /move_base/clear_costmaps
 * Costmap Layer comments
 * Add destructors for all of the layers to remove the dynamic parameter clients
 * Add method for removing static observations (for testing)
 * Move testing_helper
 * Initial Clearing Costmap parameter change
-* Fixed costmap_2d clearing from service /move_base/clear_costmaps
+* Fixed nav2_costmap_2d clearing from service /move_base/clear_costmaps
 * Contributors: David Lu!!, Kevin Hallenbeck, Michael Ferguson
 
 1.11.11 (2014-07-23)
@@ -242,4 +242,4 @@ Changelog for package costmap_2d
 * Additional static layer functionality for receiving updates
 * Misc. Pointcloud fixes
 * Improved eigen alignment problem on 32-bit arch.
-* fixed costmap_2d tests
+* fixed nav2_costmap_2d tests

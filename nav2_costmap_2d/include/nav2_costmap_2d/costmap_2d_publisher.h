@@ -35,16 +35,16 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_COSTMAP_2D_PUBLISHER_H_
-#define COSTMAP_2D_COSTMAP_2D_PUBLISHER_H_
+#ifndef nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H_
+#define nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H_
 
 #include "rclcpp/rclcpp.hpp"
-#include <costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/costmap_2d.h>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <map_msgs/msg/occupancy_grid_update.hpp>
 #include <tf2/transform_datatypes.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 /**
  * @class Costmap2DPublisher
@@ -109,5 +109,5 @@ private:
   nav_msgs::msg::OccupancyGrid grid_;
   static char * cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
 };
-}  // namespace costmap_2d
-#endif // COSTMAP_2D_COSTMAP_2D_PUBLISHER_H
+}  // namespace nav2_costmap_2d
+#endif // nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H

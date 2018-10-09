@@ -42,7 +42,7 @@
 
 using std::hypot;
 
-costmap_2d::Costmap2D costmap(5, 5, 1.0, 0.0, 0.0);
+nav2_costmap_2d::Costmap2D costmap(5, 5, 1.0, 0.0, 0.0);
 
 TEST(CostmapQueue, basicQueue)
 {
@@ -59,7 +59,7 @@ TEST(CostmapQueue, basicQueue)
 
 TEST(CostmapQueue, bigTest)
 {
-  costmap_2d::Costmap2D big_map(500, 500, 1.0, 0.0, 0.0);
+  nav2_costmap_2d::Costmap2D big_map(500, 500, 1.0, 0.0, 0.0);
   costmap_queue::CostmapQueue q(big_map);
   int count = 0;
   q.enqueueCell(0, 0);

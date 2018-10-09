@@ -32,16 +32,16 @@
  * Test harness for StaticMap Layer for Costmap2D
  */
 
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/obstacle_layer.h>
-#include <costmap_2d/static_layer.h>
-#include <costmap_2d/observation_buffer.h>
-#include <costmap_2d/testing_helper.h>
+#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/obstacle_layer.h>
+#include <nav2_costmap_2d/static_layer.h>
+#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/testing_helper.h>
 #include <set>
 #include <gtest/gtest.h>
 
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 
 /**
@@ -52,7 +52,7 @@ TEST(costmap, testResetForStaticMap){
   std::vector<unsigned char> staticMap;
   for(unsigned int i=0; i<10; i++){
     for(unsigned int j=0; j<10; j++){
-      staticMap.push_back(costmap_2d::LETHAL_OBSTACLE);
+      staticMap.push_back(nav2_costmap_2d::LETHAL_OBSTACLE);
     }
   }
 
@@ -108,7 +108,7 @@ TEST(costmap, testResetForStaticMap){
   int hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         hitCount++;
       }
     }
@@ -119,7 +119,7 @@ TEST(costmap, testResetForStaticMap){
   hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) != costmap_2d::LETHAL_OBSTACLE)
+      if(map.getCost(i, j) != nav2_costmap_2d::LETHAL_OBSTACLE)
         hitCount++;
     }
   }
@@ -132,7 +132,7 @@ TEST(costmap, testResetForStaticMap){
   hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE)
         hitCount++;
     }
   }
@@ -266,7 +266,7 @@ TEST(costmap, testStaticMap){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         occupiedCells.push_back(map.getIndex(i, j));
       }
     }

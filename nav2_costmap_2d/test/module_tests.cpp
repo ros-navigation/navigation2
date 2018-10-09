@@ -32,12 +32,12 @@
  * Test harness for Costmap2D
  */
 
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/observation_buffer.h>
 #include <set>
 #include <gtest/gtest.h>
 
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 const unsigned char MAP_10_BY_10_CHAR[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -92,7 +92,7 @@ TEST(costmap, testResetForStaticMap){
   std::vector<unsigned char> staticMap;
   for(unsigned int i=0; i<10; i++){
     for(unsigned int j=0; j<10; j++){
-      staticMap.push_back(costmap_2d::LETHAL_OBSTACLE);
+      staticMap.push_back(nav2_costmap_2d::LETHAL_OBSTACLE);
     }
   }
 
@@ -148,7 +148,7 @@ TEST(costmap, testResetForStaticMap){
   int hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         hitCount++;
       }
     }
@@ -159,7 +159,7 @@ TEST(costmap, testResetForStaticMap){
   hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) != costmap_2d::LETHAL_OBSTACLE)
+      if(map.getCost(i, j) != nav2_costmap_2d::LETHAL_OBSTACLE)
         hitCount++;
     }
   }
@@ -172,7 +172,7 @@ TEST(costmap, testResetForStaticMap){
   hitCount = 0;
   for(unsigned int i=0; i < 10; ++i){
     for(unsigned int j=0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE)
         hitCount++;
     }
   }
@@ -211,17 +211,17 @@ TEST(costmap, testCostFunctionCorrectness){
 
   for(unsigned int i = 0; i <= (unsigned int)ceil(ROBOT_RADIUS * 5.0); i++){
     // To the right
-    ASSERT_EQ(map.getCost(50 + i, 50) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
-    ASSERT_EQ(map.getCost(50 + i, 50) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 + i, 50) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 + i, 50) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
     // To the left
-    ASSERT_EQ(map.getCost(50 - i, 50) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
-    ASSERT_EQ(map.getCost(50 - i, 50) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 - i, 50) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 - i, 50) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
     // Down
-    ASSERT_EQ(map.getCost(50, 50 + i) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
-    ASSERT_EQ(map.getCost(50, 50 + i) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 + i) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 + i) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
     // Up
-    ASSERT_EQ(map.getCost(50, 50 - i) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
-    ASSERT_EQ(map.getCost(50, 50 - i) >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 - i) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 - i) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
   }
 
   // Verify the normalized cost attenuates as expected
@@ -246,7 +246,7 @@ TEST(costmap, testCostFunctionCorrectness){
 
   for(unsigned int i = 0; i < 100; i++)
     for(unsigned int j = 0; j < 100; j++)
-      ASSERT_EQ(map.getCost(i, j), costmap_2d::FREE_SPACE);
+      ASSERT_EQ(map.getCost(i, j), nav2_costmap_2d::FREE_SPACE);
 }
 
 char printableCost( unsigned char cost )
@@ -299,7 +299,7 @@ TEST(costmap, testWaveInterference){
   printf("map:\n");
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) != costmap_2d::FREE_SPACE){
+      if(map.getCost(i, j) != nav2_costmap_2d::FREE_SPACE){
         update_count++;
       }
       printf("%c", printableCost( map.getCost( i, j )));
@@ -452,7 +452,7 @@ TEST(costmap, testRaytracing){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         lethal_count++;
       }
     }
@@ -514,7 +514,7 @@ TEST(costmap, testInflationShouldNotCreateUnknowns){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::NO_INFORMATION){
+      if(map.getCost(i, j) == nav2_costmap_2d::NO_INFORMATION){
         unknown_count++;
       }
     }
@@ -546,7 +546,7 @@ TEST(costmap, testStaticMap){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         occupiedCells.push_back(map.getIndex(i, j));
       }
     }
@@ -634,7 +634,7 @@ TEST(costmap, testDynamicObstacles){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -676,7 +676,7 @@ TEST(costmap, testMultipleAdditions){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -717,7 +717,7 @@ TEST(costmap, testZThreshold){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -739,7 +739,7 @@ TEST(costmap, testInflation){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
         occupiedCells.push_back(map.getIndex(i, j));
       }
     }
@@ -759,7 +759,7 @@ TEST(costmap, testInflation){
     unsigned int x, y;
     map.indexToCells(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.getIndex(x, y)), true);
-    ASSERT_EQ(map.getCost(x, y) == costmap_2d::LETHAL_OBSTACLE || map.getCost(x, y) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(x, y) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(x, y) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
   }
 
   // Set an obstacle at the origin and observe insertions for it and its neighbors
@@ -783,7 +783,7 @@ TEST(costmap, testInflation){
   occupiedCells.clear();
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
         occupiedCells.push_back(map.getIndex(i, j));
       }
     }
@@ -814,7 +814,7 @@ TEST(costmap, testInflation){
   occupiedCells.clear();
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
         occupiedCells.push_back(map.getIndex(i, j));
       }
     }
@@ -844,9 +844,9 @@ TEST(costmap, testInflation){
 
   map.updateWorld(0, 0, obsBuf2, empty);
 
-  ASSERT_EQ(map.getCost(1, 9), costmap_2d::LETHAL_OBSTACLE);
-  ASSERT_EQ(map.getCost(0, 9), costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
-  ASSERT_EQ(map.getCost(2, 9), costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  ASSERT_EQ(map.getCost(1, 9), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_EQ(map.getCost(0, 9), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  ASSERT_EQ(map.getCost(2, 9), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
   pcl::PointCloud<pcl::PointXYZ> c3;
@@ -866,7 +866,7 @@ TEST(costmap, testInflation){
 
   map.updateWorld(0, 0, obsBuf3, empty);
 
-  ASSERT_EQ(map.getCost(0, 9), costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_EQ(map.getCost(0, 9), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
 /**
@@ -900,8 +900,8 @@ TEST(costmap, testInflation2){
 
   map.updateWorld(0, 0, obsBuf, obsBuf);
 
-  ASSERT_EQ(map.getCost(3, 2), costmap_2d::INSCRIBED_INFLATED_OBSTACLE);  
-  ASSERT_EQ(map.getCost(3, 3), costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  ASSERT_EQ(map.getCost(3, 2), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);  
+  ASSERT_EQ(map.getCost(3, 3), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 }
 
 /**
@@ -923,7 +923,7 @@ TEST(costmap, testInflation3){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -951,7 +951,7 @@ TEST(costmap, testInflation3){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) != costmap_2d::FREE_SPACE){
+      if(map.getCost(i, j) != nav2_costmap_2d::FREE_SPACE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -962,7 +962,7 @@ TEST(costmap, testInflation3){
   ids.clear();
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE || map.getCost(i, j) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -976,7 +976,7 @@ TEST(costmap, testInflation3){
   ids.clear();
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) != costmap_2d::FREE_SPACE){
+      if(map.getCost(i, j) != nav2_costmap_2d::FREE_SPACE){
         ids.push_back(map.getIndex(i, j));
       }
     }
@@ -1014,7 +1014,7 @@ TEST(costmap, testRaytracing2){
 
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         obstacles.push_back(map.getIndex(i, j));
       }
     }
@@ -1027,7 +1027,7 @@ TEST(costmap, testRaytracing2){
   obstacles.clear();
   for(unsigned int i = 0; i < 10; ++i){
     for(unsigned int j = 0; j < 10; ++j){
-      if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE){
+      if(map.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE){
         obstacles.push_back(map.getIndex(i, j));
       }
     }

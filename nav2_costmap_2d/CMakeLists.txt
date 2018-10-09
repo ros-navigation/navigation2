@@ -99,30 +99,30 @@ ament_target_dependencies(layers
   nav2_costmap_2d
 )
 
-# TODO(bpwilcox): port costmap_2d_markers
-#add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
-#ament_target_dependencies(costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(costmap_2d_markers
-  #costmap_2d
+# TODO(bpwilcox): port nav2_costmap_2d_markers
+#add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
+#ament_target_dependencies(nav2_costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
+#target_link_libraries(nav2_costmap_2d_markers
+  #nav2_costmap_2d
 #)
 
-# TODO(bpwilcox): port costmap_2d_cloud
-#add_executable(costmap_2d_cloud src/costmap_2d_cloud.cpp)
-#ament_target_dependencies(costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(costmap_2d_cloud
-  #costmap_2d
+# TODO(bpwilcox): port nav2_costmap_2d_cloud
+#add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
+#ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
+#target_link_libraries(nav2_costmap_2d_cloud
+  #nav2_costmap_2d
 #)
 
-add_executable(costmap_2d_node src/costmap_2d_node.cpp)
-ament_target_dependencies(costmap_2d_node
+add_executable(nav2_costmap_2d_node src/costmap_2d_node.cpp)
+ament_target_dependencies(nav2_costmap_2d_node
   ${dependencies}
 )
 
-target_link_libraries(costmap_2d_node
+target_link_libraries(nav2_costmap_2d_node
   nav2_costmap_2d
 )
 
-install(TARGETS nav2_costmap_2d layers costmap_2d_node
+install(TARGETS nav2_costmap_2d layers nav2_costmap_2d_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

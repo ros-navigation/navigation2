@@ -32,14 +32,14 @@
  * Test harness for ObstacleLayer for Costmap2D
  */
 
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/observation_buffer.h>
-#include <costmap_2d/testing_helper.h>
+#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/testing_helper.h>
 #include <set>
 #include <gtest/gtest.h>
 
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 /*
  * For reference, the static map looks like this:
@@ -143,7 +143,7 @@ TEST(costmap, testRaytracing2){
   // Should thus be the same
   ASSERT_EQ(with_static, obs_after);
   // If 21 are filled, 79 should be free
-  ASSERT_EQ(79, countValues(*(layers.getCostmap()), costmap_2d::FREE_SPACE));
+  ASSERT_EQ(79, countValues(*(layers.getCostmap()), nav2_costmap_2d::FREE_SPACE));
 }
 
 /**
@@ -170,9 +170,9 @@ TEST(costmap, testWaveInterference){
   // 3 obstacle cells are filled, <1,1>,<2,2>,<4,4> and <6,6> are now free
   // <0,0> is footprint and is free
   //printMap(*costmap);
-  ASSERT_EQ(3, countValues(*costmap, costmap_2d::LETHAL_OBSTACLE));
-  ASSERT_EQ(92, countValues(*costmap, costmap_2d::NO_INFORMATION));
-  ASSERT_EQ(5, countValues(*costmap, costmap_2d::FREE_SPACE));
+  ASSERT_EQ(3, countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE));
+  ASSERT_EQ(92, countValues(*costmap, nav2_costmap_2d::NO_INFORMATION));
+  ASSERT_EQ(5, countValues(*costmap, nav2_costmap_2d::FREE_SPACE));
 }
 
 /**
@@ -193,7 +193,7 @@ TEST(costmap, testZThreshold){
   layers.updateMap(0,0,0);
 
   Costmap2D* costmap = layers.getCostmap();
-  ASSERT_EQ(countValues(*costmap, costmap_2d::LETHAL_OBSTACLE), 1);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1);
 }
 
 
@@ -216,10 +216,10 @@ TEST(costmap, testDynamicObstacles){
 
   Costmap2D* costmap = layers.getCostmap();
   // Should now have 1 insertion and no deletions
-  ASSERT_EQ(countValues(*costmap, costmap_2d::LETHAL_OBSTACLE), 21);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
 
   // Repeating the call - we should see no insertions or deletions
-  ASSERT_EQ(countValues(*costmap, costmap_2d::LETHAL_OBSTACLE), 21);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
 }
 
 
@@ -239,7 +239,7 @@ TEST(costmap, testMultipleAdditions){
   Costmap2D* costmap = layers.getCostmap();
   //printMap(*costmap);
 
-  ASSERT_EQ(countValues(*costmap, costmap_2d::LETHAL_OBSTACLE), 20);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
 
 }
 

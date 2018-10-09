@@ -71,7 +71,7 @@ public:
   virtual bool isValidCost(const unsigned char cost);
 
 protected:
-  costmap_2d::Costmap2D * costmap_;
+  nav2_costmap_2d::Costmap2D * costmap_;
   bool sum_scores_;
 };
 }  // namespace dwb_critics

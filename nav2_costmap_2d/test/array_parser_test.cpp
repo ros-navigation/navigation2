@@ -29,9 +29,9 @@
 
 #include <gtest/gtest.h>
 
-#include "costmap_2d/array_parser.h"
+#include "nav2_costmap_2d/array_parser.h"
 
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 TEST(array_parser, basic_operation)
 {

@@ -11,7 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(costmap_2d REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -27,7 +27,7 @@ add_library(${PROJECT_NAME}
 
 set(dependencies
   rclcpp
-  costmap_2d
+  nav2_costmap_2d
 )
 
 ament_target_dependencies(${PROJECT_NAME}

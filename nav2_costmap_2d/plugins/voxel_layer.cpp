@@ -35,21 +35,21 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <costmap_2d/voxel_layer.h>
+#include <nav2_costmap_2d/voxel_layer.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 #define VOXEL_BITS 16
-PLUGINLIB_EXPORT_CLASS(costmap_2d::VoxelLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::VoxelLayer, nav2_costmap_2d::Layer)
 
-using costmap_2d::NO_INFORMATION;
-using costmap_2d::LETHAL_OBSTACLE;
-using costmap_2d::FREE_SPACE;
+using nav2_costmap_2d::NO_INFORMATION;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::FREE_SPACE;
 
-using costmap_2d::ObservationBuffer;
-using costmap_2d::Observation;
+using nav2_costmap_2d::ObservationBuffer;
+using nav2_costmap_2d::Observation;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 void VoxelLayer::onInitialize()
@@ -59,7 +59,7 @@ void VoxelLayer::onInitialize()
 
   private_nh.param("publish_voxel_map", publish_voxel_, false);
   if (publish_voxel_) {
-    voxel_pub_ = private_nh.advertise<costmap_2d::VoxelGrid>("voxel_grid", 1);
+    voxel_pub_ = private_nh.advertise<nav2_costmap_2d::VoxelGrid>("voxel_grid", 1);
   }
 
   clearing_endpoints_pub_ = private_nh.advertise<sensor_msgs::PointCloud>("clearing_endpoints", 1);
@@ -67,8 +67,8 @@ void VoxelLayer::onInitialize()
 
 void VoxelLayer::setupDynamicReconfigure(ros::NodeHandle & nh)
 {
-  voxel_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>::CallbackType cb = std::bind(
+  voxel_dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::VoxelPluginConfig>(nh);
+  dynamic_reconfigure::Server<nav2_costmap_2d::VoxelPluginConfig>::CallbackType cb = std::bind(
       &VoxelLayer::reconfigureCB, this, _1, _2);
   voxel_dsrv_->setCallback(cb);
 }
@@ -80,7 +80,7 @@ VoxelLayer::~VoxelLayer()
   }
 }
 
-void VoxelLayer::reconfigureCB(costmap_2d::VoxelPluginConfig & config, uint32_t level)
+void VoxelLayer::reconfigureCB(nav2_costmap_2d::VoxelPluginConfig & config, uint32_t level)
 {
   enabled_ = config.enabled;
   footprint_clearing_enabled_ = config.footprint_clearing_enabled;
@@ -194,7 +194,7 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
   }
 
   if (publish_voxel_) {
-    costmap_2d::VoxelGrid grid_msg;
+    nav2_costmap_2d::VoxelGrid grid_msg;
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
     grid_msg.size_x = voxel_grid_.sizeX();
     grid_msg.size_y = voxel_grid_.sizeY();
@@ -449,4 +449,4 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

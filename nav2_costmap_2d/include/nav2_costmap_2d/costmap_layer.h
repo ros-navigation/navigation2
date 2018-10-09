@@ -35,14 +35,14 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_COSTMAP_LAYER_H_
-#define COSTMAP_2D_COSTMAP_LAYER_H_
+#ifndef nav2_costmap_2d_COSTMAP_LAYER_H_
+#define nav2_costmap_2d_COSTMAP_LAYER_H_
 
 #include <rclcpp/rclcpp.hpp>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/layer.h>
+#include <nav2_costmap_2d/layered_costmap.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 class CostmapLayer : public Layer, public Costmap2D
@@ -78,7 +78,7 @@ protected:
    * TrueOverwrite means every value from this layer
    * is written into the master grid.
    */
-  void updateWithTrueOverwrite(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  void updateWithTrueOverwrite(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   /*
@@ -88,7 +88,7 @@ protected:
    * Overwrite means every valid value from this layer
    * is written into the master grid (does not copy NO_INFORMATION)
    */
-  void updateWithOverwrite(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  void updateWithOverwrite(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   /*
@@ -100,7 +100,7 @@ protected:
    * it is overwritten. If the layer's value is NO_INFORMATION,
    * the master value does not change.
    */
-  void updateWithMax(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  void updateWithMax(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   /*
@@ -115,7 +115,7 @@ protected:
    * If the sum value is larger than INSCRIBED_INFLATED_OBSTACLE,
    * the master value is set to (INSCRIBED_INFLATED_OBSTACLE - 1).
    */
-  void updateWithAddition(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+  void updateWithAddition(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
       int max_j);
 
   /**
@@ -150,5 +150,5 @@ private:
   double extra_min_x_, extra_max_x_, extra_min_y_, extra_max_y_;
 };
 
-}  // namespace costmap_2d
-#endif // COSTMAP_2D_COSTMAP_LAYER_H_
+}  // namespace nav2_costmap_2d
+#endif // nav2_costmap_2d_COSTMAP_LAYER_H_

@@ -34,20 +34,20 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef COSTMAP_2D_OBSERVATION_BUFFER_H_
-#define COSTMAP_2D_OBSERVATION_BUFFER_H_
+#ifndef nav2_costmap_2d_OBSERVATION_BUFFER_H_
+#define nav2_costmap_2d_OBSERVATION_BUFFER_H_
 
 #include <vector>
 #include <list>
 #include <string>
 #include "rclcpp/time.hpp"
-#include <costmap_2d/observation.h>
+#include <nav2_costmap_2d/observation.h>
 #include <tf2_ros/buffer.h>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 /**
  * @class ObservationBuffer
@@ -151,5 +151,5 @@ private:
   double obstacle_range_, raytrace_range_;
   double tf_tolerance_;
 };
-}  // namespace costmap_2d
-#endif  // COSTMAP_2D_OBSERVATION_BUFFER_H_
+}  // namespace nav2_costmap_2d
+#endif  // nav2_costmap_2d_OBSERVATION_BUFFER_H_

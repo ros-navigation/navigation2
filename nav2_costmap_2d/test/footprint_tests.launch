@@ -1,6 +1,6 @@
 <launch>
 
-  <test time-limit="10" test-name="footprint_test" pkg="costmap_2d" type="footprint_tests">
+  <test time-limit="10" test-name="footprint_test" pkg="nav2_costmap_2d" type="footprint_tests">
     <param name="unpadded/string/footprint_padding" value="0" />
     <param name="unpadded/footprint" value="[[1, 1], [-1, 1], [-1, -1]]" />
 

@@ -16,7 +16,7 @@
 #define DWB_CORE__COMMON_TYPES_H_
 
 #include <memory>
-#include "costmap_2d/costmap_2d_ros.h"
+#include "nav2_costmap_2d/costmap_2d_ros.h"
 #include "tf2_ros/transform_listener.h"
 
 
@@ -24,7 +24,7 @@ namespace dwb_core
 {
 
 typedef std::shared_ptr<tf2_ros::Buffer> TFBufferPtr;
-typedef std::shared_ptr<costmap_2d::Costmap2DROS> CostmapROSPtr;
+typedef std::shared_ptr<nav2_costmap_2d::Costmap2DROS> CostmapROSPtr;
 
 }
 

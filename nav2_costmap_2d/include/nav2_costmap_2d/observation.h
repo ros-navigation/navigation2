@@ -29,13 +29,13 @@
  * Authors: Conor McGann
  */
 
-#ifndef COSTMAP_2D_OBSERVATION_H_
-#define COSTMAP_2D_OBSERVATION_H_
+#ifndef nav2_costmap_2d_OBSERVATION_H_
+#define nav2_costmap_2d_OBSERVATION_H_
 
 #include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 /**
@@ -99,5 +99,5 @@ public:
   double obstacle_range_, raytrace_range_;
 };
 
-}  // namespace costmap_2d
-#endif  // COSTMAP_2D_OBSERVATION_H_
+}  // namespace nav2_costmap_2d
+#endif  // nav2_costmap_2d_OBSERVATION_H_

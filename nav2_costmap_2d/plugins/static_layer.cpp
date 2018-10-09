@@ -36,20 +36,20 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <costmap_2d/static_layer.h>
-#include <costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/static_layer.h>
+#include <nav2_costmap_2d/costmap_math.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 
-PLUGINLIB_EXPORT_CLASS(costmap_2d::StaticLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
-using costmap_2d::NO_INFORMATION;
-using costmap_2d::LETHAL_OBSTACLE;
-using costmap_2d::FREE_SPACE;
+using nav2_costmap_2d::NO_INFORMATION;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::FREE_SPACE;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 StaticLayer::StaticLayer() {enabled_ = true;}
@@ -65,7 +65,7 @@ void StaticLayer::onInitialize()
 {
   auto nh = rclcpp::Node::make_shared(name_);
   rclcpp::Node::SharedPtr g_nh;
-  g_nh = rclcpp::Node::make_shared("costmap_2d_static");
+  g_nh = rclcpp::Node::make_shared("nav2_costmap_2d_static");
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
 
   current_ = true;
@@ -94,7 +94,7 @@ void StaticLayer::onInitialize()
   //if (map_sub_.getTopic() != ros::names::resolve(map_topic)) {
 
   // we'll subscribe to the latched topic that the map server uses
-  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Requesting the map...");
+  RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Requesting the map...");
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
   custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
@@ -110,11 +110,11 @@ void StaticLayer::onInitialize()
   }
 
   RCLCPP_INFO(rclcpp::get_logger(
-        "costmap_2d"), "Received a %d X %d map at %f m/pix", getSizeInCellsX(),
+        "nav2_costmap_2d"), "Received a %d X %d map at %f m/pix", getSizeInCellsX(),
       getSizeInCellsY(), getResolution());
 
   if (subscribe_to_updates_) {
-    RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Subscribing to updates");
+    RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Subscribing to updates");
     map_update_sub_ = g_nh->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
         map_topic + "_updates",
         std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), custom_qos_profile);
@@ -128,13 +128,13 @@ void StaticLayer::onInitialize()
     delete dsrv_;
   } */
 
-  //dsrv_ = new dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>(nh);
-  //dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType cb = std::bind(
+  //dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig>(nh);
+  //dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig>::CallbackType cb = std::bind(
   //    &StaticLayer::reconfigureCB, this, _1, _2);
   //dsrv_->setCallback(cb);
 }
 
-/* void StaticLayer::reconfigureCB(costmap_2d::GenericPluginConfig & config, uint32_t level)
+/* void StaticLayer::reconfigureCB(nav2_costmap_2d::GenericPluginConfig & config, uint32_t level)
 {
   if (config.enabled != enabled_) {
     enabled_ = config.enabled;
@@ -178,7 +178,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   unsigned int size_x = new_map->info.width, size_y = new_map->info.height;
 
   RCLCPP_DEBUG(rclcpp::get_logger(
-        "costmap_2d"), "Received a %d X %d map at %f m/pix", size_x, size_y,
+        "nav2_costmap_2d"), "Received a %d X %d map at %f m/pix", size_x, size_y,
       new_map->info.resolution);
 
   // resize costmap if size, resolution or origin do not match
@@ -192,7 +192,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   {
     // Update the size of the layered costmap (and all layers, including this one)
     RCLCPP_INFO(rclcpp::get_logger(
-          "costmap_2d"), "Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
+          "nav2_costmap_2d"), "Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
         new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution,
         new_map->info.origin.position.x,
@@ -205,7 +205,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   {
     // only update the size of the costmap stored locally in this layer
     RCLCPP_INFO(rclcpp::get_logger(
-          "costmap_2d"), "Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
+          "nav2_costmap_2d"), "Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
         new_map->info.resolution);
     resizeMap(size_x, size_y, new_map->info.resolution,
         new_map->info.origin.position.x, new_map->info.origin.position.y);
@@ -234,7 +234,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   // shutdown the map subscrber if firt_map_only_ flag is on
   if (first_map_only_) {
     RCLCPP_INFO(rclcpp::get_logger(
-          "costmap_2d"), "Shutting down the map subscriber. first_map_only flag is on");
+          "nav2_costmap_2d"), "Shutting down the map subscriber. first_map_only flag is on");
     // TODO(bpwilcox): Resolve shutdown of ros2 subscription
     //map_sub_.shutdown();
   }
@@ -307,7 +307,7 @@ void StaticLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
   has_updated_data_ = false;
 }
 
-void StaticLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+void StaticLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
     int max_j)
 {
   if (!map_received_) {
@@ -334,7 +334,7 @@ void StaticLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, in
     try {
       transform = tf_->lookupTransform(map_frame_, global_frame_, tf2_ros::fromMsg(rclcpp::Time()));
     } catch (tf2::TransformException ex) {
-      RCLCPP_ERROR(rclcpp::get_logger("costmap_2d"), "%s", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("nav2_costmap_2d"), "%s", ex.what());
       return;
     }
     // Copy map data given proper transformations
@@ -361,4 +361,4 @@ void StaticLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, in
   }
 }
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

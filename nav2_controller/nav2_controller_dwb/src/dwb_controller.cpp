@@ -45,7 +45,7 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
     // get path from command
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tfListener(tfBuffer);
-    cm_ = std::make_shared<costmap_2d::Costmap2DROS>("local_costmap", tfBuffer);
+    cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer);
     auto nh = shared_from_this();
     odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
     vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);

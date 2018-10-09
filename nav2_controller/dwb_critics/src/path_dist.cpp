@@ -36,7 +36,7 @@
 #include <vector>
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_2d_utils/path_ops.h"
-#include "costmap_2d/cost_values.h"
+#include "nav2_costmap_2d/cost_values.h"
 
 namespace dwb_critics
 {
@@ -64,7 +64,7 @@ bool PathDistCritic::prepare(
     double g_y = adjusted_global_plan.poses[i].y;
     unsigned int map_x, map_y;
     if (costmap_->worldToMap(g_x, g_y, map_x,
-      map_y) && costmap_->getCost(map_x, map_y) != costmap_2d::NO_INFORMATION)
+      map_y) && costmap_->getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION)
     {
       int index = costmap_->getIndex(map_x, map_y);
       cell_values_[index] = 0.0;

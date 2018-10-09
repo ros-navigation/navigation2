@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_FOOTPRINT_H
-#define COSTMAP_2D_FOOTPRINT_H
+#ifndef nav2_costmap_2d_FOOTPRINT_H
+#define nav2_costmap_2d_FOOTPRINT_H
 
 #include "rclcpp/rclcpp.hpp"
 #include <geometry_msgs/msg/polygon.hpp>
@@ -45,7 +45,7 @@
 #include <geometry_msgs/msg/point32.hpp>
 #include <xmlrpcpp/XmlRpcValue.h>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 /**
@@ -148,6 +148,6 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
 void writeFootprintToParam(rclcpp::Node::SharedPtr nh,
     const std::vector<geometry_msgs::msg::Point> & footprint);
 
-}  // end namespace costmap_2d
+}  // end namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_FOOTPRINT_H
+#endif  // nav2_costmap_2d_FOOTPRINT_H

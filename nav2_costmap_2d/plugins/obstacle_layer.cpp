@@ -35,23 +35,23 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <costmap_2d/obstacle_layer.h>
-#include <costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/obstacle_layer.h>
+#include <nav2_costmap_2d/costmap_math.h>
 #include <tf2_ros/message_filter.h>
 
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-PLUGINLIB_EXPORT_CLASS(costmap_2d::ObstacleLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
 
-using costmap_2d::NO_INFORMATION;
-using costmap_2d::LETHAL_OBSTACLE;
-using costmap_2d::FREE_SPACE;
+using nav2_costmap_2d::NO_INFORMATION;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::FREE_SPACE;
 
-using costmap_2d::ObservationBuffer;
-using costmap_2d::Observation;
+using nav2_costmap_2d::ObservationBuffer;
+using nav2_costmap_2d::Observation;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 void ObstacleLayer::onInitialize()
@@ -220,8 +220,8 @@ void ObstacleLayer::onInitialize()
 
 void ObstacleLayer::setupDynamicReconfigure(ros::NodeHandle & nh)
 {
-  dsrv_ = new dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>::CallbackType cb = std::bind(
+  dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::ObstaclePluginConfig>(nh);
+  dynamic_reconfigure::Server<nav2_costmap_2d::ObstaclePluginConfig>::CallbackType cb = std::bind(
       &ObstacleLayer::reconfigureCB, this, _1, _2);
   dsrv_->setCallback(cb);
 }
@@ -232,7 +232,7 @@ ObstacleLayer::~ObstacleLayer()
     delete dsrv_;
   }
 }
-void ObstacleLayer::reconfigureCB(costmap_2d::ObstaclePluginConfig & config, uint32_t level)
+void ObstacleLayer::reconfigureCB(nav2_costmap_2d::ObstaclePluginConfig & config, uint32_t level)
 {
   enabled_ = config.enabled;
   footprint_clearing_enabled_ = config.footprint_clearing_enabled;
@@ -412,7 +412,7 @@ void ObstacleLayer::updateFootprint(double robot_x, double robot_y, double robot
   }
 }
 
-void ObstacleLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+void ObstacleLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
     int max_i,
     int max_j)
 {
@@ -421,7 +421,7 @@ void ObstacleLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, 
   }
 
   if (footprint_clearing_enabled_) {
-    setConvexPolygonCost(transformed_footprint_, costmap_2d::FREE_SPACE);
+    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
 
   switch (combination_method_) {
@@ -436,7 +436,7 @@ void ObstacleLayer::updateCosts(costmap_2d::Costmap2D & master_grid, int min_i, 
   }
 }
 
-void ObstacleLayer::addStaticObservation(costmap_2d::Observation & obs, bool marking, bool clearing)
+void ObstacleLayer::addStaticObservation(nav2_costmap_2d::Observation & obs, bool marking, bool clearing)
 {
   if (marking) {
     static_marking_observations_.push_back(obs);
@@ -610,4 +610,4 @@ void ObstacleLayer::reset()
   activate();
 }
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

@@ -35,16 +35,16 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef COSTMAP_2D_LAYERED_COSTMAP_H_
-#define COSTMAP_2D_LAYERED_COSTMAP_H_
+#ifndef nav2_costmap_2d_LAYERED_COSTMAP_H_
+#define nav2_costmap_2d_LAYERED_COSTMAP_H_
 
-#include <costmap_2d/cost_values.h>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/layer.h>
+#include <nav2_costmap_2d/costmap_2d.h>
 #include <vector>
 #include <string>
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 class Layer;
 
@@ -102,7 +102,7 @@ public:
 
   bool isTrackingUnknown()
   {
-    return costmap_.getDefaultValue() == costmap_2d::NO_INFORMATION;
+    return costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
   }
 
   std::vector<std::shared_ptr<Layer> > * getPlugins()
@@ -173,6 +173,6 @@ private:
   std::vector<geometry_msgs::msg::Point> footprint_;
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif  // COSTMAP_2D_LAYERED_COSTMAP_H_
+#endif  // nav2_costmap_2d_LAYERED_COSTMAP_H_

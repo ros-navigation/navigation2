@@ -34,7 +34,7 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#include <costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/observation_buffer.h>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
@@ -43,7 +43,7 @@
 using namespace std;
 using namespace tf2;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time,
     double expected_update_rate,
@@ -75,7 +75,7 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
         tf2::durationFromSec(tf_tolerance_), &tf_error))
   {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"), "Transform between %s and %s with tolerance %.2f failed: %s.",
+          "nav2_costmap_2d"), "Transform between %s and %s with tolerance %.2f failed: %s.",
         new_global_frame.c_str(),
         global_frame_.c_str(), tf_tolerance_, tf_error.c_str());
     return false;
@@ -99,7 +99,7 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
       tf2_buffer_.transform(*(obs.cloud_), *(obs.cloud_), new_global_frame);
     } catch (TransformException & ex) {
       RCLCPP_ERROR(rclcpp::get_logger(
-            "costmap_2d"), "TF Error attempting to transform an observation from %s to %s: %s",
+            "nav2_costmap_2d"), "TF Error attempting to transform an observation from %s to %s: %s",
           global_frame_.c_str(),
           new_global_frame.c_str(), ex.what());
       return false;
@@ -182,7 +182,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     // if an exception occurs, we need to remove the empty observation from the list
     observation_list_.pop_front();
     RCLCPP_ERROR(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
         sensor_frame_.c_str(),
         cloud.header.frame_id.c_str(), ex.what());
@@ -240,7 +240,7 @@ bool ObservationBuffer::isCurrent() const
   bool current = (clock_.now() - last_updated_).toSec() <= expected_update_rate_.toSec();
   if (!current) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "costmap_2d"),
+          "nav2_costmap_2d"),
         "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.",
         topic_name_.c_str(),
         (clock_.now() - last_updated_).toSec(), expected_update_rate_.toSec());
@@ -252,4 +252,4 @@ void ObservationBuffer::resetLastUpdated()
 {
   last_updated_ = clock_.now();
 }
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d

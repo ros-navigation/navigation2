@@ -159,7 +159,7 @@ void DWBPublisher::publishCostGrid(
   cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
   cost_grid_pc.header.stamp = rclcpp::Clock().now();
 
-  costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();

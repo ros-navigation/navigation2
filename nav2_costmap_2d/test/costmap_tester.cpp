@@ -36,29 +36,29 @@
 *********************************************************************/
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <costmap_2d/costmap_2d_ros.h>
-#include <costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/cost_values.h>
 #include <tf2_ros/transform_listener.h>
 
-namespace costmap_2d {
+namespace nav2_costmap_2d {
 
 class CostmapTester : public testing::Test {
   public:
     CostmapTester(tf2_ros::Buffer& tf);
     void checkConsistentCosts();
-    void compareCellToNeighbors(costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y);
-    void compareCells(costmap_2d::Costmap2D& costmap, 
+    void compareCellToNeighbors(nav2_costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y);
+    void compareCells(nav2_costmap_2d::Costmap2D& costmap, 
         unsigned int x, unsigned int y, unsigned int nx, unsigned int ny);
     virtual void TestBody(){}
 
   private:
-    costmap_2d::Costmap2DROS costmap_ros_;
+    nav2_costmap_2d::Costmap2DROS costmap_ros_;
 };
 
 CostmapTester::CostmapTester(tf2_ros::Buffer& tf): costmap_ros_("test_costmap", tf){}
 
 void CostmapTester::checkConsistentCosts(){
-  costmap_2d::Costmap2D* costmap = costmap_ros_.getCostmap();
+  nav2_costmap_2d::Costmap2D* costmap = costmap_ros_.getCostmap();
 
   //get a copy of the costmap contained by our ros wrapper
   costmap->saveMap("costmap_test.pgm");
@@ -71,7 +71,7 @@ void CostmapTester::checkConsistentCosts(){
   }
 }
 
-void CostmapTester::compareCellToNeighbors(costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y){
+void CostmapTester::compareCellToNeighbors(nav2_costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y){
   //we'll compare the cost of this cell with that of its eight neighbors to see if they're reasonable
   for(int offset_x = -1; offset_x <= 1; ++offset_x){
     for(int offset_y = -1; offset_y <= 1; ++offset_y){
@@ -87,18 +87,18 @@ void CostmapTester::compareCellToNeighbors(costmap_2d::Costmap2D& costmap, unsig
 }
 
 //for all lethal and inscribed costs, we'll make sure that their neighbors have the cost values we'd expect
-void CostmapTester::compareCells(costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y, unsigned int nx, unsigned int ny){
+void CostmapTester::compareCells(nav2_costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y, unsigned int nx, unsigned int ny){
   double cell_distance = hypot(static_cast<int>(x-nx), static_cast<int>(y-ny));
 
   unsigned char cell_cost = costmap.getCost(x, y);
   unsigned char neighbor_cost = costmap.getCost(nx, ny);
 
-  if(cell_cost == costmap_2d::LETHAL_OBSTACLE){
+  if(cell_cost == nav2_costmap_2d::LETHAL_OBSTACLE){
     //if the cell is a lethal obstacle, then we know that all its neighbors should have equal or slighlty less cost
     unsigned char expected_lowest_cost = 0; // ################costmap.computeCost(cell_distance);
-    EXPECT_TRUE(neighbor_cost >= expected_lowest_cost || (cell_distance > 0 /*costmap.cell_inflation_radius_*/ && neighbor_cost == costmap_2d::FREE_SPACE));
+    EXPECT_TRUE(neighbor_cost >= expected_lowest_cost || (cell_distance > 0 /*costmap.cell_inflation_radius_*/ && neighbor_cost == nav2_costmap_2d::FREE_SPACE));
   }
-  else if(cell_cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
+  else if(cell_cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
     //the furthest valid distance from an obstacle is the inscribed radius plus the cell distance away
     double furthest_valid_distance = 0; // ################costmap.cell_inscribed_radius_ + cell_distance + 1;
     unsigned char expected_lowest_cost = 0; // ################costmap.computeCost(furthest_valid_distance);
@@ -108,12 +108,12 @@ void CostmapTester::compareCells(costmap_2d::Costmap2D& costmap, unsigned int x,
       ROS_ERROR("Cell: (%d, %d), Neighbor: (%d, %d)", x, y, nx, ny);
       costmap.saveMap("failing_costmap.pgm");
     }
-    EXPECT_TRUE(neighbor_cost >= expected_lowest_cost || (furthest_valid_distance > 0/* costmap.cell_inflation_radius_ */&& neighbor_cost == costmap_2d::FREE_SPACE));
+    EXPECT_TRUE(neighbor_cost >= expected_lowest_cost || (furthest_valid_distance > 0/* costmap.cell_inflation_radius_ */&& neighbor_cost == nav2_costmap_2d::FREE_SPACE));
   }
 }
 };
 
-costmap_2d::CostmapTester* map_tester = NULL;
+nav2_costmap_2d::CostmapTester* map_tester = NULL;
 
 TEST(CostmapTester, checkConsistentCosts){
   map_tester->checkConsistentCosts();
@@ -134,7 +134,7 @@ int main(int argc, char** argv){
 
   tf2_ros::Buffer tf(ros::Duration(10));
   tf2_ros::TransformListener tfl(tf);
-  map_tester = new costmap_2d::CostmapTester(tf);
+  map_tester = new nav2_costmap_2d::CostmapTester(tf);
 
   double wait_time;
   private_nh.param("wait_time", wait_time, 30.0);
