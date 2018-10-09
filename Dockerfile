@@ -58,19 +58,20 @@ COPY $SCRIPTPATH/*.repos ./
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
 
+WORKDIR /ros2_ws/navigation2_ws/src/navigation2
+
 # change to correct branch if $BRANCH is not = master
 ARG BRANCH=master
 RUN if [ "$BRANCH" == "master" ]; \
     then \
       echo "On master branch"; \
     else \
-      cd navigation2; \
       git fetch origin $BRANCH:temp_branch; \
       git checkout temp_branch; \
-      cd -; \
     fi
 
 # build
-RUN chmod +x navigation2/tools/build_all.sh
-RUN ./navigation2/tools/build_all.sh
+WORKDIR /ros2_ws
+RUN chmod +x navigation2_ws/src/navigation2/tools/build_all.sh
+RUN ./navigation2_ws/src/navigation2/tools/build_all.sh
 CMD ["bash"]
