@@ -73,7 +73,7 @@ private:
 
   void startCostmapServer(std::string serviceName);
 
-  nav2_msgs::TaskStatus sendRequest(
+  nav2_tasks::TaskStatus sendRequest(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path
   );

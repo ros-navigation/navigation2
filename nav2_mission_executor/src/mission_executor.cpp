@@ -18,7 +18,7 @@
 #include "nav2_mission_executor/mission_executor.hpp"
 
 using namespace std::chrono_literals;
-using nav2_msgs::TaskStatus;
+using nav2_tasks::TaskStatus;
 
 namespace nav2_mission_execution
 {

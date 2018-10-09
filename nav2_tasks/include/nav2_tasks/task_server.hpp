@@ -81,7 +81,7 @@ protected:
 
   // These messages are internal to the TaskClient implementation
   typedef std_msgs::msg::Empty CancelMsg;
-  typedef nav2_tasks::msg::TaskStatus StatusMsg;
+  typedef nav2_msgs::msg::TaskStatus StatusMsg;
 
   // The pointer to our private worker thread
   std::thread * workerThread_;
@@ -100,7 +100,7 @@ protected:
         // Reset the execution flag now that we've executed the task
         commandReceived_ = false;
 
-        nav2_tasks::msg::TaskStatus statusMsg;
+        nav2_msgs::msg::TaskStatus statusMsg;
 
         // Check the result of the user's function and send the
         // appropriate message
@@ -110,15 +110,15 @@ protected:
           resultPub_->publish(resultMsg_);
 
           // Then send the success code
-          statusMsg.result = nav2_tasks::msg::TaskStatus::SUCCEEDED;
+          statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
           statusPub_->publish(statusMsg);
         } else if (status == TaskStatus::FAILED) {
           // Otherwise, send the failure code
-          statusMsg.result = nav2_tasks::msg::TaskStatus::FAILED;
+          statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
         } else if (status == TaskStatus::CANCELED) {
           // Or the canceled code
-          statusMsg.result = nav2_tasks::msg::TaskStatus::CANCELED;
+          statusMsg.result = nav2_msgs::msg::TaskStatus::CANCELED;
           statusPub_->publish(statusMsg);
         } else {
           throw std::logic_error("Unexpected status return from task");

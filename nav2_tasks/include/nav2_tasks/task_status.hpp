@@ -15,17 +15,17 @@
 #ifndef NAV2_TASKS__TASK_STATUS_HPP_
 #define NAV2_TASKS__TASK_STATUS_HPP_
 
-#include "nav2_tasks/msg/task_status.hpp"
+#include "nav2_msgs/msg/task_status.hpp"
 
 namespace nav2_tasks
 {
 
 typedef enum
 {
-  SUCCEEDED = msg::TaskStatus::SUCCEEDED,
-  FAILED = msg::TaskStatus::FAILED,
-  RUNNING = msg::TaskStatus::RUNNING,
-  CANCELED = msg::TaskStatus::CANCELED
+  SUCCEEDED = nav2_msgs::msg::TaskStatus::SUCCEEDED,
+  FAILED = nav2_msgs::msg::TaskStatus::FAILED,
+  RUNNING = nav2_msgs::msg::TaskStatus::RUNNING,
+  CANCELED = nav2_msgs::msg::TaskStatus::CANCELED
 } TaskStatus;
 
 }  // namespace nav2_tasks

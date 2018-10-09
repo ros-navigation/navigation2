@@ -39,7 +39,7 @@
 #include "nav_msgs/msg/path.hpp"
 
 using namespace std::chrono_literals;
-using nav2_msgs::TaskStatus;
+using nav2_tasks::TaskStatus;
 
 namespace nav2_dijkstra_planner
 {
@@ -404,8 +404,8 @@ DijkstraPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 
 void
 DijkstraPlanner::getCostmap(
-  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
-  const std::chrono::milliseconds waitTime /*waitTime*/)
+  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/, 
+    const std::chrono::milliseconds /*waitTime*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggreate) layer

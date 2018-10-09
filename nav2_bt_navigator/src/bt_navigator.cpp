@@ -19,7 +19,7 @@
 #include "nav2_bt_navigator/bt_navigator.hpp"
 
 using namespace std::chrono_literals;
-using nav2_msgs::TaskStatus;
+using nav2_tasks::TaskStatus;
 
 namespace nav2_bt_navigator
 {

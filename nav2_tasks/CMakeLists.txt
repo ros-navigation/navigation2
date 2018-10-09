@@ -16,6 +16,7 @@ find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 include_directories(
   include
@@ -25,9 +26,8 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-rosidl_generate_interfaces(nav2_tasks
-  "msg/TaskStatus.msg"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
+set(dependencies
+  nav2_msgs
 )
 
 if(BUILD_TESTING)

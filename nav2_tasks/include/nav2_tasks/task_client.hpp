@@ -114,11 +114,11 @@ public:
       // If the task has failed or has been canceled, no result message is forthcoming and we
       // can propagate the status code, using the TaskStatus type rather than the message-level
       // implementation type
-      case nav2_tasks::msg::TaskStatus::FAILED:
-      case nav2_tasks::msg::TaskStatus::CANCELED:
+      case nav2_msgs::msg::TaskStatus::FAILED:
+      case nav2_msgs::msg::TaskStatus::CANCELED:
         return static_cast<TaskStatus>(statusMsg_->result);
 
-      case nav2_tasks::msg::TaskStatus::SUCCEEDED:
+      case nav2_msgs::msg::TaskStatus::SUCCEEDED:
         {
           // The result message may be here already or it may come *after* the status
           // message. If it's here, the wait will be satisfied immediately. Otherwise
@@ -150,7 +150,7 @@ protected:
 
   // These messages are internal to the TaskClient implementation
   typedef std_msgs::msg::Empty CancelMsg;
-  typedef nav2_tasks::msg::TaskStatus StatusMsg;
+  typedef nav2_msgs::msg::TaskStatus StatusMsg;
   StatusMsg::SharedPtr statusMsg_;
 
   // Variables to handle the communication of the status message to the waitForResult thread

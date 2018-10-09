@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
@@ -31,7 +32,7 @@ public:
   SimpleNavigator();
   ~SimpleNavigator();
 
-  nav2_msgs::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 protected:
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> plannerTaskClient_;
