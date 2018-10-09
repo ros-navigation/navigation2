@@ -38,6 +38,11 @@ RosRobot::RosRobot(rclcpp::Node * node)
 
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
+
+  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
+    "odom", std::bind(&RosRobot::onOdomReceived, this, std::placeholders::_1));
+
+  vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmdVelocity", 1);
 }
 
 RosRobot::~RosRobot()
@@ -52,11 +57,19 @@ RosRobot::enterSafeState()
 void
 RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceved");
+  RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceived");
 
   // TODO(mjeronimo): serialize access
   current_pose_ = msg;
   initial_pose_received_ = true;
+}
+
+void
+RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+  RCLCPP_INFO(node_->get_logger(), "RosRobot::onTwistReceived");
+std::cout<<"currentVelocity: "<< msg->twist.twist.linear.x<<std::endl;
+  current_velocity_ = msg;
 }
 
 geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr
@@ -68,6 +81,20 @@ RosRobot::getCurrentPose()
   }
 
   return current_pose_;
+}
+
+nav_msgs::msg::Odometry::SharedPtr
+RosRobot::getCurrentVelocity()
+{
+  double vel = current_velocity_->twist.twist.linear.x;
+  std::cout<<"vel: "<<vel<<std::endl;
+  return current_velocity_;
+}
+
+void RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
+{
+  vel_pub_->publish(twist);
+  return;
 }
 
 }  // namespace nav2_robot
