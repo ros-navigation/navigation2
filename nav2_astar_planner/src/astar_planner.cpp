@@ -40,8 +40,10 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr /*co
 {
   RCLCPP_INFO(get_logger(), "AStarPlanner::execute");
 
+  unsigned int seed = std::time(nullptr);
+
   // Let's use a random number of iterations (at least one)
-  int iterations = (rand() % 7) + 1;
+  int iterations = (rand_r(&seed) % 7) + 1;
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < iterations; i++) {

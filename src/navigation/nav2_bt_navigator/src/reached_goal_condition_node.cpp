@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <chrono>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_bt_navigator/reached_goal_condition_node.hpp"
 
@@ -27,7 +29,7 @@ ReachedGoalConditionNode::ReachedGoalConditionNode(rclcpp::Node::SharedPtr node)
   result_ = std::make_shared<nav2_tasks::FollowPathResult>();
 }
 
-BT::NodeStatus 
+BT::NodeStatus
 ReachedGoalConditionNode::tick()
 {
   // Quickly get the current status of the task so we can report back
@@ -39,7 +41,8 @@ ReachedGoalConditionNode::tick()
 
   // A condition node returns only success or failure, depending on whether
   // the condition had been satisfied
-  return (status == TaskStatus::SUCCEEDED)? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
+  return (status == TaskStatus::SUCCEEDED) ?
+         BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_bt_navigator

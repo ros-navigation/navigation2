@@ -22,7 +22,7 @@
 namespace nav2_bt_navigator
 {
 
-class ReachedGoalConditionNode: public BT::ConditionNode
+class ReachedGoalConditionNode : public BT::ConditionNode
 {
 public:
   explicit ReachedGoalConditionNode(rclcpp::Node::SharedPtr node);

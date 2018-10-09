@@ -39,7 +39,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
   sel_ = std::make_unique<BT::FallbackNode>("Fallback");
   reachedGoalNode_ = std::make_unique<ReachedGoalConditionNode>(node);
-  parNode_ = std::make_unique<BT::ParallelNode>("Parallel", 3); // TODO: Will never fire
+  parNode_ = std::make_unique<BT::ParallelNode>("Parallel", 3);
 
   computePathToPoseAction_ = std::make_unique<nav2_tasks::ComputePathToPoseAction>(
     node_, "ComputePathToPoseAction",
@@ -78,7 +78,9 @@ NavigateToPoseBehaviorTree::run(
 
   BT::NodeStatus result = root_->status();
 
-  while (rclcpp::ok() && !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE)) {
+  while (rclcpp::ok() &&
+    !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE))
+  {
     result = root_->executeTick();
 
     if (cancelRequested()) {
@@ -89,8 +91,8 @@ NavigateToPoseBehaviorTree::run(
     loop_rate.sleep();
   }
 
-  return (result ==
-         BT::NodeStatus::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ?
+         nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
 }
 
 }  // namespace nav2_bt_navigator

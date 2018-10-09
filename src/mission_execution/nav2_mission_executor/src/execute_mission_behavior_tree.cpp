@@ -63,7 +63,9 @@ ExecuteMissionBehaviorTree::run(
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = root_->status();
 
-  while (rclcpp::ok() && !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE)) {
+  while (rclcpp::ok() &&
+    !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE))
+  {
     result = root_->executeTick();
 
     // Check if this task server has received a cancel message
@@ -75,8 +77,8 @@ ExecuteMissionBehaviorTree::run(
     loopRate.sleep();
   }
 
-  return (result ==
-         BT::NodeStatus::SUCCESS) ? nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ?
+         nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
 }
 
 }  // namespace nav2_mission_executor
