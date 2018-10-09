@@ -42,8 +42,10 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
+  unsigned int seed = std::time(nullptr);
+
   // Let's use a random number of iterations (at least one)
-  int iterations = (rand() % 7) + 1;
+  int iterations = (rand_r(&seed) % 7) + 1;
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < iterations; i++) {

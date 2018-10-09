@@ -19,6 +19,8 @@
 #include <condition_variable>
 #include <string>
 #include <thread>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"

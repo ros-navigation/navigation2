@@ -31,15 +31,21 @@ SimpleNavigator::SimpleNavigator()
 {
   RCLCPP_INFO(get_logger(), "Initializing");
 
+  // TODO(mjeronimo): Once the TaskServer accepts a shared_ptr, this will change
+  // to use the shared_ptr passed in the constructor. For now, there's a problem
+  // because the SimpleNavigate *is* a ROS node and we can't use shared_from_this
+  // in the constructor.
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
   plannerTaskClient_ =
-    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(shared_from_this());
+    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
   if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Global planner is not running");
     throw std::runtime_error("Global planner not running");
   }
 
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(shared_from_this());
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
   if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Controller is not running");
