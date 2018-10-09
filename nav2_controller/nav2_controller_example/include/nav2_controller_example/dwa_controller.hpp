@@ -28,7 +28,7 @@ public:
   DwaController();
   ~DwaController();
 
-  nav2_msgs::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
 
 protected:
   void sendVelocity(double speed);

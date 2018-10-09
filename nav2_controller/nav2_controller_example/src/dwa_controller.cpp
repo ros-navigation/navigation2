@@ -17,7 +17,7 @@
 #include "nav2_controller_example/dwa_controller.hpp"
 
 using namespace std::chrono_literals;
-using nav2_msgs::TaskStatus;
+using nav2_tasks::TaskStatus;
 
 namespace nav2_controller_example
 {
