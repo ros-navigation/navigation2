@@ -47,7 +47,7 @@ class CostmapTester : public testing::Test {
     CostmapTester(tf2_ros::Buffer& tf);
     void checkConsistentCosts();
     void compareCellToNeighbors(nav2_costmap_2d::Costmap2D& costmap, unsigned int x, unsigned int y);
-    void compareCells(nav2_costmap_2d::Costmap2D& costmap, 
+    void compareCells(nav2_costmap_2d::Costmap2D& costmap,
         unsigned int x, unsigned int y, unsigned int nx, unsigned int ny);
     virtual void TestBody(){}
 

@@ -38,6 +38,7 @@
 #ifndef nav2_costmap_2d_nav2_costmap_2d_H_
 #define nav2_costmap_2d_nav2_costmap_2d_H_
 
+#include <cmath>
 #include <vector>
 #include <queue>
 #include <mutex>
@@ -381,7 +382,7 @@ protected:
     unsigned int offset = y0 * size_x_ + x0;
 
     // we need to chose how much to scale our dominant dimension, based on the maximum length of the line
-    double dist = hypot(dx, dy);
+    double dist = std::hypot(dx, dy);
     double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
 
     // if x is dominant
