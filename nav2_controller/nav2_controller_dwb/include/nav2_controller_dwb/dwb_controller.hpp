@@ -32,7 +32,7 @@ public:
   DwbController();
   ~DwbController();
 
-  nav2_msgs::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
 
 protected:
   bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);
