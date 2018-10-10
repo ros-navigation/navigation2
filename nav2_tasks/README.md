@@ -13,7 +13,7 @@ For convenience the nav_tasks library also provides:
 
 ## Overview
 
-The Navigation2 architecture implements a *task hiearchy* where commands are sent to modules which are organized in a hierarchy. Each module implements a task and can utilize sub-tasks, which are themselves modules that implement tasks.
+The Navigation2 architecture implements a *task hierarchy* where commands are sent to modules which are organized in a hierarchy. Each module implements a task and can utilize sub-tasks, which are themselves modules that implement tasks.
 
 For example, the Navigation2 software currently implements four tasks: **ExecuteMission**, **NavigateToPose**, **ComputePathToPose**, and **FollowPath**, which are organized as follows:
 
@@ -86,9 +86,7 @@ DoSomethingImplementation::execute(const nav2_tasks::DoSomethingCommand::SharedP
 
 ## Implementation
 
-The implementation of TaskClient and TaskServer is simplistic as the intention is to rely upon a ROS2 ActionLib (or equivalent) when it is available. 
-
-The current implementation uses four topics, one each for **Command**, **Cancel**, **Result**, and **Status** messages. The Command and Result messages are provided by the user of the classes, while the Result and Status messages are internal to the implementation. The Status message communicates whether a task has succeeded, failed, or has been canceled, while the Result message is used to return the result of the command, if successful. To keep things simple, the task library does not implement a feedback mechanism as the ROS1 ActionLib does. 
+The implementation of TaskClient and TaskServer is intentionally simplistic as it is a temporary stand-in for missing ActionLib functionality. The current implementation uses four ROS topics for task client/server communication. Associated withese topics are four message types: **Command**, **Cancel**, **Result**, and **Status**. The Command and Result messages are provided by the user of the TaskClient and TaskServer classes and are the input and output of the task from the client's point of view. The Cancel and Status messages are internal to the implementation; the Status message is used to communicate from the task server to the task client, indicating whether a task has succeeded, failed, or has been canceled, and the Cancel message is sent from the task client to the task server when the client invokes the cancel() method. To keep things simple, the task library does not implement a feedback mechanism to provide task updates.
 
 ## Open Issues
 
