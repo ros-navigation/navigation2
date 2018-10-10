@@ -95,16 +95,19 @@ RosRobot::getCurrentVelocity()
 }
 
 // TODO(mhpanah): implement getFootPrint method
-void RosRobot::getFootPrint()
+void 
+RosRobot::getFootPrint()
 {
 }
 
-std::string RosRobot::getRobotName()
+std::string 
+RosRobot::getRobotName()
 {
   return model_.getName();
 }
 
-void RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
+void 
+RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
 {
   vel_pub_->publish(twist);
 }
