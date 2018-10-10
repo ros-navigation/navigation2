@@ -62,12 +62,20 @@ WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 
 # change to correct branch if $BRANCH is not = master
 ARG BRANCH=master
+ARG REMOTE=origin
+RUN echo "Remote is $REMOTE"
 RUN if [ "$BRANCH" == "master" ]; \
     then \
       echo "On master branch"; \
     else \
-      git fetch origin $BRANCH:temp_branch; \
-      git checkout temp_branch; \
+      if [ "$REMOTE" == "origin" ]; \
+      then \
+        echo "Remote is origin"; \
+      else \
+        git remote add -f source_remote https://github.com/$REMOTE.git; \
+        git fetch source_remote $BRANCH:temp_branch; \
+        git checkout temp_branch; \
+      fi \
     fi
 
 # build
