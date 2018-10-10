@@ -18,7 +18,7 @@
 #include <thread>
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
-//#include "behavior_tree_core/xml_parsing.h"
+// #include "behavior_tree_core/xml_parsing.h"
 
 using namespace std::chrono_literals;
 
@@ -134,7 +134,7 @@ ExecuteMissionBehaviorTree::run(
   auto blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Important: when the object tree goes out of scope, all the TreeNodes are destroyed
- // auto tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
+  // auto tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
 
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
   while (result == BT::NodeStatus::RUNNING)
