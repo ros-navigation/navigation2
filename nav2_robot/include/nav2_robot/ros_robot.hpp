@@ -41,8 +41,9 @@ public:
 
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
   nav_msgs::msg::Odometry::SharedPtr getCurrentVelocity();
- // void getFoodPrint();
-  
+  // TODO(mhpanah): implement getFootPrint method
+  void getFootPrint();
+  std::string getRobotName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
 protected:
@@ -56,6 +57,7 @@ protected:
   nav_msgs::msg::Odometry::SharedPtr current_velocity_;
 
   bool initial_pose_received_;
+  bool initial_odom_received_;
   urdf::Model model_;
 
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);

@@ -21,17 +21,16 @@ namespace nav2_robot
 {
 
 RosRobot::RosRobot(rclcpp::Node * node)
-: node_(node), initial_pose_received_(false)
+: node_(node), initial_pose_received_(false), initial_odom_received_(false)
 {
   // Open and parse the URDF file
   if (!(urdf_file_ = std::getenv("URDF_FILE")).c_str()) {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to get URDF_FILE environment.");
     throw std::runtime_error("Failed to read URDF file. Please make sure path environment"
             " to urdf file is set correctly.");
   }
 
   if (!model_.initFile(urdf_file_)) {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to parse URDF file.");
+    throw std::runtime_error("Failed to parse URDF file.");
   } else {
     RCLCPP_INFO(node_->get_logger(), "Parsed URDF file");
   }
@@ -61,15 +60,18 @@ RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
 
   // TODO(mjeronimo): serialize access
   current_pose_ = msg;
-  initial_pose_received_ = true;
+  if (!initial_pose_received_) {
+    initial_pose_received_ = true;
+  }
 }
 
 void
 RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-  RCLCPP_INFO(node_->get_logger(), "RosRobot::onTwistReceived");
-std::cout<<"currentVelocity: "<< msg->twist.twist.linear.x<<std::endl;
   current_velocity_ = msg;
+  if (!initial_odom_received_) {
+    initial_odom_received_ = true;
+  }
 }
 
 geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr
@@ -86,15 +88,25 @@ RosRobot::getCurrentPose()
 nav_msgs::msg::Odometry::SharedPtr
 RosRobot::getCurrentVelocity()
 {
-  double vel = current_velocity_->twist.twist.linear.x;
-  std::cout<<"vel: "<<vel<<std::endl;
+  if (!initial_odom_received_) {
+    throw std::runtime_error("RosRobot::getCurrentVelocity: initial velocity not received yet");
+  }
   return current_velocity_;
+}
+
+// TODO(mhpanah): implement getFootPrint method
+void RosRobot::getFootPrint()
+{
+}
+
+std::string RosRobot::getRobotName()
+{
+  return model_.getName();
 }
 
 void RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
 {
   vel_pub_->publish(twist);
-  return;
 }
 
 }  // namespace nav2_robot
