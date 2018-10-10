@@ -43,7 +43,6 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  auto node = rclcpp::Node::make_shared("costmap_node");
   std::string name = "costmap";
   tf2_ros::Buffer buffer(node->get_clock(), tf2::durationFromSec(10));
   tf2_ros::TransformListener tf(buffer);
@@ -55,9 +54,11 @@ int main(int argc, char ** argv)
   base_rel_map.header.frame_id = "map";
   base_rel_map.header.stamp = clock.now();
   buffer.setTransform( base_rel_map, "footprint_tests" );
-  costmap_2d::Costmap2DROS lcr(name, buffer);
+
+  auto node = std::make_shared<costmap_2d::Costmap2DROS>(name, buffer);
+  //costmap_2d::Costmap2DROS lcr(name, buffer);
 
   rclcpp::spin(node);
-
+  rclcpp::shutdown();
   return 0;
 }
