@@ -17,6 +17,8 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(behavior_tree_core REQUIRED)
 
+find_library(dl REQUIRED)
+
 include_directories(
   include
 )
@@ -47,6 +49,7 @@ ament_target_dependencies(${executable_name}
 )
 
 target_link_libraries(${executable_name} ${library_name})
+target_link_libraries(${library_name} dl)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
