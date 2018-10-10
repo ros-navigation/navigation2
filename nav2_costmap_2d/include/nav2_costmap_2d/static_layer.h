@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_STATIC_LAYER_H_
-#define nav2_costmap_2d_STATIC_LAYER_H_
+#ifndef NAV2_COSTMAP_2D_STATIC_LAYER_H_
+#define NAV2_COSTMAP_2D_STATIC_LAYER_H_
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/costmap_layer.h>
@@ -104,4 +104,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // nav2_costmap_2d_STATIC_LAYER_H_
+#endif  // NAV2_COSTMAP_2D_STATIC_LAYER_H_

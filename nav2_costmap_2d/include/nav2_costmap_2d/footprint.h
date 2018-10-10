@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_FOOTPRINT_H
-#define nav2_costmap_2d_FOOTPRINT_H
+#ifndef NAV2_COSTMAP_2D_FOOTPRINT_H
+#define NAV2_COSTMAP_2D_FOOTPRINT_H
 
 #include "rclcpp/rclcpp.hpp"
 #include <geometry_msgs/msg/polygon.hpp>
@@ -150,4 +150,4 @@ void writeFootprintToParam(rclcpp::Node::SharedPtr nh,
 
 }  // end namespace nav2_costmap_2d
 
-#endif  // nav2_costmap_2d_FOOTPRINT_H
+#endif  // NAV2_COSTMAP_2D_FOOTPRINT_H
