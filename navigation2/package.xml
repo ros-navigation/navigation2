@@ -6,7 +6,6 @@
   <description>
     ROS2 Navigation Stack
   </description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
 
