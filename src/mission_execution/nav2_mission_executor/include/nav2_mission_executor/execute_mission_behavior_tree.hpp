@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
+#include "behavior_tree_core/bt_factory.h"
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 
@@ -52,6 +53,9 @@ private:
   // The commands and results for each action
   nav2_tasks::NavigateToPoseCommand::SharedPtr navigateToPoseCommand_;
   nav2_tasks::NavigateToPoseResult::SharedPtr navigateToPoseResult_;
+
+  // A factory that will be used to dynamically construct the behavior tree
+  BT::BehaviorTreeFactory factory_;
 };
 
 }  // namespace nav2_mission_executor
