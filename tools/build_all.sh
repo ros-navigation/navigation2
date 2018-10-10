@@ -60,7 +60,7 @@ cd $CWD/navstack_dependencies_ws
  colcon build --symlink-install)
 
 # Build our code
-cd $CWD/navigation2
+cd $CWD/navigation2_ws
 (. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 
@@ -68,7 +68,7 @@ cd $CWD/navigation2
 if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
   . ros1_dependencies_ws/devel/setup.bash
-  . navigation2/install/setup.bash
+  . navigation2_ws/install/setup.bash
   cd $CWD/ros2_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi
