@@ -6,7 +6,7 @@
   <description>
     ROS2 controller (DWB) metapackage
   </description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
 
