@@ -81,7 +81,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS
+class Costmap2DROS : public rclcpp::Node
 {
 public:
   /**
@@ -258,7 +258,10 @@ private:
   void setPluginParams(rclcpp::Node::SharedPtr nh);
 
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //void reconfigureCB(nav2_costmap_2d::Costmap2DConfig &config, uint32_t level);
+  //void reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level);
+  void parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult on_param_event(
+    std::vector<rclcpp::Parameter> parameters);
   void movementCB();
 
   void mapUpdateLoop(double frequency);
@@ -280,6 +283,7 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
