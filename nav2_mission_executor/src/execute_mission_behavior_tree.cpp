@@ -18,7 +18,7 @@
 #include <thread>
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
-// #include "behavior_tree_core/xml_parsing.h"
+ #include "behavior_tree_core/xml_parsing.h"
 
 using namespace std::chrono_literals;
 
@@ -31,6 +31,8 @@ static const std::string xml_text = R"(
      <BehaviorTree ID="MainTree">
         <SequenceStar name="root">
             <CalculateGoalPose/>
+            <NavigateToPoseAction />
+            <NavigateToPoseAction />
             <PrintGoalPose />
         </SequenceStar>
      </BehaviorTree>
@@ -102,22 +104,9 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
   navigateToPoseCommand_->pose.orientation.z = 2;
   navigateToPoseCommand_->pose.orientation.w = 3;
 
-#if 1
   factory_.registerSimpleAction("CalculateGoalPose", CalculateGoalPose);
   factory_.registerNodeType<PrintGoalPose>("PrintGoalPose");
-#else
-  // Create the nodes of the tree
-  root_ = std::make_unique<BT::SequenceNodeWithMemory>("Sequence");
-
-  navigateToPoseAction1_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_,
-      "NavigateToPoseAction1", navigateToPoseCommand_, navigateToPoseResult_);
-  navigateToPoseAction2_ = std::make_unique<nav2_tasks::NavigateToPoseAction>(node_,
-      "NavigateToPoseAction2", navigateToPoseCommand_, navigateToPoseResult_);
-
-  // Add the nodes to the tree, creating the tree structure
-  root_->addChild(navigateToPoseAction1_.get());
-  root_->addChild(navigateToPoseAction2_.get());
-#endif
+  factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPoseAction");
 }
 
 ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
@@ -129,38 +118,26 @@ nav2_tasks::TaskStatus
 ExecuteMissionBehaviorTree::run(
   std::function<bool()> /*cancelRequested*/, std::chrono::milliseconds loopTimeout)
 {
-#if 1
   // create a Blackboard from BlackboardLocal (simple, not persistent, local storage)
   auto blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Important: when the object tree goes out of scope, all the TreeNodes are destroyed
-  // auto tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
+  auto tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
 
-  BT::NodeStatus result = BT::NodeStatus::RUNNING;
-  while (result == BT::NodeStatus::RUNNING)
-  {
-    //result = tree.root_node->executeTick();
-    std::this_thread::sleep_for(loopTimeout);
-  }
-
-#else
   rclcpp::WallRate loopRate(loopTimeout);
-  BT::NodeStatus result = root_->status();
-
-  while (rclcpp::ok() &&
-    !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE))
+  BT::NodeStatus result = BT::NodeStatus::RUNNING;
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
   {
-    result = root_->executeTick();
+    result = tree.root_node->executeTick();
 
     // Check if this task server has received a cancel message
     if (cancelRequested()) {
-      root_->halt();
+      tree.root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
     loopRate.sleep();
   }
-#endif
 
   return (result == BT::NodeStatus::SUCCESS) ?
          nav2_tasks::TaskStatus::SUCCEEDED : nav2_tasks::TaskStatus::FAILED;
