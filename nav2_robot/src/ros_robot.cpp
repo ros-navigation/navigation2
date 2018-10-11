@@ -56,8 +56,6 @@ RosRobot::enterSafeState()
 void
 RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  RCLCPP_INFO(node_->get_logger(), "RosRobot::onPoseReceived");
-
   // TODO(mjeronimo): serialize access
   current_pose_ = msg;
   if (!initial_pose_received_) {
@@ -74,11 +72,11 @@ RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
   }
 }
 
-bool 
+bool
 RosRobot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
-    RCLCPP_INFO(node_->get_logger(), "initial pose not received yet");
+    RCLCPP_WARN(node_->get_logger(), "Can't return current pose: Initial pose not yet received");
     return false;
   } else {
     robot_pose = current_pose_;
@@ -86,31 +84,27 @@ RosRobot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPt
   return true;
 }
 
-bool 
+bool
 RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity)
 {
   if (!initial_odom_received_) {
-   RCLCPP_INFO(node_->get_logger(), "initial odom not received yet");
-   return false;
+    RCLCPP_WARN(node_->get_logger(), "Can't return current velocity: Initial odometry not yet"
+      " received");
+    return false;
   } else {
     robot_velocity = current_velocity_;
   }
   return true;
 }
 
-// TODO(mhpanah): implement getFootPrint method
-void 
-RosRobot::getFootPrint()
-{
-}
-// TODO(mhpanah): modify this method name and implementation to inclue robot types and Serial # (ID)
-std::string 
+// TODO(mhpanah): modify this method name and implementation to include robot types and Serial # (ID)
+std::string
 RosRobot::getRobotName()
 {
   return model_.getName();
 }
 
-void 
+void
 RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
 {
   vel_pub_->publish(twist);

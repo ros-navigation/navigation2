@@ -28,11 +28,6 @@ namespace nav2_robot
 class RosRobot : public Robot
 {
 public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
   explicit RosRobot(rclcpp::Node * node);
   RosRobot() = delete;
   ~RosRobot();
@@ -41,8 +36,6 @@ public:
 
   bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   bool getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity);
-  // TODO(mhpanah): implement getFootPrint method
-  void getFootPrint();
   std::string getRobotName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 

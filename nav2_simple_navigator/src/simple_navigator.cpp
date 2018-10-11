@@ -65,8 +65,9 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
     endpoints->goal = command->pose;
     endpoints->tolerance = 2.0;
   } else {
-    //TODO(mhpanah): use either last known pose, current pose from odom, wait, or return failure.
-    RCLCPP_INFO(get_logger(), "Current Robot Pose is not available");
+    //TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
+    RCLCPP_ERROR(get_logger(), "Current Robot Pose is not available");
+    return TaskStatus::FAILED;
   }
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
