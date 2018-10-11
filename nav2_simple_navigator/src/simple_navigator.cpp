@@ -30,17 +30,22 @@ SimpleNavigator::SimpleNavigator()
 {
   RCLCPP_INFO(get_logger(), "SimpleNavigator::SimpleNavigator");
 
-  plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  // TODO(mjeronimo): Once the TaskServer accepts a shared_ptr, this will change
+  // to use the shared_ptr passed in the constructor. For now, there's a problem
+  // because the SimpleNavigate *is* a ROS node and we can't use shared_from_this
+  // in the constructor.
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
+  plannerTaskClient_ =
+    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
   if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "SimpleNavigator: planner not running");
     throw std::runtime_error("SimpleNavigator: planner not running");
   }
 
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
   if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "SimpleNavigator: controller not running");
     throw std::runtime_error("SimpleNavigator: controller not running");
   }
 }
@@ -89,6 +94,10 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
       case TaskStatus::FAILED:
         RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: planning task failed");
         return TaskStatus::FAILED;
+
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task canceled");
+        break;
 
       case TaskStatus::RUNNING:
         RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task still running");
@@ -145,6 +154,10 @@ planning_succeeded:
       case TaskStatus::FAILED:
         RCLCPP_ERROR(get_logger(), "SimpleNavigator::execute: control task failed");
         return TaskStatus::FAILED;
+
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task canceled");
+        break;
 
       case TaskStatus::RUNNING:
         break;

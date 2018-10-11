@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
-#define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
+#ifndef NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_
+#define NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_
 
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_tasks/execute_mission_task.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_tasks
 {
 
-class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
-{
-public:
-  BtNavigator();
+using ExecuteMissionAction =
+  BtActionNode<ExecuteMissionCommand, ExecuteMissionResult>;
 
-  nav2_tasks::TaskStatus execute(
-    const nav2_tasks::NavigateToPoseCommand::SharedPtr command) override;
-};
+}  // namespace nav2_tasks
 
-}  // namespace nav2_bt_navigator
-
-#endif  // NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
+#endif  // NAV2_TASKS__EXECUTE_MISSION_ACTION_HPP_
