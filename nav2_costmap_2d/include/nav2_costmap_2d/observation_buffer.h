@@ -34,8 +34,8 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D_OBSERVATION_BUFFER_H_
-#define NAV2_COSTMAP_2D_OBSERVATION_BUFFER_H_
+#ifndef NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_
+#define NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_
 
 #include <vector>
 #include <list>
@@ -152,4 +152,4 @@ private:
   double tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
-#endif  // NAV2_COSTMAP_2D_OBSERVATION_BUFFER_H_
+#endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_

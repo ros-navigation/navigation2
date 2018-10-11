@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D_INFLATION_LAYER_H_
-#define NAV2_COSTMAP_2D_INFLATION_LAYER_H_
+#ifndef NAV2_COSTMAP_2D__INFLATION_LAYER_H_
+#define NAV2_COSTMAP_2D__INFLATION_LAYER_H_
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.h>
@@ -197,4 +197,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D_INFLATION_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__INFLATION_LAYER_H_

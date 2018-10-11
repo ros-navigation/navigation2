@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D_LAYERED_COSTMAP_H_
-#define NAV2_COSTMAP_2D_LAYERED_COSTMAP_H_
+#ifndef NAV2_COSTMAP_2D__LAYERED_COSTMAP_H_
+#define NAV2_COSTMAP_2D__LAYERED_COSTMAP_H_
 
 #include <nav2_costmap_2d/cost_values.h>
 #include <nav2_costmap_2d/layer.h>
@@ -175,4 +175,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D_LAYERED_COSTMAP_H_
+#endif  // NAV2_COSTMAP_2D__LAYERED_COSTMAP_H_

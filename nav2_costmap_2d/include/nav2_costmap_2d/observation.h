@@ -29,8 +29,8 @@
  * Authors: Conor McGann
  */
 
-#ifndef NAV2_COSTMAP_2D_OBSERVATION_H_
-#define NAV2_COSTMAP_2D_OBSERVATION_H_
+#ifndef NAV2_COSTMAP_2D__OBSERVATION_H_
+#define NAV2_COSTMAP_2D__OBSERVATION_H_
 
 #include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -100,4 +100,4 @@ public:
 };
 
 }  // namespace nav2_costmap_2d
-#endif  // NAV2_COSTMAP_2D_OBSERVATION_H_
+#endif  // NAV2_COSTMAP_2D__OBSERVATION_H_
