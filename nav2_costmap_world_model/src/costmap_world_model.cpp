@@ -40,7 +40,7 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
     };
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name + "_GetCostmap",
+  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       costmap_service_callback);
 
   // Get the current map from the map server

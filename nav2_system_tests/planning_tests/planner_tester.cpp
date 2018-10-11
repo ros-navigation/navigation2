@@ -53,7 +53,7 @@ PlannerTester::PlannerTester()
   loadSimpleCostmap(TestCostmap::open_space);
 
   // TODO(orduno): get service name from param server
-  startCostmapServer("CostmapService");
+  startCostmapServer("GetCostmap");
 
   // Launch a thread to process the messages for this node
   spinning_ok_ = true;
@@ -110,7 +110,7 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
     // User can set an environment variable to the location of the test src
     char const * path = getenv("TEST_MAP");
     if (path == NULL) {
-      file_path = "../../src/planning/nav2_planning_tests/maps/map.pgm";
+      file_path = "../../nav2_system_tests/maps/map.pgm";
     } else {
       file_path = std::string(path);
     }
