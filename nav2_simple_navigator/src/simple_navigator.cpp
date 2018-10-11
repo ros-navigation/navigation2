@@ -59,9 +59,15 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   // localization, while the goal pose is from the incoming command
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
 
-  endpoints->start = robot_.getCurrentPose()->pose.pose;
-  endpoints->goal = command->pose;
-  endpoints->tolerance = 2.0;
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
+  if (robot_.getCurrentPose(current_pose)) {
+    endpoints->start = current_pose->pose.pose;
+    endpoints->goal = command->pose;
+    endpoints->tolerance = 2.0;
+  } else {
+    //TODO(mhpanah): use either last known pose, current pose from odom, wait, or return failure.
+    RCLCPP_INFO(get_logger(), "Current Robot Pose is not available");
+  }
 
   RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();

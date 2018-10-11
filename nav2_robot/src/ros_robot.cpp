@@ -34,7 +34,7 @@ RosRobot::RosRobot(rclcpp::Node * node)
   } else {
     RCLCPP_INFO(node_->get_logger(), "Parsed URDF file");
   }
-
+  // TODO(mhpanah): Topic names for pose and odom should should be confifured with parameters
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
 
@@ -74,24 +74,28 @@ RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
   }
 }
 
-geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr
-RosRobot::getCurrentPose()
+bool 
+RosRobot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
-  // TODO(mjeronimo): better to throw an exception or return an empty result/nullptr?
   if (!initial_pose_received_) {
-    throw std::runtime_error("RosRobot::getCurrentPose: initial pose not received yet");
+    RCLCPP_INFO(node_->get_logger(), "initial pose not received yet");
+    return false;
+  } else {
+    robot_pose = current_pose_;
   }
-
-  return current_pose_;
+  return true;
 }
 
-nav_msgs::msg::Odometry::SharedPtr
-RosRobot::getCurrentVelocity()
+bool 
+RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity)
 {
   if (!initial_odom_received_) {
-    throw std::runtime_error("RosRobot::getCurrentVelocity: initial velocity not received yet");
+   RCLCPP_INFO(node_->get_logger(), "initial odom not received yet");
+   return false;
+  } else {
+    robot_velocity = current_velocity_;
   }
-  return current_velocity_;
+  return true;
 }
 
 // TODO(mhpanah): implement getFootPrint method
@@ -99,7 +103,7 @@ void
 RosRobot::getFootPrint()
 {
 }
-
+// TODO(mhpanah): modify this method name and implementation to inclue robot types and Serial # (ID)
 std::string 
 RosRobot::getRobotName()
 {

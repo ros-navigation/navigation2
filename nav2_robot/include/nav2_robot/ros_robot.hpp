@@ -39,8 +39,8 @@ public:
 
   void enterSafeState() override;
 
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
-  nav_msgs::msg::Odometry::SharedPtr getCurrentVelocity();
+  bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
+  bool getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity);
   // TODO(mhpanah): implement getFootPrint method
   void getFootPrint();
   std::string getRobotName();
