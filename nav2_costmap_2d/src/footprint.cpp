@@ -206,16 +206,13 @@ bool makeFootprintFromString(const std::string & footprint_string,
 
 std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr nh)
 {
-
-
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
 
-  std::string full_param_name;
-  std::string full_radius_param_name;
+  std::string full_param_name = "footprint";
+  std::string full_radius_param_name = "robot_radius";
   std::vector<geometry_msgs::msg::Point> points;
 
-  if (parameters_client->has_parameter("footprint")) {
-    full_param_name = parameters_client->get_parameter<std::string>("footprint");
+  if (parameters_client->has_parameter(full_param_name)) {
     XmlRpc::XmlRpcValue footprint_xmlrpc;
     footprint_xmlrpc = parameters_client->get_parameter<XmlRpc::XmlRpcValue>(full_param_name);
     if (footprint_xmlrpc.getType() == XmlRpc::XmlRpcValue::TypeString &&
@@ -232,8 +229,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::Sha
     }
   }
 
-  if (parameters_client->has_parameter("robot_radius")) {
-    full_radius_param_name = parameters_client->get_parameter<std::string>("robot_radius");
+  if (parameters_client->has_parameter(full_radius_param_name)) {
     double robot_radius;
     robot_radius = parameters_client->get_parameter<double>(full_radius_param_name, 1.234);
     points = makeFootprintFromRadius(robot_radius);

@@ -59,6 +59,7 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.h"
+#include "rclcpp/parameter_events_filter.hpp"
 
 class SuperValue : public XmlRpc::XmlRpcValue
 {
@@ -236,6 +237,25 @@ public:
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
   void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
+  
+  template<class T>
+  void getParamValue(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+    std::string param_name, T & new_value)
+  {    
+
+    rclcpp::ParameterEventsFilter filter(event, {param_name},
+      {rclcpp::ParameterEventsFilter::EventType::NEW,
+      rclcpp::ParameterEventsFilter::EventType::CHANGED});
+    if(!(filter.get_events()).empty())
+    {
+      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Parameter Changed: %s", param_name.c_str());    
+      auto param_msg = ((filter.get_events()).front()).second;
+      auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
+      new_value = param_value.get_value<T>();
+    }else {
+      this->get_parameter<T>(param_name, new_value);
+    }
+  }
 
 protected:
   LayeredCostmap * layered_costmap_;
