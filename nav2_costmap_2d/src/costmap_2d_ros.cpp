@@ -71,7 +71,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   : layered_costmap_(NULL),
   name_(name),
   tf_(tf),
-  transform_tolerance_(3.5),
+  transform_tolerance_(10000),
   map_update_thread_shutdown_(false),
   stop_updates_(false),
   initialized_(true),
@@ -86,17 +86,16 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 {
   tf2::toMsg(tf2::Transform::getIdentity(), old_pose_.pose);
 
-  private_nh_ = rclcpp::Node::make_shared(name_);
+  auto private_nh = rclcpp::Node::make_shared(name_);
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
   // get two frames
-  auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(private_nh_);
-  global_frame_ =
-      private_parameters_client->get_parameter<std::string>("global_frame", std::string("map"));
-  robot_base_frame_ =
-      private_parameters_client->get_parameter<std::string>("robot_base_frame", std::string(
-        "base_link"));
+  auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
+  this->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
+  this->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
 
-  rclcpp::Time last_error = private_nh_->now();
+  rclcpp::Clock clock;
+  rclcpp::Time last_error = clock.now();
   std::string tf_error;
 
   // we need to make sure that the transform between the robot base frame and the global frame is available
@@ -104,8 +103,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       !tf_.canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
         tf2::durationFromSec(0.1), &tf_error))
   {
-    rclcpp::spin_some(private_nh_);
-    if (last_error + nav2_util::durationFromSeconds(5.0) < private_nh_->now()) {
+    //rclcpp::spin_some(private_nh);
+    if (last_error + nav2_util::durationFromSeconds(5.0) < clock.now()) {
       RCLCPP_WARN(rclcpp::get_logger(
             "nav2_costmap_2d"),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
@@ -119,53 +118,25 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // check if we want a rolling window version of the costmap
   bool rolling_window, track_unknown_space, always_send_full_costmap;
+  this->get_parameter_or<bool>("rolling_window", rolling_window, false);
+  this->get_parameter_or<bool>("track_unknown_space", track_unknown_space, false);
+  this->get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, false);
 
-  rolling_window = private_parameters_client->get_parameter<bool>("rolling_window", false);
-  track_unknown_space = private_parameters_client->get_parameter<bool>("track_unknown_space", false);
-  always_send_full_costmap = private_parameters_client->get_parameter<bool>(
-      "always_send_full_costmap", false);
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
-/*   if (!private_parameters_client->has_parameter("plugins")) {
-    resetOldParameters(private_nh);
+  std::vector<rclcpp::Parameter> param;
+  rclcpp::Parameter temp;
+  if (!this->get_parameter("plugin_names", temp)) {
+  setPluginParams(temp_node);
   }
 
-  if (private_parameters_client->has_parameter("plugins")) {
-    XmlRpc::XmlRpcValue my_list;
-    my_list = private_parameters_client->get_parameter<XmlRpc::XmlRpcValue>("plugins");
-
-    for (int32_t i = 0; i < my_list.size(); ++i) {
-      std::string pname = static_cast<std::string>(my_list[i]["name"]);
-      std::string type = static_cast<std::string>(my_list[i]["type"]);
-      RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Using plugin \"%s\"", pname.c_str());
-
-      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
-      layered_costmap_->addPlugin(plugin);
-      plugin->initialize(layered_costmap_, name + "/" + pname, &tf_);
-    }
-  } */
-
-  std::vector<std::string> class_names;
-  class_names = plugin_loader_.getDeclaredClasses();
-  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "printing available class names...");
-  for (int i = 0; i < class_names.size(); ++i)
-  {
-    printf("%s\n", class_names[i].c_str());
-  }
-
-  if (!private_parameters_client->has_parameter("plugin_names")) {
-    setPluginParams(private_nh);
-  }
-
-  if (private_parameters_client->has_parameter("plugin_names")) {
-    std::vector<rclcpp::Parameter> param;
-    param = private_nh->get_parameters({"plugin_names", "plugin_types"});
+  if (this->get_parameter("plugin_names", temp)) {
+  //if (private_parameters_client->has_parameter("plugin_names")) {
+    param = this->get_parameters({"plugin_names", "plugin_types"});
 
     for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
-      //std::string pname = static_cast<std::string>(param[0][i]);
       std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
-      //std::string type = static_cast<std::string>(param[1][i]);
       std::string type = (param[1].get_value<std::vector<std::string>>())[i];
 
       RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Using plugin \"%s\"", pname.c_str());
@@ -175,35 +146,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       plugin->initialize(layered_costmap_, name + "_" + pname, &tf_);
     }
   }
-  
-
-/*   layered_costmap_->updateMap(0,0,0);
-  auto cm = layered_costmap_->getCostmap();
-  printf("map:\n");
-  for (int i = 0; i < cm->getSizeInCellsY(); i++) {
-    for (int j = 0; j < cm->getSizeInCellsX(); j++) {
-      printf("%4d", int(cm->getCost(j, i)));
-    }
-    printf("\n\n");
-  } */
 
   // subscribe to the footprint topic
   std::string topic_param, topic;
-  if (!private_parameters_client->has_parameter("footprint_topic")) {
-    topic_param = "footprint_topic";
-  }
-  topic =
-      private_parameters_client->get_parameter<std::string>(topic_param, std::string("footprint"));
-  footprint_sub_ = private_nh_->create_subscription<geometry_msgs::msg::Polygon>(topic,
+  this->get_parameter_or<std::string>("footprint_topic", topic_param, std::string("footprint_topic"));
+  this->get_parameter_or<std::string>(topic_param, topic, std::string("footprint"));
+  footprint_sub_ = this->create_subscription<geometry_msgs::msg::Polygon>(topic,
       std::bind(&Costmap2DROS::setUnpaddedRobotFootprintPolygon, this, std::placeholders::_1));
+  this->get_parameter_or<std::string>("published_footprint_topic", topic_param, std::string("published_footprint"));
+  this->get_parameter_or<std::string>(topic_param, topic, std::string("oriented_footprint"));
 
-  if (!private_parameters_client->has_parameter("published_footprint_topic")) {
-    topic_param = "published_footprint";
-  }
-  topic =
-      private_parameters_client->get_parameter<std::string>(topic_param,
-      std::string("oriented_footprint"));
-  footprint_pub_ = private_nh_->create_publisher<geometry_msgs::msg::PolygonStamped>(
+  footprint_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       "footprint", rmw_qos_profile_default);
 
   setUnpaddedRobotFootprint(makeFootprintFromParams(private_nh_));
@@ -222,14 +175,24 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   timer_ = private_nh_->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
-  //dsrv_ = new dynamic_reconfigure::Server<Costmap2DConfig>(ros::NodeHandle("~/" + name));
-  //dynamic_reconfigure::Server<Costmap2DConfig>::CallbackType cb = std::bind(&Costmap2DROS::reconfigureCB, this, _1,
-  //                                                                            _2);
-  //dsrv_->setCallback(cb);
+  //this->register_param_change_callback(std::bind(&Costmap2DROS::on_param_event, this, std::placeholders::_1));
+  parameter_sub_ = private_parameters_client->on_parameter_event(std::bind(&Costmap2DROS::parameter_event_callback, this, std::placeholders::_1));
 
-  map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, 5.0));
+  auto set_parameters_results = this->set_parameters({
+    rclcpp::Parameter("update_frequency", 5.0),
+    //rclcpp::Parameter("transform_tolerance", 0.3),
+    //rclcpp::Parameter("publish_frequency", 0.0),
+    //rclcpp::Parameter("width", 10),
+    //rclcpp::Parameter("height", 10),
+    //rclcpp::Parameter("resolution", 0.1),
+    //rclcpp::Parameter("origin_x", 0.0),
+    //rclcpp::Parameter("origin_y", 0.0),
+    //rclcpp::Parameter("footprint", "[]"),
+    //rclcpp::Parameter("robot_radius", 0.46),
+    //rclcpp::Parameter("footprint_padding", 0.01)
+  });
 
-  //layered_costmap_->updateMap(0,0,0);
+  //this->set_parameter_if_not_set <double> ("transform_tolerance", transform_tolerance_);
 
 
 }
@@ -264,7 +227,6 @@ void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
   std::vector<std::string> plugin_types = {"costmap_2d::StaticLayer","costmap_2d::InflationLayer"};
   param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
   nh->set_parameters(param);
-
 }
 
 
@@ -352,7 +314,64 @@ void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
   //});
 
 }
+
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
+void Costmap2DROS::parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  getParamValue(event,"transform_tolerance", transform_tolerance_);
+
+  if (map_update_thread_ != NULL)
+  {
+    map_update_thread_shutdown_ = true;
+    map_update_thread_->join();
+    delete map_update_thread_;
+  }
+  map_update_thread_shutdown_ = false;
+  double map_update_frequency;
+  getParamValue(event,"update_frequency", map_update_frequency);
+
+  double map_publish_frequency;
+  getParamValue(event,"publish_frequency", map_publish_frequency);
+
+  if (map_publish_frequency > 0)
+    publish_cycle_ = rclcpp::Duration(1*1e9 / map_publish_frequency);
+  else
+    publish_cycle_ = rclcpp::Duration(-1*1e9);
+
+  // find size parameters
+  double resolution, origin_x, origin_y;
+  int map_width_meters, map_height_meters;
+
+  getParamValue(event,"width", map_width_meters);
+  getParamValue(event,"height", map_height_meters);
+  getParamValue(event,"resolution", resolution);
+  getParamValue(event,"origin_x", origin_x);
+  getParamValue(event,"origin_y", origin_y); 
+  
+  if (!layered_costmap_->isSizeLocked())
+  {
+    layered_costmap_->resizeMap((unsigned int)(map_width_meters / resolution),
+                                (unsigned int)(map_height_meters / resolution), resolution, origin_x, origin_y);
+  }
+
+  // If the padding has changed, call setUnpaddedRobotFootprint() to
+  // re-apply the padding.
+  float footprint_padding;
+  getParamValue(event,"footprint_padding", footprint_padding);
+  if (footprint_padding_ != footprint_padding)
+  {  
+    footprint_padding_ = footprint_padding;
+    setUnpaddedRobotFootprint(unpadded_footprint_);
+  }
+
+  //readFootprintFromConfig(config, old_config_);
+
+  //old_config_ = config;
+  //RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "parameter callback: Start Thread?");
+  map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
+  //RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "parameter callback: Thread Finished");
+
+}
 
 /* void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level)
 {
@@ -497,8 +516,9 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = private_nh_->now();
-      if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
+      rclcpp::Time now = nh->now();
+      //if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
+      if (last_publish_ + publish_cycle_ < now) {
         publisher_->publishCostmap();
         last_publish_ = now;
       }
@@ -506,20 +526,21 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     r.sleep();
     // make sure to sleep for the remainder of our cycle time
 
-    if (r.period() > tf2::durationFromSec(1 / frequency)) {
+    // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
+/*     if (r.period() > tf2::durationFromSec(1 / frequency)) {    
       RCLCPP_WARN(rclcpp::get_logger(
             "nav2_costmap_2d"),
           "Map update loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds",
           frequency,
           r.period());
-    }
+    } */
   }
 }
 
 void Costmap2DROS::updateMap()
 {
 
-  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Update Map...");
+  RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Updating Map...");
 
   //auto clock = new rclcpp::Clock();
   rclcpp::Clock clock;
@@ -532,8 +553,6 @@ void Costmap2DROS::updateMap()
         yaw = tf2::getYaw(pose.pose.orientation);
 
       layered_costmap_->updateMap(x, y, yaw);
-      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Updated...");
-
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
       footprint.header.stamp = private_nh_->now();
