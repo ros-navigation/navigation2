@@ -58,19 +58,28 @@ COPY $SCRIPTPATH/*.repos ./
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
 
+WORKDIR /ros2_ws/navigation2_ws/src/navigation2
+
 # change to correct branch if $BRANCH is not = master
 ARG BRANCH=master
+ARG REMOTE=origin
+RUN echo "Remote is $REMOTE"
 RUN if [ "$BRANCH" == "master" ]; \
     then \
       echo "On master branch"; \
     else \
-      cd navigation2; \
-      git fetch origin $BRANCH:temp_branch; \
-      git checkout temp_branch; \
-      cd -; \
+      if [ "$REMOTE" == "origin" ]; \
+      then \
+        echo "Remote is origin"; \
+      else \
+        git remote add -f source_remote https://github.com/$REMOTE.git; \
+        git fetch source_remote $BRANCH:temp_branch; \
+        git checkout temp_branch; \
+      fi \
     fi
 
 # build
-RUN chmod +x navigation2/tools/build_all.sh
-RUN ./navigation2/tools/build_all.sh
+WORKDIR /ros2_ws
+RUN chmod +x navigation2_ws/src/navigation2/tools/build_all.sh
+RUN ./navigation2_ws/src/navigation2/tools/build_all.sh
 CMD ["bash"]
