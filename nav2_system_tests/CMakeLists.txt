@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_planning_tests)
+project(nav2_system_tests)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -27,8 +27,8 @@ find_package(ament_lint_auto REQUIRED)
 set(TEST_LAUNCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_launch_files)
 
 ament_add_gtest_executable(test_planner_node
-  test_planner_node.cpp
-  planner_tester.cpp
+  planning_tests/test_planner_node.cpp
+  planning_tests/planner_tester.cpp
 )
 
 ament_target_dependencies(test_planner_node
@@ -42,7 +42,7 @@ ament_target_dependencies(test_planner_node
 
 ament_add_test(test_planner_node
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/planning_tests/test_planner_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
