@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef PLANNING__NAV2_PLANNING_TESTS__PLANNER_TESTER_HPP_
-#define PLANNING__NAV2_PLANNING_TESTS__PLANNER_TESTER_HPP_
+#ifndef PLANNING__PLANNER_TESTER_HPP_
+#define PLANNING__PLANNER_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -123,4 +123,4 @@ private:
 
 }  // namespace nav2_util
 
-#endif  // PLANNING__NAV2_PLANNING_TESTS__PLANNER_TESTER_HPP_
+#endif  // PLANNING__PLANNER_TESTER_HPP_
