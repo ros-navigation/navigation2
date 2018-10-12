@@ -91,6 +91,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // get two frames
   auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
+
   this->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   this->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
 
@@ -175,11 +176,11 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   timer_ = private_nh_->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
-  //this->register_param_change_callback(std::bind(&Costmap2DROS::on_param_event, this, std::placeholders::_1));
+  this->register_param_change_callback(std::bind(&Costmap2DROS::on_param_event, this, std::placeholders::_1));
   parameter_sub_ = private_parameters_client->on_parameter_event(std::bind(&Costmap2DROS::parameter_event_callback, this, std::placeholders::_1));
 
   auto set_parameters_results = this->set_parameters({
-    rclcpp::Parameter("update_frequency", 5.0),
+    rclcpp::Parameter("update_frequency", 1.0),
     //rclcpp::Parameter("transform_tolerance", 0.3),
     //rclcpp::Parameter("publish_frequency", 0.0),
     //rclcpp::Parameter("width", 10),
@@ -195,6 +196,132 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   //this->set_parameter_if_not_set <double> ("transform_tolerance", transform_tolerance_);
 
 
+bool validate_param(std::string param_name, std::map<std::string, rclcpp::Parameter> & map, rclcpp::ParameterType Type)
+{
+  if (map.count(param_name) > 0)
+    if(Type == map[param_name].get_type()){
+      return true;
+    }
+    else{
+      return false;
+    }
+  return true;
+}
+
+
+
+rcl_interfaces::msg::SetParametersResult Costmap2DROS::on_param_event(
+  std::vector<rclcpp::Parameter> parameters)
+{
+
+  std::map<std::string, rclcpp::Parameter> param_map;
+
+  for (auto parameter : parameters){
+  param_map[parameter.get_name()] = parameter;
+  RCLCPP_INFO(this->get_logger(), "parameter change: %s", (parameter.get_name()).c_str());
+  }
+
+  auto result = rcl_interfaces::msg::SetParametersResult();
+  result.successful = true;
+
+  if(get_param(
+    "transform_tolerance", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, transform_tolerance_)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  
+/*   result.successful &= get_param(
+    "transform_tolerance", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, transform_tolerance_); */
+
+  if (map_update_thread_ != NULL)
+  {
+    map_update_thread_shutdown_ = true;
+    map_update_thread_->join();
+    delete map_update_thread_;
+  }
+  map_update_thread_shutdown_ = false;
+
+  double map_update_frequency;
+  if(get_param(
+    "update_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, map_update_frequency)){
+    result.successful &= true;
+  } else {result.successful = false;}
+/*   result.successful &= get_param(
+    "update_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, map_update_frequency); */
+
+ double map_publish_frequency;
+  if(get_param(
+    "publish_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, map_publish_frequency)){
+    result.successful &= true;
+  } else {result.successful = false;}
+/*   result.successful &= get_param(
+    "publish_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, map_publish_frequency); */
+
+  if (map_publish_frequency > 0)
+    publish_cycle_ = rclcpp::Duration(1*1e9 / map_publish_frequency);
+  else
+    publish_cycle_ = rclcpp::Duration(-1*1e9);
+
+  // find size parameters
+  double resolution, origin_x, origin_y;
+  int map_width_meters, map_height_meters;
+  if(get_param(
+    "width", param_map, rclcpp::ParameterType::PARAMETER_INTEGER, map_width_meters)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  if(get_param(
+    "height", param_map, rclcpp::ParameterType::PARAMETER_INTEGER, map_height_meters)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  if(get_param(
+    "resolution", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, resolution)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  if(get_param(
+    "origin_x", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, origin_x)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  if(get_param(
+    "origin_y", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, origin_y)){
+    result.successful &= true;
+  } else {result.successful = false;}
+
+/*   result.successful &= get_param(
+    "width", param_map, rclcpp::ParameterType::PARAMETER_INTEGER, map_width_meters);
+   result.successful &= get_param(
+    "height", param_map, rclcpp::ParameterType::PARAMETER_INTEGER, map_height_meters);
+  result.successful = get_param(
+    "resolution", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, resolution);
+  result.successful &= get_param(
+    "origin_x", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, origin_x);
+  result.successful &= get_param(
+    "origin_y", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, origin_y); */
+
+  if (!layered_costmap_->isSizeLocked())
+  {
+    layered_costmap_->resizeMap((unsigned int)(map_width_meters / resolution),
+                                (unsigned int)(map_height_meters / resolution), resolution, origin_x, origin_y);
+  }
+
+  // If the padding has changed, call setUnpaddedRobotFootprint() to
+  // re-apply the padding.
+  float footprint_padding;
+  if(get_param(
+    "footprint_padding", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, footprint_padding)){
+    result.successful &= true;
+  } else {result.successful = false;}
+  
+/*   result.successful &= get_param(
+    "footprint_padding", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE, footprint_padding); */
+
+  if (footprint_padding_ != footprint_padding)
+  {  
+    footprint_padding_ = footprint_padding;
+    setUnpaddedRobotFootprint(unpadded_footprint_);
+  }
+
+  map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
+  
+  return result;
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
@@ -227,92 +354,6 @@ void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
   std::vector<std::string> plugin_types = {"costmap_2d::StaticLayer","costmap_2d::InflationLayer"};
   param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
   nh->set_parameters(param);
-}
-
-
-void Costmap2DROS::resetOldParameters(rclcpp::Node::SharedPtr nh)
-{
-  RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Loading from pre-hydro parameter style");
-  bool flag;
-  std::string s;
-  std::vector<XmlRpc::XmlRpcValue> plugins;
-
-  XmlRpc::XmlRpcValue::ValueStruct map;
-  SuperValue super_map;
-  SuperValue super_array;
-
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
-
-  if (parameters_client->has_parameter("static_map")) {
-    flag = parameters_client->get_parameter<bool>("static_map");
-    if (flag) {
-      map["name"] = XmlRpc::XmlRpcValue("static_layer");
-      map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::StaticLayer");
-      super_map.setStruct(&map);
-      plugins.push_back(super_map);
-
-      auto map_layer = rclcpp::Node::make_shared("static_layer", std::string(nh->get_name()));
-
-      move_parameter(nh, map_layer, "map_topic");
-      move_parameter(nh, map_layer, "unknown_cost_value");
-      move_parameter(nh, map_layer, "lethal_cost_threshold");
-      move_parameter(nh, map_layer, "track_unknown_space", false);
-    }
-  }
-  auto obstacles = rclcpp::Node::make_shared("obstacle_layer", std::string(nh->get_name()));
-
-  if (parameters_client->has_parameter("map_type")) {
-    s = parameters_client->get_parameter<std::string>("map_type");
-    if (s == "voxel") {
-      map["name"] = XmlRpc::XmlRpcValue("obstacle_layer");
-      map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::VoxelLayer");
-      super_map.setStruct(&map);
-      plugins.push_back(super_map);
-
-      move_parameter(nh, obstacles, "origin_z");
-      move_parameter(nh, obstacles, "z_resolution");
-      move_parameter(nh, obstacles, "z_voxels");
-      move_parameter(nh, obstacles, "mark_threshold");
-      move_parameter(nh, obstacles, "unknown_threshold");
-      move_parameter(nh, obstacles, "publish_voxel_map");
-    }
-  } else {
-    map["name"] = XmlRpc::XmlRpcValue("obstacle_layer");
-    map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::ObstacleLayer");
-    super_map.setStruct(&map);
-    plugins.push_back(super_map);
-  }
-
-  move_parameter(nh, obstacles, "max_obstacle_height");
-  move_parameter(nh, obstacles, "raytrace_range");
-  move_parameter(nh, obstacles, "obstacle_range");
-  move_parameter(nh, obstacles, "track_unknown_space", true);
-
-  s = parameters_client->get_parameter<std::string>("observation_sources", std::string(""));
-  std::stringstream ss(s);
-  std::string source;
-  while (ss >> source) {
-    move_parameter(nh, obstacles, source);
-  }
-  move_parameter(nh, obstacles, "observation_sources");
-
-  auto inflation = rclcpp::Node::make_shared("obstacle_layer", std::string(nh->get_name()));
-  //ros::NodeHandle inflation(nh, "inflation_layer");
-
-  move_parameter(nh, inflation, "cost_scaling_factor");
-  move_parameter(nh, inflation, "inflation_radius");
-  map["name"] = XmlRpc::XmlRpcValue("inflation_layer");
-  map["type"] = XmlRpc::XmlRpcValue("nav2_costmap_2d::InflationLayer");
-  super_map.setStruct(&map);
-  plugins.push_back(super_map);
-
-  super_array.setArray(&plugins);
-  // TODO(bpwilcox): parameter client doesn't support setting xmlrpc data structure
-  //nh.setParam("plugins", super_array);
-  //auto set_parameters_results = parameters_client->set_parameters({
-  //  rclcpp::Parameter("plugins", super_array)
-  //});
-
 }
 
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
@@ -512,7 +553,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     t_diff = end_t - start_t;
     RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"), "Map update time: %.9f", t_diff);
     if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {
-      unsigned int x0, y0, xn, yn;
+/*       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
@@ -521,7 +562,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       if (last_publish_ + publish_cycle_ < now) {
         publisher_->publishCostmap();
         last_publish_ = now;
-      }
+      } */
     }
     r.sleep();
     // make sure to sleep for the remainder of our cycle time

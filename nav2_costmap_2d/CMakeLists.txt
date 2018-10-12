@@ -102,11 +102,17 @@ target_link_libraries(layers
   nav2_costmap_2d
 )
 
-# TODO(bpwilcox): port nav2_costmap_2d_markers
-#add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
-#ament_target_dependencies(nav2_costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(nav2_costmap_2d_markers
-  #nav2_costmap_2d
+add_library(dynamic_reconfigure
+  src/dynamic_reconfigure.cpp
+)
+ament_target_dependencies(dynamic_reconfigure
+  ${dependencies}
+)
+# TODO(bpwilcox): port costmap_2d_markers
+#add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
+#ament_target_dependencies(costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
+#target_link_libraries(costmap_2d_markers
+  #costmap_2d
 #)
 
 # TODO(bpwilcox): port nav2_costmap_2d_cloud
@@ -126,7 +132,14 @@ target_link_libraries(nav2_costmap_2d_node
   layers
 )
 
-install(TARGETS nav2_costmap_2d costmap_2d_node layers
+add_executable(param_test src/costmap_test.cpp)
+ament_target_dependencies(param_test
+  ${dependencies}
+)
+target_link_libraries(param_test
+  dynamic_reconfigure
+)
+install(TARGETS nav2_costmap_2d costmap_2d_node layers param_test dynamic_reconfigure
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
