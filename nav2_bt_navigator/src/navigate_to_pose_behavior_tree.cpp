@@ -60,7 +60,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
 NavigateToPoseBehaviorTree::~NavigateToPoseBehaviorTree()
 {
-  BT::haltAllActions(root_.get());
+//  BT::haltAllActions(root_.get());
 }
 
 nav2_tasks::TaskStatus

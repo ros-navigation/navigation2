@@ -18,7 +18,7 @@
 #include <thread>
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
- #include "behavior_tree_core/xml_parsing.h"
+#include "behavior_tree_core/xml_parsing.h"
 
 using namespace std::chrono_literals;
 
@@ -30,15 +30,15 @@ static const std::string xml_text = R"(
 
      <BehaviorTree ID="MainTree">
         <SequenceStar name="root">
+            <NavigateToPoseAction />
             <CalculateGoalPose/>
-            <NavigateToPoseAction />
-            <NavigateToPoseAction />
             <PrintGoalPose />
         </SequenceStar>
      </BehaviorTree>
 
  </root>
  )";
+
             //<MoveBase  goal="2;4;0" />
             //<MoveBase  goal="${GoalPose}" />
 
@@ -72,15 +72,22 @@ public:
   {
     geometry_msgs::msg::Pose2D goal;
     // RECOMMENDED: check if the blackboard is empty
-    if ( blackboard() && blackboard()->get("GoalPose", goal))
-    {
-      printf("[PrintGoalPose] x=%.f y=%.1f theta=%.2f\n",
-             goal.x, goal.y, goal.theta);
-      return BT::NodeStatus::SUCCESS;
+    if (blackboard() && blackboard()->get("GoalPose", goal)) {
+      printf("[PrintGoalPose] x=%.f y=%.1f theta=%.2f\n", goal.x, goal.y, goal.theta);
     } else {
       printf("The blackboard does not contain the key [GoalPose]\n");
       return BT::NodeStatus::FAILURE;
     }
+
+    rclcpp::Node::SharedPtr node;
+    if (blackboard() && blackboard()->get("node", node)) {
+      printf("[PrintGoalPose] node: %p\n", (void *) node.get());
+    } else {
+      printf("The blackboard does not contain the key [GoalPose]\n");
+      return BT::NodeStatus::FAILURE;
+    }
+
+    return BT::NodeStatus::SUCCESS;
   }
 
   virtual void halt() override { setStatus(BT::NodeStatus::IDLE); }
@@ -93,6 +100,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
   navigateToPoseCommand_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
   navigateToPoseResult_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
+#if 0
   // Compose the NavigateToPose message for the Navigation module. Fake out some values
   // for now. The goal pose would actually come from the Mission Plan. Could pass the mission
   // plan in the constructor and then use the values from there to instance each of the nodes.
@@ -103,39 +111,45 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
   navigateToPoseCommand_->pose.orientation.y = 1;
   navigateToPoseCommand_->pose.orientation.z = 2;
   navigateToPoseCommand_->pose.orientation.w = 3;
-
+#endif
   factory_.registerSimpleAction("CalculateGoalPose", CalculateGoalPose);
   factory_.registerNodeType<PrintGoalPose>("PrintGoalPose");
   factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPoseAction");
+
+  printf("[ExecuteMissionBehaviorTree] node: %p\n", (void *) node_.get());
+
+  blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
+
+  blackboard_->set<rclcpp::Node::SharedPtr>("node", node_);
+  blackboard_->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
+  blackboard_->set<nav2_tasks::NavigateToPoseCommand::SharedPtr>("command", navigateToPoseCommand_);
+  blackboard_->set<nav2_tasks::NavigateToPoseResult::SharedPtr>("result", navigateToPoseResult_);
+
+  // When the tree goes out of scope, all the nodes are destroyed
+  tree_ = BT::buildTreeFromText(factory_, xml_text, blackboard_);
 }
 
 ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
 {
-  BT::haltAllActions(root_.get());
 }
 
 nav2_tasks::TaskStatus
 ExecuteMissionBehaviorTree::run(
   std::function<bool()> /*cancelRequested*/, std::chrono::milliseconds loopTimeout)
 {
-  // create a Blackboard from BlackboardLocal (simple, not persistent, local storage)
-  auto blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
-
-  // Important: when the object tree goes out of scope, all the TreeNodes are destroyed
-  auto tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
-
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
+
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
   {
-    result = tree.root_node->executeTick();
-
+    result = tree_.root_node->executeTick();
+#if 0
     // Check if this task server has received a cancel message
     if (cancelRequested()) {
       tree.root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
-
+#endif
     loopRate.sleep();
   }
 

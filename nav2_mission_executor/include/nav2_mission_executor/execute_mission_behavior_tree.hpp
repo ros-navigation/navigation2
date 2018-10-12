@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
+#include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 
@@ -43,12 +44,17 @@ private:
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
+#if 1
+  BT::Blackboard::Ptr blackboard_;
+  BT::Tree tree_;
+#else
   // The root node of the behavior tree
   std::unique_ptr<BT::SequenceNodeWithMemory> root_;
 
   // The actions that will be composed into a tree
   std::unique_ptr<nav2_tasks::NavigateToPoseAction> navigateToPoseAction1_;
   std::unique_ptr<nav2_tasks::NavigateToPoseAction> navigateToPoseAction2_;
+#endif
 
   // The commands and results for each action
   nav2_tasks::NavigateToPoseCommand::SharedPtr navigateToPoseCommand_;
