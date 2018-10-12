@@ -257,6 +257,26 @@ public:
     }
   }
 
+
+
+  template <class T>
+  bool get_param(std::string param_name, std::map<std::string, rclcpp::Parameter> & map, rclcpp::ParameterType Type, T & value)
+  {
+    if (map.count(param_name) > 0)
+      if(Type == map[param_name].get_type()){
+        //value = map[param_name].get_value<T>();
+      RCLCPP_INFO(this->get_logger(), "Parameter Changed: %s", param_name.c_str());    
+        return true;
+      }
+      else{
+        //this->get_parameter<T>(param_name, value);
+        RCLCPP_WARN(this->get_logger(), "Parameter Type does not match: %s", param_name.c_str());    
+        return false;
+      }
+   //this->get_parameter<T>(param_name, value);
+    return true;
+  }
+
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
@@ -294,7 +314,7 @@ private:
   pluginlib::ClassLoader<Layer> plugin_loader_;
   geometry_msgs::msg::PoseStamped old_pose_;
   Costmap2DPublisher * publisher_;
-
+  
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
   //dynamic_reconfigure::Server<nav2_costmap_2d::Costmap2DConfig> *dsrv_;
   //nav2_costmap_2d::Costmap2DConfig old_config_;
