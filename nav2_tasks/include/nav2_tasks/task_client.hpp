@@ -84,7 +84,7 @@ public:
       rclcpp::spin_some(node_->get_node_base_interface());
 
       auto t1 = std::chrono::high_resolution_clock::now();
-      auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+      auto elapsedTime = t1 - t0;
 
       if (elapsedTime > timeout) {
         return false;

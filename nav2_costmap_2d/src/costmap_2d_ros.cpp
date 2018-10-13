@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "nav2_util/duration_conversions.h"
 
 using namespace std;
 
@@ -107,7 +108,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
         tf2::durationFromSec(0.1), &tf_error))
   {
     rclcpp::spin_some(private_nh);
-    if (last_error + rclcpp::Duration(5.0) < clock.now()) {
+    if (last_error + nav2_util::durationFromSeconds(5.0) < clock.now()) {
       RCLCPP_WARN(rclcpp::get_logger(
             "nav2_costmap_2d"),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",

@@ -18,6 +18,7 @@
   <depend>roscpp</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
+  <depend>nav2_msgs</depend>
 
   <test_depend>ament_cmake_cppcheck</test_depend>
   <test_depend>ament_cmake_cpplint</test_depend>

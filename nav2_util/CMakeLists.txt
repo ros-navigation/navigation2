@@ -82,7 +82,7 @@ install(TARGETS
   LIBRARY DESTINATION lib)
 
 install(DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)

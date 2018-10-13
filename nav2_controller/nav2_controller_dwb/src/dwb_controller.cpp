@@ -29,7 +29,7 @@ namespace nav2_controller_dwb
 {
 
 DwbController::DwbController()
-: nav2_tasks::FollowPathTaskServer("FollowPathNode")
+: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfListener_(tfBuffer_)
 {
 }
 
@@ -38,22 +38,22 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
+  RCLCPP_INFO(get_logger(), "Starting controller");
   try {
-    nav_2d_msgs::msg::Path2D path;
-    // get path from command
-    tf2_ros::Buffer tfBuffer;
-    tf2_ros::TransformListener tfListener(tfBuffer);
-    cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer);
+    auto path = nav_2d_utils::pathToPath2D(*command);
+    cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
     auto nh = shared_from_this();
     odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-    vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
-    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer), cm_);
+    vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/mobile_base/commands/velocity", 1);
+    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_), cm_);
     planner_.setPlan(path);
+    RCLCPP_INFO(get_logger(), "Initialized");
     while (true) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
+        RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
         publishZeroVelocity();
       } else {
         if (isGoalReached(pose2d)) {
@@ -62,7 +62,7 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
-
+        RCLCPP_INFO(get_logger(), "Publishing velocity");
         if (cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
           setCanceled();

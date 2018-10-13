@@ -79,6 +79,8 @@ namespace dwb_critics
 class OscillationCritic : public dwb_core::TrajectoryCritic
 {
 public:
+  OscillationCritic()
+  : oscillation_reset_time_(0) {}
   void onInit() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
@@ -141,7 +143,7 @@ private:
 
   CommandTrend x_trend_, y_trend_, theta_trend_;
   double oscillation_reset_dist_, oscillation_reset_angle_, x_only_threshold_;
-  double oscillation_reset_time_;
+  rclcpp::Duration oscillation_reset_time_;
 
   // Cached square parameter
   double oscillation_reset_dist_sq_;

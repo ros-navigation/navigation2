@@ -33,9 +33,11 @@
  */
 
 #include "dwb_critics/oscillation.h"
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <vector>
+#include "nav2_util/duration_conversions.h"
 #include "nav_2d_utils/parameters.h"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
@@ -44,6 +46,7 @@ PLUGINLIB_EXPORT_CLASS(dwb_critics::OscillationCritic, dwb_core::TrajectoryCriti
 
 namespace dwb_critics
 {
+
 
 OscillationCritic::CommandTrend::CommandTrend()
 {
@@ -91,7 +94,8 @@ void OscillationCritic::onInit()
   oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_angle", 0.2);
-  oscillation_reset_time_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0);
+  oscillation_reset_time_ = nav2_util::durationFromSeconds(
+    nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0));
 
   /**
    * Historical Parameter Loading
@@ -168,9 +172,9 @@ bool OscillationCritic::resetAvailable()
       return true;
     }
   }
-  if (oscillation_reset_time_ >= 0.0) {
+  if (oscillation_reset_time_ >= nav2_util::durationFromSeconds(0.0)) {
     auto t_diff = (rclcpp::Clock().now() - prev_reset_time_);
-    if (t_diff > rclcpp::Duration(oscillation_reset_time_)) {
+    if (t_diff > oscillation_reset_time_) {
       return true;
     }
   }

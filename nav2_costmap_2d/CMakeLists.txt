@@ -27,10 +27,11 @@ find_package(xmlrpcpp REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(nav2_util REQUIRED)
 
 # TODO(bpwilcox): port remaining packages
 #find_package(tf2_sensor_msgs REQUIRED)
-#find_package(dynamic_reconfigure REQUIRED) 
+#find_package(dynamic_reconfigure REQUIRED)
 #find_package(voxel_grid REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
@@ -52,7 +53,7 @@ add_definitions(${EIGEN3_DEFINITIONS})
 #	DEPENDENCIES std_msgs geometry_msgs map_msgs
 #)
 
-add_library(nav2_costmap_2d
+add_library(nav2_costmap_2d SHARED
   src/array_parser.cpp
   src/costmap_2d.cpp
   src/layer.cpp
@@ -61,9 +62,9 @@ add_library(nav2_costmap_2d
   src/costmap_2d_publisher.cpp
   src/costmap_math.cpp
   src/footprint.cpp
-  src/costmap_layer.cpp	
+  src/costmap_layer.cpp
   #	TODO(bpwilcox): need tf2_sensor_msgs ported
-  # src/observation_buffer.cpp  
+  # src/observation_buffer.cpp
 )
 
 set(dependencies
@@ -77,13 +78,14 @@ set(dependencies
   pluginlib
   tf2_geometry_msgs
   message_filters
+  nav2_util
 )
 
 ament_target_dependencies(nav2_costmap_2d
   ${dependencies}
 )
 
-add_library(layers
+add_library(layers SHARED
   plugins/inflation_layer.cpp
 
   # TODO(bpwilcox): port additional plugin layers

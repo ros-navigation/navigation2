@@ -38,6 +38,7 @@
 #include "nav_2d_utils/parameters.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.h"
+#include "nav2_util/duration_conversions.h"
 
 namespace dwb_plugins
 {
@@ -83,7 +84,7 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = rclcpp::Duration(sim_time_);
+  traj.duration = nav2_util::durationFromSeconds(sim_time_);
   geometry_msgs::msg::Pose2D pose = start_pose;
 
   std::vector<double> steps = getTimeSteps(cmd_vel);

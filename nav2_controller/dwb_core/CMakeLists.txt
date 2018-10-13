@@ -39,7 +39,7 @@ set(dependencies
   nav_2d_utils
 )
 
-add_library(dwb_core
+add_library(dwb_core SHARED
   src/dwb_core.cpp
   src/publisher.cpp
   src/illegal_trajectory_tracker.cpp
