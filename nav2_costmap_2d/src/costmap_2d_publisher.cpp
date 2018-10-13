@@ -47,8 +47,8 @@ Costmap2DPublisher::Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap
     std::string global_frame,
     std::string topic_name,
     bool always_send_full_costmap)
-  : node(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
-  always_send_full_costmap_(always_send_full_costmap)
+  : node_(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
+  always_send_full_costmap_(always_send_full_costmap), topic_name_(topic_name)
 {
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
@@ -125,14 +125,12 @@ void Costmap2DPublisher::prepareGrid()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  // TODO(bpwilcox): port getNumSubscribers for publisher
-  /*
-  if (costmap_pub_->getNumSubscribers() == 0)
-  {
+ if(node_->count_subscribers(topic_name_))
+ {
     // No subscribers, so why do any work?
-    return;
-  }
-  */
+    return;   
+ }
+
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||

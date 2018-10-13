@@ -239,41 +239,49 @@ public:
   void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
   
   template<class T>
-  void getParamValue(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+  bool getParamValue(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
     std::string param_name, T & new_value)
   {    
-
     rclcpp::ParameterEventsFilter filter(event, {param_name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
       rclcpp::ParameterEventsFilter::EventType::CHANGED});
     if(!(filter.get_events()).empty())
     {
-      RCLCPP_INFO(rclcpp::get_logger("costmap_2d"), "Parameter Changed: %s", param_name.c_str());    
       auto param_msg = ((filter.get_events()).front()).second;
       auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
       new_value = param_value.get_value<T>();
+      return true;
     }else {
       this->get_parameter<T>(param_name, new_value);
+      return false;
     }
   }
 
+  bool check_parameter_change(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+    std::string param_name)
+  {
+     rclcpp::ParameterEventsFilter filter(event, {param_name},
+      {rclcpp::ParameterEventsFilter::EventType::NEW,
+      rclcpp::ParameterEventsFilter::EventType::CHANGED});
+    if(!(filter.get_events()).empty())
+    {
+      return true;
+    }else {
+      return false;
+    }     
+  }
 
-
-  template <class T>
-  bool get_param(std::string param_name, std::map<std::string, rclcpp::Parameter> & map, rclcpp::ParameterType Type, T & value)
+  bool validate_param(std::string param_name, std::map<std::string, rclcpp::Parameter> & map, rclcpp::ParameterType Type)
   {
     if (map.count(param_name) > 0)
       if(Type == map[param_name].get_type()){
-        //value = map[param_name].get_value<T>();
-      RCLCPP_INFO(this->get_logger(), "Parameter Changed: %s", param_name.c_str());    
+      RCLCPP_INFO(this->get_logger(), "Parameter Change Successful: %s", param_name.c_str());    
         return true;
       }
       else{
-        //this->get_parameter<T>(param_name, value);
-        RCLCPP_WARN(this->get_logger(), "Parameter Type does not match: %s", param_name.c_str());    
+        RCLCPP_WARN(this->get_logger(), "Parameter Change Denied::Doesn't Match Type: %s", param_name.c_str());    
         return false;
       }
-   //this->get_parameter<T>(param_name, value);
     return true;
   }
 
@@ -290,17 +298,19 @@ private:
    *
    * If the values of footprint and robot_radius are the same in
    * new_config and old_config, nothing is changed. */
+<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
   //void readFootprintFromConfig(const nav2_costmap_2d::Costmap2DConfig &new_config,
   //                             const nav2_costmap_2d::Costmap2DConfig &old_config);
+=======
+  void readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+>>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
   void setPluginParams(rclcpp::Node::SharedPtr nh);
 
-  // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //void reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level);
-  void parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
-  rcl_interfaces::msg::SetParametersResult on_param_event(
+  void param_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult param_validation_callback(
     std::vector<rclcpp::Parameter> parameters);
   void movementCB();
 
@@ -316,8 +326,12 @@ private:
   Costmap2DPublisher * publisher_;
   
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
+<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
   //dynamic_reconfigure::Server<nav2_costmap_2d::Costmap2DConfig> *dsrv_;
   //nav2_costmap_2d::Costmap2DConfig old_config_;
+=======
+  //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
+>>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
 
   std::recursive_mutex configuration_mutex_;
 

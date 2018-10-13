@@ -96,6 +96,7 @@ private:
   bool trinary_costmap_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+  rclcpp::Node::SharedPtr node_;
   unsigned char lethal_threshold_, unknown_cost_value_;
 
   //TODO(bpwilcox): Replace dynamic_reconfigure functionality
