@@ -45,7 +45,6 @@ protected:
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
   tf2_ros::Buffer tfBuffer_;
   tf2_ros::TransformListener tfListener_;
-
 };
 
 }  // namespace nav2_controller_dwb
