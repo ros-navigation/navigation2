@@ -104,7 +104,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // we need to make sure that the transform between the robot base frame and the global frame is available
   while (rclcpp::ok() &&
-      !tf_.canTransform(global_frame_, robot_base_frame_, tf2_ros::fromMsg(rclcpp::Time()),
+      !tf_.canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
         tf2::durationFromSec(0.1), &tf_error))
   {
     rclcpp::spin_some(private_nh);
@@ -585,14 +585,12 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   // check global_pose timeout
 
   //TODO(bpwilcox): use toSec() function in more recent rclcpp branch
-  if (tf2::timeToSec(tf2_ros::fromMsg(current_time)) -
-      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)) > transform_tolerance_)
+  if ((current_time - rclcpp::Time(global_pose.header.stamp)) > nav2_util::durationFromSeconds(transform_tolerance_))
   {
-    RCLCPP_WARN(rclcpp::get_logger(
-          "nav2_costmap_2d"),
-        "Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-        tf2::timeToSec(tf2_ros::fromMsg(current_time)),
-        tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)), transform_tolerance_);
+    RCLCPP_WARN(rclcpp::get_logger( "nav2_costmap_2d"),
+        "Costmap2DROS transform timeout. Current time: %ld, global_pose stamp: %ld, tolerance: %.4f",
+        current_time.nanoseconds(),
+        rclcpp::Time(global_pose.header.stamp).nanoseconds(), transform_tolerance_);
 
     return false;
   }
