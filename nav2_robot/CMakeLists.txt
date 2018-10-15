@@ -13,6 +13,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(urdf REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 include_directories(
   include
@@ -24,7 +26,9 @@ add_library(nav2_robot STATIC
 
 ament_target_dependencies(nav2_robot
   rclcpp
+  urdf
   geometry_msgs
+  nav_msgs
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -44,5 +48,7 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
+ament_export_dependencies(urdf)
+ament_export_dependencies(nav_msgs)
 
 ament_package()

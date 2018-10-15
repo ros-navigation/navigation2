@@ -18,7 +18,9 @@
 #include <string>
 #include "nav2_robot/robot.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "urdf/model.h"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 namespace nav2_robot
 {
@@ -26,27 +28,33 @@ namespace nav2_robot
 class RosRobot : public Robot
 {
 public:
-  /**
-   * Construct a RosRobot with a provided URDF file.
-   *
-   * @param[in] filename The filename of the URDF file describing this robot.
-   */
   explicit RosRobot(rclcpp::Node * node);
   RosRobot() = delete;
   ~RosRobot();
 
   void enterSafeState() override;
 
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr getCurrentPose();
+  bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
+  bool getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity);
+  std::string getRobotName();
+  void sendVelocity(geometry_msgs::msg::Twist twist);
 
 protected:
   rclcpp::Node * node_;
-
+  std::string urdf_file_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
+  nav_msgs::msg::Odometry::SharedPtr current_velocity_;
+
   bool initial_pose_received_;
+  bool initial_odom_received_;
+  urdf::Model model_;
 
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg);
 };
 
 }  // namespace nav2_robot
