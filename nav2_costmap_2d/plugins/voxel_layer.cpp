@@ -46,9 +46,6 @@ using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
 
-using nav2_costmap_2d::ObservationBuffer;
-using nav2_costmap_2d::Observation;
-
 namespace nav2_costmap_2d
 {
 
