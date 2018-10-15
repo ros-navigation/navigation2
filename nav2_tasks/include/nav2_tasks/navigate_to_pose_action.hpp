@@ -21,8 +21,24 @@
 namespace nav2_tasks
 {
 
+#if 1
+class NavigateToPoseAction: public BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>
+{
+public:
+  NavigateToPoseAction(const std::string & action_name)
+  : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name)
+  {
+    // Retrieve the parameter using getParam()
+    //Pose2D goal; 
+    //bool goal_passed = getParam<Pose2D>("goal", goal);
+  }
+
+private:
+};
+#else
 using NavigateToPoseAction =
   BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>;
+#endif
 
 }  // namespace nav2_tasks
 

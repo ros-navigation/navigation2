@@ -15,15 +15,10 @@
 #ifndef NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 #define NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 
-#include <functional>
-#include <memory>
-#include <chrono>
-
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
 #include "behavior_tree_core/xml_parsing.h"
-#include "nav2_tasks/execute_mission_task.hpp"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 
 namespace nav2_mission_executor
@@ -44,17 +39,11 @@ private:
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
-#if 1
+  // A blackboard that is shared among all of the leaf nodes
   BT::Blackboard::Ptr blackboard_;
-  BT::Tree tree_;
-#else
-  // The root node of the behavior tree
-  std::unique_ptr<BT::SequenceNodeWithMemory> root_;
 
-  // The actions that will be composed into a tree
-  std::unique_ptr<nav2_tasks::NavigateToPoseAction> navigateToPoseAction1_;
-  std::unique_ptr<nav2_tasks::NavigateToPoseAction> navigateToPoseAction2_;
-#endif
+  // The complete behavior tree that results from parsing the incoming XML
+  std::shared_ptr<BT::Tree> tree_;
 
   // The commands and results for each action
   nav2_tasks::NavigateToPoseCommand::SharedPtr navigateToPoseCommand_;

@@ -30,17 +30,15 @@ static const std::string xml_text = R"(
 
      <BehaviorTree ID="MainTree">
         <SequenceStar name="root">
-            <NavigateToPoseAction />
+            <NavigateToPoseAction goal="${GoalPose}"/>
             <CalculateGoalPose/>
             <PrintGoalPose />
+            <NavigateToPoseAction goal="${GoalPose}"/>
         </SequenceStar>
      </BehaviorTree>
 
  </root>
  )";
-
-            //<MoveBase  goal="2;4;0" />
-            //<MoveBase  goal="${GoalPose}" />
 
 BT::NodeStatus CalculateGoalPose(BT::TreeNode& self)
 {
@@ -52,8 +50,7 @@ BT::NodeStatus CalculateGoalPose(BT::TreeNode& self)
   mygoal.theta = pi;
 
   // RECOMMENDED: check if the blackboard is nullptr
-  if (self.blackboard())
-  {
+  if (self.blackboard()) {
     // store it in the blackboard
     self.blackboard()->set("GoalPose", mygoal);
   }
@@ -100,18 +97,6 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
   navigateToPoseCommand_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
   navigateToPoseResult_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
-#if 0
-  // Compose the NavigateToPose message for the Navigation module. Fake out some values
-  // for now. The goal pose would actually come from the Mission Plan. Could pass the mission
-  // plan in the constructor and then use the values from there to instance each of the nodes.
-  navigateToPoseCommand_->pose.position.x = 0;
-  navigateToPoseCommand_->pose.position.y = 1;
-  navigateToPoseCommand_->pose.position.z = 2;
-  navigateToPoseCommand_->pose.orientation.x = 0;
-  navigateToPoseCommand_->pose.orientation.y = 1;
-  navigateToPoseCommand_->pose.orientation.z = 2;
-  navigateToPoseCommand_->pose.orientation.w = 3;
-#endif
   factory_.registerSimpleAction("CalculateGoalPose", CalculateGoalPose);
   factory_.registerNodeType<PrintGoalPose>("PrintGoalPose");
   factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPoseAction");
@@ -135,21 +120,21 @@ ExecuteMissionBehaviorTree::~ExecuteMissionBehaviorTree()
 
 nav2_tasks::TaskStatus
 ExecuteMissionBehaviorTree::run(
-  std::function<bool()> /*cancelRequested*/, std::chrono::milliseconds loopTimeout)
+  std::function<bool()> cancelRequested, std::chrono::milliseconds loopTimeout)
 {
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
   {
-    result = tree_.root_node->executeTick();
-#if 0
+    result = tree_->root_node->executeTick();
+
     // Check if this task server has received a cancel message
     if (cancelRequested()) {
-      tree.root_node->halt();
+      tree_->root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
-#endif
+
     loopRate.sleep();
   }
 
