@@ -144,7 +144,7 @@ void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   if (setOscillationFlags(cmd_vel)) {
     prev_stationary_pose_ = pose_;
-    prev_reset_time_ = rclcpp::Clock().now();
+    prev_reset_time_ = nh_->now();
   }
 
   // if we've got restrictions... check if we can reset any oscillation flags
@@ -173,7 +173,7 @@ bool OscillationCritic::resetAvailable()
     }
   }
   if (oscillation_reset_time_ >= nav2_util::durationFromSeconds(0.0)) {
-    auto t_diff = (rclcpp::Clock().now() - prev_reset_time_);
+    auto t_diff = (nh_->now() - prev_reset_time_);
     if (t_diff > oscillation_reset_time_) {
       return true;
     }
