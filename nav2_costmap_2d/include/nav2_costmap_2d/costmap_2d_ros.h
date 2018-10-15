@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_nav2_costmap_2d_ROS_H_
-#define nav2_costmap_2d_nav2_costmap_2d_ROS_H_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H_
+#define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H_
 
 #include <nav2_costmap_2d/layered_costmap.h>
 #include <nav2_costmap_2d/layer.h>
@@ -286,4 +286,4 @@ private:
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d
 
-#endif  // nav2_costmap_2d_nav2_costmap_2d_ROS_H
+#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H

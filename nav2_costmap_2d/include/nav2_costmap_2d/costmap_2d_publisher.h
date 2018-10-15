@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H_
-#define nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H_
+#define NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H_
 
 #include "rclcpp/rclcpp.hpp"
 #include <nav2_costmap_2d/costmap_2d.h>
@@ -110,4 +110,4 @@ private:
   static char * cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
 };
 }  // namespace nav2_costmap_2d
-#endif // nav2_costmap_2d_nav2_costmap_2d_PUBLISHER_H
+#endif // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H

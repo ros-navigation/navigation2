@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_VOXEL_LAYER_H_
-#define nav2_costmap_2d_VOXEL_LAYER_H_
+#ifndef NAV2_COSTMAP__2D_VOXEL_LAYER_H_
+#define NAV2_COSTMAP__2D_VOXEL_LAYER_H_
 
 #include <ros/ros.h>
 #include <nav2_costmap_2d/layer.h>
@@ -158,4 +158,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // nav2_costmap_2d_VOXEL_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__VOXEL_LAYER_H_

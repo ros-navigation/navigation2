@@ -34,8 +34,8 @@
  *
  * Author: David V. Lu!!
  *********************************************************************/
-#ifndef nav2_costmap_2d_LAYER_H_
-#define nav2_costmap_2d_LAYER_H_
+#ifndef NAV2_COSTMAP_2D__LAYER_H_
+#define NAV2_COSTMAP_2D__LAYER_H_
 
 #include <nav2_costmap_2d/costmap_2d.h>
 #include <nav2_costmap_2d/layered_costmap.h>
@@ -132,4 +132,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // nav2_costmap_2d_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__LAYER_H_
