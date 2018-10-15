@@ -29,10 +29,10 @@ class ExecuteMissionBehaviorTree
 public:
   explicit ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node);
   ExecuteMissionBehaviorTree() = delete;
-  ~ExecuteMissionBehaviorTree();
 
   nav2_tasks::TaskStatus run(
     std::function<bool()> cancelRequested,
+    std::string & mission_plan,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
 private:
@@ -44,10 +44,6 @@ private:
 
   // The complete behavior tree that results from parsing the incoming XML
   std::shared_ptr<BT::Tree> tree_;
-
-  // The commands and results for each action
-  nav2_tasks::NavigateToPoseCommand::SharedPtr navigateToPoseCommand_;
-  nav2_tasks::NavigateToPoseResult::SharedPtr navigateToPoseResult_;
 
   // A factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;

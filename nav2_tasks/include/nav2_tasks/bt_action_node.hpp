@@ -31,8 +31,8 @@ template<class CommandMsg, class ResultMsg>
 class BtActionNode : public BT::ActionNode
 {
 public:
-  BtActionNode(const std::string & action_name)
-  : BT::ActionNode(action_name), task_client_(nullptr)
+  BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
+  : BT::ActionNode(action_name, params), task_client_(nullptr)
   {
   }
 
@@ -45,13 +45,12 @@ public:
   BT::NodeStatus tick() override
   {
     if (task_client_ == nullptr) {
+      // Get the required items from the blackboard
       node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-
-      task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
       tick_timeout_ = blackboard()->template get<std::chrono::milliseconds>("tick_timeout");
 
-      command_ = blackboard()->template get<CommandMsgPtr>("command");
-      result_ = blackboard()->template get<ResultMsgPtr>("result");
+      // Now that we have the ROS node to use, create the task client for this action
+      task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
     }
 
     task_client_->sendCommand(command_);
@@ -92,9 +91,10 @@ public:
     cv_cancel_.wait(lock);
   }
 
-private:
+protected:
   typename std::unique_ptr<nav2_tasks::TaskClient<CommandMsg, ResultMsg>> task_client_;
 
+  // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
 
   // The timeout value while to use in the tick loop while waiting for
