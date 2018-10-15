@@ -97,7 +97,7 @@ RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity
   return true;
 }
 
-// TODO(mhpanah): modify this method name and implementation to include robot types and Serial # (ID)
+// TODO(mhpanah): modify this method name and implementation to include robot types and Serial #(ID)
 std::string
 RosRobot::getRobotName()
 {
