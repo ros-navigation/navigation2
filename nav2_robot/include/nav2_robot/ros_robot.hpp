@@ -28,6 +28,7 @@ namespace nav2_robot
 class RosRobot : public Robot
 {
 public:
+  using Footprint = std::vector<geometry_msgs::msg::Point>;
   explicit RosRobot(rclcpp::Node * node);
   RosRobot() = delete;
   ~RosRobot();
@@ -36,6 +37,8 @@ public:
 
   bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   bool getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity);
+  Footprint getFootprint();
+
   std::string getRobotName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
