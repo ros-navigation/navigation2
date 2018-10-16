@@ -97,6 +97,30 @@ RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity
   return true;
 }
 
+RosRobot::Footprint
+RosRobot::getFootprint()
+{
+  geometry_msgs::msg::Point frontLeft, frontRight, rearLeft, rearRight;
+
+  // TODO(crdelsey): Hard coding robot footprint to get code operational quickly.
+  // This data should come from parameter or something. In the meantime, the
+  // robot is assumed to be a 1x1 square with the front right corner on the
+  // origin. Forwards is down the X axis.
+  frontLeft.x = 0;
+  frontLeft.y = 1;
+
+  frontRight.x = 0;
+  frontRight.y = 0;
+
+  rearRight.x = -1;
+  rearRight.y = 0;
+
+  rearLeft.x = -1;
+  rearLeft.y = 1;
+
+  return Footprint {frontLeft, frontRight, rearLeft, rearRight};
+}
+
 // TODO(mhpanah): modify this method name and implementation to include robot types and Serial # (ID)
 std::string
 RosRobot::getRobotName()
