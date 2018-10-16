@@ -6,10 +6,7 @@ services:
   - docker
 
 before_install:
-  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
-  - echo Branch is $BRANCH
-  - echo TRAVIS_REPO_SLUG is $TRAVIS_REPO_SLUG
-  - docker build -t nav2/latest --build-arg BRANCH=$BRANCH --build-arg REMOTE=$TRAVIS_REPO_SLUG .
+  - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
 
 script:
-  - docker run nav2/latest /bin/bash -c echo "Testing"
+  - docker run nav2:latest /bin/bash -c echo "Testing"

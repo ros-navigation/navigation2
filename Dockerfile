@@ -61,21 +61,14 @@ RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
 WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 
 # change to correct branch if $BRANCH is not = master
-ARG BRANCH=master
-ARG REMOTE=origin
-RUN echo "Remote is $REMOTE"
-RUN if [ "$BRANCH" == "master" ]; \
+ARG PULLREQ=false
+RUN echo "pullreq is $PULLREQ"
+RUN if [ "$PULLREQ" == "false" ]; \
     then \
-      echo "On master branch"; \
+      echo "No pull request given"; \
     else \
-      if [ "$REMOTE" == "origin" ]; \
-      then \
-        echo "Remote is origin"; \
-      else \
-        git remote add -f source_remote https://github.com/$REMOTE.git; \
-        git fetch source_remote $BRANCH:temp_branch; \
-        git checkout temp_branch; \
-      fi \
+      git fetch origin pull/$PULLREQ/head:pr_branch; \
+      git checkout pr_branch; \
     fi
 
 # build
