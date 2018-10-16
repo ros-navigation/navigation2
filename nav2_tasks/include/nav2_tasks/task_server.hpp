@@ -95,16 +95,15 @@ protected:
         [&] {return commandReceived_ == true;}))
       {
         nav2_msgs::msg::TaskStatus statusMsg;
-	    TaskStatus status = TaskStatus::FAILED;
+        TaskStatus status = TaskStatus::FAILED;
 
         // Call the user's overridden method
         try {
           status = execute(commandMsg_);
-        } catch (std::exception & /*e*/) {
-          //RCLCPP_INFO(this->get_logger(), "Task generated an exception: ");
+        } catch (...) {
           statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
-		}
+        }
 
         // Reset the execution flag now that we've executed the task
         commandReceived_ = false;
