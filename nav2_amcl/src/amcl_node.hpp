@@ -190,8 +190,6 @@ private:
 
   std::chrono::duration<double> cloud_pub_interval;
 
-  rclcpp::Time last_cloud_pub_time;
-
   // For slowing play-back when reading directly from a bag file
   std::chrono::duration<double> bag_scan_period_;
 
