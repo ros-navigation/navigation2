@@ -28,34 +28,35 @@ namespace nav2_mission_executor
 ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
-  // Register nodes that may occur in the behavior tree XML description
+  // Register our custom action nodes so that they can be included in XML description
   factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPoseAction");
-
-  // Create the blackboard that will be shared by all of the nodes in the tree
-  blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
-
-  // Set a couple values that all of the action nodes expect/require
-  blackboard_->set<rclcpp::Node::SharedPtr>("node", node_);
-  blackboard_->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
 }
 
 nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   std::function<bool()> cancelRequested, std::string & xml_text, std::chrono::milliseconds loopTimeout)
 {
+  // Create the blackboard that will be shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
+
+  // Set a couple values that all of the action nodes expect/require
+  blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+  blackboard->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
+
+  // The complete behavior tree that results from parsing the incoming XML. When the tree goes 
+  // out of scope, all the nodes are destroyed
+  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
+
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
-
-  // When the tree goes out of scope, all the nodes are destroyed
-  tree_ = BT::buildTreeFromText(factory_, xml_text, blackboard_);
 
   // Loop until something happens with ROS or the node completes w/ success or failure
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
   {
-    result = tree_->root_node->executeTick();
+    result = tree->root_node->executeTick();
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      tree_->root_node->halt();
+      tree->root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 

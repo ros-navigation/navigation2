@@ -39,12 +39,6 @@ private:
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
-  // A blackboard that is shared among all of the leaf nodes
-  BT::Blackboard::Ptr blackboard_;
-
-  // The complete behavior tree that results from parsing the incoming XML
-  std::shared_ptr<BT::Tree> tree_;
-
   // A factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };

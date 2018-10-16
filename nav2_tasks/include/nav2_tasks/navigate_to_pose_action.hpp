@@ -17,6 +17,8 @@
 
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 
 namespace BT
 {
@@ -35,17 +37,50 @@ struct Pose2D
 template <> 
 inline Pose2D convertFromString(const std::string & key)
 {
-    // three real numbers separated by semicolons
-    auto parts = BT::splitString(key, ';');
-    if (parts.size() != 3) {
-        throw std::runtime_error("invalid input)");
-    } else {
-        Pose2D output;
-        output.x     = BT::convertFromString<double>( parts[0] );
-        output.y     = BT::convertFromString<double>( parts[1] );
-        output.theta = BT::convertFromString<double>( parts[2] );
-        return output;
-    }
+  // three real numbers separated by semicolons
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 3) {
+    throw std::runtime_error("invalid input)");
+  } else {
+    Pose2D output;
+    output.x     = BT::convertFromString<double>(parts[0]);
+    output.y     = BT::convertFromString<double>(parts[1]);
+    output.theta = BT::convertFromString<double>(parts[2]);
+    return output;
+  }
+}
+
+template <> 
+inline geometry_msgs::msg::Point convertFromString(const std::string & key)
+{
+  // three real numbers separated by semicolons
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 3) {
+      throw std::runtime_error("invalid input)");
+  } else {
+    geometry_msgs::msg::Point position;
+    position.x = BT::convertFromString<double>(parts[0]);
+    position.y = BT::convertFromString<double>(parts[1]);
+    position.z = BT::convertFromString<double>(parts[2]);
+    return position;
+  }
+}
+
+template <> 
+inline geometry_msgs::msg::Quaternion convertFromString(const std::string & key)
+{
+  // three real numbers separated by semicolons
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 4) {
+      throw std::runtime_error("invalid input)");
+  } else {
+    geometry_msgs::msg::Quaternion orientation;
+    orientation.x = BT::convertFromString<double>(parts[0]);
+    orientation.y = BT::convertFromString<double>(parts[1]);
+    orientation.z = BT::convertFromString<double>(parts[2]);
+    orientation.w = BT::convertFromString<double>(parts[3]);
+    return orientation;
+  }
 }
 
 }
@@ -59,18 +94,23 @@ public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
   : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name, params)
   {
-    // Retrieve the parameter using getParam()
-    BT::Pose2D goal; 
-    bool goal_passed = getParam<BT::Pose2D>("goal", goal);
-
-    printf("NavigateToPoseAction: ctor: goal_passed: %d\n", goal_passed);
-
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
     result_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 
-    //blackboard()->set<nav2_tasks::NavigateToPoseCommand::SharedPtr>("command", command_);
-    //blackboard()->set<nav2_tasks::NavigateToPoseResult::SharedPtr>("result", result_);
+    // Use the position and orientation fields from the behavior tree node parameter
+    geometry_msgs::msg::Point position;
+    bool position_passed = getParam<geometry_msgs::msg::Point>("position", position);
+
+    geometry_msgs::msg::Quaternion orientation;
+    bool orientation_passed = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
+
+    // TODO(mjeronimo): use asserts
+    if (!position_passed || !orientation_passed)
+      printf("foobar\n"); // RCLCPP_ERROR(node_->get_logger(), "NavigateToPoseAction: position or orientation not provided");
+
+    command_->pose.position = position;
+    command_->pose.orientation = orientation;
   }
 
   static const BT::NodeParameters & requiredNodeParameters()

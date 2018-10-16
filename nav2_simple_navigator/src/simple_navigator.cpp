@@ -68,7 +68,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   // localization, while the goal pose is from the incoming command
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
 
-#if 0
+#if 1
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
   if (robot_.getCurrentPose(current_pose)) {
     RCLCPP_DEBUG(get_logger(), "got robot pose");
@@ -86,7 +86,15 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   endpoints->tolerance = 2.0;
 #endif
 
-  RCLCPP_INFO(get_logger(), "Requesting path from the planner server.");
+  RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
+  RCLCPP_DEBUG(get_logger(), "goal.position.x: %f", endpoints->goal.position.x);
+  RCLCPP_DEBUG(get_logger(), "goal.position.y: %f", endpoints->goal.position.y);
+  RCLCPP_DEBUG(get_logger(), "goal.position.z: %f", endpoints->goal.position.z);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.x: %f", endpoints->goal.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.y: %f", endpoints->goal.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.z: %f", endpoints->goal.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.w: %f", endpoints->goal.orientation.w);
+
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   plannerTaskClient_->sendCommand(endpoints);
 

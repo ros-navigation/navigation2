@@ -33,13 +33,10 @@ public:
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
 
 private:
+  // For now, receive the move_base_simple/goal message from rviz and use this
+  // goal pose to create a mission plan, publishing the result
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-
-  // For now, use the move_base_simple/goal topic (from rviz) for the goal pose
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  geometry_msgs::msg::PoseStamped::SharedPtr goal_pose_;
-
-  // Also, for now, publish a mission plan when receiving a goal pose from rviz
   rclcpp::Publisher<nav2_msgs::msg::MissionPlan>::SharedPtr plan_pub_;
 };
 
