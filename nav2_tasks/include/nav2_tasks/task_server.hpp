@@ -94,17 +94,23 @@ protected:
       if (cvCommand_.wait_for(lock, std::chrono::milliseconds(100),
         [&] {return commandReceived_ == true;}))
       {
+        nav2_msgs::msg::TaskStatus statusMsg;
+	    TaskStatus status = TaskStatus::FAILED;
+
         // Call the user's overridden method
-        TaskStatus status = execute(commandMsg_);
+        try {
+          status = execute(commandMsg_);
+        } catch (std::exception & /*e*/) {
+          //RCLCPP_INFO(this->get_logger(), "Task generated an exception: ");
+          statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
+          statusPub_->publish(statusMsg);
+		}
 
         // Reset the execution flag now that we've executed the task
         commandReceived_ = false;
 
-        nav2_msgs::msg::TaskStatus statusMsg;
-
         // Check the result of the user's function and send the
         // appropriate message
-
         if (status == TaskStatus::SUCCEEDED) {
           // If the task succeeded, first publish the result message
           resultPub_->publish(resultMsg_);
