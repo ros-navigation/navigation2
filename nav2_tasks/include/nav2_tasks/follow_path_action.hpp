@@ -15,14 +15,32 @@
 #ifndef NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 #define NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 
+#include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_tasks
 {
 
-using FollowPathAction =
-  BtActionNode<FollowPathCommand, FollowPathResult>;
+class FollowPathAction: public BtActionNode<FollowPathCommand, FollowPathResult>
+{
+public:
+  FollowPathAction(const std::string & action_name, const BT::NodeParameters & params)
+  : BtActionNode<FollowPathCommand, FollowPathResult>(action_name, params)
+  {
+    // Create the input and output messages
+    command_ = std::make_shared<nav2_tasks::FollowPathCommand>();
+    result_ = std::make_shared<nav2_tasks::FollowPathResult>();
+  }
+
+  static const BT::NodeParameters & requiredNodeParameters()
+  {
+    static BT::NodeParameters params = {{"jnk","0;0;0"}};
+    return params;
+  }
+};
 
 }  // namespace nav2_tasks
 

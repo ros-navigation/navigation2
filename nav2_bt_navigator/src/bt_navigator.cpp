@@ -28,14 +28,14 @@ BtNavigator::BtNavigator()
 TaskStatus
 BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "BtNavigator: Received new navigation goal to (%.2f, %.2f).",
+  RCLCPP_INFO(get_logger(), "Start navigation to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
   TaskStatus result = bt.run(command, std::bind(&BtNavigator::cancelRequested, this));
 
-  RCLCPP_INFO(get_logger(), "BtNavigator::execute: completed: %d", result);
+  RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;
 }
 

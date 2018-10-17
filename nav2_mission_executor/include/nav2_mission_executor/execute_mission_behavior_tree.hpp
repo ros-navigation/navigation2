@@ -19,7 +19,7 @@
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
 #include "behavior_tree_core/xml_parsing.h"
-#include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "nav2_tasks/execute_mission_task.hpp"
 
 namespace nav2_mission_executor
 {
@@ -31,8 +31,8 @@ public:
   ExecuteMissionBehaviorTree() = delete;
 
   nav2_tasks::TaskStatus run(
+    const nav2_tasks::ExecuteMissionCommand::SharedPtr & command,
     std::function<bool()> cancelRequested,
-    std::string & mission_plan,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
 private:

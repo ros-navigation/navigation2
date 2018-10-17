@@ -12,83 +12,70 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
+
+#include <memory>
+#include "Blackboard/blackboard_local.h"
+#include "behavior_tree_core/xml_parsing.h"
+#include "nav2_tasks/compute_path_to_pose_action.hpp"
+#include "nav2_tasks/follow_path_action.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_bt_navigator
 {
 
+static const std::string xml_text = R"(
+ <root main_tree_to_execute = "MainTree" >
+     <BehaviorTree ID="MainTree">
+        <SequenceStar name="root">
+            <ComputePathToPose />
+            <FollowPath />
+        </SequenceStar>
+     </BehaviorTree>
+ </root>
+)";
+
 NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
-  // Create the input and output data
-  computePathToPoseCommand_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-  computePathToPoseResult_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-
-  followPathCommand_ = std::make_shared<nav2_tasks::FollowPathCommand>();
-  followPathResult_ = std::make_shared<nav2_tasks::FollowPathResult>();
-
-  // Create the nodes of the tree
-  root_ = std::make_unique<BT::SequenceNodeWithMemory>("Sequence");
-
-  firstPath_ = std::make_unique<nav2_tasks::ComputePathToPoseAction>(
-    node_, "FirstPath",
-    computePathToPoseCommand_, computePathToPoseResult_);
-
-  sel_ = std::make_unique<BT::FallbackNode>("Fallback");
-  reachedGoalNode_ = std::make_unique<ReachedGoalConditionNode>(node);
-  parNode_ = std::make_unique<BT::ParallelNode>("Parallel", 3);
-
-  computePathToPoseAction_ = std::make_unique<nav2_tasks::ComputePathToPoseAction>(
-    node_, "ComputePathToPoseAction",
-    computePathToPoseCommand_, computePathToPoseResult_);
-
-  followPathAction_ = std::make_unique<nav2_tasks::FollowPathAction>(
-    node_, "FollowPathAction",
-    followPathCommand_, followPathResult_);
-
-  // Add the nodes to the tree, creating the tree structure
-  root_->addChild(firstPath_.get());
-  root_->addChild(sel_.get());
-  sel_->addChild(reachedGoalNode_.get());
-  sel_->addChild(parNode_.get());
-  parNode_->addChild(computePathToPoseAction_.get());
-  parNode_->addChild(followPathAction_.get());
-}
-
-NavigateToPoseBehaviorTree::~NavigateToPoseBehaviorTree()
-{
-//  BT::haltAllActions(root_.get());
+   // Register our custom action nodes so that they can be included in XML description
+  factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
+  factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
 }
 
 nav2_tasks::TaskStatus
 NavigateToPoseBehaviorTree::run(
-  nav2_tasks::NavigateToPoseCommand::SharedPtr command,
+  const nav2_tasks::NavigateToPoseCommand::SharedPtr & /*command*/,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loop_rate(loopTimeout);
+  // Create the blackboard that will be shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
-  // Compose the PathEndPoints message for the Navigation module
-  // TODO(mjeronimo): starting pose needs to come from localization
-  computePathToPoseCommand_->start = command->pose;
-  computePathToPoseCommand_->goal = command->pose;
+  // Set a couple values that all of the action nodes expect/require
+  blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+  blackboard->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
 
-  BT::NodeStatus result = root_->status();
+  // The complete behavior tree that results from parsing the XML. When the tree goes 
+  // out of scope, all the nodes are destroyed
+  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
 
-  while (rclcpp::ok() &&
-    !(result == BT::NodeStatus::SUCCESS || result == BT::NodeStatus::FAILURE))
+  rclcpp::WallRate loopRate(loopTimeout);
+  BT::NodeStatus result = BT::NodeStatus::RUNNING;
+
+  // Loop until something happens with ROS or the node completes w/ success or failure
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
   {
-    result = root_->executeTick();
+    result = tree->root_node->executeTick();
 
+    // Check if we've received a cancel message
     if (cancelRequested()) {
-      root_->halt();
+      tree->root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
-    loop_rate.sleep();
+    loopRate.sleep();
   }
 
   return (result == BT::NodeStatus::SUCCESS) ?

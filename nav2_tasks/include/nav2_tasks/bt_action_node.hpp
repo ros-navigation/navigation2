@@ -31,6 +31,11 @@ template<class CommandMsg, class ResultMsg>
 class BtActionNode : public BT::ActionNode
 {
 public:
+  BtActionNode(const std::string & action_name)
+  : BT::ActionNode(action_name), task_client_(nullptr)
+  {
+  }
+
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
   : BT::ActionNode(action_name, params), task_client_(nullptr)
   {

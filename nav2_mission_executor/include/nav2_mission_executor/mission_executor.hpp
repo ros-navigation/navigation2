@@ -15,9 +15,6 @@
 #ifndef NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 #define NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 
-#include <string>
-#include <memory>
-#include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
