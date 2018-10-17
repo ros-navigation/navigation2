@@ -65,7 +65,7 @@ ARG PULLREQ=false
 RUN echo "pullreq is $PULLREQ"
 RUN if [ "$PULLREQ" == "false" ]; \
     then \
-      echo "No pull request given"; \
+      echo "No pull request number given - defaulting to master branch"; \
     else \
       git fetch origin pull/$PULLREQ/head:pr_branch; \
       git checkout pr_branch; \
