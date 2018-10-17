@@ -14,4 +14,4 @@ The Simple Navigator module is meant to show how one can utilize (sub-)task clie
 
 ## Implementation
 
-In its *execute* method, which directs the task server to begin its operation, the Simple Navigator invokes ComputePathToPose and FollowPath in sequence, managing the task clients for each directly. 
+In its [*execute* method](https://github.com/ros-planning/navigation2/blob/master/nav2_simple_navigator/src/simple_navigator.cpp), which directs the task server to begin its operation, the Simple Navigator invokes ComputePathToPose and FollowPath in sequence, managing the task clients for each directly. 
