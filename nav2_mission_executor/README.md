@@ -33,9 +33,9 @@ The mission plan itself is an XML string that defines the behavior tree. For exa
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <NavigateToPoseAction position="10;11;0.0" orientation="1;2;3;4"/>
-      <NavigateToPoseAction position="20;21;0.0" orientation="5;6;7;8"/>
-      <NavigateToPoseAction position="30;31;0.0" orientation="9;1;2;3"/>
+      <NavigateToPoseAction position="10;11;0.0" orientation="0.7071;0;0.7071;0"/>
+      <NavigateToPoseAction position="20;21;0.0" orientation="0.7071;0;0.7071;0"/>
+      <NavigateToPoseAction position="30;31;0.0" orientation="0.7071;0;0.7071;0"/>
     </SequenceStar>
   </BehaviorTree>
 </root>
@@ -50,7 +50,7 @@ The behavior tree can incorporate recovery actions by responding to conditions i
 
 ## Creating Behavior Tree Nodes
 
-To create a node that can be included in a behavior tree, there must first be an task server/client defined for it. To define a task server and client one defines the command and result messages for that task, the templates for the TaskClient and TaskServer, and the name for the task. For example, the NavigateToPose task is defined as follows:
+To create a node that can be included in a behavior tree, there must first be an task server/client defined for it. For example, the NavigateToPose task is defined as follows:
 
 ```C++
 namespace nav2_tasks
@@ -71,7 +71,9 @@ inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
 }  // namespace nav2_tasks
 ```
 
-Then, one can use the BtAction template. [ TODO: Once the behavior tree code is integrated describe the process of creating a behavior tree action ]
+Then, one can use the BtAction template to create an action node that can be included in a behavior tree. [ TODO: Once the behavior tree code is integrated describe the process of creating a behavior tree action ]
+
+The behavior tree node automatically handles communication with the corresponding task server via a contained task client.
 
 ## Open Issues
 
