@@ -1,0 +1,21 @@
+# Nav2 Costmap_2d
+
+The costmap_2d package is responsible for building a 2D costmap of the environment, taking observations from sensors and 
+optionally initialized via the map server or a rolling window. A plugin interface allows for layers to be combined into the
+costmap and finally inflated via a user specified inflation radius. The nav2 version of the costmap_2d package is mostly a direct
+ROS2 port of the ROS1 navigation stack version, with minimal noteable changes necessary due to support in ROS2. 
+
+## Overview of Changes from ROS1 Navigation Costmap_2d
+- Removal of legacy parameter style ("Loading from pre-hydro parameter style")
+- Intermediate replacement of dynamic reconfigure (not ported to ROS2). This discussion started here with costmap_2d but is a more
+widespread discussion throughout the navigation stack (see issue https://github.com/ros-planning/navigation2/issues/177) and 
+general ROS2 community
+
+## Still needs work
+- Obstacle Layer Plugin (requires port of tf2_sensor_msgs)
+- Voxel Layer Plugin
+
+## Future Plans
+- Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like
+to broaden this world model concept and use costmap's layer concept as motivation for providing a service-style interface to
+potential clients needing information about the world.
