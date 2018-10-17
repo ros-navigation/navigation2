@@ -23,18 +23,7 @@ namespace nav2_robot
 RosRobot::RosRobot(rclcpp::Node * node)
 : node_(node), initial_pose_received_(false), initial_odom_received_(false)
 {
-  // Open and parse the URDF file
-  if (!(urdf_file_ = std::getenv("URDF_FILE")).c_str()) {
-    throw std::runtime_error("Failed to read URDF file. Please make sure path environment"
-            " to urdf file is set correctly.");
-  }
-
-  if (!model_.initFile(urdf_file_)) {
-    throw std::runtime_error("Failed to parse URDF file.");
-  } else {
-    RCLCPP_INFO(node_->get_logger(), "Parsed URDF file");
-  }
-  // TODO(mhpanah): Topic names for pose and odom should should be confifured with parameters
+  // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
 
@@ -97,11 +86,12 @@ RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity
   return true;
 }
 
-// TODO(mhpanah): modify this method name and implementation to include robot types and Serial # (ID)
+// TODO(mhpanah): modify this method name and implementation to include robot types and Serial #(ID)
 std::string
 RosRobot::getRobotName()
 {
-  return model_.getName();
+  // Temporarily just returning a string until we enable parsing URDF file.
+  return "turtlebot";
 }
 
 void
