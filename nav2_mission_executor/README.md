@@ -33,9 +33,9 @@ The mission plan itself is an XML string that defines the behavior tree. For exa
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <NavigateToPoseAction position="10;11;0.0" orientation="0.7071;0;0.7071;0"/>
-      <NavigateToPoseAction position="20;21;0.0" orientation="0.7071;0;0.7071;0"/>
-      <NavigateToPoseAction position="30;31;0.0" orientation="0.7071;0;0.7071;0"/>
+      <NavigateToPose position="10;11;0.0" orientation="0.7071;0;0.7071;0"/>
+      <NavigateToPose position="20;21;0.0" orientation="0.7071;0;0.7071;0"/>
+      <NavigateToPose position="30;31;0.0" orientation="0.7071;0;0.7071;0"/>
     </SequenceStar>
   </BehaviorTree>
 </root>
