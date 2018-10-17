@@ -1,6 +1,6 @@
 # Mission Executor
 
-The Mission Executor module is a task server (simple action server) that coordinates other tasks. It can be used to direct the activities multiple robots as well as other, non-robot tasks.
+The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities multiple robots as well as other, non-robot tasks.
 
 ## Overview
  
@@ -20,7 +20,7 @@ using ExecuteMissionTaskServer = TaskServer<ExecuteMissionCommand, ExecuteMissio
 
 NOTE: An Empty message is used in the definition of the task client and server if there is no other data required.
 
-The [mission plan message](../nav_msgs/msg/MissionPlan.msg) consists of a header and a mission plan string:
+The [mission plan message](https://github.com/ros-planning/navigation2/blob/master/nav2_msgs/msg/MissionPlan.msg) consists of a header and a mission plan string:
 
 ```
 std_msgs/Header header
@@ -42,7 +42,11 @@ The mission plan itself is an XML string that defines the behavior tree. For exa
 
 ```
 
-The mission plan module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) to dynamically create a behavior tree from the input XML description. It then generates and executes the tree and returns the status code (SUCESSFUL, FAILED, CANCELED) to the task client. 
+The mission plan module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) to dynamically create a behavior tree from the input XML description. It then generates and executes the tree and returns the status code (SUCESSFUL, FAILED, CANCELED) to the task client.
+
+## Incorporating Recovery Behaviors
+
+The behavior tree can incorporate recovery actions by responding to conditions in the tree with other actions; a failure of one action could result in the execution of a recovery action, for example. 
 
 ## Creating Behavior Tree Nodes
 
@@ -67,9 +71,7 @@ inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
 }  // namespace nav2_tasks
 ```
 
-Then, one can use the BtAction template. 
-
-[ TODO: Once the behavior tree code is integrated describe the process of creating a behavior tree action ]
+Then, one can use the BtAction template. [ TODO: Once the behavior tree code is integrated describe the process of creating a behavior tree action ]
 
 ## Open Issues
 
