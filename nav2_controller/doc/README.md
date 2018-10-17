@@ -28,8 +28,42 @@ The main architectural change is due to the replacement of `MoveBase` by the `Fo
 
 We basically removed the `MoveBase` adapter layers and `nav_core2` interfaces. Instead, they were replaced by a simple adapter from the `FollowPath` task interface to the `DWBLocalPlanner` component.
 
+## New local planner interface
+
+For the local planner, the task interface consist of initialization/destruction code and one core method - `execute`. This method gets called with the path produced by the global planner. The local planner keeps processing the path until:
+1. It reaches the goal.
+2. It gets a new plan which preempts the current plan.
+3. It fails to produce an adequate plan, in which case it fails and leaves it to the caller to hand off to a recovery behavior.
+
+The new task interface looks something like this in pseudocode
+```c++
+TaskStatus execute(path)
+{
+    planner_.initialize(nodeHandle);
+    planner_.setPlan(path);
+    while (true) {
+      auto pose = getRobotPose(pose2d);
+      if (isGoalReached(pose)) {
+        break;
+      }
+      auto velocity = getTwist();
+      auto cmd_vel_2d = planner_.computeVelocityCommands(pose, velocity);
+      publishVelocity(cmd_vel_2d);
+
+      std::this_thread::sleep_for(10ms);
+    }
+
+  nav2_tasks::FollowPathResult result;
+  setResult(result);
+
+  return TaskStatus::SUCCEEDED;
+}
+
+```
 ## Future Plans
 
+* Add support for updating the planned path before we've finished the current one.
+* Add support for recovery behaviors
 * Simplify parameters and remove obsolete parameters
 * Remove the direct inclusion of `costmap_2d` and replace it with calls to the world model node.
 * Port another planner to refine the interfaces to the planner and to the world model. There are not many local planners available for the navigation stack, it seems. However `Time Elastic Band` seems like an interesting possibility of the few that are out there, as it interprets the dynamic obstacles very differently.
