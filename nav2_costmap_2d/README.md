@@ -11,11 +11,11 @@ ROS2 port of the ROS1 navigation stack version, with minimal noteable changes ne
 widespread discussion throughout the navigation stack (see issue https://github.com/ros-planning/navigation2/issues/177) and 
 general ROS2 community
 
-## Still needs work
-- Obstacle Layer Plugin (requires port of tf2_sensor_msgs)
-- Voxel Layer Plugin
+## Still needs port
+- Obstacle Layer Plugin (https://github.com/ros-planning/navigation2/issues/192)
+- Voxel Layer Plugin (https://github.com/ros-planning/navigation2/issues/193)
 
 ## Future Plans
 - Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like
 to broaden this world model concept and use costmap's layer concept as motivation for providing a service-style interface to
-potential clients needing information about the world.
+potential clients needing information about the world (see issue https://github.com/ros-planning/navigation2/issues/18)
