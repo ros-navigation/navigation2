@@ -1,10 +1,10 @@
 # Simple Navigator
 
-The Simple Navigator module implements a **NavigateToPose** task server. As such, its responsibility is to navigate the robot to the specified pose.
+The Simple Navigator module implements a **nav2_tasks::NavigateToPose** task server. As such, its responsibility is to navigate the robot to the specified pose.
 
 ## Overview
  
-The Simple Navigator implements NavigateToPose using two sub-tasks, **ComputePathToPose** and **FollowPath**. It is conceptually similar to the MoveBase in the ROS 1 Navigation stack in that it coordinates the global planner (ComputePathToPose) and the local planner (FollowPath). 
+The Simple Navigator implements NavigateToPose using two sub-tasks, **ComputePathToPose** and **FollowPath**, which are, in turn, task servers that implement the **nav2_tasks::ComputePathToPose** and **nav2_tasks::FollowPath** interfaces. It is conceptually similar to the MoveBase in the ROS 1 Navigation stack in that it coordinates the global planner (ComputePathToPose) and the local planner (FollowPath). 
 
 The Simple Navigator sits in the task hierarchy, as follows:
 
