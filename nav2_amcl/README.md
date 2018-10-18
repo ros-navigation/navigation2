@@ -1,14 +1,14 @@
 # AMCL
-Adaptive Monte Carlo Localization (AMCL) is a probabilistic localization module which estimates the position and orientation (i.e. Pose) of a robot in given known map.
+Adaptive Monte Carlo Localization (AMCL) is a probabilistic localization module which estimates the position and orientation (i.e. Pose) of a robot in a given known map.
 
 ## Overview
-Currently, the AMCL module in ROS 2 Navigation System is a direct port from ROS1 AMCL package (http://wiki.ros.org/amcl) with some minor code re-factoring. The direct port includes all of ROS1 functionalities except dynamic parameter reconfiguration and running from Bag files. The code re-factoring includes moving Sensor, Particle Filter, and Map from nav2_amcl directory to nav2_util directory. The main logic behind this is code re-usability.  However, given the way in which these classes are currently written, these codes are highly bounded to AMCL.  Therefore, to make use of code re-usability these classes needs to be substantially modified.
+Currently, the AMCL module in ROS 2 Navigation System is a direct port from ROS1 AMCL package (http://wiki.ros.org/amcl) with some minor code re-factoring. The direct port includes all of ROS1 functionalities except dynamic parameter reconfiguration and running from Bag files. The code re-factoring includes moving Sensor, Particle Filter, and Map from nav2_amcl directory to nav2_util directory. The main logic behind this is code re-usability.  However, given the way in which these classes are currently written, these codes are highly bounded to AMCL.  Therefore, to make use of code re-usability, these classes need to be substantially modified.
 
 ## Current Plan
 * Polishing AMCL core code, specially the `laserReceived` callback
-* Refactoring redundant codes such as `angle_diff` which exists in multiple places
+* Refactoring redundant codes such as `angle_diff` which exist in multiple places
 * Using generic Particle Filter library
-* Creating a generic library to pull out the algorithms that are from Probabilistic Robotics text book.  These algorithms could potentially be used on other modules
+* Creating a generic library to pull out the algorithms that are from Probabilistic Robotics textbook.  These algorithms could potentially be used on other modules
 * Enabling dynamic reconfigure functionality
 
 ## Future Plan
