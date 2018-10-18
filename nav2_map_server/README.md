@@ -19,7 +19,7 @@ instantiating the map type-specific class)
 - Occupancy Grid (nav_msgs/msg/OccupancyGrid)
 
 ## Future Plans
-- Make abstract base class for map server derive from rclcpp::Node
-- Support new map types, e.g. GridMap (https://github.com/ANYbotics/grid_map)
-- Load & Parse YAML file as ROS2 parameters via launch
-- Port and refactor Map Saver
+- Make abstract base class for map server derive from rclcpp::Node (https://github.com/ros-planning/navigation2/issues/189)
+- Support new map types, e.g. GridMap (https://github.com/ros-planning/navigation2/issues/191)
+- Load & Parse YAML file as ROS2 parameters via launch (https://github.com/ros-planning/navigation2/issues/190)
+- Port and refactor Map Saver (https://github.com/ros-planning/navigation2/issues/188)
