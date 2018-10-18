@@ -28,16 +28,16 @@ ament_target_dependencies(nav2_dynamic_params
   ${dependencies}
 )
 
-add_executable(test_nav2_dynamic_params
-  src/test_dynamic_params_client.cpp
+add_executable(example_nav2_dynamic_params
+  src/example_dynamic_params.cpp
 )
-ament_target_dependencies(test_nav2_dynamic_params
+ament_target_dependencies(example_nav2_dynamic_params
   ${dependencies}
 )
-target_link_libraries(test_nav2_dynamic_params
+target_link_libraries(example_nav2_dynamic_params
   nav2_dynamic_params
 )
-install(TARGETS nav2_dynamic_params test_nav2_dynamic_params
+install(TARGETS nav2_dynamic_params example_nav2_dynamic_params
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -59,5 +59,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(nav2_dynamic_params)
-ament_export_dependencies(${dependencies})
+
 ament_package()

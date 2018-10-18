@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DYNAMIC_PARAMS_DYNAMIC_PARAMS_CLIENT_H_
-#define NAV2_DYNAMIC_PARAMS_DYNAMIC_PARAMS_CLIENT_H_
+#ifndef NAV2_DYNAMIC_PARAMS__DYNAMIC_PARAMS_CLIENT_HPP_
+#define NAV2_DYNAMIC_PARAMS__DYNAMIC_PARAMS_CLIENT_HPP_
 
 #include <map>
+#include <string>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
 
@@ -24,71 +26,85 @@ namespace nav2_dynamic_params
 
 class DynamicParamsClient
 {
-
 public:
-
-  DynamicParamsClient(std::string node_name, rclcpp::Node::SharedPtr node)
+  explicit DynamicParamsClient(rclcpp::SyncParametersClient::SharedPtr client)
   {
-    node_name_= node_name;
-    //node_= node;
-
-    // Create member node and client for node name 
-    node_ = rclcpp::Node::make_shared("dynamic_params_client");
-    parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_, node_name);
-
+    parameters_client_ = client;
   }
+
+  void addParametersFromServer(std::vector<std::string> param_names)
+  {
+    auto params = parameters_client_->get_parameters(param_names);
+    for (auto & param : params) {
+      dynamic_param_map_[param.get_name()] = param;
+      dynamic_param_names_.push_back(param.get_name());
+    }
+  }
+
+  std::vector<std::string> get_param_names()
+  {
+    return dynamic_param_names_;
+  }
+
+  std::map<std::string, rclcpp::Parameter> get_param_map()
+  {
+    return dynamic_param_map_;
+  }
+
   template<class T>
-  bool get_event_param(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+  bool get_event_param(
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
     std::string param_name, T & new_value)
   {
     rclcpp::ParameterEventsFilter filter(event, {param_name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
-      rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if(!(filter.get_events()).empty())
-    {
+        rclcpp::ParameterEventsFilter::EventType::CHANGED});
+    if (!(filter.get_events()).empty()) {
       auto param_msg = ((filter.get_events()).front()).second;
       auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
       new_value = param_value.get_value<T>();
+      dynamic_param_map_[param_name] = param_value;
       return true;
-    }else {
-      //node_->get_parameter<T>(param_name, new_value);
-
-      // Call through parameter client of member node
-      new_value = parameters_client_->get_parameter<T>(param_name);
+    } else {
+      if (dynamic_param_map_.count(param_name) > 0) {
+        new_value = dynamic_param_map_[param_name].get_value<T>();
+      }
       return false;
     }
   }
 
   template<class T>
-  bool get_event_param(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+  bool get_event_param(
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
     std::string param_name, T & new_value, T default_value)
-  {    
+  {
     rclcpp::ParameterEventsFilter filter(event, {param_name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
-      rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if(!(filter.get_events()).empty())
-    {
+        rclcpp::ParameterEventsFilter::EventType::CHANGED});
+    if (!(filter.get_events()).empty()) {
       auto param_msg = ((filter.get_events()).front()).second;
       auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
       new_value = param_value.get_value<T>();
+      dynamic_param_map_[param_name] = param_value;
       return true;
-    }else {
-      //node_->get_parameter_or<T>(param_name, new_value, default_value);
-
-      // Call through parameter client of member node
-      new_value = parameters_client_->get_parameter<T>(param_name, default_value);
+    } else {
+      if (dynamic_param_map_.count(param_name) > 0) {
+        new_value = dynamic_param_map_[param_name].get_value<T>();
+      } else {
+        RCLCPP_WARN(rclcpp::get_logger("dynamic_params_client"),
+          "Parameter '%s' not set, using default", param_name.c_str());
+        new_value = default_value;
+      }
       return false;
     }
   }
+
 private:
-
-  std::string node_name_;
-  rclcpp::Node::SharedPtr node_; 
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
-
+  std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
+  std::vector<std::string> dynamic_param_names_;
 };
 
 }  // namespace nav2_dynamic_params
 
-#endif  // NAV2_DYNAMIC_PARAMS_DYNAMIC_PARAMS_CLIENT_H_
-
+#endif  // NAV2_DYNAMIC_PARAMS__DYNAMIC_PARAMS_CLIENT_HPP_
