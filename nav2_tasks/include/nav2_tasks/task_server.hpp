@@ -35,7 +35,10 @@ class TaskServer : public rclcpp::Node
 {
 public:
   explicit TaskServer(const std::string & name, bool autoStart = true)
-  : Node(name), workerThread_(nullptr), commandReceived_(false)
+  : Node(name),
+    workerThread_(nullptr),
+    commandReceived_(false),
+    eptr_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
     commandSub_ = create_subscription<CommandMsg>(taskName + "_command",
@@ -103,6 +106,17 @@ protected:
         } catch (...) {
           statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
+
+          // Save the exception so that we can propagate it back to the thread owning
+          // this object (the task server)
+          eptr_ = std::current_exception();
+
+          // TODO(mjeronimo): using rclcpp:shutdown is the only way I know so far to tell
+          // ROS to stop this node from spinning so that it will be destroyed and we can
+          // propagate the exception from the nodes destructor. I'd rather have a way to
+          // shutdown just this node, but at least this is better than having the node
+          // spinning even when a node's thread has terminated with a fault/exception
+          rclcpp::shutdown();
         }
 
         // Reset the execution flag now that we've executed the task
@@ -146,6 +160,12 @@ protected:
     workerThread_->join();
     delete workerThread_;
     workerThread_ = nullptr;
+
+    // If there was an exception during execution, rethrow the exception so
+    // that the owning thread (the thread that created this object) receives it
+    if (eptr_ != nullptr) {
+      std::rethrow_exception(eptr_);
+    }
   }
 
   // Variables to handle the communication of the command to the execute thread
@@ -182,6 +202,8 @@ protected:
   // The publishers for the result from this task
   typename rclcpp::Publisher<ResultMsg>::SharedPtr resultPub_;
   typename rclcpp::Publisher<StatusMsg>::SharedPtr statusPub_;
+
+  std::exception_ptr eptr_;
 };
 
 }  // namespace nav2_tasks
