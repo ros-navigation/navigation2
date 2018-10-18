@@ -70,10 +70,10 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 {
   tf2::toMsg(tf2::Transform::getIdentity(), old_pose_.pose);
 
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+  node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
   // get two frames
-  auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
+  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
 
   this->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   this->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -107,13 +107,13 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
-  if (!private_parameters_client->has_parameter("plugin_names") ||
-    !private_parameters_client->has_parameter("plugin_types") ) {
-  setPluginParams(temp_node);
+  if (!parameters_client_->has_parameter("plugin_names") ||
+    !parameters_client_->has_parameter("plugin_types") ) {
+  setPluginParams(node_);
   }
 
-  if (private_parameters_client->has_parameter("plugin_names") &&
-    private_parameters_client->has_parameter("plugin_types")) {
+  if (parameters_client_->has_parameter("plugin_names") &&
+    parameters_client_->has_parameter("plugin_types")) {
     auto param = this->get_parameters({"plugin_names", "plugin_types"});
 
     for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
@@ -140,9 +140,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   footprint_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       "footprint", rmw_qos_profile_default);
 
-  setUnpaddedRobotFootprint(makeFootprintFromParams(private_nh_));
+  setUnpaddedRobotFootprint(makeFootprintFromParams(node_));
 
-  publisher_ = new Costmap2DPublisher(private_nh_,
+  publisher_ = new Costmap2DPublisher(node_,
       layered_costmap_->getCostmap(), global_frame_, "costmap",
       always_send_full_costmap);
 
@@ -155,76 +155,55 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   robot_stopped_ = false;
   timer_ = private_nh_->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
-  this->register_param_change_callback(std::bind(&Costmap2DROS::param_validation_callback, this, std::placeholders::_1));
-  parameter_sub_ = private_parameters_client->on_parameter_event(std::bind(&Costmap2DROS::param_event_callback, this, std::placeholders::_1));
+  param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node_);
+
+/* 
+  // Style 1 
+  
+  std::map<std::string, rclcpp::ParameterType> map;
+  map["transform_tolerance"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["update_frequency"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["publish_frequency"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["width"] = rclcpp::ParameterType::PARAMETER_INTEGER;
+  map["height"] = rclcpp::ParameterType::PARAMETER_INTEGER;
+  map["resolution"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["origin_x"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["origin_y"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
+  map["footprint_padding"] = rclcpp::ParameterType::PARAMETER_DOUBLE; 
+
+  // Add Map of parameters for validation
+  param_validator_->add_param(map);
+*/
+
+  // Style 2
+  // Add parameter with bound limits for validation
+  param_validator_->add_param("transform_tolerance",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
+  param_validator_->add_param("update_frequency",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,100});
+  param_validator_->add_param("publish_frequency",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,100});
+  param_validator_->add_param("width",rclcpp::ParameterType::PARAMETER_INTEGER, {0,0}, 1);
+  param_validator_->add_param("height",rclcpp::ParameterType::PARAMETER_INTEGER, {0,0}, 1);
+  param_validator_->add_param("resolution",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,50});
+  param_validator_->add_param("origin_x",rclcpp::ParameterType::PARAMETER_DOUBLE);
+  param_validator_->add_param("origin_y",rclcpp::ParameterType::PARAMETER_DOUBLE);
+  param_validator_->add_param("footprint_padding",rclcpp::ParameterType::PARAMETER_DOUBLE);
+  param_validator_->add_param("robot_radius",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
+
+  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&Costmap2DROS::param_event_callback, this, std::placeholders::_1));
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
+  dynamic_param_client_->addParametersFromServer({
+    "transform_tolerance","update_frequency","publish_frequency",
+    "width","height","resolution","origin_x","origin_y","footprint_padding"});
+
+  auto dynamic_params = dynamic_param_client_->get_param_names();
+
+  for (auto & names : dynamic_params){
+    printf("%s\n", names.c_str());
+  }
 
   auto set_parameters_results = this->set_parameters({
     rclcpp::Parameter("update_frequency", 1.0),
     rclcpp::Parameter("publish_frequency", 1.0),
   });
-
-
-
-rcl_interfaces::msg::SetParametersResult Costmap2DROS::param_validation_callback(
-  std::vector<rclcpp::Parameter> parameters)
-{
-
-  std::map<std::string, rclcpp::Parameter> param_map;
-
-  for (auto parameter : parameters){
-  param_map[parameter.get_name()] = parameter;
-  RCLCPP_INFO(this->get_logger(), "Parameter Change Request: %s", (parameter.get_name()).c_str());
-  }
-
-  auto result = rcl_interfaces::msg::SetParametersResult();
-  result.successful = true;
-
-  if(validate_param(
-    "transform_tolerance", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "update_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "publish_frequency", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "width", param_map, rclcpp::ParameterType::PARAMETER_INTEGER)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "height", param_map, rclcpp::ParameterType::PARAMETER_INTEGER)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "resolution", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "origin_x", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "origin_y", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-
-  if(validate_param(
-    "footprint_padding", param_map, rclcpp::ParameterType::PARAMETER_DOUBLE)){
-    result.successful &= true;
-  } else {result.successful = false;}
-  
-  return result;
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
@@ -246,7 +225,7 @@ Costmap2DROS::~Costmap2DROS()
 
   delete layered_costmap_;
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
-  //delete dsrv_;
+  //delete param_validator__;
 }
 
 void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
@@ -262,8 +241,9 @@ void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
 // TODO(bpwilcox): resolve dynamic reconfigure dependencies
 void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  getParamValue(event,"transform_tolerance", transform_tolerance_);
 
+  dynamic_param_client_->get_event_param(event,"transform_tolerance", transform_tolerance_);
+  
   if (map_update_thread_ != NULL)
   {
     map_update_thread_shutdown_ = true;
@@ -271,11 +251,11 @@ void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEven
     delete map_update_thread_;
   }
   map_update_thread_shutdown_ = false;
-  double map_update_frequency;
-  getParamValue(event,"update_frequency", map_update_frequency);
+  double map_update_frequency = 1.0;
+  dynamic_param_client_->get_event_param(event,"update_frequency", map_update_frequency);
 
-  double map_publish_frequency;
-  getParamValue(event,"publish_frequency", map_publish_frequency);
+  double map_publish_frequency = 5.0;
+  dynamic_param_client_->get_event_param(event,"publish_frequency", map_publish_frequency);
 
   if (map_publish_frequency > 0)
     publish_cycle_ = rclcpp::Duration(1*1e9 / map_publish_frequency);
@@ -286,11 +266,11 @@ void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEven
   double resolution, origin_x, origin_y;
   int map_width_meters, map_height_meters;
 
-  getParamValue(event,"width", map_width_meters);
-  getParamValue(event,"height", map_height_meters);
-  getParamValue(event,"resolution", resolution);
-  getParamValue(event,"origin_x", origin_x);
-  getParamValue(event,"origin_y", origin_y); 
+  dynamic_param_client_->get_event_param(event,"width", map_width_meters); 
+  dynamic_param_client_->get_event_param(event,"height", map_height_meters);
+  dynamic_param_client_->get_event_param(event,"resolution", resolution);
+  dynamic_param_client_->get_event_param(event,"origin_x", origin_x);
+  dynamic_param_client_->get_event_param(event,"origin_y", origin_y); 
   
   if (!layered_costmap_->isSizeLocked())
   {
@@ -301,7 +281,8 @@ void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEven
   // If the padding has changed, call setUnpaddedRobotFootprint() to
   // re-apply the padding.
   float footprint_padding;
-  getParamValue(event,"footprint_padding", footprint_padding);
+  dynamic_param_client_->get_event_param(event,"footprint_padding", footprint_padding);
+
   if (footprint_padding_ != footprint_padding)
   {  
     footprint_padding_ = footprint_padding;
@@ -311,7 +292,6 @@ void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEven
   readFootprintFromConfig(event);
 
   map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
-
 }
 
 void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
@@ -324,8 +304,8 @@ void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterE
   std::string footprint;
   double robot_radius;
 
-  if (!getParamValue(event, "footprint", footprint) ||
-    !getParamValue(event, "robot_radius", robot_radius))
+  if (!dynamic_param_client_->get_event_param(event, "footprint", footprint) ||
+    !dynamic_param_client_->get_event_param(event, "robot_radius", robot_radius))
     {
       return;
     }
@@ -360,8 +340,6 @@ void Costmap2DROS::setUnpaddedRobotFootprint(const std::vector<geometry_msgs::ms
 
 void Costmap2DROS::movementCB()
 {
-  // don't allow configuration to happen while this check occurs
-  // std::recursive_mutex::scoped_lock mcl(configuration_mutex_);
 
   geometry_msgs::msg::PoseStamped new_pose;
   if (!getRobotPose(new_pose)) {

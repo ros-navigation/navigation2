@@ -60,6 +60,8 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.h"
 #include "rclcpp/parameter_events_filter.hpp"
+#include "nav2_dynamic_params/dynamic_params_validator.hpp"
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 class SuperValue : public XmlRpc::XmlRpcValue
 {
@@ -257,34 +259,6 @@ public:
     }
   }
 
-  bool check_parameter_change(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
-    std::string param_name)
-  {
-     rclcpp::ParameterEventsFilter filter(event, {param_name},
-      {rclcpp::ParameterEventsFilter::EventType::NEW,
-      rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if(!(filter.get_events()).empty())
-    {
-      return true;
-    }else {
-      return false;
-    }     
-  }
-
-  bool validate_param(std::string param_name, std::map<std::string, rclcpp::Parameter> & map, rclcpp::ParameterType Type)
-  {
-    if (map.count(param_name) > 0)
-      if(Type == map[param_name].get_type()){
-      RCLCPP_INFO(this->get_logger(), "Parameter Change Successful: %s", param_name.c_str());    
-        return true;
-      }
-      else{
-        RCLCPP_WARN(this->get_logger(), "Parameter Change Denied::Doesn't Match Type: %s", param_name.c_str());    
-        return false;
-      }
-    return true;
-  }
-
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
@@ -298,12 +272,7 @@ private:
    *
    * If the values of footprint and robot_radius are the same in
    * new_config and old_config, nothing is changed. */
-<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
-  //void readFootprintFromConfig(const nav2_costmap_2d::Costmap2DConfig &new_config,
-  //                             const nav2_costmap_2d::Costmap2DConfig &old_config);
-=======
   void readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
@@ -324,6 +293,7 @@ private:
   pluginlib::ClassLoader<Layer> plugin_loader_;
   geometry_msgs::msg::PoseStamped old_pose_;
   Costmap2DPublisher * publisher_;
+<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
   
   // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
 <<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
@@ -333,8 +303,13 @@ private:
   //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
 >>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
 
+=======
+  nav2_dynamic_params::DynamicParamsValidator * param_validator_;
+  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+>>>>>>> 74c29a8... storing work before rebase:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
   std::recursive_mutex configuration_mutex_;
-
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
