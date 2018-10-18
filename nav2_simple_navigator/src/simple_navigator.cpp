@@ -28,32 +28,32 @@ SimpleNavigator::SimpleNavigator()
 : nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
   robot_(this)
 {
-  RCLCPP_INFO(get_logger(), "starting node");
+  RCLCPP_INFO(get_logger(), "Starting node");
 
   plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
 
   if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "planner not running");
-    throw std::runtime_error("planner not running");
+    RCLCPP_ERROR(get_logger(), "Planner not running");
+    throw std::runtime_error("Planner not running");
   }
 
   controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
 
   if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "controller not running");
-    throw std::runtime_error("controller not running");
+    RCLCPP_ERROR(get_logger(), "Controller not running");
+    throw std::runtime_error("Controller not running");
   }
 }
 
 SimpleNavigator::~SimpleNavigator()
 {
-  RCLCPP_INFO(get_logger(), "stopping node");
+  RCLCPP_INFO(get_logger(), "Stopping node");
 }
 
 TaskStatus
 SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_DEBUG(get_logger(), "execute");
+  RCLCPP_DEBUG(get_logger(), "Execute navigate to pose");
 
   // Compose the PathEndPoints message for Navigation. The starting pose comes from
   // localization, while the goal pose is from the incoming command
@@ -67,11 +67,11 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
     endpoints->tolerance = 2.0;
   } else {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
-    RCLCPP_ERROR(get_logger(), "current robot pose is not available");
+    RCLCPP_ERROR(get_logger(), "Current robot pose is not available");
     return TaskStatus::FAILED;
   }
 
-  RCLCPP_DEBUG(get_logger(), "getting the path from the planner");
+  RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   plannerTaskClient_->sendCommand(endpoints);
 
@@ -80,7 +80,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "task has been canceled");
+      RCLCPP_INFO(get_logger(), "Task has been canceled");
       plannerTaskClient_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -91,26 +91,26 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "planning task completed");
+        RCLCPP_INFO(get_logger(), "Planning task completed");
         goto planning_succeeded;
 
       case TaskStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "planning task failed");
+        RCLCPP_ERROR(get_logger(), "Planning task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_DEBUG(get_logger(), "planning task still running");
+        RCLCPP_DEBUG(get_logger(), "Planning task still running");
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "invalid status value");
-        throw std::logic_error("invalid status value");
+        RCLCPP_ERROR(get_logger(), "Invalid status value");
+        throw std::logic_error("Invalid status value");
     }
   }
 
 planning_succeeded:
 
-  RCLCPP_DEBUG(get_logger(), "got path of size %u", path->poses.size());
+  RCLCPP_DEBUG(get_logger(), "Got path of size %u", path->poses.size());
 
   int index = 0;
   for (auto pose : path->poses) {
@@ -119,7 +119,7 @@ planning_succeeded:
     index++;
   }
 
-  RCLCPP_INFO(get_logger(), "sending the path to the controller to execute");
+  RCLCPP_INFO(get_logger(), "Sending the path to the controller to execute");
 
   controllerTaskClient_->sendCommand(path);
 
@@ -128,7 +128,7 @@ planning_succeeded:
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "task has been canceled");
+      RCLCPP_INFO(get_logger(), "Task has been canceled");
       controllerTaskClient_->cancel();
       setCanceled();
       return TaskStatus::CANCELED;
@@ -141,23 +141,23 @@ planning_succeeded:
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "control task completed");
+          RCLCPP_INFO(get_logger(), "Control task completed");
           nav2_tasks::NavigateToPoseResult navigationResult;
           setResult(navigationResult);
           return TaskStatus::SUCCEEDED;
         }
 
       case TaskStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "control task failed");
+        RCLCPP_ERROR(get_logger(), "Control task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
-        RCLCPP_DEBUG(get_logger(), "control task still running");
+        RCLCPP_DEBUG(get_logger(), "Control task still running");
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "invalid status value");
-        throw std::logic_error("invalid status value");
+        RCLCPP_ERROR(get_logger(), "Invalid status value");
+        throw std::logic_error("Invalid status value");
     }
   }
 }
