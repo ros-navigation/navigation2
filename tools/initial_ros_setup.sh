@@ -52,7 +52,7 @@ return_to_root_dir() {
 }
 
 download_navstack() {
-  echo "Downloading the ROS 2 navstack"
+  echo "Downloading the ROS 2 navstack into navigation2_ws"
   mkdir -p navigation2_ws/src
   cd navigation2_ws
   if [ -f "custom_nav2.repos" ]; then #override default location for testing
@@ -74,7 +74,7 @@ download_ros2() {
 }
 
 download_ros2_dependencies() {
-  echo "Downloading the dependencies workspace"
+  echo "Downloading the ROS 2 dependencies workspace"
   mkdir -p navstack_dependencies_ws/src
   cd navstack_dependencies_ws
   vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
