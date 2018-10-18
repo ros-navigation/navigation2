@@ -9,7 +9,7 @@
     convenience functions for event callbacks are also provided
   </description>
   <author>Brian Wilcox</author>
-	<maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
+  <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -20,6 +20,6 @@
   <test_depend>ament_lint_auto</test_depend>
 
   <export>
-	  <build_type>ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
