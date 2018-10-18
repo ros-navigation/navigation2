@@ -24,13 +24,8 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy 
 
-# install basic build script dependencies 
+# update latest package versions
 RUN apt-get update
-RUN apt-get install -y \
-    python3-colcon-common-extensions \
-    git \
-    wget \
-    python3-vcstool
 
 # install ROS1 dependencies
 RUN apt-get install -y \
@@ -38,6 +33,22 @@ RUN apt-get install -y \
     ros-$ROS1_DISTRO-urdf \
     ros-$ROS1_DISTRO-interactive-markers \
     ros-$ROS1_DISTRO-gazebo-ros
+
+# install ROS2 dependencies
+RUN apt install -y \
+    build-essential \
+    cmake \
+    git \
+    python3-colcon-common-extensions \
+    python3-pip \
+    python-rosdep \
+    python3-vcstool \
+    wget
+
+# install Fast-RTPS dependencies
+RUN apt install --no-install-recommends -y \
+    libasio-dev \
+    libtinyxml2-dev
 
 # install map_server dependencies
 RUN apt-get install -y \
