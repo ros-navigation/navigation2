@@ -113,7 +113,7 @@ protected:
 
           // TODO(mjeronimo): using rclcpp:shutdown is the only way I know so far to tell
           // ROS to stop this node from spinning so that it will be destroyed and we can
-          // propagate the exception from the nodes destructor. I'd rather have a way to
+          // propagate the exception from the node's destructor. I'd rather have a way to
           // shutdown just this node, but at least this is better than having the node
           // spinning even when a node's thread has terminated with a fault/exception
           rclcpp::shutdown();
