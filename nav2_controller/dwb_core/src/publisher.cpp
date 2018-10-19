@@ -46,36 +46,37 @@ namespace dwb_core
 
 void DWBPublisher::initialize(const std::shared_ptr<rclcpp::Node> & nh)
 {
+  nh_ = nh;
   // Load Publishers
-  nh->get_parameter_or("publish_evaluation", publish_evaluation_, true);
+  nh_->get_parameter_or("publish_evaluation", publish_evaluation_, true);
   if (publish_evaluation_) {
-    eval_pub_ = nh->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
+    eval_pub_ = nh_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
   }
 
-  nh->get_parameter_or("publish_global_plan", publish_global_plan_, true);
+  nh_->get_parameter_or("publish_global_plan", publish_global_plan_, true);
   if (publish_global_plan_) {
-    global_pub_ = nh->create_publisher<nav_msgs::msg::Path>("global_plan", 1);
+    global_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("global_plan", 1);
   }
 
-  nh->get_parameter_or("publish_transformed_plan", publish_transformed_, true);
+  nh_->get_parameter_or("publish_transformed_plan", publish_transformed_, true);
   if (publish_transformed_) {
-    transformed_pub_ = nh->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+    transformed_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   }
 
-  nh->get_parameter_or("publish_local_plan", publish_local_plan_, true);
+  nh_->get_parameter_or("publish_local_plan", publish_local_plan_, true);
   if (publish_local_plan_) {
-    local_pub_ = nh->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+    local_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
   }
 
-  nh->get_parameter_or("publish_trajectories", publish_trajectories_, true);
+  nh_->get_parameter_or("publish_trajectories", publish_trajectories_, true);
   if (publish_trajectories_) {
-    marker_pub_ = nh->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
+    marker_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
   }
   prev_marker_count_ = 0;
 
-  nh->get_parameter_or("publish_cost_grid_pc", publish_cost_grid_pc_, false);
+  nh_->get_parameter_or("publish_cost_grid_pc", publish_cost_grid_pc_, false);
   if (publish_cost_grid_pc_) {
-    cost_grid_pc_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
+    cost_grid_pc_pub_ = nh_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
   }
 }
 
@@ -157,7 +158,7 @@ void DWBPublisher::publishCostGrid(
 
   sensor_msgs::msg::PointCloud cost_grid_pc;
   cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
-  cost_grid_pc.header.stamp = rclcpp::Clock().now();
+  cost_grid_pc.header.stamp = nh_->now();
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;

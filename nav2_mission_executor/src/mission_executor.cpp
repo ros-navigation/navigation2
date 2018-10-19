@@ -101,6 +101,7 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
         }
 
       case TaskStatus::FAILED:
+        RCLCPP_ERROR(get_logger(), "MissionExecutor::execute: navigation task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:

@@ -70,7 +70,7 @@ public:
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
-  ObservationBuffer(std::string topic_name, double observation_keep_time,
+  ObservationBuffer(rclcpp::Node::SharedPtr nh, std::string topic_name, double observation_keep_time,
       double expected_update_rate,
       double min_obstacle_height, double max_obstacle_height, double obstacle_range,
       double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
@@ -140,7 +140,7 @@ private:
   tf2_ros::Buffer & tf2_buffer_;
   const rclcpp::Duration observation_keep_time_;
   const rclcpp::Duration expected_update_rate_;
-  rclcpp::Clock clock_;
+  rclcpp::Node::SharedPtr nh_;
   rclcpp::Time last_updated_;
   std::string global_frame_;
   std::string sensor_frame_;

@@ -196,13 +196,14 @@ protected:
    * @brief Load the critic parameters from the namespace
    * @param name The namespace of this planner.
    */
-  void loadCritics(const std::shared_ptr<rclcpp::Node> & private_nh);
+  void loadCritics();
 
   std::vector<std::string> default_critic_namespaces_;
 
   CostmapROSPtr costmap_ros_;
   TFBufferPtr tf_;
   DWBPublisher pub_;
+  std::shared_ptr<rclcpp::Node> nh_;
 };
 
 }  // namespace dwb_core

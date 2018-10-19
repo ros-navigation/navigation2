@@ -275,10 +275,9 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
 
   SDL_FreeSurface(img);
 
-  rclcpp::Clock clock;
-  map_msg_.info.map_load_time = clock.now();
+  map_msg_.info.map_load_time = node_->now();
   map_msg_.header.frame_id = frame_id_;
-  map_msg_.header.stamp = clock.now();
+  map_msg_.header.stamp = node_->now();
 
   RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read map %s: %d X %d map @ %.3lf m/cell",
     map_name_.c_str(),
