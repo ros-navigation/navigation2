@@ -65,9 +65,16 @@ ARG SCRIPTPATH=./tools
 COPY $SCRIPTPATH/initial_ros_setup.sh init/
 COPY $SCRIPTPATH/*.repos ./
 
-# run setup script to download source
+# run setup script to download ROS1 and source dependencies
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
+
+# get the latest nightly ROS2 build
+#RUN mkdir /ros2_ws/ros2_ws
+#WORKDIR /ros2_ws/ros2_ws
+RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
+RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
+RUN . ros2-linux/setup.bash
 
 WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 
