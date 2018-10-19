@@ -32,9 +32,9 @@ if [ -d "ros1_dependencies_ws" ]; then
 else
   ENABLE_ROS1=false
 fi
-if [ -d "ros2_dependencies_ws" ]; then
+if [ -d "ros2_ws" ]; then
   ENABLE_ROS2=true
-  ROS2_SETUP_FILE=$CWD/ros2_dependencies_ws/install/setup.bash
+  ROS2_SETUP_FILE=$CWD/ros2_ws/install/setup.bash
 else
   ENABLE_ROS2=false
   ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.bash
@@ -50,18 +50,13 @@ if [ "$ENABLE_ROS1" = true ]; then
 
 # Build ROS 2 base
 if [ "$ENABLE_ROS2" = true ]; then
-  cd $CWD/ros2_dependencies_ws
+  cd $CWD/ros2_ws
   colcon build --symlink-install --packages-skip ros1_bridge
 fi
 
-# Build our ROS 2 dependencies
-cd $CWD/navstack_dependencies_ws
-(. $ROS2_SETUP_FILE &&
- colcon build --symlink-install)
-
 # Build our code
 cd $CWD/navigation2_ws
-(. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
+(. $ROS2_SETUP_FILE &&
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
@@ -69,6 +64,6 @@ if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
   . ros1_dependencies_ws/devel/setup.bash
   . navigation2_ws/install/setup.bash
-  cd $CWD/ros2_dependencies_ws
+  cd $CWD/ros2_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi

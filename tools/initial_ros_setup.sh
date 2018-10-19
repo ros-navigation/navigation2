@@ -51,10 +51,11 @@ return_to_root_dir() {
   cd $CWD
 }
 
-download_navstack() {
-  echo "Downloading the ROS 2 navstack into navigation2_ws"
+download_navstack_and_dependencies() {
+  echo "Downloading the ROS 2 navigation stack and dependencies into navigation2_ws"
   mkdir -p navigation2_ws/src
   cd navigation2_ws
+  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   if [ -f "custom_nav2.repos" ]; then #override default location for testing
     vcs import src < custom_nav2.repos
   else
@@ -66,18 +67,10 @@ download_navstack() {
 
 download_ros2() {
   echo "Downloading ROS 2 Release Latest"
-  mkdir -p ros2_dependencies_ws/src
-  cd ros2_dependencies_ws
+  mkdir -p ros2_ws/src
+  cd ros2_ws
   wget https://raw.githubusercontent.com/ros2/ros2/release-latest/ros2.repos
   vcs import src < ros2.repos
-  return_to_root_dir
-}
-
-download_ros2_dependencies() {
-  echo "Downloading the ROS 2 navigation dependencies workspace"
-  mkdir -p navstack_dependencies_ws/src
-  cd navstack_dependencies_ws
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   return_to_root_dir
 }
 
@@ -99,8 +92,7 @@ checkpoint() {
 }
 
 download_all() {
-  checkpoint download_navstack
-  checkpoint download_ros2_dependencies
+  checkpoint download_navstack_and_dependencies
   if [ "$ENABLE_ROS2" = true ]; then
     checkpoint download_ros2
   fi
@@ -110,9 +102,9 @@ download_all() {
 }
 
 echo "This script will download the ROS 2 latest release workspace, the"
-echo "dependencies workspace and the ros_navstack_port workspace to the"
-echo "current directory and then build them all. There should be no ROS"
-echo "environment variables set at this time."
+echo "ROS 1 dependencies workspace and the navigation2_ws workspace to"
+echo "the current directory and then build them all. There should be no"
+echo "ROS environment variables set at this time."
 echo
 echo "The current directory is $CWD"
 echo
