@@ -112,7 +112,6 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 
 planning_succeeded:
 
-<<<<<<< HEAD
   RCLCPP_INFO(get_logger(), "SimpleNavigator: Received path of size %u from planner",
     path->poses.size());
 
