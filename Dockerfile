@@ -24,13 +24,8 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy 
 
-# install basic build script dependencies 
+# update latest package versions
 RUN apt-get update
-RUN apt-get install -y \
-    python3-colcon-common-extensions \
-    git \
-    wget \
-    python3-vcstool
 
 # install ROS1 dependencies
 RUN apt-get install -y \
@@ -38,6 +33,22 @@ RUN apt-get install -y \
     ros-$ROS1_DISTRO-urdf \
     ros-$ROS1_DISTRO-interactive-markers \
     ros-$ROS1_DISTRO-gazebo-ros
+
+# install ROS2 dependencies
+RUN apt install -y \
+    build-essential \
+    cmake \
+    git \
+    python3-colcon-common-extensions \
+    python3-pip \
+    python-rosdep \
+    python3-vcstool \
+    wget
+
+# install Fast-RTPS dependencies
+RUN apt install --no-install-recommends -y \
+    libasio-dev \
+    libtinyxml2-dev
 
 # install map_server dependencies
 RUN apt-get install -y \
@@ -54,9 +65,16 @@ ARG SCRIPTPATH=./tools
 COPY $SCRIPTPATH/initial_ros_setup.sh init/
 COPY $SCRIPTPATH/*.repos ./
 
-# run setup script to download source
+# run setup script to download ROS1 and source dependencies
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
+
+# get the latest nightly ROS2 build
+#RUN mkdir /ros2_ws/ros2_ws
+#WORKDIR /ros2_ws/ros2_ws
+RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
+RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
+RUN . ros2-linux/setup.bash
 
 WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 
