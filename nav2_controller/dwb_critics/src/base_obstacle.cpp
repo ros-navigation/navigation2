@@ -75,7 +75,8 @@ double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 
 bool BaseObstacleCritic::isValidCost(const unsigned char cost)
 {
-  return cost != nav2_costmap_2d::LETHAL_OBSTACLE && cost != nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE &&
+  return cost != nav2_costmap_2d::LETHAL_OBSTACLE &&
+         cost != nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE &&
          cost != nav2_costmap_2d::NO_INFORMATION;
 }
 
