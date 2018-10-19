@@ -15,6 +15,7 @@
 #ifndef NAV2_CONTROLLER_EXAMPLE__DWA_CONTROLLER_HPP_
 #define NAV2_CONTROLLER_EXAMPLE__DWA_CONTROLLER_HPP_
 
+#include <memory>
 #include <string>
 #include "nav2_tasks/follow_path_task.hpp"
 #include "geometry_msgs/msg/twist.hpp"
