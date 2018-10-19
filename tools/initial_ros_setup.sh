@@ -61,7 +61,7 @@ download_navstack_and_dependencies() {
     cd src
     git clone https://github.com/ros-planning/navigation2.git
   fi
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+  vcs import . < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   return_to_root_dir
 }
 
