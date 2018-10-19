@@ -16,21 +16,21 @@
 
 import os
 import sys
+
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing import LaunchTestService
-from launch.substitutions import ThisLaunchFileDir
 
 
 def main(argv=sys.argv[1:]):
     launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'localization_node.launch.py')
     testExecutable = os.getenv('TEST_EXECUTABLE')
-    ld = LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource( [launchFile] )),
-        ])
+    ld = LaunchDescription(
+        [IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile]))]
+    )
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
         name='test_localization_node',
@@ -46,4 +46,3 @@ def main(argv=sys.argv[1:]):
 
 if __name__ == '__main__':
     sys.exit(main())
-
