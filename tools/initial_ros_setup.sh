@@ -74,7 +74,7 @@ download_ros2() {
 }
 
 download_ros2_dependencies() {
-  echo "Downloading the ROS 2 dependencies workspace"
+  echo "Downloading the ROS 2 navigation dependencies workspace"
   mkdir -p navstack_dependencies_ws/src
   cd navstack_dependencies_ws
   vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
@@ -82,7 +82,7 @@ download_ros2_dependencies() {
 }
 
 download_ros1_dependencies() {
-  echo "Downloading the ROS 1 dependencies workspace"
+  echo "Downloading the ROS 1 navigation dependencies workspace"
   mkdir -p ros1_dependencies_ws/src
   cd ros1_dependencies_ws
   vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros1_dependencies.repos.${ROS1_DISTRO}
