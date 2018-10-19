@@ -19,7 +19,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_factory.hpp"
-#include "nav2_map_server/map_reps/map_reps.hpp"
+#include "nav2_map_server/map_representations/map_reps.hpp"
 
 namespace nav2_map_server
 {

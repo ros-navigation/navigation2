@@ -15,6 +15,6 @@
 #ifndef NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
 #define NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
 
-#include "nav2_map_server/map_reps/occ_grid_server.hpp"
+#include "nav2_map_server/map_representations/occ_grid_server.hpp"
 
 #endif  // NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
