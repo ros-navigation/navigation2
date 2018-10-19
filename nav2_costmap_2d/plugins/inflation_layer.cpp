@@ -40,6 +40,7 @@
 #include <nav2_costmap_2d/costmap_math.h>
 #include <nav2_costmap_2d/footprint.h>
 #include <pluginlib/class_list_macros.hpp>
+#include "rclcpp/parameter_events_filter.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 
@@ -56,9 +57,8 @@ InflationLayer::InflationLayer()
   weight_(0),
   inflate_unknown_(false),
   cell_inflation_radius_(0),
-  cached_cell_inflation_radius_(0)
-  //, dsrv_(NULL)
-  , seen_(NULL),
+  cached_cell_inflation_radius_(0),
+  seen_(NULL),
   cached_costs_(NULL),
   cached_distances_(NULL),
   last_min_x_(-std::numeric_limits<float>::max()),
@@ -75,9 +75,6 @@ void InflationLayer::onInitialize()
   {
     std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
 
-    auto private_nh = rclcpp::Node::make_shared(name_);
-    rclcpp::Node::SharedPtr g_nh;
-
     current_ = true;
     if (seen_) {
       delete[] seen_;
@@ -86,39 +83,45 @@ void InflationLayer::onInitialize()
     seen_size_ = 0;
     need_reinflation_ = false;
 
-    // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-    /*
-      dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig>::CallbackType cb = std::bind(
-        &InflationLayer::reconfigureCB, this, _1, _2);
-
-       if (dsrv_ != NULL){
-        dsrv_->clearCallback();
-        dsrv_->setCallback(cb);
-      }
-      else
-      {
-        dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig>(ros::NodeHandle("~/" + name_));
-        dsrv_->setCallback(cb);
-      } */
   }
-
   matchSize();
-  //TODO(bpwilcox): Values hard-coded from config file default, replace with dynamic approach
-  setInflationParameters(0.55, 10);
 
+  node_->set_parameter_if_not_set("enabled_inflation_layer",true);
+  node_->set_parameter_if_not_set("inflation_radius", 0.55);
+  node_->set_parameter_if_not_set("cost_scaling_factor", 10.0);
+  node_->set_parameter_if_not_set("inflate_unknown",false);
+
+  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
+  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&InflationLayer::reconfigureCB, this, std::placeholders::_1));
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
+  dynamic_param_client_->addParametersFromServer({"enabled_inflation_layer", "inflation_radius", "cost_scaling_factor", "inflate_unknown"});
+  
+  // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
+  // TODO(bpwilcox): Initialize callback for dynamic parameters
 }
-// TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-/*
-void InflationLayer::reconfigureCB(nav2_costmap_2d::InflationPluginConfig &config, uint32_t level)
-{
-  setInflationParameters(config.inflation_radius, config.cost_scaling_factor);
 
-  if (enabled_ != config.enabled || inflate_unknown_ != config.inflate_unknown) {
-    enabled_ = config.enabled;
-    inflate_unknown_ = config.inflate_unknown;
+void InflationLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  RCLCPP_DEBUG(node_->get_logger(), "InflationLayer:: Event Callback");
+
+  double inflation_radius;
+  double cost_scaling_factor;
+  bool inflate_unknown;
+  bool enabled;
+
+  dynamic_param_client_->get_event_param(event,"inflation_radius", inflation_radius, 0.55);
+  dynamic_param_client_->get_event_param(event,"cost_scaling_factor", cost_scaling_factor, 10.0);
+  dynamic_param_client_->get_event_param(event,"inflate_unknown", inflate_unknown, false);
+  dynamic_param_client_->get_event_param(event,"enabled_inflation_layer", enabled, true);
+
+  setInflationParameters(inflation_radius, cost_scaling_factor);
+
+  if (enabled_ != enabled || inflate_unknown_ != inflate_unknown) {
+    enabled_ = enabled;
+    inflate_unknown_ = inflate_unknown;
     need_reinflation_ = true;
   }
-} */
+}
 
 void InflationLayer::matchSize()
 {

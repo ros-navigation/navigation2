@@ -44,18 +44,21 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   std::string name = "costmap";
-  tf2_ros::Buffer buffer(node->get_clock(), tf2::durationFromSec(10));
+  tf2_ros::Buffer buffer(tf2::durationFromSec(10));
   tf2_ros::TransformListener tf(buffer);
 
-  rclcpp::Clock clock;
+  auto t_node = rclcpp::Node::make_shared("time_node");
+
   geometry_msgs::msg::TransformStamped base_rel_map;
   base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
   base_rel_map.child_frame_id = "base_link";
   base_rel_map.header.frame_id = "map";
-  base_rel_map.header.stamp = clock.now();
+  base_rel_map.header.stamp = t_node->now();
+  //base_rel_map.header.stamp = rclcpp::Time();
   buffer.setTransform( base_rel_map, "footprint_tests" );
 
-  auto node = std::make_shared<costmap_2d::Costmap2DROS>(name, buffer);
+  auto node = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name, buffer);
+
   //costmap_2d::Costmap2DROS lcr(name, buffer);
 
   rclcpp::spin(node);

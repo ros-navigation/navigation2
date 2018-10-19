@@ -56,25 +56,18 @@ StaticLayer::StaticLayer() {enabled_ = true;}
 
 StaticLayer::~StaticLayer()
 {
-  /* if (dsrv_) {
-    delete dsrv_;
-  } */
+  if (dynamic_param_client_) {
+    delete dynamic_param_client_;
+  }
 }
 
 void StaticLayer::onInitialize()
 {
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-  auto nh = rclcpp::Node::make_shared(name_);
-  rclcpp::Node::SharedPtr g_nh;
-  g_nh = rclcpp::Node::make_shared("nav2_costmap_2d_static");
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
-=======
-  node_ = rclcpp::Node::make_shared(name_);
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
-
   current_ = true;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
+
+  node_->set_parameter_if_not_set("enabled_static_layer",true);
 
   std::string map_topic;
   node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("occ_grid"));
@@ -97,11 +90,7 @@ void StaticLayer::onInitialize()
   //if (map_sub_.getTopic() != ros::names::resolve(map_topic)) {
 
   // we'll subscribe to the latched topic that the map server uses
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-  RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Requesting the map...");
-=======
   RCLCPP_INFO(node_->get_logger(), "Requesting the map...");
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
   custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
@@ -116,15 +105,6 @@ void StaticLayer::onInitialize()
     r.sleep();
   }
 
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-  RCLCPP_INFO(rclcpp::get_logger(
-        "nav2_costmap_2d"), "Received a %d X %d map at %f m/pix", getSizeInCellsX(),
-      getSizeInCellsY(), getResolution());
-
-  if (subscribe_to_updates_) {
-    RCLCPP_INFO(rclcpp::get_logger("nav2_costmap_2d"), "Subscribing to updates");
-    map_update_sub_ = g_nh->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
-=======
   RCLCPP_INFO(node_->get_logger(),
     "Received a %d X %d map at %f m/pix", getSizeInCellsX(),
       getSizeInCellsY(), getResolution());
@@ -132,35 +112,39 @@ void StaticLayer::onInitialize()
   if (subscribe_to_updates_) {
     RCLCPP_INFO(node_->get_logger(), "Subscribing to updates");
     map_update_sub_ = node_->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
         map_topic + "_updates",
         std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), custom_qos_profile);
 
-  }
-/*   } else {
+  } else {
     has_updated_data_ = true;
-  } */
+  }
 
-  /* if (dsrv_) {
-    delete dsrv_;
-  } */
 
-  //dsrv_ = new dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig>(nh);
-  //dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig>::CallbackType cb = std::bind(
-  //    &StaticLayer::reconfigureCB, this, _1, _2);
-  //dsrv_->setCallback(cb);
+  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
+  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&StaticLayer::reconfigureCB, this, std::placeholders::_1));
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
+  dynamic_param_client_->addParametersFromServer({"enabled_static_layer"});
+
+  // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
+  // TODO(bpwilcox): Initialize callback for dynamic parameters
 }
 
-/* void StaticLayer::reconfigureCB(nav2_costmap_2d::GenericPluginConfig & config, uint32_t level)
+void StaticLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  if (config.enabled != enabled_) {
-    enabled_ = config.enabled;
+  RCLCPP_DEBUG(node_->get_logger(), "StaticLayer:: Event Callback");
+
+  bool enabled = true;
+  dynamic_param_client_->get_event_param(event,"enabled_static_layer", enabled, true); 
+
+  if (enabled != enabled_)
+  {
+    enabled_ = enabled;
     has_updated_data_ = true;
     x_ = y_ = 0;
     width_ = size_x_;
-    height_ = size_y_;
+    height_ = size_y_;    
   }
-} */
+}
 
 void StaticLayer::matchSize()
 {
@@ -194,13 +178,8 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
 {
   unsigned int size_x = new_map->info.width, size_y = new_map->info.height;
 
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-  RCLCPP_DEBUG(rclcpp::get_logger(
-        "nav2_costmap_2d"), "Received a %d X %d map at %f m/pix", size_x, size_y,
-=======
   RCLCPP_DEBUG(node_->get_logger(),
     "Received a %d X %d map at %f m/pix", size_x, size_y,
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
       new_map->info.resolution);
 
   // resize costmap if size, resolution or origin do not match
@@ -213,13 +192,8 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
         !layered_costmap_->isSizeLocked()))
   {
     // Update the size of the layered costmap (and all layers, including this one)
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-    RCLCPP_INFO(rclcpp::get_logger(
-          "nav2_costmap_2d"), "Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
-=======
     RCLCPP_INFO(node_->get_logger(),
       "Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
         new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution,
         new_map->info.origin.position.x,
@@ -231,13 +205,8 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
       origin_y_ != new_map->info.origin.position.y)
   {
     // only update the size of the costmap stored locally in this layer
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-    RCLCPP_INFO(rclcpp::get_logger(
-          "nav2_costmap_2d"), "Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
-=======
     RCLCPP_INFO(node_->get_logger(),
       "Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
         new_map->info.resolution);
     resizeMap(size_x, size_y, new_map->info.resolution,
         new_map->info.origin.position.x, new_map->info.origin.position.y);
@@ -265,13 +234,8 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
 
   // shutdown the map subscrber if firt_map_only_ flag is on
   if (first_map_only_) {
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-    RCLCPP_INFO(rclcpp::get_logger(
-          "nav2_costmap_2d"), "Shutting down the map subscriber. first_map_only flag is on");
-=======
     RCLCPP_INFO(node_->get_logger(),
       "Shutting down the map subscriber. first_map_only flag is on");
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
     // TODO(bpwilcox): Resolve shutdown of ros2 subscription
     //map_sub_.shutdown();
   }
@@ -371,11 +335,7 @@ void StaticLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_
     try {
       transform = tf_->lookupTransform(map_frame_, global_frame_, tf2::TimePointZero);
     } catch (tf2::TransformException ex) {
-<<<<<<< HEAD:nav2_costmap_2d/plugins/static_layer.cpp
-      RCLCPP_ERROR(rclcpp::get_logger("nav2_costmap_2d"), "%s", ex.what());
-=======
       RCLCPP_ERROR(node_->get_logger(), "%s", ex.what());
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/plugins/static_layer.cpp
       return;
     }
     // Copy map data given proper transformations
