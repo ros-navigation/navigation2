@@ -66,8 +66,8 @@ download_navstack() {
 
 download_ros2() {
   echo "Downloading ROS 2 Release Latest"
-  mkdir -p ros2_ws/src
-  cd ros2_ws
+  mkdir -p ros2_dependencies_ws/src
+  cd ros2_dependencies_ws
   wget https://raw.githubusercontent.com/ros2/ros2/release-latest/ros2.repos
   vcs import src < ros2.repos
   return_to_root_dir

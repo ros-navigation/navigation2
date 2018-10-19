@@ -46,7 +46,7 @@ RUN apt-get install -y \
     libsdl1.2debian \
     libsdl1.2-dev
 
-WORKDIR /ros2_ws
+WORKDIR /ros2_dependencies_ws
 
 # setup build script and run it
 # assume script is in tools on build system unless SCRIPTPATH is set
@@ -58,7 +58,7 @@ COPY $SCRIPTPATH/*.repos ./
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
 
-WORKDIR /ros2_ws/navigation2_ws/src/navigation2
+WORKDIR /ros2_dependencies_ws/navigation2_ws/src/navigation2
 
 # change to correct branch if $BRANCH is not = master
 ARG PULLREQ=false
@@ -72,7 +72,7 @@ RUN if [ "$PULLREQ" == "false" ]; \
     fi
 
 # build
-WORKDIR /ros2_ws
+WORKDIR /ros2_dependencies_ws
 RUN chmod +x navigation2_ws/src/navigation2/tools/build_all.sh
 RUN ./navigation2_ws/src/navigation2/tools/build_all.sh
 CMD ["bash"]

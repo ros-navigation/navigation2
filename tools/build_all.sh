@@ -32,9 +32,9 @@ if [ -d "ros1_dependencies_ws" ]; then
 else
   ENABLE_ROS1=false
 fi
-if [ -d "ros2_ws" ]; then
+if [ -d "ros2_dependencies_ws" ]; then
   ENABLE_ROS2=true
-  ROS2_SETUP_FILE=$CWD/ros2_ws/install/setup.bash
+  ROS2_SETUP_FILE=$CWD/ros2_dependencies_ws/install/setup.bash
 else
   ENABLE_ROS2=false
   ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.bash
@@ -50,7 +50,7 @@ if [ "$ENABLE_ROS1" = true ]; then
 
 # Build ROS 2 base
 if [ "$ENABLE_ROS2" = true ]; then
-  cd $CWD/ros2_ws
+  cd $CWD/ros2_dependencies_ws
   colcon build --symlink-install --packages-skip ros1_bridge
 fi
 
@@ -69,6 +69,6 @@ if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
   . ros1_dependencies_ws/devel/setup.bash
   . navigation2_ws/install/setup.bash
-  cd $CWD/ros2_ws
+  cd $CWD/ros2_dependencies_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi
