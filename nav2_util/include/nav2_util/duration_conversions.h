@@ -19,12 +19,14 @@
 
 namespace nav2_util
 {
-  // TODO(crdelsey): This functionality should be part of the RCLCPP Duration
-  // interface. Once that gets integrated, this function can be removed.
-  inline rclcpp::Duration durationFromSeconds(double seconds)
-  {
-    return rclcpp::Duration(static_cast<long>(seconds * 1e9));  // convert to ns
-  }
+
+// TODO(crdelsey): This functionality should be part of the RCLCPP Duration
+// interface. Once that gets integrated, this function can be removed.
+inline rclcpp::Duration durationFromSeconds(double seconds)
+{
+  return rclcpp::Duration(static_cast<int64_t>(seconds * 1e9));    // convert to ns
 }
+
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__DURATION_CONVERSIONS_H_
