@@ -55,7 +55,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   layered_costmap_(NULL),
   name_(name),
   tf_(tf),
-  transform_tolerance_(10000),
+  transform_tolerance_(0.3),
   map_update_thread_shutdown_(false),
   stop_updates_(false),
   initialized_(true),
@@ -72,14 +72,26 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
+  // Set Parameters if not set 
+  this->set_parameter_if_not_set("transform_tolerance",0.3);
+  this->set_parameter_if_not_set("update_frequency", 5.0);
+  this->set_parameter_if_not_set("publish_frequency", 0.0); 
+  this->set_parameter_if_not_set("width", 10);
+  this->set_parameter_if_not_set("height", 10);
+  this->set_parameter_if_not_set("resolution", 0.1);
+  this->set_parameter_if_not_set("origin_x", 0.0);
+  this->set_parameter_if_not_set("origin_y", 0.0);
+  this->set_parameter_if_not_set("footprint", "[]");  
+  this->set_parameter_if_not_set("footprint_padding", 0.01);
+  this->set_parameter_if_not_set("robot_radius", 0.1); 
+
   // get two frames
   parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
 
   this->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   this->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
 
-  rclcpp::Clock clock;
-  rclcpp::Time last_error = clock.now();
+  rclcpp::Time last_error = this->now();
   std::string tf_error;
 
   // we need to make sure that the transform between the robot base frame and the global frame is available
@@ -87,11 +99,11 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       !tf_.canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
         tf2::durationFromSec(0.1), &tf_error))
   {
-    if (last_error + nav2_util::durationFromSeconds(5.0) < clock.now()) {
+    if (last_error + nav2_util::durationFromSeconds(5.0) < this->now()) {
       RCLCPP_WARN(this->get_logger(),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
           robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
-      last_error = private_nh_->now();
+      last_error = this->now();
     }
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
@@ -104,9 +116,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   this->get_parameter_or<bool>("track_unknown_space", track_unknown_space, false);
   this->get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, false);
 
-
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
+  // add and initialize layer plugins
   if (!parameters_client_->has_parameter("plugin_names") ||
     !parameters_client_->has_parameter("plugin_types") ) {
   setPluginParams(node_);
@@ -115,16 +127,13 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   if (parameters_client_->has_parameter("plugin_names") &&
     parameters_client_->has_parameter("plugin_types")) {
     auto param = this->get_parameters({"plugin_names", "plugin_types"});
-
     for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
       std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
       std::string type = (param[1].get_value<std::vector<std::string>>())[i];
-
       RCLCPP_INFO(this->get_logger(), "Using plugin \"%s\"", pname.c_str());
-
       std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
       layered_costmap_->addPlugin(plugin);
-      plugin->initialize(layered_costmap_, name + "_" + pname, &tf_);
+      plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
     }
   }
 
@@ -153,31 +162,13 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // Create a timer to check if the robot is moving
   robot_stopped_ = false;
-  timer_ = private_nh_->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
+  timer_ = this->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
+  // Create Parameter Validator
   param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node_);
 
-/* 
-  // Style 1 
-  
-  std::map<std::string, rclcpp::ParameterType> map;
-  map["transform_tolerance"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["update_frequency"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["publish_frequency"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["width"] = rclcpp::ParameterType::PARAMETER_INTEGER;
-  map["height"] = rclcpp::ParameterType::PARAMETER_INTEGER;
-  map["resolution"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["origin_x"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["origin_y"] = rclcpp::ParameterType::PARAMETER_DOUBLE;
-  map["footprint_padding"] = rclcpp::ParameterType::PARAMETER_DOUBLE; 
-
-  // Add Map of parameters for validation
-  param_validator_->add_param(map);
-*/
-
-  // Style 2
   // Add parameter with bound limits for validation
-  param_validator_->add_param("transform_tolerance",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
+  param_validator_->add_param("transform_tolerance",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10},1);
   param_validator_->add_param("update_frequency",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,100});
   param_validator_->add_param("publish_frequency",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,100});
   param_validator_->add_param("width",rclcpp::ParameterType::PARAMETER_INTEGER, {0,0}, 1);
@@ -188,20 +179,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   param_validator_->add_param("footprint_padding",rclcpp::ParameterType::PARAMETER_DOUBLE);
   param_validator_->add_param("robot_radius",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
 
-  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&Costmap2DROS::param_event_callback, this, std::placeholders::_1));
+  // Add Parameter Client
+  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
   dynamic_param_client_->addParametersFromServer({
     "transform_tolerance","update_frequency","publish_frequency",
     "width","height","resolution","origin_x","origin_y","footprint_padding"});
 
-  auto dynamic_params = dynamic_param_client_->get_param_names();
 
-  for (auto & names : dynamic_params){
-    printf("%s\n", names.c_str());
-  }
-
+  // Invoke callback
+  // TODO(bpwilcox): Initialize callback for dynamic parameters
   auto set_parameters_results = this->set_parameters({
-    rclcpp::Parameter("update_frequency", 1.0),
     rclcpp::Parameter("publish_frequency", 1.0),
   });
 }
@@ -224,26 +212,26 @@ Costmap2DROS::~Costmap2DROS()
   }
 
   delete layered_costmap_;
-  // TODO(bpwilcox): resolve dynamic reconfigure dependencies
-  //delete param_validator__;
+  delete param_validator_;
+  delete dynamic_param_client_;
 }
 
-void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr nh)
+void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr node)
 {
   std::vector<rclcpp::Parameter> param;
 
   std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
-  std::vector<std::string> plugin_types = {"costmap_2d::StaticLayer","costmap_2d::InflationLayer"};
+  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
   param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
-  nh->set_parameters(param);
+  node->set_parameters(param);
 }
 
-// TODO(bpwilcox): resolve dynamic reconfigure dependencies
-void Costmap2DROS::param_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
+  RCLCPP_DEBUG(node_->get_logger(), "Costmap2DROS:: Event Callback");
 
   dynamic_param_client_->get_event_param(event,"transform_tolerance", transform_tolerance_);
-  
+
   if (map_update_thread_ != NULL)
   {
     map_update_thread_shutdown_ = true;
@@ -414,10 +402,8 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
 void Costmap2DROS::updateMap()
 {
-
   RCLCPP_DEBUG(this->get_logger(), "Updating Map...");
 
-  rclcpp::Clock clock;
   if (!stop_updates_) {
     // get global pose
     geometry_msgs::msg::PoseStamped pose;
@@ -429,7 +415,7 @@ void Costmap2DROS::updateMap()
       layered_costmap_->updateMap(x, y, yaw);
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
-      footprint.header.stamp = private_nh_->now();
+      footprint.header.stamp = this->now();
       transformFootprint(x, y, yaw, padded_footprint_, footprint);
       footprint_pub_->publish(footprint);
 
@@ -514,7 +500,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   robot_pose.header.frame_id = robot_base_frame_;
   robot_pose.header.stamp = rclcpp::Time();
 
-  rclcpp::Time current_time = private_nh_->now();  // save time for checking tf delay later
+  rclcpp::Time current_time = node_->now();  // save time for checking tf delay later
   // get the global pose of the robot
   try {
     tf_.transform(robot_pose, global_pose, global_frame_);
@@ -534,7 +520,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   // check global_pose timeout
 
   //TODO(bpwilcox): use toSec() function in more recent rclcpp branch
-  if ((current_time - rclcpp::Time(global_pose.header.stamp)) > nav2_util::durationFromSeconds(transform_tolerance_))
+  if (current_time -global_pose.header.stamp > nav2_util::durationFromSeconds(transform_tolerance_))
   {
     RCLCPP_WARN(this->get_logger(),
       "Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f, difference: %.4f",

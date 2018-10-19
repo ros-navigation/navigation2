@@ -40,10 +40,11 @@ Layer::Layer()
   tf_(NULL)
 {}
 
-void Layer::initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf)
+void Layer::initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf, rclcpp::Node::SharedPtr node)
 {
   layered_costmap_ = parent;
   name_ = name;
+  node_ = node;
   tf_ = tf;
   onInitialize();
 }

@@ -41,9 +41,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.h>
 #include <nav2_costmap_2d/layered_costmap.h>
-// TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-//#include <nav2_costmap_2d/InflationPluginConfig.h>
-//#include <dynamic_reconfigure/server.h>
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -80,9 +78,9 @@ public:
   virtual ~InflationLayer()
   {
     deleteKernels();
-    // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-    // if (dsrv_)
-    //    delete dsrv_;
+    if (dynamic_param_client_) {
+      delete dynamic_param_client_;
+    }
   }
 
   virtual void onInitialize();
@@ -188,10 +186,12 @@ private:
   double ** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
-  // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-  //dynamic_reconfigure::Server<nav2_costmap_2d::InflationPluginConfig> *dsrv_;
-  //void reconfigureCB(nav2_costmap_2d::InflationPluginConfig &config, uint32_t level);
-
+  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  
+  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
+ 
   bool need_reinflation_;  ///< Indicates that the entire costmap should be reinflated next time around.
 };
 

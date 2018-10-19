@@ -41,6 +41,7 @@
 #include <nav2_costmap_2d/layered_costmap.h>
 #include <string>
 #include <tf2_ros/buffer.h>
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -51,7 +52,7 @@ class Layer
 public:
   Layer();
 
-  void initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf);
+  void initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf, rclcpp::Node::SharedPtr node);
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -125,7 +126,8 @@ protected:
   bool enabled_;  ///< Currently this var is managed by subclasses. TODO: make this managed by this class and/or container class.
   std::string name_;
   tf2_ros::Buffer * tf_;
-
+  rclcpp::Node::SharedPtr node_;
+  
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;
 };

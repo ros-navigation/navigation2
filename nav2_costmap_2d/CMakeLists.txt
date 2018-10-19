@@ -29,6 +29,7 @@ find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_dynamic_params)
+find_package(nav2_util)
 
 # TODO(bpwilcox): port remaining packages
 #find_package(tf2_sensor_msgs REQUIRED)
@@ -80,6 +81,7 @@ set(dependencies
   tf2_sensor_msgs
   message_filters
   nav2_dynamic_params
+  nav2_util
 )
 
 ament_target_dependencies(nav2_costmap_2d
@@ -128,12 +130,7 @@ target_link_libraries(nav2_costmap_2d_node
   layers
 )
 
-add_executable(param_test src/costmap_test.cpp)
-ament_target_dependencies(param_test
-  ${dependencies}
-)
-
-install(TARGETS nav2_costmap_2d costmap_2d_node layers param_test
+install(TARGETS nav2_costmap_2d nav2_costmap_2d_node layers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -160,5 +157,5 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(layers nav2_costmap_2d)
 ament_export_dependencies(${dependencies})
-pluginlib_export_plugin_description_file(costmap_2d costmap_plugins.xml)
+pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

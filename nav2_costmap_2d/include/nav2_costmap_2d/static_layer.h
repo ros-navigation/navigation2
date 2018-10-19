@@ -41,11 +41,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/costmap_layer.h>
 #include <nav2_costmap_2d/layered_costmap.h>
-//#include <nav2_costmap_2d/GenericPluginConfig.h>
-//#include <dynamic_reconfigure/server.h>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <map_msgs/msg/occupancy_grid_update.hpp>
 #include <message_filters/subscriber.h>
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -78,9 +77,7 @@ private:
    */
   void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
-  //TODO(bpwilcox): Replace dynamic_reconfigure functionality
-
-  //void reconfigureCB(nav2_costmap_2d::GenericPluginConfig & config, uint32_t level);
+  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
 
   unsigned char interpretValue(unsigned char value);
 
@@ -96,11 +93,10 @@ private:
   bool trinary_costmap_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
-  rclcpp::Node::SharedPtr node_;
   unsigned char lethal_threshold_, unknown_cost_value_;
-
-  //TODO(bpwilcox): Replace dynamic_reconfigure functionality
-  //dynamic_reconfigure::Server<nav2_costmap_2d::GenericPluginConfig> * dsrv_;
+  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
+  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
 };
 
 }  // namespace nav2_costmap_2d

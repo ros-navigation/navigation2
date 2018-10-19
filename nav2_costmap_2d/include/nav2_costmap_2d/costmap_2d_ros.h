@@ -41,12 +41,9 @@
 #include <nav2_costmap_2d/layered_costmap.h>
 #include <nav2_costmap_2d/layer.h>
 #include <nav2_costmap_2d/costmap_2d_publisher.h>
-//#include <nav2_costmap_2d/Costmap2DConfig.h>
 #include <nav2_costmap_2d/footprint.h>
 #include <geometry_msgs/msg/polygon.h>
 #include <geometry_msgs/msg/polygon_stamped.h>
-// TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-//#include <dynamic_reconfigure/server.h>
 #include <pluginlib/class_loader.hpp>
 #include <xmlrpcpp/XmlRpcValue.h>
 #include <tf2/transform_datatypes.h>
@@ -239,25 +236,6 @@ public:
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
   void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
-  
-  template<class T>
-  bool getParamValue(const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
-    std::string param_name, T & new_value)
-  {    
-    rclcpp::ParameterEventsFilter filter(event, {param_name},
-      {rclcpp::ParameterEventsFilter::EventType::NEW,
-      rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if(!(filter.get_events()).empty())
-    {
-      auto param_msg = ((filter.get_events()).front()).second;
-      auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
-      new_value = param_value.get_value<T>();
-      return true;
-    }else {
-      this->get_parameter<T>(param_name, new_value);
-      return false;
-    }
-  }
 
 protected:
   LayeredCostmap * layered_costmap_;
@@ -278,9 +256,8 @@ private:
 
   void setPluginParams(rclcpp::Node::SharedPtr nh);
 
-  void param_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
-  rcl_interfaces::msg::SetParametersResult param_validation_callback(
-    std::vector<rclcpp::Parameter> parameters);
+  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+
   void movementCB();
 
   void mapUpdateLoop(double frequency);
@@ -293,21 +270,12 @@ private:
   pluginlib::ClassLoader<Layer> plugin_loader_;
   geometry_msgs::msg::PoseStamped old_pose_;
   Costmap2DPublisher * publisher_;
-<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
-  
-  // TODO(bpwilcox): Resolve dynamic reconfigure dependencies
-<<<<<<< HEAD:nav2_costmap_2d/include/nav2_costmap_2d/costmap_2d_ros.h
-  //dynamic_reconfigure::Server<nav2_costmap_2d::Costmap2DConfig> *dsrv_;
-  //nav2_costmap_2d::Costmap2DConfig old_config_;
-=======
-  //dynamic_reconfigure::Server<costmap_2d::Costmap2DConfig> *dsrv_;
->>>>>>> 40b6243... costmap2DROS working with callback and publisher, change to call parameters through node on static layer:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
 
-=======
   nav2_dynamic_params::DynamicParamsValidator * param_validator_;
   nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
->>>>>>> 74c29a8... storing work before rebase:src/libs/costmap_2d/include/costmap_2d/costmap_2d_ros.h
+
   std::recursive_mutex configuration_mutex_;
+  
   rclcpp::Node::SharedPtr node_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
