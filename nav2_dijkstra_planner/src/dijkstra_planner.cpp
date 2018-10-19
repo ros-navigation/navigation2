@@ -155,8 +155,9 @@ DijkstraPlanner::makePlan(
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
       get_logger(),
-      "DijkstraPlanner: Cannot create a plan: the robots start position is off the global costmap."
-      " Planning will always fail, are you sure the robot has been properly localized?");
+      "DijkstraPlanner: Cannot create a plan: the robot's start position is off the global"
+      " costmap. Planning will always fail, are you sure"
+      " the robot has been properly localized?");
     return false;
   }
 
