@@ -64,21 +64,17 @@ void operator>>(const YAML::Node & node, T & i)
 OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name)
 : node_(node)
 {
-  RCLCPP_INFO(node_->get_logger(), "Load map info");
+  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Load map info for map file: %s",
+    file_name.c_str());
   LoadMapInfoFromFile(file_name);
 
-  RCLCPP_INFO(node_->get_logger(), "Load Map: %s", map_name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Loading Map: %s", map_name_.c_str());
   LoadMapFromFile(map_name_);
 
   ConnectROS();
-
-  RCLCPP_INFO(node_->get_logger(), "Set up Service");
   SetMap();
-
-  RCLCPP_INFO(node_->get_logger(), "Set up Publisher");
   PublishMap();
-
-  RCLCPP_INFO(node_->get_logger(), "Success!");
+  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Set up map request service and publisher.");
 }
 
 void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
@@ -96,7 +92,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     doc["resolution"] >> res_;
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain a resolution tag or it is invalid.");
+      "The map %s does not contain a resolution tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain a resolution tag or it is invalid.");
   }
 
@@ -104,7 +100,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     doc["negate"] >> negate_;
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain a negate tag or it is invalid.");
+      "The map %s does not contain a negate tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain a negate tag or it is invalid.");
   }
 
@@ -112,7 +108,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     doc["occupied_thresh"] >> occ_th_;
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain an occupied_thresh tag or it is invalid.");
+      "The map %s does not contain an occupied_thresh tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid.");
   }
 
@@ -120,7 +116,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     doc["free_thresh"] >> free_th_;
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain a free_thresh tag or it is invalid.");
+      "The map %s does not contain a free_thresh tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid.");
   }
 
@@ -135,12 +131,12 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
       mode_ = RAW;
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-        "Invalid mode tag \"%s\".", modeS.c_str());
+        "The map %s has invalid mode tag \"%s\".", file_name.c_str(), modeS.c_str());
       throw std::runtime_error("Invalid mode tag.");
     }
   } catch (YAML::Exception) {
     RCLCPP_DEBUG(rclcpp::get_logger("map_server"),
-      "The map does not contain a mode tag or it is invalid.");
+      "The map %s does not contain a mode tag or it is invalid.", file_name.c_str());
     mode_ = TRINARY;
   }
 
@@ -150,7 +146,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     doc["origin"][2] >> origin_[2];
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain an origin tag or it is invalid.");
+      "The map %s does not contain an origin tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain an origin tag or it is invalid.");
   }
 
@@ -159,7 +155,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     // TODO(bpwilcox): make this path-handling more robust
     if (map_name_.size() == 0) {
       RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-        "The image tag cannot be an empty string.");
+        "The image tag in map %s cannot be an empty string.", file_name.c_str());
       throw std::runtime_error("The image tag cannot be an empty string.");
     }
     if (map_name_[0] != '/') {
@@ -170,7 +166,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
     }
   } catch (YAML::Exception) {
     RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map does not contain an image tag or it is invalid.");
+      "The map %s does not contain an image tag or it is invalid.", file_name.c_str());
     throw std::runtime_error("The map does not contain an image tag or it is invalid.");
   }
 }
@@ -284,7 +280,8 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
   map_msg_.header.frame_id = frame_id_;
   map_msg_.header.stamp = clock.now();
 
-  RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read a %d X %d map @ %.3lf m/cell",
+  RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read map %s: %d X %d map @ %.3lf m/cell",
+    map_name_.c_str(),
     map_msg_.info.width,
     map_msg_.info.height,
     map_msg_.info.resolution);

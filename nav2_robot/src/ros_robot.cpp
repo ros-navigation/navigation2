@@ -65,7 +65,7 @@ bool
 RosRobot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(), "Can't return current pose: Initial pose not yet received");
+    RCLCPP_WARN(node_->get_logger(), "Can't return current pose: Initial pose not yet received.");
     return false;
   } else {
     robot_pose = current_pose_;
@@ -78,7 +78,7 @@ RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity
 {
   if (!initial_odom_received_) {
     RCLCPP_WARN(node_->get_logger(), "Can't return current velocity: Initial odometry not yet"
-      " received");
+      " received.");
     return false;
   } else {
     robot_velocity = current_velocity_;

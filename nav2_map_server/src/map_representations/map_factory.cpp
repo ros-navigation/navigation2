@@ -26,7 +26,8 @@ BaseMapServer * MapFactory::CreateMap(
   if (map_type == "occupancy") {
     return new OccGridServer(node, file_name);
   } else {
-    RCLCPP_ERROR(node->get_logger(), "Cannot load map of type '%s'", map_type.c_str());
+    RCLCPP_ERROR(node->get_logger(), "Cannot load map %s of type %s", file_name.c_str(),
+      map_type.c_str());
     throw std::runtime_error("Map type not supported");
   }
 }
