@@ -112,6 +112,8 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
+
+  std::shared_ptr<rclcpp::Node> nh_;
 };
 
 }  // namespace dwb_core

@@ -90,26 +90,27 @@ void DWBLocalPlanner::initialize(
   std::shared_ptr<rclcpp::Node> & private_nh, TFBufferPtr tf,
   CostmapROSPtr costmap_ros)
 {
+  nh_ = private_nh;
   tf_ = tf;
   costmap_ros_ = costmap_ros;
-  private_nh->get_parameter_or("prune_plan", prune_plan_, true);
-  private_nh->get_parameter_or("prune_distance", prune_distance_, 1.0);
-  pub_.initialize(private_nh);
+  nh_->get_parameter_or("prune_plan", prune_plan_, true);
+  nh_->get_parameter_or("prune_distance", prune_distance_, 1.0);
+  pub_.initialize(nh_);
 
   // Plugins
   std::string traj_generator_name;
-  private_nh->get_parameter_or("trajectory_generator_name", traj_generator_name,
+  nh_->get_parameter_or("trajectory_generator_name", traj_generator_name,
     std::string("dwb_plugins::LimitedAccelGenerator"));
   traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
-  traj_generator_->initialize(private_nh);
+  traj_generator_->initialize(nh_);
 
   std::string goal_checker_name;
-  private_nh->get_parameter_or("goal_checker_name", goal_checker_name,
+  nh_->get_parameter_or("goal_checker_name", goal_checker_name,
     std::string("dwb_plugins::SimpleGoalChecker"));
   goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
-  goal_checker_->initialize(private_nh);
+  goal_checker_->initialize(nh_);
 
-  loadCritics(private_nh);
+  loadCritics();
 }
 
 std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
@@ -129,30 +130,30 @@ std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
   return base_name;
 }
 
-void DWBLocalPlanner::loadCritics(const std::shared_ptr<rclcpp::Node> & private_nh)
+void DWBLocalPlanner::loadCritics()
 {
-  private_nh->get_parameter("default_critic_namespaces", default_critic_namespaces_);
+  nh_->get_parameter("default_critic_namespaces", default_critic_namespaces_);
   if (default_critic_namespaces_.size() == 0) {
     default_critic_namespaces_.push_back("dwb_critics");
   }
 
   std::vector<std::string> critic_names;
-  if (!private_nh->get_parameter("critics", critic_names)) {
-    loadBackwardsCompatibleParameters(private_nh);
+  if (!nh_->get_parameter("critics", critic_names)) {
+    loadBackwardsCompatibleParameters(nh_);
   }
 
-  private_nh->get_parameter("critics", critic_names);
+  nh_->get_parameter("critics", critic_names);
   for (unsigned int i = 0; i < critic_names.size(); i++) {
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
-    private_nh->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
+    nh_->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
     plugin_class = resolveCriticClassName(plugin_class);
 
     TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
-    RCLCPP_INFO(private_nh->get_logger(),
+    RCLCPP_INFO(nh_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
-    plugin->initialize(private_nh, costmap_ros_);
+    plugin->initialize(nh_, costmap_ros_);
   }
 }
 
@@ -225,7 +226,7 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
-    results->header.stamp = rclcpp::Clock().now();
+    results->header.stamp = nh_->now();
   }
 
   nav_2d_msgs::msg::Path2D transformed_plan = transformGlobalPlan(pose);
@@ -244,7 +245,7 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
 
     // Return Value
     nav_2d_msgs::msg::Twist2DStamped cmd_vel;
-    cmd_vel.header.stamp = rclcpp::Clock().now();
+    cmd_vel.header.stamp = nh_->now();
     cmd_vel.velocity = best.traj.velocity;
 
     // debrief stateful scoring functions

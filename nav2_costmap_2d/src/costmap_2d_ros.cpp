@@ -86,20 +86,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 {
   tf2::toMsg(tf2::Transform::getIdentity(), old_pose_.pose);
 
-  auto private_nh = rclcpp::Node::make_shared(name_);
-  rclcpp::Node::SharedPtr g_nh;
+  private_nh_ = rclcpp::Node::make_shared(name_);
 
   // get two frames
-  auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(private_nh);
+  auto private_parameters_client = std::make_shared<rclcpp::SyncParametersClient>(private_nh_);
   global_frame_ =
       private_parameters_client->get_parameter<std::string>("global_frame", std::string("map"));
   robot_base_frame_ =
       private_parameters_client->get_parameter<std::string>("robot_base_frame", std::string(
         "base_link"));
 
-  //auto clock = new rclcpp::Clock();
-  rclcpp::Clock clock;
-  rclcpp::Time last_error = clock.now();
+  rclcpp::Time last_error = private_nh_->now();
   std::string tf_error;
 
   // we need to make sure that the transform between the robot base frame and the global frame is available
@@ -107,13 +104,13 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       !tf_.canTransform(global_frame_, robot_base_frame_, tf2_ros::fromMsg(rclcpp::Time()),
         tf2::durationFromSec(0.1), &tf_error))
   {
-    rclcpp::spin_some(private_nh);
-    if (last_error + nav2_util::durationFromSeconds(5.0) < clock.now()) {
+    rclcpp::spin_some(private_nh_);
+    if (last_error + nav2_util::durationFromSeconds(5.0) < private_nh_->now()) {
       RCLCPP_WARN(rclcpp::get_logger(
             "nav2_costmap_2d"),
           "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
           robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
-      last_error = clock.now();
+      last_error = private_nh_->now();
     }
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
@@ -131,7 +128,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
   if (!private_parameters_client->has_parameter("plugins")) {
-    resetOldParameters(private_nh);
+    resetOldParameters(private_nh_);
   }
 
   if (private_parameters_client->has_parameter("plugins")) {
@@ -156,7 +153,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   }
   topic =
       private_parameters_client->get_parameter<std::string>(topic_param, std::string("footprint"));
-  footprint_sub_ = private_nh->create_subscription<geometry_msgs::msg::Polygon>(topic,
+  footprint_sub_ = private_nh_->create_subscription<geometry_msgs::msg::Polygon>(topic,
       std::bind(&Costmap2DROS::setUnpaddedRobotFootprintPolygon, this, std::placeholders::_1));
 
   if (!private_parameters_client->has_parameter("published_footprint_topic")) {
@@ -165,12 +162,12 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   topic =
       private_parameters_client->get_parameter<std::string>(topic_param,
       std::string("oriented_footprint"));
-  footprint_pub_ = private_nh->create_publisher<geometry_msgs::msg::PolygonStamped>(
+  footprint_pub_ = private_nh_->create_publisher<geometry_msgs::msg::PolygonStamped>(
       "footprint", rmw_qos_profile_default);
 
-  setUnpaddedRobotFootprint(makeFootprintFromParams(private_nh));
+  setUnpaddedRobotFootprint(makeFootprintFromParams(private_nh_));
 
-  publisher_ = new Costmap2DPublisher(private_nh,
+  publisher_ = new Costmap2DPublisher(private_nh_,
       layered_costmap_->getCostmap(), global_frame_, "costmap",
       always_send_full_costmap);
 
@@ -181,7 +178,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // Create a timer to check if the robot is moving
   robot_stopped_ = false;
-  timer_ = private_nh->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
+  timer_ = private_nh_->create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
   // TODO(bpwilcox): resolve dynamic reconfigure dependencies
   //dsrv_ = new dynamic_reconfigure::Server<Costmap2DConfig>(ros::NodeHandle("~/" + name));
@@ -424,7 +421,6 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     return;
   }
 
-  rclcpp::Node::SharedPtr nh;
   rclcpp::Rate r(frequency);
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     struct timeval start, end;
@@ -443,7 +439,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = nh->now();
+      rclcpp::Time now = private_nh_->now();
       if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
         publisher_->publishCostmap();
         last_publish_ = now;
@@ -464,8 +460,6 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
 void Costmap2DROS::updateMap()
 {
-  //auto clock = new rclcpp::Clock();
-  rclcpp::Clock clock;
   if (!stop_updates_) {
     // get global pose
     geometry_msgs::msg::PoseStamped pose;
@@ -478,7 +472,7 @@ void Costmap2DROS::updateMap()
 
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
-      footprint.header.stamp = clock.now();
+      footprint.header.stamp = private_nh_->now();
       transformFootprint(x, y, yaw, padded_footprint_, footprint);
       footprint_pub_->publish(footprint);
 
@@ -556,8 +550,6 @@ void Costmap2DROS::resetLayers()
 
 bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
 {
-  //auto clock = new rclcpp::Clock();
-  rclcpp::Clock clock;
   tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
   geometry_msgs::msg::PoseStamped robot_pose;
   tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
@@ -565,7 +557,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   robot_pose.header.frame_id = robot_base_frame_;
   robot_pose.header.stamp = rclcpp::Time();
 
-  rclcpp::Time current_time = clock.now();  // save time for checking tf delay later
+  rclcpp::Time current_time = private_nh_->now();  // save time for checking tf delay later
   // get the global pose of the robot
   try {
     tf_.transform(robot_pose, global_pose, global_frame_);
