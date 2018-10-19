@@ -55,13 +55,13 @@ download_navstack_and_dependencies() {
   echo "Downloading the ROS 2 navigation stack and dependencies into navigation2_ws"
   mkdir -p navigation2_ws/src
   cd navigation2_ws
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   if [ -f "custom_nav2.repos" ]; then #override default location for testing
     vcs import src < custom_nav2.repos
   else
     cd src
     git clone https://github.com/ros-planning/navigation2.git
   fi
+  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   return_to_root_dir
 }
 
