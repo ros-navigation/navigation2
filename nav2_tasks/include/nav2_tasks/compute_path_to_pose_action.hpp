@@ -34,7 +34,7 @@ public:
     command_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
     result_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
-    // Use the position and orientation fields from the behavior tree node parameter
+    // Use the position and orientation fields from the BT node parameter
     geometry_msgs::msg::Point position;
     bool position_passed = getParam<geometry_msgs::msg::Point>("position", position);
 
@@ -42,11 +42,21 @@ public:
     bool orientation_passed = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
 
     if (!position_passed || !orientation_passed) {
-      printf("ComputePathToPoseAction: position or orientation not provided\n");
+      RCLCPP_ERROR(node_->get_logger(), "ComputePathToPoseAction: position or orientation not provided");
     }
 
-    //command_->pose.position = position;
-    //command_->pose.orientation = orientation;
+    // TODO: should push start down to the global/local planners
+    command_->start.position.x = 0; 
+    command_->start.position.y = 0; 
+    command_->start.position.z = 0; 
+    command_->start.orientation.x = 0; 
+    command_->start.orientation.y = 0; 
+    command_->start.orientation.z = 0; 
+    command_->start.orientation.w = 0; 
+
+    command_->goal.position = position;
+    command_->goal.orientation = orientation;
+    command_->tolerance = 2.0;  // TODO: should also be a parameter
   }
 
   static const BT::NodeParameters & requiredNodeParameters()

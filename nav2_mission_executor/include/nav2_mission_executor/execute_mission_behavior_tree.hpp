@@ -31,7 +31,7 @@ public:
   ExecuteMissionBehaviorTree() = delete;
 
   nav2_tasks::TaskStatus run(
-    const nav2_tasks::ExecuteMissionCommand::SharedPtr & command,
+    const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 

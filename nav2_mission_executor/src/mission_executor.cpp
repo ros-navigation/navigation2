@@ -80,7 +80,6 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
   auto message = nav2_msgs::msg::MissionPlan();
   message.mission_plan = ss.str();
 
-  RCLCPP_INFO(this->get_logger(), "MissionExecutor: Publishing a new mission plan");
   plan_pub_->publish(message);
 }
 

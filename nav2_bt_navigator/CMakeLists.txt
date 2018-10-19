@@ -32,7 +32,6 @@ set(library_name ${executable_name}_core)
 add_library(${library_name}
   src/bt_navigator.cpp
   src/navigate_to_pose_behavior_tree.cpp
-  src/reached_goal_condition_node.cpp
 )
 
 set(dependencies

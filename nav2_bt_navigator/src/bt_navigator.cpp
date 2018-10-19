@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 
@@ -33,7 +34,7 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(command, std::bind(&BtNavigator::cancelRequested, this));
+  TaskStatus result = bt.run(ss.str(), std::bind(&BtNavigator::cancelRequested, this));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;

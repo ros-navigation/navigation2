@@ -34,7 +34,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
 }
 
 nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
-  const nav2_tasks::ExecuteMissionCommand::SharedPtr & command,
+  const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested, 
   std::chrono::milliseconds loopTimeout)
 {
@@ -47,7 +47,7 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
 
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes 
   // out of scope, all the nodes are destroyed
-  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, command->mission_plan, blackboard);
+  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;

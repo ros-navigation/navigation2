@@ -25,17 +25,6 @@ using namespace std::chrono_literals;
 namespace nav2_bt_navigator
 {
 
-static const std::string xml_text = R"(
- <root main_tree_to_execute = "MainTree" >
-     <BehaviorTree ID="MainTree">
-        <SequenceStar name="root">
-            <ComputePathToPose />
-            <FollowPath />
-        </SequenceStar>
-     </BehaviorTree>
- </root>
-)";
-
 NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
@@ -46,7 +35,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
 nav2_tasks::TaskStatus
 NavigateToPoseBehaviorTree::run(
-  const nav2_tasks::NavigateToPoseCommand::SharedPtr & /*command*/,
+  const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
@@ -59,7 +48,7 @@ NavigateToPoseBehaviorTree::run(
 
   // The complete behavior tree that results from parsing the XML. When the tree goes 
   // out of scope, all the nodes are destroyed
-  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, xml_text, blackboard);
+  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
