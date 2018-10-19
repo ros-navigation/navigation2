@@ -107,7 +107,7 @@ TEST(CostmapQueue, crossQueue)
       double dd = hypot(xs[i] - static_cast<float>(cell.x_), ys[i] - static_cast<float>(cell.y_));
       min_d = std::min(min_d, dd);
     }
-    EXPECT_EQ(cell.distance_, min_d);
+    EXPECT_NEAR(cell.distance_, min_d, 0.00001);
     count++;
   }
   EXPECT_EQ(count, 25);
