@@ -62,7 +62,7 @@ TaskStatus
 MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "MissionExecutor: Executing task: %s from %f",
-    command->mission_plan.c_str(), command->header.stamp.toSec());
+    command->mission_plan.c_str(), command->header.stamp);
 
   // TODO(mjeronimo): Validate the mission plan for syntax and semantics
 

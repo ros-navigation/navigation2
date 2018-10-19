@@ -38,8 +38,8 @@ TaskStatus
 DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "DwaController: Received a new path to follow of"
-    " size %i ending at (%.2f, %.2f)", (int)command->poses.size(), command->poses.back().x,
-    command->poses.back().y);
+    " size %i ending at (%.2f, %.2f)", (int)command->poses.size(), command->poses.back().position.x,
+    command->poses.back().position.y);
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {

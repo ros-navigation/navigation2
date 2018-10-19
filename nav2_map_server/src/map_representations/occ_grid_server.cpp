@@ -32,7 +32,7 @@
  *
  * Author: Brian Gerkey
  */
-#include "nav2_map_server/map_reps/occ_grid_server.hpp"
+#include "nav2_map_server/map_representations/occ_grid_server.hpp"
 
 #include <libgen.h>
 #include <cstdio>
