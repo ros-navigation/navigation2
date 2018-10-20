@@ -15,6 +15,7 @@
 #ifndef NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 #define NAV2_MISSION_EXECUTOR__EXECUTE_MISSION_BEHAVIOR_TREE_HPP_
 
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"

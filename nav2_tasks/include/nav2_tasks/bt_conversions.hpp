@@ -22,6 +22,18 @@
 namespace BT
 {
 
+template <>
+inline rclcpp::Node::SharedPtr convertFromString(const std::string & /*key*/)
+{
+  return nullptr;
+}
+
+template <>
+inline std::chrono::milliseconds convertFromString(const std::string & /*key*/)
+{
+  return std::chrono::milliseconds(0);
+}
+
 template <> 
 inline geometry_msgs::msg::Point convertFromString(const std::string & key)
 {

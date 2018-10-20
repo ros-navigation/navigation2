@@ -15,6 +15,8 @@
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 
 #include <memory>
+#include <string>
+#include <set>
 #include "Blackboard/blackboard_local.h"
 #include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
@@ -28,7 +30,7 @@ namespace nav2_bt_navigator
 NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
-   // Register our custom action nodes so that they can be included in XML description
+  // Register our custom action nodes so that they can be included in XML description
   factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
   factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
 }
@@ -46,7 +48,7 @@ NavigateToPoseBehaviorTree::run(
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
   blackboard->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
 
-  // The complete behavior tree that results from parsing the XML. When the tree goes 
+  // The complete behavior tree that results from parsing the XML. When the tree goes
   // out of scope, all the nodes are destroyed
   std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
@@ -54,8 +56,7 @@ NavigateToPoseBehaviorTree::run(
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes w/ success or failure
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
-  {
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
     result = tree->root_node->executeTick();
 
     // Check if we've received a cancel message

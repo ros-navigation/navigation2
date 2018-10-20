@@ -15,11 +15,13 @@
 #include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
 
 #include <memory>
-//#include <thread>
+#include <string>
+#include <set>
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
 #include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
 
 using namespace std::chrono_literals;
 
@@ -35,7 +37,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
 
 nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   const std::string & behavior_tree_xml,
-  std::function<bool()> cancelRequested, 
+  std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
   // Create the blackboard that will be shared by all of the nodes in the tree
@@ -45,7 +47,7 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
   blackboard->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));
 
-  // The complete behavior tree that results from parsing the incoming XML. When the tree goes 
+  // The complete behavior tree that results from parsing the incoming XML. When the tree goes
   // out of scope, all the nodes are destroyed
   std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
@@ -53,8 +55,7 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes w/ success or failure
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING)
-  {
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
     result = tree->root_node->executeTick();
 
     // Check if we've received a cancel message

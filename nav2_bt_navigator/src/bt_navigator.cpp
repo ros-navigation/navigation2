@@ -32,6 +32,31 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   RCLCPP_INFO(get_logger(), "Start navigation to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
 
+  // Get a reference for convenience
+  geometry_msgs::msg::Pose & p = command->pose;
+
+  // Compose the args for the ComputePathToPose action
+  std::stringstream args;
+  args << "position=\"" 
+       << p.position.x << ";" << p.position.y << ";" << p.position.z  << "\""
+       << " orientation=\""
+       << p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z  << ";"
+       << p.orientation.w << "\"";
+
+  // Put it all together, trying to make the XML somewhat readable here
+  std::stringstream ss;
+  ss << R"(
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="root">
+      <ComputePathToPose )" << args.str() << R"(/>
+      <FollowPath />
+    </SequenceStar>
+  </BehaviorTree>
+</root>)";
+
+  RCLCPP_DEBUG(get_logger(), "Behavior tree XML: %s", ss.str());
+
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
   TaskStatus result = bt.run(ss.str(), std::bind(&BtNavigator::cancelRequested, this));
