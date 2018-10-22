@@ -1,6 +1,6 @@
 # Mission Executor
 
-The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities multiple robots as well as other, non-robot tasks.
+The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities of multiple robots as well as other, non-robot tasks.
 
 ## Overview
  
