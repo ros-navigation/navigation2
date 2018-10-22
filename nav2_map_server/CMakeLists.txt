@@ -16,7 +16,7 @@ find_package(nav_msgs REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
-find_package(rviz_yaml_cpp_vendor REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
 
 include_directories(
   include
@@ -42,7 +42,7 @@ add_library(${library_name}
 set(dependencies
   rclcpp
   nav_msgs
-  rviz_yaml_cpp_vendor
+  yaml_cpp_vendor
 )
 
 ament_target_dependencies(${executable_name}
