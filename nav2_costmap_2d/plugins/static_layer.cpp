@@ -332,7 +332,7 @@ void StaticLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_
     // Might even be in a different frame
     geometry_msgs::msg::TransformStamped transform;
     try {
-      transform = tf_->lookupTransform(map_frame_, global_frame_, tf2_ros::fromMsg(rclcpp::Time()));
+      transform = tf_->lookupTransform(map_frame_, global_frame_, tf2::TimePointZero);
     } catch (tf2::TransformException ex) {
       RCLCPP_ERROR(rclcpp::get_logger("nav2_costmap_2d"), "%s", ex.what());
       return;
