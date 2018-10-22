@@ -29,15 +29,15 @@
 
 //  Author: Brian Gerkey
 
-#include <cstring>
-#include <stdexcept>
+#include "nav2_util/map_loader/map_loader.hpp"
 #include <stdlib.h>
 #include <stdio.h>
-#include "nav2_util/map_loader/map_loader.hpp"
-#include "tf2/LinearMath/Quaternion.h"
-
 // We use SDL_image to load the image from disk
 #include <SDL/SDL_image.h>
+#include <string>
+#include <stdexcept>
+#include "tf2/LinearMath/Quaternion.h"
+
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))

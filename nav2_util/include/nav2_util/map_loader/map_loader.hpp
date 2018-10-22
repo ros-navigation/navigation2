@@ -29,8 +29,8 @@
 
 // Author: Brian Gerkey
 
-#ifndef MAP_LOADER__MAPLOADER_HPP_
-#define MAP_LOADER__MAPLOADER_HPP_
+#ifndef NAV2_UTIL__MAP_LOADER__MAP_LOADER_HPP_
+#define NAV2_UTIL__MAP_LOADER__MAP_LOADER_HPP_
 
 #include <string>
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -75,4 +75,4 @@ nav_msgs::msg::OccupancyGrid loadMapFromFile(
   const geometry_msgs::msg::Twist origin, const MapMode mode = TRINARY);
 }  // namespace map_loader
 
-#endif  // MAP_LOADER__MAPLOADER_HPP_
+#endif  // NAV2_UTIL__MAP_LOADER__MAP_LOADER_HPP_
