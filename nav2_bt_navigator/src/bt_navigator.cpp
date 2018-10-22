@@ -45,7 +45,7 @@ BtNavigator::BtNavigator()
 
 BtNavigator::~BtNavigator()
 {
-  RCLCPP_DEBUG(get_logger(), "BtNavigator::~BtNavigator");
+  RCLCPP_INFO(get_logger(), "Shutting down BtNavigator");
 }
 
 TaskStatus

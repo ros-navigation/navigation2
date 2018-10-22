@@ -30,7 +30,7 @@ AStarPlanner::AStarPlanner()
 
 AStarPlanner::~AStarPlanner()
 {
-  RCLCPP_DEBUG(get_logger(), "AStarPlanner::~AStarPlanner");
+  RCLCPP_INFO(get_logger(), "Shutting down AStarPlanner");
 }
 
 TaskStatus

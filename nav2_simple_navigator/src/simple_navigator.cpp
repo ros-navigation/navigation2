@@ -47,7 +47,7 @@ SimpleNavigator::SimpleNavigator()
 
 SimpleNavigator::~SimpleNavigator()
 {
-  RCLCPP_DEBUG(get_logger(), "SimpleNavigator::~SimpleNavigator");
+  RCLCPP_INFO(get_logger(), "Shutting down SimpleNavigator");
 }
 
 TaskStatus

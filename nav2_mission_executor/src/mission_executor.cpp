@@ -43,7 +43,7 @@ MissionExecutor::MissionExecutor()
 
 MissionExecutor::~MissionExecutor()
 {
-  RCLCPP_DEBUG(get_logger(), "MissionExecutor::~MissionExecutor");
+  RCLCPP_INFO(get_logger(), "Shutting down MissionExecutor");
 }
 
 void

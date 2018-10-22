@@ -67,7 +67,7 @@ DijkstraPlanner::DijkstraPlanner()
 
 DijkstraPlanner::~DijkstraPlanner()
 {
-  RCLCPP_DEBUG(get_logger(), "DijkstraPlanner::~DijkstraPlanner");
+  RCLCPP_INFO(get_logger(), "Shutting down DijkstraPlanner");
 }
 
 TaskStatus

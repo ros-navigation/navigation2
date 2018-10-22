@@ -31,7 +31,7 @@ DwaController::DwaController()
 
 DwaController::~DwaController()
 {
-  RCLCPP_DEBUG(get_logger(), "DwaController::~DwaController");
+  RCLCPP_INFO(get_logger(), "Shutting down DwaController");
 }
 
 TaskStatus
