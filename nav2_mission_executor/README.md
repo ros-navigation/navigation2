@@ -1,6 +1,6 @@
 # Mission Executor
 
-The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities of multiple robots as well as other, non-robot tasks.
+The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities of multiple robots as well as other, non-robot tasks. As such, it would typically reside on a central orchestration computer. The Mission Executor module is implemented using [Behavior Trees](https://en.wikipedia.org/wiki/Behavior_tree). As detailed in [Michele Colledanchils's doctoral thesis](https://www.diva-portal.org/smash/get/diva2:1078940/FULLTEXT01.pdf), Behavior Trees are a Control Architecture (CA) initially used in the video game industry to control non-player characters and now applied to the control of autonomous robots. 
 
 ## Overview
  
@@ -27,7 +27,7 @@ std_msgs/Header header
 string mission_plan
 ```
 
-The mission plan itself is an XML string that defines the behavior tree. For example, the following XML string specifies a sequence of three NavigateToPose actions:
+The mission plan itself is an XML string that defines a Behavior Tree. For example, the following XML string specifies a sequence of three NavigateToPose actions:
 
 ```XML
 <root main_tree_to_execute="MainTree">
@@ -42,15 +42,15 @@ The mission plan itself is an XML string that defines the behavior tree. For exa
 
 ```
 
-The mission plan module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) to dynamically create a behavior tree from the input XML description. It then generates and executes the tree and returns the status code (SUCESSFUL, FAILED, CANCELED) to the task client.
+The mission plan module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) to dynamically create a Behavior Tree from the input XML description. It then generates and executes the tree and returns the status code (SUCESSFUL, FAILED, CANCELED) to the task client.
 
 ## Incorporating Recovery Behaviors
 
-The behavior tree can incorporate recovery actions by responding to conditions in the tree with other actions; a failure of one action could result in the execution of a recovery action, for example. 
+The Behavior Tree can incorporate recovery actions by responding to conditions in the tree with other actions; a failure of one action could result in the execution of a recovery action, for example. 
 
 ## Creating Behavior Tree Nodes
 
-To create a node that can be included in a behavior tree, there must first be an task server/client defined for it. For example, the NavigateToPose task is defined as follows:
+To create a node that can be included in a Behavior Tree, there must first be an task server/client defined for it. For example, the NavigateToPose task is defined as follows:
 
 ```C++
 namespace nav2_tasks
@@ -71,12 +71,10 @@ inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
 }  // namespace nav2_tasks
 ```
 
-Then, one can use the BtAction template to create an action node that can be included in a behavior tree. [ TODO: Once the behavior tree code is integrated describe the process of creating a behavior tree action ]
+Then, one can use the BtAction template to create an action node that can be included in a Behavior Tree. [ TODO: Once the Behavior Tree code is integrated describe the process of creating a Behavior Tree action ]
 
-The behavior tree node automatically handles communication with the corresponding task server via a contained task client.
+The Behavior Tree node automatically handles communication with the corresponding task server via a contained task client.
 
 ## Open Issues
 
-* **Schema definition and XML document validation**
-
-  + Currently, there is no dynamica validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator.
+* **Schema definition and XML document validation** - Currently, there is no dynamic validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator.
