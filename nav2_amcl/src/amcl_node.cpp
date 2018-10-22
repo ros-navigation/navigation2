@@ -61,9 +61,7 @@ using amcl::ODOM_MODEL_DIFF;
 using amcl::Odom;
 using amcl::Laser;
 using amcl::ODOM_MODEL_OMNI;
-using amcl::ODOM_MODEL_DIFF_CORRECTED;
 using amcl::OdomData;
-using amcl::ODOM_MODEL_OMNI_CORRECTED;
 using amcl::SensorData;
 using amcl::LaserData;
 
@@ -168,17 +166,13 @@ AmclNode::AmclNode()
     laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
   }
 
-  tmp_model_type = parameters_client->get_parameter("tmp_model_type", std::string("diff"));
-  if (tmp_model_type == "diff") {
+  tmp_model_type = parameters_client->get_parameter("tmp_model_type", std::string("differential"));
+  if (tmp_model_type == "differential") {
     odom_model_type_ = ODOM_MODEL_DIFF;
-  } else if (tmp_model_type == "omni") {
+  } else if (tmp_model_type == "omnidirectional") {
     odom_model_type_ = ODOM_MODEL_OMNI;
-  } else if (tmp_model_type == "diff-corrected") {
-    odom_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
-  } else if (tmp_model_type == "omni-corrected") {
-    odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
   } else {
-    RCLCPP_WARN(get_logger(), "Unknown odom model type \"%s\"; defaulting to diff model",
+    RCLCPP_WARN(get_logger(), "Unknown odom model type \"%s\"; defaulting to differential model",
       tmp_model_type.c_str());
     odom_model_type_ = ODOM_MODEL_DIFF;
   }
@@ -358,14 +352,10 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
     laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD_PROB;
   }
 
-  if (config.odom_model_type == "diff") {
+  if (config.odom_model_type == "differential") {
     odom_model_type_ = ODOM_MODEL_DIFF;
-  } else if (config.odom_model_type == "omni") {
+  } else if (config.odom_model_type == "omnidirectional") {
     odom_model_type_ = ODOM_MODEL_OMNI;
-  } else if (config.odom_model_type == "diff-corrected") {
-    odom_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
-  } else if (config.odom_model_type == "omni-corrected") {
-    odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
   }
 
   if (config.min_particles > config.max_particles) {

@@ -38,9 +38,7 @@ namespace amcl
 typedef enum
 {
   ODOM_MODEL_DIFF,
-  ODOM_MODEL_OMNI,
-  ODOM_MODEL_DIFF_CORRECTED,
-  ODOM_MODEL_OMNI_CORRECTED
+  ODOM_MODEL_OMNI
 } odom_model_t;
 
 // Odometric sensor data
