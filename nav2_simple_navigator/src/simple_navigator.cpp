@@ -71,7 +71,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 #if 1
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
   if (robot_.getCurrentPose(current_pose)) {
-    RCLCPP_DEBUG(get_logger(), "got robot pose");
+    RCLCPP_DEBUG(get_logger(), "Got robot pose");
     endpoints->start = current_pose->pose.pose;
     endpoints->goal = command->pose;
     endpoints->tolerance = 2.0;
@@ -123,7 +123,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
         return TaskStatus::FAILED;
 
       case TaskStatus::CANCELED:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: planning task canceled");
+        RCLCPP_INFO(get_logger(), "Planning task canceled");
         break;
 
       case TaskStatus::RUNNING:
@@ -183,7 +183,7 @@ planning_succeeded:
         return TaskStatus::FAILED;
 
       case TaskStatus::CANCELED:
-        RCLCPP_INFO(get_logger(), "SimpleNavigator::execute: control task canceled");
+        RCLCPP_INFO(get_logger(), "Control task canceled");
         break;
 
       case TaskStatus::RUNNING:
