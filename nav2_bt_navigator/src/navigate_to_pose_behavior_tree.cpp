@@ -18,9 +18,9 @@
 #include <string>
 #include <set>
 #include "Blackboard/blackboard_local.h"
-#include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
+#include "nav2_tasks/bt_xml.hpp"
 
 using namespace std::chrono_literals;
 

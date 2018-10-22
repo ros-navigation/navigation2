@@ -12,31 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
-#define NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
+#ifndef NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
+#define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/bt_xml.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_tasks
 {
 
-class NavigateToPoseBehaviorTree
+class BehaviorTreeEngine
 {
 public:
-  explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
-  NavigateToPoseBehaviorTree() = delete;
+  explicit BehaviorTreeEngine(rclcpp::Node::SharedPtr node);
+  BehaviorTreeEngine() = delete;
 
-  nav2_tasks::TaskStatus run(
+  TaskStatus run(
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
-private:
+protected:
+  virtual void registerCustomActions() {}
+
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
@@ -44,6 +46,6 @@ private:
   BT::BehaviorTreeFactory factory_;
 };
 
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_tasks
 
-#endif  // NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
+#endif  // NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_

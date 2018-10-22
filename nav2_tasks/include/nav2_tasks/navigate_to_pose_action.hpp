@@ -15,6 +15,8 @@
 #ifndef NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 #define NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 
+#include <string>
+#include <memory>
 #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
@@ -24,7 +26,7 @@
 namespace nav2_tasks
 {
 
-class NavigateToPoseAction: public BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>
+class NavigateToPoseAction : public BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>
 {
 public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
@@ -49,9 +51,10 @@ public:
     command_->pose.orientation = orientation;
   }
 
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"goal","0;0;0"}};
+    static BT::NodeParameters params = {{"position", "0;0;0"}, {"orientation", "0;0;0;0"}};
     return params;
   }
 };

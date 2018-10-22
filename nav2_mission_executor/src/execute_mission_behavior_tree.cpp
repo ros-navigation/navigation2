@@ -19,9 +19,9 @@
 #include <set>
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
-#include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_tasks/bt_xml.hpp"
 
 using namespace std::chrono_literals;
 
@@ -32,7 +32,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
 : node_(node)
 {
   // Register our custom action nodes so that they can be included in XML description
-  factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPoseAction");
+  factory_.registerNodeType<nav2_tasks::NavigateToPoseAction>("NavigateToPose");
 }
 
 nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(

@@ -15,6 +15,7 @@
 #ifndef NAV2_TASKS__BT_CONVERSIONS_HPP_
 #define NAV2_TASKS__BT_CONVERSIONS_HPP_
 
+#include <string>
 #include "behavior_tree_core/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -22,25 +23,28 @@
 namespace BT
 {
 
-template <>
+// The next two conversion functions are required to be defined by the BT library,
+// but are not actually called. TODO(mjeronimo): See if we can avoid these.
+
+template<>
 inline rclcpp::Node::SharedPtr convertFromString(const std::string & /*key*/)
 {
   return nullptr;
 }
 
-template <>
+template<>
 inline std::chrono::milliseconds convertFromString(const std::string & /*key*/)
 {
   return std::chrono::milliseconds(0);
 }
 
-template <> 
+template<>
 inline geometry_msgs::msg::Point convertFromString(const std::string & key)
 {
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 3) {
-      throw std::runtime_error("invalid number of fields for point attribute)");
+    throw std::runtime_error("invalid number of fields for point attribute)");
   } else {
     geometry_msgs::msg::Point position;
     position.x = BT::convertFromString<double>(parts[0]);
@@ -50,13 +54,13 @@ inline geometry_msgs::msg::Point convertFromString(const std::string & key)
   }
 }
 
-template <> 
+template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const std::string & key)
 {
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 4) {
-      throw std::runtime_error("invalid number of fields for orientation attribute)");
+    throw std::runtime_error("invalid number of fields for orientation attribute)");
   } else {
     geometry_msgs::msg::Quaternion orientation;
     orientation.x = BT::convertFromString<double>(parts[0]);
@@ -69,4 +73,4 @@ inline geometry_msgs::msg::Quaternion convertFromString(const std::string & key)
 
 }  // namespace BT
 
-#endif //  NAV2_TASKS__BT_CONVERSIONS_HPP_
+#endif  // NAV2_TASKS__BT_CONVERSIONS_HPP_

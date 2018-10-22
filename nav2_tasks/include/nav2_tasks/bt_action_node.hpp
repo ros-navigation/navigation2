@@ -16,6 +16,7 @@
 #define NAV2_TASKS__BT_ACTION_NODE_HPP_
 
 #include <string>
+#include <memory>
 #include <condition_variable>
 #include <mutex>
 
@@ -31,7 +32,7 @@ template<class CommandMsg, class ResultMsg>
 class BtActionNode : public BT::ActionNode
 {
 public:
-  BtActionNode(const std::string & action_name)
+  explicit BtActionNode(const std::string & action_name)
   : BT::ActionNode(action_name), task_client_(nullptr)
   {
   }

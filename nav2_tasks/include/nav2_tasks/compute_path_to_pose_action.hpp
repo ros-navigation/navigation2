@@ -15,6 +15,8 @@
 #ifndef NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 #define NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 
+#include <string>
+#include <memory>
 #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
@@ -24,7 +26,8 @@
 namespace nav2_tasks
 {
 
-class ComputePathToPoseAction: public BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>
+class ComputePathToPoseAction
+  : public BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>
 {
 public:
   ComputePathToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
@@ -42,26 +45,28 @@ public:
     bool orientation_passed = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
 
     if (!position_passed || !orientation_passed) {
-      RCLCPP_ERROR(node_->get_logger(), "ComputePathToPoseAction: position or orientation not provided");
+      RCLCPP_ERROR(node_->get_logger(),
+        "ComputePathToPoseAction: position or orientation not provided");
     }
 
-    // TODO: should push start down to the global/local planners
-    command_->start.position.x = 0; 
-    command_->start.position.y = 0; 
-    command_->start.position.z = 0; 
-    command_->start.orientation.x = 0; 
-    command_->start.orientation.y = 0; 
-    command_->start.orientation.z = 0; 
-    command_->start.orientation.w = 0; 
+    // TODO(mjeronimo): should push the starting pose down to the global/local planners
+    command_->start.position.x = 0;
+    command_->start.position.y = 0;
+    command_->start.position.z = 0;
+    command_->start.orientation.x = 0;
+    command_->start.orientation.y = 0;
+    command_->start.orientation.z = 0;
+    command_->start.orientation.w = 0;
 
     command_->goal.position = position;
     command_->goal.orientation = orientation;
-    command_->tolerance = 2.0;  // TODO: should also be a parameter
+    command_->tolerance = 2.0;  // TODO(mjeronimo): should also be a parameter
   }
 
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"goal","0;0;0"}};
+    static BT::NodeParameters params = {{"position", "0;0;0"}, {"orientation", "0;0;0;0"}};
     return params;
   }
 };
@@ -69,4 +74,3 @@ public:
 }  // namespace nav2_tasks
 
 #endif  // NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-

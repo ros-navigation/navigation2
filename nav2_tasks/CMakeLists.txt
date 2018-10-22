@@ -23,12 +23,25 @@ include_directories(
   include
 )
 
-install(DIRECTORY include/
-  DESTINATION include/
+add_library(nav2_tasks STATIC
+  src/behavior_tree_engine.cpp
 )
 
-set(dependencies
+ament_target_dependencies(nav2_tasks
+  rclcpp
+  geometry_msgs
   nav2_msgs
+  behavior_tree_core
+)
+
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)

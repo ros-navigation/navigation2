@@ -55,11 +55,11 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
 
   // Compose the args for the NavigateToPose action
   std::stringstream args;
-  args << "position=\"" <<
-    p.position.x << ";" << p.position.y << ";" << p.position.z << "\"" <<
-    " orientation=\"" <<
-    p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z << ";" <<
-    p.orientation.w << "\"";
+  args << "position=\""
+    << p.position.x << ";" << p.position.y << ";" << p.position.z << "\""
+	<< " orientation=\"" 
+	<< p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z << ";"
+	<< p.orientation.w << "\"";
 
   // Put it all together, trying to make the XML somewhat readable here
   std::stringstream ss;
@@ -79,9 +79,6 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
   // Publish the mission plan (so that our own TaskServer picks it up)
   auto message = nav2_msgs::msg::MissionPlan();
   message.mission_plan = ss.str();
-  message.mission_plan = R"(<root main_tree_to_execute = "MainTree" ><BehaviorTree ID="MainTree"><SequenceStar name="root"><NavigateToPoseAction position="21;22;0" orientation="1;2;3;4"/></SequenceStar></BehaviorTree></root>)";
-  message.mission_plan =
-    R"(<root main_tree_to_execute = "MainTree" ><BehaviorTree ID="MainTree"><SequenceStar name="root"><NavigateToPoseAction position="21;22;0" orientation="1;2;3;4"/></SequenceStar></BehaviorTree></root>)";
 
   plan_pub_->publish(message);
 }
