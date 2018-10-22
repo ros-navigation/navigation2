@@ -12,9 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
-#define NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
+#include <string>
 
-#include "nav2_map_server/map_reps/occ_grid_server.hpp"
+#include "nav2_map_server/map_factory.hpp"
 
-#endif  // NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
+namespace nav2_map_server
+{
+
+BaseMapServer * MapFactory::CreateMap(
+  const std::string & map_type,
+  rclcpp::Node::SharedPtr node, const std::string & file_name)
+{
+  if (map_type == "occupancy") {
+    return new OccGridServer(node, file_name);
+  } else {
+    RCLCPP_ERROR(node->get_logger(), "Cannot load map %s of type %s", file_name.c_str(),
+      map_type.c_str());
+    throw std::runtime_error("Map type not supported");
+  }
+}
+
+}  // namespace nav2_map_server

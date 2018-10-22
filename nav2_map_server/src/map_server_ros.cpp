@@ -25,11 +25,13 @@ MapServerROS::MapServerROS(const std::string & file_name, const std::string & ma
 
   try {
     map_loader_ = new MapFactory();
-    RCLCPP_INFO(node_->get_logger(), "Loading map of type '%s'", map_type.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Loading map %s of type '%s'", file_name.c_str(),
+      map_type.c_str());
     map_ = map_loader_->CreateMap(map_type, node_, file_name);
     rclcpp::spin(node_);
   } catch (std::runtime_error e) {
-    RCLCPP_ERROR(node_->get_logger(), "Cannot load map: %s", e.what());
+    RCLCPP_ERROR(node_->get_logger(), "Cannot load map %s of type %s because: %s.",
+      file_name.c_str(), map_type.c_str(), e.what());
   }
 }
 

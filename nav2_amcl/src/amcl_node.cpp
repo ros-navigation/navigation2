@@ -639,9 +639,8 @@ AmclNode::requestMap()
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
 
-  RCLCPP_INFO(get_logger(), "AmclNode::requestMap: invoking service call");
+  RCLCPP_INFO(get_logger(), "AmclNode: Processing request map service.");
   auto result = map_client.invoke(request);
-  RCLCPP_INFO(get_logger(), "AmclNode::requestMap: after service call");
 
   handleMapMessage(result->map);
 }
@@ -649,7 +648,7 @@ AmclNode::requestMap()
 void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  RCLCPP_INFO(get_logger(), "AmclNode::mapReceived");
+  RCLCPP_INFO(get_logger(), "AmclNode: A new map was received.");
   if (first_map_only_ && first_map_received_) {
     return;
   }

@@ -25,30 +25,32 @@ namespace nav2_controller_example
 DwaController::DwaController()
 : nav2_tasks::FollowPathTaskServer("FollowPathNode")
 {
-  RCLCPP_INFO(get_logger(), "DwaController::DwaController");
+  RCLCPP_INFO(get_logger(), "Initializing DwaController");
   vel_pub_ = this->create_publisher<CmdVel>("/mobile_base/commands/velocity", 1);
 }
 
 DwaController::~DwaController()
 {
-  RCLCPP_INFO(get_logger(), "DwaController::~DwaController");
+  RCLCPP_INFO(get_logger(), "Shutting down DwaController");
 }
 
 TaskStatus
-DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "DwaController::execute");
+  RCLCPP_INFO(get_logger(), "DwaController: Received a new path to follow of"
+    " size %i ending at (%.2f, %.2f)", (int)command->poses.size(), command->poses.back().position.x,
+    command->poses.back().position.y);
 
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < 10; i++) {
     // Do a bit of the task
-    RCLCPP_INFO(get_logger(), "DwaController::execute: doing work: %d", i);
-    sendVelocity(0.1);
+    const double cmd_vel = 0.1;
+    sendVelocity(cmd_vel);
     std::this_thread::sleep_for(250ms);
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "DwaController::execute: task has been canceled");
+      RCLCPP_INFO(get_logger(), "DwaController: Follow task has been canceled.");
       setCanceled();
       return TaskStatus::CANCELED;
     }
@@ -56,7 +58,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
 
   sendVelocity(0);
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "DwaController::execute: task completed");
+  RCLCPP_INFO(get_logger(), "DwaController: Follow task has been completed.");
 
   nav2_tasks::FollowPathResult result;
   setResult(result);
@@ -66,7 +68,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*
 
 void DwaController::sendVelocity(double speed)
 {
-  RCLCPP_INFO(get_logger(), "DwaController::sendVelocity: %f", speed);
+  RCLCPP_DEBUG(get_logger(), "DwaController::sendVelocity: %f", speed);
 
   CmdVel v;
   v.linear.x = speed;
