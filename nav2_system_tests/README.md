@@ -1,8 +1,10 @@
-# Testing
-## 1. Unit Testing
-Test a collection of classes from a particular component. These are provided within each component or package.
+# System Tests
 
-## 2. Component Testing
+The package provides tests for [components](#1.-Component-Testing), [subsystems](#2.-Subsystem-Testing) and full [system](#3.-System-Testing) integration.
+
+Unit tests are not included, these should be provided within each component or package.
+
+## 1. Component Testing
 Test a component's ROS API (Pub/Sub/Service).
 
 - [Global Planning](src/planning/README.md)
@@ -15,7 +17,7 @@ Test a component's ROS API (Pub/Sub/Service).
 
 - Costmaps
 
-## 3. Subsystem Testing
+## 2. Subsystem Testing
 Test the integration of several components and subsystems.
 
 - Support modules (Mapping, Perception, Prediction, Localization
@@ -26,5 +28,5 @@ Test the integration of several components and subsystems.
 
 - Command chain (Mission Planning, Mission Execution, Navigation System, Robot Interface)
 
-## 4. System Testing
+## 3. System Testing
 Test the integration of all subsystems.
