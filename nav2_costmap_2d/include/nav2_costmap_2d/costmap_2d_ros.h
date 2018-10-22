@@ -282,6 +282,8 @@ private:
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
   float footprint_padding_;
+
+  rclcpp::Node::SharedPtr private_nh_;
 };
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d

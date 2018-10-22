@@ -1,9 +1,23 @@
 sudo: required
 
-language: none
+language:
+  - none
 
 services:
   - docker
+
+notifications:
+  email:
+    on_pull_requests: false
+    on_success: change
+    on_failure: change
+    recipients:
+      - stevenamcenski@gmail.com
+      - mohammad.haghighipanah@intel.com
+      - michael.jeronimo@intel.com
+      - carlos.a.orduno@intel.com
+      - brian.wilcox@intel.com
+      - matthew.k.hansen@intel.com
 
 before_install:
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .

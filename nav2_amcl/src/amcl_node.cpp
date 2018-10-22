@@ -924,8 +924,7 @@ void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
   std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
-  rclcpp::Clock ros_clock(RCL_ROS_TIME);
-  last_laser_received_ts_ = ros_clock.now();
+  last_laser_received_ts_ = now();
   if (map_ == NULL) {
     return;
   }

@@ -45,15 +45,16 @@ using namespace tf2;
 
 namespace nav2_costmap_2d
 {
-ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time,
-    double expected_update_rate,
-    double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-    double raytrace_range, tf2_ros::Buffer & tf2_buffer, string global_frame,
-    string sensor_frame,
-    double tf_tolerance)
-  : tf2_buffer_(tf2_buffer), observation_keep_time_(observation_keep_time),
+ObservationBuffer::ObservationBuffer(
+  rclcpp::Node::SharedPtr nh,string topic_name, double observation_keep_time,
+  double expected_update_rate,
+  double min_obstacle_height, double max_obstacle_height, double obstacle_range,
+  double raytrace_range, tf2_ros::Buffer & tf2_buffer, string global_frame,
+  string sensor_frame,
+  double tf_tolerance)
+  : nh_(nh), tf2_buffer_(tf2_buffer), observation_keep_time_(observation_keep_time),
   expected_update_rate_(expected_update_rate),
-  last_updated_(clock_.now()), global_frame_(global_frame), sensor_frame_(sensor_frame),
+  last_updated_(nh->now()), global_frame_(global_frame), sensor_frame_(sensor_frame),
   topic_name_(topic_name),
   min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
   obstacle_range_(obstacle_range), raytrace_range_(raytrace_range), tf_tolerance_(tf_tolerance)
@@ -66,8 +67,7 @@ ObservationBuffer::~ObservationBuffer()
 
 bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
 {
-  //ros::Time transform_time = ros::Time::now();
-  rclcpp::Time transform_time = clock_.now();
+  rclcpp::Time transform_time = nh_.now();
   std::string tf_error;
 
   geometry_msgs::msg::TransformStamped transformStamped;
@@ -190,7 +190,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   }
 
   // if the update was successful, we want to update the last updated time
-  last_updated_ = clock_.now();
+  last_updated_ = nh_.now();
 
   // we'll also remove any stale observations from the list
   purgeStaleObservations();
@@ -237,19 +237,19 @@ bool ObservationBuffer::isCurrent() const
     return true;
   }
 
-  bool current = (clock_.now() - last_updated_).toSec() <= expected_update_rate_.toSec();
+  bool current = (nh_.now() - last_updated_).toSec() <= expected_update_rate_.toSec();
   if (!current) {
     RCLCPP_WARN(rclcpp::get_logger(
           "nav2_costmap_2d"),
         "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.",
         topic_name_.c_str(),
-        (clock_.now() - last_updated_).toSec(), expected_update_rate_.toSec());
+        (nh_.now() - last_updated_).toSec(), expected_update_rate_.toSec());
   }
   return current;
 }
 
 void ObservationBuffer::resetLastUpdated()
 {
-  last_updated_ = clock_.now();
+  last_updated_ = nh_.now();
 }
 }  // namespace nav2_costmap_2d

@@ -62,6 +62,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
 
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
   if (robot_.getCurrentPose(current_pose)) {
+    RCLCPP_DEBUG(get_logger(), "got robot pose");
     endpoints->start = current_pose->pose.pose;
     endpoints->goal = command->pose;
     endpoints->tolerance = 2.0;
@@ -114,6 +115,13 @@ planning_succeeded:
   RCLCPP_INFO(get_logger(), "SimpleNavigator: Received path of size %u from planner",
     path->poses.size());
 
+  int index = 0;
+  for (auto pose : path->poses) {
+    RCLCPP_DEBUG(get_logger(), "point %u x: %0.2f, y: %0.2f",
+      index, pose.position.x, pose.position.y);
+    index++;
+  }
+
   RCLCPP_INFO(get_logger(), "SimpleNavigator: Sending path to the controller to execute.");
 
   controllerTaskClient_->sendCommand(path);
@@ -131,7 +139,7 @@ planning_succeeded:
 
     // Check if the control task has completed
     auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controllerTaskClient_->waitForResult(controlResult, 10ms);
+    TaskStatus status = controllerTaskClient_->waitForResult(controlResult, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -139,7 +147,6 @@ planning_succeeded:
           RCLCPP_INFO(get_logger(), "SimpleNavigator: Control task completed.");
           nav2_tasks::NavigateToPoseResult navigationResult;
           setResult(navigationResult);
-
           return TaskStatus::SUCCEEDED;
         }
 
@@ -148,6 +155,7 @@ planning_succeeded:
         return TaskStatus::FAILED;
 
       case TaskStatus::RUNNING:
+        RCLCPP_DEBUG(get_logger(), "Control task still running");
         break;
 
       default:

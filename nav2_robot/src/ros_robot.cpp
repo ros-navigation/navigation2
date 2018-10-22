@@ -24,6 +24,7 @@ RosRobot::RosRobot(rclcpp::Node * node)
 : node_(node), initial_pose_received_(false), initial_odom_received_(false)
 {
   // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
+
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
 
