@@ -61,9 +61,7 @@ using amcl::ODOM_MODEL_DIFF;
 using amcl::Odom;
 using amcl::Laser;
 using amcl::ODOM_MODEL_OMNI;
-using amcl::ODOM_MODEL_DIFF_CORRECTED;
 using amcl::OdomData;
-using amcl::ODOM_MODEL_OMNI_CORRECTED;
 using amcl::SensorData;
 using amcl::LaserData;
 
@@ -173,10 +171,6 @@ AmclNode::AmclNode()
     odom_model_type_ = ODOM_MODEL_DIFF;
   } else if (tmp_model_type == "omni") {
     odom_model_type_ = ODOM_MODEL_OMNI;
-  } else if (tmp_model_type == "diff-corrected") {
-    odom_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
-  } else if (tmp_model_type == "omni-corrected") {
-    odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
   } else {
     RCLCPP_WARN(get_logger(), "Unknown odom model type \"%s\"; defaulting to diff model",
       tmp_model_type.c_str());
@@ -362,10 +356,6 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
     odom_model_type_ = ODOM_MODEL_DIFF;
   } else if (config.odom_model_type == "omni") {
     odom_model_type_ = ODOM_MODEL_OMNI;
-  } else if (config.odom_model_type == "diff-corrected") {
-    odom_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
-  } else if (config.odom_model_type == "omni-corrected") {
-    odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
   }
 
   if (config.min_particles > config.max_particles) {
