@@ -46,7 +46,8 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
     cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
     auto nh = shared_from_this();
     odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-    vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/mobile_base/commands/velocity", 1);
+    vel_pub_ =
+      this->create_publisher<geometry_msgs::msg::Twist>("/mobile_base/commands/velocity", 1);
     planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
