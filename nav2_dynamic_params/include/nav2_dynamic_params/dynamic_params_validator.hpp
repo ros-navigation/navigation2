@@ -27,21 +27,21 @@ namespace nav2_dynamic_params
 class DynamicParamsValidator
 {
 public:
-  explicit DynamicParamsValidator(rclcpp::Node::SharedPtr node);
+  DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params = false);
 
   ~DynamicParamsValidator() {}
 
-  void add_param(std::string param_name, rclcpp::ParameterType type);
+  void add_param(const std::string & param_name, const rclcpp::ParameterType & type);
 
   void add_param(
-    std::string param_name, rclcpp::ParameterType type,
+    const std::string & param_name, const rclcpp::ParameterType & type,
     std::pair<double, double> bounds);
 
   void add_param(
-    std::string param_name, rclcpp::ParameterType type,
-    std::pair<double, double> bounds, int ignore_bound);
+    const std::string & param_name, const rclcpp::ParameterType & type,
+    std::pair<double, double> bounds, const int & ignore_bound);
 
-  void add_param(std::map<std::string, rclcpp::ParameterType> map);
+  void add_param(const std::map<std::string, rclcpp::ParameterType> & map);
 
   void set_validation_callback(
     std::function<rcl_interfaces::msg::SetParametersResult(
@@ -51,14 +51,29 @@ private:
   rcl_interfaces::msg::SetParametersResult param_validation_callback(
     std::vector<rclcpp::Parameter> parameters);
 
-  bool validate_param(std::string param_name, rclcpp::Parameter param, rclcpp::ParameterType type);
+  bool validate_param(const rclcpp::Parameter & param);
 
-  bool validate_param_bounds(
-    std::string param_name, rclcpp::Parameter param,
-    std::pair<double, double> bound);
+  bool validate_param_bounds(const rclcpp::Parameter & param);
+
+  //bool check_bound_of_type(const rclcpp::Parameter & param, const rclcpp::ParameterType & type);
+
+  template <rclcpp::ParameterType ParamT>
+  bool check_bound_of_type(const rclcpp::Parameter & param)
+  {
+    auto value = param.get_value<ParamT>();
+    auto name = param.get_name();
+    if (value >= param_bound_map_[name].first && value <= param_bound_map_[name].second)
+    {
+      return true;
+    } else {
+      RCLCPP_WARN(node_->get_logger(),
+        "Parameter Change Denied::Outside Bounds: %s", name.c_str());
+      return false;
+    }  
+  }
 
   rclcpp::Node::SharedPtr node_;
-
+  bool reject_new_params_;
   std::map<std::string, rclcpp::ParameterType> param_map_;
   std::map<std::string, std::pair<double, double>> param_bound_map_;
 

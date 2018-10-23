@@ -38,9 +38,9 @@ int main(int argc, char ** argv)
   dynamic_params_client->addParametersFromServer({"foo", "bar"});
 
   // Create DynamicParamsValidator
-  auto param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node);
-  param_validator_->add_param("foo", rclcpp::ParameterType::PARAMETER_DOUBLE);
-  param_validator_->add_param("bar", rclcpp::ParameterType::PARAMETER_INTEGER, {0, 10});
+  auto param_validator = new nav2_dynamic_params::DynamicParamsValidator(node);
+  param_validator->add_param("foo", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  param_validator->add_param("bar", rclcpp::ParameterType::PARAMETER_INTEGER, {0, 10});
 
   while (!parameters_client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
@@ -83,6 +83,9 @@ int main(int argc, char ** argv)
 
   rclcpp::spin(node);
   rclcpp::shutdown();
+
+  delete dynamic_params_client;
+  delete param_validator;
 
   return 0;
 }
