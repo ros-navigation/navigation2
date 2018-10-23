@@ -18,10 +18,10 @@
 #include <string>
 #include <set>
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "behavior_tree_core/xml_parsing.h"
 #include "Blackboard/blackboard_local.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/bt_xml.hpp"
 
 using namespace std::chrono_literals;
 

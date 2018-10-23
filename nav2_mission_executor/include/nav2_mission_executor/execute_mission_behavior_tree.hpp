@@ -19,8 +19,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
+#include "behavior_tree_core/xml_parsing.h"
 #include "nav2_tasks/execute_mission_task.hpp"
-#include "nav2_tasks/bt_xml.hpp"
 
 namespace nav2_mission_executor
 {
