@@ -50,9 +50,6 @@ DijkstraPlanner::DijkstraPlanner()
   allow_unknown_(true),
   default_tolerance_(1.0)
 {
-  auto jnk = rcutils_logging_set_logger_level("ComputePathToPoseTask", RCUTILS_LOG_SEVERITY_DEBUG);
-  jnk = jnk;
-
   RCLCPP_INFO(get_logger(), "Initializing DijkstraPlanner...");
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
