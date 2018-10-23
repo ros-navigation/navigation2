@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_map_server/map_factory.hpp"
+#include "nav2_map_server/map_server_factory.hpp"
 
 #include <string>
 #include <memory>
@@ -21,7 +21,7 @@
 namespace nav2_map_server
 {
 
-std::shared_ptr<MapServer> MapFactory::createMap(rclcpp::Node::SharedPtr & node)
+std::shared_ptr<MapServer> MapServerFactory::createMapServer(rclcpp::Node::SharedPtr & node)
 {
   // Get the required parameters: first the YAML filename
   auto yaml_filename_param = rclcpp::Parameter("map_type", std::string(""));

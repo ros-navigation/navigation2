@@ -61,6 +61,11 @@ void operator>>(const YAML::Node & node, T & i)
   i = node.as<T>();
 }
 
+OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node)
+: node_(node)
+{
+}
+
 OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name)
 : node_(node)
 {

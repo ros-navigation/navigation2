@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_FACTORY_HPP_
-#define NAV2_MAP_SERVER__MAP_FACTORY_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
 
 #include <string>
 #include <memory>
@@ -23,12 +23,12 @@
 namespace nav2_map_server
 {
 
-class MapFactory
+class MapServerFactory
 {
 public:
-  static std::shared_ptr<MapServer> createMap(rclcpp::Node::SharedPtr & node);
+  static std::shared_ptr<MapServer> createMapServer(rclcpp::Node::SharedPtr & node);
 };
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAP_FACTORY_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
