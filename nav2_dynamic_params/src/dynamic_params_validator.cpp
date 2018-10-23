@@ -22,8 +22,9 @@
 namespace nav2_dynamic_params
 {
 
-DynamicParamsValidator::DynamicParamsValidator(rclcpp::Node::SharedPtr node)
-: node_(node)
+DynamicParamsValidator::DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params)
+: node_(node),
+  reject_new_params_(reject_new_params)
 {
   node_->register_param_change_callback(
     std::bind(&DynamicParamsValidator::param_validation_callback, this, std::placeholders::_1));
@@ -38,29 +39,34 @@ rcl_interfaces::msg::SetParametersResult DynamicParamsValidator::param_validatio
   for (auto parameter : parameters) {
     RCLCPP_INFO(node_->get_logger(),
       "Parameter Change Request: %s", (parameter.get_name()).c_str());
-
+      
     // Validate Parameter Type
-    for (std::map<std::string, rclcpp::ParameterType>::iterator it = param_map_.begin();
-      it != param_map_.end(); ++it)
+    if (param_map_.count(parameter.get_name()) > 0)
     {
-      if (validate_param(it->first, parameter, it->second)) {
+      if (validate_param(parameter)) {
         result.successful &= true;
       } else {
         result.successful = false;
       }
+    } else {
+        // Default to accept new parameters
+        if (reject_new_params_) {
+          result.successful = false;
+          RCLCPP_WARN(node_->get_logger(),
+            "Parameter Change Denied::Parameter Not Registered: %s", parameter.get_name().c_str());             
+        }
     }
 
     // Validate Parameter Bounds
-    for (std::map<std::string, std::pair<double, double>>::iterator it = param_bound_map_.begin();
-      it != param_bound_map_.end(); ++it)
-    {
-      if (validate_param_bounds(it->first, parameter, it->second)) {
+    if (param_bound_map_.count(parameter.get_name()) > 0) {
+      if (validate_param_bounds(parameter)) {
         result.successful &= true;
       } else {
         result.successful = false;
       }
     }
   }
+  
   // Check Custom Validation Callback if provided
   if (validation_callback_) {
     result.successful &= (validation_callback_(parameters)).successful;
@@ -69,13 +75,13 @@ rcl_interfaces::msg::SetParametersResult DynamicParamsValidator::param_validatio
   return result;
 }
 
-void DynamicParamsValidator::add_param(std::string param_name, rclcpp::ParameterType type)
+void DynamicParamsValidator::add_param(const std::string & param_name, const rclcpp::ParameterType & type)
 {
   param_map_[param_name] = type;
 }
 
 void DynamicParamsValidator::add_param(
-  std::string param_name, rclcpp::ParameterType type,
+  const std::string & param_name, const rclcpp::ParameterType & type,
   std::pair<double, double> bounds)
 {
   param_map_[param_name] = type;
@@ -83,8 +89,8 @@ void DynamicParamsValidator::add_param(
 }
 
 void DynamicParamsValidator::add_param(
-  std::string param_name, rclcpp::ParameterType type,
-  std::pair<double, double> bounds, int ignore_bound)
+  const std::string & param_name, const rclcpp::ParameterType & type,
+  std::pair<double, double> bounds, const int & ignore_bound)
 {
   param_map_[param_name] = type;
   if (ignore_bound) {
@@ -95,7 +101,7 @@ void DynamicParamsValidator::add_param(
   param_bound_map_[param_name] = bounds;
 }
 
-void DynamicParamsValidator::add_param(std::map<std::string, rclcpp::ParameterType> map)
+void DynamicParamsValidator::add_param(const std::map<std::string, rclcpp::ParameterType> & map)
 {
   param_map_.insert(map.begin(), map.end());
 }
@@ -107,52 +113,29 @@ void DynamicParamsValidator::set_validation_callback(
   validation_callback_ = callback;
 }
 
-bool DynamicParamsValidator::validate_param(
-  std::string param_name, rclcpp::Parameter param,
-  rclcpp::ParameterType type)
+bool DynamicParamsValidator::validate_param(const rclcpp::Parameter & param)
 {
-  if (param.get_name() == param_name) {
-    if (type == param.get_type()) {
-      return true;
-    } else {
-      RCLCPP_WARN(node_->get_logger(),
-        "Parameter Change Denied::Doesn't Match Type: %s", param_name.c_str());
-      return false;
-    }
-  }
-  return true;
-}
-
-bool DynamicParamsValidator::validate_param_bounds(
-  std::string param_name, rclcpp::Parameter param,
-  std::pair<double, double> bound)
-{
-  if (param.get_name() == param_name) {
-    if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE) {
-      if (param.get_value<rclcpp::ParameterType::PARAMETER_DOUBLE>() >= bound.first &&
-        param.get_value<rclcpp::ParameterType::PARAMETER_DOUBLE>() <= bound.second)
-      {
-        return true;
-      } else {
-        RCLCPP_WARN(node_->get_logger(),
-          "Parameter Change Denied::Outside Bounds: %s", param_name.c_str());
-        return false;
-      }
-    }
-    if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-      if (param.get_value<rclcpp::ParameterType::PARAMETER_INTEGER>() >= bound.first &&
-        param.get_value<rclcpp::ParameterType::PARAMETER_INTEGER>() <= bound.second)
-      {
-        return true;
-      } else {
-        RCLCPP_WARN(node_->get_logger(),
-          "Parameter Change Denied::Outside Bounds: %s", param_name.c_str());
-        return false;
-      }
-    }
+  if (param_map_[param.get_name()] == param.get_type()) {
+    return true;
+  } else {
+    RCLCPP_WARN(node_->get_logger(),
+      "Parameter Change Denied::Doesn't Match Type: %s", param.get_name().c_str());
     return false;
   }
-  return true;
 }
+
+bool DynamicParamsValidator::validate_param_bounds(const rclcpp::Parameter & param)
+{
+  if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE) {
+    return check_bound_of_type<rclcpp::ParameterType::PARAMETER_DOUBLE>(param);
+  }
+
+  if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
+    return check_bound_of_type<rclcpp::ParameterType::PARAMETER_INTEGER>(param);
+  }
+
+  return false;
+}
+
 
 }  // namespace nav2_dynamic_params

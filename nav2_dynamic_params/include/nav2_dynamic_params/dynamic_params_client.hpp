@@ -27,23 +27,24 @@ namespace nav2_dynamic_params
 class DynamicParamsClient
 {
 public:
-  explicit DynamicParamsClient(rclcpp::SyncParametersClient::SharedPtr client)
-  {
-    parameters_client_ = client;
-  }
+  explicit DynamicParamsClient(rclcpp::SyncParametersClient::SharedPtr & client)
+  : parameters_client_(client){}
 
-  void addParametersFromServer(std::vector<std::string> param_names)
+
+  void addParametersFromServer(const std::vector<std::string> param_names)
   {
     auto params = parameters_client_->get_parameters(param_names);
-    for (auto & param : params) {
+    for (const auto & param : params) {
       dynamic_param_map_[param.get_name()] = param;
-      dynamic_param_names_.push_back(param.get_name());
     }
   }
 
   std::vector<std::string> get_param_names()
   {
-    return dynamic_param_names_;
+    std::vector<std::string> names;
+    for(const auto & entry : dynamic_param_map_)
+      names.push_back(entry.first);
+    return names;
   }
 
   std::map<std::string, rclcpp::Parameter> get_param_map()
@@ -54,7 +55,7 @@ public:
   template<class T>
   bool get_event_param(
     const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
-    std::string param_name, T & new_value)
+    const std::string & param_name, T & new_value)
   {
     rclcpp::ParameterEventsFilter filter(event, {param_name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
@@ -76,7 +77,7 @@ public:
   template<class T>
   bool get_event_param(
     const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
-    std::string param_name, T & new_value, T default_value)
+    const std::string & param_name, T & new_value, const T & default_value)
   {
     rclcpp::ParameterEventsFilter filter(event, {param_name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
@@ -91,7 +92,7 @@ public:
       if (dynamic_param_map_.count(param_name) > 0) {
         new_value = dynamic_param_map_[param_name].get_value<T>();
       } else {
-        RCLCPP_WARN(rclcpp::get_logger("dynamic_params_client"),
+        RCLCPP_INFO(rclcpp::get_logger("dynamic_params_client"),
           "Parameter '%s' not set, using default", param_name.c_str());
         new_value = default_value;
       }
