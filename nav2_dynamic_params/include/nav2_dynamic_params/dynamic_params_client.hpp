@@ -67,8 +67,12 @@ public:
       dynamic_param_map_[param_name] = param_value;
       return true;
     } else {
-      if (dynamic_param_map_.count(param_name) > 0) {
+      if (dynamic_param_map_.count(param_name) > 0 &&
+        !dynamic_param_map_[param_name].get_type()==rclcpp::ParameterType::PARAMETER_NOT_SET) {
         new_value = dynamic_param_map_[param_name].get_value<T>();
+      } else {
+        RCLCPP_DEBUG(rclcpp::get_logger("dynamic_params_client"),
+          "Parameter '%s' not set", param_name.c_str());
       }
       return false;
     }
@@ -89,7 +93,8 @@ public:
       dynamic_param_map_[param_name] = param_value;
       return true;
     } else {
-      if (dynamic_param_map_.count(param_name) > 0) {
+      if (dynamic_param_map_.count(param_name) > 0 &&
+        !dynamic_param_map_[param_name].get_type()==rclcpp::ParameterType::PARAMETER_NOT_SET) {
         new_value = dynamic_param_map_[param_name].get_value<T>();
       } else {
         RCLCPP_INFO(rclcpp::get_logger("dynamic_params_client"),
