@@ -34,7 +34,7 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
     {
-      // Make sure we've got the latest map 
+      // Make sure we've got the latest map
       // TODO(mjeronimo): Instead of using a service call, the map server should push any
       // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
       auto map_request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();

@@ -23,7 +23,7 @@ int main(int argc, char ** argv)
   // Create the node that will be used by the map server. Creating the node first
   // allows the map_server to use the Node::SharedPtr in its constructor, which
   // wouldn't be possible if the MapServer was directly a Node
-  rclcpp::Node::SharedPtr map_server_node = std::make_shared<rclcpp::Node>("map_server");
+  auto map_server_node = std::make_shared<rclcpp::Node>("map_server");
 
   // Create the map server that uses this node
   auto map_server = nav2_map_server::MapServerFactory::createMapServer(map_server_node);
