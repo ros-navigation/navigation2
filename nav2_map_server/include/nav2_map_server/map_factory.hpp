@@ -16,9 +16,9 @@
 #define NAV2_MAP_SERVER__MAP_FACTORY_HPP_
 
 #include <string>
-
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_representations/map_reps.hpp"
+#include "nav2_map_server/map_server.hpp"
 
 namespace nav2_map_server
 {
@@ -26,8 +26,9 @@ namespace nav2_map_server
 class MapFactory
 {
 public:
-  BaseMapServer * CreateMap(
-    const std::string & map_type, rclcpp::Node::SharedPtr node,
+  static std::shared_ptr<MapServer> createMap(
+    rclcpp::Node::SharedPtr & node,
+    const std::string & map_type,
     const std::string & file_name);
 };
 

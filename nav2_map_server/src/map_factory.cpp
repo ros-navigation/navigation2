@@ -12,32 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_
-#define NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_
+#include "nav2_map_server/map_factory.hpp"
 
 #include <string>
-
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_factory.hpp"
-#include "nav2_map_server/map_representations/map_reps.hpp"
+#include <memory>
+#include "nav2_map_server/occ_grid_server.hpp"
 
 namespace nav2_map_server
 {
 
-class MapServerROS
+std::shared_ptr<MapServer> MapFactory::createMap(
+  rclcpp::Node::SharedPtr & node,
+  const std::string & map_type,
+  const std::string & file_name)
 {
-public:
-  MapServerROS(const std::string & file_name, const std::string & map_type);
-
-private:
-  MapFactory * map_loader_;
-  BaseMapServer * map_;
-
-  // TODO(bpwilcox): Add converter for map representations
-
-  rclcpp::Node::SharedPtr node_;
-};
+  if (map_type == "occupancy") {
+    return std::make_shared<OccGridServer>(node, file_name);
+  } else {
+    RCLCPP_ERROR(node->get_logger(), "Cannot load map %s of type %s", file_name.c_str(),
+      map_type.c_str());
+    throw std::runtime_error("Map type not supported");
+  }
+}
 
 }  // namespace nav2_map_server
-
-#endif  // NAV2_MAP_SERVER__MAP_SERVER_ROS_HPP_

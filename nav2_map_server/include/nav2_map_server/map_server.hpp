@@ -12,9 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
-#define NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_HPP_
 
-#include "nav2_map_server/map_representations/occ_grid_server.hpp"
+#include <string>
 
-#endif  // NAV2_MAP_SERVER__MAP_REPS__MAP_REPS_HPP_
+namespace nav2_map_server
+{
+
+class MapServer
+{
+public:
+  virtual ~MapServer() {}
+
+  virtual void loadMapInfoFromFile(const std::string & file_name) = 0;
+  virtual void loadMapFromFile(const std::string & map_name) = 0;
+  virtual void publishMap() = 0;
+  virtual void setMap() = 0;
+  virtual void connectROS() = 0;
+};
+
+}  // namespace nav2_map_server
+
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_HPP_

@@ -34,7 +34,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "nav2_map_server/map_representations/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_server.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -58,7 +58,7 @@ public:
   {
     OccTest = new OccGridTest;
     auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-    OccTest->LoadMapInfoFromFile(test_yaml.string());
+    OccTest->loadMapInfoFromFile(test_yaml.string());
   }
 
 protected:
@@ -75,8 +75,8 @@ protected:
 TEST_F(MapServerTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-  ASSERT_NO_THROW(OccTest->LoadMapFromFile(test_png.string()));
-  OccTest->SetMap();
+  ASSERT_NO_THROW(OccTest->loadMapFromFile(test_png.string()));
+  OccTest->setMap();
   map_resp = OccTest->GetMap();
 
   EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
@@ -93,8 +93,8 @@ TEST_F(MapServerTest, loadValidPNG)
 TEST_F(MapServerTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
-  ASSERT_NO_THROW(OccTest->LoadMapFromFile(test_bmp.string()));
-  OccTest->SetMap();
+  ASSERT_NO_THROW(OccTest->loadMapFromFile(test_bmp.string()));
+  OccTest->setMap();
   map_resp = OccTest->GetMap();
 
   EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
@@ -110,5 +110,5 @@ TEST_F(MapServerTest, loadValidBMP)
 TEST_F(MapServerTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
-  ASSERT_THROW(OccTest->LoadMapFromFile(test_invalid.string()), std::runtime_error);
+  ASSERT_THROW(OccTest->loadMapFromFile(test_invalid.string()), std::runtime_error);
 }
