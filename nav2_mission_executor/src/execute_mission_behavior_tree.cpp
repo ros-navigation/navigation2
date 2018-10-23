@@ -49,18 +49,18 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
 
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes
   // out of scope, all the nodes are destroyed
-  std::shared_ptr<BT::Tree> tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
+  BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes w/ success or failure
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree->root_node->executeTick();
+    result = tree.root_node->executeTick();
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      tree->root_node->halt();
+      tree.root_node->halt();
       return nav2_tasks::TaskStatus::CANCELED;
     }
 

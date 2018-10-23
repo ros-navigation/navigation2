@@ -68,7 +68,7 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <NavigateToPose " << args.str() <<
+      <NavigateToPose )" << args.str() <<
     R"(/>
     </SequenceStar>
   </BehaviorTree>
