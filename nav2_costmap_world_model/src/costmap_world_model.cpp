@@ -34,8 +34,17 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
     {
-      RCLCPP_INFO(
-        this->get_logger(), "CostmapWorldModel: Incoming costmap request...");
+      // Make sure we've got the latest map 
+      // TODO(mjeronimo): Instead of using a service call, the map server should push any
+      // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
+      auto map_request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
+      auto map_response = map_client_.invoke(map_request);
+
+      // Update it in the costmap message that we'll return
+      costmap_->setStaticMap(map_response->map);
+
+      // Provide the costmap to the caller
+      RCLCPP_INFO(get_logger(), "CostmapWorldModel: Incoming costmap request...");
       response->map = costmap_->getCostmap(request->specs);
     };
 
@@ -43,16 +52,8 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       costmap_service_callback);
 
-  // Get the current map from the map server
-  //
-  // TODO(mjeronimo): Instead of using a service call, the map server should push any
-  // map updates using a latched topic. Unfortunately, no latched topics yet in ROS2
-  map_client_.waitForService(std::chrono::seconds(2));
-
-  auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
-  auto response = map_client_.invoke(request);
-
-  costmap_->setStaticMap(response->map);
+  // Make sure the map service is available
+  map_client_.waitForService(std::chrono::seconds(5));
 }
 
 CostmapWorldModel::CostmapWorldModel()

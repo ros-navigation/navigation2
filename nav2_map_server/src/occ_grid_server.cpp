@@ -301,7 +301,7 @@ void OccGridServer::connectROS()
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(node_->get_logger(), "OccGridServer: servicing map request");
+      RCLCPP_INFO(node_->get_logger(), "OccGridServer: handling map request");
       response->map = occ_resp_.map;
     };
 

@@ -26,10 +26,7 @@ namespace nav2_map_server
 class MapFactory
 {
 public:
-  static std::shared_ptr<MapServer> createMap(
-    rclcpp::Node::SharedPtr & node,
-    const std::string & map_type,
-    const std::string & file_name);
+  static std::shared_ptr<MapServer> createMap(rclcpp::Node::SharedPtr & node);
 };
 
 }  // namespace nav2_map_server
