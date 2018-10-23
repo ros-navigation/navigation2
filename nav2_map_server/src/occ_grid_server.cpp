@@ -32,7 +32,7 @@
  *
  * Author: Brian Gerkey
  */
-#include "nav2_map_server/map_representations/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_server.hpp"
 
 #include <libgen.h>
 #include <cstdio>
@@ -64,20 +64,20 @@ void operator>>(const YAML::Node & node, T & i)
 OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name)
 : node_(node)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Load map info for map file: %s",
+  RCLCPP_DEBUG(node_->get_logger(), "OccGridServer: Load map info for map file: %s",
     file_name.c_str());
-  LoadMapInfoFromFile(file_name);
+  loadMapInfoFromFile(file_name);
 
-  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Loading Map: %s", map_name_.c_str());
-  LoadMapFromFile(map_name_);
+  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Loading map: %s", map_name_.c_str());
+  loadMapFromFile(map_name_);
 
-  ConnectROS();
-  SetMap();
-  PublishMap();
-  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Set up map request service and publisher.");
+  connectROS();
+  setMap();
+  publishMap();
+  RCLCPP_DEBUG(node_->get_logger(), "OccGridServer: Set up map request service and publisher.");
 }
 
-void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
+void OccGridServer::loadMapInfoFromFile(const std::string & file_name)
 {
   std::ifstream fin(file_name.c_str());
   if (fin.fail()) {
@@ -171,7 +171,7 @@ void OccGridServer::LoadMapInfoFromFile(const std::string & file_name)
   }
 }
 
-void OccGridServer::LoadMapFromFile(const std::string & map_name_)
+void OccGridServer::loadMapFromFile(const std::string & map_name_)
 {
   SDL_Surface * img;
   const char * name = map_name_.c_str();
@@ -279,14 +279,14 @@ void OccGridServer::LoadMapFromFile(const std::string & map_name_)
   map_msg_.header.frame_id = frame_id_;
   map_msg_.header.stamp = node_->now();
 
-  RCLCPP_INFO(rclcpp::get_logger("map_server"), "Read map %s: %d X %d map @ %.3lf m/cell",
+  RCLCPP_DEBUG(node_->get_logger(), "Read map %s: %d X %d map @ %.3lf m/cell",
     map_name_.c_str(),
     map_msg_.info.width,
     map_msg_.info.height,
     map_msg_.info.resolution);
 }
 
-void OccGridServer::ConnectROS()
+void OccGridServer::connectROS()
 {
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
@@ -301,7 +301,7 @@ void OccGridServer::ConnectROS()
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(node_->get_logger(), "OccGridServer: handle_occ_callback");
+      RCLCPP_INFO(node_->get_logger(), "OccGridServer: servicing map request");
       response->map = occ_resp_.map;
     };
 
@@ -309,12 +309,12 @@ void OccGridServer::ConnectROS()
   occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
 }
 
-void OccGridServer::SetMap()
+void OccGridServer::setMap()
 {
   occ_resp_.map = map_msg_;
 }
 
-void OccGridServer::PublishMap()
+void OccGridServer::publishMap()
 {
   occ_pub_->publish(map_msg_);
 

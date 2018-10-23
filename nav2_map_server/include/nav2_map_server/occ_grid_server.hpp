@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
-#define NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
+#ifndef NAV2_MAP_SERVER__OCC_GRID_SERVER_HPP_
+#define NAV2_MAP_SERVER__OCC_GRID_SERVER_HPP_
 
 #include <memory>
 #include <string>
@@ -22,12 +22,12 @@
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/base_map_server.hpp"
+#include "nav2_map_server/map_server.hpp"
 
 namespace nav2_map_server
 {
 
-class OccGridServer : public BaseMapServer
+class OccGridServer : public MapServer
 {
 public:
   explicit OccGridServer(rclcpp::Node::SharedPtr node)
@@ -36,11 +36,11 @@ public:
   OccGridServer() {}
   ~OccGridServer() {}
 
-  void LoadMapInfoFromFile(const std::string & file_name);
-  void LoadMapFromFile(const std::string & map_name);
-  void PublishMap();
-  void SetMap();
-  void ConnectROS();
+  void loadMapInfoFromFile(const std::string & file_name);
+  void loadMapFromFile(const std::string & map_name);
+  void publishMap();
+  void setMap();
+  void connectROS();
 
 protected:
   enum MapMode { TRINARY, SCALE, RAW };
@@ -73,4 +73,4 @@ protected:
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAP_REPS__OCC_GRID_SERVER_HPP_
+#endif  // NAV2_MAP_SERVER__OCC_GRID_SERVER_HPP_

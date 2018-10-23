@@ -13,30 +13,58 @@
 // limitations under the License.
 
 #include <string>
-#include "nav2_map_server/map_server_ros.hpp"
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "rcutils/cmdline_parser.h"
+#include "nav2_map_server/map_factory.hpp"
 
-#define USAGE    "\nUSAGE: map_server <map.yaml> <map_type>\n" \
-  "  map.yaml: map description file\n" \
-  "  map_type: the type of map to load (i.e. occupancy)\n"
+void print_usage()
+{
+  printf("Usage: map_server [options]\n");
+  printf("Options:\n");
+  printf("  -h                Display usage information\n");
+  printf("  -f                YAML file for map to load\n");
+  printf("  -t map_type       Type of the map server to run\n");
+}
 
 int main(int argc, char ** argv)
 {
+  if (rcutils_cli_option_exist(argv, argv + argc, "-h")) {
+    print_usage();
+    return 0;
+  }
+
+  // Get the YAML filename (required)
+  char * option = rcutils_cli_get_option(argv, argv + argc, "-f");
+
+  if (option == nullptr) {
+    print_usage();
+    return -1;
+  }
+
+  std::string file_name = std::string(option);
+
+  // Get the map type (optional, defaults to occupancy grid)
+  std::string map_type("occupancy");
+  option = rcutils_cli_get_option(argv, argv + argc, "-t");
+
+  if (option != nullptr) {
+    map_type = std::string(option);
+  }
+
+  // Now that we have the parameters, get started
   rclcpp::init(argc, argv);
 
-  if (argc != 3 && argc != 2) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", USAGE);
-    return -1;
-  }
+  // Create the node that will be used by the map server. Creating the node first
+  // allows any sub-objects, such as the map_server to use the Node::SharedPtr in their
+  // constructors, which wouldn't be the case if the MapServer itself was directly a Node
+  rclcpp::Node::SharedPtr map_server_node = std::make_shared<rclcpp::Node>("map_server_node");
 
-  std::string file_name(argv[1]);
-  std::string map_type = (argc == 2) ? "occupancy" : std::string(argv[2]);
+  // Create the map server that uses this node
+  auto map_server = nav2_map_server::MapFactory::createMap(map_server_node, map_type, file_name);
 
-  try {
-    nav2_map_server::MapServerROS MapServer(file_name, map_type);
-  } catch (std::runtime_error & e) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", e.what());
-    return -1;
-  }
+  rclcpp::spin(map_server_node);
+  rclcpp::shutdown();
 
   return 0;
 }

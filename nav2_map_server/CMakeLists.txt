@@ -34,9 +34,8 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
-  src/map_representations/occ_grid_server.cpp
-  src/map_representations/map_factory.cpp
-  src/map_server_ros.cpp
+  src/occ_grid_server.cpp
+  src/map_factory.cpp
 )
 
 set(dependencies
