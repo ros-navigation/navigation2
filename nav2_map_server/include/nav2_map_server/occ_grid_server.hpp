@@ -18,10 +18,10 @@
 #include <memory>
 #include <string>
 
+#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "nav_msgs/srv/get_map.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_server.hpp"
 
 namespace nav2_map_server
@@ -30,11 +30,9 @@ namespace nav2_map_server
 class OccGridServer : public MapServer
 {
 public:
-  explicit OccGridServer(rclcpp::Node::SharedPtr node)
-  : node_(node) {}
+  explicit OccGridServer(rclcpp::Node::SharedPtr node);
   OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name);
   OccGridServer() {}
-  ~OccGridServer() {}
 
   void loadMapInfoFromFile(const std::string & file_name);
   void loadMapFromFile(const std::string & map_name);

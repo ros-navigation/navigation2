@@ -14,7 +14,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_factory.hpp"
+#include "nav2_map_server/map_server_factory.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
   rclcpp::Node::SharedPtr map_server_node = std::make_shared<rclcpp::Node>("map_server");
 
   // Create the map server that uses this node
-  auto map_server = nav2_map_server::MapFactory::createMap(map_server_node);
+  auto map_server = nav2_map_server::MapServerFactory::createMapServer(map_server_node);
 
   rclcpp::spin(map_server_node);
   rclcpp::shutdown();
