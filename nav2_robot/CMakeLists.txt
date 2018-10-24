@@ -21,7 +21,7 @@ include_directories(
 )
 
 add_library(nav2_robot STATIC
-  src/ros_robot.cpp
+  src/robot.cpp
 )
 
 ament_target_dependencies(nav2_robot

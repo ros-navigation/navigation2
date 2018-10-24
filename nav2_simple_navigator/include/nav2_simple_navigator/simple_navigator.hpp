@@ -21,7 +21,7 @@
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_robot/ros_robot.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_simple_navigator
 {
@@ -38,7 +38,7 @@ protected:
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> plannerTaskClient_;
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controllerTaskClient_;
 
-  nav2_robot::RosRobot robot_;
+  nav2_robot::Robot robot_;
 };
 
 }  // namespace nav2_simple_navigator

@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_robot/ros_robot.hpp"
+#include "nav2_robot/robot.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
@@ -36,7 +36,7 @@ public:
   TestRobotClass()
   {
     node_ = rclcpp::Node::make_shared("robot_class_test");
-    robot_ = std::make_unique<nav2_robot::RosRobot>(node_.get());
+    robot_ = std::make_unique<nav2_robot::Robot>(node_.get());
 
     // Initializing Pose and Twist messages
     initTestPose();
@@ -56,7 +56,7 @@ public:
 
 protected:
   std::shared_ptr<rclcpp::Node> node_;
-  std::unique_ptr<nav2_robot::RosRobot> robot_;
+  std::unique_ptr<nav2_robot::Robot> robot_;
 
   geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   geometry_msgs::msg::Twist testTwist_;
@@ -127,7 +127,7 @@ void TestRobotClass::initTestTwist()
 
 TEST_F(TestRobotClass, getNameTest)
 {
-  std::string robotName = robot_->getRobotName();
+  std::string robotName = robot_->getName();
   EXPECT_EQ(robotName, "turtlebot");
 }
 
