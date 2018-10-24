@@ -12,39 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_robot/robot.hpp"
+
 #include <string>
 #include <exception>
 #include "urdf/model.h"
-#include "nav2_robot/ros_robot.hpp"
 
 namespace nav2_robot
 {
 
-RosRobot::RosRobot(rclcpp::Node * node)
+Robot::Robot(rclcpp::Node * node)
 : node_(node), initial_pose_received_(false), initial_odom_received_(false)
 {
   // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
 
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&RosRobot::onPoseReceived, this, std::placeholders::_1));
+    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom", std::bind(&RosRobot::onOdomReceived, this, std::placeholders::_1));
+    "odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
 
   vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmdVelocity", 1);
 }
 
-RosRobot::~RosRobot()
-{
-}
-
 void
-RosRobot::enterSafeState()
-{
-}
-
-void
-RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+Robot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
   // TODO(mjeronimo): serialize access
   current_pose_ = msg;
@@ -54,7 +46,7 @@ RosRobot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
 }
 
 void
-RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
+Robot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   current_velocity_ = msg;
   if (!initial_odom_received_) {
@@ -63,40 +55,40 @@ RosRobot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 }
 
 bool
-RosRobot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
+Robot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
     RCLCPP_WARN(node_->get_logger(), "Can't return current pose: Initial pose not yet received.");
     return false;
-  } else {
-    robot_pose = current_pose_;
   }
+
+  robot_pose = current_pose_;
   return true;
 }
 
 bool
-RosRobot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity)
+Robot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity)
 {
   if (!initial_odom_received_) {
     RCLCPP_WARN(node_->get_logger(), "Can't return current velocity: Initial odometry not yet"
       " received.");
     return false;
-  } else {
-    robot_velocity = current_velocity_;
   }
+
+  robot_velocity = current_velocity_;
   return true;
 }
 
 // TODO(mhpanah): modify this method name and implementation to include robot types and Serial #(ID)
 std::string
-RosRobot::getRobotName()
+Robot::getName()
 {
   // Temporarily just returning a string until we enable parsing URDF file.
   return "turtlebot";
 }
 
 void
-RosRobot::sendVelocity(geometry_msgs::msg::Twist twist)
+Robot::sendVelocity(geometry_msgs::msg::Twist twist)
 {
   vel_pub_->publish(twist);
 }
