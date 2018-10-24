@@ -1032,7 +1032,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     odata.delta = delta;
 
     // Use the action data to update the filter
-    odom_->UpdateAction(pf_, reinterpret_cast<SensorData *>(&odata));
+   odom_->UpdateAction(pf_, reinterpret_cast<OdomData *>(&odata));
 
     // Pose at last filter update
     // this->pf_odom_pose = pose;

@@ -42,7 +42,7 @@ typedef enum
 } odom_model_t;
 
 // Odometric sensor data
-class OdomData : public SensorData
+class OdomData
 {
   // Odometric pose
 
@@ -57,7 +57,7 @@ public:
 
 
 // Odometric sensor model
-class Odom : public Sensor
+class Odom
 {
   // Default constructor
 
@@ -92,7 +92,7 @@ public:
   // has been updated.
 
 public:
-  virtual bool UpdateAction(pf_t * pf, SensorData * data);
+  bool UpdateAction(pf_t * pf, OdomData * data);
 
   // Current data timestamp
 

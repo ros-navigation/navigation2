@@ -61,9 +61,8 @@ angle_diff(double a, double b)
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
 Odom::Odom()
-: Sensor()
 {
-  this->time = 0.0;
+
 }
 
 void
@@ -115,7 +114,7 @@ Odom::SetModel(
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the action model
-bool Odom::UpdateAction(pf_t * pf, SensorData * data)
+bool Odom::UpdateAction(pf_t * pf, OdomData * data)
 {
   OdomData * ndata;
   ndata = reinterpret_cast<OdomData *>(data);
