@@ -100,7 +100,7 @@ void DWBLocalPlanner::initialize(
   // Plugins
   std::string traj_generator_name;
   nh_->get_parameter_or("trajectory_generator_name", traj_generator_name,
-    std::string("dwb_plugins::LimitedAccelGenerator"));
+    std::string("dwb_plugins::StandardTrajectoryGenerator"));
   traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
   traj_generator_->initialize(nh_);
 
