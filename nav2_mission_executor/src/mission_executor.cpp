@@ -64,11 +64,18 @@ MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr comm
   RCLCPP_INFO(get_logger(), "MissionExecutor: Executing task: %s from %f",
     command->mission_plan.c_str(), command->header.stamp);
 
-  // TODO(mjeronimo): Validate the mission plan for syntax and semantics
+  // TODO(mjeronimo): Normally, we'll get the goal pose from the task in the mission plan.
+  // For now, we're using the one received from rviz via the move_base_simple/goal topic.
+  // Since the pose from the move_base_simple/goal topic doesn't include the tolerance,
+  // we'll add that here. In the future we can modify the rviz plug-in to also provide
+  // the tolerance value. In the case of the mission plan, the tolerance will be available
+  // as an attribute of the NavigateToPose action.
 
-  // TODO(mjeronimo): Get the goal pose from the task in the mission plan. For now, we're
-  // using the one received from rviz via the move_base_simple/goal topic.
-  navTaskClient_->sendCommand(goal_pose_);
+  auto nav_command = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
+  nav_command->pose = goal_pose_->pose;
+  nav_command->tolerance = 2.0;
+
+  navTaskClient_->sendCommand(nav_command);
 
   auto navResult = std::make_shared<nav2_tasks::NavigateToPoseResult>();
 

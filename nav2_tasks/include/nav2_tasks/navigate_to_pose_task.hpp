@@ -17,13 +17,13 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_msgs/msg/pose_with_tolerance_stamped.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using NavigateToPoseCommand = geometry_msgs::msg::PoseStamped;
+using NavigateToPoseCommand = nav2_msgs::msg::PoseWithToleranceStamped;
 using NavigateToPoseResult = std_msgs::msg::Empty;
 
 using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;

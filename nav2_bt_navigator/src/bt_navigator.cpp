@@ -58,7 +58,8 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   // TODO(mjeronimo): get the starting pose from Localization (fake it out for now)
   endpoints->start = command->pose;
-  endpoints->goal = command->pose;
+  endpoints->goal.pose = command->pose;
+  endpoints->goal.tolerance = command->tolerance;
 
   RCLCPP_INFO(get_logger(), "BtNavigator: Getting a path from the planner.");
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();

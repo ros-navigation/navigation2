@@ -74,8 +74,9 @@ TaskStatus
 DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "DijkstraPlanner: Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
-    command->goal.position.x, command->goal.position.y);
+    "(%.2f, %.2f) with tolerance %f.",
+    command->start.position.x, command->start.position.y,
+    command->goal.pose.position.x, command->goal.pose.position.y, command->goal.tolerance);
 
   nav2_tasks::ComputePathToPoseResult result;
   try {
@@ -88,7 +89,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
+    bool foundPath = makePlan(command->start, command->goal.pose, command->goal.tolerance, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
@@ -99,7 +100,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "DijkstraPlanner: Planning algorithm failed to generate a valid"
-        " path to (%.2f, %.2f)", command->goal.position.x, command->goal.position.y);
+        " path to (%.2f, %.2f)", command->goal.pose.position.x, command->goal.pose.position.y);
       return TaskStatus::FAILED;
     }
 
@@ -120,7 +121,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "DijkstraPlanner: Plan calculation to (%.2f, %.2f) failed: \"%s\"",
-      command->goal.position.x, command->goal.position.y, ex.what());
+      command->goal.pose.position.x, command->goal.pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
@@ -494,7 +495,7 @@ DijkstraPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::Sh
 
   marker.points.resize(2);
   marker.points[0] = endpoints->start.position;
-  marker.points[1] = endpoints->goal.position;
+  marker.points[1] = endpoints->goal.pose.position;
 
   // Set the color -- be sure to set alpha to something non-zero!
   std_msgs::msg::ColorRGBA start_color;

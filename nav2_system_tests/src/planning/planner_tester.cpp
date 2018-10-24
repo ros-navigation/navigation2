@@ -247,9 +247,9 @@ bool PlannerTester::defaultPlannerTest(
 
     endpoints->start.position.x = 1.0;
     endpoints->start.position.y = 1.0;
-    endpoints->goal.position.x = 9.0;
-    endpoints->goal.position.y = 9.0;
-    endpoints->tolerance = 2.0;
+    endpoints->goal.pose.position.x = 9.0;
+    endpoints->goal.pose.position.y = 9.0;
+    endpoints->goal.tolerance = 2.0;
 
   } else {
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerTest:"
@@ -259,9 +259,9 @@ bool PlannerTester::defaultPlannerTest(
     //  Planner will do coordinate transformation to map internally
     endpoints->start.position.x = 390.0;
     endpoints->start.position.y = 10.0;
-    endpoints->goal.position.x = 10.0;
-    endpoints->goal.position.y = 390.0;
-    endpoints->tolerance = 2.0;
+    endpoints->goal.pose.position.x = 10.0;
+    endpoints->goal.pose.position.y = 390.0;
+    endpoints->goal.tolerance = 2.0;
   }
 
   bool pathIsCollisionFree = plannerTest(endpoints, path);
@@ -325,10 +325,9 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
     auto goal = generate_random();
     endpoints->start.position.x = start.first;
     endpoints->start.position.y = start.second;
-    endpoints->goal.position.x = goal.first;
-    endpoints->goal.position.y = goal.second;
-
-    endpoints->tolerance = 2.0;
+    endpoints->goal.pose.position.x = goal.first;
+    endpoints->goal.pose.position.y = goal.second;
+    endpoints->goal.tolerance = 2.0;
 
     // TODO(orduno): Tweak criteria for defining if a path goes into obstacles.
     //               Current Dijkstra planner will sometimes produce paths that cut corners
@@ -339,7 +338,7 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
         " failed or found a collision with start at %0.2f, %0.2f and end at %0.2f, %0.2f",
         endpoints->start.position.x, endpoints->start.position.y,
-        endpoints->goal.position.x, endpoints->goal.position.y);
+        endpoints->goal.pose.position.x, endpoints->goal.pose.position.y);
       all_tests_OK = false;
       ++num_fail;
     }

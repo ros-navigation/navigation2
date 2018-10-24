@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CostmapMetaData.msg"
   "msg/Path.msg"
   "msg/PathEndPoints.msg"
+  "msg/PoseWithToleranceStamped.msg"
   "msg/MissionPlan.msg"
   "msg/TaskStatus.msg"
   "srv/GetCostmap.srv"

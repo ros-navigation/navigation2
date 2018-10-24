@@ -1,11 +1,7 @@
 std_msgs/Header header
 
-# The start pose for the plan
+# The starting pose of the path
 geometry_msgs/Pose start
 
-# The final pose of the goal
-geometry_msgs/Pose goal
-
-# If the goal is obstructed, how many meters the planner can
-# relax the constraint in x and y before failing.
-float32 tolerance
+# The ending pose of the path
+nav2_msgs/PoseWithToleranceStamped goal
