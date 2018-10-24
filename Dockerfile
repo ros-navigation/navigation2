@@ -57,10 +57,9 @@ RUN apt-get install -y \
     libsdl1.2debian \
     libsdl1.2-dev
 
-WORKDIR /ros2_ws
-
 # setup build script and run it
 # assume script is in tools on build system unless SCRIPTPATH is set
+WORKDIR /ros2_ws
 ARG SCRIPTPATH=./tools
 COPY $SCRIPTPATH/initial_ros_setup.sh init/
 COPY $SCRIPTPATH/*.repos ./
@@ -69,23 +68,12 @@ COPY $SCRIPTPATH/*.repos ./
 RUN chmod +x init/initial_ros_setup.sh
 RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
 
-# get the latest nightly ROS2 build
-#WORKDIR /ros2_ws/ros2_ws
+# get the latest nightly ROS2 build -> ros2_ws/ros2_linux
 RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
 RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
 
-# create a directory ros2_ws to link to the unzip location
-RUN ln -s ros2-linux ros2_ws
-RUN ls -l ros2_ws
-
-# copy the setup.bash file to the install directory
-RUN mkdir -p ros2-linux/install
-RUN cp ros2-linux/setup.bash ros2-linux/install
-RUN ls -l ros2_ws/install/setup.bash
-
-WORKDIR /ros2_ws/navigation2_ws/src/navigation2
-
 # change to correct branch if $BRANCH is not = master
+WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 ARG PULLREQ=false
 RUN echo "pullreq is $PULLREQ"
 RUN if [ "$PULLREQ" == "false" ]; \
@@ -96,11 +84,6 @@ RUN if [ "$PULLREQ" == "false" ]; \
       git checkout pr_branch; \
     fi
 
-# build
-WORKDIR /ros2_ws
-#RUN chmod +x navigation2_ws/src/navigation2/tools/build_all.sh
-#RUN ./navigation2_ws/src/navigation2/tools/build_all.sh
-
 # Build ROS 1 dependencies
 WORKDIR /ros2_ws/ros1_dependencies_ws
 RUN  (. /opt/ros/$ROS1_DISTRO/setup.bash  && catkin_make)
@@ -109,11 +92,10 @@ RUN  (. /opt/ros/$ROS1_DISTRO/setup.bash  && catkin_make)
 WORKDIR /ros2_ws/navstack_dependencies_ws
 RUN (. /ros2_ws/ros2-linux/setup.bash  && colcon build --symlink-install)
 
-# Build our code
+# Build navigation2 code
 WORKDIR /ros2_ws/navigation2_ws
 RUN (. /ros2_ws/ros2-linux/setup.bash && \
      . /ros2_ws/navstack_dependencies_ws/install/setup.bash && \
      colcon build --symlink-install)
-
 
 CMD ["bash"]
