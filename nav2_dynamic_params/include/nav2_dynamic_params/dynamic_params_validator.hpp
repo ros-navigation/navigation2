@@ -27,7 +27,7 @@ namespace nav2_dynamic_params
 class DynamicParamsValidator
 {
 public:
-  DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params = false);
+  explicit DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params = false);
 
   ~DynamicParamsValidator() {}
 
@@ -43,6 +43,9 @@ public:
 
   void add_param(const std::map<std::string, rclcpp::ParameterType> & map);
 
+  // Reject parameter changes to static parameters
+  void add_static_params(std::vector<std::string> static_param_names);
+
   void set_validation_callback(
     std::function<rcl_interfaces::msg::SetParametersResult(
       const std::vector<rclcpp::Parameter> &)> callback);
@@ -55,27 +58,27 @@ private:
 
   bool validate_param_bounds(const rclcpp::Parameter & param);
 
-  //bool check_bound_of_type(const rclcpp::Parameter & param, const rclcpp::ParameterType & type);
+  bool check_if_static(const rclcpp::Parameter & param);
 
-  template <rclcpp::ParameterType ParamT>
+  template<rclcpp::ParameterType ParamT>
   bool check_bound_of_type(const rclcpp::Parameter & param)
   {
     auto value = param.get_value<ParamT>();
     auto name = param.get_name();
-    if (value >= param_bound_map_[name].first && value <= param_bound_map_[name].second)
-    {
+    if (value >= param_bound_map_[name].first && value <= param_bound_map_[name].second) {
       return true;
     } else {
       RCLCPP_WARN(node_->get_logger(),
         "Parameter Change Denied::Outside Bounds: %s", name.c_str());
       return false;
-    }  
+    }
   }
 
   rclcpp::Node::SharedPtr node_;
   bool reject_new_params_;
   std::map<std::string, rclcpp::ParameterType> param_map_;
   std::map<std::string, std::pair<double, double>> param_bound_map_;
+  std::vector<std::string> static_params_;
 
   std::function<rcl_interfaces::msg::SetParametersResult(
       const std::vector<rclcpp::Parameter> &)> validation_callback_;
