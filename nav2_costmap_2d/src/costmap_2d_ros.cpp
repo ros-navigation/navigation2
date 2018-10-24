@@ -124,17 +124,25 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   setPluginParams(node_);
   }
 
-  if (parameters_client_->has_parameter("plugin_names") &&
-    parameters_client_->has_parameter("plugin_types")) {
-    auto param = get_parameters({"plugin_names", "plugin_types"});
-    for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
-      std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
-      std::string type = (param[1].get_value<std::vector<std::string>>())[i];
-      RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
-      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
-      layered_costmap_->addPlugin(plugin);
-      plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
-    }
+  // if (parameters_client_->has_parameter("plugin_names") &&
+  //   parameters_client_->has_parameter("plugin_types")) {
+  //   auto param = get_parameters({"plugin_names", "plugin_types"});
+  //   for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
+  //     std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
+  //     std::string type = (param[1].get_value<std::vector<std::string>>())[i];
+  //     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
+  //     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
+  //     layered_costmap_->addPlugin(plugin);
+  //     plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
+  //   }
+  // }
+
+  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
+  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
+  for (int i = 0; i < 2; i++) {
+    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
+    layered_costmap_->addPlugin(plugin);
+    plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
   }
 
   // subscribe to the footprint topic
