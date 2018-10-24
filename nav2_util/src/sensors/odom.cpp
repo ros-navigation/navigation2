@@ -62,7 +62,6 @@ angle_diff(double a, double b)
 // Default constructor
 Odom::Odom()
 {
-
 }
 
 void

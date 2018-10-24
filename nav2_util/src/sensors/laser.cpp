@@ -41,8 +41,7 @@ using amcl::Laser;
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
 Laser::Laser(size_t max_beams, map_t * map)
-: Sensor(),
-  max_samples(0), max_obs(0),
+: max_samples(0), max_obs(0),
   temp_obs(NULL)
 {
   this->time = 0.0;
@@ -121,7 +120,7 @@ Laser::SetModelLikelihoodFieldProb(
 
 ////////////////////////////////////////////////////////////////////////////////
 // Apply the laser sensor model
-bool Laser::UpdateSensor(pf_t * pf, SensorData * data)
+bool Laser::UpdateSensor(pf_t * pf, LaserData * data)
 {
   if (this->max_beams < 2) {
     return false;
@@ -156,7 +155,7 @@ double Laser::BeamModel(LaserData * data, pf_sample_set_t * set)
   pf_sample_t * sample;
   pf_vector_t pose;
 
-  self = reinterpret_cast<Laser *>(data->sensor);
+  self = reinterpret_cast<Laser *>(data->laser);
 
   total_weight = 0.0;
 
@@ -228,7 +227,7 @@ double Laser::LikelihoodFieldModel(LaserData * data, pf_sample_set_t * set)
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = reinterpret_cast<Laser *>(data->sensor);
+  self = reinterpret_cast<Laser *>(data->laser);
 
   total_weight = 0.0;
 
@@ -320,7 +319,7 @@ double Laser::LikelihoodFieldModelProb(LaserData * data, pf_sample_set_t * set)
   pf_vector_t pose;
   pf_vector_t hit;
 
-  self = reinterpret_cast<Laser *>(data->sensor);
+  self = reinterpret_cast<Laser *>(data->laser);
 
   total_weight = 0.0;
 

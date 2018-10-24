@@ -1042,7 +1042,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
     LaserData ldata;
-    ldata.sensor = lasers_[laser_index];
+    ldata.laser = lasers_[laser_index];
     ldata.range_count = laser_scan->ranges.size();
 
     // To account for lasers that are mounted upside-down, we determine the
@@ -1106,7 +1106,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         (i * angle_increment);
     }
 
-    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<SensorData *>(&ldata));
+    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<LaserData *>(&ldata));
 
     lasers_update_[laser_index] = false;
 

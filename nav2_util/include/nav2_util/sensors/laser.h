@@ -42,27 +42,11 @@ typedef enum
   LASER_MODEL_LIKELIHOOD_FIELD_PROB
 } laser_model_t;
 
-// Laser sensor data
-class LaserData : public SensorData
-{
-public:
-  LaserData() {ranges = NULL;}
-  virtual ~LaserData() {delete[] ranges;}
-  // Laser range data (range, bearing tuples)
-
-public:
-  int range_count;
-
-public:
-  double range_max;
-
-public:
-  double(*ranges)[2];
-};
-
+// Forward declarations
+class LaserData;
 
 // Laseretric sensor model
-class Laser : public Sensor
+class Laser
 {
   // Default constructor
 
@@ -106,7 +90,7 @@ public:
   // filter has been updated.
 
 public:
-  virtual bool UpdateSensor(pf_t * pf, SensorData * data);
+  bool UpdateSensor(pf_t * pf, LaserData * data);
 
   // Set the laser's pose after construction
 
@@ -216,6 +200,25 @@ private:
 
 private:
   double chi_outlier;
+};
+
+// Laser sensor data
+class LaserData
+{
+public:
+  Laser * laser;
+  LaserData() {ranges = NULL;}
+  virtual ~LaserData() {delete[] ranges;}
+  // Laser range data (range, bearing tuples)
+
+public:
+  int range_count;
+
+public:
+  double range_max;
+
+public:
+  double(*ranges)[2];
 };
 
 }  // namespace amcl
