@@ -29,7 +29,7 @@
 #ifndef NAV2_UTIL__SENSORS__LASER_H_
 #define NAV2_UTIL__SENSORS__LASER_H_
 
-#include "nav2_util/sensors/sensor.h"
+#include "nav2_util/pf/pf.h"
 #include "nav2_util/map/map.h"
 
 namespace amcl

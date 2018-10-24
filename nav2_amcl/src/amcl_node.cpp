@@ -61,7 +61,6 @@ using amcl::Odom;
 using amcl::Laser;
 using amcl::ODOM_MODEL_OMNI;
 using amcl::OdomData;
-using amcl::SensorData;
 using amcl::LaserData;
 
 using namespace std::chrono_literals;

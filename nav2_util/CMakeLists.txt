@@ -50,7 +50,6 @@ add_library(pf_lib SHARED
 )
 
 add_library(sensors_lib SHARED
-  src/sensors/sensor.cpp
   src/sensors/odom.cpp
   src/sensors/laser.cpp
 )
