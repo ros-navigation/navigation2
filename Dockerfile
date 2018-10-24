@@ -22,7 +22,6 @@ RUN if [ "$http_proxy" == "" ]; \
 RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list
 
 ENV ROS1_DISTRO melodic
-ENV ROS2_DISTRO bouncy 
 
 # update latest package versions
 RUN apt-get update
@@ -57,20 +56,14 @@ RUN apt-get install -y \
     libsdl1.2debian \
     libsdl1.2-dev
 
-# setup build script and run it
-# assume script is in tools on build system unless SCRIPTPATH is set
-WORKDIR /ros2_ws
-ARG SCRIPTPATH=./tools
-COPY $SCRIPTPATH/initial_ros_setup.sh init/
-COPY $SCRIPTPATH/*.repos ./
-
-# run setup script to download ROS1 and source dependencies
-RUN chmod +x init/initial_ros_setup.sh
-RUN yes | ./init/initial_ros_setup.sh --no-ros2 --download-only
-
 # get the latest nightly ROS2 build -> ros2_ws/ros2_linux
+WORKDIR /ros2_ws
 RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
 RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
+
+# clone navigation2 repo
+WORKDIR /ros2_ws/navigation2_ws/src
+RUN git clone https://github.com/ros-planning/navigation2.git
 
 # change to correct branch if $BRANCH is not = master
 WORKDIR /ros2_ws/navigation2_ws/src/navigation2
@@ -83,6 +76,15 @@ RUN if [ "$PULLREQ" == "false" ]; \
       git fetch origin pull/$PULLREQ/head:pr_branch; \
       git checkout pr_branch; \
     fi
+
+# Download dependencies
+RUN echo "Downloading the ROS 2 navstack dependencies workspace"
+WORKDIR /ros2_ws/navstack_dependencies_ws/src
+RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+
+RUN echo "Downloading the ROS 1 dependencies workspace"
+WORKDIR /ros2_ws/ros1_dependencies_ws/src
+RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros1_dependencies.repos.${ROS1_DISTRO}
 
 # Build ROS 1 dependencies
 WORKDIR /ros2_ws/ros1_dependencies_ws
