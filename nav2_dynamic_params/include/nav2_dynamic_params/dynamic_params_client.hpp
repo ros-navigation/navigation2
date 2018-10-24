@@ -16,6 +16,7 @@
 #define NAV2_DYNAMIC_PARAMS__DYNAMIC_PARAMS_CLIENT_HPP_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
@@ -27,23 +28,61 @@ namespace nav2_dynamic_params
 class DynamicParamsClient
 {
 public:
-  explicit DynamicParamsClient(rclcpp::SyncParametersClient::SharedPtr & client)
-  : parameters_client_(client){}
-
-
-  void addParametersFromServer(const std::vector<std::string> param_names)
+  explicit DynamicParamsClient(
+    rclcpp::Node::SharedPtr node, std::vector<std::string> remote_names = {""})
+    : node_(node)
   {
-    auto params = parameters_client_->get_parameters(param_names);
-    for (const auto & param : params) {
-      dynamic_param_map_[param.get_name()] = param;
+    add_parameter_clients(remote_names);
+    init_parameters();
+  }
+
+  ~DynamicParamsClient() {}
+
+  void add_parameter_clients(std::vector<std::string> remote_names = {""})
+  {
+    for (auto & name : remote_names) {
+      auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, name);
+      parameters_clients_.push_back(client);
     }
+  }
+
+  void set_callback(
+    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
+  {
+    for (auto & client : parameters_clients_) {
+      auto sub = client->on_parameter_event(callback);
+      event_subscriptions_.push_back(sub);
+    }
+  }
+
+  void init_parameters(const std::vector<std::string> & param_names)
+  {
+    for (const auto & client : parameters_clients_) {
+      auto params = client->get_parameters(param_names);
+      for (const auto & param : params) {
+        if (!dynamic_param_map_.count(param.get_name())) {
+          dynamic_param_map_[param.get_name()] = param;
+        }
+      }
+    }
+  }
+
+  void init_parameters()
+  {
+    std::vector<std::string> param_names;
+    for (const auto & client : parameters_clients_) {
+      auto param_list = client->list_parameters({}, 1);
+      param_names.insert(param_names.end(), param_list.names.begin(), param_list.names.end());
+    }
+    init_parameters(param_names);
   }
 
   std::vector<std::string> get_param_names()
   {
     std::vector<std::string> names;
-    for(const auto & entry : dynamic_param_map_)
+    for (const auto & entry : dynamic_param_map_) {
       names.push_back(entry.first);
+    }
     return names;
   }
 
@@ -68,7 +107,8 @@ public:
       return true;
     } else {
       if (dynamic_param_map_.count(param_name) > 0 &&
-        !dynamic_param_map_[param_name].get_type()==rclcpp::ParameterType::PARAMETER_NOT_SET) {
+        !dynamic_param_map_[param_name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
+      {
         new_value = dynamic_param_map_[param_name].get_value<T>();
       } else {
         RCLCPP_DEBUG(rclcpp::get_logger("dynamic_params_client"),
@@ -94,7 +134,8 @@ public:
       return true;
     } else {
       if (dynamic_param_map_.count(param_name) > 0 &&
-        !dynamic_param_map_[param_name].get_type()==rclcpp::ParameterType::PARAMETER_NOT_SET) {
+        !dynamic_param_map_[param_name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
+      {
         new_value = dynamic_param_map_[param_name].get_value<T>();
       } else {
         RCLCPP_INFO(rclcpp::get_logger("dynamic_params_client"),
@@ -106,9 +147,12 @@ public:
   }
 
 private:
-  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
   std::vector<std::string> dynamic_param_names_;
+  std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
+  rclcpp::Node::SharedPtr node_;
+  std::vector<rclcpp::Subscription
+    <rcl_interfaces::msg::ParameterEvent>::SharedPtr> event_subscriptions_;
 };
 
 }  // namespace nav2_dynamic_params

@@ -27,31 +27,14 @@ int main(int argc, char ** argv)
 
   auto node = rclcpp::Node::make_shared("example_dynamic_params_client");
 
-  // Create Parameter Client to Node
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(node);
-
   // Add Parameters to Server
   node->set_parameters({rclcpp::Parameter("foo", 1.0), rclcpp::Parameter("bar", 2)});
 
-  // Create DynamicParamsClient
-  dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(parameters_client);
-  dynamic_params_client->addParametersFromServer({"foo", "bar"});
+  // Add Dynamic Reconfigure Client
+  dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
 
-  // Create DynamicParamsValidator
-  auto param_validator = new nav2_dynamic_params::DynamicParamsValidator(node);
-  param_validator->add_param("foo", rclcpp::ParameterType::PARAMETER_DOUBLE);
-  param_validator->add_param("bar", rclcpp::ParameterType::PARAMETER_INTEGER, {0, 10});
-
-  while (!parameters_client->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
-      return 0;
-    }
-    RCLCPP_INFO(node->get_logger(), "service not available, waiting again...");
-  }
-
-  auto sub = parameters_client->on_parameter_event(
-    [node](const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
+  std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [node](
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
     {
       RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "Event Callback!");
 
@@ -67,7 +50,14 @@ int main(int argc, char ** argv)
       double foobar;
       dynamic_params_client->get_event_param(event, "foobar", foobar, 5.5);
       RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "foobar: %f", foobar);
-    });
+    };
+
+  dynamic_params_client->set_callback(callback);
+
+  // Create DynamicParamsValidator
+  auto param_validator = new nav2_dynamic_params::DynamicParamsValidator(node);
+  param_validator->add_param("foo", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  param_validator->add_param("bar", rclcpp::ParameterType::PARAMETER_INTEGER, {0, 10});
 
   // Change Parameters
   RCLCPP_INFO(node->get_logger(), "First Service Request:");
@@ -80,6 +70,10 @@ int main(int argc, char ** argv)
   // Add New Parameter
   RCLCPP_INFO(node->get_logger(), "Third Service Request:");
   node->set_parameters({rclcpp::Parameter("foobar", 28.0)});
+  param_validator->add_static_params({"foobar"});
+
+  RCLCPP_INFO(node->get_logger(), "Fourth Service Request:");
+  node->set_parameters({rclcpp::Parameter("foobar", 5.0)});
 
   rclcpp::spin(node);
   rclcpp::shutdown();
