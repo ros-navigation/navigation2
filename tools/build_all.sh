@@ -44,8 +44,12 @@ fi
 # Build ROS 1 dependencies
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
-  (. /opt/ros/$ROS1_DISTRO/setup.bash &&
-   catkin_make)
+  ROS1_SETUP_FILE=/opt/ros/$ROS1_DISTRO/setup.bash 
+  if [ ! -f $ROS1_SETUP_FILE ]; then
+    echo "'$ROS1_SETUP_FILE' does not exist. Install ROS $ROS1_DISTRO"
+    exit 1
+  fi 
+  (. $ROS1_SETUP_FILE && catkin_make)
  fi
 
 # Build ROS 2 base
