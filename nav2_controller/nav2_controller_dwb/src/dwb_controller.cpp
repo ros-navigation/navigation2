@@ -25,6 +25,8 @@ using nav2_tasks::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 
+#define NO_OP_DELETER [](auto){}
+
 namespace nav2_controller_dwb
 {
 
@@ -49,7 +51,7 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
-    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_), cm_);
+    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
     while (true) {
