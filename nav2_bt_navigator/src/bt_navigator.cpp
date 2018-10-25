@@ -29,7 +29,7 @@ BtNavigator::BtNavigator()
 TaskStatus
 BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Start navigation to goal (%.2f, %.2f).",
+  RCLCPP_INFO(get_logger(), "Start navigating to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
 
   // Get a reference for convenience
@@ -37,19 +37,21 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   // Compose the args for the ComputePathToPose action
   std::stringstream args;
-  args << "position=\"" 
-       << p.position.x << ";" << p.position.y << ";" << p.position.z  << "\""
-       << " orientation=\""
-       << p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z  << ";"
-       << p.orientation.w << "\"";
+  args << "position=\"" <<
+    p.position.x << ";" << p.position.y << ";" << p.position.z << "\"" <<
+    " orientation=\"" <<
+    p.orientation.x << ";" << p.orientation.y << ";" <<
+    p.orientation.z << ";" << p.orientation.w << "\"";
 
   // Put it all together, trying to make the XML somewhat readable here
   std::stringstream ss;
-  ss << R"(
+  ss <<
+    R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <ComputePathToPose )" << args.str() << R"(/>
+      <ComputePathToPose )" << args.str() <<
+    R"(/>
       <FollowPath />
     </SequenceStar>
   </BehaviorTree>

@@ -68,7 +68,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   // localization, while the goal pose is from the incoming command
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
 
-#if 1
+#if 0
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
   if (robot_.getCurrentPose(current_pose)) {
     RCLCPP_DEBUG(get_logger(), "Got robot pose");
@@ -81,7 +81,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
     return TaskStatus::FAILED;
   }
 #else
-  endpoints->start = command->pose; // robot_.getCurrentPose()->pose.pose;
+  endpoints->start = command->pose;
   endpoints->goal = command->pose;
   endpoints->tolerance = 2.0;
 #endif

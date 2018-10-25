@@ -55,11 +55,11 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
 
   // Compose the args for the NavigateToPose action
   std::stringstream args;
-  args << "position=\""
-    << p.position.x << ";" << p.position.y << ";" << p.position.z << "\""
-	<< " orientation=\"" 
-	<< p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z << ";"
-	<< p.orientation.w << "\"";
+  args << "position=\"" <<
+    p.position.x << ";" << p.position.y << ";" << p.position.z << "\"" <<
+    " orientation=\"" <<
+    p.orientation.x << ";" << p.orientation.y << ";" << p.orientation.z << ";" <<
+    p.orientation.w << "\"";
 
   // Put it all together, trying to make the XML somewhat readable here
   std::stringstream ss;
