@@ -22,4 +22,4 @@ repositories:
   tf2_sensor_msgs:
     type: git
     url: https://github.com/stevemacenski/geometry2
-    version: bouncy
+    version: ros2
