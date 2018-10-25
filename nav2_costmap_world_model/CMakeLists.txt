@@ -18,6 +18,7 @@ find_package(nav2_tasks)
 find_package(nav2_util)
 find_package(nav2_msgs)
 find_package(nav_msgs)
+find_package(nav2_costmap_2d REQUIRED)
 
 include_directories(
   include
@@ -44,6 +45,7 @@ set(dependencies
   tf2_ros
   tf2
   nav_msgs
+  nav2_costmap_2d
 )
 
 ament_target_dependencies(${executable_name}
