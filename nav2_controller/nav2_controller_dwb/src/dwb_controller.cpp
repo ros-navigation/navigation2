@@ -28,8 +28,9 @@ using dwb_core::CostmapROSPtr;
 namespace nav2_controller_dwb
 {
 
+// TODO(cdelsey): provide the correct clock to tfBuffer_
 DwbController::DwbController()
-: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfListener_(tfBuffer_)
+: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(std::make_shared<rclcpp::Clock>()), tfListener_(tfBuffer_)
 {
 }
 

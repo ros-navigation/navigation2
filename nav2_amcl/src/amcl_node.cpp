@@ -206,7 +206,7 @@ AmclNode::AmclNode()
   cloud_pub_interval = std::chrono::duration<double>{1.0};
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(parameters_node_));
-  tf_.reset(new tf2_ros::Buffer());
+  tf_.reset(new tf2_ros::Buffer(get_clock()));
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
 
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;

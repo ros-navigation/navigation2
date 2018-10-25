@@ -18,7 +18,7 @@
   <depend>rclcpp</depend>
   <depend>sdl</depend>
   <depend>sdl-image</depend>
-  <depend>rviz_yaml_cpp_vendor</depend>
+  <depend>yaml_cpp_vendor</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
