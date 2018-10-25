@@ -1,0 +1,410 @@
+<?xml version="1.0"?>
+<!--
+  Before starting:
+    - Build ROS2 from master branch
+    - Install Gazebo 9
+    - Build gazebo_ros_pkgs from ros2 branch
+
+  Gazebo differential drive robot
+
+  To run:
+
+      gazebo <dash><dash>verbose <path_to>/gazebo_ros_simplebot.world
+
+  Try sending commands:
+
+    ros2 topic pub /demo/cmd_demo geometry_msgs/Twist '{linear: {x: 1.0}}' -1
+
+    ros2 topic pub /demo/cmd_demo geometry_msgs/Twist '{angular: {z: 0.1}}' -1
+
+  Try listening to odometry:
+
+    ros2 topic echo /demo/odom_demo
+
+  Try listening to TF:
+
+    ros2 run tf2_ros tf2_echo odom chassis
+
+    ros2 run tf2_ros tf2_echo chassis right_wheel
+
+    ros2 run tf2_ros tf2_echo chassis left_wheel
+
+
+  Open RVIZ:
+
+      ros2 run rviz2 rviz2
+
+  On RViz, add the following topics:
+
+      * /ray/pointcloud2
+      * /ray/pointcloud
+      * /ray/laserscan
+
+  (Note that the laser scans are not working on RViz due to https://github.com/ros2/rviz/issues/332)
+
+  On RViz, change the "Fixed Frame" to `ray_link`
+
+  Echo the range topics, i.e.
+
+     ros2 topic echo /ray/range
+     ros2 topic echo /gpu_ray/range
+
+  TODO(orduno)
+    - Fix transforms for laser sensor
+    - Add transform for imu?
+    - Fix topic names
+    - Verify the output of the imu
+    - Reduce the size of the robot
+    - Create launch file? use empty_world.launch.py as an example
+-->
+
+<sdf version="1.6">
+  <world name="default">
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <model name='simplebot'>
+      <pose>0 0 0.325 0 -0 0</pose>
+
+      <link name='chassis'>
+        <pose>-0.151427 -0 0.175 0 -0 0</pose>
+        <inertial>
+          <mass>1.14395</mass>
+          <inertia>
+            <ixx>0.126164</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.416519</iyy>
+            <iyz>0</iyz>
+            <izz>0.481014</izz>
+          </inertia>
+        </inertial>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>2.01142 1 0.568726</size>
+            </box>
+          </geometry>
+        </visual>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>2.01142 1 0.568726</size>
+            </box>
+          </geometry>
+        </collision>
+      </link>
+
+      <!-- ray sensor -->
+      <link name="ray_link">
+        <pose>0.75 0 0.484 0 0 0</pose>
+        <visual name="visual_box">
+          <geometry>
+            <box>
+              <size>0.05 0.05 0.05</size>
+            </box>
+          </geometry>
+        </visual>
+        <collision name="collision_box">
+          <geometry>
+            <box>
+              <size>0.05 0.05 0.05</size>
+            </box>
+          </geometry>
+          <laser_retro>100.0</laser_retro>
+        </collision>
+        <sensor name="sensor_ray" type="ray">
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>300</samples>
+                <resolution>1.0</resolution>
+                <min_angle>-0.5236</min_angle>
+                <max_angle>0.5236</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>100</samples>
+                <resolution>1.0</resolution>
+                <min_angle>-0.5236</min_angle>
+                <max_angle>0.5236</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.05</min>
+              <max>50.0</max>
+            </range>
+          </ray>
+          <always_on>true</always_on>
+          <update_rate>1.0</update_rate>
+          <plugin name="pc2" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <namespace>/ray</namespace>
+              <argument>~/out:=pointcloud2</argument>
+            </ros>
+            <output_type>sensor_msgs/PointCloud2</output_type>
+          </plugin>
+          <plugin name="pc" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <namespace>/ray</namespace>
+              <argument>~/out:=pointcloud</argument>
+            </ros>
+            <output_type>sensor_msgs/PointCloud</output_type>
+          </plugin>
+          <plugin name="laserscan" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <namespace>/ray</namespace>
+              <argument>~/out:=laserscan</argument>
+            </ros>
+            <output_type>sensor_msgs/LaserScan</output_type>
+          </plugin>
+          <plugin name="range" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <namespace>/ray</namespace>
+              <argument>~/out:=range</argument>
+            </ros>
+            <output_type>sensor_msgs/Range</output_type>
+          </plugin>
+        </sensor>
+      </link>
+
+      <!-- imu sensor -->
+      <link name="imu_link">
+        <pose>0.0 0 0.484 0 0 0</pose>
+        <visual name="visual_box">
+          <geometry>
+            <box>
+              <size>0.05 0.05 0.05</size>
+            </box>
+          </geometry>
+        </visual>
+        <collision name="collision_box">
+          <geometry>
+            <box>
+              <size>0.05 0.05 0.05</size>
+            </box>
+          </geometry>
+          <!-- <laser_retro>100.0</laser_retro> -->
+        </collision>
+        <sensor name="sensor_imu" type="imu">
+          <always_on>true</always_on>
+          <update_rate>1.0</update_rate>
+          <visualize>true</visualize>
+          <topic>__default_topic__</topic>
+          <plugin name="imu" filename="libgazebo_ros_imu_sensor.so">
+            <topicName>imu</topicName>
+            <bodyName>imu_link</bodyName>
+            <updateRateHZ>10.0</updateRateHZ>
+            <gaussianNoise>0.0</gaussianNoise>
+            <xyzOffset>0 0 0</xyzOffset>
+            <rpyOffset>0 0 0</rpyOffset>
+            <frameName>imu_link</frameName>
+          </plugin>
+        </sensor>
+      </link>
+
+      <link name='left_wheel'>
+        <pose>0.554283 0.625029 -0.025 -1.5707 0 0</pose>
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.145833</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.145833</iyy>
+            <iyz>0</iyz>
+            <izz>0.125</izz>
+          </inertia>
+        </inertial>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>0.3</radius>
+            </sphere>
+          </geometry>
+        </visual>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.3</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0</slip1>
+                <slip2>0</slip2>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.01</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <link name='right_wheel'>
+        <pose>0.554282 -0.625029 -0.025 -1.5707 0 0</pose>
+        <inertial>
+          <mass>2</mass>
+          <inertia>
+            <ixx>0.145833</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.145833</iyy>
+            <iyz>0</iyz>
+            <izz>0.125</izz>
+          </inertia>
+        </inertial>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>0.3</radius>
+            </sphere>
+          </geometry>
+        </visual>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.3</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0</slip1>
+                <slip2>0</slip2>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.01</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <link name='caster'>
+        <pose>-0.957138 -0 -0.125 0 -0 0</pose>
+        <inertial>
+          <mass>1</mass>
+          <inertia>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>0.2</radius>
+            </sphere>
+          </geometry>
+        </visual>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.2</radius>
+            </sphere>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name='ray_link_joint' type='fixed'>
+        <parent>chassis</parent>
+        <child>ray_link</child>
+      </joint>
+
+      <joint name='imu_link_joint' type='fixed'>
+        <parent>chassis</parent>
+        <child>imu_link</child>
+      </joint>
+
+      <joint name='left_wheel_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>left_wheel</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1.79769e+308</lower>
+            <upper>1.79769e+308</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name='right_wheel_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>right_wheel</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1.79769e+308</lower>
+            <upper>1.79769e+308</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name='caster_wheel' type='ball'>
+        <parent>chassis</parent>
+        <child>caster</child>
+      </joint>
+
+      <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+
+        <ros>
+          <namespace>/demo</namespace>
+          <argument>cmd_vel:=cmd_demo</argument>
+          <argument>odom:=odom_demo</argument>
+        </ros>
+
+        <!-- wheels -->
+        <left_joint>left_wheel_joint</left_joint>
+        <right_joint>right_wheel_joint</right_joint>
+
+        <!-- kinematics -->
+        <wheel_separation>1.25</wheel_separation>
+        <wheel_diameter>0.6</wheel_diameter>
+
+        <!-- limits -->
+        <max_wheel_torque>20</max_wheel_torque>
+        <max_wheel_acceleration>1.0</max_wheel_acceleration>
+
+        <!-- output -->
+        <publish_odom>true</publish_odom>
+        <publish_odom_tf>true</publish_odom_tf>
+        <publish_wheel_tf>true</publish_wheel_tf>
+
+        <odometry_frame>odom_demo</odometry_frame>
+        <robot_base_frame>chassis</robot_base_frame>
+
+      </plugin>
+
+    </model>
+
+  </world>
+</sdf>
