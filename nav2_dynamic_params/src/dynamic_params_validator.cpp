@@ -43,16 +43,14 @@ rcl_interfaces::msg::SetParametersResult DynamicParamsValidator::param_validatio
     // Check if parameter is static
     if (check_if_static(parameter)) {
       result.successful = false;
-      RCLCPP_WARN(node_->get_logger(),
-        "Parameter Change Denied::Parameter is static: %s", parameter.get_name().c_str());
+      return result;
     }
 
     // Validate Parameter Type
     if (param_map_.count(parameter.get_name()) > 0) {
-      if (validate_param(parameter)) {
-        result.successful &= true;
-      } else {
+      if (!validate_param(parameter)) {
         result.successful = false;
+        return result;
       }
     } else {
       // Default to accept new parameters
@@ -61,22 +59,22 @@ rcl_interfaces::msg::SetParametersResult DynamicParamsValidator::param_validatio
         RCLCPP_WARN(node_->get_logger(),
           "Parameter Change Denied::Parameter Not Registered: %s",
           parameter.get_name().c_str());
+        return result;
       }
     }
 
     // Validate Parameter Bounds
     if (param_bound_map_.count(parameter.get_name()) > 0) {
-      if (validate_param_bounds(parameter)) {
-        result.successful &= true;
-      } else {
+      if (!validate_param_bounds(parameter)) {
         result.successful = false;
+        return result;
       }
     }
   }
 
   // Check Custom Validation Callback if provided
   if (validation_callback_) {
-    result.successful &= (validation_callback_(parameters)).successful;
+    return validation_callback_(parameters);
   }
 
   return result;
@@ -146,7 +144,9 @@ bool DynamicParamsValidator::validate_param_bounds(const rclcpp::Parameter & par
   if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
     return check_bound_of_type<rclcpp::ParameterType::PARAMETER_INTEGER>(param);
   }
-
+  RCLCPP_WARN(node_->get_logger(),
+    "Parameter Change Denied:: Can Only Check Bounds of Type int or double: %s",
+    param.get_name().c_str());
   return false;
 }
 
@@ -155,6 +155,8 @@ bool DynamicParamsValidator::check_if_static(const rclcpp::Parameter & param)
   if (std::find(static_params_.begin(), static_params_.end(),
     param.get_name()) != static_params_.end())
   {
+    RCLCPP_WARN(node_->get_logger(),
+      "Parameter Change Denied::Parameter is static: %s", param.get_name().c_str());
     return true;
   } else {
     return false;

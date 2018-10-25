@@ -100,53 +100,64 @@ public:
       {rclcpp::ParameterEventsFilter::EventType::NEW,
         rclcpp::ParameterEventsFilter::EventType::CHANGED});
     if (!(filter.get_events()).empty()) {
-      auto param_msg = ((filter.get_events()).front()).second;
-      auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
-      new_value = param_value.get_value<T>();
-      dynamic_param_map_[param_name] = param_value;
+      new_value = get_param_from_event<T>(filter);
       return true;
     } else {
-      if (dynamic_param_map_.count(param_name) > 0 &&
-        !dynamic_param_map_[param_name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
-      {
-        new_value = dynamic_param_map_[param_name].get_value<T>();
+      if (get_param_from_map<T>(param_name, new_value)) {
+        return true;
       } else {
-        RCLCPP_DEBUG(rclcpp::get_logger("dynamic_params_client"),
-          "Parameter '%s' not set", param_name.c_str());
+        RCLCPP_WARN(rclcpp::get_logger("dynamic_params_client"),
+          "Parameter '%s' not set on node", param_name.c_str());
+        return false;
       }
-      return false;
     }
   }
 
   template<class T>
-  bool get_event_param(
-    const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
+  bool get_event_param_or(
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr & event,
     const std::string & param_name, T & new_value, const T & default_value)
   {
-    rclcpp::ParameterEventsFilter filter(event, {param_name},
-      {rclcpp::ParameterEventsFilter::EventType::NEW,
-        rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if (!(filter.get_events()).empty()) {
-      auto param_msg = ((filter.get_events()).front()).second;
-      auto param_value = rclcpp::Parameter::from_parameter_msg(*param_msg);
-      new_value = param_value.get_value<T>();
-      dynamic_param_map_[param_name] = param_value;
+    if (get_event_param<T>(event, param_name, new_value)) {
       return true;
     } else {
-      if (dynamic_param_map_.count(param_name) > 0 &&
-        !dynamic_param_map_[param_name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
-      {
-        new_value = dynamic_param_map_[param_name].get_value<T>();
-      } else {
-        RCLCPP_INFO(rclcpp::get_logger("dynamic_params_client"),
-          "Parameter '%s' not set, using default", param_name.c_str());
-        new_value = default_value;
-      }
+      new_value = default_value;
       return false;
     }
   }
 
+  bool is_in_event(
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr & event, const std::string & name)
+  {
+    rclcpp::ParameterEventsFilter filter(event, {name},
+      {rclcpp::ParameterEventsFilter::EventType::NEW,
+        rclcpp::ParameterEventsFilter::EventType::CHANGED});
+    return !filter.get_events().empty();
+  }
+
 private:
+  template<class T>
+  T get_param_from_event(const rclcpp::ParameterEventsFilter & event_filter)
+  {
+    auto param_msg = ((event_filter.get_events()).front()).second;
+    auto param = rclcpp::Parameter::from_parameter_msg(*param_msg);
+    dynamic_param_map_[param.get_name()] = param;
+    return param.get_value<T>();
+  }
+
+  template<class T>
+  bool get_param_from_map(const std::string & name, T & value)
+  {
+    if (dynamic_param_map_.count(name) > 0 &&
+      !dynamic_param_map_[name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
+    {
+      value = dynamic_param_map_[name].get_value<T>();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
   std::vector<std::string> dynamic_param_names_;
   std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
