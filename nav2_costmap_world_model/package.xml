@@ -18,7 +18,7 @@
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>nav2_tasks</exec_depend>
+  <exec_depend>nav2_costmap_2d</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
