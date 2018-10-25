@@ -24,6 +24,7 @@ set(dependencies
 add_library(nav2_dynamic_params
   src/dynamic_params_validator.cpp
 )
+
 ament_target_dependencies(nav2_dynamic_params
   ${dependencies}
 )
@@ -31,12 +32,15 @@ ament_target_dependencies(nav2_dynamic_params
 add_executable(example_nav2_dynamic_params
   src/example_dynamic_params.cpp
 )
+
 ament_target_dependencies(example_nav2_dynamic_params
   ${dependencies}
 )
+
 target_link_libraries(example_nav2_dynamic_params
   nav2_dynamic_params
 )
+
 install(TARGETS nav2_dynamic_params example_nav2_dynamic_params
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
