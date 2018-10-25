@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "costmap_2d/inflation_layer.h"
-#include "costmap_2d/layered_costmap.h"
-#include "costmap_2d/static_layer.h"
+#include "nav2_costmap_2d/inflation_layer.h"
+#include "nav2_costmap_2d/layered_costmap.h"
+#include "nav2_costmap_2d/static_layer.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/costmap.hpp"
@@ -50,12 +50,12 @@ public:
 private:
   void costmap_callback(
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
-    const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
   // Server for providing a costmap
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
-  costmap_2d::LayeredCostmap * layered_costmap_;
+  nav2_costmap_2d::LayeredCostmap * layered_costmap_;
   tf2_ros::Buffer * tf_;
 };
 

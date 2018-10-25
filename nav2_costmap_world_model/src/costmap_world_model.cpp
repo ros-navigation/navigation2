@@ -29,28 +29,28 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
 : Node(name + "_Node")
 {
   // Create layered costmap with static and inflation layer
-  layered_costmap_ = new costmap_2d::LayeredCostmap("frame", false, false);
-  addLayer<costmap_2d::StaticLayer>("static");
-  addLayer<costmap_2d::InflationLayer>("inflation");
+  layered_costmap_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
+  addLayer<nav2_costmap_2d::StaticLayer>("static");
+  addLayer<nav2_costmap_2d::InflationLayer>("inflation");
   // TODO(bpwilcox): replace manual footprint to layered_costmap with parameter or from nav2_robot
   setFootprint(0, 0);
   layered_costmap_->updateMap(0, 0, 0);
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name + "_GetCostmap",
-    std::bind(&CostmapWorldModel::costmap_callback, this,
-    std::placeholders::_1, std::placeholders::_2. std::placeholders::_3));
+      std::bind(&CostmapWorldModel::costmap_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void CostmapWorldModel::costmap_callback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Request>/*request*/,
-  const std::shared_ptr<nav2_world_model_msgs::srv::GetCostmap::Response> response)
+  const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
+  const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
 {
   RCLCPP_INFO(
     this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
 
-  costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   rclcpp::Clock clock;
 
   response->map.metadata.size_x = costmap->getSizeInCellsX();
@@ -80,17 +80,17 @@ void CostmapWorldModel::setFootprint(double length, double width)
 {
   std::vector<geometry_msgs::msg::Point> polygon;
   geometry_msgs::msg::Point p;
-  p.x = width/2;
-  p.y = length/2;
+  p.x = width / 2;
+  p.y = length / 2;
   polygon.push_back(p);
-  p.x = width/2;
-  p.y = -length/2;
+  p.x = width / 2;
+  p.y = -length / 2;
   polygon.push_back(p);
-  p.x = -width/2;
-  p.y = -length/2;
+  p.x = -width / 2;
+  p.y = -length / 2;
   polygon.push_back(p);
-  p.x = -width/2;
-  p.y = length/2;
+  p.x = -width / 2;
+  p.y = length / 2;
   polygon.push_back(p);
   layered_costmap_->setFootprint(polygon);
 }
