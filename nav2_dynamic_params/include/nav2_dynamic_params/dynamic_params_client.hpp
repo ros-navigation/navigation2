@@ -158,12 +158,35 @@ private:
     }
   }
 
+  void add_params(std::string remote_node, std::vector<std::string> param_names){
+    
+  }
+
+  void set_event_callback(std::string remote_node) {
+
+    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [this, remote_node](
+      const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
+      {
+        if (check_event(event, remote_node)) {
+          user_callback(event, remote_node);
+        }
+      };
+  }
+
+private:
+  bool check_event(const rcl_interfaces::msg::ParameterEvent::SharedPtr event, std::string remote_node){
+  // grab parameter name
+  // check parameter name against list of dynamic parameters
+  }
+
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
   std::vector<std::string> dynamic_param_names_;
   std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
   rclcpp::Node::SharedPtr node_;
   std::vector<rclcpp::Subscription
     <rcl_interfaces::msg::ParameterEvent>::SharedPtr> event_subscriptions_;
+
+  std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr, std::string node_name)> user_callback;
 };
 
 }  // namespace nav2_dynamic_params

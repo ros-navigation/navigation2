@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  auto node = rclcpp::Node::make_shared("example_dynamic_params_client");
+  auto node = rclcpp::Node::make_shared("test_node");
 
   // Add Parameters to Server
   node->set_parameters({rclcpp::Parameter("foo", 1.0), rclcpp::Parameter("bar", 2)});
@@ -38,23 +38,18 @@ int main(int argc, char ** argv)
     {
       RCLCPP_INFO(node->get_logger(), "Event Callback!");
 
-      if (dynamic_params_client->is_in_event(event, "foo")) {
-        RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"),
-          "'foo' is in this event!");
-      }
-
       double foo;
       dynamic_params_client->get_event_param(event, "foo", foo);
       RCLCPP_INFO(node->get_logger(), "foo: %f", foo);
 
       int bar;
-      dynamic_params_client->get_event_param_or(event, "bar", bar, 4);
-      RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "bar: %d", bar);
+      dynamic_params_client->get_event_param(event, "bar", bar, 4);
+      RCLCPP_INFO(node->get_logger(), "bar: %d", bar);
 
       // Parameter not set on server
       double foobar;
-      dynamic_params_client->get_event_param_or(event, "foobar", foobar, 5.5);
-      RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "foobar: %f", foobar);
+      dynamic_params_client->get_event_param(event, "foobar", foobar, 5.5);
+      RCLCPP_INFO(node->get_logger(), "foobar: %f", foobar);
     };
 
   dynamic_params_client->set_callback(callback);
