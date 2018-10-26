@@ -142,7 +142,7 @@ void StaticLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Share
     has_updated_data_ = true;
     x_ = y_ = 0;
     width_ = size_x_;
-    height_ = size_y_;    
+    height_ = size_y_;
   }
 }
 
