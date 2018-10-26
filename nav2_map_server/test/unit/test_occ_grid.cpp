@@ -42,28 +42,16 @@
 using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
-class OccGridTest : public nav2_map_server::OccGridServer
-{
-public:
-  OccGridTest() {}
-  ~OccGridTest() {}
-
-  nav_msgs::srv::GetMap::Response GetMap() {return occ_resp_;}
-};
-
 class MapServerTest : public ::testing::Test
 {
 public:
   MapServerTest()
   {
-    OccTest = new OccGridTest;
-    auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-    OccTest->loadMapInfoFromFile(test_yaml.string());
+    map_server_ = new nav2_map_server::OccGridServer;
   }
 
 protected:
-  OccGridTest * OccTest;
-  nav_msgs::srv::GetMap::Response map_resp;
+  nav2_map_server::OccGridServer * map_server_;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -75,15 +63,15 @@ protected:
 TEST_F(MapServerTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-  ASSERT_NO_THROW(OccTest->loadMapFromFile(test_png.string()));
-  OccTest->setMap();
-  map_resp = OccTest->GetMap();
+  ASSERT_NO_THROW(map_server_->loadMapFromFile(test_png.string()));
 
-  EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-  EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-  EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-  for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
-    EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+  nav_msgs::msg::OccupancyGrid map_msg = map_server_->getOccupancyGrid();
+
+  EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
+  EXPECT_EQ(map_msg.info.width, g_valid_image_width);
+  EXPECT_EQ(map_msg.info.height, g_valid_image_height);
+  for (unsigned int i = 0; i < map_msg.info.width * map_msg.info.height; i++) {
+    EXPECT_EQ(g_valid_image_content[i], map_msg.data[i]);
   }
 }
 
@@ -93,15 +81,15 @@ TEST_F(MapServerTest, loadValidPNG)
 TEST_F(MapServerTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
-  ASSERT_NO_THROW(OccTest->loadMapFromFile(test_bmp.string()));
-  OccTest->setMap();
-  map_resp = OccTest->GetMap();
+  ASSERT_NO_THROW(map_server_->loadMapFromFile(test_bmp.string()));
 
-  EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-  EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-  EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-  for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
-    EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+  nav_msgs::msg::OccupancyGrid map_msg = map_server_->getOccupancyGrid();
+
+  EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
+  EXPECT_EQ(map_msg.info.width, g_valid_image_width);
+  EXPECT_EQ(map_msg.info.height, g_valid_image_height);
+  for (unsigned int i = 0; i < map_msg.info.width * map_msg.info.height; i++) {
+    EXPECT_EQ(g_valid_image_content[i], map_msg.data[i]);
   }
 }
 
@@ -110,5 +98,5 @@ TEST_F(MapServerTest, loadValidBMP)
 TEST_F(MapServerTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
-  ASSERT_THROW(OccTest->loadMapFromFile(test_invalid.string()), std::runtime_error);
+  ASSERT_THROW(map_server_->loadMapFromFile(test_invalid.string()), std::runtime_error);
 }

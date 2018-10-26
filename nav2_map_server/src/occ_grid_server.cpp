@@ -34,17 +34,10 @@
  */
 #include "nav2_map_server/occ_grid_server.hpp"
 
-#include <libgen.h>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <memory>
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
 #include <chrono>
 
-#include "yaml-cpp/yaml.h"
 #include "LinearMath/btQuaternion.h"
 #include "SDL/SDL_image.h"
 
@@ -53,145 +46,72 @@ using namespace std::chrono_literals;
 namespace nav2_map_server
 {
 
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
-
-template<typename T>
-void operator>>(const YAML::Node & node, T & i)
-{
-  i = node.as<T>();
-}
+const std::string OccGridServer::frame_id_ = "map";
 
 OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
-}
-
-OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name)
-: node_(node)
-{
-  RCLCPP_DEBUG(node_->get_logger(), "OccGridServer: Load map info for map file: %s",
-    file_name.c_str());
-  loadMapInfoFromFile(file_name);
-
-  RCLCPP_INFO(node_->get_logger(), "OccGridServer: Loading map: %s", map_name_.c_str());
+  loadParameters();
   loadMapFromFile(map_name_);
-
   connectROS();
-  setMap();
-  publishMap();
-  RCLCPP_DEBUG(node_->get_logger(), "OccGridServer: Set up map request service and publisher.");
 }
 
-void OccGridServer::loadMapInfoFromFile(const std::string & file_name)
+void OccGridServer::loadParameters()
 {
-  std::ifstream fin(file_name.c_str());
-  if (fin.fail()) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "Map_server could not open %s", file_name.c_str());
-    throw std::runtime_error("File path invalid");
-  }
+#if 0
+template<typename ParameterT>
+  void
+  get_parameter_or_set(
+    const std::string & name,
+    ParameterT & value,
+    const ParameterT & alternative_value);
+#endif
 
-  YAML::Node doc = YAML::LoadFile(file_name);
+  // Set this node's default parameter values
+  node_->set_parameter_if_not_set("resolution", 0.050000);
+  node_->set_parameter_if_not_set("negate", 0);
+  node_->set_parameter_if_not_set("occupied_thresh", 0.65);
+  node_->set_parameter_if_not_set("free_thresh", 0.196);
+  node_->set_parameter_if_not_set("mode", "trinary");
+  node_->set_parameter_if_not_set("image", "test_map.pgm");
+  node_->set_parameter_if_not_set("origin", std::vector<double>({-15.400000, -12.200000, 0.000000}) );
 
-  try {
-    doc["resolution"] >> res_;
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain a resolution tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain a resolution tag or it is invalid.");
-  }
+  // Get any overrides from the YAML file
+  res_ = node_->get_parameter("resolution").as_double();
+  negate_ = node_->get_parameter("negate").as_int();
+  occ_th_ = node_->get_parameter("occupied_thresh").as_double();
+  free_th_ = node_->get_parameter("free_thresh").as_double();
+  std::string modeS = node_->get_parameter("mode").as_string();
+  map_name_ = node_->get_parameter("image").as_string();
+  origin_ = node_->get_parameter("origin").as_double_array();
 
-  try {
-    doc["negate"] >> negate_;
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain a negate tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain a negate tag or it is invalid.");
-  }
-
-  try {
-    doc["occupied_thresh"] >> occ_th_;
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain an occupied_thresh tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid.");
-  }
-
-  try {
-    doc["free_thresh"] >> free_th_;
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain a free_thresh tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid.");
-  }
-
-  try {
-    std::string modeS = "";
-    doc["mode"] >> modeS;
-    if (modeS == "trinary") {
-      mode_ = TRINARY;
-    } else if (modeS == "scale") {
-      mode_ = SCALE;
-    } else if (modeS == "raw") {
-      mode_ = RAW;
-    } else {
-      RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-        "The map %s has invalid mode tag \"%s\".", file_name.c_str(), modeS.c_str());
-      throw std::runtime_error("Invalid mode tag.");
-    }
-  } catch (YAML::Exception) {
-    RCLCPP_DEBUG(rclcpp::get_logger("map_server"),
-      "The map %s does not contain a mode tag or it is invalid.", file_name.c_str());
+  // Convert the string version of the mode name to one of the enumeration values
+  if (modeS == "trinary") {
+    mode_ = TRINARY;
+  } else if (modeS == "scale") {
+    mode_ = SCALE;
+  } else if (modeS == "raw") {
+    mode_ = RAW;
+  } else {
+    RCLCPP_WARN(node_->get_logger(),
+      "Mode parameter not recognized: '%s', using default value (trinary)",
+      modeS.c_str());
     mode_ = TRINARY;
   }
-
-  try {
-    doc["origin"][0] >> origin_[0];
-    doc["origin"][1] >> origin_[1];
-    doc["origin"][2] >> origin_[2];
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain an origin tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain an origin tag or it is invalid.");
-  }
-
-  try {
-    doc["image"] >> map_name_;
-    // TODO(bpwilcox): make this path-handling more robust
-    if (map_name_.size() == 0) {
-      RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-        "The image tag in map %s cannot be an empty string.", file_name.c_str());
-      throw std::runtime_error("The image tag cannot be an empty string.");
-    }
-    if (map_name_[0] != '/') {
-      // dirname can modify what you pass it
-      char * fname_copy = strdup(file_name.c_str());
-      map_name_ = std::string(dirname(fname_copy)) + '/' + map_name_;
-      free(fname_copy);
-    }
-  } catch (YAML::Exception) {
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"),
-      "The map %s does not contain an image tag or it is invalid.", file_name.c_str());
-    throw std::runtime_error("The map does not contain an image tag or it is invalid.");
-  }
 }
+
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
 void OccGridServer::loadMapFromFile(const std::string & map_name_)
 {
-  SDL_Surface * img;
-  const char * name = map_name_.c_str();
-  unsigned char * pixels;
   unsigned char * p;
   unsigned char value;
-  int rowstride, n_channels, avg_channels;
   unsigned int i, j;
   int k;
-  double occ;
-  int alpha;
-  int color_sum;
-  double color_avg;
 
   // Load the image using SDL.  If we get NULL back, the image load failed.
+  SDL_Surface * img;
+  const char * name = map_name_.c_str();
   if (!(img = IMG_Load(name))) {
     std::string errmsg = std::string("failed to open image file \"") +
       std::string(name) + std::string("\": ") + IMG_GetError();
@@ -204,12 +124,12 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
   map_msg_.info.width = img->w;
   map_msg_.info.height = img->h;
   map_msg_.info.resolution = res_;
-  map_msg_.info.origin.position.x = *(origin_);
-  map_msg_.info.origin.position.y = *(origin_ + 1);
+  map_msg_.info.origin.position.x = origin_[0];
+  map_msg_.info.origin.position.y = origin_[1];
   map_msg_.info.origin.position.z = 0.0;
   btQuaternion q;
   // setEulerZYX(yaw, pitch, roll)
-  q.setEulerZYX(*(origin_ + 2), 0, 0);
+  q.setEulerZYX(origin_[2], 0, 0);
   map_msg_.info.origin.orientation.x = q.x();
   map_msg_.info.origin.orientation.y = q.y();
   map_msg_.info.origin.orientation.z = q.z();
@@ -219,11 +139,12 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
   map_msg_.data.resize(map_msg_.info.width * map_msg_.info.height);
 
   // Get values that we'll need to iterate through the pixels
-  rowstride = img->pitch;
-  n_channels = img->format->BytesPerPixel;
+  int rowstride = img->pitch;
+  int n_channels = img->format->BytesPerPixel;
 
   // NOTE: Trinary mode still overrides here to preserve existing behavior.
   // Alpha will be averaged in with color channels when using trinary mode.
+  int avg_channels;
   if (mode_ == TRINARY || !img->format->Amask) {
     avg_channels = n_channels;
   } else {
@@ -231,7 +152,8 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
   }
 
   // Copy pixel data into the map structure
-  pixels = (unsigned char *)(img->pixels);
+  unsigned char * pixels = (unsigned char *)(img->pixels);
+  int color_sum;
   for (j = 0; j < map_msg_.info.height; j++) {
     for (i = 0; i < map_msg_.info.width; i++) {
       // Compute mean of RGB for this pixel
@@ -240,8 +162,9 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
       for (k = 0; k < avg_channels; k++) {
         color_sum += *(p + (k));
       }
-      color_avg = color_sum / static_cast<double>(avg_channels);
+      double color_avg = color_sum / static_cast<double>(avg_channels);
 
+      int alpha;
       if (n_channels == 1) {
         alpha = 1;
       } else {
@@ -258,7 +181,7 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
 
       // If negate is true, we consider blacker pixels free, and whiter
       // pixels free.  Otherwise, it's vice versa.
-      occ = (255 - color_avg) / 255.0;
+      double occ = (255 - color_avg) / 255.0;
 
       // Apply thresholds to RGB means to determine occupancy values for
       // map.  Note that we invert the graphics-ordering of the pixels to
@@ -293,6 +216,18 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
 
 void OccGridServer::connectROS()
 {
+  // Create a service callback handle
+  auto handle_occ_callback = [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
+    std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
+      RCLCPP_INFO(node_->get_logger(), "OccGridServer: handling map request");
+      response->map = map_msg_;
+    };
+
+  // Create a service that provides the occupancy grid
+  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
+
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
@@ -301,33 +236,22 @@ void OccGridServer::connectROS()
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
     "occ_grid", custom_qos_profile);
 
-  // Create a service callback handle
-  auto handle_occ_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
-    std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(node_->get_logger(), "OccGridServer: handling map request");
-      response->map = occ_resp_.map;
-    };
-
-  // Create a service that provides the occupancy grid
-  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
-}
-
-void OccGridServer::setMap()
-{
-  occ_resp_.map = map_msg_;
-}
-
-void OccGridServer::publishMap()
-{
+  // Publish the map using the latched topic
   occ_pub_->publish(map_msg_);
 
-  // For now, periodically publish the map so that the ros1 bridge will be sure the proxy the
+  // TODO(mjeronimo): Remove the following once we've got everything on the ROS2 side
+  //
+  // Periodically publish the map so that the ros1 bridge will be sure the proxy the
   // message to rviz on the ROS1 side
-  // TODO(mjeronimo): Remove this once we've got everything on the ROS2 side
   auto timer_callback = [this]() -> void {occ_pub_->publish(map_msg_);};
   timer_ = node_->create_wall_timer(2s, timer_callback);
 }
+
+nav_msgs::msg::OccupancyGrid
+OccGridServer::getOccupancyGrid()
+{
+  return map_msg_;
+}
+
 
 }  // namespace nav2_map_server

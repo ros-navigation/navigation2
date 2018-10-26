@@ -15,7 +15,7 @@
 #ifndef NAV2_MAP_SERVER__OCC_GRID_SERVER_HPP_
 #define NAV2_MAP_SERVER__OCC_GRID_SERVER_HPP_
 
-#include <memory>
+//#include <memory>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
@@ -27,44 +27,44 @@
 namespace nav2_map_server
 {
 
-class OccGridServer : public MapServer
+class OccGridServer: public MapServer
 {
 public:
   explicit OccGridServer(rclcpp::Node::SharedPtr node);
-  OccGridServer(rclcpp::Node::SharedPtr node, std::string file_name);
   OccGridServer() {}
 
-  void loadMapInfoFromFile(const std::string & file_name);
-  void loadMapFromFile(const std::string & map_name);
-  void publishMap();
-  void setMap();
-  void connectROS();
+  void loadMapFromFile(const std::string & map_name) override;
+  nav_msgs::msg::OccupancyGrid getOccupancyGrid() override;
+  void connectROS() override;
 
 protected:
-  enum MapMode { TRINARY, SCALE, RAW };
+  void loadParameters();
 
-  // Info from parsing the YAML file
-  double origin_[3];
+  // Map parameters
+  double res_;
   int negate_;
   double occ_th_;
   double free_th_;
-  double res_;
+  enum MapMode { TRINARY, SCALE, RAW };
   MapMode mode_ = TRINARY;
-  std::string frame_id_ = "map";
   std::string map_name_;
+  std::vector<double> origin_;
+
+  static const std::string frame_id_;
 
   // The ROS node to use for ROS-related operations such as creating a service
   rclcpp::Node::SharedPtr node_;
 
   // A service to provide the ouccpancy grid (GetMap) and the message to return
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
-  nav_msgs::srv::GetMap::Response occ_resp_;
 
-  // A topic on which the occupance grid will be published and the message to publish
+  // A topic on which the occupancy grid will be published
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+
+  // The message to publish on the occupancy grid topic
   nav_msgs::msg::OccupancyGrid map_msg_;
 
-  // For now, publish the map periodically so that its sure to be received on the
+  // For now, publish the map periodically so that it is sure to be received on the
   // ROS1 side across the ROS1 bridge
   rclcpp::TimerBase::SharedPtr timer_;
 };
