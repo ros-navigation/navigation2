@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+    <name>voxel_grid</name>
+    <version>1.16.2</version>
+    <description>
+
+        voxel_grid provides an implementation of an efficient 3D voxel grid. The occupancy grid can support 3 different representations for the state of a cell: marked, free, or unknown. Due to the underlying implementation relying on bitwise and and or integer operations, the voxel grid only supports 16 different levels per voxel column. However, this limitation yields raytracing and cell marking performance in the grid comparable to standard 2D structures making it quite fast compared to most 3D structures.
+
+    </description>
+    <author>Eitan Marder-Eppstein, Eric Berger</author>
+    <author>contradict@gmail.com</author>
+    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+    <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
+    <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
+    <license>BSD</license>
+    <url>http://wiki.ros.org/voxel_grid</url>
+
+    <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
+
+    <depend>roscpp</depend>
+
+    <test_depend>rosunit</test_depend>
+</package>
