@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_controller_dwb</name>
+  <name>dwb_controller</name>
   <version>0.1.0</version>
   <description>TODO</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>

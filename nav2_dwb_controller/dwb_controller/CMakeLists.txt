@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_controller_dwb)
+project(nav2_dwb_controller)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -24,7 +24,7 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-set(executable_name nav2_controller_dwb)
+set(executable_name dwb_controller)
 
 add_executable(${executable_name}
   src/main.cpp

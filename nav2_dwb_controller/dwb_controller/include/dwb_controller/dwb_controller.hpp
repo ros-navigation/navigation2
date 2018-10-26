@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER_DWB__DWB_CONTROLLER_HPP_
-#define NAV2_CONTROLLER_DWB__DWB_CONTROLLER_HPP_
+#ifndef nav2_dwb_controller__DWB_CONTROLLER_HPP_
+#define nav2_dwb_controller__DWB_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -23,7 +23,7 @@
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.h"
 
-namespace nav2_controller_dwb
+namespace nav2_dwb_controller
 {
 
 class DwbController : public nav2_tasks::FollowPathTaskServer
@@ -47,6 +47,6 @@ protected:
   tf2_ros::TransformListener tfListener_;
 };
 
-}  // namespace nav2_controller_dwb
+}  // namespace nav2_dwb_controller
 
-#endif  // NAV2_CONTROLLER_DWB__DWB_CONTROLLER_HPP_
+#endif  // nav2_dwb_controller__DWB_CONTROLLER_HPP_
