@@ -13,7 +13,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(message_filters REQUIRED)
-find_package(Boost REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -25,7 +24,6 @@ find_package(nav2_tasks REQUIRED)
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
 )
 
 set(executable_name amcl)
@@ -59,8 +57,6 @@ ament_target_dependencies(${executable_name}
 
 target_link_libraries(${executable_name}
   ${library_name}
-  ${Boost_LIBRARIES}
-  boost_system
 )
 
 ament_target_dependencies(${library_name}
