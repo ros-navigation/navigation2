@@ -109,10 +109,10 @@ void InflationLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Sh
   bool inflate_unknown;
   bool enabled;
 
-  dynamic_param_client_->get_event_param(event,"inflation_radius", inflation_radius, 0.55);
-  dynamic_param_client_->get_event_param(event,"cost_scaling_factor", cost_scaling_factor, 10.0);
-  dynamic_param_client_->get_event_param(event,"inflate_unknown", inflate_unknown, false);
-  dynamic_param_client_->get_event_param(event,"enabled_inflation_layer", enabled, true);
+  dynamic_param_client_->get_event_param_or(event,"inflation_radius", inflation_radius, 0.55);
+  dynamic_param_client_->get_event_param_or(event,"cost_scaling_factor", cost_scaling_factor, 10.0);
+  dynamic_param_client_->get_event_param_or(event,"inflate_unknown", inflate_unknown, false);
+  dynamic_param_client_->get_event_param_or(event,"enabled_inflation_layer", enabled, true);
 
   setInflationParameters(inflation_radius, cost_scaling_factor);
 

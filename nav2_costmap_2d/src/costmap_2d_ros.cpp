@@ -289,11 +289,8 @@ void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterE
   // topic by a dynamic_reconfigure call which was setting some other
   // variable.
   
-  std::string footprint;
-  double robot_radius;
-
-  if (!dynamic_param_client_->get_event_param(event, "footprint", footprint) ||
-    !dynamic_param_client_->get_event_param(event, "robot_radius", robot_radius))
+  if (!dynamic_param_client_->is_in_event(event, "footprint") ||
+    !dynamic_param_client_->is_in_event(event, "robot_radius"))
     {
       return;
     }
