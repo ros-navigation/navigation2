@@ -3,16 +3,16 @@
 ## Comparison to Move Base in ROS
 AMCL and map_server were ported to ROS2 with minimal functional changes, but some refactoring.
 
-  * amcl -> nav2_amcl
-  * map_server -> nav2_map_server
+  * amcl -> [nav2_amcl](/nav2_amcl/README.md)
+  * map_server -> [nav2_map_server](/nav2_map_server/README.md)
 
 ![Move Base 1](./move_base_compare_1.png)
 
 In addition, move_base itself has been split into multiple components:
 
-  * nav2_simple_navigator (replaces move_base)
-  * nav2_dijkstra_planner (replaces global_planner)
-  * nav2_controller_dwb (replaces local_planner)
+  * [nav2_simple_navigator](/nav2_simple_navigator/README.md) (replaces move_base)
+  * [nav2_dijkstra_planner](/nav2_dijkstra_planner/README.md) (replaces global_planner)
+  * [nav2_controller_dwb](nav2_controller_dwb/README.md) (replaces local_planner)
 
 ![Move Base 2](./move_base_compare_2.png)
 
