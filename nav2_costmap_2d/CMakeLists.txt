@@ -32,7 +32,6 @@ find_package(nav2_dynamic_params)
 find_package(nav2_util)
 
 # TODO(bpwilcox): port remaining packages
-#find_package(tf2_sensor_msgs REQUIRED)
 #find_package(voxel_grid REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
