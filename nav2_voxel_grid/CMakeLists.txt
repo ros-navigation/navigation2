@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(voxel_grid)
+project(nav2_voxel_grid)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -7,30 +7,29 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(
-  include
-  ${rclcpp_INCLUDE_DIRS})
+  include)
 
 add_library(voxel_grid src/voxel_grid.cpp)
-target_link_libraries(voxel_grid ${rclcpp_LIBRARIES})
 
-ament_export_dependencies(
+set(dependencies
   rclcpp
 )
-ament_export_include_directories(include)
-ament_export_libraries(voxel_grid)
 
-ament_package()
+ament_target_dependencies(voxel_grid
+  ${dependencies}
+)
 
 install(TARGETS voxel_grid
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/
@@ -38,10 +37,15 @@ install(DIRECTORY include/
 )
 
 if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+
   find_package(ament_cmake_gtest REQUIRED)
-  ament_add_gtest(voxel_grid_tests test/voxel_grid_tests.cpp)
-  target_link_libraries(voxel_grid_tests
-    voxel_grid
-    ${rclcpp_LIBRARIES}
-  )
+  add_subdirectory(test)
 endif()
+
+ament_export_dependencies(rclcpp)
+ament_export_include_directories(include)
+ament_export_libraries(voxel_grid)
+
+ament_package()
