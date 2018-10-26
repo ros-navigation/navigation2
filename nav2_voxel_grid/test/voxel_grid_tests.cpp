@@ -37,7 +37,7 @@
 #include <voxel_grid/voxel_grid.h>
 #include <gtest/gtest.h>
 
-TEST(voxel_grid, basicMarkingAndClearing){
+TEST(voxel_grid, basicMarkingAndClearing) {
   int size_x = 50, size_y = 10, size_z = 16;
   voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
 
@@ -45,12 +45,12 @@ TEST(voxel_grid, basicMarkingAndClearing){
   int table_z = 12;
   int table_x_min = 5, table_x_max = 15;
   int table_y_min = 0, table_y_max = 3;
-  for(int x = table_x_min; x <= table_x_max; x++){
+  for (int x = table_x_min; x <= table_x_max; x++) {
     vg.markVoxelLine(x, table_y_min, table_z, x, table_y_max, table_z);
   }
 
-  for(int i = table_x_min; i <= table_x_max; ++i){
-    for(int j = table_y_min; j <= table_y_max; ++j){
+  for (int i = table_x_min; i <= table_x_max; ++i) {
+    for (int j = table_y_min; j <= table_y_max; ++j) {
       //check that each cell of the table is marked
       ASSERT_EQ(voxel_grid::MARKED, vg.getVoxel(i, j, table_z));
     }
@@ -59,13 +59,12 @@ TEST(voxel_grid, basicMarkingAndClearing){
   int mark_count = 0;
   unsigned int unknown_count = 0;
   //go through each cell in the voxel grid and make sure that only 44 are filled in
-  for(unsigned int i = 0; i < vg.sizeX(); ++i){
-    for(unsigned int j = 0; j < vg.sizeY(); ++j){
-      for(unsigned int k = 0; k < vg.sizeZ(); ++k){
-        if(vg.getVoxel(i, j, k) == voxel_grid::MARKED){
+  for (unsigned int i = 0; i < vg.sizeX(); ++i) {
+    for (unsigned int j = 0; j < vg.sizeY(); ++j) {
+      for (unsigned int k = 0; k < vg.sizeZ(); ++k) {
+        if (vg.getVoxel(i, j, k) == voxel_grid::MARKED) {
           mark_count++;
-        }
-        else if(vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN){
+        } else if (vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN) {
           unknown_count++;
         }
       }
@@ -83,16 +82,14 @@ TEST(voxel_grid, basicMarkingAndClearing){
   unknown_count = 0;
   int free_count = 0;
   //go through each cell in the voxel grid and make sure that only 33 are now filled in
-  for(unsigned int i = 0; i < vg.sizeX(); ++i){
-    for(unsigned int j = 0; j < vg.sizeY(); ++j){
-      for(unsigned int k = 0; k < vg.sizeZ(); ++k){
-        if(vg.getVoxel(i, j, k) == voxel_grid::MARKED){
+  for (unsigned int i = 0; i < vg.sizeX(); ++i) {
+    for (unsigned int j = 0; j < vg.sizeY(); ++j) {
+      for (unsigned int k = 0; k < vg.sizeZ(); ++k) {
+        if (vg.getVoxel(i, j, k) == voxel_grid::MARKED) {
           mark_count++;
-        }
-        else if(vg.getVoxel(i, j, k) == voxel_grid::FREE){
+        } else if (vg.getVoxel(i, j, k) == voxel_grid::FREE) {
           free_count++;
-        }
-        else if(vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN){
+        } else if (vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN) {
           unknown_count++;
         }
       }
@@ -109,7 +106,7 @@ TEST(voxel_grid, basicMarkingAndClearing){
   ASSERT_EQ(unknown_count, vg.sizeX() * vg.sizeY() * vg.sizeZ() - 44);
 
   //now let's put in a vertical column manually to test markVoxel
-  for(unsigned int i = 0; i < vg.sizeZ(); ++i){
+  for (unsigned int i = 0; i < vg.sizeZ(); ++i) {
     vg.markVoxel(0, 0, i);
     ASSERT_EQ(vg.getVoxel(0, 0, i), voxel_grid::MARKED);
   }
@@ -120,7 +117,7 @@ TEST(voxel_grid, basicMarkingAndClearing){
   //now, let's clear that line of voxels and make sure that they clear out OK
   vg.clearVoxelLine(0, 0, 0, 0, 0, vg.sizeZ() - 1);
 
-  for(unsigned int i = 0; i < vg.sizeZ(); ++i){
+  for (unsigned int i = 0; i < vg.sizeZ(); ++i) {
     ASSERT_EQ(vg.getVoxel(0, 0, i), voxel_grid::FREE);
   }
 
@@ -140,7 +137,8 @@ TEST(voxel_grid, basicMarkingAndClearing){
      */
 }
 
-int main(int argc, char** argv){
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
