@@ -47,8 +47,7 @@ void CostmapWorldModel::costmap_callback(
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
 {
-  RCLCPP_INFO(
-    this->get_logger(), "CostmapWorldModel::CostmapWorldModel:Incoming costmap request");
+  RCLCPP_INFO(this->get_logger(), "Received costmap request");
 
   nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   rclcpp::Clock clock;
@@ -61,6 +60,7 @@ void CostmapWorldModel::costmap_callback(
   response->map.metadata.update_time = now();
 
   tf2::Quaternion quaternion;
+  // TODO(bpwilcox): Grab correct orientation information
   quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
   response->map.metadata.origin.position.x = costmap->getOriginX();
   response->map.metadata.origin.position.y = costmap->getOriginY();
