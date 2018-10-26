@@ -56,39 +56,13 @@
 using amcl::LASER_MODEL_BEAM;
 using amcl::LASER_MODEL_LIKELIHOOD_FIELD;
 using amcl::LASER_MODEL_LIKELIHOOD_FIELD_PROB;
-using amcl::ODOM_MODEL_DIFF;
-using amcl::Odom;
+using nav2_util::DifferentialMotionModel;
+using nav2_util::OmniMotionModel;
 using amcl::Laser;
-using amcl::ODOM_MODEL_OMNI;
-using amcl::OdomData;
 using amcl::LaserData;
 
 using namespace std::chrono_literals;
 static const auto TRANSFORM_TIMEOUT = 1s;
-
-static double
-normalize(double z)
-{
-  return atan2(sin(z), cos(z));
-}
-
-static double
-angle_diff(double a, double b)
-{
-  double d1, d2;
-  a = normalize(a);
-  b = normalize(b);
-  d1 = a - b;
-  d2 = 2 * M_PI - fabs(d1);
-  if (d1 > 0) {
-    d2 *= -1.0;
-  }
-  if (fabs(d1) < fabs(d2)) {
-    return d1;
-  } else {
-    return d2;
-  }
-}
 
 static const char scan_topic_[] = "scan";
 
@@ -103,7 +77,7 @@ AmclNode::AmclNode()
   map_(NULL),
   pf_(NULL),
   resample_count_(0),
-  odom_(NULL),
+  motionModel_(NULL),
   laser_(NULL),
   initial_pose_hyp_(NULL),
   first_map_received_(false),
@@ -164,15 +138,17 @@ AmclNode::AmclNode()
     laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
   }
 
-  tmp_model_type = parameters_client->get_parameter("tmp_model_type", std::string("differential"));
-  if (tmp_model_type == "differential") {
-    odom_model_type_ = ODOM_MODEL_DIFF;
-  } else if (tmp_model_type == "omnidirectional") {
-    odom_model_type_ = ODOM_MODEL_OMNI;
+  robot_model_type_ = parameters_client->get_parameter("tmp_model_type", std::string("differential"));
+
+  if (robot_model_type_ == "differential"){
+    //motionModel_ = std::make_unique<nav2_util::DifferentialMotionModel>(alpha1_, alpha2_, alpha3_, alpha4_);
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
+  } else if (robot_model_type_ == "omnidirectional") {
+    motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
   } else {
     RCLCPP_WARN(get_logger(), "Unknown odom model type \"%s\"; defaulting to differential model",
-      tmp_model_type.c_str());
-    odom_model_type_ = ODOM_MODEL_DIFF;
+      robot_model_type_.c_str());
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
   }
 
   d_thresh_ = parameters_client->get_parameter("update_min_d", 0.25);
@@ -722,11 +698,14 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   pf_init_ = false;
 
   // Instantiate the sensor objects
-  // Odometry
-  delete odom_;
-  odom_ = new Odom();
-  assert(odom_);
-  odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
+  delete motionModel_;
+  if (robot_model_type_ == "differential"){
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
+  } else if (robot_model_type_ == "omnidirectional") {
+    motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
+  } else {
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
+  }
   // Laser
   delete laser_;
   laser_ = new Laser(max_beams_, map_);
@@ -770,8 +749,8 @@ AmclNode::freeMapDependentMemory()
     pf_ = NULL;
   }
 
-  delete odom_;
-  odom_ = NULL;
+  delete motionModel_;
+  motionModel_ = NULL;
 
   delete laser_;
   laser_ = NULL;
@@ -986,7 +965,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // delta = pf_vector_coord_sub(pose, pf_odom_pose_);
     delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
     delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-    delta.v[2] = angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+    delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
 
     // See if we should update the filter
     bool update = fabs(delta.v[0]) > d_thresh_ ||
@@ -1023,15 +1002,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // printf("pose\n");
     // pf_vector_fprintf(pose, stdout, "%.3f");
 
-    OdomData odata;
-    odata.pose = pose;
-    // HACK
-    // Modify the delta in the action data so the filter gets
-    // updated correctly
-    odata.delta = delta;
-
-    // Use the action data to update the filter
-   odom_->UpdateAction(pf_, reinterpret_cast<OdomData *>(&odata));
+   motionModel_->odometryUpdate(pf_, pose, delta);
 
     // Pose at last filter update
     // this->pf_odom_pose = pose;

@@ -36,7 +36,8 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/sensors/laser.h"
-#include "nav2_util/sensors/odom.h"
+#include "nav2_util/motion_model/motion_model.h"
+#include "nav2_util/angleutils.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -185,8 +186,9 @@ private:
   // Used to temporarily let amcl update samples even when no motion occurs
   bool m_force_update;
 
-  amcl::Odom * odom_;
+  nav2_util::MotionModel * motionModel_;
   amcl::Laser * laser_;
+  std::string robot_model_type_;
 
   std::chrono::duration<double> cloud_pub_interval;
 
@@ -250,7 +252,8 @@ private:
   double beam_skip_error_threshold_;
   double laser_likelihood_max_dist_;
 
-  amcl::odom_model_t odom_model_type_;
+  std::string odom_model_type_;
+  //amcl::odom_model_t odom_model_type_;
   amcl::laser_model_t laser_model_type_;
 
   double init_pose_[3];
