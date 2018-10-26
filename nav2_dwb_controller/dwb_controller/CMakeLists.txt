@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_dwb_controller)
+project(dwb_controller)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
