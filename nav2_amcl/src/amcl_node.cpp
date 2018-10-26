@@ -20,7 +20,6 @@
 
 /* Author: Brian Gerkey */
 
-#include <boost/foreach.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -479,7 +478,7 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(1.0));
   }
 
-  BOOST_FOREACH(rosbag::MessageInstance const msg, view)
+  for (rosbag::View::const_iterator view_it=view.begin(); view_it!=view.end(); ++view_it)
   {
     if (!ros::ok()) {
       break;
@@ -488,7 +487,7 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
     // Process any ros messages or callbacks at this point
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration());
 
-    tf2_msgs::TFMessage::ConstPtr tf_msg = msg.instantiate<tf2_msgs::TFMessage>();
+    tf2_msgs::TFMessage::ConstPtr tf_msg = view_it->instantiate<tf2_msgs::TFMessage>();
     if (tf_msg != NULL) {
       tf_pub.publish(msg);
       for (size_t ii = 0; ii < tf_msg->transforms.size(); ++ii) {
@@ -497,7 +496,7 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
       continue;
     }
 
-    sensor_msgs::LaserScan::ConstPtr base_scan = msg.instantiate<sensor_msgs::LaserScan>();
+    sensor_msgs::LaserScan::ConstPtr base_scan = view_it->instantiate<sensor_msgs::LaserScan>();
     if (base_scan != NULL) {
       laser_pub.publish(msg);
       // Disabling laser_scan_filter
@@ -508,7 +507,7 @@ void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
       continue;
     }
 
-    ROS_WARN_STREAM("Unsupported message type" << msg.getTopic());
+    ROS_WARN_STREAM("Unsupported message type" << view_it->getTopic());
   }
 
   bag.close();
