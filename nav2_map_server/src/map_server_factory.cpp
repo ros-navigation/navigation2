@@ -23,23 +23,18 @@ namespace nav2_map_server
 
 std::shared_ptr<MapServer> MapServerFactory::createMapServer(rclcpp::Node::SharedPtr & node)
 {
-  // Get the required parameters: first the YAML filename
-  auto yaml_filename_param = rclcpp::Parameter("map_type", std::string(""));
-  node->get_parameter("yaml_filename", yaml_filename_param);
-  std::string yaml_filename = yaml_filename_param.as_string();
+  // Set the default value of the parameters
+  node->set_parameter_if_not_set("map_type", std::string("occupancy"));
 
-  // Then the map type
-  auto map_type_param = rclcpp::Parameter("map_type", std::string("occupancy"));
-  node->get_parameter("map_type", map_type_param);
-  std::string map_type = map_type_param.as_string();
+  // Get any overridden values from the YAML file
+  std::string map_type = node->get_parameter("map_type").as_string();
 
   // Create the specified type of map server
   if (map_type == "occupancy") {
-    return std::make_shared<OccGridServer>(node, yaml_filename);
+    return std::make_shared<OccGridServer>(node);
   }
 
-  RCLCPP_ERROR(node->get_logger(), "Cannot load map %s of type %s",
-    yaml_filename.c_str(), map_type.c_str());
+  RCLCPP_ERROR(node->get_logger(), "Cannot load server for map type %s", map_type.c_str());
   throw std::runtime_error("Map type not supported");
 }
 
