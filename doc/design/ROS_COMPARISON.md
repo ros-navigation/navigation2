@@ -12,7 +12,7 @@ In addition, move_base itself has been split into multiple components:
 
   * [nav2_simple_navigator](/nav2_simple_navigator/README.md) (replaces move_base)
   * [nav2_dijkstra_planner](/nav2_dijkstra_planner/README.md) (replaces global_planner)
-  * [nav2_dwb_controller](nav2_dwb_controller/README.md) (replaces local_planner)
+  * [nav2_dwb_controller](/nav2_dwb_controller/README.md) (replaces local_planner)
 
 ![Move Base 2](./move_base_compare_2.png)
 
