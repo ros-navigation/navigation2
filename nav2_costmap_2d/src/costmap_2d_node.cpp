@@ -43,13 +43,19 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
+  // This node is created and spun in order to pass clock to buffer for Costmap2DROS node
+  auto time_node = rclcpp::Node::make_shared("time_node");
+
   std::string name = "costmap";
-  tf2_ros::Buffer buffer(tf2::durationFromSec(10));
+  tf2_ros::Buffer buffer(time_node->get_clock(), tf2::durationFromSec(10));
   tf2_ros::TransformListener tf(buffer);
 
-  auto node = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name, buffer);
+  auto costmap_node = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name, buffer);
 
-  rclcpp::spin(node);
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(time_node);
+  exec.add_node(costmap_node);
+  exec.spin();
   rclcpp::shutdown();
   return 0;
 }

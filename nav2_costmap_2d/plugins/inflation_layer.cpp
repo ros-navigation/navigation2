@@ -91,11 +91,8 @@ void InflationLayer::onInitialize()
   node_->set_parameter_if_not_set("cost_scaling_factor", 10.0);
   node_->set_parameter_if_not_set("inflate_unknown",false);
 
-  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
-  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&InflationLayer::reconfigureCB, this, std::placeholders::_1));
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
-  dynamic_param_client_->addParametersFromServer({"enabled_inflation_layer", "inflation_radius", "cost_scaling_factor", "inflate_unknown"});
-  
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_->set_callback(std::bind(&InflationLayer::reconfigureCB, this, std::placeholders::_1));  
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
   // TODO(bpwilcox): Initialize callback for dynamic parameters
 }

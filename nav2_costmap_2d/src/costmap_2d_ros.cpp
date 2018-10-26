@@ -180,12 +180,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   param_validator_->add_param("robot_radius",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
 
   // Add Parameter Client
-  parameter_sub_ = parameters_client_->on_parameter_event(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(parameters_client_); 
-  dynamic_param_client_->addParametersFromServer({
-    "transform_tolerance","update_frequency","publish_frequency",
-    "width","height","resolution","origin_x","origin_y","footprint_padding"});
-
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_); 
+  dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
 
   // Invoke callback
   // TODO(bpwilcox): Initialize callback for dynamic parameters
@@ -288,7 +284,12 @@ void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterE
   // changed.  Otherwise we might overwrite a footprint sent on a
   // topic by a dynamic_reconfigure call which was setting some other
   // variable.
-  
+
+  std::string footprint;
+  double robot_radius;
+  dynamic_param_client_->get_event_param(event,"footprint", footprint); 
+  dynamic_param_client_->get_event_param(event,"robot_radius", robot_radius); 
+
   if (!dynamic_param_client_->is_in_event(event, "footprint") ||
     !dynamic_param_client_->is_in_event(event, "robot_radius"))
     {
@@ -371,7 +372,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = now();
+      rclcpp::Time now = this->now();
 
       if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
       //if (last_publish_ + publish_cycle_ < now) {
