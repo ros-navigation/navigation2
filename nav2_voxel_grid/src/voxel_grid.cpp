@@ -63,7 +63,7 @@ VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size
 
 void VoxelGrid::resize(unsigned int size_x, unsigned int size_y, unsigned int size_z)
 {
-  //if we're not actually changing the size, we can just reset things
+  // if we're not actually changing the size, we can just reset things
   if (size_x == size_x_ && size_y == size_y_ && size_z == size_z_) {
     reset();
     return;
@@ -112,8 +112,9 @@ void VoxelGrid::markVoxelLine(
     z1 >= size_z_)
   {
     RCLCPP_DEBUG(logger,
-      "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
-      size_x_, size_y_, size_z_);
+      "Error, line endpoint out of bounds. "
+      "(%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)",
+      x0, y0, z0, x1, y1, z1, size_x_, size_y_, size_z_);
     return;
   }
 
@@ -129,8 +130,9 @@ void VoxelGrid::clearVoxelLine(
     z1 >= size_z_)
   {
     RCLCPP_DEBUG(logger,
-      "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
-      size_x_, size_y_, size_z_);
+      "Error, line endpoint out of bounds. "
+      "(%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)",
+      x0, y0, z0, x1, y1, z1, size_x_, size_y_, size_z_);
     return;
   }
 
@@ -153,8 +155,9 @@ void VoxelGrid::clearVoxelLineInMap(
     z1 >= size_z_)
   {
     RCLCPP_DEBUG(logger,
-      "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
-      size_x_, size_y_, size_z_);
+      "Error, line endpoint out of bounds. "
+      "(%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)",
+      x0, y0, z0, x1, y1, z1, size_x_, size_y_, size_z_);
     return;
   }
 
@@ -198,12 +201,12 @@ VoxelStatus VoxelGrid::getVoxelColumn(
   unsigned int unknown_bits = uint16_t(*col >> 16) ^ uint16_t(*col);
   unsigned int marked_bits = *col >> 16;
 
-  //check if the number of marked bits qualifies the col as marked
+  // check if the number of marked bits qualifies the col as marked
   if (!bitsBelowThreshold(marked_bits, marked_threshold)) {
     return MARKED;
   }
 
-  //check if the number of unkown bits qualifies the col as unknown
+  // check if the number of unkown bits qualifies the col as unknown
   if (!bitsBelowThreshold(unknown_bits, unknown_threshold)) {
     return UNKNOWN;
   }
@@ -249,4 +252,4 @@ void VoxelGrid::printColumnGrid()
     printf("|\n");
   }
 }
-}
+}  // namespace voxel_grid
