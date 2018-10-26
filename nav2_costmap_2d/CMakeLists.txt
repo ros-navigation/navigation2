@@ -53,8 +53,6 @@ add_definitions(${EIGEN3_DEFINITIONS})
 #	DEPENDENCIES std_msgs geometry_msgs map_msgs
 #)
 
-
-
 add_library(nav2_costmap_2d SHARED
   src/array_parser.cpp
   src/costmap_2d.cpp
@@ -91,8 +89,8 @@ ament_target_dependencies(nav2_costmap_2d
 add_library(layers SHARED
   plugins/inflation_layer.cpp
   plugins/static_layer.cpp
-
-	#	TODO(bpwilcox): port additional plugin layers
+  
+  #	TODO(bpwilcox): port additional plugin layers
   #plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
 
