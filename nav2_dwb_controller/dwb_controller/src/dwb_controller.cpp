@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_controller_dwb/dwb_controller.hpp"
+#include "dwb_controller/dwb_controller.hpp"
 #include <string>
 #include <chrono>
 #include <memory>
@@ -25,7 +25,7 @@ using nav2_tasks::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 
-namespace nav2_controller_dwb
+namespace nav2_dwb_controller
 {
 
 // TODO(cdelsey): provide the correct clock to tfBuffer_
@@ -116,4 +116,4 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   return true;
 }
 
-}  // namespace nav2_controller_dwb
+}  // namespace nav2_dwb_controller
