@@ -35,9 +35,7 @@
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
 #include <nav2_costmap_2d/observation_buffer.h>
-
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2/convert.h>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 using namespace std;
@@ -67,11 +65,12 @@ ObservationBuffer::~ObservationBuffer()
 
 bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
 {
-  rclcpp::Time transform_time = nh_.now();
+  rclcpp::Time transform_time = nh_->now();
   std::string tf_error;
 
+  // TODO transform_time-> tf2::TimePoint
   geometry_msgs::msg::TransformStamped transformStamped;
-  if (!tf2_buffer_.canTransform(new_global_frame, global_frame_, transform_time,
+  if (!tf2_buffer_.canTransform(new_global_frame, global_frame_, tf2_ros::fromMsg(transform_time),
         tf2::durationFromSec(tf_tolerance_), &tf_error))
   {
     RCLCPP_ERROR(rclcpp::get_logger(
@@ -190,7 +189,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   }
 
   // if the update was successful, we want to update the last updated time
-  last_updated_ = nh_.now();
+  last_updated_ = nh_->now();
 
   // we'll also remove any stale observations from the list
   purgeStaleObservations();
@@ -237,19 +236,19 @@ bool ObservationBuffer::isCurrent() const
     return true;
   }
 
-  bool current = (nh_.now() - last_updated_).toSec() <= expected_update_rate_.toSec();
+  bool current = (nh_->now() - last_updated_) <= expected_update_rate_;
   if (!current) {
     RCLCPP_WARN(rclcpp::get_logger(
           "nav2_costmap_2d"),
         "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.",
         topic_name_.c_str(),
-        (nh_.now() - last_updated_).toSec(), expected_update_rate_.toSec());
+        (nh_->now() - last_updated_), expected_update_rate_);
   }
   return current;
 }
 
 void ObservationBuffer::resetLastUpdated()
 {
-  last_updated_ = nh_.now();
+  last_updated_ = nh_->now();
 }
 }  // namespace nav2_costmap_2d

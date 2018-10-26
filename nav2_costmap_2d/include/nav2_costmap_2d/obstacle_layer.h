@@ -38,23 +38,24 @@
 #ifndef NAV2_COSTMAP_2D__OBSTACLE_LAYER_H_
 #define NAV2_COSTMAP_2D__OBSTACLE_LAYER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/costmap_layer.h>
 #include <nav2_costmap_2d/layered_costmap.h>
 #include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/footprint.h>
 
-#include <nav_msgs/OccupancyGrid.h>
-
-#include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
 #include <tf2_ros/message_filter.h>
 #include <message_filters/subscriber.h>
-#include <dynamic_reconfigure/server.h>
-#include <nav2_costmap_2d/ObstaclePluginConfig.h>
-#include <nav2_costmap_2d/footprint.h>
+
+//#include <nav2_costmap_2d/ObstaclePluginConfig.h>
+//#include <dynamic_reconfigure/server.h>
+
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud_conversion.h>
 
 namespace nav2_costmap_2d
 {
@@ -85,7 +86,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanCallback(const sensor_msgs::LaserScanConstPtr & message,
+  void laserScanCallback(const sensor_msgs::msg::LaserScanConstPtr & message,
       const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
@@ -93,7 +94,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanValidInfCallback(const sensor_msgs::LaserScanConstPtr & message,
+  void laserScanValidInfCallback(const sensor_msgs::msg::LaserScanConstPtr & message,
       const std::shared_ptr<ObservationBuffer> & buffer);
 
   /**
@@ -101,7 +102,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void pointCloudCallback(const sensor_msgs::PointCloudConstPtr & message,
+  void pointCloudCallback(const sensor_msgs::msg::PointCloudConstPtr & message,
       const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
@@ -109,7 +110,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void pointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr & message,
+  void pointCloud2Callback(const sensor_msgs::msg::PointCloud2ConstPtr & message,
       const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
@@ -173,12 +174,13 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_clearing_observations_, static_marking_observations_;
 
   bool rolling_window_;
-  dynamic_reconfigure::Server<nav2_costmap_2d::ObstaclePluginConfig> * dsrv_;
 
   int combination_method_;
 
-private:
-  void reconfigureCB(nav2_costmap_2d::ObstaclePluginConfig & config, uint32_t level);
+  // TODO(SteveMacenski): Replace dynamic_reconfigure functionality
+  // dynamic_reconfigure::Server<nav2_costmap_2d::ObstaclePluginConfig> * dsrv_;
+// private:
+  // void reconfigureCB(nav2_costmap_2d::ObstaclePluginConfig & config, uint32_t level);
 };
 
 }  // namespace nav2_costmap_2d
