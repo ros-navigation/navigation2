@@ -13,16 +13,16 @@
       gazebo <dash><dash>verbose <path_to>/gazebo_ros_simplebot.world
 
   Try sending commands:
-    ros2 topic pub /demo/cmd_demo geometry_msgs/Twist '{linear: {x: 1.0}}' -1
-    ros2 topic pub /demo/cmd_demo geometry_msgs/Twist '{angular: {z: 0.1}}' -1
+    ros2 topic pub /nav2/cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}}' -1
+    ros2 topic pub /nav2/cmd_vel geometry_msgs/Twist '{angular: {z: 0.1}}' -1
 
   Try listening to odometry:
-    ros2 topic echo /demo/odom_demo
+    ros2 topic echo /nav2/odom
 
   Try listening to TF:
-    ros2 run tf2_ros tf2_echo odom chassis
-    ros2 run tf2_ros tf2_echo chassis right_wheel
-    ros2 run tf2_ros tf2_echo chassis left_wheel
+    ros2 run tf2_ros tf2_echo odom base_link
+    ros2 run tf2_ros tf2_echo base_link right_wheel
+    ros2 run tf2_ros tf2_echo base_link left_wheel
 
   Open RVIZ:
       ros2 run rviz2 rviz2
@@ -62,7 +62,7 @@
     <model name='simplebot'>
       <pose>0 0 0.325 0 -0 0</pose>
 
-      <link name='chassis'>
+      <link name='base_link'>
         <pose>-0.151427 -0 0.175 0 -0 0</pose>
         <inertial>
           <mass>1.14395</mass>
@@ -326,17 +326,17 @@
       </link>
 
       <joint name='ray_link_joint' type='fixed'>
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>ray_link</child>
       </joint>
 
       <joint name='imu_link_joint' type='fixed'>
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>imu_link</child>
       </joint>
 
       <joint name='left_wheel_joint' type='revolute'>
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>left_wheel</child>
         <axis>
           <xyz>0 0 1</xyz>
@@ -348,7 +348,7 @@
       </joint>
 
       <joint name='right_wheel_joint' type='revolute'>
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>right_wheel</child>
         <axis>
           <xyz>0 0 1</xyz>
@@ -360,16 +360,16 @@
       </joint>
 
       <joint name='caster_wheel' type='ball'>
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>caster</child>
       </joint>
 
       <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
 
         <ros>
-          <namespace>/demo</namespace>
-          <argument>cmd_vel:=cmd_demo</argument>
-          <argument>odom:=odom_demo</argument>
+          <namespace>/nav2</namespace>
+          <argument>cmd_vel:=cmd_vel</argument>
+          <argument>odom:=odom</argument>
         </ros>
 
         <!-- wheels -->
@@ -389,8 +389,8 @@
         <publish_odom_tf>true</publish_odom_tf>
         <publish_wheel_tf>true</publish_wheel_tf>
 
-        <odometry_frame>odom_demo</odometry_frame>
-        <robot_base_frame>chassis</robot_base_frame>
+        <odometry_frame>odom</odometry_frame>
+        <robot_base_frame>base_link</robot_base_frame>
 
       </plugin>
 
