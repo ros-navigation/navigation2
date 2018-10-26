@@ -10,15 +10,15 @@
     </description>
     <author>Eitan Marder-Eppstein, Eric Berger</author>
     <author>contradict@gmail.com</author>
-    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-    <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
-    <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
+    <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
     <license>BSD</license>
     <url>http://wiki.ros.org/voxel_grid</url>
 
-    <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>rclcpp</depend>
+    <test_depend>ament_cmake_gtest</test_depend>
 
-    <depend>roscpp</depend>
-
-    <test_depend>rosunit</test_depend>
+    <export>
+      <build_type>ament_cmake</build_type>
+    </export>
 </package>

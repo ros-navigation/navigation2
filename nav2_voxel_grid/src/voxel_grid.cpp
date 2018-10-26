@@ -36,17 +36,17 @@
 *********************************************************************/
 #include <voxel_grid/voxel_grid.h>
 #include <sys/time.h>
-#include <ros/console.h>
 
 namespace voxel_grid {
-  VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z)
+  VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z) :
+    logger(rclcpp::get_logger("voxel_grid"))
   {
-    size_x_ = size_x; 
-    size_y_ = size_y; 
-    size_z_ = size_z; 
+    size_x_ = size_x;
+    size_y_ = size_y;
+    size_z_ = size_z;
 
     if(size_z_ > 16){
-      ROS_INFO("Error, this implementation can only support up to 16 z values (%d)", size_z_); 
+      RCLCPP_INFO(logger, "Error, this implementation can only support up to 16 z values (%d)", size_z_);
       size_z_ = 16;
     }
 
@@ -68,12 +68,12 @@ namespace voxel_grid {
     }
 
     delete[] data_;
-    size_x_ = size_x; 
-    size_y_ = size_y; 
-    size_z_ = size_z; 
+    size_x_ = size_x;
+    size_y_ = size_y;
+    size_z_ = size_z;
 
     if(size_z_ > 16){
-      ROS_INFO("Error, this implementation can only support up to 16 z values (%d)", size_z); 
+      RCLCPP_INFO(logger, "Error, this implementation can only support up to 16 z values (%d)", size_z);
       size_z_ = 16;
     }
 
@@ -102,7 +102,7 @@ namespace voxel_grid {
 
   void VoxelGrid::markVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length){
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_DEBUG("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      RCLCPP_DEBUG(logger, "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
           size_x_, size_y_, size_z_);
       return;
     }
@@ -113,7 +113,7 @@ namespace voxel_grid {
 
   void VoxelGrid::clearVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length){
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_DEBUG("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      RCLCPP_DEBUG(logger, "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
           size_x_, size_y_, size_z_);
       return;
     }
@@ -122,7 +122,7 @@ namespace voxel_grid {
     raytraceLine(cv, x0, y0, z0, x1, y1, z1, max_length);
   }
 
-  void VoxelGrid::clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d, 
+  void VoxelGrid::clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d,
       unsigned int unknown_threshold, unsigned int mark_threshold, unsigned char free_cost, unsigned char unknown_cost, unsigned int max_length){
     costmap = map_2d;
     if(map_2d == NULL){
@@ -131,7 +131,7 @@ namespace voxel_grid {
     }
 
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_DEBUG("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      RCLCPP_DEBUG(logger, "Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1,
           size_x_, size_y_, size_z_);
       return;
     }
@@ -143,11 +143,11 @@ namespace voxel_grid {
   VoxelStatus VoxelGrid::getVoxel(unsigned int x, unsigned int y, unsigned int z)
   {
     if(x >= size_x_ || y >= size_y_ || z >= size_z_){
-      ROS_DEBUG("Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
       return UNKNOWN;
     }
     uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
-    uint32_t result = data_[y * size_x_ + x] & full_mask; 
+    uint32_t result = data_[y * size_x_ + x] & full_mask;
     unsigned int bits = numBits(result);
 
     // known marked: 11 = 2 bits, unknown: 01 = 1 bit, known free: 00 = 0 bits
@@ -164,10 +164,10 @@ namespace voxel_grid {
   VoxelStatus VoxelGrid::getVoxelColumn(unsigned int x, unsigned int y, unsigned int unknown_threshold, unsigned int marked_threshold)
   {
     if(x >= size_x_ || y >= size_y_){
-      ROS_DEBUG("Error, voxel out of bounds. (%d, %d)\n", x, y);
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds. (%d, %d)\n", x, y);
       return UNKNOWN;
     }
-    
+
     uint32_t* col = &data_[y * size_x_ + x];
 
     unsigned int unknown_bits = uint16_t(*col>>16) ^ uint16_t(*col);
@@ -205,7 +205,7 @@ namespace voxel_grid {
           printf((getVoxel(x, y, z)) == voxel_grid::MARKED? "#" : " ");
         }
         printf("|\n");
-      } 
+      }
     }
   }
 
@@ -216,6 +216,6 @@ namespace voxel_grid {
         printf((getVoxelColumn(x, y, 16, 0) == voxel_grid::MARKED)? "#" : " ");
       }
       printf("|\n");
-    } 
+    }
   }
-};
+}

@@ -44,8 +44,7 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
-#include <ros/console.h>
-#include <ros/assert.h>
+#include "rclcpp/rclcpp.hpp"
 
 /**
  * @class VoxelGrid
@@ -90,7 +89,7 @@ public:
   {
     if (x >= size_x_ || y >= size_y_ || z >= size_z_)
     {
-      ROS_DEBUG("Error, voxel out of bounds.\n");
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return;
     }
     uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
@@ -101,7 +100,7 @@ public:
   {
     if (x >= size_x_ || y >= size_y_ || z >= size_z_)
     {
-      ROS_DEBUG("Error, voxel out of bounds.\n");
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return false;
     }
 
@@ -120,7 +119,7 @@ public:
   {
     if (x >= size_x_ || y >= size_y_ || z >= size_z_)
     {
-      ROS_DEBUG("Error, voxel out of bounds.\n");
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return;
     }
     uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
@@ -129,7 +128,7 @@ public:
 
   inline void clearVoxelColumn(unsigned int index)
   {
-    ROS_ASSERT(index < size_x_ * size_y_);
+    assert(index < size_x_ * size_y_);
     data_[index] = 0;
   }
 
@@ -137,7 +136,7 @@ public:
   {
     if(x >= size_x_ || y >= size_y_ || z >= size_z_)
     {
-      ROS_DEBUG("Error, voxel out of bounds.\n");
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return;
     }
     int index = y * size_x_ + x;
@@ -180,13 +179,13 @@ public:
     return bit_count;
   }
 
-  static VoxelStatus getVoxel(
+  VoxelStatus getVoxel(
     unsigned int x, unsigned int y, unsigned int z,
     unsigned int size_x, unsigned int size_y, unsigned int size_z, const uint32_t* data)
   {
     if (x >= size_x || y >= size_y || z >= size_z)
     {
-      ROS_DEBUG("Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
+      RCLCPP_DEBUG(logger, "Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
       return UNKNOWN;
     }
     uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
@@ -320,6 +319,7 @@ private:
   unsigned int size_x_, size_y_, size_z_;
   uint32_t *data_;
   unsigned char *costmap;
+  rclcpp::Logger logger;
 
   //Aren't functors so much fun... used to recreate the Bresenham macro Eric wrote in the original version, but in "proper" c++
   class MarkVoxel
