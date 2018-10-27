@@ -14,21 +14,12 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_server_factory.hpp"
+#include "nav2_map_server/map_server.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-
-  // Create the node that will be used by the map server. Creating the node first
-  // allows the map_server to use the Node::SharedPtr in its constructor, which
-  // wouldn't be possible if the MapServer was directly a Node
-  auto map_server_node = std::make_shared<rclcpp::Node>("map_server");
-
-  // Create the map server that uses this node
-  auto map_server = nav2_map_server::MapServerFactory::createMapServer(map_server_node);
-
-  rclcpp::spin(map_server_node);
+  rclcpp::spin(std::make_shared<nav2_map_server::MapServer>("map_server"));
   rclcpp::shutdown();
 
   return 0;

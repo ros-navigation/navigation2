@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
-#define NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_LOADER_HPP_
+#define NAV2_MAP_SERVER__MAP_LOADER_HPP_
 
 #include <string>
-#include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_server.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_map_server
 {
 
-class MapServerFactory
+class MapLoader
 {
 public:
-  static std::shared_ptr<MapServer> createMapServer(rclcpp::Node::SharedPtr & node);
+  virtual ~MapLoader() {}
+
+  virtual void loadMapFromFile(const std::string & map_name) = 0;
+  virtual nav_msgs::msg::OccupancyGrid getOccupancyGrid() = 0;
 };
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAP_SERVER_FACTORY_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_LOADER_HPP_

@@ -34,8 +34,8 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
-  src/occ_grid_server.cpp
-  src/map_server_factory.cpp
+  src/occ_grid_loader.cpp
+  src/map_server.cpp
 )
 
 set(dependencies

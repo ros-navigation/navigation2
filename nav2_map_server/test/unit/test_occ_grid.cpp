@@ -34,7 +34,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "nav2_map_server/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_loader.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -42,16 +42,16 @@
 using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
-class MapServerTest : public ::testing::Test
+class MapLoaderTest : public ::testing::Test
 {
 public:
-  MapServerTest()
+  MapLoaderTest()
   {
-    map_server_ = new nav2_map_server::OccGridServer;
+    map_loader_ = new nav2_map_server::OccGridLoader;
   }
 
 protected:
-  nav2_map_server::OccGridServer * map_server_;
+  nav2_map_server::OccGridLoader * map_loader_;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -60,12 +60,12 @@ protected:
  * This test can fail on OS X, due to an apparent limitation of the
  * underlying SDL_Image library. */
 
-TEST_F(MapServerTest, loadValidPNG)
+TEST_F(MapLoaderTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-  ASSERT_NO_THROW(map_server_->loadMapFromFile(test_png.string()));
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string()));
 
-  nav_msgs::msg::OccupancyGrid map_msg = map_server_->getOccupancyGrid();
+  nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
   EXPECT_EQ(map_msg.info.width, g_valid_image_width);
@@ -78,12 +78,12 @@ TEST_F(MapServerTest, loadValidPNG)
 /* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
  * the loaded image matches the known dimensions and content of the file. */
 
-TEST_F(MapServerTest, loadValidBMP)
+TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
-  ASSERT_NO_THROW(map_server_->loadMapFromFile(test_bmp.string()));
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
 
-  nav_msgs::msg::OccupancyGrid map_msg = map_server_->getOccupancyGrid();
+  nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
   EXPECT_EQ(map_msg.info.width, g_valid_image_width);
@@ -95,8 +95,8 @@ TEST_F(MapServerTest, loadValidBMP)
 
 /* Try to load an invalid file.  Succeeds if a std::runtime exception is thrown */
 
-TEST_F(MapServerTest, loadInvalidFile)
+TEST_F(MapLoaderTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
-  ASSERT_THROW(map_server_->loadMapFromFile(test_invalid.string()), std::runtime_error);
+  ASSERT_THROW(map_loader_->loadMapFromFile(test_invalid.string()), std::runtime_error);
 }

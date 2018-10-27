@@ -32,7 +32,7 @@
  *
  * Author: Brian Gerkey
  */
-#include "nav2_map_server/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_loader.hpp"
 
 #include <string>
 #include <stdexcept>
@@ -46,63 +46,46 @@ using namespace std::chrono_literals;
 namespace nav2_map_server
 {
 
-const std::string OccGridServer::frame_id_ = "map";
+const std::string OccGridLoader::frame_id_ = "map";
 
-OccGridServer::OccGridServer(rclcpp::Node::SharedPtr node)
+OccGridLoader::OccGridLoader(rclcpp::Node * node)
 : node_(node)
 {
   loadParameters();
   loadMapFromFile(map_name_);
-  connectROS();
 }
 
-void OccGridServer::loadParameters()
+void OccGridLoader::loadParameters()
 {
-#if 0
-template<typename ParameterT>
-  void
-  get_parameter_or_set(
-    const std::string & name,
-    ParameterT & value,
-    const ParameterT & alternative_value);
-#endif
+  std::string mode_str;
 
-  // Set this node's default parameter values
-  node_->set_parameter_if_not_set("resolution", 0.050000);
-  node_->set_parameter_if_not_set("negate", 0);
-  node_->set_parameter_if_not_set("occupied_thresh", 0.65);
-  node_->set_parameter_if_not_set("free_thresh", 0.196);
-  node_->set_parameter_if_not_set("mode", "trinary");
-  node_->set_parameter_if_not_set("image", "test_map.pgm");
-  node_->set_parameter_if_not_set("origin", std::vector<double>({-15.400000, -12.200000, 0.000000}) );
-
-  // Get any overrides from the YAML file
-  res_ = node_->get_parameter("resolution").as_double();
-  negate_ = node_->get_parameter("negate").as_int();
-  occ_th_ = node_->get_parameter("occupied_thresh").as_double();
-  free_th_ = node_->get_parameter("free_thresh").as_double();
-  std::string modeS = node_->get_parameter("mode").as_string();
-  map_name_ = node_->get_parameter("image").as_string();
-  origin_ = node_->get_parameter("origin").as_double_array();
+  // Get this node's default parameter values, using defaults if not supplied in the YAML file
+  node_->get_parameter_or_set("resolution", res_, 0.050000);
+  node_->get_parameter_or_set("negate", negate_, 0);
+  node_->get_parameter_or_set("occupied_thresh", occ_th_, 0.65);
+  node_->get_parameter_or_set("free_thresh", free_th_, 0.196);
+  node_->get_parameter_or_set("mode", mode_str, std::string("trinary"));
+  node_->get_parameter_or_set("image", map_name_, std::string("test_map.pgm"));
+  node_->get_parameter_or_set("origin", origin_, std::vector<double>({-15.400000, -12.200000, 0.000000}));
 
   // Convert the string version of the mode name to one of the enumeration values
-  if (modeS == "trinary") {
+  if (mode_str == "trinary") {
     mode_ = TRINARY;
-  } else if (modeS == "scale") {
+  } else if (mode_str == "scale") {
     mode_ = SCALE;
-  } else if (modeS == "raw") {
+  } else if (mode_str == "raw") {
     mode_ = RAW;
   } else {
     RCLCPP_WARN(node_->get_logger(),
       "Mode parameter not recognized: '%s', using default value (trinary)",
-      modeS.c_str());
+      mode_str.c_str());
     mode_ = TRINARY;
   }
 }
 
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-void OccGridServer::loadMapFromFile(const std::string & map_name_)
+void OccGridLoader::loadMapFromFile(const std::string & map_name_)
 {
   unsigned char * p;
   unsigned char value;
@@ -214,44 +197,10 @@ void OccGridServer::loadMapFromFile(const std::string & map_name_)
     map_msg_.info.resolution);
 }
 
-void OccGridServer::connectROS()
-{
-  // Create a service callback handle
-  auto handle_occ_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
-    std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(node_->get_logger(), "OccGridServer: handling map request");
-      response->map = map_msg_;
-    };
-
-  // Create a service that provides the occupancy grid
-  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
-
-  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    "occ_grid", custom_qos_profile);
-
-  // Publish the map using the latched topic
-  occ_pub_->publish(map_msg_);
-
-  // TODO(mjeronimo): Remove the following once we've got everything on the ROS2 side
-  //
-  // Periodically publish the map so that the ros1 bridge will be sure the proxy the
-  // message to rviz on the ROS1 side
-  auto timer_callback = [this]() -> void {occ_pub_->publish(map_msg_);};
-  timer_ = node_->create_wall_timer(2s, timer_callback);
-}
-
 nav_msgs::msg::OccupancyGrid
-OccGridServer::getOccupancyGrid()
+OccGridLoader::getOccupancyGrid()
 {
   return map_msg_;
 }
-
 
 }  // namespace nav2_map_server
