@@ -40,8 +40,7 @@ int main(int argc, char ** argv)
       RCLCPP_INFO(node->get_logger(), "Event Callback!");
 
       if (dynamic_params_client->is_in_event(event, "foo")) {
-        RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"),
-          "'foo' is in this event!");
+        RCLCPP_INFO(node->get_logger(), "'foo' is in this event!");
       }
 
       double foo;
@@ -50,12 +49,12 @@ int main(int argc, char ** argv)
 
       int bar;
       dynamic_params_client->get_event_param_or(event, "bar", bar, 4);
-      RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "bar: %d", bar);
+      RCLCPP_INFO(node->get_logger(), "bar: %d", bar);
 
       // Parameter not set on server
       double foobar;
       dynamic_params_client->get_event_param_or(event, "foobar", foobar, 5.5);
-      RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"), "foobar: %f", foobar);
+      RCLCPP_INFO(node->get_logger(), "foobar: %f", foobar);
     };
 
   dynamic_params_client->set_callback(callback);
