@@ -52,8 +52,6 @@ public:
     std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
   {
     user_callback_ = callback;
-
-    
   }
 
   void add_parameters(const std::vector<std::string> & param_names)
@@ -107,8 +105,7 @@ public:
       if (get_param_from_map<T>(param_name, new_value)) {
         return true;
       } else {
-        RCLCPP_WARN(rclcpp::get_logger("dynamic_params_client"),
-          "Parameter '%s' not set on node", param_name.c_str());
+        RCLCPP_WARN(node_->get_logger(), "Parameter '%s' not set on node", param_name.c_str());
         return false;
       }
     }
@@ -166,7 +163,6 @@ private:
     }    
   }
 
-private:
   bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   {
     // check that event variables exist in dynamic param map
