@@ -32,6 +32,7 @@ int main(int argc, char ** argv)
 
   // Add Dynamic Reconfigure Client
   dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
+  dynamic_params_client->add_parameters({"foo", "bar", "foobar"});
 
   std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [node](
     const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
