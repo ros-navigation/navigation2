@@ -33,12 +33,14 @@ public:
     : node_(node)
   {
     add_parameter_clients(remote_names);
-    init_parameters();
+    parameters_client_for_callback_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
+    event_subscription_ = parameters_client_for_callback_->on_parameter_event(
+      std::bind(&DynamicParamsClient::event_callback, this, std::placeholders::_1));
   }
 
   ~DynamicParamsClient() {}
 
-  void add_parameter_clients(std::vector<std::string> remote_names = {""})
+  void add_parameter_clients(std::vector<std::string> remote_names)
   {
     for (auto & name : remote_names) {
       auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, name);
@@ -49,13 +51,12 @@ public:
   void set_callback(
     std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
   {
-    for (auto & client : parameters_clients_) {
-      auto sub = client->on_parameter_event(callback);
-      event_subscriptions_.push_back(sub);
-    }
+    user_callback_ = callback;
+
+    
   }
 
-  void init_parameters(const std::vector<std::string> & param_names)
+  void add_parameters(const std::vector<std::string> & param_names)
   {
     for (const auto & client : parameters_clients_) {
       auto params = client->get_parameters(param_names);
@@ -67,14 +68,14 @@ public:
     }
   }
 
-  void init_parameters()
+  void add_parameters()
   {
     std::vector<std::string> param_names;
     for (const auto & client : parameters_clients_) {
       auto param_list = client->list_parameters({}, 1);
       param_names.insert(param_names.end(), param_list.names.begin(), param_list.names.end());
     }
-    init_parameters(param_names);
+    add_parameters(param_names);
   }
 
   std::vector<std::string> get_param_names()
@@ -158,35 +159,48 @@ private:
     }
   }
 
-  void add_params(std::string remote_node, std::vector<std::string> param_names){
-    
-  }
-
-  void set_event_callback(std::string remote_node) {
-
-    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [this, remote_node](
-      const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
-      {
-        if (check_event(event, remote_node)) {
-          user_callback(event, remote_node);
-        }
-      };
+  void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+  {
+    if (is_event_in_map(event)) {
+      user_callback_(event);
+    }    
   }
 
 private:
-  bool check_event(const rcl_interfaces::msg::ParameterEvent::SharedPtr event, std::string remote_node){
-  // grab parameter name
-  // check parameter name against list of dynamic parameters
+  bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+  {
+    // check that event variables exist in dynamic param map
+    // True if at least one parameter exists in parameter map
+    for (auto & new_parameter : event->new_parameters) {            
+      if (dynamic_param_map_.count(new_parameter.name))
+      {    
+        return true;
+      }
+    }
+
+    for (auto & changed_parameter : event->changed_parameters) {  
+      if (dynamic_param_map_.count(changed_parameter.name))
+      {       
+        return true;
+      }
+    }
+
+    for (auto & deleted_parameter : event->deleted_parameters) {
+      if (dynamic_param_map_.count(deleted_parameter.name))
+      {        
+        return true;
+      }
+    }
+    return false;
   }
 
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
-  std::vector<std::string> dynamic_param_names_;
   std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
+  rclcpp::SyncParametersClient::SharedPtr parameters_client_for_callback_;
   rclcpp::Node::SharedPtr node_;
-  std::vector<rclcpp::Subscription
-    <rcl_interfaces::msg::ParameterEvent>::SharedPtr> event_subscriptions_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr event_subscription_;
 
-  std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr, std::string node_name)> user_callback;
+  std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> user_callback_;
 };
 
 }  // namespace nav2_dynamic_params
