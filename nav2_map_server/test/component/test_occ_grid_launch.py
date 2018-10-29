@@ -40,6 +40,7 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
+    os.chdir(os.getenv('TEST_LAUNCH_DIR'))
     return lts.run(ls)
 
 

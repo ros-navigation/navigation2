@@ -27,60 +27,23 @@ namespace nav2_map_server
 MapServer::MapServer(const std::string & name)
 : Node(name)
 {
-  map_loader_ = createMapLoader();
-  // TODO: map_loader_->loadMapFromFile(filename); // a filename param
-  map_msg_ = map_loader_->getOccupancyGrid();
+  get_parameter_or_set("map_name", map_name_, std::string("test_map.pgm"));
+  get_parameter_or_set("map_type", map_type_, std::string("occupancy"));
 
-  initServices();
-}
-
-std::unique_ptr<MapLoader>
-MapServer::createMapLoader()
-{
-  // Get the parameters
-  std::string map_type;
-  get_parameter_or_set("map_type", map_type, std::string("occupancy"));
-
-  // Create the specified type of map loader
-  if (map_type == "occupancy") {
-    return std::make_unique<OccGridLoader>(this);
+  if (map_type_ == "occupancy") {
+    map_loader_ = std::make_unique<OccGridLoader>(this);
+  } else {
+    RCLCPP_ERROR(get_logger(), "Cannot create map loader for map type %s", map_type_.c_str());
+    throw std::runtime_error("Map type not supported");
   }
 
-  RCLCPP_ERROR(get_logger(), "Cannot create map loader for map type %s", map_type.c_str());
-  throw std::runtime_error("Map type not supported");
+  map_loader_->loadMapFromFile(map_name_);
+  map_loader_->initServices();
 }
 
-void MapServer::initServices()
+MapServer::MapServer()
+: MapServer("map_server")
 {
-  // Create a service callback handle
-  auto handle_occ_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
-    std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(get_logger(), "Handling map request");
-      response->map = map_msg_;
-    };
-
-  // Create a service that provides the occupancy grid
-  occ_service_ = create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
-
-  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-  occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
-    "occ_grid", custom_qos_profile);
-
-  // Publish the map using the latched topic
-  occ_pub_->publish(map_msg_);
-
-  // TODO(mjeronimo): Remove the following once we've got everything on the ROS2 side
-  //
-  // Periodically publish the map so that the ros1 bridge will be sure the proxy the
-  // message to rviz on the ROS1 side
-  auto timer_callback = [this]() -> void {occ_pub_->publish(map_msg_);};
-  timer_ = create_wall_timer(2s, timer_callback);
 }
 
 }  // namespace nav2_map_server
