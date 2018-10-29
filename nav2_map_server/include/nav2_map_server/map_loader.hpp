@@ -16,7 +16,6 @@
 #define NAV2_MAP_SERVER__MAP_LOADER_HPP_
 
 #include <string>
-#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_map_server
 {
@@ -26,8 +25,8 @@ class MapLoader
 public:
   virtual ~MapLoader() {}
 
-  virtual void loadMapFromFile(const std::string & map_name) = 0;
-  virtual nav_msgs::msg::OccupancyGrid getOccupancyGrid() = 0;
+  virtual void loadMapFromFile(const std::string & filename) = 0;
+  virtual void initServices() = 0;
 };
 
 }  // namespace nav2_map_server

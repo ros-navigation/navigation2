@@ -19,10 +19,6 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_loader.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
-#include "nav_msgs/msg/map_meta_data.hpp"
-#include "nav_msgs/srv/get_map.hpp"
-#include "nav2_map_server/map_loader.hpp"
 
 namespace nav2_map_server
 {
@@ -31,26 +27,15 @@ class MapServer : public rclcpp::Node
 {
 public:
   explicit MapServer(const std::string & name);
-  MapServer() = delete;
+  MapServer();
 
 private:
-  std::unique_ptr<MapLoader> createMapLoader();
-  void initServices();
-
+  // Only one map loader so far
   std::shared_ptr<MapLoader> map_loader_;
 
-  // A service to provide the ouccpancy grid (GetMap) and the message to return
-  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
-
-  // A topic on which the occupancy grid will be published
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
-
-  // For now, publish the map periodically so that it is sure to be received on the
-  // ROS1 side across the ROS1 bridge
-  rclcpp::TimerBase::SharedPtr timer_;
-
-  // The message to publish on the occupancy grid topic
-  nav_msgs::msg::OccupancyGrid map_msg_;
+  // The name and type of the (one and only) map to load
+  std::string map_name_;
+  std::string map_type_;
 };
 
 }  // namespace nav2_map_server

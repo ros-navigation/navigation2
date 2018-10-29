@@ -19,7 +19,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_map_server::MapServer>("map_server"));
+  rclcpp::spin(std::make_shared<nav2_map_server::MapServer>());
   rclcpp::shutdown();
 
   return 0;

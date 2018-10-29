@@ -15,8 +15,8 @@
 #ifndef NAV2_MAP_SERVER__OCC_GRID_LOADER_HPP_
 #define NAV2_MAP_SERVER__OCC_GRID_LOADER_HPP_
 
-//#include <memory>
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -27,35 +27,42 @@
 namespace nav2_map_server
 {
 
-class OccGridLoader: public MapLoader
+class OccGridLoader : public MapLoader
 {
 public:
   explicit OccGridLoader(rclcpp::Node * node);
-  OccGridLoader() {}
+  OccGridLoader() = delete;
 
-  void loadMapFromFile(const std::string & map_name) override;
-  nav_msgs::msg::OccupancyGrid getOccupancyGrid() override;
+  void loadMapFromFile(const std::string & filename) override;
+  void initServices() override;
 
 protected:
-  void loadParameters();
-
   // Map parameters
-  double res_;
+  double resolution_;
   int negate_;
-  double occ_th_;
-  double free_th_;
+  double occupied_thresh_;
+  double free_thresh_;
   enum MapMode { TRINARY, SCALE, RAW };
   MapMode mode_ = TRINARY;
-  std::string map_name_;
   std::vector<double> origin_;
 
-  static const std::string frame_id_;
+  static const char * frame_id_;
 
   // The ROS node to use for ROS-related operations such as creating a service
   rclcpp::Node * node_;
 
+  // A service to provide the ouccpancy grid (GetMap) and the message to return
+  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
+
+  // A topic on which the occupancy grid will be published
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+
   // The message to publish on the occupancy grid topic
-  nav_msgs::msg::OccupancyGrid map_msg_;
+  nav_msgs::msg::OccupancyGrid msg_;
+
+  // For now, use a timer to publish the map periodically so that it is sure
+  // to be received on the ROS1 side across the ROS1 bridge
+  rclcpp::TimerBase::SharedPtr timer_;
 };
 
 }  // namespace nav2_map_server

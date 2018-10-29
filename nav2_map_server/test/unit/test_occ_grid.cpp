@@ -33,6 +33,7 @@
 #include <experimental/filesystem>
 #include <stdexcept>
 #include <string>
+#include <memory>
 
 #include "nav2_map_server/occ_grid_loader.hpp"
 #include "test_constants/test_constants.h"
@@ -42,16 +43,41 @@
 using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+
+RclCppFixture g_rclcppfixture;
+
+class TestMapLoader : public nav2_map_server::OccGridLoader
+{
+public:
+  explicit TestMapLoader(rclcpp::Node * node)
+  : OccGridLoader(node)
+  {
+  }
+
+  nav_msgs::msg::OccupancyGrid getOccupancyGrid()
+  {
+    return msg_;
+  }
+};
+
 class MapLoaderTest : public ::testing::Test
 {
 public:
   MapLoaderTest()
   {
-    map_loader_ = new nav2_map_server::OccGridLoader;
+    node_ = std::make_shared<rclcpp::Node>("MapLoaderTest");
+    map_loader_ = new TestMapLoader(node_.get());
   }
 
 protected:
-  nav2_map_server::OccGridLoader * map_loader_;
+  rclcpp::Node::SharedPtr node_;
+  TestMapLoader * map_loader_;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -63,8 +89,8 @@ protected:
 TEST_F(MapLoaderTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string()));
 
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string()));
   nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
@@ -81,8 +107,8 @@ TEST_F(MapLoaderTest, loadValidPNG)
 TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
-  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
 
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
   nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
