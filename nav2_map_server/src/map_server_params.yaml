@@ -2,7 +2,7 @@ map_server:
     ros__parameters:
         map_name: "test_map.pgm"
         map_type: "occupancy"
-        resolution: 0.050000
+        resolution: 0.1
         negate: 0
         occupied_thresh: 0.65
         free_thresh: 0.196

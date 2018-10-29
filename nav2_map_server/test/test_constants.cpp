@@ -58,4 +58,4 @@ const char g_valid_image_content[] = {
 const char * g_valid_png_file = "testmap.png";
 const char * g_valid_bmp_file = "testmap.bmp";
 
-const float g_valid_image_res = 0.05;
+const float g_valid_image_res = 0.1;
