@@ -56,7 +56,7 @@ OccGridLoader::OccGridLoader(rclcpp::Node * node)
   std::string mode_str;
 
   // Get this node's default parameter values, using defaults if not supplied in the YAML file
-  node_->get_parameter_or_set("resolution", resolution_, 0.050000);
+  node_->get_parameter_or_set("resolution", resolution_, 0.1);
   node_->get_parameter_or_set("negate", negate_, 0);
   node_->get_parameter_or_set("occupied_thresh", occupied_thresh_, 0.65);
   node_->get_parameter_or_set("free_thresh", free_thresh_, 0.196);
