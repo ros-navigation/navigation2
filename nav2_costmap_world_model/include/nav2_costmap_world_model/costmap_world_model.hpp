@@ -42,7 +42,7 @@ public:
   {
     auto layer = std::make_shared<LayerT>();
     layered_costmap_->addPlugin(layer);
-    layer->initialize(layered_costmap_, layer_name, tf_);
+    layer->initialize(layered_costmap_, layer_name, tf_, node_);
   }
 
   void setFootprint(double length, double width);
@@ -57,6 +57,7 @@ private:
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
   nav2_costmap_2d::LayeredCostmap * layered_costmap_;
   tf2_ros::Buffer * tf_;
+  rclcpp::Node::SharedPtr node_;
 };
 
 }  // namespace nav2_costmap_world_model

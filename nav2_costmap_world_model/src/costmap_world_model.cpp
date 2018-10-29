@@ -28,6 +28,8 @@ namespace nav2_costmap_world_model
 CostmapWorldModel::CostmapWorldModel(const string & name)
 : Node(name + "_Node")
 {
+  node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
   // Create layered costmap with static and inflation layer
   layered_costmap_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
   addLayer<nav2_costmap_2d::StaticLayer>("static");
