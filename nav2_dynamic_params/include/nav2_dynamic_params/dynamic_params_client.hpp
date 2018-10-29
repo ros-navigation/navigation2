@@ -30,7 +30,7 @@ class DynamicParamsClient
 public:
   explicit DynamicParamsClient(
     rclcpp::Node::SharedPtr node, std::vector<std::string> remote_names = {""})
-    : node_(node)
+  : node_(node)
   {
     add_parameter_clients(remote_names);
     parameters_client_for_callback_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
@@ -49,9 +49,13 @@ public:
   }
 
   void set_callback(
-    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
+    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback,
+    bool init_callback = true)
   {
     user_callback_ = callback;
+    if (init_callback) {
+      force_callback();
+    }
   }
 
   void add_parameters(const std::vector<std::string> & param_names)
@@ -133,6 +137,13 @@ public:
     return !filter.get_events().empty();
   }
 
+
+  void force_callback()
+  {
+    auto event = std::make_shared<rcl_interfaces::msg::ParameterEvent>();
+    user_callback_(event);
+  }
+
 private:
   template<class T>
   T get_param_from_event(const rclcpp::ParameterEventsFilter & event_filter)
@@ -160,30 +171,27 @@ private:
   {
     if (is_event_in_map(event)) {
       user_callback_(event);
-    }    
+    }
   }
 
   bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   {
     // check that event variables exist in dynamic param map
     // True if at least one parameter exists in parameter map
-    for (auto & new_parameter : event->new_parameters) {            
-      if (dynamic_param_map_.count(new_parameter.name))
-      {    
+    for (auto & new_parameter : event->new_parameters) {
+      if (dynamic_param_map_.count(new_parameter.name)) {
         return true;
       }
     }
 
-    for (auto & changed_parameter : event->changed_parameters) {  
-      if (dynamic_param_map_.count(changed_parameter.name))
-      {       
+    for (auto & changed_parameter : event->changed_parameters) {
+      if (dynamic_param_map_.count(changed_parameter.name)) {
         return true;
       }
     }
 
     for (auto & deleted_parameter : event->deleted_parameters) {
-      if (dynamic_param_map_.count(deleted_parameter.name))
-      {        
+      if (dynamic_param_map_.count(deleted_parameter.name)) {
         return true;
       }
     }
