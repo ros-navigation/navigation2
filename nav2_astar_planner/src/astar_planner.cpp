@@ -58,7 +58,7 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Cancelled global planning task");
+      RCLCPP_INFO(get_logger(), "Canceled global planning task");
       setCanceled();
       return TaskStatus::CANCELED;
     }
