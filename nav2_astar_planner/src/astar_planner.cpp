@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018 Simbe Robotics (Author: Steve Macenski)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <chrono>
 #include "nav2_astar_planner/astar_planner.hpp"
 
@@ -23,9 +23,25 @@ namespace nav2_astar_planner
 {
 
 AStarPlanner::AStarPlanner()
-: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode")
+: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode", false),
+  global_frame_("map"),
+  allow_unknown_(true),
+  default_tolerance_(1.0)
 {
   RCLCPP_INFO(get_logger(), "Initializing AStarPlanner");
+
+  // TODO(SteveMacenski): Enable parameter server and get costmap service name from there
+
+  // Create publishers for visualization of the path and endpoints
+  plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
+  plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
+    "endpoints", 1);
+
+  costmap_client_.waitForService(std::chrono::seconds(2));
+
+  // Start listening for incoming ComputePathToPose task requests
+  startWorkerThread();
+
 }
 
 AStarPlanner::~AStarPlanner()
@@ -40,33 +56,469 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
-  // Spin here for a bit to fake out some processing time
-  for (int i = 0; i < 10; i++) {
-    // Do a bit of the task
-    RCLCPP_DEBUG(get_logger(), "AStarPlanner::execute: doing work: %d", i);
-    std::this_thread::sleep_for(100ms);
+  nav2_tasks::ComputePathToPoseResult result;
 
-    // if (failed_to_plan)
-    // {
-    //   RCLCPP_WARN(get_logger(), "AStarPlanner: Failed to generate path.");
-    // }
+  try {
+    // Get an updated costmap
+    getCostmap(costmap_);
+    RCLCPP_DEBUG(get_logger(), "AStarPlanner: Costmap size: %d,%d",
+      costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-    // Before we loop again to do more work, check if we've been canceled
+    // Create a planner based on the new costmap size
+    planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+    // Make the plan for the provided goal pose
+    bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
+
+    // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
       RCLCPP_INFO(get_logger(), "AStarPlanner: Cancelled global planning task.");
       setCanceled();
       return TaskStatus::CANCELED;
     }
+
+    if (!foundPath) {
+      RCLCPP_WARN(get_logger(), "AStarPlanner: Planning algorithm failed to generate a valid"
+        " path to (%.2f, %.2f)", command->goal.position.x, command->goal.position.y);
+      return TaskStatus::FAILED;
+    }
+
+    RCLCPP_INFO(get_logger(),
+      "AStarPlanner: Found valid path of size %u", result.poses.size());
+
+    // Publish the plan for visualization purposes
+    RCLCPP_INFO(get_logger(), "AStarPlanner: Publishing the valid path.");
+    publishPlan(result);
+    publishEndpoints(command);
+
+    // TODO(orduno): Enable potential visualization
+
+    // We've successfully completed the task, so return the result
+    RCLCPP_INFO(get_logger(), "AStarPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
+      command->goal.position.x, command->goal.position.y, command->tolerance);
+    setResult(result);
+    return TaskStatus::SUCCEEDED;
+  } catch (std::exception & ex) {
+    RCLCPP_WARN(get_logger(), "AStarPlanner: Plan calculation to (%.2f, %.2f) failed: \"%s\"",
+      command->goal.position.x, command->goal.position.y, ex.what());
+
+    // TODO(orduno): provide information about fail error to parent task,
+    //               for example: couldn't get costmap update
+    return TaskStatus::FAILED;
+  } catch (...) {
+    RCLCPP_WARN(get_logger(), "AStarPlanner: Failed to generate path.");
+
+    // TODO(orduno): provide information about the failure to the parent task,
+    //               for example: couldn't get costmap update
+    return TaskStatus::FAILED;
+  }
+}
+
+bool
+AStarPlanner::makePlan(
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & goal, double tolerance,
+  nav2_msgs::msg::Path & plan)
+{
+  // clear the plan, just in case
+  plan.poses.clear();
+
+  // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
+
+  double wx = start.position.x;
+  double wy = start.position.y;
+
+  RCLCPP_INFO(get_logger(), "AStarPlanner: Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+    start.position.x, start.position.y, goal.position.x, goal.position.y);
+
+  unsigned int mx, my;
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "AStarPlanner: Cannot create a plan: the robot's start position is off the global"
+      " costmap. Planning will always fail, are you sure"
+      " the robot has been properly localized?");
+    return false;
   }
 
-  // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "AStarPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
-    command->goal.position.x, command->goal.position.y, command->tolerance);
+  // clear the starting cell within the costmap because we know it can't be an obstacle
+  clearRobotCell(mx, my);
 
-  nav2_tasks::ComputePathToPoseResult result;
-  setResult(result);
+  // make sure to resize the underlying array that Navfn uses
+  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-  return TaskStatus::SUCCEEDED;
+  planner_->setCostmap(&costmap_.data[0], true, allow_unknown_);
+
+  int map_start[2];
+  map_start[0] = mx;
+  map_start[1] = my;
+
+  wx = goal.position.x;
+  wy = goal.position.y;
+
+  if (worldToMap(wx, wy, mx, my)) {
+    if (tolerance <= 0.0) {
+      std::cout << "tolerance: " << tolerance << std::endl;
+      RCLCPP_WARN(
+        get_logger(),
+        "AStarPlanner: The goal sent to the planner is off the global costmap."
+        " Planning will always fail to this goal.");
+      return false;
+    }
+    mx = 0;
+    my = 0;
+  }
+
+  int map_goal[2];
+  map_goal[0] = mx;
+  map_goal[1] = my;
+
+  // TODO(orduno): Explain why we are providing 'map_goal' to setStart().
+  //               Same for setGoal, seems reversed. Computing backwards?
+
+  planner_->setStart(map_goal);
+  planner_->setGoal(map_start);
+  planner_->calcNavFnAstar(true);
+
+  double resolution = costmap_.metadata.resolution;
+  geometry_msgs::msg::Pose p, best_pose;
+  p = goal;
+
+  bool found_legal = false;
+  double best_sdist = std::numeric_limits<double>::max();
+
+  p.position.y = goal.position.y - tolerance;
+
+  while (p.position.y <= goal.position.y + tolerance) {
+    p.position.x = goal.position.x - tolerance;
+    while (p.position.x <= goal.position.x + tolerance) {
+      double potential = getPointPotential(p.position);
+      double sdist = squared_distance(p, goal);
+      if (potential < POT_HIGH && sdist < best_sdist) {
+        best_sdist = sdist;
+        best_pose = p;
+        found_legal = true;
+      }
+      p.position.x += resolution;
+    }
+    p.position.y += resolution;
+  }
+
+  if (found_legal) {
+    // extract the plan
+    if (getPlanFromPotential(best_pose, plan)) {
+      geometry_msgs::msg::Pose goal_copy = best_pose;
+      plan.poses.push_back(goal_copy);
+    } else {
+      RCLCPP_ERROR(
+        get_logger(),
+        "AStarPlanner: Failed to create a plan from potential when a legal"
+        " potential was found. This shouldn't happen.");
+    }
+  }
+
+  return !plan.poses.empty();
+}
+
+bool
+AStarPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
+{
+  // make sure to resize the underlying array that Navfn uses
+  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+  std::vector<unsigned char> costmapData = std::vector<unsigned char>(
+    costmap_.data.begin(), costmap_.data.end());
+
+  planner_->setCostmap(&costmapData[0], true, allow_unknown_);
+
+  unsigned int mx, my;
+  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
+    return false;
+  }
+
+  int map_start[2];
+  map_start[0] = 0;
+  map_start[1] = 0;
+
+  int map_goal[2];
+  map_goal[0] = mx;
+  map_goal[1] = my;
+
+  planner_->setStart(map_start);
+  planner_->setGoal(map_goal);
+
+  return planner_->calcNavFnAstar();
+}
+
+bool
+AStarPlanner::getPlanFromPotential(
+  const geometry_msgs::msg::Pose & goal,
+  nav2_msgs::msg::Path & plan)
+{
+  // clear the plan, just in case
+  plan.poses.clear();
+
+  // Goal should be in global frame
+  double wx = goal.position.x;
+  double wy = goal.position.y;
+
+  // the potential has already been computed, so we won't update our copy of the costmap
+  unsigned int mx, my;
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "The goal sent to the navfn planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
+  }
+
+  int map_goal[2];
+  map_goal[0] = mx;
+  map_goal[1] = my;
+
+  planner_->setStart(map_goal);
+
+  planner_->calcPath(costmap_.metadata.size_x * 4);
+
+  // extract the plan
+  float * x = planner_->getPathX();
+  float * y = planner_->getPathY();
+  int len = planner_->getPathLen();
+
+  plan.header.stamp = this->now();
+  plan.header.frame_id = global_frame_;
+
+  for (int i = len - 1; i >= 0; --i) {
+    // convert the plan to world coordinates
+    double world_x, world_y;
+    mapToWorld(x[i], y[i], world_x, world_y);
+
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = world_x;
+    pose.position.y = world_y;
+    pose.position.z = 0.0;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = 0.0;
+    pose.orientation.z = 0.0;
+    pose.orientation.w = 1.0;
+    plan.poses.push_back(pose);
+  }
+
+  return !plan.poses.empty();
+}
+
+double
+AStarPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
+{
+  unsigned int mx, my;
+  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
+    return std::numeric_limits<double>::max();
+  }
+
+  unsigned int index = my * planner_->nx + mx;
+  return planner_->potarr[index];
+}
+
+bool
+AStarPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
+{
+  return validPointPotential(world_point, default_tolerance_);
+}
+
+bool
+AStarPlanner::validPointPotential(
+  const geometry_msgs::msg::Point & world_point, double tolerance)
+{
+  double resolution = costmap_.metadata.resolution;
+
+  geometry_msgs::msg::Point p = world_point;
+  p.y = world_point.y - tolerance;
+
+  while (p.y <= world_point.y + tolerance) {
+    p.x = world_point.x - tolerance;
+    while (p.x <= world_point.x + tolerance) {
+      double potential = getPointPotential(p);
+      if (potential < POT_HIGH) {
+        return true;
+      }
+      p.x += resolution;
+    }
+    p.y += resolution;
+  }
+
+  return false;
+}
+
+
+
+
+
+
+
+
+bool
+AStarPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
+{
+  if (wx < costmap_.metadata.origin.position.x || wy < costmap_.metadata.origin.position.y) {
+    RCLCPP_ERROR(get_logger(), "wordToMap failed: wx,wy: %f,%f, size_x,size_y: %d,%d", wx, wy,
+      costmap_.metadata.size_x, costmap_.metadata.size_y);
+    return false;
+  }
+
+  mx = static_cast<int>((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution);
+  my = static_cast<int>((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution);
+
+  if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
+    return true;
+  }
+
+  RCLCPP_ERROR(get_logger(), "wordToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+    costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+  return false;
+}
+
+void
+AStarPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
+{
+  wx = costmap_.metadata.origin.position.x + mx * costmap_.metadata.resolution;
+  wy = costmap_.metadata.origin.position.y + my * costmap_.metadata.resolution;
+}
+
+void
+AStarPlanner::clearRobotCell(unsigned int mx, unsigned int my)
+{
+  // TODO(orduno): check usage of this function, might instead be a request to
+  //               world_model / map server
+  unsigned int index = my * costmap_.metadata.size_x + mx;
+  costmap_.data[index] = nav2_util::Costmap::free_space;
+}
+
+void
+AStarPlanner::getCostmap(
+  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
+  const std::chrono::milliseconds /*waitTime*/)
+{
+  // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
+  //               including master (aggreate) layer
+
+  auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
+  request->specs.resolution = 1.0;
+
+  auto result = costmap_client_.invoke(request);
+  costmap = result.get()->map;
+}
+
+void
+AStarPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
+{
+  std::cout << "Costmap" << std::endl;
+  std::cout << "  size:       " <<
+    costmap.metadata.size_x << "," << costmap.metadata.size_x << std::endl;
+  std::cout << "  origin:     " <<
+    costmap.metadata.origin.position.x << "," << costmap.metadata.origin.position.y << std::endl;
+  std::cout << "  resolution: " << costmap.metadata.resolution << std::endl;
+  std::cout << "  data:       " <<
+    "(" << costmap.data.size() << " cells)" << std::endl << "    ";
+
+  const char separator = ' ';
+  const int valueWidth = 4;
+
+  unsigned int index = 0;
+  for (unsigned int h = 0; h < costmap.metadata.size_y; ++h) {
+    for (unsigned int w = 0; w < costmap.metadata.size_x; ++w) {
+      std::cout << std::left << std::setw(valueWidth) << std::setfill(separator) <<
+        static_cast<unsigned int>(costmap.data[index]);
+      index++;
+    }
+    std::cout << std::endl << "    ";
+  }
+  std::cout << std::endl;
+}
+
+void
+AStarPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints)
+{
+  visualization_msgs::msg::Marker marker;
+
+  builtin_interfaces::msg::Time time;
+  time.sec = 0;
+  time.nanosec = 0;
+  marker.header.stamp = time;
+  marker.header.frame_id = "map";
+
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  // Any marker sent with the same namespace and id will overwrite the old one
+  marker.ns = "endpoints";
+  static int index;
+  marker.id = index++;
+
+  marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+
+  // Set the marker action.
+  marker.action = visualization_msgs::msg::Marker::ADD;
+
+  // Set the pose of the marker.
+  // This is a full 6DOF pose relative to the frame/time specified in the header
+  geometry_msgs::msg::Pose pose;
+  pose.orientation.w = 1.0;
+
+  marker.pose.orientation = pose.orientation;
+
+  // Set the scale of the marker -- 1x1x1 here means 1m on a side
+  marker.scale.x = 3.0;
+  marker.scale.y = 3.0;
+  marker.scale.z = 3.0;
+
+  builtin_interfaces::msg::Duration duration;
+  duration.sec = 0;
+  duration.nanosec = 0;
+
+  // 0 indicates the object should last forever
+  marker.lifetime = duration;
+
+  marker.frame_locked = false;
+
+  marker.points.resize(2);
+  marker.points[0] = endpoints->start.position;
+  marker.points[1] = endpoints->goal.position;
+
+  // Set the color -- be sure to set alpha to something non-zero!
+  std_msgs::msg::ColorRGBA start_color;
+  start_color.r = 0.0;
+  start_color.g = 0.0;
+  start_color.b = 1.0;
+  start_color.a = 1.0;
+
+  std_msgs::msg::ColorRGBA goal_color;
+  goal_color.r = 0.0;
+  goal_color.g = 1.0;
+  goal_color.b = 0.0;
+  goal_color.a = 1.0;
+
+  marker.colors.resize(2);
+  marker.colors[0] = start_color;
+  marker.colors[1] = goal_color;
+
+  plan_marker_publisher_->publish(marker);
+}
+
+void
+AStarPlanner::publishPlan(const nav2_msgs::msg::Path & path)
+{
+  // Publish as a nav1 path msg
+  nav_msgs::msg::Path rviz_path;
+
+  rviz_path.header = path.header;
+  rviz_path.poses.resize(path.poses.size());
+
+  // Assuming path is already provided in world coordinates
+  for (unsigned int i = 0; i < path.poses.size(); i++) {
+    rviz_path.poses[i].header = path.header;
+    rviz_path.poses[i].pose = path.poses[i];
+  }
+
+  plan_publisher_->publish(rviz_path);
 }
 
 }  // namespace nav2_astar_planner
