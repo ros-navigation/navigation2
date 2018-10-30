@@ -50,7 +50,10 @@ add_library(pf_lib SHARED
 )
 
 add_library(sensors_lib SHARED
-  src/sensors/laser.cpp
+  src/sensors/laser/laser.cpp
+  #src/sensors/laser/beam_model.cpp
+  #src/sensors/laser/likelihood_field_model.cpp
+  #src/sensors/laser/likelihood_field_model_prob.cpp
 )
 
 add_library(motions_lib SHARED
