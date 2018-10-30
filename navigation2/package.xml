@@ -12,9 +12,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <depend>nav2_amcl</depend>
   <depend>nav2_astar_planner</depend>
-  <depend>nav2_bringup</depend>
   <depend>nav2_bt_navigator</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_costmap_world_model</depend>
