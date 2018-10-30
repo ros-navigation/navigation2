@@ -15,6 +15,8 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav2_robot REQUIRED)
+find_package(behavior_tree_core REQUIRED)
 
 include_directories(
   include
@@ -30,6 +32,7 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/bt_navigator.cpp
+  src/navigate_to_pose_behavior_tree.cpp
 )
 
 set(dependencies
@@ -37,7 +40,9 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_msgs
-) 
+  nav2_robot
+  behavior_tree_core
+)
 
 ament_target_dependencies(${executable_name}
   ${dependencies}

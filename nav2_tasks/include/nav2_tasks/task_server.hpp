@@ -139,6 +139,8 @@ protected:
           // Or the canceled code
           statusMsg.result = nav2_msgs::msg::TaskStatus::CANCELED;
           statusPub_->publish(statusMsg);
+
+          cancelReceived_ = false;
         } else {
           throw std::logic_error("Unexpected status return from task");
         }

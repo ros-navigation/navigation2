@@ -15,12 +15,8 @@
 #ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 #define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
-#include <string>
-#include <memory>
-#include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_tasks/follow_path_task.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -29,13 +25,12 @@ class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
   BtNavigator();
-  ~BtNavigator();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus execute(
+    const nav2_tasks::NavigateToPoseCommand::SharedPtr command) override;
 
-protected:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> plannerTaskClient_;
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controllerTaskClient_;
+private:
+  nav2_robot::Robot robot_;
 };
 
 }  // namespace nav2_bt_navigator

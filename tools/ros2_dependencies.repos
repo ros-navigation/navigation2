@@ -19,3 +19,7 @@ repositories:
     type: git
     url: https://github.com/bpwilcox/xmlrpcpp.git
     version: master
+  behavior_tree_core:
+    type: git
+    url: https://github.com/mjeronimo/BehaviorTree.CPP
+    version: master
