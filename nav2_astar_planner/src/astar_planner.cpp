@@ -44,7 +44,7 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     "(%.2f, %.2f) with tolerance %.2f",
     command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y,
-	tolerance_);
+    tolerance_);
 
   unsigned int seed = std::time(nullptr);
 
