@@ -1,25 +1,19 @@
-# Nav2 Map Server
+# Map Server
 
-The map server in the navigation2 stack is responsible for loading a map from an image file and providing a map message across 
-the ROS2 Interface for potential clients. In comparison to the ROS1 navigation map server, the nav2 map server intends to support
-a variety of potential map types, and thus some aspects of the original code have been refactored to support this extensible 
-framework.
+The `Map Server` is responsible to provide maps to the rest of the nav2 system using 
+both topic and service interfaces. In contrast to the ROS1 navigation map server, the nav2 map 
+server will support a variety of map types, and thus some aspects of the original code have been 
+refactored to support this new extensible framework.
 
 ## Overview of changes from ROS1 Navigation Map Server
-- Implementation of the Map Server has been refactored into an abstract base class for map server and its respective map type-specific 
-implementations (i.e. nav_msgs/msg/OccupancyGrids)
-- Loading and Parsing of YAML file (path currently provided as command line argument) and loading of the directed image file have
-been refactored into function implementations from the map server abstract base class. 
-- A factory pattern has been introduced to decide at launch time which map type to use
-- It is optional whether the map is connected to the ROS Interface or is initialized as an object in another module (by
-instantiating the map type-specific class)
-- Map Saver not (yet) ported
+- The nav1 Map Server code has been refactored into a `MapLoader` abstract base class, type-specific map loaders such as an `OccGridLoader`, and a `MapServer` class that manages the loaders
+- A map loader loads an image file, compose a ROS message for the loaded map, and present the result via topic and service interfaces
+- Direct loading and parsing of a YAML configuration file has been removed in favor of using ROS2 parameters
+A ROS2-style YAML file can still be specified at launch time, which provides an opportunity to override default parameter values, which are set in the code
 
 ## Currently Supported Map Types
-- Occupancy Grid (nav_msgs/msg/OccupancyGrid)
+- Occupancy grid (nav_msgs/msg/OccupancyGrid), via the OccGridLoader
 
 ## Future Plans
-- Make abstract base class for map server derive from rclcpp::Node (https://github.com/ros-planning/navigation2/issues/189)
-- Support new map types, e.g. GridMap (https://github.com/ros-planning/navigation2/issues/191)
-- Load & Parse YAML file as ROS2 parameters via launch (https://github.com/ros-planning/navigation2/issues/190)
+- Support additional map types, e.g. GridMap (https://github.com/ros-planning/navigation2/issues/191)
 - Port and refactor Map Saver (https://github.com/ros-planning/navigation2/issues/188)

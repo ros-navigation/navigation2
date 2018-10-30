@@ -24,19 +24,17 @@ using namespace std::chrono_literals;
 namespace nav2_map_server
 {
 
-MapServer::MapServer(const std::string & name)
-: Node(name)
+MapServer::MapServer(const std::string & node_name)
+: Node(node_name)
 {
-  get_parameter_or_set("map_name", map_name_, std::string("test_map.pgm"));
-  get_parameter_or_set("map_type", map_type_, std::string("occupancy"));
+  // TODO(mjeronimo): Currently, there is only one map loader. Going forward,
+  // there will be multiple loaders, each with their own file to load. At that
+  // point we'll have to figure out how to communicate which loaders and files
+  // the map server should use.
 
-  if (map_type_ == "occupancy") {
-    map_loader_ = std::make_unique<OccGridLoader>(this);
-  } else {
-    RCLCPP_ERROR(get_logger(), "Cannot create map loader for map type %s", map_type_.c_str());
-    throw std::runtime_error("Map type not supported");
-  }
+  get_parameter_or_set("map_name", map_name_, std::string("map.pgm"));
 
+  map_loader_ = std::make_unique<OccGridLoader>(this);
   map_loader_->loadMapFromFile(map_name_);
   map_loader_->initServices();
 }

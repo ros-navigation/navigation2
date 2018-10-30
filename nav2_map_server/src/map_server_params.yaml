@@ -3,7 +3,7 @@
 # These values are the same defaults as in the code.
 map_server:
     ros__parameters:
-        map_name: "test_map.pgm"
+        map_name: "map.pgm"
         map_type: "occupancy"
         resolution: 0.1
         negate: 0
