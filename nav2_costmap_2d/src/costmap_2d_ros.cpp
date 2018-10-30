@@ -75,7 +75,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   // Set Parameters if not set 
   set_parameter_if_not_set("transform_tolerance",0.3);
   set_parameter_if_not_set("update_frequency", 5.0);
-  set_parameter_if_not_set("publish_frequency", 0.0); 
+  set_parameter_if_not_set("publish_frequency", 1.0); 
   set_parameter_if_not_set("width", 10);
   set_parameter_if_not_set("height", 10);
   set_parameter_if_not_set("resolution", 0.1);
@@ -188,14 +188,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   param_validator_->add_param("robot_radius",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
 
   // Add Parameter Client
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_); 
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_->add_parameters(
+    {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
+    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
 
   // Invoke callback
   // TODO(bpwilcox): Initialize callback for dynamic parameters
-  auto set_parameters_results = set_parameters({
+/*   auto set_parameters_results = set_parameters({
     rclcpp::Parameter("publish_frequency", 1.0),
-  });
+  }); */
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
