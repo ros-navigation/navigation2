@@ -14,13 +14,14 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_controller_example/dwa_controller.hpp"
+#include "dwb_controller/dwb_controller.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_controller_example::DwaController>());
+  rclcpp::spin(std::make_shared<nav2_dwb_controller::DwbController>());
   rclcpp::shutdown();
 
   return 0;
 }
+

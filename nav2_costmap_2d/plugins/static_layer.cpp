@@ -100,8 +100,9 @@ void StaticLayer::onInitialize()
   has_updated_data_ = false;
 
   rclcpp::Rate r(10);
+  rclcpp::executors::SingleThreadedExecutor exec;
   while (!map_received_ && rclcpp::ok()) {
-    rclcpp::spin_some(node_);
+    exec.spin_node_once(node_->get_node_base_interface(), std::chrono::milliseconds(100));
     r.sleep();
   }
 

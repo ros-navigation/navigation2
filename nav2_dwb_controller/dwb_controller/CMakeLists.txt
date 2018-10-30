@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_controller_example)
+project(dwb_controller)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -16,12 +16,15 @@ find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(dwb_core REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
   include
+  ${Boost_INCLUDE_DIRS}
 )
 
-set(executable_name dwa_controller)
+set(executable_name dwb_controller)
 
 add_executable(${executable_name}
   src/main.cpp
@@ -30,7 +33,7 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
-  src/dwa_controller.cpp
+  src/dwb_controller.cpp
 )
 
 set(dependencies
@@ -39,17 +42,18 @@ set(dependencies
   nav2_tasks
   nav2_robot
   nav2_msgs
+  dwb_core
 )
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+target_link_libraries(${library_name} ${Boost_LIBRARIES})
+
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+target_link_libraries(${executable_name} ${library_name} ${Boost_LIBRARIES})
 
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib

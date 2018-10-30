@@ -13,8 +13,7 @@ def generate_launch_description():
                 ], period = 1.0),
         launch.actions.TimerAction(
             actions = [
-                #launch_ros.actions.Node( package='nav2_controller_dwb', node_executable='nav2_controller_dwb', output='screen')
-                launch_ros.actions.Node( package='nav2_controller_example', node_executable='dwa_controller', output='screen')
+                launch_ros.actions.Node( package='nav2_controller_dwb', node_executable='nav2_controller_dwb', output='screen')
                 ], period = 5.0),
         launch.actions.TimerAction(
             actions = [
