@@ -19,7 +19,10 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_controller_dwb::DwbController>());
+  rclcpp::executors::SingleThreadedExecutor exec;
+  auto controller_node = std::make_shared<nav2_controller_dwb::DwbController>(exec);
+  exec.add_node(controller_node);
+  exec.spin();
   rclcpp::shutdown();
 
   return 0;

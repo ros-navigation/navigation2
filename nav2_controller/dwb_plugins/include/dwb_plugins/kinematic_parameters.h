@@ -103,7 +103,7 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_, max_speed_xy_sq_;
 
-  // void reconfigureCB(KinematicParamsConfig &config, uint32_t level);
+  void reconfigureCB();
   // std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
 };
 
