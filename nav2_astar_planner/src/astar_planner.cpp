@@ -40,8 +40,8 @@ AStarPlanner::~AStarPlanner()
 TaskStatus
 AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f) with tolerance %.2f",
+  RCLCPP_INFO(get_logger(),
+    "Attempting to a find path from (%.2f, %.2f) to (%.2f, %.2f) with tolerance %.2f",
     command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y,
     tolerance_);

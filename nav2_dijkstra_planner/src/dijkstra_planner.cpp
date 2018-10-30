@@ -49,7 +49,7 @@ DijkstraPlanner::DijkstraPlanner()
   global_frame_("map"),
   allow_unknown_(true)
 {
-  RCLCPP_INFO(get_logger(), "Initializing DijkstraPlanner...");
+  RCLCPP_INFO(get_logger(), "Initializing");
 
   get_parameter_or_set("tolerance", tolerance_, 1.0);
 
@@ -68,22 +68,23 @@ DijkstraPlanner::DijkstraPlanner()
 
 DijkstraPlanner::~DijkstraPlanner()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down DijkstraPlanner");
+  RCLCPP_INFO(get_logger(), "Shutting down");
 }
 
 TaskStatus
 DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(),
-    "DijkstraPlanner: Attempting to a find path from (%.2f, %.2f) to (%.2f, %.2f)",
+    "Attempting to a find path from (%.2f, %.2f) to (%.2f, %.2f) with tolerance %.2f",
     command->start.position.x, command->start.position.y,
-    command->goal.position.x, command->goal.position.y);
+    command->goal.position.x, command->goal.position.y,
+    tolerance_);
 
   nav2_tasks::ComputePathToPoseResult result;
   try {
     // Get an updated costmap
     getCostmap(costmap_);
-    RCLCPP_DEBUG(get_logger(), "DijkstraPlanner: Costmap size: %d,%d",
+    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Create a planner based on the new costmap size
@@ -94,22 +95,21 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "DijkstraPlanner: Cancelled global planning task.");
+      RCLCPP_INFO(get_logger(), "Canceled global planning task");
       setCanceled();
       return TaskStatus::CANCELED;
     }
 
     if (!foundPath) {
-      RCLCPP_WARN(get_logger(), "DijkstraPlanner: Planning algorithm failed to generate a valid"
+      RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", command->goal.position.x, command->goal.position.y);
       return TaskStatus::FAILED;
     }
 
-    RCLCPP_INFO(get_logger(),
-      "DijkstraPlanner: Found valid path of size %u", result.poses.size());
+    RCLCPP_INFO(get_logger(), "Found valid path of size %u", result.poses.size());
 
     // Publish the plan for visualization purposes
-    RCLCPP_INFO(get_logger(), "DijkstraPlanner: Publishing the valid path.");
+    RCLCPP_INFO(get_logger(), "Publishing the valid path");
     publishPlan(result);
     publishEndpoints(command);
 
@@ -121,14 +121,14 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     // Return success, which causes the result message to be sent to the client
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
-    RCLCPP_WARN(get_logger(), "DijkstraPlanner: Plan calculation to (%.2f, %.2f) failed: \"%s\"",
+    RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
       command->goal.position.x, command->goal.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   } catch (...) {
-    RCLCPP_WARN(get_logger(), "DijkstraPlanner: Plan calculation failed");
+    RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
@@ -150,14 +150,14 @@ DijkstraPlanner::makePlan(
   double wx = start.position.x;
   double wy = start.position.y;
 
-  RCLCPP_INFO(get_logger(), "DijkstraPlanner: Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+  RCLCPP_INFO(get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
       get_logger(),
-      "DijkstraPlanner: Cannot create a plan: the robot's start position is off the global"
+      "Cannot create a plan: the robot's start position is off the global"
       " costmap. Planning will always fail, are you sure"
       " the robot has been properly localized?");
     return false;
@@ -183,7 +183,7 @@ DijkstraPlanner::makePlan(
       std::cout << "tolerance: " << tolerance << std::endl;
       RCLCPP_WARN(
         get_logger(),
-        "DijkstraPlanner: The goal sent to the planner is off the global costmap."
+        "The goal sent to the planner is off the global costmap."
         " Planning will always fail to this goal.");
       return false;
     }
@@ -234,7 +234,7 @@ DijkstraPlanner::makePlan(
     } else {
       RCLCPP_ERROR(
         get_logger(),
-        "DijkstraPlanner: Failed to create a plan from potential when a legal"
+        "Failed to create a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
   }
