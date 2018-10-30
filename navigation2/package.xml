@@ -18,11 +18,9 @@
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_costmap_world_model</depend>
   <depend>nav2_dijkstra_planner</depend>
-  <depend>nav2_gazebo_localizer</depend>
   <depend>nav2_map_server</depend>
   <depend>nav2_mission_executor</depend>
   <depend>nav2_msgs</depend>
-  <depend>nav2_planning_tests</depend>
   <depend>nav2_robot</depend>
   <depend>nav2_simple_navigator</depend>
   <depend>nav2_tasks</depend>
