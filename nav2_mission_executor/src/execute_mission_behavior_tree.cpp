@@ -38,7 +38,7 @@ ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr n
 nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
-  std::chrono::milliseconds loopTimeout)
+  std::chrono::milliseconds tree_tick_timeout)
 {
   // Create the blackboard that will be shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
@@ -51,7 +51,7 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
   // out of scope, all the nodes are destroyed
   BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
-  rclcpp::WallRate loopRate(loopTimeout);
+  rclcpp::WallRate loop_rate(tree_tick_timeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes w/ success or failure
@@ -64,7 +64,7 @@ nav2_tasks::TaskStatus ExecuteMissionBehaviorTree::run(
       return nav2_tasks::TaskStatus::CANCELED;
     }
 
-    loopRate.sleep();
+    loop_rate.sleep();
   }
 
   return (result == BT::NodeStatus::SUCCESS) ?

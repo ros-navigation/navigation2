@@ -63,7 +63,7 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
   }
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "Successfully computed a path to (%.2f, %.2f)"
+  RCLCPP_INFO(get_logger(), "Successfully computed a path to (%.2f, %.2f)",
     command->goal.position.x, command->goal.position.y);
 
   nav2_tasks::ComputePathToPoseResult result;

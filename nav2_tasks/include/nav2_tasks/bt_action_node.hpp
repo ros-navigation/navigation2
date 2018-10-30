@@ -53,7 +53,7 @@ public:
     if (task_client_ == nullptr) {
       // Get the required items from the blackboard
       node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-      tick_timeout_ = blackboard()->template get<std::chrono::milliseconds>("tick_timeout");
+      node_loop_timeout_ = blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout_");
 
       // Now that we have the ROS node to use, create the task client for this action
       task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
@@ -63,7 +63,7 @@ public:
 
     // Loop until the task has completed
     while (!isHalted()) {
-      nav2_tasks::TaskStatus status = task_client_->waitForResult(result_, tick_timeout_);
+      nav2_tasks::TaskStatus status = task_client_->waitForResult(result_, node_loop_timeout_);
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
@@ -105,7 +105,7 @@ protected:
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
-  std::chrono::milliseconds tick_timeout_;
+  std::chrono::milliseconds node_loop_timeout_;
 
   typename CommandMsg::SharedPtr command_;
   typename ResultMsg::SharedPtr result_;

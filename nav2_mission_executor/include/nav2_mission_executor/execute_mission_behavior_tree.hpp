@@ -34,7 +34,7 @@ public:
   nav2_tasks::TaskStatus run(
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
+    std::chrono::milliseconds tree_tick_timeout = std::chrono::milliseconds(100));
 
 private:
   // The ROS node to use for any task clients
