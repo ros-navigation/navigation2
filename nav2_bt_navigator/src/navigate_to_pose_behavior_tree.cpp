@@ -46,7 +46,7 @@ NavigateToPoseBehaviorTree::run(
 
   // Set a couple values that all of the action nodes expect/require
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout_", std::chrono::milliseconds(100));
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100));
 
   // The complete behavior tree that results from parsing the XML. When the tree goes
   // out of scope, all the nodes are destroyed
