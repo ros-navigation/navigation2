@@ -33,11 +33,14 @@ public:
   explicit OccGridLoader(rclcpp::Node * node);
   OccGridLoader() = delete;
 
+  // Load the image and generate an occupancy grid
   void loadMapFromFile(const std::string & filename) override;
+
+  // Make the occupancy griad available via ROS topic and service
   void initServices() override;
 
 protected:
-  // Map parameters
+  // Map parameters retrieved from the node
   double resolution_;
   int negate_;
   double occupied_thresh_;
@@ -46,6 +49,7 @@ protected:
   MapMode mode_ = TRINARY;
   std::vector<double> origin_;
 
+  // The frame ID used in the returned occupancy grid message
   static const char * frame_id_;
 
   // The ROS node to use for ROS-related operations such as creating a service

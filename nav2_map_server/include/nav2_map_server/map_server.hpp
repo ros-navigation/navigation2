@@ -26,14 +26,14 @@ namespace nav2_map_server
 class MapServer : public rclcpp::Node
 {
 public:
-  explicit MapServer(const std::string & name);
+  explicit MapServer(const std::string & node_name);
   MapServer();
 
 private:
   // Only one map loader so far
   std::shared_ptr<MapLoader> map_loader_;
 
-  // The name and type of the (one and only) map to load
+  // The name and type of the map to load
   std::string map_name_;
   std::string map_type_;
 };
