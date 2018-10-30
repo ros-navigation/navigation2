@@ -14,17 +14,22 @@
 
   <depend>nav2_amcl</depend>
   <depend>nav2_astar_planner</depend>
+  <depend>nav2_bringup</depend>
   <depend>nav2_bt_navigator</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_costmap_world_model</depend>
   <depend>nav2_dijkstra_planner</depend>
+  <depend>nav2_dwb_planner</depend>
+  <depend>nav2_dynamic_params</depend>
   <depend>nav2_map_server</depend>
   <depend>nav2_mission_executor</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_robot</depend>
   <depend>nav2_simple_navigator</depend>
+  <depend>nav2_system_tests</depend>
   <depend>nav2_tasks</depend>
   <depend>nav2_util</depend>
+  <depend>nav2_voxel_grid</depend>
   
   <export>
     <build_type>ament_cmake</build_type>
