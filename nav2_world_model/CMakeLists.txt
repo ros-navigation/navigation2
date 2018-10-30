@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_costmap_world_model)
+project(nav2_world_model)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -20,7 +20,7 @@ include_directories(
   include
 )
 
-set(executable_name costmap_world_model)
+set(executable_name world_model)
 
 add_executable(${executable_name}
   src/main.cpp
@@ -29,7 +29,7 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
-  src/costmap_world_model.cpp
+  src/world_model.cpp
 )
 
 set(dependencies

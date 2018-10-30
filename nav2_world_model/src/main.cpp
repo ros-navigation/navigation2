@@ -14,12 +14,12 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_world_model/costmap_world_model.hpp"
+#include "nav2_world_model/world_model.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_costmap_world_model::CostmapWorldModel>());
+  rclcpp::spin(std::make_shared<nav2_world_model::WorldModel>());
   rclcpp::shutdown();
 
   return 0;
