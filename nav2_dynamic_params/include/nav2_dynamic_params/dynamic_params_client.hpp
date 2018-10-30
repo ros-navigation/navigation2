@@ -48,6 +48,8 @@ public:
     }
   }
 
+  // Sets user callback as a member variable.
+  // Default true for init_callback to force user callback upon setting
   void set_callback(
     std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback,
     bool init_callback = true)
@@ -58,6 +60,8 @@ public:
     }
   }
 
+  // Initializes list of parameters in the cached dynamic parameter map
+  // with values from remote nodes
   void add_parameters(const std::vector<std::string> & param_names)
   {
     for (const auto & client : parameters_clients_) {
@@ -70,6 +74,8 @@ public:
     }
   }
 
+  // Adds all parameters currently on the remote nodes and initializes them
+  // in the dynamic parameter map
   void add_parameters()
   {
     std::vector<std::string> param_names;
@@ -94,6 +100,8 @@ public:
     return dynamic_param_map_;
   }
 
+  // This function assigns the value from the event, if present, or the dynamic parameters map,
+  // otherwise it does not assign anything
   template<class T>
   bool get_event_param(
     const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
@@ -115,6 +123,8 @@ public:
     }
   }
 
+  // This function assigns the value from the event, if present, or the dynamic parameters map,
+  // otherwise it assigns the default value
   template<class T>
   bool get_event_param_or(
     const rcl_interfaces::msg::ParameterEvent::SharedPtr & event,
@@ -128,6 +138,7 @@ public:
     }
   }
 
+  // A check to filter whether parameter name is part of the event
   bool is_in_event(
     const rcl_interfaces::msg::ParameterEvent::SharedPtr & event, const std::string & name)
   {
@@ -137,7 +148,7 @@ public:
     return !filter.get_events().empty();
   }
 
-
+  // Passes an empty event to the user_callback
   void force_callback()
   {
     auto event = std::make_shared<rcl_interfaces::msg::ParameterEvent>();
@@ -166,7 +177,7 @@ private:
       return false;
     }
   }
-
+  // This event callbak filters for parameters that exist in dynamic parameters map
   void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   {
     if (is_event_in_map(event)) {
@@ -174,10 +185,10 @@ private:
     }
   }
 
+  // This function checks that event variables exist in the cached dynamic param map
+  // True if at least one parameter exists in the map
   bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   {
-    // check that event variables exist in dynamic param map
-    // True if at least one parameter exists in parameter map
     for (auto & new_parameter : event->new_parameters) {
       if (dynamic_param_map_.count(new_parameter.name)) {
         return true;
@@ -197,13 +208,18 @@ private:
     }
     return false;
   }
-
+  // Cached Map of dynamic parameters. Parameter values are initialized
+  // from remote nodes if the parameter exists
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
+
+  // Vector to store parameter clients to remote nodes
   std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
+
   rclcpp::SyncParametersClient::SharedPtr parameters_client_for_callback_;
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr event_subscription_;
 
+  // Users of this class will pass in an event callback
   std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> user_callback_;
 };
 
