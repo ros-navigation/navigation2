@@ -193,12 +193,6 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
     "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
-
-  // Invoke callback
-  // TODO(bpwilcox): Initialize callback for dynamic parameters
-/*   auto set_parameters_results = set_parameters({
-    rclcpp::Parameter("publish_frequency", 1.0),
-  }); */
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(

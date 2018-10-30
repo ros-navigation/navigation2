@@ -28,7 +28,7 @@ int main(int argc, char ** argv)
 
   auto node = rclcpp::Node::make_shared("example_dynamic_params_client");
 
-  // Add Parameters to Server
+  // Set parameters on the node
   node->set_parameters({rclcpp::Parameter("foo", 1.0), rclcpp::Parameter("bar", 2)});
 
   // Add Dynamic Reconfigure Client
