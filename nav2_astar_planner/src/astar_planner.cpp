@@ -28,6 +28,8 @@ AStarPlanner::AStarPlanner()
 : nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode")
 {
   RCLCPP_INFO(get_logger(), "Initializing");
+
+  get_parameter_or_set("tolerance", tolerance_, 1.0);
 }
 
 AStarPlanner::~AStarPlanner()
@@ -39,10 +41,10 @@ TaskStatus
 AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f) with tolerance %.2f.",
+    "(%.2f, %.2f) with tolerance %.2f",
     command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y,
-    command->tolerance);
+	tolerance_);
 
   unsigned int seed = std::time(nullptr);
 
@@ -56,7 +58,7 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Canceled global planning task.");
+      RCLCPP_INFO(get_logger(), "Cancelled global planning task");
       setCanceled();
       return TaskStatus::CANCELED;
     }

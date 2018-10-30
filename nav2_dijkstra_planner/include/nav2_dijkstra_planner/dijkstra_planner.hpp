@@ -116,7 +116,7 @@ private:
   bool allow_unknown_;
 
   // Amount the planner can relax the space constraint
-  double default_tolerance_;
+  double tolerance_;
 };
 
 }  // namespace nav2_dijkstra_planner

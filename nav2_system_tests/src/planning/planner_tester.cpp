@@ -252,7 +252,6 @@ bool PlannerTester::defaultPlannerTest(
     endpoints->start.position.y = 1.0;
     endpoints->goal.position.x = 9.0;
     endpoints->goal.position.y = 9.0;
-    endpoints->tolerance = 2.0;
 
   } else {
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerTest:"
@@ -264,7 +263,6 @@ bool PlannerTester::defaultPlannerTest(
     endpoints->start.position.y = 10.0;
     endpoints->goal.position.x = 10.0;
     endpoints->goal.position.y = 390.0;
-    endpoints->tolerance = 2.0;
   }
 
   bool pathIsCollisionFree = plannerTest(endpoints, path);
@@ -330,8 +328,6 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
     endpoints->start.position.y = start.second;
     endpoints->goal.position.x = goal.first;
     endpoints->goal.position.y = goal.second;
-
-    endpoints->tolerance = 2.0;
 
     // TODO(orduno): Tweak criteria for defining if a path goes into obstacles.
     //               Current Dijkstra planner will sometimes produce paths that cut corners

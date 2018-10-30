@@ -47,10 +47,11 @@ namespace nav2_dijkstra_planner
 DijkstraPlanner::DijkstraPlanner()
 : nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode", false),
   global_frame_("map"),
-  allow_unknown_(true),
-  default_tolerance_(1.0)
+  allow_unknown_(true)
 {
   RCLCPP_INFO(get_logger(), "Initializing DijkstraPlanner...");
+
+  get_parameter_or_set("tolerance", tolerance_, 1.0);
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
 
@@ -88,7 +89,7 @@ DijkstraPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr c
     planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
+    bool foundPath = makePlan(command->start, command->goal, tolerance_, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (cancelRequested()) {
@@ -342,7 +343,7 @@ DijkstraPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point
 bool
 DijkstraPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
 {
-  return validPointPotential(world_point, default_tolerance_);
+  return validPointPotential(world_point, tolerance_);
 }
 
 bool

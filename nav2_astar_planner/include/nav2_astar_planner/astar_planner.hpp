@@ -29,6 +29,9 @@ public:
 
   nav2_tasks::TaskStatus execute(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
+
+private:
+  double tolerance_;
 };
 
 }  // namespace nav2_astar_planner
