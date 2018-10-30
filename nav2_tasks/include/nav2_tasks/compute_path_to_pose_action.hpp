@@ -33,40 +33,52 @@ public:
   ComputePathToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
   : BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>(action_name, params)
   {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-    result_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
+    // Get the starting pose information from the XML attributes
 
-    // Use the position and orientation fields from the BT node parameter
-    geometry_msgs::msg::Point position;
-    bool position_passed = getParam<geometry_msgs::msg::Point>("position", position);
+    geometry_msgs::msg::Point start_position;
+    bool have_start_position =
+      getParam<geometry_msgs::msg::Point>("start_position", start_position);
 
-    geometry_msgs::msg::Quaternion orientation;
-    bool orientation_passed = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
+    geometry_msgs::msg::Quaternion start_orientation;
+    bool have_start_orientation =
+      getParam<geometry_msgs::msg::Quaternion>("start_orientation", start_orientation);
 
-    if (!position_passed || !orientation_passed) {
+    if (!have_start_position || !have_start_orientation) {
       RCLCPP_ERROR(node_->get_logger(),
-        "ComputePathToPoseAction: position or orientation not provided");
+        "ComputePathToPoseAction: starting position or orientation not provided");
     }
 
-    // TODO(mjeronimo): should push the starting pose down to the global/local planners
-    command_->start.position.x = 0;
-    command_->start.position.y = 0;
-    command_->start.position.z = 0;
-    command_->start.orientation.x = 0;
-    command_->start.orientation.y = 0;
-    command_->start.orientation.z = 0;
-    command_->start.orientation.w = 0;
+    // Get the ending pose information from the XML attributes
 
-    command_->goal.position = position;
-    command_->goal.orientation = orientation;
-    command_->tolerance = 2.0;  // TODO(mjeronimo): should also be a parameter
+    geometry_msgs::msg::Point goal_position;
+    bool have_goal_position = getParam<geometry_msgs::msg::Point>("goal_position", goal_position);
+
+    geometry_msgs::msg::Quaternion goal_orientation;
+    bool have_goal_orientation =
+      getParam<geometry_msgs::msg::Quaternion>("goal_orientation", goal_orientation);
+
+    if (!have_goal_position || !have_goal_orientation) {
+      RCLCPP_ERROR(node_->get_logger(),
+        "ComputePathToPoseAction: goal position or orientation not provided");
+    }
+
+    // Create the command message for this task
+    command_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+    command_->start.position = start_position;
+    command_->start.orientation = start_orientation;
+    command_->goal.position = goal_position;
+    command_->goal.orientation = goal_orientation;
+
+    // Create the result message
+    result_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"position", "0;0;0"}, {"orientation", "0;0;0;0"}};
+    static BT::NodeParameters params = {
+      {"start_position", "0;0;0"}, {"start_orientation", "0;0;0;0"},
+      {"goal_position", "0;0;0"}, {"goal_orientation", "0;0;0;0"}};
     return params;
   }
 };

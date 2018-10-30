@@ -32,23 +32,25 @@ public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
   : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name, params)
   {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-    result_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
-
-    // Use the position and orientation fields from the behavior tree node parameter
+    // Use the position and orientation fields from the XML attributes
     geometry_msgs::msg::Point position;
-    bool position_passed = getParam<geometry_msgs::msg::Point>("position", position);
+    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
 
     geometry_msgs::msg::Quaternion orientation;
-    bool orientation_passed = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
+    bool have_orientation = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
 
-    if (!position_passed || !orientation_passed) {
-      printf("NavigateToPoseAction: position or orientation not provided\n");
+    if (!have_position || !have_orientation) {
+      RCLCPP_ERROR(node_->get_logger(),
+        "NavigateToPoseAction: position or orientation not provided");
     }
 
+    // Create the command message for this task
+    command_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
     command_->pose.position = position;
     command_->pose.orientation = orientation;
+
+    // Create the result message
+    result_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method

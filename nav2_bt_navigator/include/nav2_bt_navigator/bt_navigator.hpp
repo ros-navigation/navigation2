@@ -16,6 +16,7 @@
 #define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
 #include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -27,6 +28,9 @@ public:
 
   nav2_tasks::TaskStatus execute(
     const nav2_tasks::NavigateToPoseCommand::SharedPtr command) override;
+
+private:
+  nav2_robot::Robot robot_;
 };
 
 }  // namespace nav2_bt_navigator

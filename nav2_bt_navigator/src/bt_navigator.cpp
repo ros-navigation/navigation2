@@ -22,7 +22,8 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode")
+: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
+  robot_(this)
 {
 }
 
@@ -32,20 +33,34 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   RCLCPP_INFO(get_logger(), "Start navigating to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
 
-  // Get a reference for convenience
-  geometry_msgs::msg::Pose & p = command->pose;
+  // Get the current pose from the robot
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current;
+
+  if (!robot_.getCurrentPose(current)) {
+    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+    return TaskStatus::FAILED;
+  }
+
+  // Get a reference to the command pose for convenience
+  geometry_msgs::msg::Pose & goal = command->pose;
 
   // Compose the args for the ComputePathToPose action
   std::stringstream args;
-  args << "position=\"" <<
-    p.position.x << ";" << p.position.y << ";" << p.position.z << "\"" <<
-    " orientation=\"" <<
-    p.orientation.x << ";" << p.orientation.y << ";" <<
-    p.orientation.z << ";" << p.orientation.w << "\"";
+  args << "start_position=\"" <<
+    current->pose.pose.position.x << ";" << current->pose.pose.position.y << ";" <<
+    current->pose.pose.position.z << "\" " <<
+    "start_orientation=\"" <<
+    current->pose.pose.orientation.x << ";" << current->pose.pose.orientation.y << ";" <<
+    current->pose.pose.orientation.z << ";" << current->pose.pose.orientation.w << "\"" <<
+    "goal_position=\"" <<
+    goal.position.x << ";" << goal.position.y << ";" << goal.position.z << "\" " <<
+    "goal_orientation=\"" <<
+    goal.orientation.x << ";" << goal.orientation.y << ";" <<
+    goal.orientation.z << ";" << goal.orientation.w << "\"";
 
   // Put it all together, trying to make the XML somewhat readable here
-  std::stringstream ss;
-  ss <<
+  std::stringstream command_ss;
+  command_ss <<
     R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
@@ -57,11 +72,11 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   </BehaviorTree>
 </root>)";
 
-  RCLCPP_DEBUG(get_logger(), "Behavior tree XML: %s", ss.str());
+  RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", command_ss.str().c_str());
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(ss.str(), std::bind(&BtNavigator::cancelRequested, this));
+  TaskStatus result = bt.run(command_ss.str(), std::bind(&BtNavigator::cancelRequested, this));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;

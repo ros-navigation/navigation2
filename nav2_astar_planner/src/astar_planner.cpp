@@ -39,8 +39,10 @@ TaskStatus
 AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
-    command->goal.position.x, command->goal.position.y);
+    "(%.2f, %.2f) with tolerance %.2f.",
+    command->start.position.x, command->start.position.y,
+    command->goal.position.x, command->goal.position.y,
+    command->tolerance);
 
   unsigned int seed = std::time(nullptr);
 
@@ -50,7 +52,6 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
   // Spin here for a bit to fake out some processing time
   for (int i = 0; i < iterations; i++) {
     // Do a bit of the task
-    RCLCPP_INFO(get_logger(), "Doing work: %d", i);
     std::this_thread::sleep_for(10ms);
 
     // Before we loop again to do more work, check if we've been canceled
@@ -62,8 +63,8 @@ AStarPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
   }
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
-    command->goal.position.x, command->goal.position.y, command->tolerance);
+  RCLCPP_INFO(get_logger(), "Successfully computed a path to (%.2f, %.2f)"
+    command->goal.position.x, command->goal.position.y);
 
   nav2_tasks::ComputePathToPoseResult result;
   setResult(result);

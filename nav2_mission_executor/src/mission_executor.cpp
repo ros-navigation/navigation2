@@ -32,7 +32,7 @@ MissionExecutor::MissionExecutor()
 
 TaskStatus MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Starting mission execution");
+  RCLCPP_INFO(get_logger(), "Executing mission plan: %s", command->mission_plan.c_str());
 
   // Create and run the behavior tree for this mission
   ExecuteMissionBehaviorTree bt(shared_from_this());
@@ -62,8 +62,8 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
     p.orientation.w << "\"";
 
   // Put it all together, trying to make the XML somewhat readable here
-  std::stringstream ss;
-  ss <<
+  std::stringstream command_ss;
+  command_ss <<
     R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
@@ -74,11 +74,11 @@ void MissionExecutor::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::
   </BehaviorTree>
 </root>)";
 
-  RCLCPP_DEBUG(get_logger(), "Publishing a mission plan: %s", ss.str());
+  RCLCPP_INFO(get_logger(), "Publishing a mission plan: %s", command_ss.str().c_str());
 
   // Publish the mission plan (so that our own TaskServer picks it up)
   auto message = nav2_msgs::msg::MissionPlan();
-  message.mission_plan = ss.str();
+  message.mission_plan = command_ss.str();
 
   plan_pub_->publish(message);
 }

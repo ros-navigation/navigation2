@@ -39,9 +39,14 @@ DwaController::~DwaController()
 TaskStatus
 DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "DwaController: Received a new path to follow of"
-    " size %i ending at (%.2f, %.2f)", (int)command->poses.size(), command->poses.back().position.x,
-    command->poses.back().position.y);
+  if (command->poses.size() == 0) {
+    RCLCPP_WARN(get_logger(), "Received an empty path");
+  } else {
+    RCLCPP_INFO(get_logger(), "Received a new path to follow of"
+      " size %i ending at (%.2f, %.2f)", (int)command->poses.size(),
+      command->poses.back().position.x,
+      command->poses.back().position.y);
+  }
 
   unsigned int seed = std::time(nullptr);
 
@@ -57,7 +62,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 
     // Before we loop again to do more work, check if we've been canceled
     if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "DwaController: Follow task has been canceled.");
+      RCLCPP_INFO(get_logger(), "Follow task has been canceled");
       setCanceled();
       return TaskStatus::CANCELED;
     }
@@ -67,7 +72,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
   sendVelocity(0);
 
   // We've successfully completed the task, so return the result
-  RCLCPP_INFO(get_logger(), "DwaController: Follow task has been completed.");
+  RCLCPP_INFO(get_logger(), "Follow task has been completed");
 
   nav2_tasks::FollowPathResult result;
   setResult(result);
@@ -77,7 +82,7 @@ DwaController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 
 void DwaController::sendVelocity(double speed)
 {
-  RCLCPP_DEBUG(get_logger(), "DwaController::sendVelocity: %f", speed);
+  RCLCPP_INFO(get_logger(), "Send velocity: %f", speed);
 
   CmdVel v;
   v.linear.x = speed;

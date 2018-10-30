@@ -64,27 +64,20 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   RCLCPP_INFO(get_logger(), "Begin navigating to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
 
-  // Compose the PathEndPoints message for Navigation. The starting pose comes from
-  // localization, while the goal pose is from the incoming command
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-
-#if 0
+  // Get the current pose from the robot
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
-  if (robot_.getCurrentPose(current_pose)) {
-    RCLCPP_DEBUG(get_logger(), "Got robot pose");
-    endpoints->start = current_pose->pose.pose;
-    endpoints->goal = command->pose;
-    endpoints->tolerance = 2.0;
-  } else {
+
+  if (!robot_.getCurrentPose(current_pose)) {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
     RCLCPP_WARN(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
-#else
-  endpoints->start = command->pose;
+
+  // Create a PathEndPoints message for the global planner
+  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  endpoints->start = current_pose->pose.pose;
   endpoints->goal = command->pose;
   endpoints->tolerance = 2.0;
-#endif
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
   RCLCPP_DEBUG(get_logger(), "goal.position.x: %f", endpoints->goal.position.x);
