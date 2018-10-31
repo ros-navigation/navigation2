@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__MAP_GRID_H_
-#define DWB_CRITICS__MAP_GRID_H_
+#ifndef DWB_CRITICS__MAP_GRID_HPP_
+#define DWB_CRITICS__MAP_GRID_HPP_
 
 #include <vector>
 #include <memory>
@@ -134,4 +134,4 @@ protected:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS__MAP_GRID_H_
+#endif  // DWB_CRITICS__MAP_GRID_HPP_

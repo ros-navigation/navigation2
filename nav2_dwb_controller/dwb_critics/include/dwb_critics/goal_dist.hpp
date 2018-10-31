@@ -31,44 +31,34 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS__PATH_ALIGN_H_
-#define DWB_CRITICS__PATH_ALIGN_H_
+#ifndef DWB_CRITICS__GOAL_DIST_HPP_
+#define DWB_CRITICS__GOAL_DIST_HPP_
 
 #include <vector>
-#include <string>
-#include "dwb_critics/path_dist.h"
+#include "dwb_critics/map_grid.hpp"
 
 namespace dwb_critics
 {
 /**
- * @class PathAlignCritic
- * @brief Scores trajectories based on how far from the global path the front of the robot ends up.
+ * @class GoalDistCritic
+ * @brief Scores trajectories based on how far along the global path they end up.
  *
- * This uses the costmap grid as a proxy for calculating which way the robot should be facing relative
- * to the global path. Instead of scoring how far the center of the robot is away from the global path,
- * this critic calculates how far a point forward_point_distance in front of the robot is from the global
- * path. This biases the planner toward trajectories that line up with the global plan.
- *
- * When the robot is near the end of the path, the scale of this critic is set to zero. When the projected
- * point is past the global goal, we no longer want this critic to try to align to a part of the global path
- * that isn't there.
+ * This trajectory critic helps ensure progress along the global path. It finds the pose from the
+ * global path farthest from the robot that is still on the costmap, and aims for that point by
+ * assigning the lowest cost to the cell corresponding with that farthest pose.
  */
-class PathAlignCritic : public PathDistCritic
+class GoalDistCritic : public MapGridCritic
 {
 public:
-  PathAlignCritic()
-  : zero_scale_(false), forward_point_distance_(0.0) {}
-  void onInit() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
     const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
-  double getScale() const override;
-  double scorePose(const geometry_msgs::msg::Pose2D & pose) override;
 
 protected:
-  bool zero_scale_;
-  double forward_point_distance_;
+  bool getLastPoseOnCostmap(
+    const nav_2d_msgs::msg::Path2D & global_plan, unsigned int & x,
+    unsigned int & y);
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS__PATH_ALIGN_H_
+#endif  // DWB_CRITICS__GOAL_DIST_HPP_

@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__BASE_OBSTACLE_H_
-#define DWB_CRITICS__BASE_OBSTACLE_H_
+#ifndef DWB_CRITICS__BASE_OBSTACLE_HPP_
+#define DWB_CRITICS__BASE_OBSTACLE_HPP_
 
 #include "dwb_core/trajectory_critic.h"
 
@@ -76,4 +76,4 @@ protected:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS__BASE_OBSTACLE_H_
+#endif  // DWB_CRITICS__BASE_OBSTACLE_HPP_

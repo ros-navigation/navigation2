@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/obstacle_footprint.h"
+#include "dwb_critics/obstacle_footprint.hpp"
 #include <algorithm>
 #include <vector>
-#include "dwb_critics/line_iterator.h"
+#include "dwb_critics/line_iterator.hpp"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"

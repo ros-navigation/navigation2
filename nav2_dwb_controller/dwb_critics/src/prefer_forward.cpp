@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/prefer_forward.h"
+#include "dwb_critics/prefer_forward.hpp"
 #include <math.h>
 #include "pluginlib/class_list_macros.hpp"
 

@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__TWIRLING_H_
-#define DWB_CRITICS__TWIRLING_H_
+#ifndef DWB_CRITICS__TWIRLING_HPP_
+#define DWB_CRITICS__TWIRLING_HPP_
 
 #include "dwb_core/trajectory_critic.h"
 
@@ -56,4 +56,4 @@ public:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS__TWIRLING_H_
+#endif  // DWB_CRITICS__TWIRLING_HPP_

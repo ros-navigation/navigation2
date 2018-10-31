@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__OBSTACLE_FOOTPRINT_H_
-#define DWB_CRITICS__OBSTACLE_FOOTPRINT_H_
+#ifndef DWB_CRITICS__OBSTACLE_FOOTPRINT_HPP_
+#define DWB_CRITICS__OBSTACLE_FOOTPRINT_HPP_
 
 #include <vector>
-#include "dwb_critics/base_obstacle.h"
+#include "dwb_critics/base_obstacle.hpp"
 
 namespace dwb_critics
 {
@@ -97,4 +97,4 @@ protected:
 };
 }  // namespace dwb_critics
 
-#endif  // DWB_CRITICS__OBSTACLE_FOOTPRINT_H_
+#endif  // DWB_CRITICS__OBSTACLE_FOOTPRINT_HPP_

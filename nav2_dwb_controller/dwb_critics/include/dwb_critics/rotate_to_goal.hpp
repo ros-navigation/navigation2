@@ -31,24 +31,40 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef DWB_CRITICS__ROTATE_TO_GOAL_HPP_
+#define DWB_CRITICS__ROTATE_TO_GOAL_HPP_
 
-#ifndef DWB_CRITICS__ALIGNMENT_UTIL_H_
-#define DWB_CRITICS__ALIGNMENT_UTIL_H_
-
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include <string>
+#include <vector>
+#include "dwb_core/trajectory_critic.h"
 
 namespace dwb_critics
 {
+
 /**
- * @brief Projects the given pose forward the specified distance in the x direction.
- * @param pose Input pose
- * @param distance distance to move (in meters)
- * @return Pose distance meters in front of input pose.
+ * @class RotateToGoalCritic
+ * @brief Forces the commanded trajectories to only be rotations if within a certain distance window
  *
- * (used in both path_align and dist_align)
+ * This used to be built in to the DWA Local Planner, but has been moved to a critic for consistency.
+ *
+ * If the current pose is within xy_goal_tolerance LINEAR distance from the goal pose, score trajectories
+ * that have linear movement as invalid and prefer trajectories that will move toward the goal yaw.
  */
-geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D & pose, double distance);
+class RotateToGoalCritic : public dwb_core::TrajectoryCritic
+{
+public:
+  void onInit() override;
+  bool prepare(
+    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
+
+private:
+  bool in_window_;
+  double goal_yaw_;
+  double xy_goal_tolerance_;
+  double xy_goal_tolerance_sq_;  ///< Cached squared tolerance
+};
 
 }  // namespace dwb_critics
-
-#endif  // DWB_CRITICS__ALIGNMENT_UTIL_H_
+#endif  // DWB_CRITICS__ROTATE_TO_GOAL_HPP_

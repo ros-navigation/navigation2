@@ -31,24 +31,24 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS__PATH_DIST_H_
-#define DWB_CRITICS__PATH_DIST_H_
 
-#include "dwb_critics/map_grid.h"
+#ifndef DWB_CRITICS__ALIGNMENT_UTIL_HPP_
+#define DWB_CRITICS__ALIGNMENT_UTIL_HPP_
+
+#include "geometry_msgs/msg/pose2_d.hpp"
 
 namespace dwb_critics
 {
 /**
- * @class PathDistCritic
- * @brief Scores trajectories based on how far from the global path they end up.
+ * @brief Projects the given pose forward the specified distance in the x direction.
+ * @param pose Input pose
+ * @param distance distance to move (in meters)
+ * @return Pose distance meters in front of input pose.
+ *
+ * (used in both path_align and dist_align)
  */
-class PathDistCritic : public MapGridCritic
-{
-public:
-  bool prepare(
-    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
-};
+geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D & pose, double distance);
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS__PATH_DIST_H_
+
+#endif  // DWB_CRITICS__ALIGNMENT_UTIL_HPP_

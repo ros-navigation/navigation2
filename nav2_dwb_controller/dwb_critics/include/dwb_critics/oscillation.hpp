@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__OSCILLATION_H_
-#define DWB_CRITICS__OSCILLATION_H_
+#ifndef DWB_CRITICS__OSCILLATION_HPP_
+#define DWB_CRITICS__OSCILLATION_HPP_
 
 #include <vector>
 #include <string>
@@ -155,4 +155,4 @@ private:
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS__OSCILLATION_H_
+#endif  // DWB_CRITICS__OSCILLATION_HPP_

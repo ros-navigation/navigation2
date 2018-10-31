@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/oscillation.h"
+#include "dwb_critics/oscillation.hpp"
 #include <chrono>
 #include <cmath>
 #include <string>

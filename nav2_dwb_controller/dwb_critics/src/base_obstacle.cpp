@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/base_obstacle.h"
+#include "dwb_critics/base_obstacle.hpp"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"

@@ -31,34 +31,36 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CRITICS__GOAL_DIST_H_
-#define DWB_CRITICS__GOAL_DIST_H_
 
-#include <vector>
-#include "dwb_critics/map_grid.h"
+#ifndef DWB_CRITICS__PREFER_FORWARD_HPP_
+#define DWB_CRITICS__PREFER_FORWARD_HPP_
+
+#include <string>
+#include "dwb_core/trajectory_critic.h"
 
 namespace dwb_critics
 {
+
 /**
- * @class GoalDistCritic
- * @brief Scores trajectories based on how far along the global path they end up.
+ * @class PreferForwardCritic
+ * @brief Penalize trajectories with move backwards and/or turn too much
  *
- * This trajectory critic helps ensure progress along the global path. It finds the pose from the
- * global path farthest from the robot that is still on the costmap, and aims for that point by
- * assigning the lowest cost to the cell corresponding with that farthest pose.
+ * Has three different scoring conditions:
+ * 1) If the trajectory's x velocity is negative, return the penalty
+ * 2) If the trajectory's x is low and the theta is also low, return the penalty.
+ * 3) Otherwise, return a scaled version of the trajectory's theta.
  */
-class GoalDistCritic : public MapGridCritic
+class PreferForwardCritic : public dwb_core::TrajectoryCritic
 {
 public:
-  bool prepare(
-    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+  PreferForwardCritic()
+  : penalty_(1.0), strafe_x_(0.1), strafe_theta_(0.2), theta_scale_(10.0) {}
+  void onInit() override;
+  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 
-protected:
-  bool getLastPoseOnCostmap(
-    const nav_2d_msgs::msg::Path2D & global_plan, unsigned int & x,
-    unsigned int & y);
+private:
+  double penalty_, strafe_x_, strafe_theta_, theta_scale_;
 };
 
 }  // namespace dwb_critics
-#endif  // DWB_CRITICS__GOAL_DIST_H_
+#endif  // DWB_CRITICS__PREFER_FORWARD_HPP_

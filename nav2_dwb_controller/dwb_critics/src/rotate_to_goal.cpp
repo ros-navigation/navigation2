@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/rotate_to_goal.h"
+#include "dwb_critics/rotate_to_goal.hpp"
 #include <string>
 #include <vector>
 #include "nav_2d_utils/parameters.hpp"
