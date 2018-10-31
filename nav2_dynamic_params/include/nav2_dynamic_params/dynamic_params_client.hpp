@@ -67,11 +67,16 @@ public:
     for (const auto & client : parameters_clients_) {
       auto params = client->get_parameters(param_names);
       for (const auto & param : params) {
-        if (!dynamic_param_map_.count(param.get_name())) {
-          dynamic_param_map_[param.get_name()] = param;
-        }
+        set_param_in_map(param);
       }
     }
+  }
+
+// Variant of add_parameters. Passing as char [] to avoid ambigous overload errors
+  void add_parameters(const char param_name[])
+  {
+    std::string pname = param_name;
+    add_parameters({pname});
   }
 
   // Adds all parameters currently on the remote nodes and initializes them
@@ -156,6 +161,19 @@ public:
   }
 
 private:
+  void set_param_in_map(rclcpp::Parameter param)
+  {
+    if (!dynamic_param_map_.count(param.get_name())) {
+      dynamic_param_map_[param.get_name()] = param;
+    } else {
+      if (dynamic_param_map_[param.get_name()].get_type() ==
+        rclcpp::ParameterType::PARAMETER_NOT_SET)
+      {
+        dynamic_param_map_[param.get_name()] = param;
+      }
+    }
+  }
+
   template<class T>
   T get_param_from_event(const rclcpp::ParameterEventsFilter & event_filter)
   {
