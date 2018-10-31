@@ -25,13 +25,19 @@ using nav2_tasks::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 
+#define NO_OP_DELETER [](auto){}
+
 namespace nav2_dwb_controller
 {
 
-// TODO(cdelsey): provide the correct clock to tfBuffer_
-DwbController::DwbController()
-: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(std::make_shared<rclcpp::Clock>()), tfListener_(tfBuffer_)
+DwbController::DwbController(rclcpp::executor::Executor & executor)
+: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(get_clock()), tfListener_(tfBuffer_)
 {
+  cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
+  executor.add_node(cm_);
+  odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
+  vel_pub_ =
+    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 }
 
 DwbController::~DwbController()
@@ -44,12 +50,8 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
-    cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
     auto nh = shared_from_this();
-    odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-    vel_pub_ =
-      this->create_publisher<geometry_msgs::msg::Twist>("/mobile_base/commands/velocity", 1);
-    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_), cm_);
+    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
     while (true) {

@@ -29,7 +29,7 @@ namespace nav2_dwb_controller
 class DwbController : public nav2_tasks::FollowPathTaskServer
 {
 public:
-  DwbController();
+  DwbController(rclcpp::executor::Executor & executor);
   ~DwbController();
 
   nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
