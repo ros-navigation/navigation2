@@ -36,8 +36,8 @@ DwbController::DwbController(rclcpp::executor::Executor & executor)
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_pub_ = 
-    this->create_publisher<geometry_msgs::msg::Twist>("/mobile_base/commands/velocity", 1);
+  vel_pub_ =
+    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 }
 
 DwbController::~DwbController()
