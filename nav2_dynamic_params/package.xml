@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_dynamic_params</name>
   <version>0.1.0</version>
@@ -8,7 +8,6 @@
     type and defined bounds. Support for custom validation callbacks is also provided. Some useful
     convenience functions for event callbacks are also provided
   </description>
-  <author>Brian Wilcox</author>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
   <license>Apache License 2.0</license>
 
