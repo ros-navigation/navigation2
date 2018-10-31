@@ -4,7 +4,9 @@ import launch.actions
 import launch_ros.actions
 
 def generate_launch_description():
-    mapFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'test_map.yaml')
+    launchDir = os.getenv('TEST_LAUNCH_DIR')
+    mapFile = os.path.join(launchDir, 'test_map.yaml')
+    controller_parameters = os.path.join(launchDir, 'turtlebot_kinematic_parameters.yaml')
 
     return LaunchDescription([
         launch.actions.TimerAction(
@@ -13,7 +15,7 @@ def generate_launch_description():
                 ], period = 1.0),
         launch.actions.TimerAction(
             actions = [
-                launch_ros.actions.Node( package='nav2_controller_dwb', node_executable='nav2_controller_dwb', output='screen')
+                launch_ros.actions.Node( package='dwb_controller', node_executable='dwb_controller', output='screen', parameters=[controller_parameters])
                 ], period = 5.0),
         launch.actions.TimerAction(
             actions = [
