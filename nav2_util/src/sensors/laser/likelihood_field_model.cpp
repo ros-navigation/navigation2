@@ -27,17 +27,18 @@
 namespace nav2_util
 {
 
-LikelihoodFieldModel::LikelihoodFieldModel(double z_hit, double z_rand, double sigma_hit,
-                                           double max_occ_dist, size_t max_beams, map_t * map)
-                                          : Laser(max_beams, map)
+LikelihoodFieldModel::LikelihoodFieldModel(
+  double z_hit, double z_rand, double sigma_hit,
+  double max_occ_dist, size_t max_beams, map_t * map)
+: Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
-  sigma_hit_ = sigma_hit; 
+  sigma_hit_ = sigma_hit;
   max_occ_dist_ = max_occ_dist;
 }
 
-double 
+double
 LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
 {
   LikelihoodFieldModel * self;
@@ -131,17 +132,15 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
 }
 
 
-
 bool
 LikelihoodFieldModel::sensorUpdate(pf_t * pf, LaserData * data)
 {
-    if (max_beams_ < 2)
-    {
-        return false;
-    }
-    pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
+  if (max_beams_ < 2) {
+    return false;
+  }
+  pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
 
-    return true;
+  return true;
 }
 
 }  // namespace nav2_util

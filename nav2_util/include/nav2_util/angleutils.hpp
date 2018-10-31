@@ -31,7 +31,7 @@ class angleutils
    static double angle_diff(double a, double b);
 };
 
-inline double 
+inline double
 angleutils::normalize(double z)
 {
   return atan2(sin(z), cos(z));

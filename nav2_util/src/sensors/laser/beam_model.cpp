@@ -27,13 +27,14 @@
 namespace nav2_util
 {
 
-BeamModel::BeamModel(double z_hit, double z_short, double z_max, double z_rand, double sigma_hit,
-                     double lambda_short, double chi_outlier, size_t max_beams, map_t * map)
-                     : Laser(max_beams, map)
+BeamModel::BeamModel(
+  double z_hit, double z_short, double z_max, double z_rand, double sigma_hit,
+  double lambda_short, double chi_outlier, size_t max_beams, map_t * map)
+: Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
-  sigma_hit_ = sigma_hit; 
+  sigma_hit_ = sigma_hit;
   z_short_ = z_short;
   z_max_ = z_max;
   lambda_short_ = lambda_short;
@@ -41,7 +42,7 @@ BeamModel::BeamModel(double z_hit, double z_short, double z_max, double z_rand, 
 }
 
 // Determine the probability for the given pose
-double 
+double
 BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
 {
   BeamModel * self;
@@ -117,13 +118,12 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
 bool
 BeamModel::sensorUpdate(pf_t * pf, LaserData * data)
 {
-    if (max_beams_ < 2)
-    {
-        return false;
-    }
-    pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
+  if (max_beams_ < 2) {
+    return false;
+  }
+  pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
 
-    return true;
+  return true;
 }
 
 }  // namespace nav2_util

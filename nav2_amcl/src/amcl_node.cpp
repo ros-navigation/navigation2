@@ -126,12 +126,12 @@ AmclNode::AmclNode()
 
   sensor_model_type_ =
     parameters_client->get_parameter("laser_model_type", std::string("likelihood_field"));
-    RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
+  RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
 
-  robot_model_type_ = parameters_client->get_parameter("tmp_model_type", 
-                                                        std::string("differential"));                                                  
+  robot_model_type_ = parameters_client->get_parameter("tmp_model_type",
+      std::string("differential"));
   createMotionModel();
-  
+
   d_thresh_ = parameters_client->get_parameter("update_min_d", 0.25);
   a_thresh_ = parameters_client->get_parameter("update_min_a", 0.2);
   odom_frame_id_ = parameters_client->get_parameter("odom_frame_id", std::string("odom"));
@@ -681,8 +681,8 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Instantiate the sensor objects
   delete motionModel_;
   createMotionModel();
- 
-   // Laser
+
+  // Laser
   delete laser_;
   createLaserObject();
 
@@ -957,7 +957,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // printf("pose\n");
     // pf_vector_fprintf(pose, stdout, "%.3f");
 
-   motionModel_->odometryUpdate(pf_, pose, delta);
+    motionModel_->odometryUpdate(pf_, pose, delta);
 
     // Pose at last filter update
     // this->pf_odom_pose = pose;
@@ -1310,16 +1310,16 @@ AmclNode::applyInitialPose()
 nav2_util::Laser *
 AmclNode::createLaserObject()
 {
-    if (sensor_model_type_ == "beam") {
+  if (sensor_model_type_ == "beam") {
     laser_ = new BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
-                           0.0, max_beams_, map_);
+        0.0, max_beams_, map_);
   } else if (sensor_model_type_ == "likelihood_field_prob") {
     laser_ = new LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_,
-                                          do_beamskip_, beam_skip_distance_,beam_skip_threshold_,
-                                          beam_skip_error_threshold_, max_beams_, map_);
+        do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
+        beam_skip_error_threshold_, max_beams_, map_);
   } else {
-    laser_ = new LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_, 
-                                      max_beams_, map_);
+    laser_ = new LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_,
+        max_beams_, map_);
   }
   return laser_;
 }
@@ -1327,14 +1327,14 @@ AmclNode::createLaserObject()
 void
 AmclNode::createMotionModel()
 {
-  if (robot_model_type_ == "differential"){
+  if (robot_model_type_ == "differential") {
     motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
-    RCLCPP_WARN(get_logger(), "Robot motion model is differential");
+    RCLCPP_INFO(get_logger(), "Robot motion model is differential");
   } else if (robot_model_type_ == "omnidirectional") {
     motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
-    RCLCPP_WARN(get_logger(), "Robot motion model is omnidirectional");
+    RCLCPP_INFO(get_logger(), "Robot motion model is omnidirectional");
   } else {
-    RCLCPP_WARN(get_logger(), "Unknown robot motion model, defaulting to differential model");
+    RCLCPP_INFO(get_logger(), "Unknown robot motion model, defaulting to differential model");
     motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
   }
 }

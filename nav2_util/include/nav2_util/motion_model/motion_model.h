@@ -24,34 +24,36 @@ namespace nav2_util
 
 class MotionModel
 {
-  public:
-    virtual ~MotionModel() = default;
-    virtual void odometryUpdate(pf_t *pf, const pf_vector_t & pose, const pf_vector_t & delta) = 0;
+public:
+  virtual ~MotionModel() = default;
+  virtual void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta) = 0;
 };
 
 class OmniMotionModel : public MotionModel
 {
-  public:
-    OmniMotionModel(double alpha1, double alpha2, double alpha3, double alpha4, double alpha5);
-    void odometryUpdate(pf_t *pf, const pf_vector_t & pose, const pf_vector_t & delta);
-  private:
-    double alpha1_;
-    double alpha2_;
-    double alpha3_;
-    double alpha4_;
-    double alpha5_;
+public:
+  OmniMotionModel(double alpha1, double alpha2, double alpha3, double alpha4, double alpha5);
+  void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta);
+
+private:
+  double alpha1_;
+  double alpha2_;
+  double alpha3_;
+  double alpha4_;
+  double alpha5_;
 };
 
 class DifferentialMotionModel : public MotionModel
 {
-  public:
-    DifferentialMotionModel(double alpha1, double alpha2, double alpha3, double alpha4);
-    void odometryUpdate(pf_t *pf, const pf_vector_t & pose, const pf_vector_t & delta);
-  private:
-    double alpha1_;
-    double alpha2_;
-    double alpha3_;
-    double alpha4_;
+public:
+  DifferentialMotionModel(double alpha1, double alpha2, double alpha3, double alpha4);
+  void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta);
+
+private:
+  double alpha1_;
+  double alpha2_;
+  double alpha3_;
+  double alpha4_;
 };
 
 }  // namespace nav2_util

@@ -28,27 +28,27 @@
 namespace nav2_util
 {
 
-LikelihoodFieldModelProb::LikelihoodFieldModelProb(double z_hit, double z_rand, double sigma_hit,
-                                                   double max_occ_dist, bool do_beamskip,
-                                                   double beam_skip_distance,
-                                                   double beam_skip_threshold, 
-                                                   double beam_skip_error_threshold,
-                                                   size_t max_beams, map_t * map)
-                                                  : Laser(max_beams, map)
+LikelihoodFieldModelProb::LikelihoodFieldModelProb(
+  double z_hit, double z_rand, double sigma_hit,
+  double max_occ_dist, bool do_beamskip,
+  double beam_skip_distance,
+  double beam_skip_threshold,
+  double beam_skip_error_threshold,
+  size_t max_beams, map_t * map)
+: Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
-  sigma_hit_ = sigma_hit; 
+  sigma_hit_ = sigma_hit;
   max_occ_dist_ = max_occ_dist;
   do_beamskip_ = do_beamskip;
   beam_skip_distance_ = beam_skip_distance;
-  beam_skip_threshold_ = beam_skip_threshold; 
-  beam_skip_error_threshold_ = beam_skip_error_threshold; 
-
+  beam_skip_threshold_ = beam_skip_threshold;
+  beam_skip_error_threshold_ = beam_skip_error_threshold;
 }
-   
+
 // Determine the probability for the given pose
-double 
+double
 LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set)
 {
   LikelihoodFieldModelProb * self;
@@ -242,13 +242,12 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
 bool
 LikelihoodFieldModelProb::sensorUpdate(pf_t * pf, LaserData * data)
 {
-    if (max_beams_ < 2)
-    {
-        return false;
-    }
-    pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
+  if (max_beams_ < 2) {
+    return false;
+  }
+  pf_update_sensor(pf, (pf_sensor_model_fn_t) sensorFunction, data);
 
-    return true;
+  return true;
 }
 
-}  // na2_util
+}  // namespace nav2_util

@@ -65,7 +65,7 @@ Laser::reallocTempData(int new_max_samples, int new_max_obs)
   }
 }
 
-void 
+void
 Laser::SetLaserPose(pf_vector_t & laser_pose)
 {
   laser_pose_ = laser_pose;
