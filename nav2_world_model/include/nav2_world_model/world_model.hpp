@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_
-#define NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_
+#ifndef NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
+#define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 
 #include <string>
 #include <vector>
@@ -28,14 +28,14 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "tf2_ros/transform_listener.h"
 
-namespace nav2_costmap_world_model
+namespace nav2_world_model
 {
 
-class CostmapWorldModel : public rclcpp::Node
+class WorldModel : public rclcpp::Node
 {
 public:
-  explicit CostmapWorldModel(const std::string & name);
-  CostmapWorldModel();
+  explicit WorldModel(const std::string & name);
+  WorldModel();
 
   template<class LayerT>
   void addLayer(std::string layer_name)
@@ -60,6 +60,6 @@ private:
   rclcpp::Node::SharedPtr node_;
 };
 
-}  // namespace nav2_costmap_world_model
+}  // namespace nav2_world_model
 
-#endif  // NAV2_COSTMAP_WORLD_MODEL__COSTMAP_WORLD_MODEL_HPP_
+#endif  // NAV2_WORLD_MODEL__WORLD_MODEL_HPP_

@@ -17,15 +17,15 @@
 #include <vector>
 #include <string>
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "nav2_costmap_world_model/costmap_world_model.hpp"
+#include "nav2_world_model/world_model.hpp"
 
 using std::vector;
 using std::string;
 
-namespace nav2_costmap_world_model
+namespace nav2_world_model
 {
 
-CostmapWorldModel::CostmapWorldModel(const string & name)
+WorldModel::WorldModel(const string & name)
 : Node(name + "_Node")
 {
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
@@ -40,11 +40,11 @@ CostmapWorldModel::CostmapWorldModel(const string & name)
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name + "_GetCostmap",
-      std::bind(&CostmapWorldModel::costmap_callback, this,
+      std::bind(&WorldModel::costmap_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void CostmapWorldModel::costmap_callback(
+void WorldModel::costmap_callback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
@@ -78,7 +78,7 @@ void CostmapWorldModel::costmap_callback(
   response->map.data.assign(data, data + data_length);
 }
 
-void CostmapWorldModel::setFootprint(double length, double width)
+void WorldModel::setFootprint(double length, double width)
 {
   std::vector<geometry_msgs::msg::Point> polygon;
   geometry_msgs::msg::Point p;
@@ -97,9 +97,9 @@ void CostmapWorldModel::setFootprint(double length, double width)
   layered_costmap_->setFootprint(polygon);
 }
 
-CostmapWorldModel::CostmapWorldModel()
-: CostmapWorldModel("WorldModel")
+WorldModel::WorldModel()
+: WorldModel("WorldModel")
 {
 }
 
-}  // namespace nav2_costmap_world_model
+}  // namespace nav2_world_model

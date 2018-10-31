@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_costmap_world_model</name>
+  <name>nav2_world_model</name>
   <version>0.1.0</version>
   <description>TODO</description>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
