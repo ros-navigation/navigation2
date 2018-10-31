@@ -36,7 +36,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
-#include "nav_2d_utils/parameters.h"
+#include "nav_2d_utils/parameters.hpp"
 
 using std::fabs;
 

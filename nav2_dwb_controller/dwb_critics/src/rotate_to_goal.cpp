@@ -35,7 +35,7 @@
 #include "dwb_critics/rotate_to_goal.h"
 #include <string>
 #include <vector>
-#include "nav_2d_utils/parameters.h"
+#include "nav_2d_utils/parameters.hpp"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"

@@ -17,7 +17,7 @@
 #include <chrono>
 #include <memory>
 #include "dwb_core/exceptions.h"
-#include "nav_2d_utils/conversions.h"
+#include "nav_2d_utils/conversions.hpp"
 
 using namespace std::chrono_literals;
 using std::shared_ptr;

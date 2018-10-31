@@ -39,9 +39,9 @@
 #include <utility>
 #include "dwb_core/dwb_core.h"
 #include "dwb_core/illegal_trajectory_tracker.h"
-#include "nav_2d_utils/conversions.h"
-#include "nav_2d_utils/parameters.h"
-#include "nav_2d_utils/tf_help.h"
+#include "nav_2d_utils/conversions.hpp"
+#include "nav_2d_utils/parameters.hpp"
+#include "nav_2d_utils/tf_help.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_msgs/msg/critic_score.hpp"
 #include "pluginlib/class_list_macros.hpp"

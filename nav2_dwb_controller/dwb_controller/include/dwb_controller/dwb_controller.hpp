@@ -21,7 +21,7 @@
 #include "dwb_core/dwb_core.h"
 #include "dwb_core/common_types.h"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "nav_2d_utils/odom_subscriber.h"
+#include "nav_2d_utils/odom_subscriber.hpp"
 
 namespace nav2_dwb_controller
 {

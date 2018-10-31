@@ -37,7 +37,7 @@
 #include <string>
 #include "dwb_critics/alignment_util.h"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav_2d_utils/parameters.h"
+#include "nav_2d_utils/parameters.hpp"
 
 namespace dwb_critics
 {

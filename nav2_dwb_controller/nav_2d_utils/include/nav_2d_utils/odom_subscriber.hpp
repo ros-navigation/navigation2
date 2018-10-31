@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
-#define NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
+#ifndef NAV_2D_UTILS__ODOM_SUBSCRIBER_HPP_
+#define NAV_2D_UTILS__ODOM_SUBSCRIBER_HPP_
 
 #include <memory>
 #include <mutex>
@@ -89,4 +89,4 @@ protected:
 
 }  // namespace nav_2d_utils
 
-#endif  // NAV_2D_UTILS__ODOM_SUBSCRIBER_H_
+#endif  // NAV_2D_UTILS__ODOM_SUBSCRIBER_HPP_

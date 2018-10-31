@@ -35,7 +35,7 @@
 #include "dwb_critics/goal_dist.h"
 #include <vector>
 #include "pluginlib/class_list_macros.hpp"
-#include "nav_2d_utils/path_ops.h"
+#include "nav_2d_utils/path_ops.hpp"
 #include "nav2_costmap_2d/cost_values.h"
 
 namespace dwb_critics

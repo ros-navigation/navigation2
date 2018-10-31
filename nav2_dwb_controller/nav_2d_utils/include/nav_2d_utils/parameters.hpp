@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV_2D_UTILS__PARAMETERS_H_
-#define NAV_2D_UTILS__PARAMETERS_H_
+#ifndef NAV_2D_UTILS__PARAMETERS_HPP_
+#define NAV_2D_UTILS__PARAMETERS_HPP_
 
 #include <string>
 #include <memory>
@@ -159,4 +159,4 @@ void moveParameter(
 }  // namespace nav_2d_utils
 #pragma GCC diagnostic pop
 
-#endif  // NAV_2D_UTILS__PARAMETERS_H_
+#endif  // NAV_2D_UTILS__PARAMETERS_HPP_
