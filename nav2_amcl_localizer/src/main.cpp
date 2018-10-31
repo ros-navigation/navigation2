@@ -34,13 +34,13 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "amcl_node.hpp"
+#include "nav2_amcl_localizer/amcl_localizer.hpp"
 
 int
 main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<AmclNode>());
+  rclcpp::spin(std::make_shared<nav2_amcl_localizer::AmclLocalizer>());
   rclcpp::shutdown();
 
   return 0;

@@ -12,7 +12,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>nav2_amcl</depend>
+  <depend>nav2_amcl_localizer</depend>
   <depend>nav2_astar_planner</depend>
   <depend>nav2_bt_navigator</depend>
   <depend>nav2_costmap_2d</depend>

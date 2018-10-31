@@ -25,7 +25,7 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
-#include "amcl_node.hpp"
+#include "nav2_amcl_localizer/amcl_localizer.hpp"
 #include "nav2_util/pf/pf.h"  // pf_vector_t
 #include "nav2_util/strutils.hpp"
 #include "nav2_tasks/map_service_client.hpp"
@@ -65,6 +65,10 @@ using amcl::SensorData;
 using amcl::LaserData;
 
 using namespace std::chrono_literals;
+
+namespace nav2_amcl_localizer
+{
+
 static const auto TRANSFORM_TIMEOUT = 1s;
 
 static double
@@ -94,10 +98,10 @@ angle_diff(double a, double b)
 static const char scan_topic_[] = "scan";
 
 #if NEW_UNIFORM_SAMPLING
-std::vector<std::pair<int, int>> AmclNode::free_space_indices;
+std::vector<std::pair<int, int>> AmclLocalizer::free_space_indices;
 #endif
 
-AmclNode::AmclNode()
+AmclLocalizer::AmclLocalizer()
 : Node("amcl"),
   sent_first_transform_(false),
   latest_tf_valid_(false),
@@ -255,19 +259,19 @@ AmclNode::AmclNode()
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclLocalizer::laserReceived,
                                                    this, std::placeholders::_1));
   */
   laser_scan_filter_ = this->create_subscription<sensor_msgs::msg::LaserScan>(scan_topic_,
-      std::bind(&AmclNode::laserReceived, this, std::placeholders::_1), custom_qos_profile);
+      std::bind(&AmclLocalizer::laserReceived, this, std::placeholders::_1), custom_qos_profile);
 
   initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose",
-    std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
+    std::bind(&AmclLocalizer::initialPoseReceived, this, std::placeholders::_1));
 
   if (use_map_topic_) {
     map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("occ_grid",
-        std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+        std::bind(&AmclLocalizer::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
     requestMap();
@@ -277,17 +281,17 @@ AmclNode::AmclNode()
 #if 0
   dsrv_ = new dynamic_reconfigure::Server<amcl::AMCLConfig>(ros::NodeHandle("~"));
   dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = std::bind(
-    &AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
+    &AmclLocalizer::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
   dsrv_->setCallback(cb);
 #endif
 
   // 15s timer to warn on lack of receipt of laser scans, #5209
   laser_check_interval_ = 15s;
   check_laser_timer_ =
-    create_wall_timer(laser_check_interval_, std::bind(&AmclNode::checkLaserReceived, this));
+    create_wall_timer(laser_check_interval_, std::bind(&AmclLocalizer::checkLaserReceived, this));
 }
 
-AmclNode::~AmclNode()
+AmclLocalizer::~AmclLocalizer()
 {
   // delete dsrv_;
   freeMapDependentMemory();
@@ -297,7 +301,7 @@ AmclNode::~AmclNode()
 }
 
 #if 0
-void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
+void AmclLocalizer::reconfigureCB(AMCLConfig & config, uint32_t level)
 {
   std::lock_gaurd<std::recursive_mutex> cfl(configuration_mutex_);
 
@@ -380,7 +384,7 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
   }
   pf_ = pf_alloc(min_particles_, max_particles_,
       alpha_slow_, alpha_fast_,
-      (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
+      (pf_init_model_fn_t)AmclLocalizer::uniformPoseGenerator,
       reinterpret_cast<void *>(map_));
   pf_err_ = config.kld_err;
   pf_z_ = config.kld_z;
@@ -439,96 +443,14 @@ void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
                                                              odom_frame_id_,
                                                              100,
                                                              nh_);
-  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
+  laser_scan_filter_->registerCallback(std::bind(&AmclLocalizer::laserReceived,
                                                    this, std::placeholders::_1));
   */
-  initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
+  initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclLocalizer::initialPoseReceived, this);
 }
 #endif
 
-
-void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
-{
-#if 0
-  rosbag::Bag bag;
-  bag.open(in_bag_fn, rosbag::bagmode::Read);
-  std::vector<std::string> topics;
-  topics.push_back(std::string("tf"));
-  std::string scan_topic_name = "base_scan";  // TODO(?): determine what topic this actually is
-  topics.push_back(scan_topic_name);
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-  ros::Publisher laser_pub = nh_.advertise<sensor_msgs::LaserScan>(scan_topic_name, 100);
-  rclcpp::Publisher laser_pub = this->create_publisher<sensor_msgs::LaserScan>(scan_topic_name);
-  ros::Publisher tf_pub = nh_.advertise<tf2_msgs::TFMessage>("/tf", 100);
-  // Sleep for a second to let all subscribers connect
-  ros::WallDuration(1.0).sleep();
-
-  ros::WallTime start(ros::WallTime::now());
-
-  // Wait for map
-  while (ros::ok()) {
-    {
-      std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
-      if (map_) {
-        ROS_INFO("Map is ready");
-        break;
-      }
-    }
-    ROS_INFO("Waiting for map...");
-    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(1.0));
-  }
-
-  for (rosbag::View::const_iterator view_it=view.begin(); view_it!=view.end(); ++view_it)
-  {
-    if (!ros::ok()) {
-      break;
-    }
-
-    // Process any ros messages or callbacks at this point
-    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration());
-
-    tf2_msgs::TFMessage::ConstPtr tf_msg = view_it->instantiate<tf2_msgs::TFMessage>();
-    if (tf_msg != NULL) {
-      tf_pub.publish(msg);
-      for (size_t ii = 0; ii < tf_msg->transforms.size(); ++ii) {
-        tf_->setTransform(tf_msg->transforms[ii], "rosbag_authority");
-      }
-      continue;
-    }
-
-    sensor_msgs::LaserScan::ConstPtr base_scan = view_it->instantiate<sensor_msgs::LaserScan>();
-    if (base_scan != NULL) {
-      laser_pub.publish(msg);
-      // Disabling laser_scan_filter
-      // laser_scan_filter_->add(base_scan);
-      if (bag_scan_period_ > ros::WallDuration(0)) {
-        bag_scan_period_.sleep();
-      }
-      continue;
-    }
-
-    ROS_WARN_STREAM("Unsupported message type" << view_it->getTopic());
-  }
-
-  bag.close();
-
-  double runtime = (ros::WallTime::now() - start).toSec();
-  ROS_INFO("Bag complete, took %.1f seconds to process, shutting down", runtime);
-
-  const geometry_msgs::Quaternion & q(last_published_pose.pose.pose.orientation);
-  double yaw, pitch, roll;
-  tf2::Matrix3x3(tf2::Quaternion(q.x, q.y, q.z, q.w)).getEulerYPR(yaw, pitch, roll);
-  ROS_INFO("Final location %.3f, %.3f, %.3f with stamp=%f",
-    last_published_pose.pose.pose.position.x,
-    last_published_pose.pose.pose.position.y,
-    yaw, last_published_pose.header.stamp.toSec()
-  );
-
-  ros::shutdown();
-#endif
-}
-
-void AmclNode::savePoseToServer()
+void AmclLocalizer::savePoseToServer()
 {
   // We need to apply the last transform to the latest odom pose to get
   // the latest map pose to store.  We'll take the covariance from
@@ -542,19 +464,19 @@ void AmclNode::savePoseToServer()
     map_pose.getOrigin().x(), map_pose.getOrigin().y());
 
   parameters_client->set_parameters({
-    rclcpp::Parameter("initial_pose_x", map_pose.getOrigin().x()),
-    rclcpp::Parameter("initial_pose_y", map_pose.getOrigin().y()),
-    rclcpp::Parameter("initial_pose_a", yaw),
-    rclcpp::Parameter("initial_cov_xx",
-    last_published_pose.pose.covariance[6 * 0 + 0]),
-    rclcpp::Parameter("initial_cov_yy",
-    last_published_pose.pose.covariance[6 * 1 + 1]),
-    rclcpp::Parameter("initial_cov_aa",
-    last_published_pose.pose.covariance[6 * 5 + 5]),
-  });
+      rclcpp::Parameter("initial_pose_x", map_pose.getOrigin().x()),
+      rclcpp::Parameter("initial_pose_y", map_pose.getOrigin().y()),
+      rclcpp::Parameter("initial_pose_a", yaw),
+      rclcpp::Parameter("initial_cov_xx",
+      last_published_pose.pose.covariance[6 * 0 + 0]),
+      rclcpp::Parameter("initial_cov_yy",
+      last_published_pose.pose.covariance[6 * 1 + 1]),
+      rclcpp::Parameter("initial_cov_aa",
+      last_published_pose.pose.covariance[6 * 5 + 5]),
+    });
 }
 
-void AmclNode::updatePoseFromServer()
+void AmclLocalizer::updatePoseFromServer()
 {
   init_pose_[0] = 0.0;
   init_pose_[1] = 0.0;
@@ -616,7 +538,7 @@ void AmclNode::updatePoseFromServer()
 }
 
 void
-AmclNode::checkLaserReceived()
+AmclLocalizer::checkLaserReceived()
 {
   if (last_laser_received_ts_.nanoseconds() == 0) {
     RCLCPP_WARN(
@@ -637,7 +559,7 @@ AmclNode::checkLaserReceived()
 }
 
 void
-AmclNode::requestMap()
+AmclLocalizer::requestMap()
 {
   std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
@@ -646,16 +568,16 @@ AmclNode::requestMap()
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
 
-  RCLCPP_INFO(get_logger(), "AmclNode: Processing request map service.");
+  RCLCPP_INFO(get_logger(), "AmclLocalizer: Processing request map service.");
   auto result = map_client.invoke(request);
 
   handleMapMessage(result->map);
 }
 
 void
-AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+AmclLocalizer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  RCLCPP_INFO(get_logger(), "AmclNode: A new map was received.");
+  RCLCPP_INFO(get_logger(), "AmclLocalizer: A new map was received.");
   if (first_map_only_ && first_map_received_) {
     return;
   }
@@ -665,7 +587,7 @@ AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 }
 
 void
-AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
+AmclLocalizer::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
@@ -704,7 +626,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Create the particle filter
   pf_ = pf_alloc(min_particles_, max_particles_,
       alpha_slow_, alpha_fast_,
-      (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
+      (pf_init_model_fn_t)AmclLocalizer::uniformPoseGenerator,
       reinterpret_cast<void *>(map_));  // (void *)map_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
@@ -759,7 +681,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 }
 
 void
-AmclNode::freeMapDependentMemory()
+AmclLocalizer::freeMapDependentMemory()
 {
   if (map_ != NULL) {
     map_free(map_);
@@ -783,7 +705,7 @@ AmclNode::freeMapDependentMemory()
  * representation. This allocates a map_t and returns it.
  */
 map_t *
-AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
+AmclLocalizer::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 {
   map_t * map = map_alloc();
   // ROS_ASSERT(map);
@@ -812,7 +734,7 @@ AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 }
 
 bool
-AmclNode::getOdomPose(
+AmclLocalizer::getOdomPose(
   geometry_msgs::msg::PoseStamped & odom_pose,
   double & x, double & y, double & yaw,
   const rclcpp::Time & t, const std::string & f)
@@ -838,7 +760,7 @@ AmclNode::getOdomPose(
 }
 
 pf_vector_t
-AmclNode::uniformPoseGenerator(void * arg)
+AmclLocalizer::uniformPoseGenerator(void * arg)
 {
   map_t * map = reinterpret_cast<map_t *>(arg);
 
@@ -877,7 +799,7 @@ AmclNode::uniformPoseGenerator(void * arg)
 }
 
 void
-AmclNode::globalLocalizationCallback(
+AmclLocalizer::globalLocalizationCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
@@ -889,7 +811,7 @@ AmclNode::globalLocalizationCallback(
   std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
-  pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
+  pf_init_model(pf_, (pf_init_model_fn_t)AmclLocalizer::uniformPoseGenerator,
     reinterpret_cast<void *>(map_));
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
 
@@ -898,7 +820,7 @@ AmclNode::globalLocalizationCallback(
 
 // force nomotion updates (amcl updating without requiring motion)
 void
-AmclNode::nomotionUpdateCallback(
+AmclLocalizer::nomotionUpdateCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
@@ -908,7 +830,7 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
-AmclNode::setMapCallback(
+AmclLocalizer::setMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav_msgs::srv::SetMap::Request> req,
   std::shared_ptr<nav_msgs::srv::SetMap::Response>/*res*/)
@@ -918,7 +840,7 @@ AmclNode::setMapCallback(
 }
 
 void
-AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
+AmclLocalizer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
   std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
   last_laser_received_ts_ = now();
@@ -1214,7 +1136,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
          }
        */
 
-      RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
+      RCLCPP_INFO(get_logger(), "AmclLocalizer publishing pose");
       pose_pub_->publish(p);
       last_published_pose = p;
 
@@ -1287,13 +1209,13 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 }
 
 void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclLocalizer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
   handleInitialPoseMessage(*msg);
 }
 
 void
-AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
+AmclLocalizer::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
   std::lock_guard<std::recursive_mutex> prl(configuration_mutex_);
 
@@ -1367,7 +1289,7 @@ AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceS
 }
 
 void
-AmclNode::applyInitialPose()
+AmclLocalizer::applyInitialPose()
 {
   std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
@@ -1381,3 +1303,5 @@ AmclNode::applyInitialPose()
     initial_pose_hyp_ = nullptr;
   }
 }
+
+}  // namespace nav2_amcl_localizer

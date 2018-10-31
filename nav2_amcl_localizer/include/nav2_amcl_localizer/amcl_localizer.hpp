@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef AMCL_NODE_HPP_
-#define AMCL_NODE_HPP_
+#ifndef NAV2_AMCL_LOCALIZER__AMCL_LOCALIZER_HPP_
+#define NAV2_AMCL_LOCALIZER__AMCL_LOCALIZER_HPP_
 
 #include <vector>
 #include <string>
@@ -38,6 +38,9 @@
 #include "nav2_util/sensors/laser.h"
 #include "nav2_util/sensors/odom.h"
 
+namespace nav2_amcl_localizer
+{
+
 #define NEW_UNIFORM_SAMPLING 1
 
 // Pose hypothesis
@@ -53,16 +56,11 @@ typedef struct
   pf_matrix_t pf_pose_cov;
 } amcl_hyp_t;
 
-class AmclNode : public rclcpp::Node
+class AmclLocalizer : public rclcpp::Node
 {
 public:
-  AmclNode();
-  ~AmclNode();
-
-  /**
-   * @brief Uses TF and LaserScan messages from bag file to drive AMCL instead
-   */
-  void runFromBag(const std::string & in_bag_fn);
+  AmclLocalizer();
+  ~AmclLocalizer();
 
   int process();
   void savePoseToServer();
@@ -259,4 +257,6 @@ private:
   bool tf_broadcast_;
 };
 
-#endif  // AMCL_NODE_HPP_
+}  // namespace nav2_amcl_localizer
+
+#endif  // NAV2_AMCL_LOCALIZER__AMCL_LOCALIZER_HPP_

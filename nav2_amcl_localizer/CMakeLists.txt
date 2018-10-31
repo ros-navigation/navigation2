@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_amcl)
+project(nav2_amcl_localizer)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -35,7 +35,7 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
-  src/amcl_node.cpp
+  src/amcl_localizer.cpp
 )
 
 set(dependencies
