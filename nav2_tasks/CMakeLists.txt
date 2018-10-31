@@ -27,11 +27,15 @@ add_library(nav2_tasks STATIC
   src/behavior_tree_engine.cpp
 )
 
-ament_target_dependencies(nav2_tasks
+set(dependencies
   rclcpp
   geometry_msgs
   nav2_msgs
   behavior_tree_core
+)
+
+ament_target_dependencies(nav2_tasks
+  ${dependencies}
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -46,7 +50,11 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_tasks test/test_tasks.cpp)
+  ament_target_dependencies(test_tasks ${dependencies})
 endif()
 
 ament_export_include_directories(include)
