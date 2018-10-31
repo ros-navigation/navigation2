@@ -121,7 +121,7 @@ void StaticLayer::onInitialize()
   }
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
-  dynamic_param_client_->add_parameters({"enabled_static_layer"});
+  dynamic_param_client_->add_parameters("enabled_static_layer");
   dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this, std::placeholders::_1));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
 }
