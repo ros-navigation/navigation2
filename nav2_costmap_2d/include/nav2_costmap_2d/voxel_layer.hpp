@@ -35,13 +35,13 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP__2D_VOXEL_LAYER_H_
-#define NAV2_COSTMAP__2D_VOXEL_LAYER_H_
+#ifndef NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
+#define NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
 
 #include <ros/ros.h>
-#include <nav2_costmap_2d/layer.h>
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/layer.hpp>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/observation_buffer.hpp>
 #include <nav2_costmap_2d/VoxelGrid.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
@@ -52,7 +52,7 @@
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
 #include <nav2_costmap_2d/VoxelPluginConfig.h>
-#include <nav2_costmap_2d/obstacle_layer.h>
+#include <nav2_costmap_2d/obstacle_layer.hpp>
 #include <voxel_grid/voxel_grid.h>
 
 namespace nav2_costmap_2d
@@ -158,4 +158,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__VOXEL_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_

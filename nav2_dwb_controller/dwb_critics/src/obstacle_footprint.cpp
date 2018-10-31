@@ -38,7 +38,7 @@
 #include "dwb_critics/line_iterator.h"
 #include "dwb_core/exceptions.h"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_costmap_2d/cost_values.h"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::ObstacleFootprintCritic, dwb_core::TrajectoryCritic)
 

@@ -29,7 +29,7 @@
 
 #include <gtest/gtest.h>
 
-#include "nav2_costmap_2d/array_parser.h"
+#include "nav2_costmap_2d/array_parser.hpp"
 
 using namespace nav2_costmap_2d;
 

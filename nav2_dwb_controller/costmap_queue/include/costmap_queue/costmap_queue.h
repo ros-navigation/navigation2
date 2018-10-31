@@ -39,7 +39,7 @@
 #include <vector>
 #include <limits>
 #include <memory>
-#include "nav2_costmap_2d/costmap_2d.h"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "costmap_queue/map_based_queue.h"
 
 namespace costmap_queue

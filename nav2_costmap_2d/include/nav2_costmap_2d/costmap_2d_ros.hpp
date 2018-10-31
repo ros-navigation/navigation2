@@ -35,13 +35,13 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H_
-#define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/layer.h>
-#include <nav2_costmap_2d/costmap_2d_publisher.h>
-#include <nav2_costmap_2d/footprint.h>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/layer.hpp>
+#include <nav2_costmap_2d/costmap_2d_publisher.hpp>
+#include <nav2_costmap_2d/footprint.hpp>
 #include <geometry_msgs/msg/polygon.h>
 #include <geometry_msgs/msg/polygon_stamped.h>
 #include <pluginlib/class_loader.hpp>
@@ -291,4 +291,4 @@ private:
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_ROS_H
+#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_

@@ -2,11 +2,11 @@
 #define NAV2_COSTMAP_2D__TESTING_HELPER_H
 
 #include "rclcpp/rclcpp.hpp"
-#include <nav2_costmap_2d/cost_values.h>
-#include <nav2_costmap_2d/costmap_2d.h>
-#include <nav2_costmap_2d/static_layer.h>
-#include <nav2_costmap_2d/obstacle_layer.h>
-#include <nav2_costmap_2d/inflation_layer.h>
+#include <nav2_costmap_2d/cost_values.hpp>
+#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/static_layer.hpp>
+#include <nav2_costmap_2d/obstacle_layer.hpp>
+#include <nav2_costmap_2d/inflation_layer.hpp>
 
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 

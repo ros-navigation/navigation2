@@ -38,7 +38,7 @@
 #include <algorithm>
 #include <memory>
 #include "dwb_core/exceptions.h"
-#include "nav2_costmap_2d/cost_values.h"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 using std::abs;
 using costmap_queue::CellData;

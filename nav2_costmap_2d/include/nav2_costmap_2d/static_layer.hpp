@@ -35,12 +35,12 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__STATIC_LAYER_H_
-#define NAV2_COSTMAP_2D__STATIC_LAYER_H_
+#ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
+#define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/costmap_layer.h>
-#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/costmap_layer.hpp>
+#include <nav2_costmap_2d/layered_costmap.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <map_msgs/msg/occupancy_grid_update.hpp>
 #include <message_filters/subscriber.h>
@@ -101,4 +101,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__STATIC_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__STATIC_LAYER_HPP_

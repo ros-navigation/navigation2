@@ -34,11 +34,11 @@
  *
  * Author: David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__LAYER_H_
-#define NAV2_COSTMAP_2D__LAYER_H_
+#ifndef NAV2_COSTMAP_2D__LAYER_HPP_
+#define NAV2_COSTMAP_2D__LAYER_HPP_
 
-#include <nav2_costmap_2d/costmap_2d.h>
-#include <nav2_costmap_2d/layered_costmap.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/layered_costmap.hpp>
 #include <string>
 #include <tf2_ros/buffer.h>
 #include "rclcpp/rclcpp.hpp"
@@ -134,4 +134,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__LAYER_H_
+#endif  // NAV2_COSTMAP_2D__LAYER_HPP_

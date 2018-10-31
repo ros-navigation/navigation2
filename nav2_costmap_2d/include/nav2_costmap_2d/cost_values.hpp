@@ -34,8 +34,8 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__COST_VALUES_H_
-#define NAV2_COSTMAP_2D__COST_VALUES_H_
+#ifndef NAV2_COSTMAP_2D__COST_VALUES_HPP_
+#define NAV2_COSTMAP_2D__COST_VALUES_HPP_
 /** Provides a mapping for often used cost values */
 namespace nav2_costmap_2d
 {
@@ -44,4 +44,4 @@ static const unsigned char LETHAL_OBSTACLE = 254;
 static const unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
 static const unsigned char FREE_SPACE = 0;
 }
-#endif  // NAV2_COSTMAP_2D__COST_VALUES_H_
+#endif  // NAV2_COSTMAP_2D__COST_VALUES_HPP_

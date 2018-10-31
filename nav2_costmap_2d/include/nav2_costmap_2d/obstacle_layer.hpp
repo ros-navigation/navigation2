@@ -35,14 +35,14 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__OBSTACLE_LAYER_H_
-#define NAV2_COSTMAP_2D__OBSTACLE_LAYER_H_
+#ifndef NAV2_COSTMAP_2D__OBSTACLE_LAYER_HPP_
+#define NAV2_COSTMAP_2D__OBSTACLE_LAYER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/costmap_layer.h>
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/observation_buffer.h>
-#include <nav2_costmap_2d/footprint.h>
+#include <nav2_costmap_2d/costmap_layer.hpp>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/observation_buffer.hpp>
+#include <nav2_costmap_2d/footprint.hpp>
 
 #include <laser_geometry/laser_geometry.h>
 #include <tf2_ros/message_filter.h>
@@ -185,4 +185,4 @@ protected:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__OBSTACLE_LAYER_H_
+#endif  // NAV2_COSTMAP_2D__OBSTACLE_LAYER_HPP_

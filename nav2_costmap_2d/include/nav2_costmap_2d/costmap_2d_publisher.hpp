@@ -35,11 +35,11 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H_
-#define NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <map_msgs/msg/occupancy_grid_update.hpp>
 #include <tf2/transform_datatypes.h>

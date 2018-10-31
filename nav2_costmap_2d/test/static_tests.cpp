@@ -32,12 +32,12 @@
  * Test harness for StaticMap Layer for Costmap2D
  */
 
-#include <nav2_costmap_2d/costmap_2d.h>
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/obstacle_layer.h>
-#include <nav2_costmap_2d/static_layer.h>
-#include <nav2_costmap_2d/observation_buffer.h>
-#include <nav2_costmap_2d/testing_helper.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/obstacle_layer.hpp>
+#include <nav2_costmap_2d/static_layer.hpp>
+#include <nav2_costmap_2d/observation_buffer.hpp>
+#include <nav2_costmap_2d/testing_helper.hpp>
 #include <set>
 #include <gtest/gtest.h>
 

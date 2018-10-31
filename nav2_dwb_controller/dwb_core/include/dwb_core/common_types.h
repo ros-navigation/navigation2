@@ -16,7 +16,7 @@
 #define DWB_CORE__COMMON_TYPES_H_
 
 #include <memory>
-#include "nav2_costmap_2d/costmap_2d_ros.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 
 

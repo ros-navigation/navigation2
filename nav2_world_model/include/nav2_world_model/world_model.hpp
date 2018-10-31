@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "nav2_costmap_2d/inflation_layer.h"
-#include "nav2_costmap_2d/layered_costmap.h"
-#include "nav2_costmap_2d/static_layer.h"
+#include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/static_layer.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/costmap.hpp"

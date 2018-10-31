@@ -32,8 +32,8 @@
  * Test harness for Costmap2D
  */
 
-#include <nav2_costmap_2d/costmap_2d.h>
-#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/observation_buffer.hpp>
 #include <set>
 #include <gtest/gtest.h>
 

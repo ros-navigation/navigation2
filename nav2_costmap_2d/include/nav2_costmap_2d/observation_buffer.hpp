@@ -34,15 +34,15 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_
-#define NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_
+#ifndef NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_
+#define NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_
 
 #include <vector>
 #include <list>
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "rclcpp/time.hpp"
-#include <nav2_costmap_2d/observation.h>
+#include <nav2_costmap_2d/observation.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
@@ -153,4 +153,4 @@ private:
   double tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
-#endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_H_
+#endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_

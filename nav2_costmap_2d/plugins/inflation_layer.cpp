@@ -36,9 +36,9 @@
  *         David V. Lu!!
  *********************************************************************/
 #include <algorithm>
-#include <nav2_costmap_2d/inflation_layer.h>
-#include <nav2_costmap_2d/costmap_math.h>
-#include <nav2_costmap_2d/footprint.h>
+#include <nav2_costmap_2d/inflation_layer.hpp>
+#include <nav2_costmap_2d/costmap_math.hpp>
+#include <nav2_costmap_2d/footprint.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include "rclcpp/parameter_events_filter.hpp"
 

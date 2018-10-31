@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <nav2_costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/costmap_math.hpp>
 
 double distanceToLine(double pX, double pY, double x0, double y0, double x1, double y1)
 {
