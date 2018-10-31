@@ -46,7 +46,8 @@ public:
     }
   }
 
-  void set_callback(std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
+  void set_callback(
+    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback)
   {
     for (auto & client : parameters_clients_) {
       auto sub = client->on_parameter_event(callback);
