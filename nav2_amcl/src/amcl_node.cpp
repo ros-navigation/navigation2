@@ -53,13 +53,15 @@
 // #include <rosbag/bag.h>
 // #include <rosbag/view.h>
 
-using amcl::LASER_MODEL_BEAM;
-using amcl::LASER_MODEL_LIKELIHOOD_FIELD;
-using amcl::LASER_MODEL_LIKELIHOOD_FIELD_PROB;
+
+using nav2_util::BeamModel;
+using nav2_util::LikelihoodFieldModel;
+using nav2_util::LikelihoodFieldModelProb;
+
 using nav2_util::DifferentialMotionModel;
 using nav2_util::OmniMotionModel;
-using amcl::Laser;
-using amcl::LaserData;
+using nav2_util::Laser;
+using nav2_util::LaserData;
 
 using namespace std::chrono_literals;
 static const auto TRANSFORM_TIMEOUT = 1s;
@@ -122,35 +124,14 @@ AmclNode::AmclNode()
   lambda_short_ = parameters_client->get_parameter("lambda_short", 0.1);
   laser_likelihood_max_dist_ = parameters_client->get_parameter("laser_likelihood_max_dist", 2.0);
 
-  std::string tmp_model_type;
-  tmp_model_type =
+  sensor_model_type_ =
     parameters_client->get_parameter("laser_model_type", std::string("likelihood_field"));
-  if (tmp_model_type == "beam") {
-    laser_model_type_ = LASER_MODEL_BEAM;
-  } else if (tmp_model_type == "likelihood_field") {
-    laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
-  } else if (tmp_model_type == "likelihood_field_prob") {
-    laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD_PROB;
-  } else {
-    RCLCPP_WARN(
-      get_logger(), "Unknown laser model type \"%s\"; defaulting to likelihood_field model",
-      tmp_model_type.c_str());
-    laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
-  }
+    RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
 
-  robot_model_type_ = parameters_client->get_parameter("tmp_model_type", std::string("differential"));
-
-  if (robot_model_type_ == "differential"){
-    //motionModel_ = std::make_unique<nav2_util::DifferentialMotionModel>(alpha1_, alpha2_, alpha3_, alpha4_);
-    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
-  } else if (robot_model_type_ == "omnidirectional") {
-    motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
-  } else {
-    RCLCPP_WARN(get_logger(), "Unknown odom model type \"%s\"; defaulting to differential model",
-      robot_model_type_.c_str());
-    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
-  }
-
+  robot_model_type_ = parameters_client->get_parameter("tmp_model_type", 
+                                                        std::string("differential"));                                                  
+  createMotionModel();
+  
   d_thresh_ = parameters_client->get_parameter("update_min_d", 0.25);
   a_thresh_ = parameters_client->get_parameter("update_min_a", 0.2);
   odom_frame_id_ = parameters_client->get_parameter("odom_frame_id", std::string("odom"));
@@ -699,37 +680,11 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 
   // Instantiate the sensor objects
   delete motionModel_;
-  if (robot_model_type_ == "differential"){
-    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
-  } else if (robot_model_type_ == "omnidirectional") {
-    motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
-  } else {
-    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
-  }
-  // Laser
+  createMotionModel();
+ 
+   // Laser
   delete laser_;
-  laser_ = new Laser(max_beams_, map_);
-  assert(laser_);
-  if (laser_model_type_ == LASER_MODEL_BEAM) {
-    laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-      sigma_hit_, lambda_short_, 0.0);
-  } else if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB) {
-    RCLCPP_INFO(
-      get_logger(),
-      "Initializing likelihood field model; this can take some time on large maps...");
-    laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
-      laser_likelihood_max_dist_,
-      do_beamskip_, beam_skip_distance_,
-      beam_skip_threshold_, beam_skip_error_threshold_);
-    RCLCPP_INFO(get_logger(), "Done initializing likelihood field model.");
-  } else {
-    RCLCPP_INFO(
-      get_logger(),
-      "Initializing likelihood field model; this can take some time on large maps...");
-    laser_->SetModelLikelihoodField(z_hit_, z_rand_, sigma_hit_,
-      laser_likelihood_max_dist_);
-    RCLCPP_INFO(get_logger(), "Done initializing likelihood field model.");
-  }
+  createLaserObject();
 
   // In case the initial pose message arrived before the first map,
   // try to apply the initial pose now that the map has arrived.
@@ -911,7 +866,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
     RCLCPP_DEBUG(get_logger(), "Setting up laser %d (frame_id=%s)\n",
       (int)frame_to_laser_.size(), laser_scan_frame_id.c_str());
-    lasers_.push_back(new Laser(*laser_));
+    lasers_.push_back(createLaserObject());
     lasers_update_.push_back(true);
     laser_index = frame_to_laser_.size();
 
@@ -1076,7 +1031,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         (i * angle_increment);
     }
 
-    lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<LaserData *>(&ldata));
+    lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
 
     lasers_update_[laser_index] = false;
 
@@ -1349,5 +1304,37 @@ AmclNode::applyInitialPose()
     pf_init_ = false;
     delete initial_pose_hyp_;
     initial_pose_hyp_ = nullptr;
+  }
+}
+
+nav2_util::Laser *
+AmclNode::createLaserObject()
+{
+    if (sensor_model_type_ == "beam") {
+    laser_ = new BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
+                           0.0, max_beams_, map_);
+  } else if (sensor_model_type_ == "likelihood_field_prob") {
+    laser_ = new LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_,
+                                          do_beamskip_, beam_skip_distance_,beam_skip_threshold_,
+                                          beam_skip_error_threshold_, max_beams_, map_);
+  } else {
+    laser_ = new LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_, 
+                                      max_beams_, map_);
+  }
+  return laser_;
+}
+
+void
+AmclNode::createMotionModel()
+{
+  if (robot_model_type_ == "differential"){
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
+    RCLCPP_WARN(get_logger(), "Robot motion model is differential");
+  } else if (robot_model_type_ == "omnidirectional") {
+    motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
+    RCLCPP_WARN(get_logger(), "Robot motion model is omnidirectional");
+  } else {
+    RCLCPP_WARN(get_logger(), "Unknown robot motion model, defaulting to differential model");
+    motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
   }
 }

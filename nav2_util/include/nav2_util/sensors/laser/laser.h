@@ -29,20 +29,16 @@ class LaserData;
 class Laser
 {
   public:
-    //Laser();
     Laser(size_t max_beams, map_t * map);
     virtual ~Laser();
     virtual bool sensorUpdate(pf_t * pf, LaserData * data) = 0;
     void SetLaserPose(pf_vector_t & laser_pose);
 
   protected:
-    // common across all models
     double z_hit_;
-  public:
     double z_rand_;
     double sigma_hit_; 
-
-  public:
+    
     void reallocTempData(int max_samples, int max_obs);
     map_t * map_;
     pf_vector_t laser_pose_;
