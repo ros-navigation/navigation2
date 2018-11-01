@@ -12,7 +12,6 @@
     costmap, rolling window based costmaps, and parameter based subscription to
     and configuration of sensor topics.
   </description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
   <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
