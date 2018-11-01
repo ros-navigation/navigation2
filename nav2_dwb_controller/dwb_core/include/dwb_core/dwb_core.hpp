@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__DWB_CORE_H_
-#define DWB_CORE__DWB_CORE_H_
+#ifndef DWB_CORE__DWB_CORE_HPP_
+#define DWB_CORE__DWB_CORE_HPP_
 
 #include <string>
 #include <vector>
@@ -41,10 +41,10 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "dwb_core/trajectory_generator.h"
-#include "dwb_core/goal_checker.h"
-#include "dwb_core/trajectory_critic.h"
-#include "dwb_core/publisher.h"
+#include "dwb_core/trajectory_generator.hpp"
+#include "dwb_core/goal_checker.hpp"
+#include "dwb_core/trajectory_critic.hpp"
+#include "dwb_core/publisher.hpp"
 
 namespace dwb_core
 {
@@ -208,4 +208,4 @@ protected:
 
 }  // namespace dwb_core
 
-#endif  // DWB_CORE__DWB_CORE_H_
+#endif  // DWB_CORE__DWB_CORE_HPP_

@@ -32,14 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__PUBLISHER_H_
-#define DWB_CORE__PUBLISHER_H_
+#ifndef DWB_CORE__PUBLISHER_HPP_
+#define DWB_CORE__PUBLISHER_HPP_
 
 #include <vector>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dwb_core/common_types.h"
-#include "dwb_core/trajectory_critic.h"
+#include "dwb_core/common_types.hpp"
+#include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -118,4 +118,4 @@ protected:
 
 }  // namespace dwb_core
 
-#endif  // DWB_CORE__PUBLISHER_H_
+#endif  // DWB_CORE__PUBLISHER_HPP_

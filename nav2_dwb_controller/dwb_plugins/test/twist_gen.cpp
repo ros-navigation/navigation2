@@ -38,7 +38,7 @@
 #include "gtest/gtest.h"
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "dwb_plugins/limited_accel_generator.hpp"
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 
 using std::hypot;
 using std::fabs;

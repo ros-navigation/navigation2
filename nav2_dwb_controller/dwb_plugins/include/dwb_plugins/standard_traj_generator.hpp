@@ -38,7 +38,7 @@
 #include <vector>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dwb_core/trajectory_generator.h"
+#include "dwb_core/trajectory_generator.hpp"
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
 

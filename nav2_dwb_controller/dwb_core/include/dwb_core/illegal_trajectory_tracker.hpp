@@ -31,61 +31,47 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CORE__EXCEPTIONS_H_
-#define DWB_CORE__EXCEPTIONS_H_
 
-#include <stdexcept>
+#ifndef DWB_CORE__ILLEGAL_TRAJECTORY_TRACKER_HPP_
+#define DWB_CORE__ILLEGAL_TRAJECTORY_TRACKER_HPP_
+
+#include <map>
+#include <utility>
 #include <string>
-#include <memory>
+#include "dwb_core/exceptions.hpp"
 
-namespace nav_core2
+namespace dwb_core
 {
-
-class PlannerException : public std::runtime_error
-{
-public:
-  explicit PlannerException(const std::string description)
-  : std::runtime_error(description) {}
-  typedef std::shared_ptr<PlannerException> Ptr;
-};
-
-/**
- * @class PlannerTFException
- * @brief Thrown when the planner cannot complete its operation due to TF errors
- */
-class PlannerTFException : public PlannerException
+class IllegalTrajectoryTracker
 {
 public:
-  explicit PlannerTFException(const std::string description)
-  : PlannerException(description) {}
-};
+  IllegalTrajectoryTracker()
+  : legal_count_(0), illegal_count_(0) {}
 
-/**
- * @class IllegalTrajectoryException
- * @brief Thrown when one of the critics encountered a fatal error
- */
-class IllegalTrajectoryException : public PlannerException
-{
-public:
-  IllegalTrajectoryException(const std::string critic_name, const std::string description)
-  : PlannerException(description), critic_name_(critic_name) {}
-  std::string getCriticName() const {return critic_name_;}
+  void addIllegalTrajectory(const nav_core2::IllegalTrajectoryException & e);
+  void addLegalTrajectory();
+
+  std::map<std::pair<std::string, std::string>, double> getPercentages() const;
+
+  std::string getMessage() const;
 
 protected:
-  std::string critic_name_;
+  std::map<std::pair<std::string, std::string>, unsigned int> counts_;
+  unsigned int legal_count_, illegal_count_;
 };
 
 /**
  * @class NoLegalTrajectoriesException
  * @brief Thrown when all the trajectories explored are illegal
  */
-class NoLegalTrajectoriesException : public PlannerException
+class NoLegalTrajectoriesException : public nav_core2::NoLegalTrajectoriesException
 {
 public:
-  explicit NoLegalTrajectoriesException(const std::string description)
-  : PlannerException(description) {}
+  explicit NoLegalTrajectoriesException(const IllegalTrajectoryTracker & tracker)
+  : nav_core2::NoLegalTrajectoriesException(tracker.getMessage()), tracker_(tracker) {}
+  IllegalTrajectoryTracker tracker_;
 };
 
-}  // namespace nav_core2
+}  // namespace dwb_core
 
-#endif  // DWB_CORE__EXCEPTIONS_H_
+#endif  // DWB_CORE__ILLEGAL_TRAJECTORY_TRACKER_HPP_

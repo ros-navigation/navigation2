@@ -37,7 +37,7 @@
 
 #include <vector>
 #include <string>
-#include "dwb_core/trajectory_critic.h"
+#include "dwb_core/trajectory_critic.hpp"
 
 namespace dwb_critics
 {

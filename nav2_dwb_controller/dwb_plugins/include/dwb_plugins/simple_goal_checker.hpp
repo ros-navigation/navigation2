@@ -37,7 +37,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dwb_core/goal_checker.h"
+#include "dwb_core/goal_checker.hpp"
 
 namespace dwb_plugins
 {

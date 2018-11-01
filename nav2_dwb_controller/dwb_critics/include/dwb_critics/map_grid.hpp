@@ -37,7 +37,7 @@
 
 #include <vector>
 #include <memory>
-#include "dwb_core/trajectory_critic.h"
+#include "dwb_core/trajectory_critic.hpp"
 #include "costmap_queue/costmap_queue.hpp"
 
 namespace dwb_critics

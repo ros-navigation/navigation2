@@ -36,7 +36,7 @@
 #include <string>
 #include <vector>
 #include "nav_2d_utils/parameters.hpp"
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 

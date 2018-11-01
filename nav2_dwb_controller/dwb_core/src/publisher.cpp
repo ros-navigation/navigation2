@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_core/publisher.h"
+#include "dwb_core/publisher.hpp"
 #include <vector>
 #include <memory>
 #include "visualization_msgs/msg/marker.hpp"

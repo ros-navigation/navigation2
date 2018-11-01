@@ -32,14 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__TRAJECTORY_CRITIC_H_
-#define DWB_CORE__TRAJECTORY_CRITIC_H_
+#ifndef DWB_CORE__TRAJECTORY_CRITIC_HPP_
+#define DWB_CORE__TRAJECTORY_CRITIC_HPP_
 
 #include <string>
 #include <vector>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "dwb_core/common_types.h"
+#include "dwb_core/common_types.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_msgs/msg/path2_d.hpp"
@@ -172,4 +172,4 @@ protected:
 
 }  // namespace dwb_core
 
-#endif  // DWB_CORE__TRAJECTORY_CRITIC_H_
+#endif  // DWB_CORE__TRAJECTORY_CRITIC_HPP_

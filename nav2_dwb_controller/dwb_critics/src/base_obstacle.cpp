@@ -33,7 +33,7 @@
  */
 
 #include "dwb_critics/base_obstacle.hpp"
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 

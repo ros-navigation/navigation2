@@ -36,7 +36,7 @@
 #define DWB_CRITICS__PREFER_FORWARD_HPP_
 
 #include <string>
-#include "dwb_core/trajectory_critic.h"
+#include "dwb_core/trajectory_critic.hpp"
 
 namespace dwb_critics
 {

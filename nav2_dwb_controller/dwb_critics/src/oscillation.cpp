@@ -39,7 +39,7 @@
 #include <vector>
 #include "nav2_util/duration_conversions.h"
 #include "nav_2d_utils/parameters.hpp"
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::OscillationCritic, dwb_core::TrajectoryCritic)

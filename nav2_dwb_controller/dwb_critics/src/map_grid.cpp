@@ -37,7 +37,7 @@
 #include <string>
 #include <algorithm>
 #include <memory>
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using std::abs;

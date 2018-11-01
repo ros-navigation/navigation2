@@ -16,7 +16,7 @@
 #include <string>
 #include <chrono>
 #include <memory>
-#include "dwb_core/exceptions.h"
+#include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 
 using namespace std::chrono_literals;

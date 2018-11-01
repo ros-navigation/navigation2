@@ -18,8 +18,8 @@
 #include <memory>
 #include <string>
 #include "nav2_tasks/follow_path_task.hpp"
-#include "dwb_core/dwb_core.h"
-#include "dwb_core/common_types.h"
+#include "dwb_core/dwb_core.hpp"
+#include "dwb_core/common_types.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 
