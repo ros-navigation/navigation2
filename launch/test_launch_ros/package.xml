@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model
+  href="http://download.ros.org/schema/package_format2.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>test_launch_ros</name>
+  <version>0.6.0</version>
+  <description>Tests for ROS specific extensions to the launch tool.</description>
+  <maintainer email="william@osrfoundation.org">William Woodall</maintainer>
+  <license>Apache License 2.0</license>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>demo_nodes_py</test_depend>
+  <test_depend>launch_ros</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <test_depend>python3-yaml</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

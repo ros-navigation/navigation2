@@ -1,0 +1,4 @@
+<launch>
+  <test test-name="test_subscriber" pkg="message_filters" type="message_filters-test_subscriber"/>
+</launch>
+

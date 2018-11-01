@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<methodCall>
+	<methodName>validator1.easyStructTest</methodName>
+	<params>
+		<param>
+			<value><struct>
+				<member>
+					<name>curly</name>
+					<value>
+						<i4>-78</i4>
+						</value>
+					</member>
+				<member>
+					<name>larry</name>
+					<value>
+						<i4>23</i4>
+						</value>
+					</member>
+				<member>
+					<name>moe</name>
+					<value>
+						<i4>38</i4>
+						</value>
+					</member>
+				</struct></value>
+			</param>
+		</params>
+	</methodCall>
+

@@ -1,0 +1,84 @@
+$ python3 ./launch_counters.py
+Starting introspection of launch description...
+
+<launch.launch_description.LaunchDescription object at 0x103e46860>
+├── LogInfo('Hello World!')
+├── LogInfo('Is that you, ' + EnvVarSub('USER') + '?')
+├── RegisterEventHandler('<launch.event_handlers.on_process_io.OnProcessIO object at 0x1045a0c50>'):
+│   └── OnProcessIO(matcher='event issubclass of ProcessIO and event.action == ExecuteProcess(0x1036299f8)', handlers={on_stdout: '<function main.<locals>.on_output at 0x103e93ae8>', on_stderr: '<function main.<locals>.on_output at 0x103e93ae8>'})
+├── Action('<launch.actions.set_launch_configuration.SetLaunchConfiguration object at 0x1045a0c18>')
+├── ExecuteProcess(cmd=[FindExecSub('whoami')], cwd=None, env=None, shell=False)
+├── RegisterEventHandler('<launch.event_handlers.on_process_io.OnProcessIO object at 0x1045ae390>'):
+│   └── OnProcessIO(matcher='event issubclass of ProcessIO and event.action == ExecuteProcess(0x1045ae2e8)', handlers={on_stdout: '<function main.<locals>.<lambda> at 0x1045a48c8>'})
+├── Action('<launch.actions.set_launch_configuration.SetLaunchConfiguration object at 0x1045ae400>')
+├── ExecuteProcess(cmd=['python3', '-u', './counter.py'], cwd=None, env=None, shell=False)
+├── RegisterEventHandler('<launch.event_handlers.on_process_io.OnProcessIO object at 0x1045ae5f8>'):
+│   └── OnProcessIO(matcher='event issubclass of ProcessIO and event.action == ExecuteProcess(0x1045ae4a8)', handlers={on_stdout: '<function main.<locals>.counter_output_handler at 0x1045ad048>', on_stderr: '<function main.<locals>.counter_output_handler at 0x1045ad048>'})
+├── ExecuteProcess(cmd=['python3', '-u', './counter.py', '--ignore-sigint'], cwd=None, env=None, shell=False)
+├── ExecuteProcess(cmd=['python3', '-u', './counter.py', '--ignore-sigint', '--ignore-sigterm'], cwd=None, env=None, shell=False)
+├── RegisterEventHandler('<launch.event_handlers.on_shutdown.OnShutdown object at 0x1045ae9b0>'):
+    └── OnShutdown(matcher='event issubclass of launch.events.Shutdown', handler=<function main.<locals>.<lambda> at 0x1045ad158>)
+
+Starting launch of launch description...
+
+[INFO] [launch.user]: Hello World!
+[INFO] [launch.user]: Is that you, william?
+[INFO] [launch]: process[whoami-1]: started with pid [22435]
+[INFO] [launch]: process[whoami-1]: process has finished cleanly
+[INFO] [launch]: process[python3-2]: started with pid [22436]
+[INFO] [launch]: process[python3-3]: started with pid [22438]
+[INFO] [launch]: process[python3-4]: started with pid [22439]
+[INFO] [launch.user]: whoami says you are 'william'.
+[whoami-1] william
+[whoami-1]         0.00 real         0.00 user         0.00 sys
+[python3-3] will be ignoring SIGINT
+[python3-3] Counter: 1
+[python3-4] will be ignoring SIGINT
+[python3-4] will be ignoring SIGTERM
+[python3-4] Counter: 1
+[python3-2] Counter: 1
+[python3-3] Counter: 2
+[python3-4] Counter: 2
+[python3-2] Counter: 2
+[python3-3] Counter: 3
+[python3-4] Counter: 3
+[python3-2] Counter: 3
+[python3-3] Counter: 4
+[python3-4] Counter: 4
+[python3-2] Counter: 4
+[INFO] [launch.user]: Launch was asked to shutdown: saw 'Counter: 4' from 'python3-2'
+[INFO] [launch]: sending signal 'SIGINT' to process[python3-4]
+[INFO] [launch]: sending signal 'SIGINT' to process[python3-3]
+[INFO] [launch]: sending signal 'SIGINT' to process[python3-2]
+[python3-4] ignoring SIGINT
+[python3-3] ignoring SIGINT
+[python3-2] Traceback (most recent call last):
+[python3-2]   File "./counter.py", line 79, in <module>
+[python3-2]     sys.exit(main())
+[python3-2]   File "./counter.py", line 72, in main
+[python3-2]     time.sleep(args.sleep)
+[python3-2] KeyboardInterrupt
+[ERROR] [launch]: process[python3-2] process has died [pid 22436, exit code 1, cmd 'python3 -u ./counter.py'].
+[python3-3] Counter: 5
+[python3-4] Counter: 5
+[python3-3] Counter: 6
+[python3-4] Counter: 6
+[python3-3] Counter: 7
+[python3-4] Counter: 7
+[python3-3] Counter: 8
+[python3-4] Counter: 8
+[ERROR] [launch]: process[python3-4] failed to terminate 5 seconds after receiving SIGINT, escalating to SIGTERM
+[ERROR] [launch]: process[python3-3] failed to terminate 5 seconds after receiving SIGINT, escalating to SIGTERM
+[INFO] [launch]: sending signal 'SIGTERM' to process[python3-4]
+[INFO] [launch]: sending signal 'SIGTERM' to process[python3-3]
+[python3-3] Counter: 9
+[python3-4] ignoring SIGTERM
+[python3-4] Counter: 9
+[ERROR] [launch]: process[python3-3] process has died [pid 22438, exit code -15, cmd 'python3 -u ./counter.py --ignore-sigint'].
+[python3-4] Counter: 10
+[python3-4] Counter: 11
+[python3-4] Counter: 12
+[python3-4] Counter: 13
+[ERROR] [launch]: process[python3-4] failed to terminate 10.0 seconds after receiving SIGTERM, escalating to SIGKILL
+[INFO] [launch]: sending signal 'SIGKILL' to process[python3-4]
+[ERROR] [launch]: process[python3-4] process has died [pid 22439, exit code -9, cmd 'python3 -u ./counter.py --ignore-sigint --ignore-sigterm'].

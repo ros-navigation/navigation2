@@ -1,0 +1,59 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b message_filters is a set of message "filters" which take messages in, usually through a callback from somewhere else,
+and may or may not spit them out at some time in the future, depending on the conditions which need to be met for that
+filter to do so.
+
+\b message_filters also sets up a common pattern for these filters, allowing you to chain them together, even though they
+have no explicit base class.
+
+
+\section codeapi Code API
+
+The filters currently implemented in this package are:
+- message_filters::Subscriber - A source filter, which wraps a ROS subscription.  Most filter chains will begin with a Subscriber.
+- message_filters::Cache - Caches messages which pass through it, allowing later lookup by time stamp.
+- message_filters::TimeSynchronizer - Synchronizes multiple messages by their timestamps, only passing them through when all have arrived.
+- message_filters::TimeSequencer - Tries to pass messages through ordered by their timestamps, even if some arrive out of order.
+
+There is also a base-class provided for simple filters: message_filters::SimpleFilter.  This provides callback management and disconnection
+for any filter that derives from it.  A simple filter is defined as one that outputs a single message.  message_filters::SimpleFilter provides
+the registerCallback() method for any of its derived classes.  message_filters::Subscriber, message_filters::Cache and message_filters::TimeSequencer
+are all derived from message_filters::SimpleFilter.
+
+Here's a simple example of using a Subscriber with a Cache:
+\verbatim
+void myCallback(const robot_msgs::Pose::ConstPtr& pose)
+{}
+
+ros::NodeHandle nh;
+message_filters::Subscriber<robot_msgs::Pose> sub(nh, "pose_topic", 1);
+message_filters::Cache<robot_msgs::Pose> cache(sub, 10);
+cache.registerCallback(myCallback);
+\endverbatim
+
+The Subscriber here acts as the source of messages.  Each message is passed to the cache, which then passes it through to the
+user's callback (myCallback)
+
+\section connections CONNECTIONS
+
+Every filter can have up to two types of connections, input and output.  Source filters (such as message_filters::Subscriber) only
+have output connections, whereas most other filters have both input and output connections.
+
+The two connection types do not have to be identical.  For example, message_filters::TimeSynchronizer's input connection takes one
+parameter, but its output connection has somewhere between 2 and 9 parameters, depending on the number of connections being
+synchronized.
+
+Input connections are registered either in the filter's constructor, or by calling connectInput() on the filter. For example:
+\verbatim
+message_filters::Cache<robot_msgs::Pose> cache(10);
+cache.connectInput(sub);
+\endverbatim 
+
+This connects cache's input to sub's output.
+
+Output connections are registered through the registerCallback() function.
+
+*/

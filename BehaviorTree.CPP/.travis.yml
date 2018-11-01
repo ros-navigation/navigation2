@@ -1,0 +1,45 @@
+# This config file for Travis CI utilizes ros-industrial/industrial_ci package.
+# For more info for the package, see https://github.com/ros-industrial/industrial_ci/blob/master/README.rst
+
+sudo: required
+dist: trusty
+language: cpp
+
+os:
+  - linux
+
+compiler:
+  - gcc
+
+matrix:
+    include:
+      - bare_linux:
+        env: ROS_DISTRO="none"
+      - ros_indigo:
+        env: ROS_DISTRO="indigo"
+      - ros_kinetic:
+        env: ROS_DISTRO="kinetic"
+    fast_finish: true
+
+before_install:
+  - sudo apt-get update && sudo apt-get --reinstall install -qq build-essential libzmqpp-dev
+  # GTest: see motivation here https://www.eriksmistad.no/getting-started-with-google-test-on-ubuntu/
+  - sudo apt-get --reinstall install -qq libgtest-dev cmake
+  - cd /usr/src/gtest
+  - sudo cmake CMakeLists.txt
+  - sudo make
+  - sudo cp *.a /usr/lib
+  - cd $TRAVIS_BUILD_DIR
+
+install:
+  - if [ "$ROS_DISTRO" != "none" ]; then git clone https://github.com/ros-industrial/industrial_ci.git .ci_config; fi
+
+before_script:
+  # Prepare build directory
+  - mkdir -p build
+  
+script:
+  - if [ "$ROS_DISTRO"  = "none" ]; then (cd build; cmake .. ;cmake --build .; ./bin/behavior_tree_core_test); fi
+  - if [ "$ROS_DISTRO" != "none" ]; then (.ci_config/travis.sh); fi
+
+

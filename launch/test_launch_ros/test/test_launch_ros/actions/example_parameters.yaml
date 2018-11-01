@@ -1,0 +1,9 @@
+/my_ns:
+    my_node:
+        ros__parameters:
+            some_int: 42
+            a_string: "Hello world"
+            some_list:
+                sub_list:
+                    some_integers: [1, 2, 3, 4]
+                    some_doubles : [3.14, 2.718]

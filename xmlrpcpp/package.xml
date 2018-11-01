@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>xmlrpcpp</name>
+  <version>0.1.0</version>
+  <description>
+    XmlRpc++ is a C++ implementation of the XML-RPC protocol. This version is
+    heavily modified from the package available on SourceForge in order to
+    support roscpp's threading model. As such, we are maintaining our
+    own fork.
+  </description>
+  <maintainer email="dthomas@osrfoundation.org">Dirk Thomas</maintainer>
+  <license>LGPL-2.1</license>
+
+  <url>http://xmlrpcpp.sourceforge.net</url>
+  <author>Chris Morley</author>
+  <author>Konstantin Pilipchuk</author>
+  <author>Morgan Quigley</author>
+  <author>Austin Hendrix</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+    <export>
+		<build_type>ament_cmake</build_type>
+    </export>
+</package>

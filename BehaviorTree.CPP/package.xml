@@ -1,0 +1,18 @@
+<package>
+  <name>behavior_tree_core</name>
+  <version>2.0.0</version>
+  <description>
+  This package provides a behavior trees core.
+  </description>
+
+  <maintainer email="michele.colledanchise@gmail.com">Michele Colledanchise</maintainer>
+  <maintainer email="davide.faconti@eurecat.org">Davide Faconti</maintainer>
+
+  <license>MIT</license>
+
+  <author>Michele Colledanchise</author>
+  <author>Davide Faconti</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

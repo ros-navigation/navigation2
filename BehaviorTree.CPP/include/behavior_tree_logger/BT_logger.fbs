@@ -1,0 +1,63 @@
+namespace BT_Serialization;
+
+enum Status : byte {
+    IDLE = 0,
+    RUNNING,
+    SUCCESS,
+    FAILURE
+}
+
+enum Type : byte {
+    UNDEFINED = 0,
+    ACTION,
+    CONDITION,
+    CONTROL,
+    DECORATOR,
+    SUBTREE
+}
+
+struct Timestamp 
+{
+  usec_since_epoch : uint64;
+}
+
+table KeyValue
+{
+  key   : string;
+  value : string;
+}
+
+table TreeNode
+{
+  uid           : uint16;
+  children_uid  : [uint16];
+  type          : Type;
+  status        : Status;
+  instance_name : string   (required);
+  registration_name : string   (required);
+  params : [KeyValue];
+}
+
+table BehaviorTree 
+{
+  root_uid : uint16;
+  nodes    : [TreeNode];
+}
+
+struct StatusChange 
+{
+  uid         : uint16;
+  prev_status : Status;
+  status      : Status;
+  timestamp   : Timestamp;
+}
+
+table StatusChangeLog
+{
+    behavior_tree  : BehaviorTree;
+    state_changes  : [StatusChange];
+}
+
+root_type StatusChangeLog;
+
+root_type BehaviorTree;

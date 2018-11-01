@@ -1,0 +1,7 @@
+Debug
+Release
+doc
+*.ncb
+*.opt
+*.plg
+*.suo

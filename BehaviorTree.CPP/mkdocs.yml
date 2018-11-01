@@ -1,0 +1,46 @@
+site_name: BehaviorTree.CPP
+site_description: Introduction to Behavior Trees
+site_author: Davide Faconti
+
+copyright: 'Copyright &copy; 2018 Davide Faconti, Eurecat'
+
+theme:
+  name: 'material'
+  language: en
+  logo: 'images/BT.png'
+  feature:
+    tabs: true
+  palette:
+    primary: blue
+    accent: indigo
+  font:
+    text: Ubuntu
+    code: Roboto Mono
+  
+repo_name: 'BehaviorTree.CPP'
+repo_url: 'https://github.com/BehaviorTree/BehaviorTree.CPP'
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - codehilite:
+      guess_lang: true
+
+
+pages:
+    - Home: index.md
+    - Learn the basics:
+       - Introduction:      BT_basics.md
+       - Sequence Nodes:    SequenceNode.md
+       - Fallback Nodes:    FallbackNode.md
+       - Decorators Nodes:  DecoratorNode.md
+    - Tutorials: 
+       - Getting started:                getting_started.md
+       - "Tutorial 1: Create a Tree":    tutorial_A_create_trees.md
+       - "Tutorial 2: NodeParameters":   tutorial_B_node_parameters.md
+       - "Tutorial 3: Blackboards":      tutorial_C_blackboard.md
+       - "Tutorial 4: Subtrees":         tutorial_D_subtrees.md
+       - "Tutorial 5: Plugins":          tutorial_E_plugins.md
+       - "Tutorial 6: Loggers":          tutorial_F_loggers.md
+

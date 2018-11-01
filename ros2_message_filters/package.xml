@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>message_filters</name>
+  <version>2.0.0</version>
+  <description>
+    A set of ROS2 message filters which take in messages and may output those messages at a later time, based on the conditions that filter needs met.
+  </description>
+  <maintainer email="ethan.gao@linux.intel.com">Ethan Gao</maintainer>
+  <license>BSD</license>
+  <url>https://github.com/intel/ros2_message_filters</url>
+  <author>Jing Wang</author>
+  <author>Josh Faust</author>
+  <author>Vijay Pradeep</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>builtin_interfaces</build_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

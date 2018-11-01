@@ -1,0 +1,4 @@
+<launch>
+  <test test-name="time_sequencer" pkg="message_filters" type="message_filters-time_sequencer_unittest"/>
+</launch>
+

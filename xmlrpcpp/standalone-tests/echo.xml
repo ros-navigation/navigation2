@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<methodCall>
+	<methodName>echo</methodName>
+	<params>
+		<param><value><string>Hello Chris</string></value></param>
+		<param><value><i4>123</i4></value></param>
+		</params>
+	</methodCall>
+
