@@ -22,6 +22,7 @@ RUN if [ "$http_proxy" == "" ]; \
 RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list
 
 ENV ROS1_DISTRO melodic
+ENV ROS2_DISTRO bouncy
 
 # update latest package versions
 RUN apt-get update
@@ -88,14 +89,17 @@ RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros1_dependenci
 
 # Build ROS 1 dependencies
 WORKDIR /ros2_ws/ros1_dependencies_ws
+RUN rosdep init && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO --as-root=apt:false --as-root=pip:false
 RUN  (. /opt/ros/$ROS1_DISTRO/setup.bash  && catkin_make)
 
 # Build ROS 2 dependencies
 WORKDIR /ros2_ws/navstack_dependencies_ws
+RUN rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
 RUN (. /ros2_ws/ros2-linux/setup.bash  && colcon build --symlink-install)
 
 # Build navigation2 code
 WORKDIR /ros2_ws/navigation2_ws
+RUN rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
 RUN (. /ros2_ws/ros2-linux/setup.bash && \
      . /ros2_ws/navstack_dependencies_ws/install/setup.bash && \
      colcon build --symlink-install)

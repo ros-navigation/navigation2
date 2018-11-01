@@ -45,7 +45,7 @@ fi
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
   ROS1_SETUP_FILE=/opt/ros/$ROS1_DISTRO/setup.bash 
-  rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO
+  sudo rosdep init && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO
   if [ ! -f $ROS1_SETUP_FILE ]; then
     echo "'$ROS1_SETUP_FILE' does not exist. Install ROS $ROS1_DISTRO"
     exit 1
