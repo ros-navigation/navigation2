@@ -1,5 +1,5 @@
-#ifndef NAV2_COSTMAP_2D__TESTING_HELPER_H
-#define NAV2_COSTMAP_2D__TESTING_HELPER_H
+#ifndef NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
+#define NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 #include <nav2_costmap_2d/cost_values.hpp>
@@ -108,4 +108,4 @@ nav2_costmap_2d::InflationLayer * addInflationLayer(nav2_costmap_2d::LayeredCost
 }
 
 
-#endif  // NAV2_COSTMAP_2D__TESTING_HELPER_H
+#endif  // NAV2_COSTMAP_2D__TESTING_HELPER_HPP_

@@ -28,8 +28,8 @@
  *
  * author: Dave Hershberger
  */
-#ifndef NAV2_COSTMAP_2D__ARRAY_PARSER_H
-#define NAV2_COSTMAP_2D__ARRAY_PARSER_H
+#ifndef NAV2_COSTMAP_2D__ARRAY_PARSER_HPP_
+#define NAV2_COSTMAP_2D__ARRAY_PARSER_HPP_
 
 #include <vector>
 #include <string>
@@ -48,4 +48,4 @@ std::vector<std::vector<float> > parseVVF(const std::string & input, std::string
 
 }  // end namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__ARRAY_PARSER_H
+#endif  // NAV2_COSTMAP_2D__ARRAY_PARSER_HPP_

@@ -111,4 +111,4 @@ private:
   static char * cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
 };
 }  // namespace nav2_costmap_2d
-#endif // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_H
+#endif // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
