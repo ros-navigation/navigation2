@@ -45,6 +45,7 @@ fi
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
   ROS1_SETUP_FILE=/opt/ros/$ROS1_DISTRO/setup.bash 
+  rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO
   if [ ! -f $ROS1_SETUP_FILE ]; then
     echo "'$ROS1_SETUP_FILE' does not exist. Install ROS $ROS1_DISTRO"
     exit 1
@@ -55,6 +56,7 @@ if [ "$ENABLE_ROS1" = true ]; then
 # Build ROS 2 base
 if [ "$ENABLE_ROS2" = true ]; then
   cd $CWD/ros2_ws
+  rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
   colcon build --symlink-install --packages-skip ros1_bridge
 fi
 
@@ -65,6 +67,7 @@ cd $CWD/navstack_dependencies_ws
 
 # Build our code
 cd $CWD/navigation2_ws
+rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
 (. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 
