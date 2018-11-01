@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
-#define COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
+#ifndef COSTMAP_QUEUE__MAP_BASED_QUEUE_HPP_
+#define COSTMAP_QUEUE__MAP_BASED_QUEUE_HPP_
 
 #include <algorithm>
 #include <map>
@@ -169,4 +169,4 @@ protected:
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE__MAP_BASED_QUEUE_H_
+#endif  // COSTMAP_QUEUE__MAP_BASED_QUEUE_HPP_

@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "costmap_queue/limited_costmap_queue.h"
+#include "costmap_queue/limited_costmap_queue.hpp"
 
 namespace costmap_queue
 {

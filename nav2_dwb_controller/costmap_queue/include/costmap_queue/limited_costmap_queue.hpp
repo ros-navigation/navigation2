@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
-#define COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
+#ifndef COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_HPP_
+#define COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_HPP_
 
-#include "costmap_queue/costmap_queue.h"
+#include "costmap_queue/costmap_queue.hpp"
 
 namespace costmap_queue
 {
@@ -55,4 +55,4 @@ public:
 };
 }  // namespace costmap_queue
 
-#endif  // COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_H_
+#endif  // COSTMAP_QUEUE__LIMITED_COSTMAP_QUEUE_HPP_
