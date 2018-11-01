@@ -1334,7 +1334,7 @@ AmclNode::createMotionModel()
     motionModel_ = new OmniMotionModel(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
     RCLCPP_INFO(get_logger(), "Robot motion model is omnidirectional");
   } else {
-    RCLCPP_INFO(get_logger(), "Unknown robot motion model, defaulting to differential model");
+    RCLCPP_WARN(get_logger(), "Unknown robot motion model, defaulting to differential model");
     motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
   }
 }
