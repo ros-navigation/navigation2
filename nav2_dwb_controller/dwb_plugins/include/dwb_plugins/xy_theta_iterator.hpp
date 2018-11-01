@@ -32,37 +32,35 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_
-#define DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_
+#ifndef DWB_PLUGINS__XY_THETA_ITERATOR_HPP_
+#define DWB_PLUGINS__XY_THETA_ITERATOR_HPP_
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "dwb_core/goal_checker.h"
+#include "dwb_plugins/velocity_iterator.hpp"
+#include "dwb_plugins/one_d_velocity_iterator.hpp"
 
 namespace dwb_plugins
 {
-
-/**
- * @class SimpleGoalChecker
- * @brief Goal Checker plugin that only checks the position difference
- */
-class SimpleGoalChecker : public dwb_core::GoalChecker
+class XYThetaIterator : public VelocityIterator
 {
 public:
-  SimpleGoalChecker();
-  // Standard GoalChecker Interface
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
-  bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) override;
+  XYThetaIterator()
+  : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
+  void initialize(
+    const std::shared_ptr<rclcpp::Node> & nh,
+    KinematicParameters::Ptr kinematics) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
+  bool hasMoreTwists() override;
+  nav_2d_msgs::msg::Twist2D nextTwist() override;
 
 protected:
-  double xy_goal_tolerance_, yaw_goal_tolerance_;
+  virtual bool isValidVelocity();
+  void iterateToValidVelocity();
+  int vx_samples_, vy_samples_, vtheta_samples_;
+  KinematicParameters::Ptr kinematics_;
 
-  // Cached squared xy_goal_tolerance_
-  double xy_goal_tolerance_sq_;
+  std::shared_ptr<OneDVelocityIterator> x_it_, y_it_, th_it_;
 };
-
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS__SIMPLE_GOAL_CHECKER_H_
+#endif  // DWB_PLUGINS__XY_THETA_ITERATOR_HPP_

@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__KINEMATIC_PARAMETERS_H_
-#define DWB_PLUGINS__KINEMATIC_PARAMETERS_H_
+#ifndef DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
+#define DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
@@ -109,4 +109,4 @@ protected:
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS__KINEMATIC_PARAMETERS_H_
+#endif  // DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_

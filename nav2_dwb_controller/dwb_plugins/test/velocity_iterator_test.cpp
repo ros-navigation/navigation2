@@ -33,7 +33,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "dwb_plugins/one_d_velocity_iterator.h"
+#include "dwb_plugins/one_d_velocity_iterator.hpp"
 
 using dwb_plugins::OneDVelocityIterator;
 

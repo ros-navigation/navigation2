@@ -32,34 +32,32 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_
-#define DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_
+#ifndef DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
+#define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "dwb_plugins/simple_goal_checker.h"
+#include "dwb_plugins/standard_traj_generator.hpp"
 
 namespace dwb_plugins
 {
-
 /**
- * @class StoppedGoalChecker
- * @brief Goal Checker plugin that checks the position difference and velocity
+ * @class LimitedAccelGenerator
+ * @brief Limits the acceleration in the generated trajectories to a fraction of the simulated time.
  */
-class StoppedGoalChecker : public SimpleGoalChecker
+class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  StoppedGoalChecker();
-  // Standard GoalChecker Interface
   void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
-  bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) override;
+  void checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
+  dwb_msgs::msg::Trajectory2D generateTrajectory(
+    const geometry_msgs::msg::Pose2D & start_pose,
+    const nav_2d_msgs::msg::Twist2D & start_vel,
+    const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
 
 protected:
-  double rot_stopped_velocity_, trans_stopped_velocity_;
+  double acceleration_time_;
 };
-
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS__STOPPED_GOAL_CHECKER_H_
+#endif  // DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_

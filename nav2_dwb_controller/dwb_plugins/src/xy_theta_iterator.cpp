@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/xy_theta_iterator.h"
+#include "dwb_plugins/xy_theta_iterator.hpp"
 #include <memory>
 #include "nav_2d_utils/parameters.hpp"
 

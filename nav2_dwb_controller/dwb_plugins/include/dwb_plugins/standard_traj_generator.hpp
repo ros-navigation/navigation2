@@ -32,15 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_
-#define DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_
+#ifndef DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_HPP_
+#define DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_HPP_
 
 #include <vector>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/trajectory_generator.h"
-#include "dwb_plugins/velocity_iterator.h"
-#include "dwb_plugins/kinematic_parameters.h"
+#include "dwb_plugins/velocity_iterator.hpp"
+#include "dwb_plugins/kinematic_parameters.hpp"
 
 namespace dwb_plugins
 {
@@ -138,4 +138,4 @@ protected:
 
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_H_
+#endif  // DWB_PLUGINS__STANDARD_TRAJ_GENERATOR_HPP_

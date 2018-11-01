@@ -32,35 +32,27 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__XY_THETA_ITERATOR_H_
-#define DWB_PLUGINS__XY_THETA_ITERATOR_H_
+#ifndef DWB_PLUGINS__VELOCITY_ITERATOR_HPP_
+#define DWB_PLUGINS__VELOCITY_ITERATOR_HPP_
 
 #include <memory>
-#include "dwb_plugins/velocity_iterator.h"
-#include "dwb_plugins/one_d_velocity_iterator.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
+#include "dwb_plugins/kinematic_parameters.hpp"
 
 namespace dwb_plugins
 {
-class XYThetaIterator : public VelocityIterator
+class VelocityIterator
 {
 public:
-  XYThetaIterator()
-  : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
-  void initialize(
+  virtual ~VelocityIterator() {}
+  virtual void initialize(
     const std::shared_ptr<rclcpp::Node> & nh,
-    KinematicParameters::Ptr kinematics) override;
-  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
-  bool hasMoreTwists() override;
-  nav_2d_msgs::msg::Twist2D nextTwist() override;
-
-protected:
-  virtual bool isValidVelocity();
-  void iterateToValidVelocity();
-  int vx_samples_, vy_samples_, vtheta_samples_;
-  KinematicParameters::Ptr kinematics_;
-
-  std::shared_ptr<OneDVelocityIterator> x_it_, y_it_, th_it_;
+    KinematicParameters::Ptr kinematics) = 0;
+  virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) = 0;
+  virtual bool hasMoreTwists() = 0;
+  virtual nav_2d_msgs::msg::Twist2D nextTwist() = 0;
 };
 }  // namespace dwb_plugins
 
-#endif  // DWB_PLUGINS__XY_THETA_ITERATOR_H_
+#endif  // DWB_PLUGINS__VELOCITY_ITERATOR_HPP_

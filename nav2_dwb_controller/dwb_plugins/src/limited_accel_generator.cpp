@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/limited_accel_generator.h"
+#include "dwb_plugins/limited_accel_generator.hpp"
 #include <vector>
 #include <memory>
 #include "nav_2d_utils/parameters.hpp"
