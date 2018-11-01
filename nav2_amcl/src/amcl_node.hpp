@@ -35,8 +35,8 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/sensors/laser/laser.h"
-#include "nav2_util/motion_model/motion_model.h"
+#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/angleutils.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1

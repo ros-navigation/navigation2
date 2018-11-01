@@ -25,7 +25,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "nav2_util/sensors/laser/laser.h"
+#include "nav2_util/sensors/laser/laser.hpp"
 
 namespace nav2_util
 {

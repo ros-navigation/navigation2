@@ -34,8 +34,8 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef VOXEL_GRID__VOXEL_GRID_H_
-#define VOXEL_GRID__VOXEL_GRID_H_
+#ifndef VOXEL_GRID__VOXEL_GRID_HPP_
+#define VOXEL_GRID__VOXEL_GRID_HPP_
 
 #include <stdio.h>
 #include <string.h>
@@ -432,4 +432,4 @@ private:
 
 }  // namespace voxel_grid
 
-#endif  // VOXEL_GRID__VOXEL_GRID_H_
+#endif  // VOXEL_GRID__VOXEL_GRID_HPP_

@@ -43,7 +43,7 @@
 #include <algorithm>
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "nav2_util/duration_conversions.h"
+#include "nav2_util/duration_conversions.hpp"
 
 using namespace std;
 

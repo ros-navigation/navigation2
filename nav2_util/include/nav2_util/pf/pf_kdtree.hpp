@@ -25,8 +25,8 @@
  * CVS: $Id: pf_kdtree.h 6532 2008-06-11 02:45:56Z gbiggs $
  *************************************************************************/
 
-#ifndef NAV2_UTIL__PF__PF_KDTREE_H_
-#define NAV2_UTIL__PF__PF_KDTREE_H_
+#ifndef NAV2_UTIL__PF__PF_KDTREE_HPP_
+#define NAV2_UTIL__PF__PF_KDTREE_HPP_
 
 #ifdef INCLUDE_RTKGUI
 #include <rtk.h>
@@ -104,4 +104,4 @@ extern void pf_kdtree_draw(pf_kdtree_t * self, rtk_fig_t * fig);
 
 #endif
 
-#endif  // NAV2_UTIL__PF__PF_KDTREE_H_
+#endif  // NAV2_UTIL__PF__PF_KDTREE_HPP_

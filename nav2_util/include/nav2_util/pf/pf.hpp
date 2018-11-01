@@ -25,11 +25,11 @@
  * CVS: $Id: pf.h 3293 2005-11-19 08:37:45Z gerkey $
  *************************************************************************/
 
-#ifndef NAV2_UTIL__PF__PF_H_
-#define NAV2_UTIL__PF__PF_H_
+#ifndef NAV2_UTIL__PF__PF_HPP_
+#define NAV2_UTIL__PF__PF_HPP_
 
-#include "nav2_util/pf/pf_vector.h"
-#include "nav2_util/pf/pf_kdtree.h"
+#include "nav2_util/pf/pf_vector.hpp"
+#include "nav2_util/pf/pf_kdtree.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -198,4 +198,4 @@ void pf_init_converged(pf_t * pf);
 #endif
 
 
-#endif  // NAV2_UTIL__PF__PF_H_
+#endif  // NAV2_UTIL__PF__PF_HPP_

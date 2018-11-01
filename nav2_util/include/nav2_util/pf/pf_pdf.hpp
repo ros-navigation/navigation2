@@ -25,10 +25,10 @@
  * CVS: $Id: pf_pdf.h 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
-#ifndef NAV2_UTIL__PF__PF_PDF_H_
-#define NAV2_UTIL__PF__PF_PDF_H_
+#ifndef NAV2_UTIL__PF__PF_PDF_HPP_
+#define NAV2_UTIL__PF__PF_PDF_HPP_
 
-#include "nav2_util/pf/pf_vector.h"
+#include "nav2_util/pf/pf_vector.hpp"
 
 // #include <gsl/gsl_rng.h>
 // #include <gsl/gsl_randist.h>
@@ -81,4 +81,4 @@ pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t * pdf);
 }
 #endif
 
-#endif  // NAV2_UTIL__PF__PF_PDF_H_
+#endif  // NAV2_UTIL__PF__PF_PDF_HPP_

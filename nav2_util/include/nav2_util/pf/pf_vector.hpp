@@ -25,8 +25,8 @@
  * CVS: $Id: pf_vector.h 6345 2008-04-17 01:36:39Z gerkey $
  *************************************************************************/
 
-#ifndef NAV2_UTIL__PF__PF_VECTOR_H_
-#define NAV2_UTIL__PF__PF_VECTOR_H_
+#ifndef NAV2_UTIL__PF__PF_VECTOR_HPP_
+#define NAV2_UTIL__PF__PF_VECTOR_HPP_
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,4 +91,4 @@ void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a);
 }
 #endif
 
-#endif  // NAV2_UTIL__PF__PF_VECTOR_H_
+#endif  // NAV2_UTIL__PF__PF_VECTOR_HPP_

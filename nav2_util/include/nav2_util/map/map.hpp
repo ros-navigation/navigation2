@@ -25,8 +25,8 @@
  * CVS: $Id: map.h 1713 2003-08-23 04:03:43Z inspectorg $
  **************************************************************************/
 
-#ifndef NAV2_UTIL__MAP__MAP_H_
-#define NAV2_UTIL__MAP__MAP_H_
+#ifndef NAV2_UTIL__MAP__MAP_HPP_
+#define NAV2_UTIL__MAP__MAP_HPP_
 
 #include <stdint.h>
 
@@ -144,4 +144,4 @@ void map_draw_wifi(map_t * map, struct _rtk_fig_t * fig, int index);
 }
 #endif
 
-#endif  // NAV2_UTIL__MAP__MAP_H_
+#endif  // NAV2_UTIL__MAP__MAP_HPP_

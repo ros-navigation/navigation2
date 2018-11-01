@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_H_
-#define NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_H_
+#ifndef NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_
+#define NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_
 
 #include <string>
-#include "nav2_util/pf/pf.h"
-#include "nav2_util/pf/pf_pdf.h"
+#include "nav2_util/pf/pf.hpp"
+#include "nav2_util/pf/pf_pdf.hpp"
 
 namespace nav2_util
 {
@@ -58,4 +58,4 @@ private:
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_H_
+#endif  // NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_

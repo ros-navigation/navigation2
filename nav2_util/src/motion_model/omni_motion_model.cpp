@@ -23,7 +23,7 @@
 #include <math.h>
 #include <algorithm>
 
-#include "nav2_util/motion_model/motion_model.h"
+#include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/angleutils.hpp"
 
 namespace nav2_util

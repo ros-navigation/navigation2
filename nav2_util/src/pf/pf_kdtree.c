@@ -31,8 +31,8 @@
 #include <string.h>
 
 
-#include "nav2_util/pf/pf_vector.h"
-#include "nav2_util/pf/pf_kdtree.h"
+#include "nav2_util/pf/pf_vector.hpp"
+#include "nav2_util/pf/pf_kdtree.hpp"
 
 
 // Compare keys to see if they are equal
