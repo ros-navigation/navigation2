@@ -13,6 +13,6 @@
   <author>Michele Colledanchise</author>
   <author>Davide Faconti</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament</buildtool_depend>
 
 </package>
