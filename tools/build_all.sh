@@ -45,29 +45,30 @@ fi
 if [ "$ENABLE_ROS1" = true ]; then
   cd ros1_dependencies_ws
   ROS1_SETUP_FILE=/opt/ros/$ROS1_DISTRO/setup.bash 
-  sudo rosdep init && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO
   if [ ! -f $ROS1_SETUP_FILE ]; then
     echo "'$ROS1_SETUP_FILE' does not exist. Install ROS $ROS1_DISTRO"
     exit 1
-  fi 
+  fi
   (. $ROS1_SETUP_FILE && catkin_make)
  fi
 
 # Build ROS 2 base
 if [ "$ENABLE_ROS2" = true ]; then
   cd $CWD/ros2_ws
-  rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
   colcon build --symlink-install --packages-skip ros1_bridge
 fi
 
 # Build our ROS 2 dependencies
 cd $CWD/navstack_dependencies_ws
+export ROSDISTRO_INDEX_URL'https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
+rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
 (. $ROS2_SETUP_FILE &&
  colcon build --symlink-install)
 
 # Build our code
 cd $CWD/navigation2_ws
-rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
+export ROSDISTRO_INDEX_URL'https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
+rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
 (. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 

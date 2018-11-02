@@ -2,7 +2,7 @@
 # It also expects to be contained in the /navigation2 root folder for file copy
 # Example build command:
 # sudo docker build -t nav2:latest --build-arg http_proxy=http://my.proxy.com:### .
-FROM osrf/ros2:bouncy-desktop 
+FROM osrf/ros2:bouncy-desktop
 
 SHELL ["/bin/bash", "-c"]
 
@@ -23,6 +23,7 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/
 
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy
+ENV ROSDISTRO_INDEX_URL 'https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
 
 # update latest package versions
 RUN apt-get update
@@ -83,25 +84,16 @@ RUN echo "Downloading the ROS 2 navstack dependencies workspace"
 WORKDIR /ros2_ws/navstack_dependencies_ws/src
 RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
 
-RUN echo "Downloading the ROS 1 dependencies workspace"
-WORKDIR /ros2_ws/ros1_dependencies_ws/src
-RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros1_dependencies.repos.${ROS1_DISTRO}
-
-# Build ROS 1 dependencies
-WORKDIR /ros2_ws/ros1_dependencies_ws
-RUN rosdep init && rosdep update && rosdep install -y --from-paths src --ignore-src --rosdistro $ROS1_DISTRO --as-root=apt:false --as-root=pip:false
-RUN  (. /opt/ros/$ROS1_DISTRO/setup.bash  && catkin_make)
-
 # Build ROS 2 dependencies
 WORKDIR /ros2_ws/navstack_dependencies_ws
-RUN rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
-RUN (. /ros2_ws/ros2-linux/setup.bash  && colcon build --symlink-install)
+RUN rosdep init && rosdep update && rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false --skip-keys "catkin"
+# source 
+RUN (source /opt/ros/$ROS2_DISTRO/setup.bash && . /ros2_ws/ros2-linux/setup.bash && colcon build --symlink-install)
 
 # Build navigation2 code
 WORKDIR /ros2_ws/navigation2_ws
-RUN rosdep install -y --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
-RUN (. /ros2_ws/ros2-linux/setup.bash && \
-     . /ros2_ws/navstack_dependencies_ws/install/setup.bash && \
+RUN rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
+RUN (source /opt/ros/$ROS2_DISTRO/setup.bash && . /ros2_ws/ros2-linux/setup.bash && . /ros2_ws/navstack_dependencies_ws/install/setup.bash && \
      colcon build --symlink-install)
 
 CMD ["bash"]
