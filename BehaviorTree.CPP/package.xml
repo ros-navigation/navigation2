@@ -13,6 +13,6 @@
   <author>Michele Colledanchise</author>
   <author>Davide Faconti</author>
 
-  <buildtool_depend>ament</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
 </package>
