@@ -14,5 +14,5 @@
   <author>Davide Faconti</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-
+  <test_depend>ament_cmake_gtest</test_depend>
 </package>
