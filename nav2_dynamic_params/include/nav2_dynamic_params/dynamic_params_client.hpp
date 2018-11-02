@@ -28,6 +28,7 @@ namespace nav2_dynamic_params
 class DynamicParamsClient
 {
 public:
+  // From what I've gathered, events are scoped by namespace, not node name
   explicit DynamicParamsClient(
     rclcpp::Node::SharedPtr node, std::vector<std::string> remote_names = {""})
   : node_(node)

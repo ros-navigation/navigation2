@@ -17,6 +17,7 @@ find_package(tf2 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_dynamic_params REQUIRED)
 
 include_directories(
   include
@@ -30,10 +31,16 @@ set(dependencies
   geometry_msgs
   tf2_geometry_msgs
   nav2_costmap_2d
+  nav2_dynamic_params
 )
 
 add_executable(fake_tf2_transform src/fake_tf2_transform.cpp)
 ament_target_dependencies(fake_tf2_transform
+  ${dependencies}
+)
+
+add_executable(extra_param_node src/extra_param_node.cpp)
+ament_target_dependencies(extra_param_node
   ${dependencies}
 )
 
@@ -42,7 +49,7 @@ ament_target_dependencies(param_tests
   ${dependencies}
 )
 
-install(TARGETS fake_tf2_transform param_tests
+install(TARGETS fake_tf2_transform param_tests extra_param_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
