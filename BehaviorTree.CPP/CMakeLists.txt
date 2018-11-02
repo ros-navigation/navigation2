@@ -6,7 +6,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -pthread -Werror=return
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_gtest REQUIRED)
 find_package(GTest)
 
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -72,26 +71,31 @@ target_link_libraries(behavior_tree_core dl)
 ######################################################
 # TESTS
 ######################################################
-set(BT_Tests
-  gtest/src/action_test_node.cpp
-  gtest/src/condition_test_node.cpp
-  gtest/gtest_tree.cpp
-  gtest/gtest_sequence.cpp
-  gtest/gtest_parallel.cpp
-  gtest/gtest_fallback.cpp
-  gtest/gtest_factory.cpp
-  3rdparty/tinyXML2/tinyxml2.cpp
-  3rdparty/minitrace/minitrace.cpp
-)
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  set(BT_Tests
+    gtest/src/action_test_node.cpp
+    gtest/src/condition_test_node.cpp
+    gtest/gtest_tree.cpp
+    gtest/gtest_sequence.cpp
+    gtest/gtest_parallel.cpp
+    gtest/gtest_fallback.cpp
+    gtest/gtest_factory.cpp
+    3rdparty/tinyXML2/tinyxml2.cpp
+    3rdparty/minitrace/minitrace.cpp
+  )
 
-include_directories(gtest/include)
+  include_directories(gtest/include)
 
-ament_add_gtest(behavior_tree_core_test ${BT_Tests} )
+  ament_add_gtest(behavior_tree_core_test ${BT_Tests} )
 
-target_link_libraries(behavior_tree_core_test
-	${BEHAVIOR_TREE_LIBRARIES} crossdoor_nodes
-	${catkin_LIBRARIES}
-)
+  target_link_libraries(behavior_tree_core_test
+    ${BEHAVIOR_TREE_LIBRARIES} crossdoor_nodes
+    ${catkin_LIBRARIES}
+  )
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+endif()
 
 ######################################################
 # COMPILING EXAMPLES and TOOLS
