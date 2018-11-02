@@ -12,7 +12,7 @@ notifications:
     on_success: change
     on_failure: change
     recipients:
-      - stevenamcenski@gmail.com
+      - stevenmacenski@gmail.com
       - mohammad.haghighipanah@intel.com
       - michael.jeronimo@intel.com
       - carlos.a.orduno@intel.com

@@ -13,7 +13,6 @@
 
   <depend>geometry_msgs</depend>
   <depend>nav_2d_msgs</depend>
-  <depend>nav_core2</depend>
   <depend>nav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
