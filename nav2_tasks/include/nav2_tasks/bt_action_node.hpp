@@ -53,7 +53,8 @@ public:
     if (task_client_ == nullptr) {
       // Get the required items from the blackboard
       node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-      node_loop_timeout_ = blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+      node_loop_timeout_ =
+        blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
       // Now that we have the ROS node to use, create the task client for this action
       task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
