@@ -1,4 +1,4 @@
-#include <nav2_costmap_2d/costmap_layer.h>
+#include <nav2_costmap_2d/costmap_layer.hpp>
 
 namespace nav2_costmap_2d
 {

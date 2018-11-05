@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/path_dist.h"
+#include "dwb_critics/path_dist.hpp"
 #include <vector>
 #include "pluginlib/class_list_macros.hpp"
-#include "nav_2d_utils/path_ops.h"
-#include "nav2_costmap_2d/cost_values.h"
+#include "nav_2d_utils/path_ops.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 namespace dwb_critics
 {

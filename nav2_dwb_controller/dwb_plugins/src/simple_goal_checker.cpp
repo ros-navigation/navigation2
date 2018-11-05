@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/simple_goal_checker.h"
+#include "dwb_plugins/simple_goal_checker.hpp"
 #include <memory>
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"

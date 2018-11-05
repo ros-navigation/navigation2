@@ -35,7 +35,7 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 #include <cstdio>
 
 using namespace std;

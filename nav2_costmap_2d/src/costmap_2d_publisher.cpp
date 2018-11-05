@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/costmap_2d_publisher.h>
-#include <nav2_costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/costmap_2d_publisher.hpp>
+#include <nav2_costmap_2d/cost_values.hpp>
 
 namespace nav2_costmap_2d
 {

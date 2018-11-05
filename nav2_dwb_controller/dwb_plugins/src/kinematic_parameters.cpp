@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/kinematic_parameters.h"
+#include "dwb_plugins/kinematic_parameters.hpp"
 #include <cmath>
 #include <memory>
 #include <string>
-#include "nav_2d_utils/parameters.h"
+#include "nav_2d_utils/parameters.hpp"
 
 using std::fabs;
 

@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/rotate_to_goal.h"
+#include "dwb_critics/rotate_to_goal.hpp"
 #include <string>
 #include <vector>
-#include "nav_2d_utils/parameters.h"
-#include "dwb_core/exceptions.h"
+#include "nav_2d_utils/parameters.hpp"
+#include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 

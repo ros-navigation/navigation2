@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 #include "gtest/gtest.h"
-#include "dwb_plugins/simple_goal_checker.h"
-#include "dwb_plugins/stopped_goal_checker.h"
+#include "dwb_plugins/simple_goal_checker.hpp"
+#include "dwb_plugins/stopped_goal_checker.hpp"
 
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;

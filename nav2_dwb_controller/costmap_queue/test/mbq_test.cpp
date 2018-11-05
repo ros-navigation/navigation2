@@ -34,7 +34,7 @@
 
 #include <string>
 #include "gtest/gtest.h"
-#include "costmap_queue/map_based_queue.h"
+#include "costmap_queue/map_based_queue.hpp"
 
 using costmap_queue::MapBasedQueue;
 

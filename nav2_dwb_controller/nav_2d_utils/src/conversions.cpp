@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "nav_2d_utils/conversions.h"
+#include "nav_2d_utils/conversions.hpp"
 #include <vector>
 #include <string>
 #pragma GCC diagnostic push

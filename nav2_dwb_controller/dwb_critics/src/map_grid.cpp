@@ -32,13 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/map_grid.h"
+#include "dwb_critics/map_grid.hpp"
 #include <cmath>
 #include <string>
 #include <algorithm>
 #include <memory>
-#include "dwb_core/exceptions.h"
-#include "nav2_costmap_2d/cost_values.h"
+#include "dwb_core/exceptions.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 using std::abs;
 using costmap_queue::CellData;

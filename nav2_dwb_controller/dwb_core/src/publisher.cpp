@@ -32,13 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_core/publisher.h"
+#include "dwb_core/publisher.hpp"
 #include <vector>
 #include <memory>
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "nav_2d_utils/conversions.h"
+#include "nav_2d_utils/conversions.hpp"
 //#include <sensor_msgs/point_cloud_conversion.hpp> // NOLINT cpplint doesn't like commented out header file
 
 namespace dwb_core

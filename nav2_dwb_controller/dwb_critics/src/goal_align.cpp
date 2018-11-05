@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/goal_align.h"
+#include "dwb_critics/goal_align.hpp"
 #include <vector>
 #include <string>
-#include "dwb_critics/alignment_util.h"
+#include "dwb_critics/alignment_util.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav_2d_utils/parameters.h"
+#include "nav_2d_utils/parameters.hpp"
 
 namespace dwb_critics
 {

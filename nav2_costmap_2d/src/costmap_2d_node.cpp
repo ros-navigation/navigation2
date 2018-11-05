@@ -36,7 +36,7 @@
  *         David V. Lu!!
  *********************************************************************/
 #include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <tf2_ros/transform_listener.h>
 
 int main(int argc, char ** argv)

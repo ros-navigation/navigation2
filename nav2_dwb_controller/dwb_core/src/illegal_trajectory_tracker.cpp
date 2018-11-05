@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_core/illegal_trajectory_tracker.h"
+#include "dwb_core/illegal_trajectory_tracker.hpp"
 #include <map>
 #include <utility>
 #include <string>

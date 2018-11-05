@@ -34,7 +34,7 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#include <nav2_costmap_2d/observation_buffer.h>
+#include <nav2_costmap_2d/observation_buffer.hpp>
 #include <tf2/convert.h>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 

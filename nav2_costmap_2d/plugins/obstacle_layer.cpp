@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/obstacle_layer.h>
-#include <nav2_costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/obstacle_layer.hpp>
+#include <nav2_costmap_2d/costmap_math.hpp>
 #include <tf2_ros/message_filter.h>
 
 #include <pluginlib/class_list_macros.h>

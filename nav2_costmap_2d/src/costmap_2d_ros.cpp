@@ -35,15 +35,15 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <cstdio>
 #include <string>
 #include <sys/time.h>
 #include <algorithm>
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "nav2_util/duration_conversions.h"
+#include "nav2_util/duration_conversions.hpp"
 
 using namespace std;
 

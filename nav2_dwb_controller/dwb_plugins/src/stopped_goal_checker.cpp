@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/stopped_goal_checker.h"
+#include "dwb_plugins/stopped_goal_checker.hpp"
 #include <cmath>
 #include <memory>
 #include "pluginlib/class_list_macros.hpp"

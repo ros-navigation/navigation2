@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_critics/twirling.h"
+#include "dwb_critics/twirling.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_critics
