@@ -30,8 +30,8 @@ def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([launch_ros.actions.Node(
-        package='nav2_dijkstra_planner',
-        node_executable='dijkstra_planner',
+        package='nav2_smart_planner',
+        node_executable='smart_planner',
         output='screen'),
     ])
 
