@@ -21,6 +21,9 @@
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
+#include <iostream>       // std::cout
+#include <string>         // std::string
+#include <cstddef>         // std::size_t
 
 namespace nav2_dynamic_params
 {
@@ -28,24 +31,69 @@ namespace nav2_dynamic_params
 class DynamicParamsClient
 {
 public:
-  // From what I've gathered, events are scoped by namespace, not node name
   explicit DynamicParamsClient(
     rclcpp::Node::SharedPtr node, std::vector<std::string> remote_names = {""})
   : node_(node)
   {
     add_parameter_clients(remote_names);
-    parameters_client_for_callback_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
-    event_subscription_ = parameters_client_for_callback_->on_parameter_event(
-      std::bind(&DynamicParamsClient::event_callback, this, std::placeholders::_1));
   }
 
   ~DynamicParamsClient() {}
 
-  void add_parameter_clients(std::vector<std::string> remote_names)
+  std::string resolve_namespace_params (std::string & remote_name)
+  {
+    if (remote_name == "") {
+      std::string node_namespace = node_->get_namespace();
+      return node_namespace;
+    } else if (remote_name.at(0) != '/') {
+      remote_name = '/' + remote_name;
+    }
+
+    auto node_namespace = split_path(remote_name).first;
+    return node_namespace;
+  }
+
+  std::pair<std::string, std::string> split_path(const std::string & str)
+  {
+    std::size_t found = str.find_last_of("/\\");
+    std::string path = str.substr(0,found);
+    std::string name = str.substr(found+1);
+    return {path, name};
+  }
+
+  void add_namespace_event_subscriber(const std::string & node_namespace)
+  {
+    if (std::find(node_namespaces_.begin(), node_namespaces_.end(),
+      node_namespace) == node_namespaces_.end())
+    {
+      node_namespaces_.push_back(node_namespace);
+      auto topic = join_path(node_namespace, "parameter_events");
+      std::cout << "Subsribing to topic: " <<  topic << "\n";
+
+    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [this, node_namespace](
+        const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
+        {
+          if (is_event_in_map(event, node_namespace)) {
+            set_events_in_map(event, node_namespace);
+            user_callback_(event);
+          }
+        };
+
+      auto event_sub = node_->create_subscription<rcl_interfaces::msg::ParameterEvent>(
+        topic, callback);
+
+      event_subscriptions_.push_back(event_sub);  
+    }
+  }
+
+  void add_parameter_clients(std::vector<std::string> & remote_names)
   {
     for (auto & name : remote_names) {
+      auto node_namespace = resolve_namespace_params(name);
+      add_namespace_event_subscriber(node_namespace);
       auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, name);
-      parameters_clients_.push_back(client);
+      //parameters_clients_.push_back(client);
+      parameters_clients_[name] = std::make_shared<rclcpp::SyncParametersClient>(node_, name);
     }
   }
 
@@ -65,10 +113,29 @@ public:
   // with values from remote nodes
   void add_parameters(const std::vector<std::string> & param_names)
   {
-    for (const auto & client : parameters_clients_) {
-      auto params = client->get_parameters(param_names);
+    for (auto & client : parameters_clients_)
+    {
+      auto params = client.second->get_parameters(param_names);
+      //std::size_t found = client.first.find_last_of("/\\");
+      //std::string node_namespace = client.first.substr(0,found);
+      std::string node_namespace = split_path(client.first).first;
       for (const auto & param : params) {
-        set_param_in_map(param);
+        init_param_in_map(param, node_namespace);
+      }
+    }
+  }
+
+  void add_parameters(const std::string & ns, const std::vector<std::string> & param_names)
+  {
+    for (auto & client : parameters_clients_)
+    {
+      std::size_t found = client.first.find_last_of("/\\");
+      std::string node_namespace = client.first.substr(0,found);    
+      if (node_namespace == ns || node_namespace == "/" + ns) {  
+        auto params = client.second->get_parameters(param_names);
+        for (const auto & param : params) {
+          init_param_in_map(param, node_namespace);
+        }        
       }
     }
   }
@@ -86,9 +153,10 @@ public:
   {
     std::vector<std::string> param_names;
     for (const auto & client : parameters_clients_) {
-      auto param_list = client->list_parameters({}, 1);
+      auto param_list = client.second->list_parameters({}, 1);
       param_names.insert(param_names.end(), param_list.names.begin(), param_list.names.end());
     }
+
     add_parameters(param_names);
   }
 
@@ -96,7 +164,9 @@ public:
   {
     std::vector<std::string> names;
     for (const auto & entry : dynamic_param_map_) {
-      names.push_back(entry.first);
+      if (entry.second.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
+        names.push_back(entry.first);
+      }
     }
     return names;
   }
@@ -106,37 +176,23 @@ public:
     return dynamic_param_map_;
   }
 
-  // This function assigns the value from the event, if present, or the dynamic parameters map,
-  // otherwise it does not assign anything
+  // Alternate Versions without event 
   template<class T>
-  bool get_event_param(
-    const rcl_interfaces::msg::ParameterEvent::SharedPtr event,
-    const std::string & param_name, T & new_value)
+  bool get_event_param(const std::string & param_name, T & new_value, const std::string & name_space = "")
   {
-    rclcpp::ParameterEventsFilter filter(event, {param_name},
-      {rclcpp::ParameterEventsFilter::EventType::NEW,
-        rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    if (!(filter.get_events()).empty()) {
-      new_value = get_param_from_event<T>(filter);
+    auto lookup_name = join_path(name_space, param_name);
+    if (get_param_from_map<T>(lookup_name, new_value)) {
       return true;
     } else {
-      if (get_param_from_map<T>(param_name, new_value)) {
-        return true;
-      } else {
-        RCLCPP_WARN(node_->get_logger(), "Parameter '%s' not set on node", param_name.c_str());
-        return false;
-      }
+      RCLCPP_WARN(node_->get_logger(), "Parameter '%s' not set on node", lookup_name.c_str());
+      return false;
     }
   }
 
-  // This function assigns the value from the event, if present, or the dynamic parameters map,
-  // otherwise it assigns the default value
   template<class T>
-  bool get_event_param_or(
-    const rcl_interfaces::msg::ParameterEvent::SharedPtr & event,
-    const std::string & param_name, T & new_value, const T & default_value)
+  bool get_event_param_or(const std::string & param_name, T & new_value, const T & default_value, const std::string & name_space = "")
   {
-    if (get_event_param<T>(event, param_name, new_value)) {
+    if (get_event_param<T>(param_name, new_value, name_space)) {
       return true;
     } else {
       new_value = default_value;
@@ -162,6 +218,56 @@ public:
   }
 
 private:
+  void init_param_in_map(rclcpp::Parameter param, std::string node_namespace)
+  {
+    auto param_name = join_path(node_namespace,param.get_name());
+    if (!dynamic_param_map_.count(param_name)) {
+      dynamic_param_map_[param_name] = param;
+    } else {
+      if (dynamic_param_map_[param_name].get_type() ==
+        rclcpp::ParameterType::PARAMETER_NOT_SET)
+      {
+        dynamic_param_map_[param_name] = param;
+      } else if (dynamic_param_map_[param_name].get_type() !=
+        rclcpp::ParameterType::PARAMETER_NOT_SET &&
+        param.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET)
+        {
+          RCLCPP_WARN(node_->get_logger(),
+            "Duplicate Parameter Name: %s", param.get_name().c_str());
+        }
+    }
+  }
+
+  void set_events_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event, std::string ns)
+  {
+    for (auto & new_parameter : event->new_parameters) {
+      if (dynamic_param_map_.count(join_path(ns, new_parameter.name))) {
+        auto param = rclcpp::Parameter::from_parameter_msg(new_parameter);
+        dynamic_param_map_[join_path(ns, new_parameter.name)] = param;
+      }
+    }
+
+    for (auto & changed_parameter : event->changed_parameters) {
+      if (dynamic_param_map_.count(join_path(ns, changed_parameter.name))) {
+        auto param = rclcpp::Parameter::from_parameter_msg(changed_parameter);
+        dynamic_param_map_[join_path(ns, changed_parameter.name)] = param;
+      }
+    }
+  }
+
+  std::string join_path(std::string path, std::string name)
+  {
+    std::string joined_path = path;
+    if (*joined_path.rbegin() != '/') {     
+      joined_path = joined_path + "/";
+    }
+    if (*joined_path.begin() != '/') {
+      joined_path = "/" + joined_path;
+    }
+    joined_path = joined_path + name;
+    return joined_path;
+  }
+
   void set_param_in_map(rclcpp::Parameter param)
   {
     if (!dynamic_param_map_.count(param.get_name())) {
@@ -171,17 +277,14 @@ private:
         rclcpp::ParameterType::PARAMETER_NOT_SET)
       {
         dynamic_param_map_[param.get_name()] = param;
-      }
+      } else if (dynamic_param_map_[param.get_name()].get_type() !=
+        rclcpp::ParameterType::PARAMETER_NOT_SET &&
+        param.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET)
+        {
+          RCLCPP_WARN(node_->get_logger(),
+            "Duplicate Parameter Name: %s", param.get_name().c_str());
+        }
     }
-  }
-
-  template<class T>
-  T get_param_from_event(const rclcpp::ParameterEventsFilter & event_filter)
-  {
-    auto param_msg = ((event_filter.get_events()).front()).second;
-    auto param = rclcpp::Parameter::from_parameter_msg(*param_msg);
-    dynamic_param_map_[param.get_name()] = param;
-    return param.get_value<T>();
   }
 
   template<class T>
@@ -196,50 +299,48 @@ private:
       return false;
     }
   }
-  // This event callbak filters for parameters that exist in dynamic parameters map
-  void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
-  {
-    if (is_event_in_map(event)) {
-      user_callback_(event);
-    }
-  }
 
   // This function checks that event variables exist in the cached dynamic param map
   // True if at least one parameter exists in the map
-  bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+   bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event, std::string ns)
   {
     for (auto & new_parameter : event->new_parameters) {
-      if (dynamic_param_map_.count(new_parameter.name)) {
+      if (dynamic_param_map_.count(join_path(ns, new_parameter.name))) {
         return true;
       }
     }
 
     for (auto & changed_parameter : event->changed_parameters) {
-      if (dynamic_param_map_.count(changed_parameter.name)) {
+      if (dynamic_param_map_.count(join_path(ns, changed_parameter.name))) {
         return true;
       }
     }
 
     for (auto & deleted_parameter : event->deleted_parameters) {
-      if (dynamic_param_map_.count(deleted_parameter.name)) {
+      if (dynamic_param_map_.count(join_path(ns, deleted_parameter.name))) {
         return true;
       }
     }
     return false;
   }
+
   // Cached Map of dynamic parameters. Parameter values are initialized
   // from remote nodes if the parameter exists
   std::map<std::string, rclcpp::Parameter> dynamic_param_map_;
-
-  // Vector to store parameter clients to remote nodes
-  std::vector<rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
+  
+  // Map to store parameter clients to remote nodes
+  std::map<std::string, rclcpp::SyncParametersClient::SharedPtr> parameters_clients_;
 
   rclcpp::SyncParametersClient::SharedPtr parameters_client_for_callback_;
   rclcpp::Node::SharedPtr node_;
+  std::vector<std::string> node_namespaces_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr event_subscription_;
+  std::vector<rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr> event_subscriptions_;
 
   // Users of this class will pass in an event callback
   std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> user_callback_;
+
+  rclcpp::Node::SharedPtr nh_;
 };
 
 }  // namespace nav2_dynamic_params

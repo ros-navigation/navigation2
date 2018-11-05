@@ -17,6 +17,7 @@
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "nav2_dynamic_params/dynamic_params_validator.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include <sstream>
 
 using namespace std::chrono_literals;
 using rcl_interfaces::msg::SetParametersResult;
@@ -33,16 +34,16 @@ void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   }
 
   double foo;
-  dynamic_params_client->get_event_param(event, "foo", foo);
+  dynamic_params_client->get_event_param("foo", foo);
   RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "foo: %f", foo);
 
   int bar;
-  dynamic_params_client->get_event_param_or(event, "bar", bar, 4);
+  dynamic_params_client->get_event_param_or("bar", bar, 4);
   RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "bar: %d", bar);
 
   // Parameter not set on server
   double foobar;
-  dynamic_params_client->get_event_param_or(event, "foobar", foobar, 5.5);
+  dynamic_params_client->get_event_param_or("foobar", foobar, 5.5);
   RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "foobar: %f", foobar);
 }
 
@@ -80,10 +81,20 @@ int main(int argc, char ** argv)
 
   // Add Dynamic Reconfigure Client
   dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
-  dynamic_params_client->add_parameters({"foo", "bar"});
-  dynamic_params_client->add_parameters("foobar");
+  //dynamic_params_client->add_parameters({"foo", "bar"});
+  //dynamic_params_client->add_parameters("foobar");
+  dynamic_params_client->add_parameters("", {"foo", "bar", "foobar"});
+
   dynamic_params_client->set_callback(std::bind(event_callback, std::placeholders::_1));
 
+
+  auto list = dynamic_params_client->get_param_names();
+
+  std::stringstream ss;
+  for (auto & param_name : list)
+  {
+    ss << "\n" << param_name;
+  }
   // Create DynamicParamsValidator
   auto param_validator = new nav2_dynamic_params::DynamicParamsValidator(node);
   param_validator->add_param("foo", rclcpp::ParameterType::PARAMETER_DOUBLE);
