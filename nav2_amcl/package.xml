@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>nav2_amcl</name>
-  <version>1.15.2</version>
+  <version>0.1.0</version>
   <description>
     <p>
       amcl is a probabilistic localization system for a robot moving in
@@ -18,7 +18,6 @@
   <url>http://wiki.ros.org/amcl</url>
   <author>Brian P. Gerkey</author>
   <author>contradict@gmail.com</author>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
   <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
@@ -26,7 +25,6 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>rclcpp</build_depend>
-  <build_depend>message_filters</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>

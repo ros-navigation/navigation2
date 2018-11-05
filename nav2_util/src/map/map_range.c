@@ -30,7 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nav2_util/map/map.h"
+#include "nav2_util/map/map.hpp"
 
 // Extract a single range reading from the map.  Unknown cells and/or
 // out-of-bound cells are treated as occupied, which makes it easy to

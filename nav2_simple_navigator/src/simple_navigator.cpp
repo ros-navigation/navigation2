@@ -31,14 +31,21 @@ SimpleNavigator::SimpleNavigator()
 {
   RCLCPP_INFO(get_logger(), "Initializing");
 
-  plannerTaskClient_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(this);
+  // TODO(mjeronimo): Once the TaskServer accepts a shared_ptr, this will change
+  // to use the shared_ptr passed in the constructor. For now, there's a problem
+  // because the SimpleNavigate *is* a ROS node and we can't use shared_from_this
+  // in the constructor.
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
+  plannerTaskClient_ =
+    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
   if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Global planner is not running");
     throw std::runtime_error("Global planner not running");
   }
 
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(this);
+  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
   if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
     RCLCPP_ERROR(get_logger(), "Controller is not running");
@@ -57,23 +64,30 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   RCLCPP_INFO(get_logger(), "Begin navigating to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
 
-  // Compose the PathEndPoints message for Navigation. The starting pose comes from
-  // localization, while the goal pose is from the incoming command
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-
+  // Get the current pose from the robot
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
-  if (robot_.getCurrentPose(current_pose)) {
-    RCLCPP_DEBUG(get_logger(), "got robot pose");
-    endpoints->start = current_pose->pose.pose;
-    endpoints->goal = command->pose;
-    endpoints->tolerance = 2.0;
-  } else {
+
+  if (!robot_.getCurrentPose(current_pose)) {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
     RCLCPP_WARN(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
 
-  RCLCPP_INFO(get_logger(), "Requesting path from the planner server.");
+  // Create a PathEndPoints message for the global planner
+  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  endpoints->start = current_pose->pose.pose;
+  endpoints->goal = command->pose;
+  endpoints->tolerance = 2.0;
+
+  RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
+  RCLCPP_DEBUG(get_logger(), "goal.position.x: %f", endpoints->goal.position.x);
+  RCLCPP_DEBUG(get_logger(), "goal.position.y: %f", endpoints->goal.position.y);
+  RCLCPP_DEBUG(get_logger(), "goal.position.z: %f", endpoints->goal.position.z);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.x: %f", endpoints->goal.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.y: %f", endpoints->goal.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.z: %f", endpoints->goal.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "goal.orientation.w: %f", endpoints->goal.orientation.w);
+
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   plannerTaskClient_->sendCommand(endpoints);
 
@@ -100,6 +114,10 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
       case TaskStatus::FAILED:
         RCLCPP_ERROR(get_logger(), "Planning task failed.");
         return TaskStatus::FAILED;
+
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "Planning task canceled");
+        break;
 
       case TaskStatus::RUNNING:
         RCLCPP_DEBUG(get_logger(), "Planning task still running.");
@@ -156,6 +174,10 @@ planning_succeeded:
       case TaskStatus::FAILED:
         RCLCPP_ERROR(get_logger(), "Control task failed.");
         return TaskStatus::FAILED;
+
+      case TaskStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "Control task canceled");
+        break;
 
       case TaskStatus::RUNNING:
         RCLCPP_DEBUG(get_logger(), "Control task still running");

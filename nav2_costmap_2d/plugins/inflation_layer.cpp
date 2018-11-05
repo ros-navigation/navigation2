@@ -36,9 +36,9 @@
  *         David V. Lu!!
  *********************************************************************/
 #include <algorithm>
-#include <nav2_costmap_2d/inflation_layer.h>
-#include <nav2_costmap_2d/costmap_math.h>
-#include <nav2_costmap_2d/footprint.h>
+#include <nav2_costmap_2d/inflation_layer.hpp>
+#include <nav2_costmap_2d/costmap_math.hpp>
+#include <nav2_costmap_2d/footprint.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include "rclcpp/parameter_events_filter.hpp"
 
@@ -92,9 +92,10 @@ void InflationLayer::onInitialize()
   node_->set_parameter_if_not_set("inflate_unknown",false);
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_->add_parameters(
+    {"enabled_inflation_layer", "inflation_radius", "cost_scaling_factor", "inflate_unknown"});   
   dynamic_param_client_->set_callback(std::bind(&InflationLayer::reconfigureCB, this, std::placeholders::_1));  
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
-  // TODO(bpwilcox): Initialize callback for dynamic parameters
 }
 
 void InflationLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)

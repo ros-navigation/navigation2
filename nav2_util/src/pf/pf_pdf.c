@@ -32,7 +32,7 @@
 // #include <gsl/gsl_rng.h>
 // #include <gsl/gsl_randist.h>
 
-#include "nav2_util/pf/pf_pdf.h"
+#include "nav2_util/pf/pf_pdf.hpp"
 
 // Random number generator seed value
 static unsigned int pf_pdf_seed;

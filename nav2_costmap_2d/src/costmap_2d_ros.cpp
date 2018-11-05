@@ -35,15 +35,15 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/layered_costmap.h>
-#include <nav2_costmap_2d/costmap_2d_ros.h>
+#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <cstdio>
 #include <string>
 #include <sys/time.h>
 #include <algorithm>
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "nav2_util/duration_conversions.h"
+#include "nav2_util/duration_conversions.hpp"
 
 using namespace std;
 
@@ -75,7 +75,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   // Set Parameters if not set 
   set_parameter_if_not_set("transform_tolerance",0.3);
   set_parameter_if_not_set("update_frequency", 5.0);
-  set_parameter_if_not_set("publish_frequency", 0.0); 
+  set_parameter_if_not_set("publish_frequency", 1.0); 
   set_parameter_if_not_set("width", 10);
   set_parameter_if_not_set("height", 10);
   set_parameter_if_not_set("resolution", 0.1);
@@ -124,17 +124,25 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   setPluginParams(node_);
   }
 
-  if (parameters_client_->has_parameter("plugin_names") &&
-    parameters_client_->has_parameter("plugin_types")) {
-    auto param = get_parameters({"plugin_names", "plugin_types"});
-    for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
-      std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
-      std::string type = (param[1].get_value<std::vector<std::string>>())[i];
-      RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
-      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
-      layered_costmap_->addPlugin(plugin);
-      plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
-    }
+  // if (parameters_client_->has_parameter("plugin_names") &&
+  //   parameters_client_->has_parameter("plugin_types")) {
+  //   auto param = get_parameters({"plugin_names", "plugin_types"});
+  //   for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
+  //     std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
+  //     std::string type = (param[1].get_value<std::vector<std::string>>())[i];
+  //     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
+  //     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
+  //     layered_costmap_->addPlugin(plugin);
+  //     plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
+  //   }
+  // }
+
+  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
+  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
+  for (int i = 0; i < 2; i++) {
+    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
+    layered_costmap_->addPlugin(plugin);
+    plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
   }
 
   // subscribe to the footprint topic
@@ -180,14 +188,11 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   param_validator_->add_param("robot_radius",rclcpp::ParameterType::PARAMETER_DOUBLE, {0,10});
 
   // Add Parameter Client
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_); 
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_->add_parameters(
+    {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
+    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
-
-  // Invoke callback
-  // TODO(bpwilcox): Initialize callback for dynamic parameters
-  auto set_parameters_results = set_parameters({
-    rclcpp::Parameter("publish_frequency", 1.0),
-  });
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(

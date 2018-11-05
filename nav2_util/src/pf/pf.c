@@ -31,9 +31,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "nav2_util/pf/pf.h"
-#include "nav2_util/pf/pf_pdf.h"
-#include "nav2_util/pf/pf_kdtree.h"
+#include "nav2_util/pf/pf.hpp"
+#include "nav2_util/pf/pf_pdf.hpp"
+#include "nav2_util/pf/pf_kdtree.hpp"
 
 
 // Compute the required number of samples, given that there are k bins

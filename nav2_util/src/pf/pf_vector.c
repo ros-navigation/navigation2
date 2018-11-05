@@ -30,8 +30,8 @@
 // #include <gsl/gsl_eigen.h>
 // #include <gsl/gsl_linalg.h>
 
-#include "nav2_util/pf/pf_vector.h"
-#include "nav2_util/pf/eig3.h"
+#include "nav2_util/pf/pf_vector.hpp"
+#include "nav2_util/pf/eig3.hpp"
 
 
 // Return a zero vector

@@ -19,7 +19,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_mission_execution::MissionExecutor>());
+  rclcpp::spin(std::make_shared<nav2_mission_executor::MissionExecutor>());
   rclcpp::shutdown();
 
   return 0;

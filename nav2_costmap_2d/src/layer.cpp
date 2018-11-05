@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "nav2_costmap_2d/layer.h"
+#include "nav2_costmap_2d/layer.hpp"
 
 namespace nav2_costmap_2d
 {

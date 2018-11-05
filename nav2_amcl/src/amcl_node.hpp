@@ -35,8 +35,9 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/sensors/laser.h"
-#include "nav2_util/sensors/odom.h"
+#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_util/motion_model/motion_model.hpp"
+#include "nav2_util/angleutils.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -71,6 +72,8 @@ private:
   void updatePoseFromServer();
   void checkLaserReceived();
   void requestMap();
+  void createMotionModel();
+  nav2_util::Laser * createLaserObject();
 
   // Callbacks
   void globalLocalizationCallback(
@@ -164,7 +167,7 @@ private:
   // tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
 
-  std::vector<amcl::Laser *> lasers_;
+  std::vector<nav2_util::Laser *> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
 
@@ -185,8 +188,10 @@ private:
   // Used to temporarily let amcl update samples even when no motion occurs
   bool m_force_update;
 
-  amcl::Odom * odom_;
-  amcl::Laser * laser_;
+  nav2_util::MotionModel * motionModel_;
+  nav2_util::Laser * laser_;
+  std::string robot_model_type_;
+  std::string sensor_model_type_;
 
   std::chrono::duration<double> cloud_pub_interval;
 
@@ -250,8 +255,8 @@ private:
   double beam_skip_error_threshold_;
   double laser_likelihood_max_dist_;
 
-  amcl::odom_model_t odom_model_type_;
-  amcl::laser_model_t laser_model_type_;
+  std::string odom_model_type_;
+  std::string laser_model_type_;
 
   double init_pose_[3];
   double init_cov_[3];

@@ -36,8 +36,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/static_layer.h>
-#include <nav2_costmap_2d/costmap_math.h>
+#include <nav2_costmap_2d/static_layer.hpp>
+#include <nav2_costmap_2d/costmap_math.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -100,8 +100,9 @@ void StaticLayer::onInitialize()
   has_updated_data_ = false;
 
   rclcpp::Rate r(10);
+  rclcpp::executors::SingleThreadedExecutor exec;
   while (!map_received_ && rclcpp::ok()) {
-    rclcpp::spin_some(node_);
+    exec.spin_node_once(node_->get_node_base_interface(), std::chrono::milliseconds(100));
     r.sleep();
   }
 
@@ -120,9 +121,9 @@ void StaticLayer::onInitialize()
   }
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_->add_parameters("enabled_static_layer");
   dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this, std::placeholders::_1));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
-  // TODO(bpwilcox): Initialize callback for dynamic parameters
 }
 
 void StaticLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)

@@ -28,9 +28,9 @@
  */
 #include <string>
 
-#include <nav2_costmap_2d/costmap_math.h>
-#include <nav2_costmap_2d/footprint.h>
-#include <nav2_costmap_2d/array_parser.h>
+#include <nav2_costmap_2d/costmap_math.hpp>
+#include <nav2_costmap_2d/footprint.hpp>
+#include <nav2_costmap_2d/array_parser.hpp>
 #include <geometry_msgs/msg/point32.hpp>
 
 namespace nav2_costmap_2d

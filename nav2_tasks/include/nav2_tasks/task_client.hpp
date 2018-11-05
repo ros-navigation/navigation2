@@ -19,6 +19,8 @@
 #include <condition_variable>
 #include <string>
 #include <thread>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"
@@ -35,9 +37,14 @@ template<class CommandMsg, class ResultMsg>
 class TaskClient
 {
 public:
-  explicit TaskClient(rclcpp::Node * node)
+  explicit TaskClient(rclcpp::Node::SharedPtr node)
   : node_(node)
   {
+    resultReceived_ = false;
+    statusReceived_ = false;
+
+    statusMsg_ = std::make_shared<StatusMsg>();
+
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
 
     // Create the publishers
@@ -81,7 +88,7 @@ public:
 
     // TODO(mjeronimo): Replace this with a legit way to wait for the server
     while (node_->count_subscribers(taskName) < 1) {
-      rclcpp::spin_some(node_->get_node_base_interface());
+      rclcpp::spin_some(node_);
 
       auto t1 = std::chrono::high_resolution_clock::now();
       auto elapsedTime = t1 - t0;
@@ -175,7 +182,7 @@ protected:
     cvResult_.notify_one();
   }
 
-  // Called when the TaskServer sends it status code (success or failure)
+  // Called when the TaskServer sends its status code (success or failure)
   void onStatusReceived(const StatusMsg::SharedPtr statusMsg)
   {
     {
@@ -188,7 +195,7 @@ protected:
   }
 
   // The TaskClient isn't itself a node, so needs to know which one to use
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
 
   // The client's publishers: the command and cancel messages
   typename rclcpp::Publisher<CommandMsg>::SharedPtr commandPub_;
