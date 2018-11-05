@@ -1,5 +1,0 @@
-repositories:
-  turtlebot3:
-    type: git
-    url:  https://github.com/ROBOTIS-GIT/turtlebot3.git
-    version: melodic-devel

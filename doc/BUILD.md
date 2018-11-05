@@ -30,20 +30,17 @@ chmod a+x initial_ros_setup.sh
 
 The `initial_ros_setup.sh` script downloads four ROS workspaces and then builds them in the correct order. The four workspaces are:
 
- * ROS 1 Dependencies - This is a set of ROS 1 repos that are used by the system test. At the time of this writing, it consists solely of Turtlebot 3 packages.
-
  * ROS 2 release - This is the ROS 2 latest release as defined by the repos file found on [https://github.com/ros2/ros2/]
 
  * ROS 2 Dependencies - This is a set of ROS 2 packages that aren't included in the ROS 2 release yet, but which the navstack depends on. This also includes packages which are part of the ROS 2 release where we need a different version.
 
  * Navigation 2 - This repo.
 
- After all the workspaces are downloaded, the `navigation2/tools/build_all.sh` script is run which builds each repo in the order listed above using the `colcon build --symlink-install` command (except ROS 1 dependencies which are built using `catkin_make`)
+ After all the workspaces are downloaded, the `navigation2/tools/build_all.sh` script is run which builds each repo in the order listed above using the `colcon build --symlink-install` command.
 
 ### Options
 
 The `initial_ros_setup.sh` accepts the following options:
- * `--no-ros1` This skips downloading and building the ROS 1 dependencies and skips building the ROS 1 bridge
  * `--no-ros2` This skips downloading and building the ROS 2 release. Instead it uses the binary packages and setup.sh installed in `/opt/ros/bouncy`
  * `--download-only` This skips the build steps
 
@@ -72,7 +69,7 @@ An automated build system could make a clean directory and run the `initial_ros_
 
 Instead, it would be better to do an initial download of all the source and dependencies
 ```sh
-./initial_ros_setup.sh --no-ros1 --download-only
+./initial_ros_setup.sh --download-only
 ```
 
 Then the CI tool can monitor the `navigation2` repo, update it as necessary, and rebuild using either the `<directory_for_workspaces>/navigation2_ws/src/navigation2/tools/build_all.sh` script or by running
