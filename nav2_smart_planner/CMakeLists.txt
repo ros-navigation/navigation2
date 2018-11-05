@@ -30,7 +30,6 @@ set(dependencies
   rclcpp
   std_msgs
   visualization_msgs
-  nav2_task
   nav2_util
   nav2_tasks
   nav2_msgs
