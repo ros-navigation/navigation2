@@ -88,77 +88,19 @@ AmclNode::AmclNode()
   std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
   parameters_node_ = rclcpp::Node::make_shared("ParametersNode");
-  parameters_client =
-    std::make_shared<rclcpp::SyncParametersClient>(std::shared_ptr<rclcpp::Node>(parameters_node_));
 
-  // Grab params off the param server
-  use_map_topic_ = parameters_client->get_parameter("use_map_topic_", false);
-  first_map_only_ = parameters_client->get_parameter("first_map_only_", false);
+  initAmclParams();
 
-  double tmp;
-  tmp = parameters_client->get_parameter("gui_publish_rate", 10.0);
-  gui_publish_period = tf2::durationFromSec(1.0 / tmp);
-  tmp = parameters_client->get_parameter("save_pose_rate", 0.5);
-  save_pose_period = tf2::durationFromSec(1.0 / tmp);
-  laser_min_range_ = parameters_client->get_parameter("laser_min_range", -1.0);
-  laser_max_range_ = parameters_client->get_parameter("laser_max_range", 12.0);
-  max_beams_ = parameters_client->get_parameter("max_beams", 60);
-  min_particles_ = parameters_client->get_parameter("min_particles", 500);
-  max_particles_ = parameters_client->get_parameter("max_particles", 2000);
-  pf_err_ = parameters_client->get_parameter("pf_err", 0.05);
-  pf_z_ = parameters_client->get_parameter("pf_z", 0.99);
-  alpha1_ = parameters_client->get_parameter("alpha1", 0.2);
-  alpha2_ = parameters_client->get_parameter("alpha2", 0.2);
-  alpha3_ = parameters_client->get_parameter("alpha3", 0.2);
-  alpha4_ = parameters_client->get_parameter("alpha4", 0.2);
-  alpha5_ = parameters_client->get_parameter("alpha5", 0.2);
-  do_beamskip_ = parameters_client->get_parameter("do_beamskip", false);
-  beam_skip_distance_ = parameters_client->get_parameter("beam_skip_distance", 0.5);
-  beam_skip_threshold_ = parameters_client->get_parameter("beam_skip_threshold", 0.3);
-  beam_skip_error_threshold_ = parameters_client->get_parameter("beam_skip_error_threshold", 0.9);
-  z_hit_ = parameters_client->get_parameter("z_hit", 0.5);
-  z_short_ = parameters_client->get_parameter("z_short", 0.05);
-  z_max_ = parameters_client->get_parameter("z_max", 0.05);
-  z_rand_ = parameters_client->get_parameter("z_rand", 0.5);
-  sigma_hit_ = parameters_client->get_parameter("sigma_hit", 0.2);
-  lambda_short_ = parameters_client->get_parameter("lambda_short", 0.1);
-  laser_likelihood_max_dist_ = parameters_client->get_parameter("laser_likelihood_max_dist", 2.0);
 
-  sensor_model_type_ =
-    parameters_client->get_parameter("laser_model_type", std::string("likelihood_field"));
-  RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
-
-  robot_model_type_ = parameters_client->get_parameter("tmp_model_type",
-      std::string("differential"));
   createMotionModel();
-
-  d_thresh_ = parameters_client->get_parameter("update_min_d", 0.25);
-  a_thresh_ = parameters_client->get_parameter("update_min_a", 0.2);
-  odom_frame_id_ = parameters_client->get_parameter("odom_frame_id", std::string("odom"));
-  base_frame_id_ = parameters_client->get_parameter("base_frame_id", std::string("base_footprint"));
-  global_frame_id_ = parameters_client->get_parameter("global_frame_id", std::string("map"));
-  resample_interval_ = parameters_client->get_parameter("resample_interval", 1);
-  double tmp_tol;
-  tmp_tol = parameters_client->get_parameter("transform_tolerance", 1.0);
-  alpha_slow_ = parameters_client->get_parameter("recovery_alpha_slow", 0.0);
-  alpha_fast_ = parameters_client->get_parameter("recovery_alpha_fast", 0.0);
-  tf_broadcast_ = parameters_client->get_parameter("tf_broadcast", true);
-
-  transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-
-  {
+   
     double bag_scan_period;
     bag_scan_period = parameters_client->get_parameter("bag_scan_period", -1.0);
     bag_scan_period_ = std::chrono::duration<double>{bag_scan_period};
-  }
-
-  odom_frame_id_ = strutils::stripLeadingSlash(odom_frame_id_);
-  base_frame_id_ = strutils::stripLeadingSlash(base_frame_id_);
-  global_frame_id_ = strutils::stripLeadingSlash(global_frame_id_);
-
+  
   updatePoseFromServer();
 
-  cloud_pub_interval = std::chrono::duration<double>{1.0};
+  //cloud_pub_interval = std::chrono::duration<double>{1.0};
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(parameters_node_));
   tf_.reset(new tf2_ros::Buffer(get_clock()));
@@ -252,155 +194,7 @@ AmclNode::~AmclNode()
   // TODO(mhpanah): delete everything allocated in constructor
 }
 
-#if 0
-void AmclNode::reconfigureCB(AMCLConfig & config, uint32_t level)
-{
-  std::lock_gaurd<std::recursive_mutex> cfl(configuration_mutex_);
 
-  // we don't want to do anything on the first call
-  // which corresponds to startup
-  if (first_reconfigure_call_) {
-    first_reconfigure_call_ = false;
-    default_config_ = config;
-    return;
-  }
-
-  if (config.restore_defaults) {
-    config = default_config_;
-    // avoid looping
-    config.restore_defaults = false;
-  }
-
-  d_thresh_ = config.update_min_d;
-  a_thresh_ = config.update_min_a;
-
-  resample_interval_ = config.resample_interval;
-
-  laser_min_range_ = config.laser_min_range;
-  laser_max_range_ = config.laser_max_range;
-
-  gui_publish_period = ros::Duration(1.0 / config.gui_publish_rate);
-  save_pose_period = ros::Duration(1.0 / config.save_pose_rate);
-
-  transform_tolerance_.fromSec(config.transform_tolerance);
-
-  max_beams_ = config.laser_max_beams;
-  alpha1_ = config.odom_alpha1;
-  alpha2_ = config.odom_alpha2;
-  alpha3_ = config.odom_alpha3;
-  alpha4_ = config.odom_alpha4;
-  alpha5_ = config.odom_alpha5;
-
-  z_hit_ = config.laser_z_hit;
-  z_short_ = config.laser_z_short;
-  z_max_ = config.laser_z_max;
-  z_rand_ = config.laser_z_rand;
-  sigma_hit_ = config.laser_sigma_hit;
-  lambda_short_ = config.laser_lambda_short;
-  laser_likelihood_max_dist_ = config.laser_likelihood_max_dist;
-
-  if (config.laser_model_type == "beam") {
-    laser_model_type_ = LASER_MODEL_BEAM;
-  } else if (config.laser_model_type == "likelihood_field") {
-    laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
-  } else if (config.laser_model_type == "likelihood_field_prob") {
-    laser_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD_PROB;
-  }
-
-  if (config.odom_model_type == "differential") {
-    odom_model_type_ = ODOM_MODEL_DIFF;
-  } else if (config.odom_model_type == "omnidirectional") {
-    odom_model_type_ = ODOM_MODEL_OMNI;
-  }
-
-  if (config.min_particles > config.max_particles) {
-    ROS_WARN(
-      "You've set min_particles to be greater than max particles, this isn't allowed so they'll"
-      " be set to be equal.");
-    config.max_particles = config.min_particles;
-  }
-
-  min_particles_ = config.min_particles;
-  max_particles_ = config.max_particles;
-  alpha_slow_ = config.recovery_alpha_slow;
-  alpha_fast_ = config.recovery_alpha_fast;
-  tf_broadcast_ = config.tf_broadcast;
-
-  do_beamskip_ = config.do_beamskip;
-  beam_skip_distance_ = config.beam_skip_distance;
-  beam_skip_threshold_ = config.beam_skip_threshold;
-
-  if (pf_ != NULL) {
-    pf_free(pf_);
-    pf_ = NULL;
-  }
-  pf_ = pf_alloc(min_particles_, max_particles_,
-      alpha_slow_, alpha_fast_,
-      (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-      reinterpret_cast<void *>(map_));
-  pf_err_ = config.kld_err;
-  pf_z_ = config.kld_z;
-  pf_->pop_err = pf_err_;
-  pf_->pop_z = pf_z_;
-
-  // Initialize the filter
-  pf_vector_t pf_init_pose_mean = pf_vector_zero();
-  pf_init_pose_mean.v[0] = last_published_pose.pose.pose.position.x;
-  pf_init_pose_mean.v[1] = last_published_pose.pose.pose.position.y;
-  pf_init_pose_mean.v[2] = tf2::getYaw(last_published_pose.pose.pose.orientation);
-  pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
-  pf_init_pose_cov.m[0][0] = last_published_pose.pose.covariance[6 * 0 + 0];
-  pf_init_pose_cov.m[1][1] = last_published_pose.pose.covariance[6 * 1 + 1];
-  pf_init_pose_cov.m[2][2] = last_published_pose.pose.covariance[6 * 5 + 5];
-  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
-  pf_init_ = false;
-
-  // Instantiate the sensor objects
-  // Odometry
-  delete odom_;
-  odom_ = new Odom();
-  ROS_ASSERT(odom_);
-  odom_->SetModel(odom_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
-  // Laser
-  delete laser_;
-  laser_ = new Laser(max_beams_, map_);
-  ROS_ASSERT(laser_);
-  if (laser_model_type_ == LASER_MODEL_BEAM) {
-    laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-      sigma_hit_, lambda_short_, 0.0);
-  } else if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB) {
-    ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
-    laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
-      laser_likelihood_max_dist_,
-      do_beamskip_, beam_skip_distance_,
-      beam_skip_threshold_, beam_skip_error_threshold_);
-    ROS_INFO("Done initializing likelihood field model with probabilities.");
-  } else if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD) {
-    ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
-    laser_->SetModelLikelihoodField(z_hit_, z_rand_, sigma_hit_,
-      laser_likelihood_max_dist_);
-    ROS_INFO("Done initializing likelihood field model.");
-  }
-
-  odom_frame_id_ = strutils::stripLeadingSlash(config.odom_frame_id);
-  base_frame_id_ = strutils::stripLeadingSlash(config.base_frame_id);
-  global_frame_id_ = strutils::stripLeadingSlash(config.global_frame_id);
-
-  // Disabling laser_scan_filter
-  /*
-  delete laser_scan_filter_;
-  laser_scan_filter_ =
-          new tf2_ros::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_,
-                                                             *tf_,
-                                                             odom_frame_id_,
-                                                             100,
-                                                             nh_);
-  laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
-                                                   this, std::placeholders::_1));
-  */
-  initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
-}
-#endif
 
 
 void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
@@ -1337,4 +1131,56 @@ AmclNode::createMotionModel()
     RCLCPP_WARN(get_logger(), "Unknown robot motion model, defaulting to differential model");
     motionModel_ = new DifferentialMotionModel(alpha1_, alpha2_, alpha3_, alpha4_);
   }
+}
+
+void
+AmclNode::initAmclParams()
+{
+  // Grab params off the param server
+  get_parameter_or_set("use_map_topic_", use_map_topic_, false);
+  get_parameter_or_set("first_map_only_", first_map_only_, false);
+  double save_pose_rate;
+  get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
+  save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
+  get_parameter_or_set("laser_min_range", laser_min_range_, -1.0);
+  get_parameter_or_set("laser_max_range", laser_max_range_, 12.0);
+  get_parameter_or_set("max_beams", max_beams_, 60);
+  get_parameter_or_set("min_particles", min_particles_, 500);
+  get_parameter_or_set("max_particles", max_particles_, 2000);
+  get_parameter_or_set("pf_err", pf_err_, 0.05);
+  get_parameter_or_set("pf_z", pf_z_, 0.99);
+  get_parameter_or_set("alpha1", alpha1_, 0.2);
+  get_parameter_or_set("alpha2", alpha2_, 0.2);
+  get_parameter_or_set("alpha3", alpha3_, 0.2);
+  get_parameter_or_set("alpha4", alpha4_, 0.2);
+  get_parameter_or_set("alpha5", alpha5_, 0.2);
+  get_parameter_or_set("do_beamskip", do_beamskip_, false);
+  get_parameter_or_set("beam_skip_distance", beam_skip_distance_, 0.5);
+  get_parameter_or_set("beam_skip_threshold", beam_skip_threshold_, 0.3);
+  get_parameter_or_set("beam_skip_error_threshold", beam_skip_error_threshold_, 0.9);
+  get_parameter_or_set("z_hit", z_hit_, 0.5);
+  get_parameter_or_set("z_short", z_short_, 0.05);
+  get_parameter_or_set("z_max", z_max_, 0.05);
+  get_parameter_or_set("z_rand", z_rand_, 0.5);
+  get_parameter_or_set("sigma_hit", sigma_hit_, 0.2);
+  get_parameter_or_set("lambda_short", lambda_short_, 0.1);
+  get_parameter_or_set("laser_likelihood_max_dist", laser_likelihood_max_dist_, 2.0);
+  get_parameter_or_set("sensor_model_type", sensor_model_type_, std::string("likelihood_field"));
+  RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
+  get_parameter_or_set("tmp_model_type", robot_model_type_, std::string("differential"));
+  get_parameter_or_set("update_min_d", d_thresh_, 0.25);
+  get_parameter_or_set("update_min_a", a_thresh_, 0.2);
+  get_parameter_or_set("odom_frame_id", odom_frame_id_, std::string("odom"));
+  get_parameter_or_set("base_frame_id", base_frame_id_, std::string("base_footprint"));
+  get_parameter_or_set("global_frame_id", global_frame_id_, std::string("map"));
+  get_parameter_or_set("resample_interval", resample_interval_, 1);
+  double tmp_tol;
+  get_parameter_or_set("transform_tolerance", tmp_tol, 1.0);
+  transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+  get_parameter_or_set("recovery_alpha_slow", alpha_slow_, 0.0);
+  get_parameter_or_set("recovery_alpha_fast", alpha_fast_, 0.0);
+  get_parameter_or_set("tf_broadcast", tf_broadcast_, true);
+  odom_frame_id_ = strutils::stripLeadingSlash(odom_frame_id_);
+  base_frame_id_ = strutils::stripLeadingSlash(base_frame_id_);
+  global_frame_id_ = strutils::stripLeadingSlash(global_frame_id_);
 }
