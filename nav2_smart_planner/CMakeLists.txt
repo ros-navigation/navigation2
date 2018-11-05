@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_dijkstra_planner)
+project(nav2_smart_planner)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -23,36 +23,38 @@ include_directories(
   include
 )
 
-set(executable_name dijkstra_planner)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
-
-set(library_name ${executable_name}_core)
-
-add_library(${library_name}
-  src/dijkstra_planner.cpp
-  src/navfn.cpp
-)
+set(library_name smart_planner)
+set(executable_name ${library_name}_node)
 
 set(dependencies
   rclcpp
   std_msgs
   visualization_msgs
-  nav2_tasks
+  nav2_task
   nav2_util
+  nav2_tasks
   nav2_msgs
   nav_msgs
 )
 
-ament_target_dependencies(${executable_name}
+# Library
+add_library(${library_name} SHARED
+  src/smart_planner.cpp
+  src/navfn.cpp
+)
+
+ament_target_dependencies(${library_name}
   ${dependencies}
+)
+
+# Executable
+add_executable(${executable_name}
+  src/main.cpp
 )
 
 target_link_libraries(${executable_name} ${library_name})
 
-ament_target_dependencies(${library_name}
+ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
@@ -72,5 +74,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_libraries(${library_name})
 
 ament_package()

@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018 Simbe Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_
-#define NAV2_DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_
+#ifndef NAV2_SMART_PLANNER__SMART_PLANNER_HPP_
+#define NAV2_SMART_PLANNER__SMART_PLANNER_HPP_
 
 #include <string>
 #include <vector>
@@ -23,20 +24,20 @@
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_tasks/costmap_service_client.hpp"
-#include "nav2_dijkstra_planner/navfn.hpp"
+#include "nav2_smart_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
-namespace nav2_dijkstra_planner
+namespace nav2_smart_planner
 {
 
-class DijkstraPlanner : public nav2_tasks::ComputePathToPoseTaskServer
+class SmartPlanner : public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
-  DijkstraPlanner();
-  ~DijkstraPlanner();
+  SmartPlanner();
+  ~SmartPlanner();
 
   nav2_tasks::TaskStatus execute(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
@@ -62,6 +63,7 @@ private:
 
   // Check for a valid potential value at a given point in the world
   // - must call computePotential first
+  // - currently unused
   bool validPointPotential(const geometry_msgs::msg::Point & world_point);
   bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
 
@@ -96,6 +98,9 @@ private:
   void publishPlan(const nav2_msgs::msg::Path & path);
   void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints);
 
+  // Determine if a new planner object should be made
+  bool isPlannerOutOfDate();
+
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
@@ -108,6 +113,7 @@ private:
 
   // The costmap to use
   nav2_msgs::msg::Costmap costmap_;
+  uint current_costmap_size_[2];
 
   // The global frame of the costmap
   std::string global_frame_;
@@ -117,8 +123,11 @@ private:
 
   // Amount the planner can relax the space constraint
   double default_tolerance_;
+
+  // Whether to use the astar planner or default dijkstras
+  bool use_astar_;
 };
 
-}  // namespace nav2_dijkstra_planner
+}  // namespace nav2_smart_planner
 
-#endif  // NAV2_DIJKSTRA_PLANNER__DIJKSTRA_PLANNER_HPP_
+#endif  // NAV2_SMART_PLANNER__SMART_PLANNER_HPP_

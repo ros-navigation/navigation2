@@ -1,6 +1,6 @@
-# Dijkstra Planner
+# Smart Planner
 
-The DijkstraPlanner is a [planning module](../doc/requirements/requirements.md) that implements the `nav2_tasks::ComputePathToPose` interface.
+The SmartPlanner is a [planning module](../doc/requirements/requirements.md) that implements the `nav2_tasks::ComputePathToPose` interface.
 
 A planning module implementing the `nav2_tasks::ComputePathToPose` interface is responsible for generating a feasible path given start and end robot poses. It provides the equivalent functionality to a [GlobalPlanner](http://wiki.ros.org/nav_core#BaseGlobalPlanner) in ROS1 [MoveBase](http://wiki.ros.org/move_base).
 
@@ -9,7 +9,8 @@ Currently, DijkstraPlanner's core algorithm is a direct port from the ROS1 MoveB
 
 ## Characteristics
 
-Dijkstra's search algorithm is guaranteed to find the shortest path under any condition.
+In Dijkstra mode (`use_astar = false`) Dijkstra's search algorithm is guaranteed to find the shortest path under any condition.
+In A* mode (`use_astar = true`) A*'s search algorithm is not guaranteed to find the shortest path, however it uses a heuristic to expand the potential field towards the goal.
 
 The Navfn planner assumes a circular robot and operates on a costmap.
 
