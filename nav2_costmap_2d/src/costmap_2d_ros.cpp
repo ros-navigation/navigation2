@@ -170,7 +170,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // Create a timer to check if the robot is moving
   robot_stopped_ = false;
-  timer_ = create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
+  //timer_ = create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
   // Create Parameter Validator
   param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node_);
