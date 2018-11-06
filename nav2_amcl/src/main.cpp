@@ -36,11 +36,19 @@
 #include "rclcpp/rclcpp.hpp"
 #include "amcl_node.hpp"
 
+std::shared_ptr<rclcpp::Clock> simtime_clock;
+
 int
 main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<AmclNode>());
+  rclcpp::executors::MultiThreadedExecutor exec;
+  auto clockNode = rclcpp::Node::make_shared("amcl_clock_node");
+  simtime_clock = clockNode->get_clock();
+  auto amclNode = std::make_shared<AmclNode>();
+  exec.add_node(clockNode);
+  exec.add_node(amclNode);
+  exec.spin();
   rclcpp::shutdown();
 
   return 0;

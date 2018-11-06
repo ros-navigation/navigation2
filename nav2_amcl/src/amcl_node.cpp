@@ -66,7 +66,7 @@ using namespace std::chrono_literals;
 // message filter support is re-enabled. The default timeout to the transform
 // call is 0 anyhow, so this no longer serves a purpose. A value other than 0
 // causes the node to hang when use_sim_time is active.
-static const auto TRANSFORM_TIMEOUT = 0ns;
+static const auto TRANSFORM_TIMEOUT = 1s;
 
 static const char scan_topic_[] = "scan";
 
@@ -101,7 +101,7 @@ AmclNode::AmclNode()
   updatePoseFromServer();
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(node_));
-  tf_.reset(new tf2_ros::Buffer(get_clock()));
+  tf_.reset(new tf2_ros::Buffer(simtime_clock));
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
 
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
