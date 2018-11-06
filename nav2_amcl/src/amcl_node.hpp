@@ -61,8 +61,6 @@ class AmclNode : public rclcpp::Node
 public:
   AmclNode();
   ~AmclNode();
-
-  int process();
   void savePoseToServer();
 
 private:
@@ -105,10 +103,7 @@ private:
   std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
   void initAmclParams();
   void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
-// 1. Reconfigure stuff
-// void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
-private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
 
@@ -116,12 +111,10 @@ private:
     initial_pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 
-private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tfb_;
   std::shared_ptr<tf2_ros::TransformListener> tfl_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-private:
   rclcpp::SyncParametersClient::SharedPtr parameters_client;
   rclcpp::Node::SharedPtr parameters_node_;
 
@@ -151,17 +144,12 @@ private:
   bool use_map_topic_;
   bool first_map_only_;
 
-  std::chrono::duration<double> gui_publish_period;
   tf2::TimePoint save_pose_last_time;
   tf2::Duration save_pose_period;
 
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose;
 
   map_t * map_;
-  char * mapdata;
-  int sx;
-  int sy;
-  double resolution;
 
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
   // Disabling MessageFilter Subscriber and creating a regular sub without filtering
@@ -196,19 +184,11 @@ private:
 
   std::chrono::duration<double> cloud_pub_interval;
 
-  // For slowing play-back when reading directly from a bag file
-  std::chrono::duration<double> bag_scan_period_;
-
   // Time for tolerance on the published transform,
   // basically defines how long a map->odom transform is good for
   // std::chrono::duration<double> transform_tolerance_;
   tf2::Duration transform_tolerance_;
 
-  // ros::NodeHandle nh_;
-  // ros::NodeHandle private_nh_;
-  // ros::Publisher pose_pub_;
-  // ros::Publisher particlecloud_pub_;
-// 3. Service server
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr global_loc_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;  // to let amcl update
   // samples without requiring motion
@@ -219,11 +199,6 @@ private:
   bool first_reconfigure_call_;
 
   std::recursive_mutex configuration_mutex_;
-
-// 4. Dynamic reconfigure
-// dynamic_reconfigure::Server<amcl::AMCLConfig> *dsrv_;
-// AMCLConfig automatically generated (how?)
-// amcl::AMCLConfig default_config_;
 
   rclcpp::Time last_laser_received_ts_;
   std::chrono::seconds laser_check_interval_;
