@@ -153,7 +153,7 @@ void DWBLocalPlanner::loadCritics()
     RCLCPP_INFO(nh_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
-    plugin->initialize(nh_, costmap_ros_);
+    plugin->initialize(nh_, plugin_name, costmap_ros_);
   }
 }
 
