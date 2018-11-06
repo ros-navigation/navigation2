@@ -195,6 +195,8 @@ AmclNode::~AmclNode()
 
 void AmclNode::savePoseToServer()
 {
+// TODO(mhpanah): Enable saving pose to parameter server.
+/*
   // We need to apply the last transform to the latest odom pose to get
   // the latest map pose to store.  We'll take the covariance from
   // last_published_pose.
@@ -217,6 +219,7 @@ void AmclNode::savePoseToServer()
     rclcpp::Parameter("initial_cov_aa",
     last_published_pose.pose.covariance[6 * 5 + 5]),
   });
+*/
 }
 
 void AmclNode::updatePoseFromServer()
@@ -228,6 +231,8 @@ void AmclNode::updatePoseFromServer()
   init_cov_[1] = 0.5 * 0.5;
   init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
 
+  // TODO(mhpanah): Enable reading pose from parameter server.
+/*
   // Check for NAN on input from param server, #5239
   double tmp_pos;
 
@@ -278,6 +283,7 @@ void AmclNode::updatePoseFromServer()
   } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");
   }
+*/
 }
 
 void
