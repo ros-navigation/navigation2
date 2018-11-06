@@ -6,7 +6,6 @@
   <description>
     ROS2 Navigation Stack
   </description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
 
@@ -14,7 +13,6 @@
 
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
-  <exec_depend>nav2_astar_planner</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_world_model</exec_depend>
