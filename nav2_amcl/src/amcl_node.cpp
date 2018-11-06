@@ -46,9 +46,6 @@
 #include "tf2_ros/transform_listener.h"
 #include "message_filters/subscriber.h"
 
-// Dynamic_reconfigure
-// #include "dynamic_reconfigure/server.h"
-
 // Allows AMCL to run from bag file
 // #include <rosbag/bag.h>
 // #include <rosbag/view.h>
@@ -87,10 +84,11 @@ AmclNode::AmclNode()
 {
   std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
-  parameters_node_ = rclcpp::Node::make_shared("ParametersNode");
+  node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
   initAmclParams();
 
+  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
 
   createMotionModel();
    
@@ -100,9 +98,7 @@ AmclNode::AmclNode()
   
   updatePoseFromServer();
 
-  //cloud_pub_interval = std::chrono::duration<double>{1.0};
-
-  tfb_.reset(new tf2_ros::TransformBroadcaster(parameters_node_));
+  tfb_.reset(new tf2_ros::TransformBroadcaster(node_));
   tf_.reset(new tf2_ros::Buffer(get_clock()));
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
 
@@ -172,12 +168,20 @@ AmclNode::AmclNode()
   }
   m_force_update = false;
 
-#if 0
-  dsrv_ = new dynamic_reconfigure::Server<amcl::AMCLConfig>(ros::NodeHandle("~"));
-  dynamic_reconfigure::Server<amcl::AMCLConfig>::CallbackType cb = std::bind(
-    &AmclNode::reconfigureCB, this, std::placeholders::_1, std::placeholders::_2);
-  dsrv_->setCallback(cb);
-#endif
+  dynamic_param_client_->add_parameters({"use_map_topic_", "first_map_only_", "save_pose_rate", 
+                                       "laser_min_range", "laser_max_range", "max_beams", 
+                                       "min_particles", "max_particles", "pf_err", 
+                                       "pf_z", "alpha1", "alpha2", "alpha3", "alpha4", "alpha5", 
+                                       "do_beamskip", "beam_skip_distance", "beam_skip_threshold", 
+                                       "beam_skip_error_threshold", "z_hit", "z_short", "z_max", 
+                                       "z_rand", "sigma_hit", "lambda_short", 
+                                       "laser_likelihood_max_dist", "laser_model_type",
+                                       "tmp_model_type", "update_min_d", "update_min_a",
+                                       "odom_frame_id", "base_frame_id", "global_frame_id",
+                                       "recovery_alpha_slow", "recovery_alpha_fast", "tf_broadcast"
+                                        });
+  dynamic_param_client_->set_callback(
+                         std::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1));
 
   // 15s timer to warn on lack of receipt of laser scans, #5209
   laser_check_interval_ = 15s;
@@ -193,9 +197,6 @@ AmclNode::~AmclNode()
   delete laser_scan_sub_;
   // TODO(mhpanah): delete everything allocated in constructor
 }
-
-
-
 
 void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
 {
@@ -1165,7 +1166,7 @@ AmclNode::initAmclParams()
   get_parameter_or_set("sigma_hit", sigma_hit_, 0.2);
   get_parameter_or_set("lambda_short", lambda_short_, 0.1);
   get_parameter_or_set("laser_likelihood_max_dist", laser_likelihood_max_dist_, 2.0);
-  get_parameter_or_set("sensor_model_type", sensor_model_type_, std::string("likelihood_field"));
+  get_parameter_or_set("laser_model_type", sensor_model_type_, std::string("likelihood_field"));
   RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
   get_parameter_or_set("tmp_model_type", robot_model_type_, std::string("differential"));
   get_parameter_or_set("update_min_d", d_thresh_, 0.25);
@@ -1183,4 +1184,97 @@ AmclNode::initAmclParams()
   odom_frame_id_ = strutils::stripLeadingSlash(odom_frame_id_);
   base_frame_id_ = strutils::stripLeadingSlash(base_frame_id_);
   global_frame_id_ = strutils::stripLeadingSlash(global_frame_id_);
+}
+
+void 
+AmclNode::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+
+// TODO(mhpanah): restore defaults 
+/*
+  if (config.restore_defaults) {
+    config = default_config_;
+    // avoid looping
+    config.restore_defaults = false;
+  }
+*/
+dynamic_param_client_->get_event_param(event,"update_min_d", d_thresh_);
+dynamic_param_client_->get_event_param(event,"update_min_a", a_thresh_);
+dynamic_param_client_->get_event_param(event,"resample_interval", resample_interval_);
+dynamic_param_client_->get_event_param(event,"laser_min_range", laser_min_range_);
+dynamic_param_client_->get_event_param(event,"laser_max_range", laser_max_range_);
+
+double save_pose_rate;
+dynamic_param_client_->get_event_param(event, "save_pose_rate", save_pose_rate);
+save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
+
+double tmp_tol;
+dynamic_param_client_->get_event_param(event, "transform_tolerance", tmp_tol);
+transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+
+dynamic_param_client_->get_event_param(event,"laser_max_beams", max_beams_);
+dynamic_param_client_->get_event_param(event,"odom_alpha1", alpha1_);
+dynamic_param_client_->get_event_param(event,"odom_alpha2", alpha2_);
+dynamic_param_client_->get_event_param(event,"odom_alpha3", alpha3_);
+dynamic_param_client_->get_event_param(event,"odom_alpha4", alpha4_);
+dynamic_param_client_->get_event_param(event,"odom_alpha5", alpha5_);
+dynamic_param_client_->get_event_param(event,"laser_z_hit", z_hit_);
+dynamic_param_client_->get_event_param(event,"laser_z_short", z_short_);
+dynamic_param_client_->get_event_param(event,"laser_z_max", z_max_);
+dynamic_param_client_->get_event_param(event,"laser_z_rand", z_rand_);
+dynamic_param_client_->get_event_param(event,"laser_sigma_hit", sigma_hit_);
+dynamic_param_client_->get_event_param(event,"laser_lambda_short", lambda_short_);
+dynamic_param_client_->get_event_param(event,"laser_likelihood_max_dist", 
+                                       laser_likelihood_max_dist_);
+dynamic_param_client_->get_event_param(event,"laser_model_type", sensor_model_type_);
+dynamic_param_client_->get_event_param(event,"tmp_model_type", robot_model_type_);
+
+dynamic_param_client_->get_event_param(event,"min_particles", min_particles_);
+dynamic_param_client_->get_event_param(event,"max_particles", max_particles_);
+
+if (min_particles_ > max_particles_) {
+  RCLCPP_WARN(get_logger(),"You've set min_particles to be greater than max particles,"
+                            " this isn't allowed so they'll be set to be equal.");
+    max_particles_ = min_particles_;
+}
+dynamic_param_client_->get_event_param(event,"recovery_alpha_slow", alpha_slow_);
+dynamic_param_client_->get_event_param(event,"recovery_alpha_fast", alpha_fast_);
+dynamic_param_client_->get_event_param(event,"tf_broadcast", tf_broadcast_);
+
+dynamic_param_client_->get_event_param(event,"do_beamskip", do_beamskip_);
+dynamic_param_client_->get_event_param(event,"beam_skip_distance", beam_skip_distance_);
+dynamic_param_client_->get_event_param(event,"beam_skip_threshold", beam_skip_threshold_);
+
+  if (pf_ != NULL) {
+    pf_free(pf_);
+    pf_ = NULL;
+  }
+  pf_ = pf_alloc(min_particles_, max_particles_, alpha_slow_, alpha_fast_,
+                (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, 
+                 reinterpret_cast<void *>(map_));
+
+  dynamic_param_client_->get_event_param(event,"kld_err", pf_err_);
+  dynamic_param_client_->get_event_param(event,"kld_z", pf_z_);
+  pf_->pop_err = pf_err_;
+  pf_->pop_z = pf_z_;
+  // Initialize the filter
+  pf_vector_t pf_init_pose_mean = pf_vector_zero();
+  pf_init_pose_mean.v[0] = last_published_pose.pose.pose.position.x;
+  pf_init_pose_mean.v[1] = last_published_pose.pose.pose.position.y;
+  pf_init_pose_mean.v[2] = tf2::getYaw(last_published_pose.pose.pose.orientation);
+  pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
+  pf_init_pose_cov.m[0][0] = last_published_pose.pose.covariance[6 * 0 + 0];
+  pf_init_pose_cov.m[1][1] = last_published_pose.pose.covariance[6 * 1 + 1];
+  pf_init_pose_cov.m[2][2] = last_published_pose.pose.covariance[6 * 5 + 5];
+  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+  pf_init_ = false;
+
+// Instantiate robot motion model and sensor object
+  // Odometry
+  delete motionModel_;
+  createMotionModel();
+  // Laser
+  delete laser_;
+  createLaserObject();
+  
 }
