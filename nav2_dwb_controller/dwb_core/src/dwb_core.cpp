@@ -95,6 +95,7 @@ void DWBLocalPlanner::initialize(
   costmap_ros_ = costmap_ros;
   nh_->get_parameter_or("prune_plan", prune_plan_, true);
   nh_->get_parameter_or("prune_distance", prune_distance_, 1.0);
+  nh_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
   pub_.initialize(nh_);
 
   // Plugins
