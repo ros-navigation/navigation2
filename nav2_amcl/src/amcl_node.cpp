@@ -92,10 +92,6 @@ AmclNode::AmclNode()
 
   createMotionModel();
 
-  double bag_scan_period;
-  bag_scan_period = parameters_client->get_parameter("bag_scan_period", -1.0);
-  bag_scan_period_ = std::chrono::duration<double>{bag_scan_period};
-
   updatePoseFromServer();
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(node_));
@@ -195,86 +191,6 @@ AmclNode::~AmclNode()
   // delete laser_scan_filter_;
   delete laser_scan_sub_;
   // TODO(mhpanah): delete everything allocated in constructor
-}
-
-void AmclNode::runFromBag(const std::string & /*in_bag_fn*/)
-{
-#if 0
-  rosbag::Bag bag;
-  bag.open(in_bag_fn, rosbag::bagmode::Read);
-  std::vector<std::string> topics;
-  topics.push_back(std::string("tf"));
-  std::string scan_topic_name = "base_scan";  // TODO(?): determine what topic this actually is
-  topics.push_back(scan_topic_name);
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-  ros::Publisher laser_pub = nh_.advertise<sensor_msgs::LaserScan>(scan_topic_name, 100);
-  rclcpp::Publisher laser_pub = this->create_publisher<sensor_msgs::LaserScan>(scan_topic_name);
-  ros::Publisher tf_pub = nh_.advertise<tf2_msgs::TFMessage>("/tf", 100);
-  // Sleep for a second to let all subscribers connect
-  ros::WallDuration(1.0).sleep();
-
-  ros::WallTime start(ros::WallTime::now());
-
-  // Wait for map
-  while (ros::ok()) {
-    {
-      std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
-      if (map_) {
-        ROS_INFO("Map is ready");
-        break;
-      }
-    }
-    ROS_INFO("Waiting for map...");
-    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(1.0));
-  }
-
-  for (rosbag::View::const_iterator view_it = view.begin(); view_it != view.end(); ++view_it) {
-    if (!ros::ok()) {
-      break;
-    }
-
-    // Process any ros messages or callbacks at this point
-    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration());
-
-    tf2_msgs::TFMessage::ConstPtr tf_msg = view_it->instantiate<tf2_msgs::TFMessage>();
-    if (tf_msg != NULL) {
-      tf_pub.publish(msg);
-      for (size_t ii = 0; ii < tf_msg->transforms.size(); ++ii) {
-        tf_->setTransform(tf_msg->transforms[ii], "rosbag_authority");
-      }
-      continue;
-    }
-
-    sensor_msgs::LaserScan::ConstPtr base_scan = view_it->instantiate<sensor_msgs::LaserScan>();
-    if (base_scan != NULL) {
-      laser_pub.publish(msg);
-      // Disabling laser_scan_filter
-      // laser_scan_filter_->add(base_scan);
-      if (bag_scan_period_ > ros::WallDuration(0)) {
-        bag_scan_period_.sleep();
-      }
-      continue;
-    }
-
-    ROS_WARN_STREAM("Unsupported message type" << view_it->getTopic());
-  }
-
-  bag.close();
-
-  double runtime = (ros::WallTime::now() - start).toSec();
-  ROS_INFO("Bag complete, took %.1f seconds to process, shutting down", runtime);
-
-  const geometry_msgs::Quaternion & q(last_published_pose.pose.pose.orientation);
-  double yaw, pitch, roll;
-  tf2::Matrix3x3(tf2::Quaternion(q.x, q.y, q.z, q.w)).getEulerYPR(yaw, pitch, roll);
-  ROS_INFO("Final location %.3f, %.3f, %.3f with stamp=%f",
-    last_published_pose.pose.pose.position.x,
-    last_published_pose.pose.pose.position.y,
-    yaw, last_published_pose.header.stamp.toSec()
-  );
-
-  ros::shutdown();
-#endif
 }
 
 void AmclNode::savePoseToServer()
