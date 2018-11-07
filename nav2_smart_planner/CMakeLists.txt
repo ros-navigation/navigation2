@@ -37,7 +37,7 @@ set(dependencies
 )
 
 # Library
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/smart_planner.cpp
   src/navfn.cpp
 )
