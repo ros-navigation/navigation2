@@ -1,17 +1,10 @@
 #!/bin/bash
 
-ENABLE_ROS1=true
 ENABLE_BUILD=true
 ENABLE_ROS2=true
-if [ "$ROS1_DISTRO" = "" ]; then
-  export ROS1_DISTRO=kinetic
-fi
+
 if [ "$ROS2_DISTRO" = "" ]; then
   export ROS2_DISTRO=bouncy
-fi
-if test "$ROS1_DISTRO" != "kinetic" && test "$ROS1_DISTRO" != "melodic" ; then
-  echo "ROS1_DISTRO variable must be set to either kinetic or melodic"
-  exit 1
 fi
 if [ "$ROS2_DISTRO" != "bouncy" ]; then
   echo "ROS2_DISTRO variable must be set to bouncy"
@@ -20,10 +13,6 @@ fi
 
 for opt in "$@" ; do
   case $opt in
-    --no-ros1)
-      ENABLE_ROS1=false
-      shift
-    ;;
     --no-ros2)
       ENABLE_ROS2=false
       shift
@@ -35,7 +24,6 @@ for opt in "$@" ; do
     *)
       echo "Invalid option: $opt"
       echo "Valid options:"
-      echo "--no-ros1       Disables downloading and building ROS1 dependencies and ROS1 bridge"
       echo "--no-ros2       Uses the binary distribution of ROS2 bouncy"
       echo "--download-only Skips the build step and only downloads the code"
       exit 1
@@ -81,14 +69,6 @@ download_ros2_dependencies() {
   return_to_root_dir
 }
 
-download_ros1_dependencies() {
-  echo "Downloading the ROS 1 dependencies workspace"
-  mkdir -p ros1_dependencies_ws/src
-  cd ros1_dependencies_ws
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros1_dependencies.repos.${ROS1_DISTRO}
-  return_to_root_dir
-}
-
 checkpoint() {
   local CHECKPOINT_FILE_NAME=.INITIAL_SETUP_$1
   CHECKPOINT_FILES="${CHECKPOINT_FILES} ${CHECKPOINT_FILE_NAME}"
@@ -103,9 +83,6 @@ download_all() {
   checkpoint download_ros2_dependencies
   if [ "$ENABLE_ROS2" = true ]; then
     checkpoint download_ros2
-  fi
-  if [ "$ENABLE_ROS1" = true ]; then
-    checkpoint download_ros1_dependencies
   fi
 }
 
