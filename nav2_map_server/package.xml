@@ -8,8 +8,6 @@
   </description>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
   <license>Apache License 2.0</license>
-  <author>Brian Gerkey</author>
-  <author>Tony Pratkanis</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
