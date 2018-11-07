@@ -17,7 +17,7 @@ def generate_launch_description():
                 ], period = 5.0),
         launch.actions.TimerAction(
             actions = [
-                launch_ros.actions.Node( package='nav2_dijkstra_planner', node_executable='dijkstra_planner', output='screen')
+                launch_ros.actions.Node( package='nav2_smart_planner', node_executable='smart_planner', output='screen')
                 ], period = 10.0),
         launch.actions.TimerAction(
             actions = [

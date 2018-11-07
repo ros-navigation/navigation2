@@ -14,12 +14,12 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_astar_planner/astar_planner.hpp"
+#include "nav2_smart_planner/smart_planner.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_astar_planner::AStarPlanner>());
+  rclcpp::spin(std::make_shared<nav2_smart_planner::SmartPlanner>());
   rclcpp::shutdown();
 
   return 0;
