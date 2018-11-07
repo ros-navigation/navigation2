@@ -1,9 +1,10 @@
 map_server:
     ros__parameters:
+        free_thresh: 0.196
         map_name: "test_map.pgm"
-        resolution: 0.1
+        map_type: "occupancy"
+        mode: "trinary"
         negate: 0
         occupied_thresh: 0.65
-        free_thresh: 0.196
-        mode: "trinary"
         origin: [-15.400000, -12.200000, 0.000000]
+        resolution: 0.1

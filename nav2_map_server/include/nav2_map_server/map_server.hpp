@@ -31,7 +31,7 @@ public:
 
 private:
   // Only one map loader so far
-  std::shared_ptr<MapLoader> map_loader_;
+  std::unique_ptr<MapLoader> map_loader_;
 
   // The name and type of the map to load
   std::string map_name_;

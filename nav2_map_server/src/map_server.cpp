@@ -27,14 +27,21 @@ namespace nav2_map_server
 MapServer::MapServer(const std::string & node_name)
 : Node(node_name)
 {
-  // TODO(mjeronimo): Currently, there is only one map loader. Going forward,
-  // there will be multiple loaders, each with their own file to load. At that
-  // point we'll have to figure out how to communicate which loaders and files
-  // the map server should use.
-
+  // The params file can specify the map to load and its type
   get_parameter_or_set("map_name", map_name_, std::string("map.pgm"));
+  get_parameter_or_set("map_type", map_type_, std::string("occupancy"));
 
-  map_loader_ = std::make_unique<OccGridLoader>(this);
+  // Each instance of the map server will load one map/type, so the
+  // map server creates the proper instance for the given type
+  if (map_type_ == "occupancy") {
+    map_loader_ = std::make_unique<OccGridLoader>(this);
+  } else {
+    RCLCPP_ERROR(get_logger(), "Cannot load map %s of type %s",
+      map_name_.c_str(), map_type_.c_str());
+    throw std::runtime_error("Map type not supported");
+  }
+
+  // Load the map and provide access to other nodes via topic and service
   map_loader_->loadMapFromFile(map_name_);
   map_loader_->initServices();
 }

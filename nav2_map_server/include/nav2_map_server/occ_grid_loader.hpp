@@ -40,6 +40,15 @@ public:
   void initServices() override;
 
 protected:
+  // The frame ID used in the returned occupancy grid message
+  static const char * frame_id_;
+
+  // The name for the topic on which the map will be published
+  static const char * topic_name_;
+
+  // The name of the service to GetMap
+  static const char * service_name_;
+
   // Map parameters retrieved from the node
   double resolution_;
   int negate_;
@@ -48,9 +57,6 @@ protected:
   enum MapMode { TRINARY, SCALE, RAW };
   MapMode mode_ = TRINARY;
   std::vector<double> origin_;
-
-  // The frame ID used in the returned occupancy grid message
-  static const char * frame_id_;
 
   // The ROS node to use for ROS-related operations such as creating a service
   rclcpp::Node * node_;

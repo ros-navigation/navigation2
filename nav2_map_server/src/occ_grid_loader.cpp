@@ -49,6 +49,8 @@ namespace nav2_map_server
 {
 
 const char * OccGridLoader::frame_id_ = "map";
+const char * OccGridLoader::topic_name_ = "occ_grid";
+const char * OccGridLoader::service_name_ = "occ_grid";
 
 OccGridLoader::OccGridLoader(rclcpp::Node * node)
 : node_(node)
@@ -204,7 +206,7 @@ OccGridLoader::initServices()
     };
 
   // Create a service that provides the occupancy grid
-  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>("occ_grid", handle_occ_callback);
+  occ_service_ = node_->create_service<nav_msgs::srv::GetMap>(service_name_, handle_occ_callback);
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
@@ -212,7 +214,7 @@ OccGridLoader::initServices()
   custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    "occ_grid", custom_qos_profile);
+    topic_name_, custom_qos_profile);
 
   // Publish the map using the latched topic
   occ_pub_->publish(msg_);
