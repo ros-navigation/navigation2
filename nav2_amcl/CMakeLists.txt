@@ -21,6 +21,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_tasks REQUIRED)
+find_package(nav2_dynamic_params)
 
 include_directories(
   include
@@ -49,6 +50,7 @@ set(dependencies
   tf2
   nav2_util
   nav2_tasks
+  nav2_dynamic_params
 )
 
 ament_target_dependencies(${executable_name}

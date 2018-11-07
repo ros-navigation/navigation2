@@ -38,6 +38,8 @@
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/angleutils.hpp"
+#include "rclcpp/parameter_events_filter.hpp"
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -59,11 +61,6 @@ class AmclNode : public rclcpp::Node
 public:
   AmclNode();
   ~AmclNode();
-
-  /**
-   * @brief Uses TF and LaserScan messages from bag file to drive AMCL instead
-   */
-  void runFromBag(const std::string & in_bag_fn);
 
   int process();
   void savePoseToServer();
@@ -104,6 +101,10 @@ private:
     double & x, double & y, double & yaw,
     const rclcpp::Time & t, const std::string & f);
 
+  rclcpp::Node::SharedPtr node_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
+  void initAmclParams();
+  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
 // 1. Reconfigure stuff
 // void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
