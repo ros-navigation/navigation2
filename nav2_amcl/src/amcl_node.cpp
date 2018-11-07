@@ -88,7 +88,7 @@ AmclNode::AmclNode()
 
   initAmclParams();
 
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
 
   createMotionModel();
 
@@ -172,7 +172,7 @@ AmclNode::AmclNode()
       "beam_skip_error_threshold", "z_hit", "z_short", "z_max",
       "z_rand", "sigma_hit", "lambda_short",
       "laser_likelihood_max_dist", "laser_model_type",
-      "tmp_model_type", "update_min_d", "update_min_a",
+      "robot_model_type", "update_min_d", "update_min_a",
       "odom_frame_id", "base_frame_id", "global_frame_id",
       "recovery_alpha_slow", "recovery_alpha_fast", "tf_broadcast"});
   dynamic_param_client_->set_callback(
@@ -1064,7 +1064,7 @@ AmclNode::initAmclParams()
   get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
   save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
   get_parameter_or_set("laser_min_range", laser_min_range_, -1.0);
-  get_parameter_or_set("laser_max_range", laser_max_range_, 12.0);
+  get_parameter_or_set("laser_max_range", laser_max_range_, 100.0);
   get_parameter_or_set("max_beams", max_beams_, 60);
   get_parameter_or_set("min_particles", min_particles_, 500);
   get_parameter_or_set("max_particles", max_particles_, 2000);
@@ -1088,7 +1088,7 @@ AmclNode::initAmclParams()
   get_parameter_or_set("laser_likelihood_max_dist", laser_likelihood_max_dist_, 2.0);
   get_parameter_or_set("laser_model_type", sensor_model_type_, std::string("likelihood_field"));
   RCLCPP_INFO(get_logger(), "Sensor model type is: \"%s\"", sensor_model_type_.c_str());
-  get_parameter_or_set("tmp_model_type", robot_model_type_, std::string("differential"));
+  get_parameter_or_set("robot_model_type", robot_model_type_, std::string("differential"));
   get_parameter_or_set("update_min_d", d_thresh_, 0.25);
   get_parameter_or_set("update_min_a", a_thresh_, 0.2);
   get_parameter_or_set("odom_frame_id", odom_frame_id_, std::string("odom"));
@@ -1146,7 +1146,7 @@ AmclNode::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr eve
   dynamic_param_client_->get_event_param(event, "laser_likelihood_max_dist",
     laser_likelihood_max_dist_);
   dynamic_param_client_->get_event_param(event, "laser_model_type", sensor_model_type_);
-  dynamic_param_client_->get_event_param(event, "tmp_model_type", robot_model_type_);
+  dynamic_param_client_->get_event_param(event, "robot_model_type", robot_model_type_);
 
   dynamic_param_client_->get_event_param(event, "min_particles", min_particles_);
   dynamic_param_client_->get_event_param(event, "max_particles", max_particles_);
