@@ -176,7 +176,7 @@ AmclNode::AmclNode()
       "odom_frame_id", "base_frame_id", "global_frame_id",
       "recovery_alpha_slow", "recovery_alpha_fast", "tf_broadcast"});
   dynamic_param_client_->set_callback(
-    std::bind(&AmclNode::reconfigureCB, this, std::placeholders::_1));
+    std::bind(&AmclNode::reconfigureCB, this));
 
   // 15s timer to warn on lack of receipt of laser scans, #5209
   laser_check_interval_ = 15s;
@@ -1107,7 +1107,7 @@ AmclNode::initAmclParams()
 }
 
 void
-AmclNode::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+AmclNode::reconfigureCB()
 {
 // TODO(mhpanah): restore defaults
 /*
@@ -1117,52 +1117,52 @@ AmclNode::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr eve
     config.restore_defaults = false;
   }
 */
-  dynamic_param_client_->get_event_param(event, "update_min_d", d_thresh_);
-  dynamic_param_client_->get_event_param(event, "update_min_a", a_thresh_);
-  dynamic_param_client_->get_event_param(event, "resample_interval", resample_interval_);
-  dynamic_param_client_->get_event_param(event, "laser_min_range", laser_min_range_);
-  dynamic_param_client_->get_event_param(event, "laser_max_range", laser_max_range_);
+  dynamic_param_client_->get_event_param("update_min_d", d_thresh_);
+  dynamic_param_client_->get_event_param("update_min_a", a_thresh_);
+  dynamic_param_client_->get_event_param("resample_interval", resample_interval_);
+  dynamic_param_client_->get_event_param("laser_min_range", laser_min_range_);
+  dynamic_param_client_->get_event_param("laser_max_range", laser_max_range_);
 
   double save_pose_rate;
-  dynamic_param_client_->get_event_param(event, "save_pose_rate", save_pose_rate);
+  dynamic_param_client_->get_event_param("save_pose_rate", save_pose_rate);
   save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
 
   double tmp_tol;
-  dynamic_param_client_->get_event_param(event, "transform_tolerance", tmp_tol);
+  dynamic_param_client_->get_event_param("transform_tolerance", tmp_tol);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
 
-  dynamic_param_client_->get_event_param(event, "laser_max_beams", max_beams_);
-  dynamic_param_client_->get_event_param(event, "odom_alpha1", alpha1_);
-  dynamic_param_client_->get_event_param(event, "odom_alpha2", alpha2_);
-  dynamic_param_client_->get_event_param(event, "odom_alpha3", alpha3_);
-  dynamic_param_client_->get_event_param(event, "odom_alpha4", alpha4_);
-  dynamic_param_client_->get_event_param(event, "odom_alpha5", alpha5_);
-  dynamic_param_client_->get_event_param(event, "laser_z_hit", z_hit_);
-  dynamic_param_client_->get_event_param(event, "laser_z_short", z_short_);
-  dynamic_param_client_->get_event_param(event, "laser_z_max", z_max_);
-  dynamic_param_client_->get_event_param(event, "laser_z_rand", z_rand_);
-  dynamic_param_client_->get_event_param(event, "laser_sigma_hit", sigma_hit_);
-  dynamic_param_client_->get_event_param(event, "laser_lambda_short", lambda_short_);
-  dynamic_param_client_->get_event_param(event, "laser_likelihood_max_dist",
+  dynamic_param_client_->get_event_param("laser_max_beams", max_beams_);
+  dynamic_param_client_->get_event_param("odom_alpha1", alpha1_);
+  dynamic_param_client_->get_event_param("odom_alpha2", alpha2_);
+  dynamic_param_client_->get_event_param("odom_alpha3", alpha3_);
+  dynamic_param_client_->get_event_param("odom_alpha4", alpha4_);
+  dynamic_param_client_->get_event_param("odom_alpha5", alpha5_);
+  dynamic_param_client_->get_event_param("laser_z_hit", z_hit_);
+  dynamic_param_client_->get_event_param("laser_z_short", z_short_);
+  dynamic_param_client_->get_event_param("laser_z_max", z_max_);
+  dynamic_param_client_->get_event_param("laser_z_rand", z_rand_);
+  dynamic_param_client_->get_event_param("laser_sigma_hit", sigma_hit_);
+  dynamic_param_client_->get_event_param("laser_lambda_short", lambda_short_);
+  dynamic_param_client_->get_event_param("laser_likelihood_max_dist",
     laser_likelihood_max_dist_);
-  dynamic_param_client_->get_event_param(event, "laser_model_type", sensor_model_type_);
-  dynamic_param_client_->get_event_param(event, "robot_model_type", robot_model_type_);
+  dynamic_param_client_->get_event_param("laser_model_type", sensor_model_type_);
+  dynamic_param_client_->get_event_param("robot_model_type", robot_model_type_);
 
-  dynamic_param_client_->get_event_param(event, "min_particles", min_particles_);
-  dynamic_param_client_->get_event_param(event, "max_particles", max_particles_);
+  dynamic_param_client_->get_event_param("min_particles", min_particles_);
+  dynamic_param_client_->get_event_param("max_particles", max_particles_);
 
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(get_logger(), "You've set min_particles to be greater than max particles,"
       " this isn't allowed so they'll be set to be equal.");
     max_particles_ = min_particles_;
   }
-  dynamic_param_client_->get_event_param(event, "recovery_alpha_slow", alpha_slow_);
-  dynamic_param_client_->get_event_param(event, "recovery_alpha_fast", alpha_fast_);
-  dynamic_param_client_->get_event_param(event, "tf_broadcast", tf_broadcast_);
+  dynamic_param_client_->get_event_param("recovery_alpha_slow", alpha_slow_);
+  dynamic_param_client_->get_event_param("recovery_alpha_fast", alpha_fast_);
+  dynamic_param_client_->get_event_param("tf_broadcast", tf_broadcast_);
 
-  dynamic_param_client_->get_event_param(event, "do_beamskip", do_beamskip_);
-  dynamic_param_client_->get_event_param(event, "beam_skip_distance", beam_skip_distance_);
-  dynamic_param_client_->get_event_param(event, "beam_skip_threshold", beam_skip_threshold_);
+  dynamic_param_client_->get_event_param("do_beamskip", do_beamskip_);
+  dynamic_param_client_->get_event_param("beam_skip_distance", beam_skip_distance_);
+  dynamic_param_client_->get_event_param("beam_skip_threshold", beam_skip_threshold_);
 
   if (pf_ != NULL) {
     pf_free(pf_);
@@ -1172,8 +1172,8 @@ AmclNode::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr eve
       (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
       reinterpret_cast<void *>(map_));
 
-  dynamic_param_client_->get_event_param(event, "kld_err", pf_err_);
-  dynamic_param_client_->get_event_param(event, "kld_z", pf_z_);
+  dynamic_param_client_->get_event_param("kld_err", pf_err_);
+  dynamic_param_client_->get_event_param("kld_z", pf_z_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
   // Initialize the filter

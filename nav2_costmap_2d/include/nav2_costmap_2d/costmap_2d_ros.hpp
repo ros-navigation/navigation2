@@ -250,13 +250,13 @@ private:
    *
    * If the values of footprint and robot_radius are the same in
    * new_config and old_config, nothing is changed. */
-  void readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void readFootprintFromConfig();
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
   void setPluginParams(rclcpp::Node::SharedPtr nh);
 
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void reconfigureCB();
 
   void movementCB();
 

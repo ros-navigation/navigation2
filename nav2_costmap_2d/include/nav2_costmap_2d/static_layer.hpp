@@ -77,7 +77,7 @@ private:
    */
   void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void reconfigureCB();
 
   unsigned char interpretValue(unsigned char value);
 
