@@ -47,6 +47,7 @@ DwbController::~DwbController()
 TaskStatus
 DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
+  RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
