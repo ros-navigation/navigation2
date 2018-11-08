@@ -94,7 +94,7 @@ public:
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    nh_->get_parameter_or("scale", scale_, 1.0);
+    nh_->get_parameter_or(name + "/scale", scale_, 1.0);
     onInit();
   }
   virtual void onInit() {}
