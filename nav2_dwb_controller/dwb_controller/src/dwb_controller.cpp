@@ -30,14 +30,16 @@ using dwb_core::CostmapROSPtr;
 namespace nav2_dwb_controller
 {
 
-DwbController::DwbController(rclcpp::executor::Executor & executor)
+DwbController::DwbController(rclcpp::executor::Executor & /*executor*/)
 : nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(get_clock()), tfListener_(tfBuffer_)
 {
+#if 0
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+#endif
 }
 
 DwbController::~DwbController()
@@ -45,9 +47,13 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
+DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
 {
+#if 1
   RCLCPP_INFO(get_logger(), "Starting controller");
+  std::this_thread::sleep_for(500ms);
+  return TaskStatus::SUCCEEDED;
+#else
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
@@ -84,6 +90,7 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
   setResult(result);
 
   return TaskStatus::SUCCEEDED;
+#endif
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)

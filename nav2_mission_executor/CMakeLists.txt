@@ -31,10 +31,10 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/mission_executor.cpp
-  src/execute_mission_behavior_tree.cpp
 )
 
 set(dependencies
+  nav2_tasks
   rclcpp
   std_msgs
   nav2_tasks

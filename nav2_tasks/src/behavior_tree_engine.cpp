@@ -20,6 +20,8 @@
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "Blackboard/blackboard_local.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "nav2_tasks/compute_path_to_pose_action.hpp"
+#include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
 
 using namespace std::chrono_literals;
@@ -30,18 +32,21 @@ namespace nav2_tasks
 BehaviorTreeEngine::BehaviorTreeEngine(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
+  // Register our custom action nodes so that they can be included in XML description
+  factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("NavigateToPose");
+  factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
+  factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
+
   // Register any custom action nodes so that they can be included in XML description
   registerCustomActions();
 }
 
 TaskStatus BehaviorTreeEngine::run(
+  BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  // Create the blackboard that will be shared by all of the nodes in the tree
-  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
-
   // Set a couple values that all of the action nodes expect/require
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
   blackboard->set<std::chrono::milliseconds>("tick_timeout", std::chrono::milliseconds(100));

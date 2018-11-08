@@ -56,6 +56,8 @@ Robot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 bool
 Robot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
+return true;
+
   if (!initial_pose_received_) {
     RCLCPP_WARN(node_->get_logger(),
       "Robot: Can't return current pose: Initial pose not yet received.");
