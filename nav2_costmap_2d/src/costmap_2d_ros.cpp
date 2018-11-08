@@ -231,7 +231,7 @@ void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Shar
 {
   RCLCPP_DEBUG(node_->get_logger(), "Costmap2DROS:: Event Callback");
 
-  dynamic_param_client_->get_event_param(event,"transform_tolerance", transform_tolerance_);
+  dynamic_param_client_->get_event_param("transform_tolerance", transform_tolerance_);
 
   if (map_update_thread_ != NULL)
   {
@@ -241,10 +241,10 @@ void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Shar
   }
   map_update_thread_shutdown_ = false;
   double map_update_frequency = 1.0;
-  dynamic_param_client_->get_event_param(event,"update_frequency", map_update_frequency);
+  dynamic_param_client_->get_event_param("update_frequency", map_update_frequency);
 
   double map_publish_frequency = 5.0;
-  dynamic_param_client_->get_event_param(event,"publish_frequency", map_publish_frequency);
+  dynamic_param_client_->get_event_param("publish_frequency", map_publish_frequency);
 
   if (map_publish_frequency > 0)
     publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency);
@@ -255,11 +255,11 @@ void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Shar
   double resolution, origin_x, origin_y;
   int map_width_meters, map_height_meters;
 
-  dynamic_param_client_->get_event_param(event,"width", map_width_meters); 
-  dynamic_param_client_->get_event_param(event,"height", map_height_meters);
-  dynamic_param_client_->get_event_param(event,"resolution", resolution);
-  dynamic_param_client_->get_event_param(event,"origin_x", origin_x);
-  dynamic_param_client_->get_event_param(event,"origin_y", origin_y); 
+  dynamic_param_client_->get_event_param("width", map_width_meters); 
+  dynamic_param_client_->get_event_param("height", map_height_meters);
+  dynamic_param_client_->get_event_param("resolution", resolution);
+  dynamic_param_client_->get_event_param("origin_x", origin_x);
+  dynamic_param_client_->get_event_param("origin_y", origin_y); 
   
   if (!layered_costmap_->isSizeLocked())
   {
@@ -270,7 +270,7 @@ void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Shar
   // If the padding has changed, call setUnpaddedRobotFootprint() to
   // re-apply the padding.
   float footprint_padding;
-  dynamic_param_client_->get_event_param(event,"footprint_padding", footprint_padding);
+  dynamic_param_client_->get_event_param("footprint_padding", footprint_padding);
 
   if (footprint_padding_ != footprint_padding)
   {  
@@ -292,8 +292,8 @@ void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterE
 
   std::string footprint;
   double robot_radius;
-  dynamic_param_client_->get_event_param(event,"footprint", footprint); 
-  dynamic_param_client_->get_event_param(event,"robot_radius", robot_radius); 
+  dynamic_param_client_->get_event_param("footprint", footprint); 
+  dynamic_param_client_->get_event_param("robot_radius", robot_radius); 
 
   if (!dynamic_param_client_->is_in_event(event, "footprint") ||
     !dynamic_param_client_->is_in_event(event, "robot_radius"))
