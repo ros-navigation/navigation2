@@ -24,13 +24,12 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-set(executable_name dwb_controller)
+set(library_name dwb_controller)
+set(executable_name ${library_name}_node)
 
 add_executable(${executable_name}
   src/main.cpp
 )
-
-set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/dwb_controller.cpp

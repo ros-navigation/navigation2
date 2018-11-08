@@ -21,13 +21,12 @@ include_directories(
   include
 )
 
-set(executable_name simple_navigator)
+set(library_name simple_navigator)
+set(executable_name ${library_name}_node)
 
 add_executable(${executable_name}
   src/main.cpp
 )
-
-set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/simple_navigator.cpp

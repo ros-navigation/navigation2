@@ -27,13 +27,12 @@ include_directories(
   include
 )
 
-set(executable_name amcl)
+set(library_name amcl)
+set(executable_name ${library_name}_node)
 
 add_executable(${executable_name}
   src/main.cpp
 )
-
-set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/amcl_node.cpp

@@ -21,7 +21,10 @@ set(dependencies
   rclcpp
 )
 
-add_library(nav2_dynamic_params
+set(library_name nav2_dynamic_params)
+set(executable_name ${library_name}_node)
+
+add_library(${library_name}
   src/dynamic_params_validator.cpp
 )
 
@@ -29,8 +32,9 @@ ament_target_dependencies(nav2_dynamic_params
   ${dependencies}
 )
 
-add_executable(example_nav2_dynamic_params
+add_executable(example_${executable_name}
   src/example_dynamic_params.cpp
+}
 )
 
 ament_target_dependencies(example_nav2_dynamic_params
