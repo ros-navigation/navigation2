@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mission_executor/mission_executor.hpp"
-//#include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
-#include "nav2_tasks/behavior_tree_engine.hpp"
+#include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
 
 using nav2_tasks::TaskStatus;
 
@@ -39,7 +38,7 @@ TaskStatus MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::Sha
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Create and run the behavior tree for this mission
-  nav2_tasks::BehaviorTreeEngine bt(shared_from_this());
+  ExecuteMissionBehaviorTree bt(shared_from_this());
   TaskStatus result =
     bt.run(blackboard, command->mission_plan, std::bind(&MissionExecutor::cancelRequested, this));
 

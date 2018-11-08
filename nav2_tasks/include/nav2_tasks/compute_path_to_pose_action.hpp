@@ -30,7 +30,7 @@ class ComputePathToPoseAction
   : public BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>
 {
 public:
-  ComputePathToPoseAction(const std::string & action_name)
+  explicit ComputePathToPoseAction(const std::string & action_name)
   : BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>(action_name)
   {
   }

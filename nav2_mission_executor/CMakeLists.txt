@@ -30,6 +30,7 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name}
+  src/execute_mission_behavior_tree.cpp
   src/mission_executor.cpp
 )
 

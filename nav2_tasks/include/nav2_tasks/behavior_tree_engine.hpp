@@ -39,8 +39,6 @@ public:
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
 protected:
-  virtual void registerCustomActions() {}
-
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 
