@@ -17,10 +17,10 @@
 #include <memory>
 #include <string>
 #include <set>
-#include "behavior_tree_core/xml_parsing.h"
-#include "Blackboard/blackboard_local.h"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
+#include "behavior_tree_core/xml_parsing.h"
+#include "Blackboard/blackboard_local.h"
 
 using namespace std::chrono_literals;
 
@@ -37,13 +37,11 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
 nav2_tasks::TaskStatus
 NavigateToPoseBehaviorTree::run(
+  BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds tree_tick_timeout)
 {
-  // Create the blackboard that will be shared by all of the nodes in the tree
-  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
-
   // Set a couple values that all of the action nodes expect/require
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
   blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100));

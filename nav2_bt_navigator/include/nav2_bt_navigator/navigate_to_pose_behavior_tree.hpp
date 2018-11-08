@@ -17,10 +17,11 @@
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
 #include "behavior_tree_core/xml_parsing.h"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "Blackboard/blackboard_local.h"
 
 namespace nav2_bt_navigator
 {
@@ -32,6 +33,7 @@ public:
   NavigateToPoseBehaviorTree() = delete;
 
   nav2_tasks::TaskStatus run(
+    BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds tree_tick_timeout = std::chrono::milliseconds(100));
