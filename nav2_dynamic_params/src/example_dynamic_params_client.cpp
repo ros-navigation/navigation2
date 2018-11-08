@@ -22,11 +22,11 @@
 nav2_dynamic_params::DynamicParamsClient * dynamic_params_client;
 
 // Define a user event callback
-void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+void event_callback()
 {
   RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "\nEvent Callback!");
 
-  if (dynamic_params_client->is_in_event(event, "foo")) {
+  if (dynamic_params_client->is_in_event("foo")) {
     RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "'foo' is in this event!");
   }
 
@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
   // without node path, adding only parameters will grab parameters from member node
   dynamic_params_client->add_parameters({"foobaz"});
 
-  dynamic_params_client->set_callback(std::bind(event_callback, std::placeholders::_1));
+  dynamic_params_client->set_callback(std::bind(event_callback));
 
   // Check list of parameters
   auto list = dynamic_params_client->get_param_names();

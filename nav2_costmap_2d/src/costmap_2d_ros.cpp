@@ -192,7 +192,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   dynamic_param_client_->add_parameters(
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
     "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
-  dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this, std::placeholders::_1));
+  dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
@@ -227,7 +227,7 @@ void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr node)
   node->set_parameters(param);
 }
 
-void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+void Costmap2DROS::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "Costmap2DROS:: Event Callback");
 
@@ -278,12 +278,12 @@ void Costmap2DROS::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::Shar
     setUnpaddedRobotFootprint(unpadded_footprint_);
   }
 
-  readFootprintFromConfig(event);
+  readFootprintFromConfig();
 
   map_update_thread_ = new std::thread(std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 }
 
-void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+void Costmap2DROS::readFootprintFromConfig()
 {
   // Only change the footprint if footprint or robot_radius has
   // changed.  Otherwise we might overwrite a footprint sent on a
@@ -295,8 +295,8 @@ void Costmap2DROS::readFootprintFromConfig(const rcl_interfaces::msg::ParameterE
   dynamic_param_client_->get_event_param("footprint", footprint); 
   dynamic_param_client_->get_event_param("robot_radius", robot_radius); 
 
-  if (!dynamic_param_client_->is_in_event(event, "footprint") ||
-    !dynamic_param_client_->is_in_event(event, "robot_radius"))
+  if (!dynamic_param_client_->is_in_event("footprint") ||
+    !dynamic_param_client_->is_in_event("robot_radius"))
     {
       return;
     }

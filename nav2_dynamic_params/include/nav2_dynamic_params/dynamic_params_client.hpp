@@ -34,7 +34,8 @@ class DynamicParamsClient
 public:
   explicit DynamicParamsClient(
     rclcpp::Node::SharedPtr node)
-  : node_(node)
+  : node_(node),
+    last_event_(std::make_shared<rcl_interfaces::msg::ParameterEvent>())
   {}
 
   ~DynamicParamsClient() {}
@@ -55,8 +56,9 @@ public:
         [this, node_namespace](
         const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
         {
+          last_event_ = event;
           if (is_event_in_map(event, node_namespace)) {
-            user_callback_(event);
+            user_callback_();
           }
         };
 
@@ -70,12 +72,12 @@ public:
   // Sets user callback as a member variable.
   // Default true for init_callback to force user callback upon setting
   void set_callback(
-    std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback,
+    std::function<void()> callback,
     bool init_callback = true)
   {
     user_callback_ = callback;
     if (init_callback) {
-      force_callback();
+      user_callback_();
     }
   }
 
@@ -203,21 +205,13 @@ public:
     return get_event_param_or<T>("", param_name, new_value, default_value);
   }
 
-  // A check to filter whether parameter name is part of the event
-  bool is_in_event(
-    const rcl_interfaces::msg::ParameterEvent::SharedPtr & event, const std::string & name)
+  // A check to filter whether parameter name is part of the lastest event
+  bool is_in_event(const std::string & name)
   {
-    rclcpp::ParameterEventsFilter filter(event, {name},
+    rclcpp::ParameterEventsFilter filter(last_event_, {name},
       {rclcpp::ParameterEventsFilter::EventType::NEW,
         rclcpp::ParameterEventsFilter::EventType::CHANGED});
     return !filter.get_events().empty();
-  }
-
-  // Passes an empty event to the user_callback
-  void force_callback()
-  {
-    auto event = std::make_shared<rcl_interfaces::msg::ParameterEvent>();
-    user_callback_(event);
   }
 
 private:
@@ -361,7 +355,10 @@ private:
     <rcl_interfaces::msg::ParameterEvent>::SharedPtr> event_subscriptions_;
 
   // Users of this class will pass in an event callback
-  std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> user_callback_;
+  std::function<void()> user_callback_;
+
+  // Pointer to latest event message
+  rcl_interfaces::msg::ParameterEvent::SharedPtr last_event_;
 };
 
 }  // namespace nav2_dynamic_params
