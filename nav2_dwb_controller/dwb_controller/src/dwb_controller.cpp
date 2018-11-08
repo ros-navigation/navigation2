@@ -30,7 +30,7 @@ using dwb_core::CostmapROSPtr;
 namespace nav2_dwb_controller
 {
 
-DwbController::DwbController(rclcpp::executor::Executor & /*executor*/)
+DwbController::DwbController(rclcpp::executor::Executor & executor)
 : nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(get_clock()), tfListener_(tfBuffer_)
 {
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
@@ -45,7 +45,7 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
