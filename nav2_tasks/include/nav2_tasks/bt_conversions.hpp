@@ -43,14 +43,12 @@ inline std::chrono::milliseconds convertFromString(const std::string & /*key*/)
 template<>
 inline nav2_msgs::msg::Path::SharedPtr convertFromString(const std::string & /*key*/)
 {
-  printf("template convert Path froms string\n");
   return nullptr;
 }
 
 template<>
 inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const std::string & /*key*/)
 {
-  printf("template convert PathEndPoints froms string\n");
   return nullptr;
 }
 
