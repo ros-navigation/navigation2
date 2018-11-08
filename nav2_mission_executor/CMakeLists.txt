@@ -34,7 +34,6 @@ add_library(${library_name}
 )
 
 set(dependencies
-  nav2_tasks
   rclcpp
   std_msgs
   nav2_tasks
