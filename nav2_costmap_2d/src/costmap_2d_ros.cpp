@@ -113,7 +113,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   bool rolling_window, track_unknown_space, always_send_full_costmap;
   get_parameter_or<bool>("rolling_window", rolling_window, false);
   get_parameter_or<bool>("track_unknown_space", track_unknown_space, false);
-  get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, false);
+  get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, true);
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
@@ -322,7 +322,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = this->now();
+      rclcpp::Time now = rclcpp::Clock(RCL_SYSTEM_TIME).now();
 
       if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
       //if (last_publish_ + publish_cycle_ < now) {
