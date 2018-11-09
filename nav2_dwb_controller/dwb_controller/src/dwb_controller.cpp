@@ -32,15 +32,20 @@ namespace nav2_dwb_controller
 
 DwbController::DwbController(rclcpp::executor::Executor & executor)
 : Node("DwbController"),
-  nav2_tasks::FollowPathTaskServer(this),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+
+  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
+  task_server_->setExecuteCallback(
+    std::bind(&DwbController::execute, this, std::placeholders::_1));
 }
 
 DwbController::~DwbController()
@@ -70,9 +75,9 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity");
-        if (cancelRequested()) {
+        if (task_server_->cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
-          setCanceled();
+          task_server_->setCanceled();
           return TaskStatus::CANCELED;
         }
       }
@@ -84,7 +89,7 @@ DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
   }
 
   nav2_tasks::FollowPathResult result;
-  setResult(result);
+  task_server_->setResult(result);
 
   return TaskStatus::SUCCEEDED;
 }

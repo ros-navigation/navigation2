@@ -34,10 +34,11 @@ template<class CommandMsg, class ResultMsg>
 class TaskServer
 {
 public:
-  explicit TaskServer(rclcpp::Node * node, bool autoStart = true)
+  explicit TaskServer(rclcpp::Node::SharedPtr & node, bool autoStart = true)
   : node_(node),
     workerThread_(nullptr),
     commandReceived_(false),
+    cancelReceived_(false),
     eptr_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
@@ -50,6 +51,11 @@ public:
     resultPub_ = node_->create_publisher<ResultMsg>(taskName + "_result");
     statusPub_ = node_->create_publisher<StatusMsg>(taskName + "_status");
 
+    execute_callback_ = [this](const typename CommandMsg::SharedPtr) {
+        printf("Execute callback not set!\n");
+        return TaskStatus::FAILED;
+      };
+
     if (autoStart) {
       startWorkerThread();
     }
@@ -60,7 +66,11 @@ public:
     stopWorkerThread();
   }
 
-  virtual TaskStatus execute(const typename CommandMsg::SharedPtr command) = 0;
+  typedef std::function<TaskStatus(const typename CommandMsg::SharedPtr command)> ExecuteCallback;
+  void setExecuteCallback(ExecuteCallback execute_callback)
+  {
+    execute_callback_ = execute_callback;
+  }
 
   // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested()
@@ -78,8 +88,15 @@ public:
     resultMsg_ = result;
   }
 
+  void startWorkerThread()
+  {
+    workerThread_ = new std::thread(&TaskServer::workerThread, this);
+  }
+
 protected:
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
+
+  ExecuteCallback execute_callback_;
 
   typename CommandMsg::SharedPtr commandMsg_;
   ResultMsg resultMsg_;
@@ -104,7 +121,7 @@ protected:
 
         // Call the user's overridden method
         try {
-          status = execute(commandMsg_);
+          status = execute_callback_(commandMsg_);
         } catch (...) {
           statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
           statusPub_->publish(statusMsg);
@@ -152,12 +169,6 @@ protected:
 
   // TODO(mjeronimo): Make explicit start and stop calls to control
   // the worker thread
-
-  // Convenience routines for starting and stopping the worker thread.
-  void startWorkerThread()
-  {
-    workerThread_ = new std::thread(&TaskServer::workerThread, this);
-  }
 
   void stopWorkerThread()
   {

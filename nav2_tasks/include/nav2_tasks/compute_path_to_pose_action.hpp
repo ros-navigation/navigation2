@@ -68,6 +68,7 @@ public:
     command_->start.orientation = start_orientation;
     command_->goal.position = goal_position;
     command_->goal.orientation = goal_orientation;
+    command_->tolerance = 2.0;
 
     // Create the result message
     result_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();

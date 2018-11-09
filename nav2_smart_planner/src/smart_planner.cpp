@@ -47,7 +47,6 @@ namespace nav2_smart_planner
 
 SmartPlanner::SmartPlanner()
 : Node("SmartPlanner"),
-  nav2_tasks::ComputePathToPoseTaskServer(this, false),
   global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0),
@@ -56,8 +55,9 @@ SmartPlanner::SmartPlanner()
   RCLCPP_INFO(get_logger(), "Initializing SmartPlanner...");
 
   // Grab params off the param server
-  auto node = rclcpp::Node::make_shared("SmartPlanner");
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(node);
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
+  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
   use_astar_ = parameters_client->get_parameter("use_astar", false);
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
@@ -67,10 +67,12 @@ SmartPlanner::SmartPlanner()
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
-  costmap_client_.waitForService(std::chrono::seconds(2));
+  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
+  task_server_->setExecuteCallback(
+    std::bind(&SmartPlanner::execute, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
-  startWorkerThread();
+  task_server_->startWorkerThread();
 }
 
 SmartPlanner::~SmartPlanner()
@@ -104,9 +106,9 @@ SmartPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "SmartPlanner: Cancelled global planning task.");
-      setCanceled();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
@@ -128,7 +130,7 @@ SmartPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
 
     RCLCPP_INFO(get_logger(), "SmartPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
       command->goal.position.x, command->goal.position.y, command->tolerance);
-    setResult(result);
+    task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "SmartPlanner: Plan calculation to (%.2f, %.2f) failed: \"%s\"",

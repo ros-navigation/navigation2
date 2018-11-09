@@ -26,19 +26,21 @@
 namespace nav2_dwb_controller
 {
 
-class DwbController : public rclcpp::Node, public nav2_tasks::FollowPathTaskServer
+class DwbController : public rclcpp::Node
 {
 public:
   DwbController(rclcpp::executor::Executor & executor);
   ~DwbController();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path) override;
+  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path);
 
 protected:
   bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
+
+  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
   dwb_core::CostmapROSPtr cm_;
   dwb_core::DWBLocalPlanner planner_;
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;

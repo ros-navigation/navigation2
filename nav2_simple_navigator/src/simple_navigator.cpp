@@ -26,32 +26,22 @@ namespace nav2_simple_navigator
 {
 
 SimpleNavigator::SimpleNavigator()
-: Node("SimpleNavigator"),
-  nav2_tasks::NavigateToPoseTaskServer(this),
-  robot_(this)
+: Node("SimpleNavigator")
 {
   RCLCPP_INFO(get_logger(), "Initializing");
 
-  // TODO(mjeronimo): Once the TaskServer accepts a shared_ptr, this will change
-  // to use the shared_ptr passed in the constructor. For now, there's a problem
-  // because the SimpleNavigate *is* a ROS node and we can't use shared_from_this
-  // in the constructor.
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
-  plannerTaskClient_ =
+  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
+
+  planner_client_ =
     std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
-  if (!plannerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "Global planner is not running");
-    throw std::runtime_error("Global planner not running");
-  }
+  controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
-  controllerTaskClient_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
-
-  if (!controllerTaskClient_->waitForServer(nav2_tasks::defaultServerTimeout)) {
-    RCLCPP_ERROR(get_logger(), "Controller is not running");
-    throw std::runtime_error("Controller not running");
-  }
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
+  task_server_->setExecuteCallback(
+    std::bind(&SimpleNavigator::execute, this, std::placeholders::_1));
 }
 
 SimpleNavigator::~SimpleNavigator()
@@ -68,7 +58,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   // Get the current pose from the robot
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  if (!robot_.getCurrentPose(current_pose)) {
+  if (!robot_->getCurrentPose(current_pose)) {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
     RCLCPP_WARN(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
@@ -90,21 +80,21 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   RCLCPP_DEBUG(get_logger(), "goal.orientation.w: %f", endpoints->goal.orientation.w);
 
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  plannerTaskClient_->sendCommand(endpoints);
+  planner_client_->sendCommand(endpoints);
 
   // Loop until the subtasks are completed
   for (;; ) {
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
-      plannerTaskClient_->cancel();
-      setCanceled();
+      planner_client_->cancel();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // Check if the planning task has completed
-    TaskStatus status = plannerTaskClient_->waitForResult(path, 100ms);
+    TaskStatus status = planner_client_->waitForResult(path, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -143,22 +133,22 @@ planning_succeeded:
 
   RCLCPP_INFO(get_logger(), "Sending path to the controller to execute.");
 
-  controllerTaskClient_->sendCommand(path);
+  controller_client_->sendCommand(path);
 
   // Loop until the control task completes
   for (;; ) {
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
-      controllerTaskClient_->cancel();
-      setCanceled();
+      controller_client_->cancel();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
     // Check if the control task has completed
     auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controllerTaskClient_->waitForResult(controlResult, 100ms);
+    TaskStatus status = controller_client_->waitForResult(controlResult, 100ms);
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
@@ -168,7 +158,7 @@ planning_succeeded:
           // This is an empty message, so there are no fields to set
           nav2_tasks::NavigateToPoseResult navigationResult;
 
-          setResult(navigationResult);
+          task_server_->setResult(navigationResult);
           return TaskStatus::SUCCEEDED;
         }
 

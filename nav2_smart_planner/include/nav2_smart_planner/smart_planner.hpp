@@ -33,16 +33,18 @@
 namespace nav2_smart_planner
 {
 
-class SmartPlanner : public rclcpp::Node, public nav2_tasks::ComputePathToPoseTaskServer
+class SmartPlanner : public rclcpp::Node
 {
 public:
   SmartPlanner();
   ~SmartPlanner();
 
   nav2_tasks::TaskStatus execute(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command) override;
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
 
 private:
+  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(
     const geometry_msgs::msg::Pose & start,

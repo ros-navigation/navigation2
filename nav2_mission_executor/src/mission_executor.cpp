@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "nav2_mission_executor/mission_executor.hpp"
+
+#include <memory>
 #include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
 
 using nav2_tasks::TaskStatus;
@@ -21,13 +23,20 @@ namespace nav2_mission_executor
 {
 
 MissionExecutor::MissionExecutor()
-: Node("MissionExecutor"), nav2_tasks::ExecuteMissionTaskServer(this)
+: Node("MissionExecutor")
 {
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
       std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));
 
   plan_pub_ = create_publisher<nav2_msgs::msg::MissionPlan>(
     "ExecuteMissionTask_command");
+
+  task_server_ = std::make_unique<nav2_tasks::ExecuteMissionTaskServer>(temp_node);
+
+  task_server_->setExecuteCallback(
+    std::bind(&MissionExecutor::execute, this, std::placeholders::_1));
 }
 
 TaskStatus MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
@@ -36,8 +45,9 @@ TaskStatus MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::Sha
 
   // Create and run the behavior tree for this mission
   ExecuteMissionBehaviorTree bt(shared_from_this());
-  TaskStatus result =
-    bt.run(command->mission_plan, std::bind(&MissionExecutor::cancelRequested, this));
+  TaskStatus result = bt.run(command->mission_plan,
+      std::bind(&nav2_tasks::ExecuteMissionTaskServer::cancelRequested,
+      task_server_.get()));
 
   RCLCPP_INFO(get_logger(), "Completed mission execution: %d", result);
   return result;

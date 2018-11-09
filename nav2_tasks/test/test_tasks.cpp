@@ -47,14 +47,14 @@ using TestTaskServer = nav2_tasks::TaskServer<TestCommand, TestResult>;
 class MyTestTaskServer : public TestTaskServer
 {
 public:
-  explicit MyTestTaskServer(rclcpp::Node * node)
+  explicit MyTestTaskServer(rclcpp::Node::SharedPtr & node)
   : TestTaskServer(node)
   {
   }
 
   MyTestTaskServer() = delete;
 
-  TaskStatus execute(const TestCommand::SharedPtr command) override
+  TaskStatus execute(const TestCommand::SharedPtr command)
   {
     // A normal task would have various possible outcomes (success,
     // failure, canceled). Since we're trying to cause the task server
@@ -112,7 +112,11 @@ protected:
     client_ = std::make_shared<TestTaskClient>(node_);
 
     // Same for the task server
-    server_ = std::make_shared<MyTestTaskServer>(node_.get());
+    server_ = std::make_shared<MyTestTaskServer>(node_);
+
+    // A task server must have its execute callback set
+    server_->setExecuteCallback(
+      std::bind(&MyTestTaskServer::execute, server_, std::placeholders::_1));
 
     // Launch a thread to spin the node
     spin_thread_ = new std::thread(&TaskClientServerTest::spin, this);

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <sstream>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
@@ -22,10 +23,15 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: Node("NavigateToPoseNode"),
-  nav2_tasks::NavigateToPoseTaskServer(this),
-  robot_(this)
+: Node("NavigateToPoseNode")
 {
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
+  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
+
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
+  task_server_->setExecuteCallback(
+    std::bind(&BtNavigator::execute, this, std::placeholders::_1));
 }
 
 TaskStatus
@@ -35,9 +41,9 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
     command->pose.position.x, command->pose.position.y);
 
   // Get the current pose from the robot
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current;
+  auto current = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  if (!robot_.getCurrentPose(current)) {
+  if (!robot_->getCurrentPose(current)) {
     RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
@@ -77,7 +83,8 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(command_ss.str(), std::bind(&BtNavigator::cancelRequested, this));
+  TaskStatus result = bt.run(command_ss.str(),
+      std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;
