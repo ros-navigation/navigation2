@@ -78,6 +78,8 @@ private:
                               const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                               const pf_vector_t & pose);
   void publishParticleCloud(const pf_sample_set_t * set);
+  bool getMaxWeightHyp(std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
+                       int & max_weight_hyp);
 
   void updatePoseFromServer();
   void checkLaserReceived();

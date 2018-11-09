@@ -731,6 +731,49 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
   particlecloud_pub_->publish(cloud_msg);
 }
 
+bool 
+AmclNode::getMaxWeightHyp(std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
+                          int & max_weight_hyp)
+{
+  // Read out the current hypotheses
+  double max_weight = 0.0;
+  hyps.resize(pf_->sets[pf_->current_set].cluster_count);
+  for (int hyp_count = 0;
+       hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
+  {
+    double weight;
+    pf_vector_t pose_mean;
+    pf_matrix_t pose_cov;
+    if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov))
+    {
+      RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", hyp_count);
+      return false;
+    }
+
+    hyps[hyp_count].weight = weight;
+    hyps[hyp_count].pf_pose_mean = pose_mean;
+    hyps[hyp_count].pf_pose_cov = pose_cov;
+
+    if (hyps[hyp_count].weight > max_weight)
+    {
+      max_weight = hyps[hyp_count].weight;
+      max_weight_hyp = hyp_count;
+    }
+  }
+
+  if (max_weight > 0.0)
+  {
+    RCLCPP_DEBUG(get_logger(), "Max weight pose: %.3f %.3f %.3f",
+                 hyps[max_weight_hyp].pf_pose_mean.v[0],
+                 hyps[max_weight_hyp].pf_pose_mean.v[1],
+                 hyps[max_weight_hyp].pf_pose_mean.v[2]);
+
+    max_weight_hyps = hyps[max_weight_hyp];
+    return true;
+  }
+  return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
@@ -896,44 +939,12 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   }
 
   if (resampled || force_publication) {
-    // Read out the current hypotheses
-    double max_weight = 0.0;
-    int max_weight_hyp = -1;
+    
+    amcl_hyp_t max_weight_hyps;
     std::vector<amcl_hyp_t> hyps;
-    hyps.resize(pf_->sets[pf_->current_set].cluster_count);
-    for (int hyp_count = 0;
-      hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
+    int max_weight_hyp = -1;
+    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) //this is not good we need to know > 0 from here
     {
-      double weight;
-      pf_vector_t pose_mean;
-      pf_matrix_t pose_cov;
-      if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov)) {
-        RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", hyp_count);
-        break;
-      }
-
-      hyps[hyp_count].weight = weight;
-      hyps[hyp_count].pf_pose_mean = pose_mean;
-      hyps[hyp_count].pf_pose_cov = pose_cov;
-
-      if (hyps[hyp_count].weight > max_weight) {
-        max_weight = hyps[hyp_count].weight;
-        max_weight_hyp = hyp_count;
-      }
-    }
-
-    if (max_weight > 0.0) {
-      RCLCPP_DEBUG(get_logger(), "Max weight pose: %.3f %.3f %.3f",
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
-        hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-      /*
-         puts("");
-         pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
-         puts("");
-       */
-
       geometry_msgs::msg::PoseWithCovarianceStamped p;
       // Fill in the header
       p.header.frame_id = global_frame_id_;
@@ -1001,7 +1012,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
       tf2::impl::Converter<true, false>::convert(odom_to_map.pose, latest_tf_);
       latest_tf_valid_ = true;
-
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
