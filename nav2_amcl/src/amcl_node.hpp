@@ -75,6 +75,11 @@ private:
   void publishParticleCloud(const pf_sample_set_t * set);
   bool getMaxWeightHyp(std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
                        int & max_weight_hyp);
+  void publishAmclPose(const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                       const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp);
+  void calculateMaptoOdomTransform(const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                                   const std::vector<amcl_hyp_t> & hyps,
+                                   const int & max_weight_hyp);                     
 
   void updatePoseFromServer();
   void checkLaserReceived();
