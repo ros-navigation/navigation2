@@ -568,6 +568,49 @@ AmclNode::setMapCallback(
   handleInitialPoseMessage(req->initial_pose);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool AmclNode::addNewScanner(int & laser_index,
+                             const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                             const std::string & laser_scan_frame_id,
+                             geometry_msgs::msg::PoseStamped & laser_pose)
+{
+  //lasers_.push_back(createLaserObject());
+  lasers_.push_back(new Laser(*laser_));
+  lasers_update_.push_back(true);
+  laser_index = frame_to_laser_.size();
+
+  geometry_msgs::msg::PoseStamped ident;
+  ident.header.frame_id = laser_scan_frame_id;
+  ident.header.stamp = rclcpp::Time();
+  tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
+
+  // geometry_msgs::msg::PoseStamped laser_pose;
+  try
+  {
+    this->tf_->transform(ident, laser_pose, base_frame_id_, TRANSFORM_TIMEOUT);
+  }
+  catch (tf2::TransformException &e)
+  {
+    RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
+                               "even though the message notifier is in use",
+                 laser_scan->header.frame_id.c_str(),
+                 base_frame_id_.c_str());
+    return false;
+  }
+
+  pf_vector_t laser_pose_v;
+  laser_pose_v.v[0] = laser_pose.pose.position.x;
+  laser_pose_v.v[1] = laser_pose.pose.position.y;
+  // laser mounting angle gets computed later -> set to 0 here!
+  laser_pose_v.v[2] = 0;
+  lasers_[laser_index]->SetLaserPose(laser_pose_v);
+  frame_to_laser_[laser_scan->header.frame_id] = laser_index;
+  return true;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
@@ -581,43 +624,14 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   }
   std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
+  geometry_msgs::msg::PoseStamped laser_pose;
 
   // Do we have the base->base_laser Tx yet?
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
-    RCLCPP_DEBUG(get_logger(), "Setting up laser %d (frame_id=%s)\n",
-      (int)frame_to_laser_.size(), laser_scan_frame_id.c_str());
-    lasers_.push_back(createLaserObject());
-    lasers_update_.push_back(true);
-    laser_index = frame_to_laser_.size();
-
-    geometry_msgs::msg::PoseStamped ident;
-    ident.header.frame_id = laser_scan_frame_id;
-    ident.header.stamp = rclcpp::Time();
-    tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
-
-    geometry_msgs::msg::PoseStamped laser_pose;
-    try {
-      this->tf_->transform(ident, laser_pose, base_frame_id_);
-    } catch (tf2::TransformException & e) {
-      RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
-        "even though the message notifier is in use",
-        laser_scan->header.frame_id.c_str(),
-        base_frame_id_.c_str());
-      return;
-    }
-
-    pf_vector_t laser_pose_v;
-    laser_pose_v.v[0] = laser_pose.pose.position.x;
-    laser_pose_v.v[1] = laser_pose.pose.position.y;
-    // laser mounting angle gets computed later -> set to 0 here!
-    laser_pose_v.v[2] = 0;
-    lasers_[laser_index]->SetLaserPose(laser_pose_v);
-    RCLCPP_DEBUG(get_logger(), "Received laser's pose wrt robot: %.3f %.3f %.3f",
-      laser_pose_v.v[0],
-      laser_pose_v.v[1],
-      laser_pose_v.v[2]);
-
-    frame_to_laser_[laser_scan->header.frame_id] = laser_index;
+    if (!addNewScanner(laser_index, laser_scan, laser_scan_frame_id, laser_pose))
+     {
+      return; //could not find transform
+     }
   } else {
     // we have the laser pose, retrieve laser index
     laser_index = frame_to_laser_[laser_scan->header.frame_id];
