@@ -24,15 +24,12 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
-find_package(xmlrpcpp REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_dynamic_params)
 find_package(nav2_util)
-
-# TODO(bpwilcox): port remaining packages
-#find_package(voxel_grid REQUIRED)
+find_package(nav2_voxel_grid REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -72,13 +69,13 @@ set(dependencies
   map_msgs
   tf2_ros
   tf2
-  xmlrpcpp
   pluginlib
   tf2_geometry_msgs
   tf2_sensor_msgs
   message_filters
   nav2_dynamic_params
   nav2_util
+  nav2_voxel_grid
 )
 
 ament_target_dependencies(nav2_costmap_2d
