@@ -21,7 +21,7 @@
 namespace nav2_bt_navigator
 {
 
-class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
+class BtNavigator : public rclcpp::Node, public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
   BtNavigator();

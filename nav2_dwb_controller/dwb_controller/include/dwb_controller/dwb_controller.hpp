@@ -26,7 +26,7 @@
 namespace nav2_dwb_controller
 {
 
-class DwbController : public nav2_tasks::FollowPathTaskServer
+class DwbController : public rclcpp::Node, public nav2_tasks::FollowPathTaskServer
 {
 public:
   DwbController(rclcpp::executor::Executor & executor);

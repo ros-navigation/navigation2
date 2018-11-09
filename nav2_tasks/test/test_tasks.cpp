@@ -47,10 +47,12 @@ using TestTaskServer = nav2_tasks::TaskServer<TestCommand, TestResult>;
 class MyTestTaskServer : public TestTaskServer
 {
 public:
-  MyTestTaskServer()
-  : TestTaskServer("TestTaskServerNode")
+  explicit MyTestTaskServer(rclcpp::Node * node)
+  : TestTaskServer(node)
   {
   }
+
+  MyTestTaskServer() = delete;
 
   TaskStatus execute(const TestCommand::SharedPtr command) override
   {
@@ -110,7 +112,7 @@ protected:
     client_ = std::make_shared<TestTaskClient>(node_);
 
     // The task server is a node (should change to be like the client)
-    server_ = std::make_shared<MyTestTaskServer>();
+    server_ = std::make_shared<MyTestTaskServer>(node_.get());
 
     // Launch a thread to spin both nodes
     spin_thread_ = new std::thread(&TaskClientServerTest::spin_the_nodes, this);
@@ -132,7 +134,7 @@ protected:
   {
     rclcpp::executors::SingleThreadedExecutor exec;
     exec.add_node(node_);
-    exec.add_node(server_);
+    //exec.add_node(server_);
     exec.spin();
   }
 

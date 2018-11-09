@@ -21,7 +21,7 @@ namespace nav2_mission_executor
 {
 
 MissionExecutor::MissionExecutor()
-: nav2_tasks::ExecuteMissionTaskServer("ExecuteMissionNode")
+: Node("MissionExecutor"), nav2_tasks::ExecuteMissionTaskServer(this)
 {
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
       std::bind(&MissionExecutor::onGoalPoseReceived, this, std::placeholders::_1));

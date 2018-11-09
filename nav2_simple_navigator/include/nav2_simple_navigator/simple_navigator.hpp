@@ -26,7 +26,7 @@
 namespace nav2_simple_navigator
 {
 
-class SimpleNavigator : public nav2_tasks::NavigateToPoseTaskServer
+class SimpleNavigator : public rclcpp::Node, public nav2_tasks::NavigateToPoseTaskServer
 {
 public:
   SimpleNavigator();

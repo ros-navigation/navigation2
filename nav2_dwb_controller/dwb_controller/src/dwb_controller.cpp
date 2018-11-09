@@ -31,7 +31,10 @@ namespace nav2_dwb_controller
 {
 
 DwbController::DwbController(rclcpp::executor::Executor & executor)
-: nav2_tasks::FollowPathTaskServer("FollowPathNode"), tfBuffer_(get_clock()), tfListener_(tfBuffer_)
+: Node("DwbController"),
+  nav2_tasks::FollowPathTaskServer(this),
+  tfBuffer_(get_clock()),
+  tfListener_(tfBuffer_)
 {
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);

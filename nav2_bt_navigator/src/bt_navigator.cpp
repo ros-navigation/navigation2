@@ -22,7 +22,8 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
+: Node("NavigateToPoseNode"),
+  nav2_tasks::NavigateToPoseTaskServer(this),
   robot_(this)
 {
 }

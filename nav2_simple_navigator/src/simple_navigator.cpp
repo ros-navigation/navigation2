@@ -26,7 +26,8 @@ namespace nav2_simple_navigator
 {
 
 SimpleNavigator::SimpleNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
+: Node("SimpleNavigator"),
+  nav2_tasks::NavigateToPoseTaskServer(this),
   robot_(this)
 {
   RCLCPP_INFO(get_logger(), "Initializing");
@@ -65,7 +66,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
     command->pose.position.x, command->pose.position.y);
 
   // Get the current pose from the robot
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose;
+  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
   if (!robot_.getCurrentPose(current_pose)) {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.

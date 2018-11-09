@@ -33,7 +33,7 @@
 namespace nav2_smart_planner
 {
 
-class SmartPlanner : public nav2_tasks::ComputePathToPoseTaskServer
+class SmartPlanner : public rclcpp::Node, public nav2_tasks::ComputePathToPoseTaskServer
 {
 public:
   SmartPlanner();

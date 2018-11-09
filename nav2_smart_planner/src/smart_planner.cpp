@@ -46,7 +46,8 @@ namespace nav2_smart_planner
 {
 
 SmartPlanner::SmartPlanner()
-: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode", false),
+: Node("SmartPlanner"),
+  nav2_tasks::ComputePathToPoseTaskServer(this, false),
   global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0),

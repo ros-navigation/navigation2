@@ -31,24 +31,24 @@ template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
 
 template<class CommandMsg, class ResultMsg>
-class TaskServer : public rclcpp::Node
+class TaskServer
 {
 public:
-  explicit TaskServer(const std::string & name, bool autoStart = true)
-  : Node(name),
+  explicit TaskServer(rclcpp::Node * node, bool autoStart = true)
+  : node_(node),
     workerThread_(nullptr),
     commandReceived_(false),
     eptr_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
-    commandSub_ = create_subscription<CommandMsg>(taskName + "_command",
+    commandSub_ = node_->create_subscription<CommandMsg>(taskName + "_command",
         std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
 
-    cancelSub_ = create_subscription<std_msgs::msg::Empty>(taskName + "_cancel",
+    cancelSub_ = node_->create_subscription<std_msgs::msg::Empty>(taskName + "_cancel",
         std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
 
-    resultPub_ = this->create_publisher<ResultMsg>(taskName + "_result");
-    statusPub_ = this->create_publisher<StatusMsg>(taskName + "_status");
+    resultPub_ = node_->create_publisher<ResultMsg>(taskName + "_result");
+    statusPub_ = node_->create_publisher<StatusMsg>(taskName + "_status");
 
     if (autoStart) {
       startWorkerThread();
@@ -79,6 +79,8 @@ public:
   }
 
 protected:
+  rclcpp::Node * node_;
+
   typename CommandMsg::SharedPtr commandMsg_;
   ResultMsg resultMsg_;
 
