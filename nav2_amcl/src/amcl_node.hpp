@@ -64,6 +64,11 @@ public:
   void savePoseToServer();
 
 private:
+  bool addNewScanner(int & laser_index,
+                     const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                     const std::string & laser_scan_frame_id,
+                     geometry_msgs::msg::PoseStamped & laser_pose);
+
   void updatePoseFromServer();
   void checkLaserReceived();
   void requestMap();
