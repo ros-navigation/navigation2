@@ -60,7 +60,6 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   stop_updates_(false),
   initialized_(true),
   stopped_(false),
-  robot_stopped_(false),
   map_update_thread_(NULL),
   last_publish_(0),
   plugin_loader_("nav2_costmap_2d", "nav2_costmap_2d::Layer"),
@@ -68,22 +67,20 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   publish_cycle_(1),
   footprint_padding_(0.0)
 {
-  tf2::toMsg(tf2::Transform::getIdentity(), old_pose_.pose);
-
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
-  // Set Parameters if not set 
+  // Set Parameters if not set
   set_parameter_if_not_set("transform_tolerance",0.3);
   set_parameter_if_not_set("update_frequency", 5.0);
-  set_parameter_if_not_set("publish_frequency", 1.0); 
+  set_parameter_if_not_set("publish_frequency", 1.0);
   set_parameter_if_not_set("width", 10);
   set_parameter_if_not_set("height", 10);
   set_parameter_if_not_set("resolution", 0.1);
   set_parameter_if_not_set("origin_x", 0.0);
   set_parameter_if_not_set("origin_y", 0.0);
-  set_parameter_if_not_set("footprint", "[]");  
+  set_parameter_if_not_set("footprint", "[]");
   set_parameter_if_not_set("footprint_padding", 0.01);
-  set_parameter_if_not_set("robot_radius", 0.1); 
+  set_parameter_if_not_set("robot_radius", 0.1);
 
   // get two frames
   parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
@@ -167,10 +164,6 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   stop_updates_ = false;
   initialized_ = true;
   stopped_ = false;
-
-  // Create a timer to check if the robot is moving
-  robot_stopped_ = false;
-  //timer_ = create_wall_timer(100ms, std::bind(&Costmap2DROS::movementCB, this));
 
   // Create Parameter Validator
   param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node_);
@@ -260,7 +253,7 @@ void Costmap2DROS::reconfigureCB()
   dynamic_param_client_->get_event_param("resolution", resolution);
   dynamic_param_client_->get_event_param("origin_x", origin_x);
   dynamic_param_client_->get_event_param("origin_y", origin_y); 
-  
+
   if (!layered_costmap_->isSizeLocked())
   {
     layered_costmap_->resizeMap((unsigned int)(map_width_meters / resolution),
@@ -273,7 +266,7 @@ void Costmap2DROS::reconfigureCB()
   dynamic_param_client_->get_event_param("footprint_padding", footprint_padding);
 
   if (footprint_padding_ != footprint_padding)
-  {  
+  {
     footprint_padding_ = footprint_padding;
     setUnpaddedRobotFootprint(unpadded_footprint_);
   }
@@ -329,32 +322,6 @@ void Costmap2DROS::setUnpaddedRobotFootprint(const std::vector<geometry_msgs::ms
   layered_costmap_->setFootprint(padded_footprint_);
 }
 
-void Costmap2DROS::movementCB()
-{
-
-  geometry_msgs::msg::PoseStamped new_pose;
-  if (!getRobotPose(new_pose)) {
-    RCLCPP_WARN(get_logger(),
-      "Could not get robot pose, cancelling reconfiguration");
-    robot_stopped_ = false;
-  }
-  // make sure that the robot is not moving
-  else {
-    old_pose_ = new_pose;
-
-    robot_stopped_ = (tf2::Vector3(old_pose_.pose.position.x, old_pose_.pose.position.y,
-          old_pose_.pose.position.z).distance(tf2::Vector3(new_pose.pose.position.x,
-            new_pose.pose.position.y, new_pose.pose.position.z)) < 1e-3) &&
-        (tf2::Quaternion(old_pose_.pose.orientation.x,
-          old_pose_.pose.orientation.y,
-          old_pose_.pose.orientation.z,
-          old_pose_.pose.orientation.w).angle(tf2::Quaternion(new_pose.pose.orientation.x,
-            new_pose.pose.orientation.y,
-            new_pose.pose.orientation.z,
-            new_pose.pose.orientation.w)) < 1e-3);
-  }
-}
-
 void Costmap2DROS::mapUpdateLoop(double frequency)
 {
   // the user might not want to run the loop every cycle
@@ -372,7 +339,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", t_diff);
-    if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {    
+    if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
@@ -389,7 +356,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     // make sure to sleep for the remainder of our cycle time
 
     // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
-/*     if (r.period() > tf2::durationFromSec(1 / frequency)) {    
+/*     if (r.period() > tf2::durationFromSec(1 / frequency)) {
       RCLCPP_WARN(get_logger(
           "Map update loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds",
           frequency,
