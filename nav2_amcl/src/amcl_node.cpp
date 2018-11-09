@@ -620,7 +620,94 @@ bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
   return update;
 }
 
+bool AmclNode::updateFilter(const int & laser_index,
+                            const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                            const pf_vector_t & pose)
+{
+  LaserData ldata;
+  //ldata.laser = lasers_[laser_index];
+  ldata.sensor = lasers_[laser_index];
+  ldata.range_count = laser_scan->ranges.size();
+  // To account for lasers that are mounted upside-down, we determine the
+  // min, max, and increment angles of the laser in the base frame.
+  //
+  // Construct min and max angles of laser, in the base_link frame.
+  // Here we set the roll pich yaw of the lasers.  We assume roll and pich are zero.
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, laser_scan->angle_min);
+  geometry_msgs::msg::QuaternionStamped min_q, inc_q;
+  min_q.header.stamp = laser_scan->header.stamp;
+  min_q.header.frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
+  tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
 
+  q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
+  inc_q.header = min_q.header;
+  tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
+  try
+  {
+    tf_->transform(min_q, min_q, base_frame_id_, TRANSFORM_TIMEOUT);
+    tf_->transform(inc_q, inc_q, base_frame_id_, TRANSFORM_TIMEOUT);
+  }
+  catch (tf2::TransformException &e)
+  {
+    RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
+                e.what());
+    return false;
+  }
+  double angle_min = tf2::getYaw(min_q.quaternion);
+  double angle_increment = tf2::getYaw(inc_q.quaternion) - angle_min;
+
+  // wrapping angle to [-pi .. pi]
+  angle_increment = fmod(angle_increment + 5 * M_PI, 2 * M_PI) - M_PI;
+
+  RCLCPP_DEBUG(
+      get_logger(), "Laser %d angles in base frame: min: %.3f inc: %.3f", laser_index, angle_min,
+      angle_increment);
+
+  // Apply range min/max thresholds, if the user supplied them
+  if (laser_max_range_ > 0.0)
+  {
+    ldata.range_max = std::min(laser_scan->range_max, static_cast<float>(laser_max_range_));
+  }
+  else
+  {
+    ldata.range_max = laser_scan->range_max;
+  }
+  double range_min;
+  if (laser_min_range_ > 0.0)
+  {
+    range_min = std::max(laser_scan->range_min, static_cast<float>(laser_min_range_));
+  }
+  else
+  {
+    range_min = laser_scan->range_min;
+  }
+
+  // The LaserData destructor will free this memory
+  ldata.ranges = new double[ldata.range_count][2];
+  //assert(ldata.ranges);
+  for (int i = 0; i < ldata.range_count; i++)
+  {
+    // amcl doesn't (yet) have a concept of min range.  So we'll map short
+    // readings to max range.
+    if (laser_scan->ranges[i] <= range_min)
+    {
+      ldata.ranges[i][0] = ldata.range_max;
+    }
+    else
+    {
+      ldata.ranges[i][0] = laser_scan->ranges[i];
+    }
+    // Compute bearing
+    ldata.ranges[i][1] = angle_min +
+                         (i * angle_increment);
+  }
+  // lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
+  lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<SensorData *>(&ldata));
+  lasers_update_[laser_index] = false;
+  pf_odom_pose_ = pose;
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void
@@ -657,7 +744,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     return;
   }
 
-
   pf_vector_t delta = pf_vector_zero();
   bool force_publication = false;
   if (!pf_init_) {
@@ -670,17 +756,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     force_publication = true;
     resample_count_ = 0;
-<<<<<<< HEAD
-  } else if (pf_init_ && lasers_update_[laser_index]) {  // If the robot has moved update the filter
-    // printf("pose\n");
-    // pf_vector_fprintf(pose, stdout, "%.3f");
-
-    motionModel_->odometryUpdate(pf_, pose, delta);
-
-    // Pose at last filter update
-    // this->pf_odom_pose = pose;
-  }
-=======
   } else {  // if (pf_init)
   
     // Set the laser update flags
@@ -691,13 +766,11 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         lasers_update_[i] = true;
       }
     }
-
     if (lasers_update_[laser_index])
     {
       OdomData odata;
       odata.pose = pose;
       odata.delta = delta;
->>>>>>> ca5e1f0... added shouldUpdateFilter and reorg ph_init
 
       //motionModel_->odometryUpdate(pf_, pose, delta);
       odom_->UpdateAction(pf_, reinterpret_cast<SensorData *>(&odata));
@@ -708,6 +781,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   bool resampled = false;
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
+<<<<<<< HEAD
     LaserData ldata;
     ldata.laser = lasers_[laser_index];
     ldata.range_count = laser_scan->ranges.size();
@@ -778,6 +852,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     lasers_update_[laser_index] = false;
 
     pf_odom_pose_ = pose;
+=======
+    updateFilter(laser_index, laser_scan, pose);
+>>>>>>> 34e63a7... added updateFilter method
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {

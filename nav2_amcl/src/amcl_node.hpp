@@ -69,6 +69,9 @@ private:
                      const std::string & laser_scan_frame_id,
                      geometry_msgs::msg::PoseStamped & laser_pose);
   bool shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta);
+  bool updateFilter(const int & laser_index,
+                              const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+                              const pf_vector_t & pose);
 
   void updatePoseFromServer();
   void checkLaserReceived();
