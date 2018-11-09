@@ -77,6 +77,7 @@ private:
   bool updateFilter(const int & laser_index,
                               const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                               const pf_vector_t & pose);
+  void publishParticleCloud(const pf_sample_set_t * set);
 
   void updatePoseFromServer();
   void checkLaserReceived();

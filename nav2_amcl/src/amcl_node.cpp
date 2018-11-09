@@ -712,6 +712,25 @@ bool AmclNode::updateFilter(const int & laser_index,
   return true;
 }
 
+void 
+AmclNode::publishParticleCloud(const pf_sample_set_t * set)
+{
+  geometry_msgs::msg::PoseArray cloud_msg;
+  cloud_msg.header.stamp = this->now();
+  cloud_msg.header.frame_id = global_frame_id_;
+  cloud_msg.poses.resize(set->sample_count);
+  for (int i = 0; i < set->sample_count; i++)
+  {
+    cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
+    cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
+    cloud_msg.poses[i].position.z = 0;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, set->samples[i].pose.v[2]);
+    tf2::impl::Converter<false, true>::convert(q, cloud_msg.poses[i].orientation);
+  }
+  particlecloud_pub_->publish(cloud_msg);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
@@ -869,23 +888,11 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     pf_sample_set_t * set = pf_->sets + pf_->current_set;
     RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
 
-    // Publish the resulting cloud
-    // TODO(?): set maximum rate for publishing
-    if (!m_force_update) {
-      geometry_msgs::msg::PoseArray cloud_msg;
-      cloud_msg.header.stamp = this->now();
-      cloud_msg.header.frame_id = global_frame_id_;
-      cloud_msg.poses.resize(set->sample_count);
-      for (int i = 0; i < set->sample_count; i++) {
-        cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
-        cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
-        cloud_msg.poses[i].position.z = 0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, set->samples[i].pose.v[2]);
-        tf2::impl::Converter<false, true>::convert(q, cloud_msg.poses[i].orientation);
-      }
-      particlecloud_pub_->publish(cloud_msg);
+    if (!m_force_update)
+    {
+      publishParticleCloud(set);
     }
+
   }
 
   if (resampled || force_publication) {
