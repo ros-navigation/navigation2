@@ -80,7 +80,8 @@ private:
   void calculateMaptoOdomTransform(const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                                    const std::vector<amcl_hyp_t> & hyps,
                                    const int & max_weight_hyp);                     
-
+  void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
+  
   void updatePoseFromServer();
   void checkLaserReceived();
   void requestMap();

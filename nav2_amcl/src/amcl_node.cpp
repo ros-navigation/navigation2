@@ -565,7 +565,6 @@ AmclNode::setMapCallback(
   handleInitialPoseMessage(req->initial_pose);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 bool AmclNode::addNewScanner(int & laser_index,
                              const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                              const std::string & laser_scan_frame_id,
@@ -837,8 +836,17 @@ AmclNode::calculateMaptoOdomTransform(const sensor_msgs::msg::LaserScan::ConstSh
   latest_tf_valid_ = true;
 }
 
+void 
+AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
+{
+  geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+  tmp_tf_stamped.header.frame_id = global_frame_id_;
+  tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
+  tmp_tf_stamped.child_frame_id = odom_frame_id_;
+  tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
+  this->tfb_->sendTransform(tmp_tf_stamped);
+}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
@@ -927,7 +935,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     }
 
   }
-
   if (resampled || force_publication) {
     
     amcl_hyp_t max_weight_hyps;
@@ -935,105 +942,30 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     int max_weight_hyp = -1;
     if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) //this is not good we need to know > 0 from here
     {
-<<<<<<< HEAD
-      geometry_msgs::msg::PoseWithCovarianceStamped p;
-      // Fill in the header
-      p.header.frame_id = global_frame_id_;
-      p.header.stamp = laser_scan->header.stamp;
-      // Copy in the pose
-      p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-      p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-      tf2::Quaternion q;
-      q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
-      tf2::impl::Converter<false, true>::convert(q, p.pose.pose.orientation);
-      // Copy in the covariance, converting from 3-D to 6-D
-      pf_sample_set_t * set = pf_->sets + pf_->current_set;
-      for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 2; j++) {
-          // Report the overall filter covariance, rather than the
-          // covariance for the highest-weight cluster
-          // p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
-          p.pose.covariance[6 * i + j] = set->cov.m[i][j];
-        }
-      }
-      // Report the overall filter covariance, rather than the
-      // covariance for the highest-weight cluster
-      // p.covariance[6*5+5] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
-      p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
-
-      /*
-         printf("cov:\n");
-         for(int i=0; i<6; i++)
-         {
-         for(int j=0; j<6; j++)
-         printf("%6.3f ", p.covariance[6*i+j]);
-         puts("");
-         }
-       */
-
-      RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
-      pose_pub_->publish(p);
-      last_published_pose = p;
-
-      RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
-        hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-      // subtracting base to odom from map to base and send map to odom instead
-      geometry_msgs::msg::PoseStamped odom_to_map;
-      try {
-        tf2::Quaternion q;
-        q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
-        tf2::Transform tmp_tf(q, tf2::Vector3(hyps[max_weight_hyp].pf_pose_mean.v[0],
-          hyps[max_weight_hyp].pf_pose_mean.v[1],
-          0.0));
-
-        geometry_msgs::msg::PoseStamped tmp_tf_stamped;
-        tmp_tf_stamped.header.frame_id = base_frame_id_;
-        tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
-        tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
-
-        this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_, TRANSFORM_TIMEOUT);
-      } catch (tf2::TransformException) {
-        RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
-        return;
-      }
-=======
       publishAmclPose(laser_scan, hyps, max_weight_hyp);
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
-    
->>>>>>> a3f8234... added publishAmclPose and calculateMaptoOdomTransform
 
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
         tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
-        geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-        tmp_tf_stamped.header.frame_id = global_frame_id_;
-        tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-        tmp_tf_stamped.child_frame_id = odom_frame_id_;
-        tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-        this->tfb_->sendTransform(tmp_tf_stamped);
+        sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
-  } else {
+    } else {
       RCLCPP_ERROR(get_logger(), "No pose!");
     }
   } else if (latest_tf_valid_) {
-    if (tf_broadcast_ == true) {
+      if (tf_broadcast_ == true)
+      {
       // Nothing changed, so we'll just republish the last transform, to keep
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-        transform_tolerance_;
-      geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-      tmp_tf_stamped.header.frame_id = global_frame_id_;
-      tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-      tmp_tf_stamped.child_frame_id = odom_frame_id_;
-      tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-      this->tfb_->sendTransform(tmp_tf_stamped);
-    }
+                                            transform_tolerance_;
+      sendMapToOdomTransform(transform_expiration);
+      }
+    
     // Is it time to save our last pose to the param server
     tf2::TimePoint now = tf2_ros::fromMsg(this->now());
     if ((tf2::durationToSec(save_pose_period) > 0.0) &&
