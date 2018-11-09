@@ -28,8 +28,10 @@
 *.out
 *.app
 
-#colcon output
+# Colcon output
 build
 log
 install
 
+# Visual Studio Code files
+.vscode
