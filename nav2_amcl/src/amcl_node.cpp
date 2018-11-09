@@ -61,7 +61,7 @@ using nav2_util::Laser;
 using nav2_util::LaserData;
 
 using namespace std::chrono_literals;
-static const auto TRANSFORM_TIMEOUT = 1s;
+static const auto TRANSFORM_TIMEOUT = 0ns;
 
 static const char scan_topic_[] = "scan";
 
