@@ -43,7 +43,6 @@
 #include <geometry_msgs/msg/polygon_stamped.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/point32.hpp>
-#include <xmlrpcpp/XmlRpcValue.h>
 
 namespace nav2_costmap_2d
 {
@@ -125,27 +124,12 @@ bool makeFootprintFromString(const std::string & footprint_string,
  * @brief Read the ros-params "footprint" and/or "robot_radius" from
  * the given NodeHandle using searchParam() to go up the tree.
  */
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr nh);
-
-/**
- * @brief Create the footprint from the given XmlRpcValue.
- *
- * @param footprint_xmlrpc should be an array of arrays, where the
- * top-level array should have 3 or more elements, and the
- * sub-arrays should all have exactly 2 elements (x and y
- * coordinates).
- *
- * @param full_param_name this is the full name of the rosparam from
- * which the footprint_xmlrpc value came.  It is used only for
- * reporting errors. */
-std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
-    XmlRpc::XmlRpcValue & footprint_xmlrpc,
-    const std::string & full_param_name);
+std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr node);
 
 /** @brief Write the current unpadded_footprint_ to the "footprint"
  * parameter of the given NodeHandle so that dynamic_reconfigure
  * will see the new value. */
-void writeFootprintToParam(rclcpp::Node::SharedPtr nh,
+void writeFootprintToParam(rclcpp::Node::SharedPtr node,
     const std::vector<geometry_msgs::msg::Point> & footprint);
 
 }  // end namespace nav2_costmap_2d

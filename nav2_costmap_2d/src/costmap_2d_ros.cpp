@@ -80,10 +80,12 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   set_parameter_if_not_set("origin_y", 0.0);
   set_parameter_if_not_set("footprint", "[]");
   set_parameter_if_not_set("footprint_padding", 0.01);
-  set_parameter_if_not_set("robot_radius", 0.1);
+  set_parameter_if_not_set("robot_radius", 0.46);
 
-  // get two frames
-  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
+  std::vector<std::string> plugin_names;
+  std::vector<std::string> plugin_types; 
+  get_parameter_or_set("plugin_names", plugin_names, {"static_layer","inflation_layer"});
+  get_parameter_or_set("plugin_types", plugin_types, {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"});
 
   get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -115,31 +117,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
-  // add and initialize layer plugins
-  if (!parameters_client_->has_parameter("plugin_names") ||
-    !parameters_client_->has_parameter("plugin_types") ) {
-  setPluginParams(node_);
-  }
-
-  // if (parameters_client_->has_parameter("plugin_names") &&
-  //   parameters_client_->has_parameter("plugin_types")) {
-  //   auto param = get_parameters({"plugin_names", "plugin_types"});
-  //   for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
-  //     std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
-  //     std::string type = (param[1].get_value<std::vector<std::string>>())[i];
-  //     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
-  //     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
-  //     layered_costmap_->addPlugin(plugin);
-  //     plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
-  //   }
-  // }
-
-  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
-  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
-  for (int i = 0; i < 2; i++) {
-    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
-    layered_costmap_->addPlugin(plugin);
-    plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
+  if (plugin_names.size() == plugin_types.size()) {
+    for (int i = 0; i < plugin_names.size(); ++i) {
+      RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names[i].c_str());
+      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
+      layered_costmap_->addPlugin(plugin);
+      plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
+    }
+  } else {
+    std::string plugin_error = "Plugin Name and Plugin Type sizes do not match";
+    RCLCPP_ERROR(get_logger(), plugin_error);
+    throw std::runtime_error(plugin_error);
   }
 
   // subscribe to the footprint topic
@@ -184,7 +172,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
   dynamic_param_client_->add_parameters(
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
-    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
+    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius", "footprint"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
 }
 
@@ -208,16 +196,6 @@ Costmap2DROS::~Costmap2DROS()
   delete layered_costmap_;
   delete param_validator_;
   delete dynamic_param_client_;
-}
-
-void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr node)
-{
-  std::vector<rclcpp::Parameter> param;
-
-  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
-  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
-  param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
-  node->set_parameters(param);
 }
 
 void Costmap2DROS::reconfigureCB()
