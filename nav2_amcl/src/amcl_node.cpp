@@ -608,6 +608,21 @@ bool AmclNode::addNewScanner(int & laser_index,
   return true;
 }
 
+bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
+{
+  delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
+  delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
+  delta.v[2] = angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+  //delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+
+  // See if we should update the filter
+  bool update = fabs(delta.v[0]) > d_thresh_ ||
+                fabs(delta.v[1]) > d_thresh_ ||
+                fabs(delta.v[2]) > a_thresh_;
+  update = update || m_force_update;
+  return update;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -648,45 +663,18 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
 
   pf_vector_t delta = pf_vector_zero();
-
-  if (pf_init_) {
-    // Compute change in pose
-    // delta = pf_vector_coord_sub(pose, pf_odom_pose_);
-    delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
-    delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-    delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
-
-    // See if we should update the filter
-    bool update = fabs(delta.v[0]) > d_thresh_ ||
-      fabs(delta.v[1]) > d_thresh_ ||
-      fabs(delta.v[2]) > a_thresh_;
-    update = update || m_force_update;
-    m_force_update = false;
-
-    // Set the laser update flags
-    if (update) {
-      for (unsigned int i = 0; i < lasers_update_.size(); i++) {
-        lasers_update_[i] = true;
-      }
-    }
-  }
-
   bool force_publication = false;
   if (!pf_init_) {
-    // Pose at last filter update
     pf_odom_pose_ = pose;
-
-    // Filter is now initialized
     pf_init_ = true;
 
-    // Should update sensor data
     for (unsigned int i = 0; i < lasers_update_.size(); i++) {
       lasers_update_[i] = true;
     }
 
     force_publication = true;
-
     resample_count_ = 0;
+<<<<<<< HEAD
   } else if (pf_init_ && lasers_update_[laser_index]) {  // If the robot has moved update the filter
     // printf("pose\n");
     // pf_vector_fprintf(pose, stdout, "%.3f");
@@ -696,7 +684,31 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // Pose at last filter update
     // this->pf_odom_pose = pose;
   }
+=======
+  } else {  // if (pf_init)
+  
+    // Set the laser update flags
+    if (shouldUpdateFilter(pose, delta))
+    {
+      for (unsigned int i = 0; i < lasers_update_.size(); i++)
+      {
+        lasers_update_[i] = true;
+      }
+    }
 
+    if (lasers_update_[laser_index])
+    {
+      OdomData odata;
+      odata.pose = pose;
+      odata.delta = delta;
+>>>>>>> ca5e1f0... added shouldUpdateFilter and reorg ph_init
+
+      //motionModel_->odometryUpdate(pf_, pose, delta);
+      odom_->UpdateAction(pf_, reinterpret_cast<SensorData *>(&odata));
+    }
+    m_force_update = false;
+  }
+   
   bool resampled = false;
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
