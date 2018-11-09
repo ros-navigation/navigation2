@@ -46,6 +46,11 @@
 #include "nav2_util/duration_conversions.hpp"
 
 using namespace std;
+using namespace std::chrono_literals;
+using std::chrono::steady_clock;
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::nanoseconds;
 
 namespace nav2_costmap_2d
 {
@@ -61,10 +66,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   initialized_(true),
   stopped_(false),
   map_update_thread_(NULL),
-  last_publish_(0),
   plugin_loader_("nav2_costmap_2d", "nav2_costmap_2d::Layer"),
   publisher_(NULL),
-  publish_cycle_(1),
+  publish_cycle_(1s),
   footprint_padding_(0.0)
 {
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
@@ -113,7 +117,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   bool rolling_window, track_unknown_space, always_send_full_costmap;
   get_parameter_or<bool>("rolling_window", rolling_window, false);
   get_parameter_or<bool>("track_unknown_space", track_unknown_space, false);
-  get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, true);
+  get_parameter_or<bool>("always_send_full_costmap", always_send_full_costmap, false);
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
@@ -218,9 +222,10 @@ void Costmap2DROS::reconfigureCB()
   dynamic_param_client_->get_event_param("publish_frequency", map_publish_frequency);
 
   if (map_publish_frequency > 0)
-    publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency);
+    publish_cycle_ = std::chrono::duration_cast<nanoseconds>(
+      duration<double>(1 / map_publish_frequency));
   else
-    publish_cycle_ = nav2_util::durationFromSeconds(-1);
+    publish_cycle_ = -1ns;
 
   // find size parameters
   double resolution, origin_x, origin_y;
@@ -308,24 +313,19 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
   }
   rclcpp::Rate r(frequency);
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    struct timeval start, end;
-    double start_t, end_t, t_diff;
-    gettimeofday(&start, NULL);
+    auto start = high_resolution_clock::now();
     updateMap();
-    gettimeofday(&end, NULL);
-    start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-    t_diff = end_t - start_t;
-    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", t_diff);
-    if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {
+    auto end = high_resolution_clock::now();
+    duration<double> diff = end - start;
+    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", diff.count());
+    if (publish_cycle_ > 0ns && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = rclcpp::Clock(RCL_SYSTEM_TIME).now();
+      auto now = steady_clock::now();
 
-      if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
-      //if (last_publish_ + publish_cycle_ < now) {
+      if (last_publish_ + publish_cycle_ < now) {
         publisher_->publishCostmap();
         last_publish_ = now;
       }

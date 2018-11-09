@@ -46,6 +46,7 @@
 #include <geometry_msgs/msg/polygon_stamped.h>
 #include <pluginlib/class_loader.hpp>
 #include <tf2/transform_datatypes.h>
+#include <chrono>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -243,8 +244,8 @@ private:
   bool stop_updates_, initialized_, stopped_;
   std::thread * map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Time last_publish_;
-  rclcpp::Duration publish_cycle_;
+  std::chrono::time_point<std::chrono::steady_clock> last_publish_;
+  std::chrono::nanoseconds publish_cycle_;
   pluginlib::ClassLoader<Layer> plugin_loader_;
   Costmap2DPublisher * publisher_;
 
