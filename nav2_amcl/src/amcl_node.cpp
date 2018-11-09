@@ -568,7 +568,6 @@ AmclNode::setMapCallback(
   handleInitialPoseMessage(req->initial_pose);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 bool AmclNode::addNewScanner(int & laser_index,
                              const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                              const std::string & laser_scan_frame_id,
@@ -840,8 +839,17 @@ AmclNode::calculateMaptoOdomTransform(const sensor_msgs::msg::LaserScan::ConstSh
   latest_tf_valid_ = true;
 }
 
+void 
+AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
+{
+  geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+  tmp_tf_stamped.header.frame_id = global_frame_id_;
+  tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
+  tmp_tf_stamped.child_frame_id = odom_frame_id_;
+  tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
+  this->tfb_->sendTransform(tmp_tf_stamped);
+}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
@@ -931,7 +939,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     }
 
   }
-
   if (resampled || force_publication) {
     
     amcl_hyp_t max_weight_hyps;
@@ -941,37 +948,28 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     {
       publishAmclPose(laser_scan, hyps, max_weight_hyp);
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
-    
 
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
         tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
-        geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-        tmp_tf_stamped.header.frame_id = global_frame_id_;
-        tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-        tmp_tf_stamped.child_frame_id = odom_frame_id_;
-        tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-        this->tfb_->sendTransform(tmp_tf_stamped);
+        sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
-  } else {
+    } else {
       RCLCPP_ERROR(get_logger(), "No pose!");
     }
   } else if (latest_tf_valid_) {
-    if (tf_broadcast_ == true) {
+      if (tf_broadcast_ == true)
+      {
       // Nothing changed, so we'll just republish the last transform, to keep
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-        transform_tolerance_;
-      geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-      tmp_tf_stamped.header.frame_id = global_frame_id_;
-      tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-      tmp_tf_stamped.child_frame_id = odom_frame_id_;
-      tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-      this->tfb_->sendTransform(tmp_tf_stamped);
-    }
+                                            transform_tolerance_;
+      sendMapToOdomTransform(transform_expiration);
+      }
+    
     // Is it time to save our last pose to the param server
     tf2::TimePoint now = tf2_ros::fromMsg(this->now());
     if ((tf2::durationToSec(save_pose_period) > 0.0) &&
