@@ -108,14 +108,14 @@ protected:
   {
     node_ = std::make_shared<rclcpp::Node>("TestNode");
 
-    // The task server is not itself a node, so needs a node to use
+    // The task client is not itself a node, so needs a node to use
     client_ = std::make_shared<TestTaskClient>(node_);
 
-    // The task server is a node (should change to be like the client)
+    // Same for the task server
     server_ = std::make_shared<MyTestTaskServer>(node_.get());
 
-    // Launch a thread to spin both nodes
-    spin_thread_ = new std::thread(&TaskClientServerTest::spin_the_nodes, this);
+    // Launch a thread to spin the node
+    spin_thread_ = new std::thread(&TaskClientServerTest::spin, this);
 
     // After creating the nodes, there is a lot of multicast traffic that can
     // cause nodes to miss messages. Let's sleep for a bit to let the nodes settle
@@ -130,12 +130,9 @@ protected:
     delete spin_thread_;
   }
 
-  void spin_the_nodes()
+  void spin()
   {
-    rclcpp::executors::SingleThreadedExecutor exec;
-    exec.add_node(node_);
-    //exec.add_node(server_);
-    exec.spin();
+    rclcpp::spin(node_);
   }
 
   void testSuccess();

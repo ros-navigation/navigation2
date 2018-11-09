@@ -39,7 +39,7 @@ WorldModel::WorldModel(const string & name)
   layered_costmap_->updateMap(0, 0, 0);
 
   // Create a service that will use the callback function to handle requests.
-  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>(name + "_GetCostmap",
+  costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       std::bind(&WorldModel::costmap_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
