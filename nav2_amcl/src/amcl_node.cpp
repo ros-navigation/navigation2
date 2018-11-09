@@ -568,13 +568,136 @@ AmclNode::setMapCallback(
   handleInitialPoseMessage(req->initial_pose);
 }
 
+void
+AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
+{
+  last_laser_received_ts_ = now();
+  if (map_ == NULL) {
+    return;
+  }
+  
+  std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
+
+  std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
+  int laser_index = -1;
+  geometry_msgs::msg::PoseStamped laser_pose;
+
+  // Do we have the base->base_laser Tx yet?
+  if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
+    if (!addNewScanner(laser_index, laser_scan, laser_scan_frame_id, laser_pose))
+     {
+      return; //could not find transform
+     }
+  } else {
+    // we have the laser pose, retrieve laser index
+    laser_index = frame_to_laser_[laser_scan->header.frame_id];
+  }
+
+  // Where was the robot when this scan was taken?
+  pf_vector_t pose;
+  if (!getOdomPose(latest_odom_pose_, pose.v[0], pose.v[1], pose.v[2],
+    laser_scan->header.stamp, base_frame_id_))
+  {
+    RCLCPP_ERROR(get_logger(), "Couldn't determine robot's pose associated with laser scan");
+    return;
+  }
+
+  pf_vector_t delta = pf_vector_zero();
+  bool force_publication = false;
+  if (!pf_init_) {
+    pf_odom_pose_ = pose;
+    pf_init_ = true;
+
+    for (unsigned int i = 0; i < lasers_update_.size(); i++) {
+      lasers_update_[i] = true;
+    }
+
+    force_publication = true;
+    resample_count_ = 0;
+  } else {
+    // Set the laser update flags
+    if (shouldUpdateFilter(pose, delta))
+    {
+      for (unsigned int i = 0; i < lasers_update_.size(); i++)
+      {
+        lasers_update_[i] = true;
+      }
+    }
+    if (lasers_update_[laser_index])
+    {
+      motionModel_->odometryUpdate(pf_, pose, delta);
+    }
+    m_force_update = false;
+  }
+   
+  bool resampled = false;
+  // If the robot has moved, update the filter
+  if (lasers_update_[laser_index]) {
+    updateFilter(laser_index, laser_scan, pose);
+
+    // Resample the particles
+    if (!(++resample_count_ % resample_interval_)) {
+      pf_update_resample(pf_);
+      resampled = true;
+    }
+
+    pf_sample_set_t * set = pf_->sets + pf_->current_set;
+    RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
+
+    if (!m_force_update)
+    {
+      publishParticleCloud(set);
+    }
+
+  }
+  if (resampled || force_publication) {
+    
+    amcl_hyp_t max_weight_hyps;
+    std::vector<amcl_hyp_t> hyps;
+    int max_weight_hyp = -1;
+    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp))
+    {
+      publishAmclPose(laser_scan, hyps, max_weight_hyp);
+      calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
+
+      if (tf_broadcast_ == true) {
+        // We want to send a transform that is good up until a
+        // tolerance time so that odom can be used
+        auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
+        tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
+        sendMapToOdomTransform(transform_expiration);
+        sent_first_transform_ = true;
+      }
+    } else {
+      RCLCPP_ERROR(get_logger(), "No pose!");
+    }
+  } else if (latest_tf_valid_) {
+      if (tf_broadcast_ == true)
+      {
+      // Nothing changed, so we'll just republish the last transform, to keep
+      // everybody happy.
+      tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
+                                            transform_tolerance_;
+      sendMapToOdomTransform(transform_expiration);
+      }
+    
+    // Is it time to save our last pose to the param server
+    tf2::TimePoint now = tf2_ros::fromMsg(this->now());
+    if ((tf2::durationToSec(save_pose_period) > 0.0) &&
+      (now - save_pose_last_time) >= save_pose_period)
+    {
+      this->savePoseToServer();
+      save_pose_last_time = now;
+    }
+  }
+}
+
 bool AmclNode::addNewScanner(int & laser_index,
                              const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
                              const std::string & laser_scan_frame_id,
                              geometry_msgs::msg::PoseStamped & laser_pose)
 {
-  //lasers_.push_back(createLaserObject());
-  lasers_.push_back(new Laser(*laser_));
+  lasers_.push_back(createLaserObject());
   lasers_update_.push_back(true);
   laser_index = frame_to_laser_.size();
 
@@ -582,8 +705,6 @@ bool AmclNode::addNewScanner(int & laser_index,
   ident.header.frame_id = laser_scan_frame_id;
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
-
-  // geometry_msgs::msg::PoseStamped laser_pose;
   try
   {
     this->tf_->transform(ident, laser_pose, base_frame_id_, TRANSFORM_TIMEOUT);
@@ -611,8 +732,7 @@ bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
 {
   delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
   delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-  delta.v[2] = angle_diff(pose.v[2], pf_odom_pose_.v[2]);
-  //delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+  delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
 
   // See if we should update the filter
   bool update = fabs(delta.v[0]) > d_thresh_ ||
@@ -627,8 +747,7 @@ bool AmclNode::updateFilter(const int & laser_index,
                             const pf_vector_t & pose)
 {
   LaserData ldata;
-  //ldata.laser = lasers_[laser_index];
-  ldata.sensor = lasers_[laser_index];
+  ldata.laser = lasers_[laser_index];
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
   // min, max, and increment angles of the laser in the base frame.
@@ -704,8 +823,7 @@ bool AmclNode::updateFilter(const int & laser_index,
     ldata.ranges[i][1] = angle_min +
                          (i * angle_increment);
   }
-  // lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
-  lasers_[laser_index]->UpdateSensor(pf_, reinterpret_cast<SensorData *>(&ldata));
+  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
   lasers_update_[laser_index] = false;
   pf_odom_pose_ = pose;
   return true;
