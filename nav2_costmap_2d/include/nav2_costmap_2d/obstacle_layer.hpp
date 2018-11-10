@@ -52,7 +52,6 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/point_cloud_conversion.h>
 
 namespace nav2_costmap_2d
 {
@@ -83,7 +82,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanCallback(const sensor_msgs::msg::LaserScan::ConstPtr & message,
+  void laserScanCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr & message,
       const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
@@ -91,7 +90,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanValidInfCallback(const sensor_msgs::msg::LaserScan::ConstPtr & message,
+  void laserScanValidInfCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr & message,
       const std::shared_ptr<ObservationBuffer> & buffer);
 
   /**
@@ -99,7 +98,7 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void pointCloud2Callback(const sensor_msgs::msg::PointCloud2::ConstPtr & message,
+  void pointCloud2Callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr & message,
       const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
