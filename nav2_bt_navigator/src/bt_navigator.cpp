@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+#include <memory>
+#include <set>
 #include <sstream>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
+#include "Blackboard/blackboard_local.h"
 
 using nav2_tasks::TaskStatus;
 
@@ -34,49 +40,45 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
     command->pose.position.x, command->pose.position.y);
 
   // Get the current pose from the robot
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current;
+  auto current = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
   if (!robot_.getCurrentPose(current)) {
     RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
 
-  // Get a reference to the command pose for convenience
-  geometry_msgs::msg::Pose & goal = command->pose;
+  // Create the blackboard that will be shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
-  // Compose the args for the ComputePathToPose action
-  std::stringstream args;
-  args << "start_position=\"" <<
-    current->pose.pose.position.x << ";" << current->pose.pose.position.y << ";" <<
-    current->pose.pose.position.z << "\" " <<
-    "start_orientation=\"" <<
-    current->pose.pose.orientation.x << ";" << current->pose.pose.orientation.y << ";" <<
-    current->pose.pose.orientation.z << ";" << current->pose.pose.orientation.w << "\"" <<
-    "goal_position=\"" <<
-    goal.position.x << ";" << goal.position.y << ";" << goal.position.z << "\" " <<
-    "goal_orientation=\"" <<
-    goal.orientation.x << ";" << goal.orientation.y << ";" <<
-    goal.orientation.z << ";" << goal.orientation.w << "\"";
+  // Put together the PathEndPoints message for the ComputePathToPose
+  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  endpoints->start = current->pose.pose;
+  endpoints->goal = command->pose;
+  endpoints->tolerance = 0.3;
 
-  // Put it all together, trying to make the XML somewhat readable here
-  std::stringstream command_ss;
-  command_ss <<
+  // The path returned from ComputePath and sent to FollowPath
+  auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
+
+  // Set the shared data (commands/results)
+  blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
+  blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);
+
+  std::string xml_text =
     R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <ComputePathToPose )" << args.str() <<
-    R"(/>
-      <FollowPath />
+      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+      <FollowPath path="${path}"/>
     </SequenceStar>
   </BehaviorTree>
 </root>)";
 
-  RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", command_ss.str().c_str());
+  RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", xml_text.c_str());
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(command_ss.str(), std::bind(&BtNavigator::cancelRequested, this));
+  TaskStatus result = bt.run(blackboard, xml_text, std::bind(&BtNavigator::cancelRequested, this));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;
