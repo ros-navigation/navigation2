@@ -41,6 +41,8 @@ if(BUILD_TESTING)
 
   add_subdirectory(src/planning)
   add_subdirectory(src/localization)
+  add_subdirectory(src/system)
+
 endif()
 
 ament_package()
