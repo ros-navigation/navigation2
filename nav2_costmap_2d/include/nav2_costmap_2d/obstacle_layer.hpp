@@ -52,6 +52,7 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -106,6 +107,8 @@ public:
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
+  virtual void setupDynamicReconfigure(rclcpp::Node::SharedPtr);
+
   /**
    * @brief  Get the observations used to mark space
    * @param marking_observations A reference to a vector that will be populated with the observations
@@ -162,6 +165,11 @@ protected:
   bool rolling_window_;
 
   int combination_method_;
+
+  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+
+private:
+  void reconfigureCB();
 };
 
 }  // namespace nav2_costmap_2d
