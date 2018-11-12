@@ -25,7 +25,7 @@ class CostmapServiceClient : public ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
   CostmapServiceClient()
-  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap")
+  : ServiceClient<nav2_msgs::srv::GetCostmap>("WorldModel_GetCostmap")
   {
   }
 

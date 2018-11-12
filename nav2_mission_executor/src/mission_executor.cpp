@@ -44,9 +44,12 @@ MissionExecutor::executeMission(const nav2_tasks::ExecuteMissionCommand::SharedP
 {
   RCLCPP_INFO(get_logger(), "Executing mission plan: %s", command->mission_plan.c_str());
 
+  // Create the blackboard that will be shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
+
   // Create and run the behavior tree for this mission
   ExecuteMissionBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(command->mission_plan,
+  TaskStatus result = bt.run(blackboard, command->mission_plan,
       std::bind(&nav2_tasks::ExecuteMissionTaskServer::cancelRequested,
       task_server_.get()));
 

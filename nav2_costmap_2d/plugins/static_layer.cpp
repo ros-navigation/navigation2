@@ -121,17 +121,17 @@ void StaticLayer::onInitialize()
   }
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
-  dynamic_param_client_->add_parameters("enabled_static_layer");
-  dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this, std::placeholders::_1));
+  dynamic_param_client_->add_parameters({"enabled_static_layer"});
+  dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
 }
 
-void StaticLayer::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+void StaticLayer::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "StaticLayer:: Event Callback");
 
   bool enabled = true;
-  dynamic_param_client_->get_event_param_or(event,"enabled_static_layer", enabled, true); 
+  dynamic_param_client_->get_event_param_or("enabled_static_layer", enabled, true); 
 
   if (enabled != enabled_)
   {

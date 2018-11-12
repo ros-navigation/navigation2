@@ -102,7 +102,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
   void initAmclParams();
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void reconfigureCB();
 
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;

@@ -68,7 +68,7 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   endpoints->start = current_pose->pose.pose;
   endpoints->goal = command->pose;
-  endpoints->tolerance = 2.0;
+  endpoints->tolerance = 2.0;  // TODO(mjeronimo): this will come in the command message
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
   RCLCPP_DEBUG(get_logger(), "goal.position.x: %f", endpoints->goal.position.x);

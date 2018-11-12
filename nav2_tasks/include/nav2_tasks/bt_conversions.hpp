@@ -19,11 +19,13 @@
 #include "behavior_tree_core/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_end_points.hpp"
 
 namespace BT
 {
 
-// The next two conversion functions are required to be defined by the BT library,
+// The following four conversion functions are required to be defined by the BT library,
 // but are not actually called. TODO(mjeronimo): See if we can avoid these.
 
 template<>
@@ -37,6 +39,20 @@ inline std::chrono::milliseconds convertFromString(const std::string & /*key*/)
 {
   return std::chrono::milliseconds(0);
 }
+
+template<>
+inline nav2_msgs::msg::Path::SharedPtr convertFromString(const std::string & /*key*/)
+{
+  return nullptr;
+}
+
+template<>
+inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const std::string & /*key*/)
+{
+  return nullptr;
+}
+
+// These are needed to be able to set parameters for these types in the BT XML
 
 template<>
 inline geometry_msgs::msg::Point convertFromString(const std::string & key)

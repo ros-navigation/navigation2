@@ -250,32 +250,29 @@ private:
    *
    * If the values of footprint and robot_radius are the same in
    * new_config and old_config, nothing is changed. */
-  void readFootprintFromConfig(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void readFootprintFromConfig();
 
   void resetOldParameters(rclcpp::Node::SharedPtr nh);
 
   void setPluginParams(rclcpp::Node::SharedPtr nh);
 
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
-
-  void movementCB();
+  void reconfigureCB();
 
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_;
-  bool stop_updates_, initialized_, stopped_, robot_stopped_;
+  bool stop_updates_, initialized_, stopped_;
   std::thread * map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Time last_publish_;
   rclcpp::Duration publish_cycle_;
   pluginlib::ClassLoader<Layer> plugin_loader_;
-  geometry_msgs::msg::PoseStamped old_pose_;
   Costmap2DPublisher * publisher_;
 
   nav2_dynamic_params::DynamicParamsValidator * param_validator_;
   nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
 
   std::recursive_mutex configuration_mutex_;
-  
+
   rclcpp::Node::SharedPtr node_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;

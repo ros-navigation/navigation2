@@ -186,7 +186,7 @@ private:
   double ** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void reconfigureCB();
   
   nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
