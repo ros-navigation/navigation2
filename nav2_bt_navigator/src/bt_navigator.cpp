@@ -14,7 +14,6 @@
 
 #include <string>
 #include <memory>
-#include <set>
 #include <sstream>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
@@ -54,14 +53,14 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   endpoints->start = current->pose.pose;
   endpoints->goal = command->pose;
-  endpoints->tolerance = 0.3;
+  endpoints->tolerance = 2.0;  // TODO(mjeronimo): this will come in the command message
 
   // The path returned from ComputePath and sent to FollowPath
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   // Set the shared data (commands/results)
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
-  blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);
+  blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
   std::string xml_text =
     R"(

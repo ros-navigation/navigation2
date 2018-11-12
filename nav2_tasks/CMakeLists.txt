@@ -14,7 +14,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behavior_tree_core REQUIRED)
@@ -23,7 +22,9 @@ include_directories(
   include
 )
 
-add_library(nav2_tasks STATIC
+set(library_name ${PROJECT_NAME})
+
+add_library(${library_name}
   src/behavior_tree_engine.cpp
 )
 
@@ -34,11 +35,11 @@ set(dependencies
   behavior_tree_core
 )
 
-ament_target_dependencies(nav2_tasks
+ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -58,6 +59,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_dependencies(rosidl_default_runtime)
+ament_export_libraries(${library_name})
 
 ament_package()

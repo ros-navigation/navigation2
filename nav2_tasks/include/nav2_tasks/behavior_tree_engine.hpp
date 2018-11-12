@@ -20,6 +20,7 @@
 #include "behavior_tree_core/behavior_tree.h"
 #include "behavior_tree_core/bt_factory.h"
 #include "behavior_tree_core/xml_parsing.h"
+#include "Blackboard/blackboard_local.h"
 #include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
@@ -32,13 +33,12 @@ public:
   BehaviorTreeEngine() = delete;
 
   TaskStatus run(
+    BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
 
 protected:
-  virtual void registerCustomActions() {}
-
   // The ROS node to use for any task clients
   rclcpp::Node::SharedPtr node_;
 

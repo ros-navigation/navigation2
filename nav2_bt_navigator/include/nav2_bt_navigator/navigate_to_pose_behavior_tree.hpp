@@ -15,35 +15,17 @@
 #ifndef NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
 #define NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
 
-#include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
-#include "behavior_tree_core/behavior_tree.h"
-#include "behavior_tree_core/bt_factory.h"
-#include "behavior_tree_core/xml_parsing.h"
-#include "Blackboard/blackboard_local.h"
+#include "nav2_tasks/behavior_tree_engine.hpp"
 
 namespace nav2_bt_navigator
 {
 
-class NavigateToPoseBehaviorTree
+class NavigateToPoseBehaviorTree : public nav2_tasks::BehaviorTreeEngine
 {
 public:
   explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
   NavigateToPoseBehaviorTree() = delete;
-
-  nav2_tasks::TaskStatus run(
-    BT::Blackboard::Ptr & blackboard,
-    const std::string & behavior_tree_xml,
-    std::function<bool()> cancelRequested,
-    std::chrono::milliseconds tree_tick_timeout = std::chrono::milliseconds(100));
-
-private:
-  // The ROS node to use for any task clients
-  rclcpp::Node::SharedPtr node_;
-
-  // A factory that will be used to dynamically construct the behavior tree
-  BT::BehaviorTreeFactory factory_;
 };
 
 }  // namespace nav2_bt_navigator
