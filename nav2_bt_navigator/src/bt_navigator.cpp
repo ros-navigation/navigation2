@@ -31,11 +31,11 @@ BtNavigator::BtNavigator()
 
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
   task_server_->setExecuteCallback(
-    std::bind(&BtNavigator::execute, this, std::placeholders::_1));
+    std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 }
 
 TaskStatus
-BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
+BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Start navigating to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);

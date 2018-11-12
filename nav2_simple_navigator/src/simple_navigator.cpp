@@ -41,7 +41,7 @@ SimpleNavigator::SimpleNavigator()
 
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
   task_server_->setExecuteCallback(
-    std::bind(&SimpleNavigator::execute, this, std::placeholders::_1));
+    std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
 }
 
 SimpleNavigator::~SimpleNavigator()
@@ -50,7 +50,7 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
+SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Begin navigating to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);

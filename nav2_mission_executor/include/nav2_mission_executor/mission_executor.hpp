@@ -27,7 +27,7 @@ class MissionExecutor : public rclcpp::Node
 public:
   MissionExecutor();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_tasks::TaskStatus executeMission(
     const nav2_tasks::ExecuteMissionCommand::SharedPtr command);
 
 private:

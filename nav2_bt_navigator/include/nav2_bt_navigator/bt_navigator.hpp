@@ -27,7 +27,7 @@ class BtNavigator : public rclcpp::Node
 public:
   BtNavigator();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_tasks::TaskStatus navigateToPose(
     const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 private:

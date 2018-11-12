@@ -39,7 +39,7 @@ public:
   SmartPlanner();
   ~SmartPlanner();
 
-  nav2_tasks::TaskStatus execute(
+  nav2_tasks::TaskStatus computePathToPose(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
 
 private:

@@ -69,7 +69,7 @@ SmartPlanner::SmartPlanner()
 
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&SmartPlanner::execute, this, std::placeholders::_1));
+    std::bind(&SmartPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->startWorkerThread();
@@ -81,10 +81,10 @@ SmartPlanner::~SmartPlanner()
 }
 
 TaskStatus
-SmartPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+SmartPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "SmartPlanner: Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
+    "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
   nav2_tasks::ComputePathToPoseResult result;
@@ -95,8 +95,7 @@ SmartPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Create a planner based on the new costmap size
-    if (isPlannerOutOfDate())
-    {
+    if (isPlannerOutOfDate()) {
       current_costmap_size_[0] = costmap_.metadata.size_x;
       current_costmap_size_[1] = costmap_.metadata.size_y;
       planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
@@ -128,7 +127,8 @@ SmartPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
 
     // TODO(orduno): Enable potential visualization
 
-    RCLCPP_INFO(get_logger(), "SmartPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
+    RCLCPP_INFO(get_logger(),
+      "SmartPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
       command->goal.position.x, command->goal.position.y, command->tolerance);
     task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;
@@ -223,10 +223,11 @@ SmartPlanner::makePlan(
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
-  if (use_astar_)
+  if (use_astar_) {
     planner_->calcNavFnAstar();
-  else
+  } else {
     planner_->calcNavFnDijkstra(true);
+  }
 
   double resolution = costmap_.metadata.resolution;
   geometry_msgs::msg::Pose p, best_pose;
@@ -295,8 +296,10 @@ SmartPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
   planner_->setStart(map_start);
   planner_->setGoal(map_goal);
 
-  if(use_astar_)
+  if (use_astar_) {
     return planner_->calcNavFnAstar();
+  }
+
   return planner_->calcNavFnDijkstra();
 }
 

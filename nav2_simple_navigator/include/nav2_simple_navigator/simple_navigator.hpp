@@ -32,7 +32,7 @@ public:
   SimpleNavigator();
   ~SimpleNavigator();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 protected:
   std::unique_ptr<nav2_robot::Robot> robot_;

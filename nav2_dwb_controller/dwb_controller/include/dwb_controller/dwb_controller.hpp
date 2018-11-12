@@ -32,7 +32,7 @@ public:
   DwbController(rclcpp::executor::Executor & executor);
   ~DwbController();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::FollowPathCommand::SharedPtr path);
+  nav2_tasks::TaskStatus followPath(const nav2_tasks::FollowPathCommand::SharedPtr path);
 
 protected:
   bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);

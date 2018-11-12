@@ -36,10 +36,11 @@ MissionExecutor::MissionExecutor()
   task_server_ = std::make_unique<nav2_tasks::ExecuteMissionTaskServer>(temp_node);
 
   task_server_->setExecuteCallback(
-    std::bind(&MissionExecutor::execute, this, std::placeholders::_1));
+    std::bind(&MissionExecutor::executeMission, this, std::placeholders::_1));
 }
 
-TaskStatus MissionExecutor::execute(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
+TaskStatus
+MissionExecutor::executeMission(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Executing mission plan: %s", command->mission_plan.c_str());
 

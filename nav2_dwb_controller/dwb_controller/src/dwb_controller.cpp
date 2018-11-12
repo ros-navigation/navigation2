@@ -45,7 +45,7 @@ DwbController::DwbController(rclcpp::executor::Executor & executor)
 
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
   task_server_->setExecuteCallback(
-    std::bind(&DwbController::execute, this, std::placeholders::_1));
+    std::bind(&DwbController::followPath, this, std::placeholders::_1));
 }
 
 DwbController::~DwbController()
@@ -53,7 +53,7 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::execute(const nav2_tasks::FollowPathCommand::SharedPtr command)
+DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
