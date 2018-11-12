@@ -65,7 +65,8 @@ public:
       auto event_sub = node_->create_subscription<rcl_interfaces::msg::ParameterEvent>(
         topic, callback);
       event_subscriptions_.push_back(event_sub);
-      get_param_list(node_namespace);
+      // TODO(bpwilcox): Fix hanging problem for list parameters service call
+      //get_param_list(node_namespace);
     }
   }
 
