@@ -38,8 +38,8 @@
 // Modified for Euclidean-distance computation
 //
 
-#ifndef NAV2_DIJKSTRA_PLANNER__NAVFN_HPP_
-#define NAV2_DIJKSTRA_PLANNER__NAVFN_HPP_
+#ifndef NAV2_SMART_PLANNER__NAVFN_HPP_
+#define NAV2_SMART_PLANNER__NAVFN_HPP_
 
 #include <math.h>
 #include <stdint.h>
@@ -266,4 +266,4 @@ public:
   void savemap(const char * fname);
 };
 
-#endif  // NAV2_DIJKSTRA_PLANNER__NAVFN_HPP_
+#endif  // NAV2_SMART_PLANNER__NAVFN_HPP_

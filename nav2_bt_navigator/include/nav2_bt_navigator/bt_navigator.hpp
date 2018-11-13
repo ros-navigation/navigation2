@@ -15,22 +15,24 @@
 #ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 #define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
+#include <memory>
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "nav2_robot/robot.hpp"
 
 namespace nav2_bt_navigator
 {
 
-class BtNavigator : public nav2_tasks::NavigateToPoseTaskServer
+class BtNavigator : public rclcpp::Node
 {
 public:
   BtNavigator();
 
-  nav2_tasks::TaskStatus execute(
-    const nav2_tasks::NavigateToPoseCommand::SharedPtr command) override;
+  nav2_tasks::TaskStatus navigateToPose(
+    const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 private:
-  nav2_robot::Robot robot_;
+  std::unique_ptr<nav2_robot::Robot> robot_;
+  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
 };
 
 }  // namespace nav2_bt_navigator

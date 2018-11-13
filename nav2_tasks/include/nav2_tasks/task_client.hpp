@@ -37,7 +37,7 @@ template<class CommandMsg, class ResultMsg>
 class TaskClient
 {
 public:
-  explicit TaskClient(rclcpp::Node::SharedPtr node)
+  explicit TaskClient(rclcpp::Node::SharedPtr & node)
   : node_(node)
   {
     resultReceived_ = false;
