@@ -80,7 +80,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   set_parameter_if_not_set("origin_y", 0.0);
   set_parameter_if_not_set("footprint", "[]");
   set_parameter_if_not_set("footprint_padding", 0.01);
-  set_parameter_if_not_set("robot_radius", 0.46);
+  set_parameter_if_not_set("robot_radius", 0.1);
 
   std::vector<std::string> plugin_names;
   std::vector<std::string> plugin_types; 

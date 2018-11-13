@@ -220,7 +220,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::Sha
   }
 
   double robot_radius;
-  node->get_parameter_or<double>(full_radius_param_name, robot_radius, 0.46);
+  node->get_parameter_or<double>(full_radius_param_name, robot_radius, 0.1);
   points = makeFootprintFromRadius(robot_radius);
 
   auto set_parameters_results = node->set_parameters({
