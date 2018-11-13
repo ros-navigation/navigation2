@@ -244,8 +244,8 @@ private:
   bool stop_updates_, initialized_, stopped_;
   std::thread * map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::TimerBase::SharedPtr timer_;
-  std::chrono::time_point<std::chrono::steady_clock> last_publish_;
-  std::chrono::nanoseconds publish_cycle_;
+  rclcpp::Time last_publish_;
+  rclcpp::Duration publish_cycle_;
   pluginlib::ClassLoader<Layer> plugin_loader_;
   Costmap2DPublisher * publisher_;
 
