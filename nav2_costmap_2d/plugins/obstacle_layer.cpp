@@ -157,40 +157,30 @@ void ObstacleLayer::onInitialize()
     custom_qos_profile.depth = 50;
 
     // TODO(bpwilcox): re-enable message_filters
-/*     // create a callback for the topic
-    if (data_type == "LaserScan") {
-      //std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>
-      //> sub(new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(node_, topic, custom_qos_profile));
+    // create a callback for the topic
+/*     if (data_type == "LaserScan") {
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>
+      > sub(new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(node_, topic, custom_qos_profile));
 
-      //std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> > filter(
-      //    new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(*sub, *tf_, global_frame_, 50, node_));
-
-      rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub;
+      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> > filter(
+          new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(*sub, *tf_, global_frame_, 50, node_));
 
       if (inf_is_valid) {
-        //filter->registerCallback(std::bind(&ObstacleLayer::laserScanValidInfCallback, this, std::placeholders::_1,
-        //      observation_buffers_.back()));
-        sub = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-          topic, std::bind(&ObstacleLayer::laserScanValidInfCallback, this, std::placeholders::_1,
-          observation_buffers_.back()), custom_qos_profile);
+        filter->registerCallback(std::bind(&ObstacleLayer::laserScanValidInfCallback, this, std::placeholders::_1,
+              observation_buffers_.back()));
 
       } else {
-        //filter->registerCallback(std::bind(&ObstacleLayer::laserScanCallback, this, std::placeholders::_1,
-        //      observation_buffers_.back()));
-        sub = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-          topic, std::bind(&ObstacleLayer::laserScanCallback, this, std::placeholders::_1,
-          observation_buffers_.back()), custom_qos_profile);      
+        filter->registerCallback(std::bind(&ObstacleLayer::laserScanCallback, this, std::placeholders::_1,
+              observation_buffers_.back()));     
       }
 
       observation_subscribers_.push_back(sub);
-      //observation_notifiers_.push_back(filter);
+      observation_notifiers_.push_back(filter);
 
       observation_notifiers_.back()->setTolerance(nav2_util::durationFromSeconds(0.05));
     } else {
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>
       > sub(new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(node_, topic, custom_qos_profile));
-      
-      rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub;
 
       if (inf_is_valid) {
         RCLCPP_WARN(node_->get_logger(),
