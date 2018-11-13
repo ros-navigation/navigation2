@@ -94,17 +94,17 @@ void ObstacleLayer::onInitialize()
     double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
-
-    node_->get_parameter_or<std::string>("topic", topic, source);
-    node_->get_parameter_or<std::string>("sensor_frame", sensor_frame, std::string(""));
-    node_->get_parameter_or<double>("observation_persistence", observation_keep_time, 0.0);
-    node_->get_parameter_or<double>("expected_update_rate", expected_update_rate, 0.0);
-    node_->get_parameter_or<std::string>("data_type", data_type, std::string("PointCloud"));
-    node_->get_parameter_or<double>("min_obstacle_height", min_obstacle_height, 0.0);
-    node_->get_parameter_or<double>("max_obstacle_height", max_obstacle_height, 0.0);
-    node_->get_parameter_or<bool>("inf_is_valid", inf_is_valid, false);
-    node_->get_parameter_or<bool>("marking", marking, false);
-    node_->get_parameter_or<bool>("clearing", clearing, false);
+  
+    node_->get_parameter_or<std::string>(source + "." + "topic", topic, source);
+    node_->get_parameter_or<std::string>(source + "." + "sensor_frame", sensor_frame, std::string(""));
+    node_->get_parameter_or<double>(source + "." + "observation_persistence", observation_keep_time, 0.0);
+    node_->get_parameter_or<double>(source + "." + "expected_update_rate", expected_update_rate, 0.0);
+    node_->get_parameter_or<std::string>(source + "." + "data_type", data_type, std::string("PointCloud"));
+    node_->get_parameter_or<double>(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
+    node_->get_parameter_or<double>(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
+    node_->get_parameter_or<bool>(source + "." + "inf_is_valid", inf_is_valid, false);
+    node_->get_parameter_or<bool>(source + "." + "marking", marking, false);
+    node_->get_parameter_or<bool>(source + "." + "clearing", clearing, false);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(node_->get_logger(),
@@ -115,14 +115,13 @@ void ObstacleLayer::onInitialize()
 
     std::string raytrace_range_param_name, obstacle_range_param_name;
 
-    // Assuming (for now) all parameters will exist on costmap node 
     // get the obstacle range for the sensor
     double obstacle_range;
-    node_->get_parameter_or<double>("obstacle_range", obstacle_range, 2.5);
+    node_->get_parameter_or<double>(source + "." + "obstacle_range", obstacle_range, 2.5);
 
     // get the raytrace range for the sensor
     double raytrace_range;
-    node_->get_parameter_or<double>("raytrace_range", obstacle_range, 3.0);
+    node_->get_parameter_or<double>(source + "." + "raytrace_range", obstacle_range, 3.0);
 
     RCLCPP_DEBUG(node_->get_logger(),
       "Creating an observation buffer for source %s, topic %s, frame %s",
