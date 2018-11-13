@@ -34,7 +34,7 @@ public:
 
   nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
-private:  
+private:
   std::unique_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
