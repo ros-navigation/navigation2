@@ -85,8 +85,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   std::vector<std::string> plugin_names;
   std::vector<std::string> plugin_types; 
-  get_parameter_or_set("plugin_names", plugin_names, {"static_layer","inflation_layer"});
-  get_parameter_or_set("plugin_types", plugin_types, {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"});
+  get_parameter_or_set("plugin_names", plugin_names, {"static_layer","inflation_layer", "obstacle_layer"});
+  get_parameter_or_set("plugin_types", plugin_types,
+    {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer", "nav2_costmap_2d::ObstacleLayer"});
 
   get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
