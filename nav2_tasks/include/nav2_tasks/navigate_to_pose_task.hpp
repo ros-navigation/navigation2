@@ -27,7 +27,36 @@ using NavigateToPoseCommand = geometry_msgs::msg::PoseStamped;
 using NavigateToPoseResult = std_msgs::msg::Empty;
 
 using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;
-using NavigateToPoseTaskServer = TaskServer<NavigateToPoseCommand, NavigateToPoseResult>;
+
+class NavigateToPoseTaskServer : public TaskServer<NavigateToPoseCommand, NavigateToPoseResult>
+{
+public:
+  NavigateToPoseTaskServer(const std::string & name)
+  : TaskServer<NavigateToPoseCommand, NavigateToPoseResult>(name)
+  {
+    auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
+    // A subscription to the goal pose from rviz2
+    goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
+      std::bind(&NavigateToPoseTaskServer::onGoalPoseReceived, this, std::placeholders::_1));
+
+    // A client that we'll use to send a command message to our own task server
+    self_client_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(temp_node);
+  }
+
+  NavigateToPoseTaskServer() = delete;
+
+protected:
+  // For backwards compatibility, the NavigateToPoseTaskServer will respond to the goal_pose
+  // message sent from rviz. We'll receive the incoming message and invoke our own
+  // NavigateToPose task using self_client_
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> self_client_;
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+  {
+    self_client_->sendCommand(pose);
+  }
+};
 
 template<>
 inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
