@@ -68,6 +68,8 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
+#if 0
+// Simple Navigator equivalent
   std::string xml_text =
     R"(
 <root main_tree_to_execute="MainTree">
@@ -78,6 +80,27 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
     </SequenceStar>
   </BehaviorTree>
 </root>)";
+#else
+// Planning and Control in parallel
+  std::string xml_text =
+    R"(
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="root">
+      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+      <Parallel threshold_M="1">
+        <FollowPath path="${path}"/>
+        <Sequence>
+	        <RateController>
+            <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+	        </RateController>
+          <UpdatePath/>
+        </Sequence>
+      </Parallel>
+    </SequenceStar>
+  </BehaviorTree>
+</root>)";
+#endif
 
   RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", xml_text.c_str());
 

@@ -72,6 +72,12 @@ public:
     execute_callback_ = execute_callback;
   }
 
+  typedef std::function<TaskStatus(const typename CommandMsg::SharedPtr command)> PreemptCallback;
+  void setPreemptCallback(PreemptCallback preempt_callback)
+  {
+    preempt_callback_ = preempt_callback;
+  }
+
   // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested()
   {
@@ -97,6 +103,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   ExecuteCallback execute_callback_;
+  PreemptCallback preempt_callback_;
 
   typename CommandMsg::SharedPtr commandMsg_;
   ResultMsg resultMsg_;
@@ -108,6 +115,57 @@ protected:
   // The pointer to our private worker thread
   std::thread * workerThread_;
 
+  void doExecute()
+  {
+    nav2_msgs::msg::TaskStatus statusMsg;
+    TaskStatus status = TaskStatus::FAILED;
+
+    // Call the user's overridden method
+    try {
+      status = execute_callback_(commandMsg_);
+    } catch (...) {
+      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
+      statusPub_->publish(statusMsg);
+
+      // Save the exception so that we can propagate it back to the thread owning
+      // this object (the task server)
+      eptr_ = std::current_exception();
+
+      // TODO(mjeronimo): using rclcpp:shutdown is the only way I know so far to tell
+      // ROS to stop this node from spinning so that it will be destroyed and we can
+      // propagate the exception from the node's destructor. I'd rather have a way to
+      // shutdown just this node, but at least this is better than having the node
+      // spinning even when a node's thread has terminated with a fault/exception
+      rclcpp::shutdown();
+    }
+
+    // Reset the execution flag now that we've executed the task
+    commandReceived_ = false;
+
+    // Check the result of the user's function and send the
+    // appropriate message
+    if (status == TaskStatus::SUCCEEDED) {
+      // If the task succeeded, first publish the result message
+      resultPub_->publish(resultMsg_);
+
+      // Then send the success code
+      statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
+      statusPub_->publish(statusMsg);
+    } else if (status == TaskStatus::FAILED) {
+      // Otherwise, send the failure code
+      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
+      statusPub_->publish(statusMsg);
+    } else if (status == TaskStatus::CANCELED) {
+      // Or the canceled code
+      statusMsg.result = nav2_msgs::msg::TaskStatus::CANCELED;
+      statusPub_->publish(statusMsg);
+
+      cancelReceived_ = false;
+    } else {
+      throw std::logic_error("Unexpected status return from task");
+    }
+  }
+
   // This class has the worker thread body which calls the user's execute() callback
   void workerThread()
   {
@@ -116,6 +174,7 @@ protected:
       if (cvCommand_.wait_for(lock, std::chrono::milliseconds(100),
         [&] {return commandReceived_ == true;}))
       {
+#if 0
         nav2_msgs::msg::TaskStatus statusMsg;
         TaskStatus status = TaskStatus::FAILED;
 
@@ -163,6 +222,9 @@ protected:
         } else {
           throw std::logic_error("Unexpected status return from task");
         }
+#else
+        doExecute();
+#endif
       }
     } while (rclcpp::ok());
   }

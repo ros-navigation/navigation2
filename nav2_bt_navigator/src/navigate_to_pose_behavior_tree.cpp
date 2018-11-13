@@ -16,6 +16,7 @@
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
+#include "nav2_tasks/rate_controller_node.hpp"
 
 using namespace std::chrono_literals;
 
@@ -28,6 +29,22 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   // Register our custom action nodes so that they can be included in XML description
   factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
   factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
+
+  // Register our custom decorator nodes
+  factory_.registerNodeType<nav2_tasks::RateController>("RateController");
+
+  // Register our Simple Action nodes
+  factory_.registerSimpleAction("UpdatePath", std::bind(&NavigateToPoseBehaviorTree::updatePath, this));
+
+  // The parallel node is not yet registered in the BehaviorTree.CPP library
+  factory_.registerNodeType<BT::ParallelNode>("Parallel");
 }
+
+BT::NodeStatus NavigateToPoseBehaviorTree::updatePath()
+{
+  printf("NavigateToPoseBehaviorTree: updatePath\n");
+  return BT::NodeStatus::RUNNING;
+}
+
 
 }  // namespace nav2_bt_navigator

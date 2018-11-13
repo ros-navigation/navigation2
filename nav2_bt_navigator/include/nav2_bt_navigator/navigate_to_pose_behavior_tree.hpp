@@ -26,6 +26,9 @@ class NavigateToPoseBehaviorTree : public nav2_tasks::BehaviorTreeEngine
 public:
   explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
   NavigateToPoseBehaviorTree() = delete;
+
+private:
+  BT::NodeStatus updatePath();
 };
 
 }  // namespace nav2_bt_navigator
