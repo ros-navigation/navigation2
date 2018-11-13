@@ -18,7 +18,6 @@
 #include <memory>
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/empty.hpp"
 
