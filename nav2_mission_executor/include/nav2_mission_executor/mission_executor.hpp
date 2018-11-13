@@ -15,19 +15,23 @@
 #ifndef NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 #define NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 
+#include <memory>
 #include "nav2_tasks/execute_mission_task.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_mission_executor
 {
 
-class MissionExecutor : public nav2_tasks::ExecuteMissionTaskServer
+class MissionExecutor : public rclcpp::Node
 {
 public:
   MissionExecutor();
 
-  nav2_tasks::TaskStatus execute(
-    const nav2_tasks::ExecuteMissionCommand::SharedPtr command) override;
+  nav2_tasks::TaskStatus executeMission(
+    const nav2_tasks::ExecuteMissionCommand::SharedPtr command);
+
+private:
+  std::unique_ptr<nav2_tasks::ExecuteMissionTaskServer> task_server_;
 };
 
 }  // namespace nav2_mission_executor

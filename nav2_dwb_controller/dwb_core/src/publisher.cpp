@@ -116,6 +116,8 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
       m.color.b = 1;
       m.ns = "ValidTrajectories";
     } else {
+      m.color.r = 0;
+      m.color.g = 0;
       m.color.b = 0;
       m.ns = "InvalidTrajectories";
     }

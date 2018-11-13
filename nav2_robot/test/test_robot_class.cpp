@@ -36,7 +36,7 @@ public:
   TestRobotClass()
   {
     node_ = rclcpp::Node::make_shared("robot_class_test");
-    robot_ = std::make_unique<nav2_robot::Robot>(node_.get());
+    robot_ = std::make_unique<nav2_robot::Robot>(node_);
 
     // Initializing Pose and Twist messages
     initTestPose();

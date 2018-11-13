@@ -26,17 +26,22 @@ namespace nav2_simple_navigator
 {
 
 SimpleNavigator::SimpleNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
-  robot_(this)
+: Node("SimpleNavigator")
 {
   RCLCPP_INFO(get_logger(), "Initializing");
 
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
+  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
 
   planner_client_ =
     std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
   controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
+
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
+  task_server_->setExecuteCallback(
+    std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
 }
 
 SimpleNavigator::~SimpleNavigator()
@@ -45,7 +50,7 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 TaskStatus
-SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
+SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Begin navigating to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
@@ -53,7 +58,7 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   // Get the current pose from the robot
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  if (!robot_.getCurrentPose(current_pose)) {
+  if (!robot_->getCurrentPose(current_pose)) {
     // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
     RCLCPP_WARN(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
@@ -81,10 +86,10 @@ SimpleNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr comm
   for (;; ) {
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
       planner_client_->cancel();
-      setCanceled();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
@@ -134,10 +139,10 @@ planning_succeeded:
   for (;; ) {
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
       controller_client_->cancel();
-      setCanceled();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
@@ -153,7 +158,7 @@ planning_succeeded:
           // This is an empty message, so there are no fields to set
           nav2_tasks::NavigateToPoseResult navigationResult;
 
-          setResult(navigationResult);
+          task_server_->setResult(navigationResult);
           return TaskStatus::SUCCEEDED;
         }
 

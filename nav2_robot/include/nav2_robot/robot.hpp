@@ -28,7 +28,7 @@ namespace nav2_robot
 class Robot
 {
 public:
-  explicit Robot(rclcpp::Node * node);
+  explicit Robot(rclcpp::Node::SharedPtr & node);
   Robot() = delete;
 
   bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
@@ -38,7 +38,7 @@ public:
 
 protected:
   // The ROS node to use to create publishers and subscribers
-  rclcpp::Node * node_;
+  rclcpp::Node::SharedPtr node_;
 
   // Publishers and subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;

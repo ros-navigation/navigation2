@@ -47,12 +47,14 @@ using TestTaskServer = nav2_tasks::TaskServer<TestCommand, TestResult>;
 class MyTestTaskServer : public TestTaskServer
 {
 public:
-  MyTestTaskServer()
-  : TestTaskServer("TestTaskServerNode")
+  explicit MyTestTaskServer(rclcpp::Node::SharedPtr & node)
+  : TestTaskServer(node)
   {
   }
 
-  TaskStatus execute(const TestCommand::SharedPtr command) override
+  MyTestTaskServer() = delete;
+
+  TaskStatus execute(const TestCommand::SharedPtr command)
   {
     // A normal task would have various possible outcomes (success,
     // failure, canceled). Since we're trying to cause the task server
@@ -106,14 +108,18 @@ protected:
   {
     node_ = std::make_shared<rclcpp::Node>("TestNode");
 
-    // The task server is not itself a node, so needs a node to use
+    // The task client is not itself a node, so needs a node to use
     client_ = std::make_shared<TestTaskClient>(node_);
 
-    // The task server is a node (should change to be like the client)
-    server_ = std::make_shared<MyTestTaskServer>();
+    // Same for the task server
+    server_ = std::make_shared<MyTestTaskServer>(node_);
 
-    // Launch a thread to spin both nodes
-    spin_thread_ = new std::thread(&TaskClientServerTest::spin_the_nodes, this);
+    // A task server must have its execute callback set
+    server_->setExecuteCallback(
+      std::bind(&MyTestTaskServer::execute, server_, std::placeholders::_1));
+
+    // Launch a thread to spin the node
+    spin_thread_ = new std::thread(&TaskClientServerTest::spin, this);
 
     // After creating the nodes, there is a lot of multicast traffic that can
     // cause nodes to miss messages. Let's sleep for a bit to let the nodes settle
@@ -128,12 +134,9 @@ protected:
     delete spin_thread_;
   }
 
-  void spin_the_nodes()
+  void spin()
   {
-    rclcpp::executors::SingleThreadedExecutor exec;
-    exec.add_node(node_);
-    exec.add_node(server_);
-    exec.spin();
+    rclcpp::spin(node_);
   }
 
   void testSuccess();
