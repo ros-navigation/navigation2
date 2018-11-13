@@ -320,7 +320,8 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
       publisher_->updateBounds(x0, xn, y0, yn);
 
       auto current_time = now();
-      if (last_publish_ + publish_cycle_ < current_time) {
+      if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+          (current_time < last_publish_)) {  // time has moved backwards, probably due to a switch to sim_time // NOLINT
         publisher_->publishCostmap();
         last_publish_ = current_time;
       }
