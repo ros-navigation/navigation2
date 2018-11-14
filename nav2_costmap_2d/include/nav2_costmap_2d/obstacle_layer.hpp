@@ -157,6 +157,7 @@ protected:
   //std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
   //std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
   
+  // replacement for message filters subscriptions, stores sensor subscriptions
   std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr> observation_laser_subscribers_;
   std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::ConstSharedPtr> observation_point_subscribers_;
 
