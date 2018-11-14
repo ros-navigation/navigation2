@@ -1063,8 +1063,8 @@ void
 AmclNode::initAmclParams()
 {
   // Grab params off the param server
-  get_parameter_or_set("use_map_topic_", use_map_topic_, false);
-  get_parameter_or_set("first_map_only_", first_map_only_, false);
+  get_parameter_or_set("use_map_topic_", use_map_topic_, true);
+  get_parameter_or_set("first_map_only_", first_map_only_, true);
   double save_pose_rate;
   get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
   save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
