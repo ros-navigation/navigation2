@@ -19,7 +19,10 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_world_model::WorldModel>());
+  rclcpp::executors::SingleThreadedExecutor exec;
+  auto world_model_node = std::make_shared<nav2_world_model::WorldModel>(exec);
+  exec.add_node(world_model_node);
+  exec.spin();
   rclcpp::shutdown();
 
   return 0;
