@@ -65,7 +65,7 @@ void ObstacleLayer::onInitialize()
 
   rolling_window_ = layered_costmap_->isRolling();
   bool track_unknown_space;
-  node_->get_parameter_or<bool>("track_unknown_space", track_unknown_space, layered_costmap_->isTrackingUnknown());
+  node_->get_parameter_or("track_unknown_space", track_unknown_space, layered_costmap_->isTrackingUnknown());
   if (track_unknown_space) {
     default_value_ = NO_INFORMATION;
   } else {
@@ -77,11 +77,11 @@ void ObstacleLayer::onInitialize()
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
   double transform_tolerance;
-  node_->get_parameter_or<double>("transform_tolerance", transform_tolerance, 0.2);
+  node_->get_parameter_or("transform_tolerance", transform_tolerance, 0.2);
 
   // get the topics that we'll subscribe to from the parameter server
   std::string topics_string;
-  node_->get_parameter_or<std::string>("observation_sources", topics_string, std::string(""));
+  node_->get_parameter_or("observation_sources", topics_string, std::string(""));
 
   RCLCPP_INFO(node_->get_logger(), "Subscribed to Topics: %s", topics_string.c_str());
 
@@ -95,16 +95,16 @@ void ObstacleLayer::onInitialize()
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
   
-    node_->get_parameter_or<std::string>(source + "." + "topic", topic, source);
-    node_->get_parameter_or<std::string>(source + "." + "sensor_frame", sensor_frame, std::string(""));
-    node_->get_parameter_or<double>(source + "." + "observation_persistence", observation_keep_time, 0.0);
-    node_->get_parameter_or<double>(source + "." + "expected_update_rate", expected_update_rate, 0.0);
-    node_->get_parameter_or<std::string>(source + "." + "data_type", data_type, std::string("PointCloud"));
-    node_->get_parameter_or<double>(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
-    node_->get_parameter_or<double>(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
-    node_->get_parameter_or<bool>(source + "." + "inf_is_valid", inf_is_valid, false);
-    node_->get_parameter_or<bool>(source + "." + "marking", marking, false);
-    node_->get_parameter_or<bool>(source + "." + "clearing", clearing, false);
+    node_->get_parameter_or(source + "." + "topic", topic, source);
+    node_->get_parameter_or(source + "." + "sensor_frame", sensor_frame, std::string(""));
+    node_->get_parameter_or(source + "." + "observation_persistence", observation_keep_time, 0.0);
+    node_->get_parameter_or(source + "." + "expected_update_rate", expected_update_rate, 0.0);
+    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("PointCloud"));
+    node_->get_parameter_or(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
+    node_->get_parameter_or(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
+    node_->get_parameter_or(source + "." + "inf_is_valid", inf_is_valid, false);
+    node_->get_parameter_or(source + "." + "marking", marking, false);
+    node_->get_parameter_or(source + "." + "clearing", clearing, false);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(node_->get_logger(),
@@ -117,11 +117,11 @@ void ObstacleLayer::onInitialize()
 
     // get the obstacle range for the sensor
     double obstacle_range;
-    node_->get_parameter_or<double>(source + "." + "obstacle_range", obstacle_range, 2.5);
+    node_->get_parameter_or(source + "." + "obstacle_range", obstacle_range, 2.5);
 
     // get the raytrace range for the sensor
     double raytrace_range;
-    node_->get_parameter_or<double>(source + "." + "raytrace_range", obstacle_range, 3.0);
+    node_->get_parameter_or(source + "." + "raytrace_range", obstacle_range, 3.0);
 
     RCLCPP_DEBUG(node_->get_logger(),
       "Creating an observation buffer for source %s, topic %s, frame %s",
@@ -234,10 +234,10 @@ void ObstacleLayer::onInitialize()
       observation_point_subscribers_.push_back(sub);
     }
   }
-   setupDynamicReconfigure(node_);
+   setupDynamicReconfigure();
 }
 
-void ObstacleLayer::setupDynamicReconfigure(rclcpp::Node::SharedPtr)
+void ObstacleLayer::setupDynamicReconfigure()
 {
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
   dynamic_param_client_->add_parameters({
