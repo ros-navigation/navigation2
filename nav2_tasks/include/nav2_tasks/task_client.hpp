@@ -49,6 +49,7 @@ public:
 
     // Create the publishers
     commandPub_ = node_->create_publisher<CommandMsg>(taskName + "_command");
+    updatePub_ = node_->create_publisher<CommandMsg>(taskName + "_update");
     cancelPub_ = node_->create_publisher<CancelMsg>(taskName + "_cancel");
 
     // Create the subscribers
@@ -70,6 +71,13 @@ public:
     resultReceived_ = false;
     statusReceived_ = false;
     commandPub_->publish(msg);
+  }
+
+  void sendPreempt(const typename CommandMsg::SharedPtr msg)
+  {
+    resultReceived_ = false;
+    statusReceived_ = false;
+    updatePub_->publish(msg);
   }
 
   // An in-flight operation can be canceled
@@ -134,7 +142,10 @@ public:
           if (cvResult_.wait_for(lock, std::chrono::milliseconds(100),
             [&] {return resultReceived_ == true;}))
           {
-            result = resultMsg_;
+            // Copy only the data, not the pointer since the pointer may have been used in
+            // a BT blackboard
+            *result = *resultMsg_;
+
             resultReceived_ = false;
             return SUCCEEDED;
           }
@@ -199,6 +210,7 @@ protected:
 
   // The client's publishers: the command and cancel messages
   typename rclcpp::Publisher<CommandMsg>::SharedPtr commandPub_;
+  typename rclcpp::Publisher<CommandMsg>::SharedPtr updatePub_;
   rclcpp::Publisher<CancelMsg>::SharedPtr cancelPub_;
 
   // The client's subscriptions: result, feedback, and status

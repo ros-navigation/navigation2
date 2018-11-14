@@ -32,10 +32,41 @@ public:
   explicit FollowPathAction(const std::string & action_name)
   : BtActionNode<FollowPathCommand, FollowPathResult>(action_name)
   {
+  }
+
+  void onInit() override
+  {
+    printf("FollowPathBTAction: onInit\n");
+
     // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::FollowPathCommand>();
+    //command_ = std::make_shared<nav2_tasks::FollowPathCommand>();
+    command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
+    printf("FollowPathBTAction: path: %p\n", (void *) command_.get());
+
     result_ = std::make_shared<nav2_tasks::FollowPathResult>();
   }
+
+  void onSendCommand() override
+  {
+    printf("FollowPathAction: onSendCommand\n");
+    int index = 0;
+    for (auto pose : command_->poses) {
+      printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
+      index++;
+    }
+  }
+
+  void onLoopIteration() override
+  {
+    // Check if there is a new path on the blackboard
+#if 0
+    if (new_path_on_blackboard) {
+      task_client_->sendPreempt(command_);
+    }
+#endif
+
+  }
+
 };
 
 }  // namespace nav2_tasks

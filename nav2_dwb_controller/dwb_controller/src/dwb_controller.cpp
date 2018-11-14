@@ -30,13 +30,14 @@ using dwb_core::CostmapROSPtr;
 namespace nav2_dwb_controller
 {
 
-DwbController::DwbController(rclcpp::executor::Executor & executor)
+DwbController::DwbController(rclcpp::executor::Executor & /*executor*/)
 : Node("DwbController"),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
+#if 0
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
@@ -44,6 +45,8 @@ DwbController::DwbController(rclcpp::executor::Executor & executor)
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
+#endif
+
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));
 }
@@ -55,6 +58,37 @@ DwbController::~DwbController()
 TaskStatus
 DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
+#if 1
+  RCLCPP_INFO(get_logger(), "Starting controller");
+
+  int index = 0;
+  RCLCPP_INFO(get_logger(), "Poses:");
+  for (auto pose : command->poses) {
+    RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
+      index, pose.position.x, pose.position.y);
+    index++;
+  }
+
+  for (int i=0; i<10; i++) {
+    if (task_server_->updateRequested()) {
+      auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
+      printf("dwb_controller: update requested\n");
+      task_server_->setUpdated();
+      task_server_->getCommandUpdate(new_path);
+
+      int index = 0;
+      RCLCPP_INFO(get_logger(), "New poses:");
+      for (auto pose : command->poses) {
+        RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
+          index, pose.position.x, pose.position.y);
+        index++;
+      }
+    }
+
+    std::this_thread::sleep_for(1s);
+  }
+  return TaskStatus::SUCCEEDED;
+#else
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
@@ -92,6 +126,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   task_server_->setResult(result);
 
   return TaskStatus::SUCCEEDED;
+#endif
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)

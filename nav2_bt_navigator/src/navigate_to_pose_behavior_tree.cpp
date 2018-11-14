@@ -34,17 +34,29 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
 
   // Register our Simple Action nodes
-  factory_.registerSimpleAction("UpdatePath", std::bind(&NavigateToPoseBehaviorTree::updatePath, this));
+  factory_.registerSimpleAction("UpdatePath", std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
   // The parallel node is not yet registered in the BehaviorTree.CPP library
   factory_.registerNodeType<BT::ParallelNode>("Parallel");
+
+  task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
 }
 
-BT::NodeStatus NavigateToPoseBehaviorTree::updatePath()
+BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
 {
   printf("NavigateToPoseBehaviorTree: updatePath\n");
+
+  auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
+
+  int index = 0;
+  for (auto pose : path->poses) {
+    printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
+    index++;
+  }
+
+  task_client_->sendPreempt(path);
+
   return BT::NodeStatus::RUNNING;
 }
-
 
 }  // namespace nav2_bt_navigator

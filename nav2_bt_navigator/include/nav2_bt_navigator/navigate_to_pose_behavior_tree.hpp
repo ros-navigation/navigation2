@@ -17,6 +17,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/behavior_tree_engine.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -28,7 +29,8 @@ public:
   NavigateToPoseBehaviorTree() = delete;
 
 private:
-  BT::NodeStatus updatePath();
+  BT::NodeStatus updatePath(BT::TreeNode & tree_node);
+  std::unique_ptr<nav2_tasks::FollowPathTaskClient> task_client_;
 };
 
 }  // namespace nav2_bt_navigator
