@@ -59,9 +59,9 @@ private:
     const geometry_msgs::msg::Pose & goal,
     nav2_msgs::msg::Path & plan);
 
-  // Remove artifacts at the end of the path. -- originated from planning on a discretized world
+  // Remove artifacts at the end of the path - originated from planning on a discretized world
   void smoothApproachToGoal(
-    const geometry_msgs::msg::Pose & goal
+    const geometry_msgs::msg::Pose & goal,
     nav2_msgs::msg::Path & plan);
 
   // Compute the potential, or navigation cost, at a given point in the world
