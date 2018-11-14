@@ -64,6 +64,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   map_update_thread_(NULL),
   plugin_loader_("nav2_costmap_2d", "nav2_costmap_2d::Layer"),
   publisher_(NULL),
+  last_publish_(0, 0, RCL_ROS_TIME),
   publish_cycle_(1,0),
   footprint_padding_(0.0)
 {
