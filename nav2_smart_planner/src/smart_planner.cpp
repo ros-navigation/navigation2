@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <exception>
+#include <cmath>
 #include "nav2_smart_planner/smart_planner.hpp"
 #include "nav2_smart_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
@@ -168,7 +169,7 @@ SmartPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
-  // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
+  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
   double wy = start.position.y;
@@ -201,7 +202,7 @@ SmartPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  if (worldToMap(wx, wy, mx, my)) {
+  if (!worldToMap(wx, wy, mx, my)) {
     if (tolerance <= 0.0) {
       std::cout << "tolerance: " << tolerance << std::endl;
       RCLCPP_WARN(
@@ -256,8 +257,7 @@ SmartPlanner::makePlan(
   if (found_legal) {
     // extract the plan
     if (getPlanFromPotential(best_pose, plan)) {
-      geometry_msgs::msg::Pose goal_copy = best_pose;
-      plan.poses.push_back(goal_copy);
+      smoothApproachToGoal(best_pose, plan);
     } else {
       RCLCPP_ERROR(
         get_logger(),
@@ -267,6 +267,25 @@ SmartPlanner::makePlan(
   }
 
   return !plan.poses.empty();
+}
+
+void
+SmartPlanner::smoothApproachToGoal(
+  const geometry_msgs::msg::Pose & best_pose,
+  nav2_msgs::msg::Path & plan)
+{
+  // For now we only check the last two poses of the plan
+  auto second_to_last_pose = plan.poses.end()[-2];
+  auto last_pose = plan.poses.back();
+  if (
+    squared_distance(last_pose, second_to_last_pose) >
+    squared_distance(best_pose, second_to_last_pose)
+  ) {
+    plan.poses.back() = best_pose;
+  } else {
+    geometry_msgs::msg::Pose goal_copy = best_pose;
+    plan.poses.push_back(goal_copy);
+  }
 }
 
 bool
@@ -411,8 +430,10 @@ SmartPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     return false;
   }
 
-  mx = static_cast<int>((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution);
-  my = static_cast<int>((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution);
+  mx = static_cast<int>(
+    std::round((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution));
+  my = static_cast<int>(
+    std::round((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution));
 
   if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
     return true;
@@ -446,7 +467,7 @@ SmartPlanner::getCostmap(
   const std::chrono::milliseconds /*waitTime*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
-  //               including master (aggreate) layer
+  //               including master (aggregate) layer
 
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
