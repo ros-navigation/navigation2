@@ -238,6 +238,7 @@ private:
   double init_cov_[3];
 
   bool tf_broadcast_;
+  int scan_error_count_ = 0;
 };
 
 #endif  // AMCL_NODE_HPP_

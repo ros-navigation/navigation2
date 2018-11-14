@@ -87,6 +87,7 @@ AmclNode::AmclNode()
   first_map_received_(false),
   first_reconfigure_call_(true)
 {
+  RCLCPP_INFO(get_logger(), "Initializing AMCL");
   std::lock_guard<std::recursive_mutex> l(configuration_mutex_);
 
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
@@ -165,7 +166,7 @@ AmclNode::AmclNode()
         std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
-    requestMap();
+    requestMap(); // FIXME: This seems to hang indefinitely
   }
   m_force_update = false;
 
@@ -187,6 +188,7 @@ AmclNode::AmclNode()
   laser_check_interval_ = 15s;
   check_laser_timer_ =
     create_wall_timer(laser_check_interval_, std::bind(&AmclNode::checkLaserReceived, this));
+  RCLCPP_INFO(get_logger(), "AMCL Initialization complete");
 }
 
 AmclNode::~AmclNode()
@@ -331,7 +333,7 @@ AmclNode::requestMap()
 void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  RCLCPP_INFO(get_logger(), "AmclNode: A new map was received.");
+  RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (first_map_only_ && first_map_received_) {
     return;
   }
@@ -479,10 +481,13 @@ AmclNode::getOdomPose(
   try {
     this->tf_->transform(ident, odom_pose, odom_frame_id_, TRANSFORM_TIMEOUT);
   } catch (tf2::TransformException e) {
-    RCLCPP_WARN(get_logger(), "Failed to compute odom pose, skipping scan (%s)", e.what());
+    ++scan_error_count_;
+    if (scan_error_count_%20 == 0) {
+    	RCLCPP_ERROR(get_logger(), "(%d) consecutive laser scan transforms failed: (%s)",scan_error_count_, e.what());
+    }
     return false;
   }
-
+  scan_error_count_ = 0; // reset since we got a good transform
   x = odom_pose.pose.position.x;
   y = odom_pose.pose.position.y;
   yaw = tf2::getYaw(odom_pose.pose.orientation);
@@ -628,7 +633,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (!getOdomPose(latest_odom_pose_, pose.v[0], pose.v[1], pose.v[2],
     laser_scan->header.stamp, base_frame_id_))
   {
-    RCLCPP_ERROR(get_logger(), "Couldn't determine robot's pose associated with laser scan");
+    RCLCPP_DEBUG(get_logger(), "Couldn't determine robot's pose associated with laser scan");
     return;
   }
 
@@ -1063,7 +1068,7 @@ void
 AmclNode::initAmclParams()
 {
   // Grab params off the param server
-  get_parameter_or_set("use_map_topic_", use_map_topic_, true);
+  get_parameter_or_set("use_map_topic_", use_map_topic_, true); // FIXME: when false AMCL hangs in constructor
   get_parameter_or_set("first_map_only_", first_map_only_, true);
   double save_pose_rate;
   get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
