@@ -34,12 +34,12 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <voxel_grid/voxel_grid.hpp>
+#include <nav2_voxel_grid/voxel_grid.hpp>
 #include <gtest/gtest.h>
 
 TEST(voxel_grid, basicMarkingAndClearing) {
   int size_x = 50, size_y = 10, size_z = 16;
-  voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
+  nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
 
   // Put a "tabletop" into the scene.  A flat rectangle of set voxels at z = 12.
   int table_z = 12;
@@ -52,7 +52,7 @@ TEST(voxel_grid, basicMarkingAndClearing) {
   for (int i = table_x_min; i <= table_x_max; ++i) {
     for (int j = table_y_min; j <= table_y_max; ++j) {
       // check that each cell of the table is marked
-      ASSERT_EQ(voxel_grid::MARKED, vg.getVoxel(i, j, table_z));
+      ASSERT_EQ(nav2_voxel_grid::MARKED, vg.getVoxel(i, j, table_z));
     }
   }
 
@@ -62,9 +62,9 @@ TEST(voxel_grid, basicMarkingAndClearing) {
   for (unsigned int i = 0; i < vg.sizeX(); ++i) {
     for (unsigned int j = 0; j < vg.sizeY(); ++j) {
       for (unsigned int k = 0; k < vg.sizeZ(); ++k) {
-        if (vg.getVoxel(i, j, k) == voxel_grid::MARKED) {
+        if (vg.getVoxel(i, j, k) == nav2_voxel_grid::MARKED) {
           mark_count++;
-        } else if (vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN) {
+        } else if (vg.getVoxel(i, j, k) == nav2_voxel_grid::UNKNOWN) {
           unknown_count++;
         }
       }
@@ -85,11 +85,11 @@ TEST(voxel_grid, basicMarkingAndClearing) {
   for (unsigned int i = 0; i < vg.sizeX(); ++i) {
     for (unsigned int j = 0; j < vg.sizeY(); ++j) {
       for (unsigned int k = 0; k < vg.sizeZ(); ++k) {
-        if (vg.getVoxel(i, j, k) == voxel_grid::MARKED) {
+        if (vg.getVoxel(i, j, k) == nav2_voxel_grid::MARKED) {
           mark_count++;
-        } else if (vg.getVoxel(i, j, k) == voxel_grid::FREE) {
+        } else if (vg.getVoxel(i, j, k) == nav2_voxel_grid::FREE) {
           free_count++;
-        } else if (vg.getVoxel(i, j, k) == voxel_grid::UNKNOWN) {
+        } else if (vg.getVoxel(i, j, k) == nav2_voxel_grid::UNKNOWN) {
           unknown_count++;
         }
       }
@@ -108,7 +108,7 @@ TEST(voxel_grid, basicMarkingAndClearing) {
   // now let's put in a vertical column manually to test markVoxel
   for (unsigned int i = 0; i < vg.sizeZ(); ++i) {
     vg.markVoxel(0, 0, i);
-    ASSERT_EQ(vg.getVoxel(0, 0, i), voxel_grid::MARKED);
+    ASSERT_EQ(vg.getVoxel(0, 0, i), nav2_voxel_grid::MARKED);
   }
 
   vg.printColumnGrid();
@@ -118,7 +118,7 @@ TEST(voxel_grid, basicMarkingAndClearing) {
   vg.clearVoxelLine(0, 0, 0, 0, 0, vg.sizeZ() - 1);
 
   for (unsigned int i = 0; i < vg.sizeZ(); ++i) {
-    ASSERT_EQ(vg.getVoxel(0, 0, i), voxel_grid::FREE);
+    ASSERT_EQ(vg.getVoxel(0, 0, i), nav2_voxel_grid::FREE);
   }
 
   mark_count = 0;

@@ -30,6 +30,7 @@ find_package(message_filters REQUIRED)
 find_package(nav2_dynamic_params)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -78,6 +79,7 @@ set(dependencies
   laser_geometry
   nav2_util
   nav2_voxel_grid
+  nav2_msgs
 )
 
 ament_target_dependencies(nav2_costmap_2d
@@ -89,9 +91,7 @@ add_library(layers SHARED
   plugins/static_layer.cpp
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
-
-  # TODO(bpwilcox): port additional plugin layers
-  #plugins/voxel_layer.cpp
+  plugins/voxel_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
