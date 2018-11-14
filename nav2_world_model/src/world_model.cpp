@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_world_model/world_model.hpp"
 
 using std::vector;
@@ -25,18 +24,14 @@ using std::string;
 namespace nav2_world_model
 {
 
-WorldModel::WorldModel(const string & name)
-: Node(name + "_Node")
+WorldModel::WorldModel(rclcpp::executor::Executor & executor, const string & name)
+: Node(name + "_Node"),
+  tfBuffer_(get_clock()),
+  tfListener_(tfBuffer_)
 {
-  node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-
-  // Create layered costmap with static and inflation layer
-  layered_costmap_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
-  addLayer<nav2_costmap_2d::StaticLayer>("static");
-  addLayer<nav2_costmap_2d::InflationLayer>("inflation");
-  // TODO(bpwilcox): replace manual footprint to layered_costmap with parameter or from nav2_robot
-  setFootprint(0, 0);
-  layered_costmap_->updateMap(0, 0, 0);
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap", tfBuffer_);
+  costmap_ = costmap_ros_->getCostmap();
+  executor.add_node(costmap_ros_);
 
   // Create a service that will use the callback function to handle requests.
   costmapServer_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
@@ -51,12 +46,9 @@ void WorldModel::costmap_callback(
 {
   RCLCPP_INFO(this->get_logger(), "Received costmap request");
 
-  nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
-  rclcpp::Clock clock;
-
-  response->map.metadata.size_x = costmap->getSizeInCellsX();
-  response->map.metadata.size_y = costmap->getSizeInCellsY();
-  response->map.metadata.resolution = costmap->getResolution();
+  response->map.metadata.size_x = costmap_->getSizeInCellsX();
+  response->map.metadata.size_y = costmap_->getSizeInCellsY();
+  response->map.metadata.resolution = costmap_->getResolution();
   response->map.metadata.layer = "Master";
   response->map.metadata.map_load_time = now();
   response->map.metadata.update_time = now();
@@ -64,41 +56,22 @@ void WorldModel::costmap_callback(
   tf2::Quaternion quaternion;
   // TODO(bpwilcox): Grab correct orientation information
   quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
-  response->map.metadata.origin.position.x = costmap->getOriginX();
-  response->map.metadata.origin.position.y = costmap->getOriginY();
+  response->map.metadata.origin.position.x = costmap_->getOriginX();
+  response->map.metadata.origin.position.y = costmap_->getOriginY();
   response->map.metadata.origin.position.z = 0.0;
   response->map.metadata.origin.orientation = tf2::toMsg(quaternion);
 
   response->map.header.stamp = now();
   response->map.header.frame_id = "map";
 
-  unsigned char * data = costmap->getCharMap();
+  unsigned char * data = costmap_->getCharMap();
   auto data_length = response->map.metadata.size_x * response->map.metadata.size_y;
   response->map.data.resize(data_length);
   response->map.data.assign(data, data + data_length);
 }
 
-void WorldModel::setFootprint(double length, double width)
-{
-  std::vector<geometry_msgs::msg::Point> polygon;
-  geometry_msgs::msg::Point p;
-  p.x = width / 2;
-  p.y = length / 2;
-  polygon.push_back(p);
-  p.x = width / 2;
-  p.y = -length / 2;
-  polygon.push_back(p);
-  p.x = -width / 2;
-  p.y = -length / 2;
-  polygon.push_back(p);
-  p.x = -width / 2;
-  p.y = length / 2;
-  polygon.push_back(p);
-  layered_costmap_->setFootprint(polygon);
-}
-
-WorldModel::WorldModel()
-: WorldModel("WorldModel")
+WorldModel::WorldModel(rclcpp::executor::Executor & executor)
+: WorldModel(executor, "WorldModel")
 {
 }
 
