@@ -86,14 +86,17 @@ void InflationLayer::onInitialize()
   }
   matchSize();
 
-  node_->set_parameter_if_not_set("enabled_inflation_layer",true);
-  node_->set_parameter_if_not_set("inflation_radius", 0.55);
-  node_->set_parameter_if_not_set("cost_scaling_factor", 10.0);
-  node_->set_parameter_if_not_set("inflate_unknown",false);
+  node_->set_parameter_if_not_set(name_ + "." + "enabled",true);
+  node_->set_parameter_if_not_set(name_ + "." + "inflation_radius", 0.55);
+  node_->set_parameter_if_not_set(name_ + "." + "cost_scaling_factor", 10.0);
+  node_->set_parameter_if_not_set(name_ + "." + "inflate_unknown",false);
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
-  dynamic_param_client_->add_parameters(
-    {"enabled_inflation_layer", "inflation_radius", "cost_scaling_factor", "inflate_unknown"});   
+  dynamic_param_client_->add_parameters({
+    name_ + "." + "enabled",
+    name_ + "." + "inflation_radius",
+    name_ + "." + "cost_scaling_factor",
+    name_ + "." + "inflate_unknown"});   
   dynamic_param_client_->set_callback(std::bind(&InflationLayer::reconfigureCB, this));  
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
 }
@@ -107,10 +110,10 @@ void InflationLayer::reconfigureCB()
   bool inflate_unknown;
   bool enabled;
 
-  dynamic_param_client_->get_event_param_or("inflation_radius", inflation_radius, 0.55);
-  dynamic_param_client_->get_event_param_or("cost_scaling_factor", cost_scaling_factor, 10.0);
-  dynamic_param_client_->get_event_param_or("inflate_unknown", inflate_unknown, false);
-  dynamic_param_client_->get_event_param_or("enabled_inflation_layer", enabled, true);
+  dynamic_param_client_->get_event_param_or(name_ + "." + "inflation_radius", inflation_radius, 0.55);
+  dynamic_param_client_->get_event_param_or(name_ + "." + "cost_scaling_factor", cost_scaling_factor, 10.0);
+  dynamic_param_client_->get_event_param_or(name_ + "." + "inflate_unknown", inflate_unknown, false);
+  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
 
   setInflationParameters(inflation_radius, cost_scaling_factor);
 

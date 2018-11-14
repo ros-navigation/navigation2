@@ -58,10 +58,10 @@ namespace nav2_costmap_2d
 
 void ObstacleLayer::onInitialize()
 {
-  node_->get_parameter_or_set("enabled_obstacle_layer", enabled_, true);
-  node_->get_parameter_or_set("footprint_clearing_enabled", footprint_clearing_enabled_, true);
-  node_->get_parameter_or_set("max_obstacle_height", max_obstacle_height_, 2.0);
-  node_->get_parameter_or_set("combination_method", combination_method_, 1);
+  node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
+  node_->get_parameter_or_set(name_ + "." + "combination_method", combination_method_, 1);
 
   rolling_window_ = layered_costmap_->isRolling();
   bool track_unknown_space;
@@ -240,8 +240,11 @@ void ObstacleLayer::onInitialize()
 void ObstacleLayer::setupDynamicReconfigure(rclcpp::Node::SharedPtr)
 {
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
-  dynamic_param_client_->add_parameters(
-    {"enabled_obstacle_layer", "footprint_clearing_enabled", "max_obstacle_height", "combination_method"});
+  dynamic_param_client_->add_parameters({
+    name_ + "." + "enabled",
+    name_ + "." + "footprint_clearing_enabled",
+    name_ + "." + "max_obstacle_height",
+    name_ + "." + "combination_method"});
   dynamic_param_client_->set_callback(std::bind(&ObstacleLayer::reconfigureCB, this), false);
 }
 
@@ -251,10 +254,12 @@ ObstacleLayer::~ObstacleLayer()
 
 void ObstacleLayer::reconfigureCB()
 {
-  dynamic_param_client_->get_event_param("enabled_obstacle_layer", enabled_); 
-  dynamic_param_client_->get_event_param("footprint_clearing_enabled", footprint_clearing_enabled_); 
-  dynamic_param_client_->get_event_param("max_obstacle_height", max_obstacle_height_); 
-  dynamic_param_client_->get_event_param("combination_method", combination_method_); 
+  RCLCPP_DEBUG(node_->get_logger(), "ObstacleLayer:: Event Callback");
+
+  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_); 
 }
 
 void ObstacleLayer::laserScanCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr message,

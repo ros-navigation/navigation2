@@ -124,7 +124,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
       RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names[i].c_str());
       std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
       layered_costmap_->addPlugin(plugin);
-      plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
+      plugin->initialize(layered_costmap_, plugin_names[i], &tf_, node_);
     }
   } else {
     std::string plugin_error = "Plugin Name and Plugin Type sizes do not match";

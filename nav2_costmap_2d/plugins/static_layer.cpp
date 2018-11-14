@@ -67,7 +67,7 @@ void StaticLayer::onInitialize()
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  node_->set_parameter_if_not_set("enabled_static_layer",true);
+  node_->set_parameter_if_not_set(name_ + "." + "enabled",true);
 
   std::string map_topic;
   node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("occ_grid"));
@@ -121,7 +121,7 @@ void StaticLayer::onInitialize()
   }
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
-  dynamic_param_client_->add_parameters({"enabled_static_layer"});
+  dynamic_param_client_->add_parameters({name_ + "." + "enabled"});
   dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
 }
@@ -131,7 +131,7 @@ void StaticLayer::reconfigureCB()
   RCLCPP_DEBUG(node_->get_logger(), "StaticLayer:: Event Callback");
 
   bool enabled = true;
-  dynamic_param_client_->get_event_param_or("enabled_static_layer", enabled, true); 
+  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true); 
 
   if (enabled != enabled_)
   {
