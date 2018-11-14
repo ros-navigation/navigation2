@@ -107,7 +107,7 @@ public:
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
-  virtual void setupDynamicReconfigure(rclcpp::Node::SharedPtr);
+  virtual void setupDynamicReconfigure();
 
   /**
    * @brief  Get the observations used to mark space
