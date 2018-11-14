@@ -34,8 +34,8 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
-#ifndef VOXEL_GRID__VOXEL_GRID_HPP_
-#define VOXEL_GRID__VOXEL_GRID_HPP_
+#ifndef NAV2_VOXEL_GRID__VOXEL_GRID_HPP_
+#define NAV2_VOXEL_GRID__VOXEL_GRID_HPP_
 
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +52,7 @@
  *        X and Y index the array and Z selects which bit of the integer
  *        is used giving a limit of 16 vertical cells.
  */
-namespace voxel_grid
+namespace nav2_voxel_grid
 {
 
 enum VoxelStatus
@@ -430,6 +430,6 @@ private:
   };
 };
 
-}  // namespace voxel_grid
+}  // namespace nav2_voxel_grid
 
-#endif  // VOXEL_GRID__VOXEL_GRID_HPP_
+#endif  // NAV2_VOXEL_GRID__VOXEL_GRID_HPP_

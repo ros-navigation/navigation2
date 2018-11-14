@@ -38,22 +38,20 @@
 #ifndef NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
 #define NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
 #include <nav2_costmap_2d/observation_buffer.hpp>
-#include <nav2_costmap_2d/VoxelGrid.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <sensor_msgs/LaserScan.h>
-#include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
+#include <nav2_dynamic_params/dynamic_params_client.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav2_msgs/msg/voxel_grid.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <laser_geometry/laser_geometry.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <message_filters/subscriber.h>
-#include <dynamic_reconfigure/server.h>
-#include <nav2_costmap_2d/VoxelPluginConfig.h>
 #include <nav2_costmap_2d/obstacle_layer.hpp>
-#include <voxel_grid/voxel_grid.h>
+#include <nav2_voxel_grid/voxel_grid.hpp>
 
 namespace nav2_costmap_2d
 {
@@ -84,27 +82,27 @@ public:
   virtual void reset();
 
 protected:
-  virtual void setupDynamicReconfigure(ros::NodeHandle & nh);
+  virtual void setupDynamicReconfigure();
 
   virtual void resetMaps();
 
 private:
-  void reconfigureCB(nav2_costmap_2d::VoxelPluginConfig & config, uint32_t level);
+  void reconfigureCB();
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
   virtual void raytraceFreespace(const nav2_costmap_2d::Observation & clearing_observation,
       double * min_x, double * min_y,
       double * max_x,
       double * max_y);
 
-  dynamic_reconfigure::Server<nav2_costmap_2d::VoxelPluginConfig> * voxel_dsrv_;
+  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
 
   bool publish_voxel_;
-  ros::Publisher voxel_pub_;
-  voxel_grid::VoxelGrid voxel_grid_;
+  rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
+  nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
-  unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  ros::Publisher clearing_endpoints_pub_;
-  sensor_msgs::PointCloud clearing_endpoints_;
+  int unknown_threshold_, mark_threshold_, size_z_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr clearing_endpoints_pub_;
+  sensor_msgs::msg::PointCloud clearing_endpoints_;
 
   inline bool worldToMap3DFloat(double wx, double wy, double wz, double & mx, double & my,
       double & mz)
