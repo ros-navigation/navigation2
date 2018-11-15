@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
@@ -34,7 +35,8 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
 
   // Register our Simple Action nodes
-  factory_.registerSimpleAction("UpdatePath", std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
+  factory_.registerSimpleAction("UpdatePath",
+    std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
   // The parallel node is not yet registered in the BehaviorTree.CPP library
   factory_.registerNodeType<BT::ParallelNode>("Parallel");
@@ -45,7 +47,8 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
 {
   // Get the updated path from the blackboard and send to the FollowPath task server
-  auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
+  auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>(
+    "path");
   task_client_->sendUpdate(path);
   return BT::NodeStatus::RUNNING;
 }

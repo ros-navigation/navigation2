@@ -127,7 +127,7 @@ planning_succeeded:
 
   int index = 0;
   for (auto pose : path->poses) {
-    RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
+    RCLCPP_DEBUG(get_logger(), "point %u x: %0.2f, y: %0.2f",
       index, pose.position.x, pose.position.y);
     index++;
   }

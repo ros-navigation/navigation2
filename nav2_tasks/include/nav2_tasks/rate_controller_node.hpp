@@ -49,10 +49,17 @@ private:
 inline BT::NodeStatus RateController::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
-    setStatus(BT::NodeStatus::RUNNING);
+    // Reset the starting point since we're starting a new iteration of
+    // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
-    return status();
+
+	// Go ahead and return since we know that the time interval hasn't
+	// expired yet
+    //setStatus(BT::NodeStatus::RUNNING);
+    //return status();
   }
+
+  setStatus(BT::NodeStatus::RUNNING);
 
   // Determine how long its been since we've started this iteration
   auto now = std::chrono::high_resolution_clock::now();
@@ -70,7 +77,7 @@ inline BT::NodeStatus RateController::tick()
     {
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        printf("seconds.count: %lf\n", seconds.count());
+        RCLCPP_DEBUG(rclcpp::get_logger("RateController"), "seconds.count: %lf", seconds.count());
 
         // Reset the timer
         start_ = std::chrono::high_resolution_clock::now();

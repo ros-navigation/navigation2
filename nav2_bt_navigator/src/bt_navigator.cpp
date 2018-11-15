@@ -91,9 +91,9 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
       <Parallel threshold_M="1">
         <FollowPath path="${path}"/>
         <Sequence>
-	        <RateController hz="10">
+          <RateController hz="10">
             <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-	        </RateController>
+          </RateController>
           <UpdatePath/>
         </Sequence>
       </Parallel>
