@@ -30,5 +30,5 @@ script:
   - colcon test --packages-skip
       dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params
       nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks
-      nav2_util nav2_voxel_grid"
+      nav2_util nav2_voxel_grid
 
