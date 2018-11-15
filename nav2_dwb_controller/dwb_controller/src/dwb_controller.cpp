@@ -54,21 +54,30 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
+DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
 {
 #if 1
   RCLCPP_INFO(get_logger(), "Starting controller");
 
   for (int i=0; i<1000; i++) {
     if (task_server_->updateRequested()) {
-      RCLCPP_INFO(get_logger(), "Updated path received");
       auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
       task_server_->getCommandUpdate(new_path);
       task_server_->setUpdated();
+
+      RCLCPP_INFO(get_logger(), "Received path update of size %u", new_path->poses.size());
+      int index = 0;
+      for (auto pose : new_path->poses) {
+        RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f", index,
+          pose.position.x, pose.position.y);
+        index++;
+      }
     }
 
     std::this_thread::sleep_for(10ms);
   }
+
+  RCLCPP_INFO(get_logger(), "Completed control task");
   return TaskStatus::SUCCEEDED;
 #else
   RCLCPP_INFO(get_logger(), "Starting controller");
