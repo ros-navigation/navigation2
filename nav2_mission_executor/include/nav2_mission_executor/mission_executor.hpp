@@ -32,12 +32,6 @@ public:
 
 private:
   std::unique_ptr<nav2_tasks::ExecuteMissionTaskServer> task_server_;
-
-  // For now, receive the move_base_simple/goal message from rviz and use this
-  // goal pose to create a mission plan, publishing the result
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp::Publisher<nav2_msgs::msg::MissionPlan>::SharedPtr plan_pub_;
 };
 
 }  // namespace nav2_mission_executor
