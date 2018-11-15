@@ -184,7 +184,7 @@ protected:
         } else {
           throw std::logic_error("Unexpected status return from task");
         }
-      } 
+      }
     } while (rclcpp::ok());
   }
 

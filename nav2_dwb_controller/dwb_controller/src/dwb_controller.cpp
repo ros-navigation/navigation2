@@ -59,28 +59,12 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
 #if 1
   RCLCPP_INFO(get_logger(), "Starting controller");
 
-  int index = 0;
-  RCLCPP_INFO(get_logger(), "Poses:");
-  for (auto pose : command->poses) {
-    RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
-      index, pose.position.x, pose.position.y);
-    index++;
-  }
-
   for (int i=0; i<1000; i++) {
     if (task_server_->updateRequested()) {
+      RCLCPP_INFO(get_logger(), "Updated path received");
       auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
-      RCLCPP_INFO(get_logger(), "Update requested");
       task_server_->getCommandUpdate(new_path);
       task_server_->setUpdated();
-
-      int index = 0;
-      RCLCPP_INFO(get_logger(), "New poses:");
-      for (auto pose : command->poses) {
-        RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
-          index, pose.position.x, pose.position.y);
-        index++;
-      }
     }
 
     std::this_thread::sleep_for(10ms);
