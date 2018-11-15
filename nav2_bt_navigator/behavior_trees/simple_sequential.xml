@@ -1,0 +1,8 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="root">
+      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+      <FollowPath path="${path}"/>
+    </SequenceStar>
+  </BehaviorTree>
+</root>

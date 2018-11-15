@@ -15,6 +15,7 @@
 #ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 #define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
+#include <string>
 #include <memory>
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "nav2_robot/robot.hpp"
@@ -33,6 +34,7 @@ public:
 private:
   std::unique_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
+  std::string bt_xml_filename_;
 };
 
 }  // namespace nav2_bt_navigator

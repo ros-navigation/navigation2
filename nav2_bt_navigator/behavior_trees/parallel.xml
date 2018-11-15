@@ -1,0 +1,16 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="root">
+      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+      <Parallel threshold_M="1">
+        <FollowPath path="${path}"/>
+        <Sequence>
+          <RateController hz="2">
+            <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+          </RateController>
+          <UpdatePath/>
+        </Sequence>
+      </Parallel>
+    </SequenceStar>
+  </BehaviorTree>
+</root>
