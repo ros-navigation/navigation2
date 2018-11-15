@@ -44,18 +44,9 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
 BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
 {
-  printf("NavigateToPoseBehaviorTree: updatePath\n");
-
+  // Get the updated path from the blackboard and send to the FollowPath task server
   auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-
-  int index = 0;
-  for (auto pose : path->poses) {
-    printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
-    index++;
-  }
-
-  task_client_->sendPreempt(path);
-
+  task_client_->sendUpdate(path);
   return BT::NodeStatus::RUNNING;
 }
 

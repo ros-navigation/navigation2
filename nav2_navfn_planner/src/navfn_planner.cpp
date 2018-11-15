@@ -569,15 +569,6 @@ NavfnPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::Share
 void
 NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
 {
-#if 1
-  int index = 0;
-  for (auto pose : path.poses) {
-    RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f",
-      index, pose.position.x, pose.position.y);
-    index++;
-  }
-#endif
-
   // Publish as a nav1 path msg
   nav_msgs::msg::Path rviz_path;
 

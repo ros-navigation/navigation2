@@ -52,13 +52,8 @@ public:
   // as getting values from the shared blackboard. A BT node can't get values
   // from the blackboard in the constructor since the BT library doesn't set
   // the blackboard until *after* the tree is build
-  virtual void onInit() 
-  {
-    printf("BtActionNode: onInit\n");
-  }
-
+  virtual void onInit() {}
   virtual void onLoopIteration() {}
-
   virtual void onSendCommand() {}
   virtual void onSuccess() {}
 
@@ -77,7 +72,6 @@ public:
       task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
 
       // Give the derived class a chance to do some initialization
-      printf("BtActionNode: tick: calling onInit\n");
       onInit();
       initialized_ = true;
     }

@@ -77,12 +77,6 @@ public:
     execute_callback_ = execute_callback;
   }
 
-  typedef std::function<TaskStatus(const typename CommandMsg::SharedPtr command)> UpdateCallback;
-  void setUpdateCallback(UpdateCallback update_callback)
-  {
-    update_callback_ = update_callback;
-  }
-
   // The user's execute method can check if the client is requesting a cancel
   bool cancelRequested()
   {
@@ -101,16 +95,11 @@ public:
 
   bool updateRequested()
   {
-    if (updateReceived_)
-      printf("TaskServer: updateRequested: updateReceived_: %d\n", (int) updateReceived_);
     return updateReceived_;
   }
 
-
-
   void setUpdated()
   {
-    printf("TaskServer: setUpdated\n");
     updateReceived_ = false;
   }
 
@@ -128,7 +117,6 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   ExecuteCallback execute_callback_;
-  UpdateCallback update_callback_;
 
   typename CommandMsg::SharedPtr commandMsg_;
   typename CommandMsg::SharedPtr updateMsg_;
@@ -141,114 +129,6 @@ protected:
   // The pointer to our private worker thread
   std::thread * workerThread_;
 
-  void doExecute()
-  {
-    nav2_msgs::msg::TaskStatus statusMsg;
-    TaskStatus status = TaskStatus::FAILED;
-
-    // Call the user's overridden method
-    try {
-      status = execute_callback_(commandMsg_);
-    } catch (...) {
-      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
-      statusPub_->publish(statusMsg);
-
-      // Save the exception so that we can propagate it back to the thread owning
-      // this object (the task server)
-      eptr_ = std::current_exception();
-
-      // TODO(mjeronimo): using rclcpp:shutdown is the only way I know so far to tell
-      // ROS to stop this node from spinning so that it will be destroyed and we can
-      // propagate the exception from the node's destructor. I'd rather have a way to
-      // shutdown just this node, but at least this is better than having the node
-      // spinning even when a node's thread has terminated with a fault/exception
-      rclcpp::shutdown();
-    }
-
-    // Reset the execution flag now that we've executed the task
-    commandReceived_ = false;
-    updateReceived_ = false;
-
-    // Check the result of the user's function and send the
-    // appropriate message
-    if (status == TaskStatus::SUCCEEDED) {
-      // If the task succeeded, first publish the result message
-      resultPub_->publish(resultMsg_);
-
-      // Then send the success code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
-      statusPub_->publish(statusMsg);
-    } else if (status == TaskStatus::FAILED) {
-      // Otherwise, send the failure code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
-      statusPub_->publish(statusMsg);
-    } else if (status == TaskStatus::CANCELED) {
-      // Or the canceled code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::CANCELED;
-      statusPub_->publish(statusMsg);
-
-      cancelReceived_ = false;
-    } else {
-      throw std::logic_error("Unexpected status return from task");
-    }
-  }
-
-  void doUpdate()
-  {
-    nav2_msgs::msg::TaskStatus statusMsg;
-    //TaskStatus status = TaskStatus::FAILED;
-
-    // Call the user's overridden method
-    try {
-      /*status =*/ update_callback_(updateMsg_);
-    } catch (...) {
-#if 0
-      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
-      statusPub_->publish(statusMsg);
-
-      // Save the exception so that we can propagate it back to the thread owning
-      // this object (the task server)
-      eptr_ = std::current_exception();
-
-      // TODO(mjeronimo): using rclcpp:shutdown is the only way I know so far to tell
-      // ROS to stop this node from spinning so that it will be destroyed and we can
-      // propagate the exception from the node's destructor. I'd rather have a way to
-      // shutdown just this node, but at least this is better than having the node
-      // spinning even when a node's thread has terminated with a fault/exception
-      rclcpp::shutdown();
-#endif
-    }
-
-#if 0
-    // Reset the execution flag now that we've executed the task
-    commandReceived_ = false;
-    updateReceived_ = false;
-
-    // Check the result of the user's function and send the
-    // appropriate message
-    if (status == TaskStatus::SUCCEEDED) {
-      // If the task succeeded, first publish the result message
-      resultPub_->publish(resultMsg_);
-
-      // Then send the success code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::SUCCEEDED;
-      statusPub_->publish(statusMsg);
-    } else if (status == TaskStatus::FAILED) {
-      // Otherwise, send the failure code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::FAILED;
-      statusPub_->publish(statusMsg);
-    } else if (status == TaskStatus::CANCELED) {
-      // Or the canceled code
-      statusMsg.result = nav2_msgs::msg::TaskStatus::CANCELED;
-      statusPub_->publish(statusMsg);
-
-      cancelReceived_ = false;
-    } else {
-      throw std::logic_error("Unexpected status return from task");
-    }
-#endif
-  }
-
   // This class has the worker thread body which calls the user's execute() callback
   void workerThread()
   {
@@ -257,7 +137,6 @@ protected:
       if (cvCommand_.wait_for(lock, std::chrono::milliseconds(100),
         [&] {return commandReceived_ == true;}))
       {
-#if 0
         nav2_msgs::msg::TaskStatus statusMsg;
         TaskStatus status = TaskStatus::FAILED;
 
@@ -305,21 +184,7 @@ protected:
         } else {
           throw std::logic_error("Unexpected status return from task");
         }
-#else
-        doExecute();
-#endif
       } 
-#if 0
-      else if (cvUpdate.wait_for(lock, std::chrono::milliseconds(1),
-        [&] {return updateReceived_ == true;}))
-      {
-        printf("TaskServer: got update in loop\n");
-        doUpdate();
-
-        // Reset the update flag now that we've executed the task
-        updateReceived_ = false;
-      }
-#endif
     } while (rclcpp::ok());
   }
 
@@ -343,15 +208,8 @@ protected:
   std::mutex commandMutex_;
   bool commandReceived_;
   std::condition_variable cvCommand_;
-
-  // Variables to handle the communication of the update command to the execute thread
-  //std::mutex updateMutex_;
   std::atomic<bool> updateReceived_;
-  std::condition_variable cvUpdate;
-
-  // Variables to handle the communication of the cancel request to the execute thread
   std::atomic<bool> cancelReceived_;
-  std::condition_variable cvCancel_;
 
   // The callbacks for our subscribers
   void onCommandReceived(const typename CommandMsg::SharedPtr msg)
@@ -367,24 +225,13 @@ protected:
 
   void onUpdateReceived(const typename CommandMsg::SharedPtr msg)
   {
-    printf("TaskServer: onUpdateReceived\n");
-#if 0
-    {
-      std::lock_guard<std::mutex> lock(commandMutex_);
-      updateMsg_ = msg;
-      updateReceived_ = true;
-    }
-#else
     updateMsg_ = msg;
     updateReceived_ = true;
-#endif
-    cvUpdate.notify_one();
   }
 
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
     cancelReceived_ = true;
-    cvCancel_.notify_one();
   }
 
   // The subscribers: command and cancel

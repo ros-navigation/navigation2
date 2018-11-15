@@ -29,6 +29,7 @@ public:
   NavigateToPoseBehaviorTree() = delete;
 
 private:
+  // Support for a BT SimpleActionNode that updates the FollowPath task
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> task_client_;
 };

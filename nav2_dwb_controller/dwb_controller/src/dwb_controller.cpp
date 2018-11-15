@@ -36,16 +36,14 @@ DwbController::DwbController(rclcpp::executor::Executor & /*executor*/)
   tfListener_(tfBuffer_)
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
 #if 0
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-
-  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
 #endif
+  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
 
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));
@@ -72,9 +70,9 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   for (int i=0; i<10; i++) {
     if (task_server_->updateRequested()) {
       auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
-      printf("dwb_controller: update requested\n");
-      task_server_->setUpdated();
+      RCLCPP_INFO(get_logger(), "Update requested");
       task_server_->getCommandUpdate(new_path);
+      task_server_->setUpdated();
 
       int index = 0;
       RCLCPP_INFO(get_logger(), "New poses:");

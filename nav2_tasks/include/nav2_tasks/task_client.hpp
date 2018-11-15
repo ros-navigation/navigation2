@@ -73,7 +73,7 @@ public:
     commandPub_->publish(msg);
   }
 
-  void sendPreempt(const typename CommandMsg::SharedPtr msg)
+  void sendUpdate(const typename CommandMsg::SharedPtr msg)
   {
     resultReceived_ = false;
     statusReceived_ = false;

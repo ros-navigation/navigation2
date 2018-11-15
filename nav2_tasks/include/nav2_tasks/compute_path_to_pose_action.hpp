@@ -37,36 +37,23 @@ public:
 
   void onInit() override
   {
-    printf("ComputePathToPoseBTAction: onInit\n");
     command_ =
       blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints");
 
     result_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-    result2 = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-    printf("ComputePathToPoseBTAction: path: %p\n", (void *) result_.get());
   }
 
+#if 0
   void onSuccess() override
   {
-    //result_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
     printf("ComputePathToPoseAction: onSuccess\n");
     int index = 0;
     for (auto pose : result_->poses) {
       printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
       index++;
     }
-
-    //auto result2 = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-    index = 0;
-    printf("ComputePathToPoseAction: onSuccess2\n");
-    for (auto pose : result2->poses) {
-      printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
-      index++;
-    }
   }
-
-  nav2_tasks::ComputePathToPoseResult::SharedPtr result2;
-
+#endif 
 };
 
 }  // namespace nav2_tasks

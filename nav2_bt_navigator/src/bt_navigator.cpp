@@ -68,10 +68,6 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
-  //auto new_path_condition = std::make_shared<std::condition_variable>();
-  //blackboard->set<std::shared_ptr<std::condition_variable>>("new_path_condition", new_path_condition);
-  //blackboard->set<bool>("new_path_flag", false);
-
 #if 0
 // Simple Navigator equivalent
   std::string xml_text =
