@@ -166,7 +166,7 @@ AmclNode::AmclNode()
         std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
-    requestMap(); // FIXME: This seems to hang indefinitely
+    requestMap(); // TODO:(mkhansen) This seems to hang indefinitely - see issue #330
   }
   m_force_update = false;
 
@@ -1068,7 +1068,7 @@ void
 AmclNode::initAmclParams()
 {
   // Grab params off the param server
-  get_parameter_or_set("use_map_topic_", use_map_topic_, true); // FIXME: when false AMCL hangs in constructor
+  get_parameter_or_set("use_map_topic_", use_map_topic_, true); // When false AMCL hangs in constructor (issue #330)
   get_parameter_or_set("first_map_only_", first_map_only_, true);
   double save_pose_rate;
   get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
