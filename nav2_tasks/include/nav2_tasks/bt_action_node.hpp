@@ -53,9 +53,6 @@ public:
   // from the blackboard in the constructor since the BT library doesn't set
   // the blackboard until *after* the tree is build
   virtual void onInit() {}
-  virtual void onLoopIteration() {}
-  virtual void onSendCommand() {}
-  virtual void onSuccess() {}
 
   BT::NodeStatus tick() override
   {
@@ -76,7 +73,6 @@ public:
       initialized_ = true;
     }
 
-    onSendCommand();
     task_client_->sendCommand(command_);
 
     // Loop until the task has completed
@@ -85,7 +81,6 @@ public:
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
-          onSuccess();
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
@@ -101,8 +96,6 @@ public:
         default:
           throw std::logic_error("BtActionNode::Tick: invalid status value");
       }
-
-      onLoopIteration();
     }
 
     return BT::NodeStatus::IDLE;

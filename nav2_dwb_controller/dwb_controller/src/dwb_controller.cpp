@@ -67,7 +67,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
     index++;
   }
 
-  for (int i=0; i<10; i++) {
+  for (int i=0; i<1000; i++) {
     if (task_server_->updateRequested()) {
       auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
       RCLCPP_INFO(get_logger(), "Update requested");
@@ -83,7 +83,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
       }
     }
 
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(10ms);
   }
   return TaskStatus::SUCCEEDED;
 #else

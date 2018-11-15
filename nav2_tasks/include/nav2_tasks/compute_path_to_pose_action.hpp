@@ -42,18 +42,6 @@ public:
 
     result_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
   }
-
-#if 0
-  void onSuccess() override
-  {
-    printf("ComputePathToPoseAction: onSuccess\n");
-    int index = 0;
-    for (auto pose : result_->poses) {
-      printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
-      index++;
-    }
-  }
-#endif 
 };
 
 }  // namespace nav2_tasks

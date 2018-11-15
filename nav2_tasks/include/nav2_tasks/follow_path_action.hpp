@@ -40,22 +40,6 @@ public:
     command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
     result_ = std::make_shared<nav2_tasks::FollowPathResult>();
   }
-
-#if 0
-  void onSendCommand() override
-  {
-    printf("FollowPathAction: onSendCommand\n");
-    int index = 0;
-    for (auto pose : command_->poses) {
-      printf("point %u x: %0.2f, y: %0.2f\n", index, pose.position.x, pose.position.y);
-      index++;
-    }
-  }
-
-  void onLoopIteration() override
-  {
-  }
-#endif
 };
 
 }  // namespace nav2_tasks

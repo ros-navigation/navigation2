@@ -24,15 +24,26 @@ namespace nav2_tasks
 class RateController : public BT::DecoratorNode
 {
 public:
-  RateController(const std::string& name)
-  : BT::DecoratorNode(name, BT::NodeParameters())
+  RateController(const std::string& name, const BT::NodeParameters & params)
+  : BT::DecoratorNode(name, params)
   {
+    unsigned int hz = 1;
+    getParam<unsigned int>("hz", hz);
+    period_ = 1.0/hz;
+  }
+
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  static const BT::NodeParameters & requiredNodeParameters()
+  {
+    static BT::NodeParameters params = {{"hz", "10"}};
+    return params;
   }
 
 private:
   virtual BT::NodeStatus tick() override;
 
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+  double period_;
 };
 
 inline BT::NodeStatus RateController::tick()
@@ -43,17 +54,23 @@ inline BT::NodeStatus RateController::tick()
     return status();
   }
 
+  // Determine how long its been since we've started this iteration
   auto now = std::chrono::high_resolution_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start_);
+  auto elapsed = now - start_;
 
-  if (elapsed.count() >= 2) {
+  // Now, get that in seconds
+  typedef std::chrono::duration<float> float_seconds;
+  auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
+
+  // If we've exceed the specified period, execute the child node
+  if (seconds.count() >= period_) {
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state)
     {
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        printf("RateController: child has returned SUCCESS\n");
+        printf("seconds.count: %lf\n", seconds.count());
 
         // Reset the timer
         start_ = std::chrono::high_resolution_clock::now();
@@ -64,7 +81,7 @@ inline BT::NodeStatus RateController::tick()
 
       case BT::NodeStatus::FAILURE:
       default:
-        printf("RateController: child has failed\n");
+        // We'll try again next time
         child_node_->setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::RUNNING;
     }

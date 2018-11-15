@@ -36,7 +36,7 @@ public:
     BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
 protected:
   // The ROS node to use for any task clients
