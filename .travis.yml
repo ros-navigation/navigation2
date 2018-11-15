@@ -21,9 +21,14 @@ notifications:
 
 before_install:
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
-
-script:
   - docker run nav2:latest /bin/bash -c "colcon test --packages-skip 
       dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params 
       nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks 
       nav2_util nav2_voxel_grid"
+
+script:
+  - colcon test --packages-skip
+      dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params
+      nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks
+      nav2_util nav2_voxel_grid"
+
