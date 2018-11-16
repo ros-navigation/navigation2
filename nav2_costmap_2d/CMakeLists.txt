@@ -83,7 +83,7 @@ set(dependencies
   nav2_msgs
 )
 
-ament_target_dependencies(nav2_costmap_2d
+ament_target_dependencies(nav2_costmap_2d_core
   ${dependencies}
 )
 
@@ -98,7 +98,7 @@ ament_target_dependencies(layers
   ${dependencies}
 )
 target_link_libraries(layers
-  nav2_costmap_2d
+  nav2_costmap_2d_core
 )
 
 # TODO(bpwilcox): port costmap_2d_markers
@@ -112,20 +112,20 @@ target_link_libraries(layers
 #add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
 #ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
 #target_link_libraries(nav2_costmap_2d_cloud
-  #nav2_costmap_2d
+  #nav2_costmap_2d_core
 #)
 
-add_executable(nav2_costmap_2d_node src/costmap_2d_node.cpp)
-ament_target_dependencies(nav2_costmap_2d_node
+add_executable(nav2_costmap_2d src/costmap_2d_node.cpp)
+ament_target_dependencies(nav2_costmap_2d
   ${dependencies}
 )
 
-target_link_libraries(nav2_costmap_2d_node
-  nav2_costmap_2d
+target_link_libraries(nav2_costmap_2d
+  nav2_costmap_2d_core
   layers
 )
 
-install(TARGETS nav2_costmap_2d nav2_costmap_2d_node layers
+install(TARGETS nav2_costmap_2d_core nav2_costmap_2d layers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -150,7 +150,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(layers nav2_costmap_2d)
+ament_export_libraries(layers nav2_costmap_2d_core)
 ament_export_dependencies(${dependencies})
-pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
+pluginlib_export_plugin_description_file(nav2_costmap_2d_core costmap_plugins.xml)
 ament_package()
