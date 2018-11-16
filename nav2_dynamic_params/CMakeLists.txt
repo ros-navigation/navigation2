@@ -21,7 +21,7 @@ set(dependencies
   rclcpp
 )
 
-add_library(nav2_dynamic_params
+add_library(nav2_dynamic_params SHARED
   src/dynamic_params_validator.cpp
 )
 
