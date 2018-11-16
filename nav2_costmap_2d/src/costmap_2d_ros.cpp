@@ -44,6 +44,7 @@
 #include <vector>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "nav2_util/duration_conversions.hpp"
+#include "nav2_util/execution_timer.hpp"
 
 using namespace std;
 
@@ -61,10 +62,10 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   initialized_(true),
   stopped_(false),
   map_update_thread_(NULL),
-  last_publish_(0),
   plugin_loader_("nav2_costmap_2d", "nav2_costmap_2d::Layer"),
   publisher_(NULL),
-  publish_cycle_(1),
+  last_publish_(0, 0, RCL_ROS_TIME),
+  publish_cycle_(1,0),
   footprint_padding_(0.0)
 {
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
@@ -82,8 +83,11 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   set_parameter_if_not_set("footprint_padding", 0.01);
   set_parameter_if_not_set("robot_radius", 0.1);
 
-  // get two frames
-  parameters_client_ = std::make_shared<rclcpp::SyncParametersClient>(node_);
+  std::vector<std::string> plugin_names;
+  std::vector<std::string> plugin_types; 
+  get_parameter_or_set("plugin_names", plugin_names, {"static_layer","inflation_layer", "obstacle_layer"});
+  get_parameter_or_set("plugin_types", plugin_types,
+    {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer", "nav2_costmap_2d::ObstacleLayer"});
 
   get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
   get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -115,31 +119,17 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window, track_unknown_space);
 
-  // add and initialize layer plugins
-  if (!parameters_client_->has_parameter("plugin_names") ||
-    !parameters_client_->has_parameter("plugin_types") ) {
-  setPluginParams(node_);
-  }
-
-  // if (parameters_client_->has_parameter("plugin_names") &&
-  //   parameters_client_->has_parameter("plugin_types")) {
-  //   auto param = get_parameters({"plugin_names", "plugin_types"});
-  //   for (int32_t i = 0; i < param[0].get_value<std::vector<std::string>>().size(); ++i) {
-  //     std::string pname = (param[0].get_value<std::vector<std::string>>())[i];
-  //     std::string type = (param[1].get_value<std::vector<std::string>>())[i];
-  //     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", pname.c_str());
-  //     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(type);
-  //     layered_costmap_->addPlugin(plugin);
-  //     plugin->initialize(layered_costmap_, name + "_" + pname, &tf_, node_);
-  //   }
-  // }
-
-  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
-  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
-  for (int i = 0; i < 2; i++) {
-    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
-    layered_costmap_->addPlugin(plugin);
-    plugin->initialize(layered_costmap_, name + "_" + plugin_names[i], &tf_, node_);
+  if (plugin_names.size() == plugin_types.size()) {
+    for (int i = 0; i < plugin_names.size(); ++i) {
+      RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names[i].c_str());
+      std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types[i]);
+      layered_costmap_->addPlugin(plugin);
+      plugin->initialize(layered_costmap_, plugin_names[i], &tf_, node_);
+    }
+  } else {
+    std::string plugin_error = "Plugin Name and Plugin Type sizes do not match";
+    RCLCPP_ERROR(get_logger(), plugin_error);
+    throw std::runtime_error(plugin_error);
   }
 
   // subscribe to the footprint topic
@@ -184,7 +174,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
   dynamic_param_client_->add_parameters(
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
-    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius"});
+    "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius", "footprint"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
 }
 
@@ -210,16 +200,6 @@ Costmap2DROS::~Costmap2DROS()
   delete dynamic_param_client_;
 }
 
-void Costmap2DROS::setPluginParams(rclcpp::Node::SharedPtr node)
-{
-  std::vector<rclcpp::Parameter> param;
-
-  std::vector<std::string> plugin_names = {"static_layer","inflation_layer"};
-  std::vector<std::string> plugin_types = {"nav2_costmap_2d::StaticLayer","nav2_costmap_2d::InflationLayer"};
-  param = {rclcpp::Parameter("plugin_names",plugin_names),rclcpp::Parameter("plugin_types",plugin_types)};
-  node->set_parameters(param);
-}
-
 void Costmap2DROS::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "Costmap2DROS:: Event Callback");
@@ -242,7 +222,7 @@ void Costmap2DROS::reconfigureCB()
   if (map_publish_frequency > 0)
     publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency);
   else
-    publish_cycle_ = nav2_util::durationFromSeconds(-1);
+    publish_cycle_ = rclcpp::Duration(-1);
 
   // find size parameters
   double resolution, origin_x, origin_y;
@@ -330,26 +310,22 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
   }
   rclcpp::Rate r(frequency);
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    struct timeval start, end;
-    double start_t, end_t, t_diff;
-    gettimeofday(&start, NULL);
+    nav2_util::ExecutionTimer timer;  // Used to measure the execution time of the updateMap method
+    timer.start();
     updateMap();
-    gettimeofday(&end, NULL);
-    start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-    t_diff = end_t - start_t;
-    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", t_diff);
-    if (publish_cycle_.nanoseconds() > 0 && layered_costmap_->isInitialized()) {
+    timer.end();
+    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
+
+    if (publish_cycle_ > rclcpp::Duration(0) && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       publisher_->updateBounds(x0, xn, y0, yn);
 
-      rclcpp::Time now = this->now();
-
-      if (last_publish_.nanoseconds() + publish_cycle_.nanoseconds() < now.nanoseconds()) {
-      //if (last_publish_ + publish_cycle_ < now) {
+      auto current_time = now();
+      if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+          (current_time < last_publish_)) {  // time has moved backwards, probably due to a switch to sim_time // NOLINT
         publisher_->publishCostmap();
-        last_publish_ = now;
+        last_publish_ = current_time;
       }
     }
     r.sleep();

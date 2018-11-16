@@ -27,13 +27,19 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_tasks::NavigateToPoseTaskServer("NavigateToPoseNode"),
-  robot_(this)
+: Node("NavigateToPoseNode")
 {
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
+
+  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
+
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
+  task_server_->setExecuteCallback(
+    std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 }
 
 TaskStatus
-BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
+BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Start navigating to goal (%.2f, %.2f).",
     command->pose.position.x, command->pose.position.y);
@@ -41,7 +47,7 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
   // Get the current pose from the robot
   auto current = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  if (!robot_.getCurrentPose(current)) {
+  if (!robot_->getCurrentPose(current)) {
     RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
@@ -77,7 +83,8 @@ BtNavigator::execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(blackboard, xml_text, std::bind(&BtNavigator::cancelRequested, this));
+  TaskStatus result = bt.run(blackboard, xml_text,
+      std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;

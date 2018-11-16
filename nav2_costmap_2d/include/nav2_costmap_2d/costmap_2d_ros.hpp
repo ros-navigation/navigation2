@@ -45,7 +45,6 @@
 #include <geometry_msgs/msg/polygon.h>
 #include <geometry_msgs/msg/polygon_stamped.h>
 #include <pluginlib/class_loader.hpp>
-#include <xmlrpcpp/XmlRpcValue.h>
 #include <tf2/transform_datatypes.h>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -59,21 +58,6 @@
 #include "rclcpp/parameter_events_filter.hpp"
 #include "nav2_dynamic_params/dynamic_params_validator.hpp"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
-
-class SuperValue : public XmlRpc::XmlRpcValue
-{
-public:
-  void setStruct(XmlRpc::XmlRpcValue::ValueStruct * a)
-  {
-    _type = TypeStruct;
-    _value.asStruct = new XmlRpc::XmlRpcValue::ValueStruct(*a);
-  }
-  void setArray(XmlRpc::XmlRpcValue::ValueArray * a)
-  {
-    _type = TypeArray;
-    _value.asArray = new std::vector<XmlRpc::XmlRpcValue>(*a);
-  }
-};
 
 namespace nav2_costmap_2d
 {
@@ -252,10 +236,6 @@ private:
    * new_config and old_config, nothing is changed. */
   void readFootprintFromConfig();
 
-  void resetOldParameters(rclcpp::Node::SharedPtr nh);
-
-  void setPluginParams(rclcpp::Node::SharedPtr nh);
-
   void reconfigureCB();
 
   void mapUpdateLoop(double frequency);
@@ -282,8 +262,6 @@ private:
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
   float footprint_padding_;
-
-  rclcpp::Node::SharedPtr private_nh_;
 };
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d

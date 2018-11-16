@@ -68,14 +68,14 @@ void loadBackwardsCompatibleParameters(const std::shared_ptr<rclcpp::Node> & nh)
                                                 //   (local) goal, based on wave propagation
   nh->set_parameters({rclcpp::Parameter("critics", critic_names)});
   /* *INDENT-OFF* */
-  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathAlign/scale", 32.0, false);
-  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalAlign/scale", 24.0, false);
-  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathDist/scale", 32.0);
-  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalDist/scale", 24.0);
-  nav_2d_utils::moveParameter(nh, "occdist_scale",      "ObstacleFootprint/scale", 0.01);
+  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathAlign.scale", 32.0, false);
+  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalAlign.scale", 24.0, false);
+  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathDist.scale", 32.0);
+  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalDist.scale", 24.0);
+  nav_2d_utils::moveParameter(nh, "occdist_scale",      "ObstacleFootprint.scale", 0.01);
 
-  nav_2d_utils::moveParameter(nh, "max_scaling_factor", "ObstacleFootprint/max_scaling_factor", 0.2);  // NOLINT
-  nav_2d_utils::moveParameter(nh, "scaling_speed",      "ObstacleFootprint/scaling_speed", 0.25);
+  nav_2d_utils::moveParameter(nh, "max_scaling_factor", "ObstacleFootprint.max_scaling_factor", 0.2);  // NOLINT
+  nav_2d_utils::moveParameter(nh, "scaling_speed",      "ObstacleFootprint.scaling_speed", 0.25);
   /* *INDENT-ON* */
 }
 
@@ -95,6 +95,7 @@ void DWBLocalPlanner::initialize(
   costmap_ros_ = costmap_ros;
   nh_->get_parameter_or("prune_plan", prune_plan_, true);
   nh_->get_parameter_or("prune_distance", prune_distance_, 1.0);
+  nh_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
   pub_.initialize(nh_);
 
   // Plugins
@@ -153,7 +154,7 @@ void DWBLocalPlanner::loadCritics()
     RCLCPP_INFO(nh_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
-    plugin->initialize(nh_, costmap_ros_);
+    plugin->initialize(nh_, plugin_name, costmap_ros_);
   }
 }
 

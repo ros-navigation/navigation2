@@ -26,19 +26,19 @@
 namespace nav2_simple_navigator
 {
 
-class SimpleNavigator : public nav2_tasks::NavigateToPoseTaskServer
+class SimpleNavigator : public rclcpp::Node
 {
 public:
   SimpleNavigator();
   ~SimpleNavigator();
 
-  nav2_tasks::TaskStatus execute(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
-protected:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> plannerTaskClient_;
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controllerTaskClient_;
-
-  nav2_robot::Robot robot_;
+private:
+  std::unique_ptr<nav2_robot::Robot> robot_;
+  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
+  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
+  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
 };
 
 }  // namespace nav2_simple_navigator

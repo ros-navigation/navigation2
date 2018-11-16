@@ -34,10 +34,10 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <voxel_grid/voxel_grid.hpp>
+#include <nav2_voxel_grid/voxel_grid.hpp>
 #include <sys/time.h>
 
-namespace voxel_grid
+namespace nav2_voxel_grid
 {
 VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z)
 : logger(rclcpp::get_logger("voxel_grid"))
@@ -235,7 +235,7 @@ void VoxelGrid::printVoxelGrid()
     printf("Layer z = %u:\n", z);
     for (unsigned int y = 0; y < size_y_; y++) {
       for (unsigned int x = 0; x < size_x_; x++) {
-        printf((getVoxel(x, y, z)) == voxel_grid::MARKED ? "#" : " ");
+        printf((getVoxel(x, y, z)) == nav2_voxel_grid::MARKED ? "#" : " ");
       }
       printf("|\n");
     }
@@ -247,9 +247,9 @@ void VoxelGrid::printColumnGrid()
   printf("Column view:\n");
   for (unsigned int y = 0; y < size_y_; y++) {
     for (unsigned int x = 0; x < size_x_; x++) {
-      printf((getVoxelColumn(x, y, 16, 0) == voxel_grid::MARKED) ? "#" : " ");
+      printf((getVoxelColumn(x, y, 16, 0) == nav2_voxel_grid::MARKED) ? "#" : " ");
     }
     printf("|\n");
   }
 }
-}  // namespace voxel_grid
+}  // namespace nav2_voxel_grid

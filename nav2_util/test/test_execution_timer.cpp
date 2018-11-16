@@ -10,20 +10,23 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License. Reserved.
+// limitations under the License.
 
-#include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_world_model/world_model.hpp"
+#include "nav2_util/execution_timer.hpp"
+#include <chrono>
+#include <thread>
+#include "gtest/gtest.h"
 
-int main(int argc, char ** argv)
+using nav2_util::ExecutionTimer;
+using std::this_thread::sleep_for;
+using namespace std::chrono_literals;
+
+TEST(ExecutionTimer, BasicDelay)
 {
-  rclcpp::init(argc, argv);
-  rclcpp::executors::SingleThreadedExecutor exec;
-  auto world_model_node = std::make_shared<nav2_world_model::WorldModel>(exec);
-  exec.add_node(world_model_node);
-  exec.spin();
-  rclcpp::shutdown();
-
-  return 0;
+  ExecutionTimer t;
+  t.start();
+  sleep_for(10ns);
+  t.end();
+  ASSERT_GE(t.elapsed_time(), 10ns);
+  ASSERT_GE(t.elapsed_time_in_seconds(), 1e-8);
 }

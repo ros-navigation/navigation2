@@ -24,15 +24,13 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
-find_package(xmlrpcpp REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_dynamic_params)
 find_package(nav2_util)
-
-# TODO(bpwilcox): port remaining packages
-#find_package(voxel_grid REQUIRED)
+find_package(nav2_voxel_grid REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -41,6 +39,7 @@ include_directories(
   include
   ${ament_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  ${laser_geometry_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -72,13 +71,15 @@ set(dependencies
   map_msgs
   tf2_ros
   tf2
-  xmlrpcpp
   pluginlib
   tf2_geometry_msgs
   tf2_sensor_msgs
   message_filters
   nav2_dynamic_params
+  laser_geometry
   nav2_util
+  nav2_voxel_grid
+  nav2_msgs
 )
 
 ament_target_dependencies(nav2_costmap_2d
@@ -88,13 +89,9 @@ ament_target_dependencies(nav2_costmap_2d
 add_library(layers SHARED
   plugins/inflation_layer.cpp
   plugins/static_layer.cpp
-  
-  #	TODO(bpwilcox): port additional plugin layers
-  #plugins/obstacle_layer.cpp
+  plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
-
-  # TODO(bpwilcox): port additional plugin layers
-  #plugins/voxel_layer.cpp
+  plugins/voxel_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}

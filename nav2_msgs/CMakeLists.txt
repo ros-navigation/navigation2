@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PathEndPoints.msg"
   "msg/MissionPlan.msg"
   "msg/TaskStatus.msg"
+  "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )

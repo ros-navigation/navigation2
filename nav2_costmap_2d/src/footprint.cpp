@@ -203,53 +203,38 @@ bool makeFootprintFromString(const std::string & footprint_string,
   return true;
 }
 
-
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr nh)
+std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr node)
 {
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
-
   std::string full_param_name = "footprint";
   std::string full_radius_param_name = "robot_radius";
   std::vector<geometry_msgs::msg::Point> points;
+  std::string footprint;
 
-  if (parameters_client->has_parameter(full_param_name)) {
-    XmlRpc::XmlRpcValue footprint_xmlrpc;
-    footprint_xmlrpc = parameters_client->get_parameter<XmlRpc::XmlRpcValue>(full_param_name);
-    if (footprint_xmlrpc.getType() == XmlRpc::XmlRpcValue::TypeString &&
-        footprint_xmlrpc != "" && footprint_xmlrpc != "[]")
-    {
-      if (makeFootprintFromString(std::string(footprint_xmlrpc), points)) {
-        writeFootprintToParam(nh, points);
-        return points;
-      }
-    } else if (footprint_xmlrpc.getType() == XmlRpc::XmlRpcValue::TypeArray) {
-      points = makeFootprintFromXMLRPC(footprint_xmlrpc, full_param_name);
-      writeFootprintToParam(nh, points);
+  node->get_parameter_or<std::string>(full_param_name, footprint, "[]" );
+  if (footprint != "" && footprint != "[]")
+  {
+    if (makeFootprintFromString(std::string(footprint), points)) {
+      writeFootprintToParam(node, points);
       return points;
     }
   }
 
-  if (parameters_client->has_parameter(full_radius_param_name)) {
-    double robot_radius;
-    robot_radius = parameters_client->get_parameter<double>(full_radius_param_name, 1.234);
-    points = makeFootprintFromRadius(robot_radius);
+  double robot_radius;
+  node->get_parameter_or<double>(full_radius_param_name, robot_radius, 0.1);
+  points = makeFootprintFromRadius(robot_radius);
 
-    auto set_parameters_results = parameters_client->set_parameters({
-          rclcpp::Parameter("robot_radius", robot_radius)
-        });
+  auto set_parameters_results = node->set_parameters({
+        rclcpp::Parameter("robot_radius", robot_radius)
+      });
 
-  }
   // Else neither param was found anywhere this knows about, so
-  // defaults will come from dynamic_reconfigure stuff, set in
-  // cfg/Costmap2D.cfg and read in this file in reconfigureCB().
+  // defaults will come from dynamic_reconfigure stuff
   return points;
 }
 
-void writeFootprintToParam(rclcpp::Node::SharedPtr nh,
+void writeFootprintToParam(rclcpp::Node::SharedPtr node,
     const std::vector<geometry_msgs::msg::Point> & footprint)
 {
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
-
   std::ostringstream oss;
   bool first = true;
   for (unsigned int i = 0; i < footprint.size(); i++) {
@@ -262,70 +247,9 @@ void writeFootprintToParam(rclcpp::Node::SharedPtr nh,
     }
   }
   oss << "]";
-  auto set_parameters_results = parameters_client->set_parameters({
+  auto set_parameters_results = node->set_parameters({
         rclcpp::Parameter("footprint", oss.str().c_str())
       });
-
-}
-
-double getNumberFromXMLRPC(XmlRpc::XmlRpcValue & value, const std::string & full_param_name)
-{
-  // Make sure that the value we're looking at is either a double or an int.
-  if (value.getType() != XmlRpc::XmlRpcValue::TypeInt &&
-      value.getType() != XmlRpc::XmlRpcValue::TypeDouble)
-  {
-    std::string & value_string = value;
-    RCLCPP_FATAL(rclcpp::get_logger(
-          "nav2_costmap_2d"),
-        "Values in the footprint specification (param %s) must be numbers. Found value %s.",
-        full_param_name.c_str(), value_string.c_str());
-    throw std::runtime_error("Values in the footprint specification must be numbers");
-  }
-  return value.getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(value) : (double)(value);
-}
-
-std::vector<geometry_msgs::msg::Point> makeFootprintFromXMLRPC(
-    XmlRpc::XmlRpcValue & footprint_xmlrpc,
-    const std::string & full_param_name)
-{
-  // Make sure we have an array of at least 3 elements.
-  if (footprint_xmlrpc.getType() != XmlRpc::XmlRpcValue::TypeArray ||
-      footprint_xmlrpc.size() < 3)
-  {
-    RCLCPP_FATAL(rclcpp::get_logger(
-          "nav2_costmap_2d"),
-        "The footprint must be specified as list of lists on the parameter server, %s was specified as %s",
-        full_param_name.c_str(), std::string(footprint_xmlrpc).c_str());
-    throw std::runtime_error(
-        "The footprint must be specified as list of lists on the parameter server with at least "
-        "3 points eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
-  }
-
-  std::vector<geometry_msgs::msg::Point> footprint;
-  geometry_msgs::msg::Point pt;
-
-  for (int i = 0; i < footprint_xmlrpc.size(); ++i) {
-    // Make sure each element of the list is an array of size 2. (x and y coordinates)
-    XmlRpc::XmlRpcValue point = footprint_xmlrpc[i];
-    if (point.getType() != XmlRpc::XmlRpcValue::TypeArray ||
-        point.size() != 2)
-    {
-      RCLCPP_FATAL(rclcpp::get_logger(
-            "nav2_costmap_2d"),
-          "The footprint (parameter %s) must be specified as list of lists on the parameter server eg: "
-          "[[x1, y1], [x2, y2], ..., [xn, yn]], but this spec is not of that form.",
-          full_param_name.c_str());
-      throw std::runtime_error(
-          "The footprint must be specified as list of lists on the parameter server eg: "
-          "[[x1, y1], [x2, y2], ..., [xn, yn]], but this spec is not of that form");
-    }
-
-    pt.x = getNumberFromXMLRPC(point[0], full_param_name);
-    pt.y = getNumberFromXMLRPC(point[1], full_param_name);
-
-    footprint.push_back(pt);
-  }
-  return footprint;
 }
 
 }  // end namespace nav2_costmap_2d

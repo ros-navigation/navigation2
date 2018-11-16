@@ -21,7 +21,7 @@
 namespace nav2_robot
 {
 
-Robot::Robot(rclcpp::Node * node)
+Robot::Robot(rclcpp::Node::SharedPtr & node)
 : node_(node), initial_pose_received_(false), initial_odom_received_(false)
 {
   // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters

@@ -75,6 +75,8 @@ checkpoint() {
   if [ ! -f ${CHECKPOINT_FILE_NAME} ]; then
     $1
     touch ${CHECKPOINT_FILE_NAME}
+  else
+    echo "${CHECKPOINT_FILE_NAME} exists. Skipping $1"
   fi
 }
 

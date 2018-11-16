@@ -89,11 +89,12 @@ public:
    * @param parent_namespace The namespace of the planner
    * @param costmap_ros Pointer to the costmap
    */
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh, CostmapROSPtr costmap_ros)
+  void initialize(const std::shared_ptr<rclcpp::Node> & nh, std::string & name, CostmapROSPtr costmap_ros)
   {
+    name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    nh_->get_parameter_or("scale", scale_, 1.0);
+    nh_->get_parameter_or(name_ + ".scale", scale_, 1.0);
     onInit();
   }
   virtual void onInit() {}

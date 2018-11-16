@@ -46,7 +46,7 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: nav2_tasks::ComputePathToPoseTaskServer("ComputePathToPoseNode", false),
+: Node("NavfnPlanner"),
   global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0),
@@ -55,8 +55,9 @@ NavfnPlanner::NavfnPlanner()
   RCLCPP_INFO(get_logger(), "Initializing.");
 
   // Grab params off the param server
-  auto node = rclcpp::Node::make_shared("NavfnPlanner");
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(node);
+  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
+  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
   use_astar_ = parameters_client->get_parameter("use_astar", false);
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
@@ -66,10 +67,12 @@ NavfnPlanner::NavfnPlanner()
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
-  costmap_client_.waitForService(std::chrono::seconds(2));
+  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
+  task_server_->setExecuteCallback(
+    std::bind(&SmartPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
-  startWorkerThread();
+  task_server_->startWorkerThread();
 }
 
 NavfnPlanner::~NavfnPlanner()
@@ -78,10 +81,10 @@ NavfnPlanner::~NavfnPlanner()
 }
 
 TaskStatus
-NavfnPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f).",command->start.position.x, command->start.position.y,
+  RCLCPP_INFO(get_logger(), "SmartPlanner: Attempting to a find path from (%.2f, %.2f) to "
+    "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
   nav2_tasks::ComputePathToPoseResult result;
@@ -92,8 +95,7 @@ NavfnPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Create a planner based on the new costmap size
-    if (isPlannerOutOfDate())
-    {
+    if (isPlannerOutOfDate()) {
       current_costmap_size_[0] = costmap_.metadata.size_x;
       current_costmap_size_[1] = costmap_.metadata.size_y;
       planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
@@ -103,9 +105,9 @@ NavfnPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
     bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
-    if (cancelRequested()) {
+    if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Cancelled global planning task.");
-      setCanceled();
+      task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
@@ -125,9 +127,10 @@ NavfnPlanner::execute(const nav2_tasks::ComputePathToPoseCommand::SharedPtr comm
 
     // TODO(orduno): Enable potential visualization
 
-    RCLCPP_INFO(get_logger(), "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
+    RCLCPP_INFO(get_logger(),
+      "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
       command->goal.position.x, command->goal.position.y, command->tolerance);
-    setResult(result);
+    task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
@@ -220,10 +223,11 @@ NavfnPlanner::makePlan(
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
-  if (use_astar_)
+  if (use_astar_) {
     planner_->calcNavFnAstar();
-  else
+  } else {
     planner_->calcNavFnDijkstra(true);
+  }
 
   double resolution = costmap_.metadata.resolution;
   geometry_msgs::msg::Pose p, best_pose;
@@ -292,8 +296,10 @@ NavfnPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
   planner_->setStart(map_start);
   planner_->setGoal(map_goal);
 
-  if(use_astar_)
+  if (use_astar_) {
     return planner_->calcNavFnAstar();
+  }
+
   return planner_->calcNavFnDijkstra();
 }
 
