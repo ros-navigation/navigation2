@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_smart_planner)
+project(nav2_navfn_planner)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -23,8 +23,8 @@ include_directories(
   include
 )
 
-set(library_name smart_planner)
-set(executable_name ${library_name}_node)
+set(executable_name navfn_planner)
+set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
@@ -38,7 +38,7 @@ set(dependencies
 
 # Library
 add_library(${library_name}
-  src/smart_planner.cpp
+  src/navfn_planner.cpp
   src/navfn.cpp
 )
 

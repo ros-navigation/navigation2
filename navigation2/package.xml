@@ -17,7 +17,7 @@
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_world_model</exec_depend>
-  <exec_depend>nav2_smart_planner</exec_depend>
+  <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_dwb_controller</exec_depend>
   <exec_depend>nav2_dynamic_params</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>

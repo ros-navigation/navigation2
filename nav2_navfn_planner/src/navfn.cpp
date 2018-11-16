@@ -44,7 +44,7 @@
 
 #include <algorithm>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_smart_planner/navfn.hpp"
+#include "nav2_navfn_planner/navfn.hpp"
 
 //
 // function to perform nav fn calculation
