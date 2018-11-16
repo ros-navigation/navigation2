@@ -23,8 +23,9 @@ before_install:
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
 
 script:
-  - docker run nav2:latest /bin/bash -c "colcon test --abort-on-test-error --packages-skip
+  - docker run -d nav2:latest /sbin/init
+  - docker exec nav2:latest /bin/bash -c "colcon test --abort-on-test-error --packages-skip
       dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params 
       nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks 
       nav2_util nav2_voxel_grid"
-
+  - docker exec nav2:latest /bin/bash -c "cd log/latest_test; if (grep -r FAIL) then /bin/false; else /bin/true; fi"
