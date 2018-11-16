@@ -53,6 +53,7 @@ protected:
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> self_client_;
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
   {
+    RCLCPP_INFO(node_->get_logger(), "Received move_base_simple/goal");
     self_client_->sendCommand(pose);
   }
 };
