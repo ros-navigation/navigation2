@@ -69,7 +69,7 @@ NavfnPlanner::NavfnPlanner()
 
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&SmartPlanner::computePathToPose, this, std::placeholders::_1));
+    std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->startWorkerThread();
@@ -83,7 +83,7 @@ NavfnPlanner::~NavfnPlanner()
 TaskStatus
 NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "SmartPlanner: Attempting to a find path from (%.2f, %.2f) to "
+  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
