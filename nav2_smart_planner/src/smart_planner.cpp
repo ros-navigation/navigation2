@@ -203,16 +203,10 @@ SmartPlanner::makePlan(
   wy = goal.position.y;
 
   if (!worldToMap(wx, wy, mx, my)) {
-    if (tolerance <= 0.0) {
-      std::cout << "tolerance: " << tolerance << std::endl;
-      RCLCPP_WARN(
-        get_logger(),
-        "SmartPlanner: The goal sent to the planner is off the global costmap."
-        " Planning will always fail to this goal.");
-      return false;
-    }
-    mx = 0;
-    my = 0;
+    RCLCPP_WARN(get_logger(),
+      "SmartPlanner: The goal sent to the planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
   }
 
   int map_goal[2];
@@ -271,19 +265,21 @@ SmartPlanner::makePlan(
 
 void
 SmartPlanner::smoothApproachToGoal(
-  const geometry_msgs::msg::Pose & best_pose,
+  const geometry_msgs::msg::Pose & goal,
   nav2_msgs::msg::Path & plan)
 {
-  // For now we only check the last two poses of the plan
+  // Replace the last pose of the computed path if it's actually further away
+  // to the second to last pose than the goal pose.
+
   auto second_to_last_pose = plan.poses.end()[-2];
   auto last_pose = plan.poses.back();
   if (
     squared_distance(last_pose, second_to_last_pose) >
-    squared_distance(best_pose, second_to_last_pose)
+    squared_distance(goal, second_to_last_pose)
   ) {
-    plan.poses.back() = best_pose;
+    plan.poses.back() = goal;
   } else {
-    geometry_msgs::msg::Pose goal_copy = best_pose;
+    geometry_msgs::msg::Pose goal_copy = goal;
     plan.poses.push_back(goal_copy);
   }
 }
