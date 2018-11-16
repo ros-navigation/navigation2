@@ -1,4 +1,4 @@
-# This hold basic information about the characterists of the Costmap
+# This hold basic information about the characteristics of the Costmap
 
 # The time at which the static map was loaded
 builtin_interfaces/Time map_load_time

@@ -53,6 +53,12 @@ inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const StringVi
   return nullptr;
 }
 
+template<>
+inline nav2_msgs::msg::Failure::SharedPtr convertFromString(const std::string & /*key*/)
+{
+  return nullptr;
+}
+
 // These are needed to be able to set parameters for these types in the BT XML
 
 template<>
