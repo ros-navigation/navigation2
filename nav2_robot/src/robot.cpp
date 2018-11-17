@@ -40,6 +40,7 @@ Robot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::Share
   // TODO(mjeronimo): serialize access
   current_pose_ = msg;
   if (!initial_pose_received_) {
+    RCLCPP_INFO(node_->get_logger(), "Received initial pose");
     initial_pose_received_ = true;
   }
 }
