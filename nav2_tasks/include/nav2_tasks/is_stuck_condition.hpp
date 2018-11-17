@@ -17,6 +17,11 @@
 
 #include <string>
 
+#include "rclcpp/rclcpp.hpp"
+#include <chrono>
+#include <ctime>
+#include <iostream>
+
 #include "behavior_tree_core/condition_node.h"
 
 namespace nav2_tasks
@@ -41,10 +46,20 @@ public:
     // TODO(orduno) Write code for detecting if the robot is stuck
     //              i.e. compare the actual robot motion with the velocity command
 
-    // For testing, let's return true (or success on BT terminology)
-    std::cout << "IsStuckCondition::tick: the Condition is true" << std::endl;
+    static auto start_time = std::chrono::system_clock::now();
+    auto end_time = std::chrono::system_clock::now();
 
-    return NodeStatus::SUCCESS;
+    if ((end_time - start_time) % 1 >= 1.0) {
+      std::cout << "IsStuckCondition::tick: Robot not stuck" << std::endl;
+    }
+
+    if (end_time - start_time > 5 /*seconds*/) {
+      start_time = std::chrono::system_clock::now();
+      std::cout << "IsStuckCondition::tick: Robot is stuck" << std::endl;
+      return NodeStatus::SUCCEEDED;  // the condition was detected
+    }
+
+    return NodeStatus::FAILURE;  // the condition was not detected
   }
 
   void halt() override
@@ -52,6 +67,8 @@ public:
   }
 
 };
+
+private:
 
 }  // namespace nav2_tasks
 

@@ -20,6 +20,7 @@
 #include "behaviortree_cpp/blackboard/blackboard.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/quaternion_stamped.hpp"
 #include "nav2_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/path_end_points.hpp"
 
@@ -49,12 +50,6 @@ inline nav2_msgs::msg::Path::SharedPtr convertFromString(const StringView & /*ke
 
 template<>
 inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const StringView & /*key*/)
-{
-  return nullptr;
-}
-
-template<>
-inline nav2_msgs::msg::Failure::SharedPtr convertFromString(const std::string & /*key*/)
 {
   return nullptr;
 }
@@ -92,6 +87,13 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView & key)
     orientation.w = BT::convertFromString<double>(parts[3]);
     return orientation;
   }
+}
+
+template<>
+inline geometry_msgs::msg::QuaternionStamped convertFromString(const std::string & key)
+{
+  geometry_msgs::msg::QuaternionStamped quaternion_stamped
+  return quaternion;
 }
 
 }  // namespace BT

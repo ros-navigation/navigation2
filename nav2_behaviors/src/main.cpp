@@ -14,12 +14,11 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_recovery_manager/recovery_manager.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_recovery_manager::RecoveryManager>());
+  // TODO(orduno) Use node composition
   rclcpp::shutdown();
 
   return 0;

@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__RECOVER_TASK_HPP_
-#define NAV2_TASKS__RECOVER_TASK_HPP_
+#ifndef NAV2_TASKS__SPIN_TASK_HPP_
+#define NAV2_TASKS__SPIN_TASK_HPP_
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_msgs/msg/failure.hpp"
+#include "geometry_msgs/quaternion_stamped.h"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks
 {
 
-using RecoverCommand = nav2_msgs::msg::Failure;
-using RecoverResult = std_msgs::msg::Empty;
+using SpinCommand = geometry_msgs::msg::QuaternionStamped;
+using SpinResult = std_msgs::msg::Empty;
 
-using RecoverTaskClient = TaskClient<RecoverCommand, RecoverResult>;
-using RecoverTaskServer = TaskServer<RecoverCommand, RecoverResult>;
+using SpinTaskClient = TaskClient<SpinCommand, SpinResult>;
+using SpinTaskServer = TaskServer<SpinCommand, SpinResult>;
 
 template<>
-inline const char * getTaskName<RecoverCommand, RecoverResult>()
+inline const char * getTaskName<SpinCommand, SpinResult>()
 {
-  return "RecoverTask";
+  return "SpinTask";
 }
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__RECOVER_TASK_HPP_
+#endif  // NAV2_TASKS__SPIN_TASK_HPP_

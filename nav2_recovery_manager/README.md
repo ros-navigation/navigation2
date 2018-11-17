@@ -1,3 +1,0 @@
-# Recovery Manager
-
-TODO(orduno)

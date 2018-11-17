@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_recovery_manager)
+project(nav2_behaviors)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -22,7 +22,7 @@ include_directories(
   include
 )
 
-set(library_name recovery_manager)
+set(library_name behaviors)
 set(executable_name ${library_name}_node)
 
 set(dependencies
@@ -36,7 +36,7 @@ set(dependencies
 
 # Library
 add_library(${library_name}
-  src/recovery_manager.cpp
+  src/behaviors.cpp
 )
 
 ament_target_dependencies(${library_name}
