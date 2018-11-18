@@ -17,7 +17,7 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "geometry_msgs/quaternion_stamped.h"
+#include "geometry_msgs/msg/quaternion_stamped.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 namespace nav2_tasks

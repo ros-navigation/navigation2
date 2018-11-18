@@ -13,35 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERY_MANAGER__STOP_MOTION_HPP_
-#define NAV2_RECOVERY_MANAGER__STOP_MOTION_HPP_
+#ifndef NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_
+#define NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_
 
-#include <string>
+#include <memory>
 
-#include "nav2_recovery_manager/recovery_behavior.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
 
-namespace nav2_recovery_manager
+namespace nav2_fake_planner
 {
 
-// Provides an interface for defining a recovery behavior
-class StopMotion : public RecoveryBehavior
+class FakePlanner : public rclcpp::Node
 {
 public:
-  explicit StopMotion(const std::string name)
-  : RecoveryBehavior(name)
-  {
-  }
+  FakePlanner();
+  ~FakePlanner();
 
-  void initialize() override;
+  nav2_tasks::TaskStatus computePathToPose(
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
 
-  bool run() override;
-
-  std::string name() { return name_; };
-
-protected:
-  std::string name_;
+private:
+  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
 };
 
-}  // nav2_recovery_manager
+}  // namespace nav2_fake_planner
 
-#endif  // NAV2_RECOVERY_MANAGER__STOP_MOTION_HPP_
+#endif  // NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_

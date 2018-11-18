@@ -43,23 +43,28 @@ public:
 
   BT::NodeStatus tick() override
   {
-    // TODO(orduno) Write code for detecting if the robot is stuck
+    // TODO(orduno) Detect if robot is stuck
     //              i.e. compare the actual robot motion with the velocity command
+
+    using namespace std::chrono_literals;
+
+    static int seconds_counter = 0;
 
     static auto start_time = std::chrono::system_clock::now();
     auto end_time = std::chrono::system_clock::now();
 
-    if ((end_time - start_time) % 1 >= 1.0) {
+    if (end_time - start_time >= 1s) {
+      ++seconds_counter;
       std::cout << "IsStuckCondition::tick: Robot not stuck" << std::endl;
-    }
-
-    if (end_time - start_time > 5 /*seconds*/) {
       start_time = std::chrono::system_clock::now();
-      std::cout << "IsStuckCondition::tick: Robot is stuck" << std::endl;
-      return NodeStatus::SUCCEEDED;  // the condition was detected
     }
 
-    return NodeStatus::FAILURE;  // the condition was not detected
+    if (seconds_counter >= 3) {
+      std::cout << "IsStuckCondition::tick: Robot is stuck" << std::endl;
+      return BT::NodeStatus::SUCCESS;  // the condition was detected
+    }
+
+    return BT::NodeStatus::FAILURE;  // the condition was not detected
   }
 
   void halt() override
@@ -67,8 +72,6 @@ public:
   }
 
 };
-
-private:
 
 }  // namespace nav2_tasks
 

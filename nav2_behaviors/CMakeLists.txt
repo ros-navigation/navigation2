@@ -17,6 +17,7 @@ find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 include_directories(
   include
@@ -32,11 +33,12 @@ set(dependencies
   nav2_tasks
   nav2_msgs
   nav_msgs
+  tf2
 )
 
 # Library
 add_library(${library_name}
-  src/behaviors.cpp
+  src/spin.cpp
 )
 
 ament_target_dependencies(${library_name}

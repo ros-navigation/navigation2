@@ -17,7 +17,7 @@
 
 #include <string>
 #include <memory>
-#include <math>
+#include <cmath>
 #include <iostream>
 
 #include "nav2_tasks/bt_conversions.hpp"
@@ -25,6 +25,7 @@
 #include "nav2_tasks/spin_task.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace nav2_tasks
 {
@@ -42,14 +43,17 @@ public:
     result_ = std::make_shared<nav2_tasks::SpinResult>();
 
     tf2::Quaternion quaternion;
-    // yaw, pitch and roll are rotation in z, y, z respectively
-    quaternion.setRPY(0, 0, 2 * M_PI)  // in radians
+    // yaw, pitch and roll are rotation in z, y, x respectively, in radians
+    quaternion.setRPY(0, 0, 2 * M_PI);
     // quaternion.normalize();
 
-    command_->quaternion.x = quaternion.x;
-    command_->quaternion.y = quaternion.y;
-    command_->quaternion.z = quaternion.z;
-    command_->quaternion.w = quaternion.w;
+    geometry_msgs::msg::Quaternion quaternion_msg;
+    quaternion_msg = tf2::toMsg(quaternion);
+
+    command_->quaternion.x = quaternion_msg.x;
+    command_->quaternion.y = quaternion_msg.y;
+    command_->quaternion.z = quaternion_msg.z;
+    command_->quaternion.w = quaternion_msg.w;
   }
 };
 

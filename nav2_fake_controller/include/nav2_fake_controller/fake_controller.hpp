@@ -13,35 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERY_MANAGER__FULL_ROTATION_HPP_
-#define NAV2_RECOVERY_MANAGER__FULL_ROTATION_HPP_
+#ifndef NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_
+#define NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_
 
-#include <string>
+#include <memory>
 
-#include "nav2_recovery_manager/recovery_behavior.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
-namespace nav2_recovery_manager
+namespace nav2_fake_controller
 {
 
-// Provides an interface for defining a recovery behavior
-class FullRotation : public RecoveryBehavior
+class FakeController : public rclcpp::Node
 {
 public:
-  explicit FullRotation(const std::string name)
-  : RecoveryBehavior(name)
-  {
-  }
+  FakeController();
+  ~FakeController();
 
-  void initialize() override;
+  nav2_tasks::TaskStatus followPath(
+    const nav2_tasks::FollowPathCommand::SharedPtr command);
 
-  bool run() override;
+private:
+  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
 
-  std::string name() { return name_; };
-
-protected:
-  std::string name_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 };
 
-}  // nav2_recovery_manager
+}  // namespace nav2_fake_controller
 
-#endif  // NAV2_RECOVERY_MANAGER__FULL_ROTATION_HPP_
+#endif  // NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Simbe Robotics
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,24 +10,17 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License. Reserved.
 
-#include "nav2_recovery_manager/full_rotation.hpp"
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_fake_planner/fake_planner.hpp"
 
-namespace nav2_recovery_manager
+int main(int argc, char ** argv)
 {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<nav2_fake_planner::FakePlanner>());
+  rclcpp::shutdown();
 
-FullRotation::FullRotation(const std::string name)
-: RecoveryBehavior(name)
-{
+  return 0;
 }
-
-void FullRotation::initialize()
-{
-}
-
-bool FullRotation::run()
-{
-}
-
-}  // namespace nav2_recovery_manager

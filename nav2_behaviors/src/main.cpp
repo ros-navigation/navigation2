@@ -14,11 +14,15 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_behaviors/spin.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  // TODO(orduno) Use node composition
+
+  // TODO(orduno) Use node composition for multiple behaviors
+  rclcpp::spin(std::make_shared<nav2_behaviors::Spin>());
+
   rclcpp::shutdown();
 
   return 0;
