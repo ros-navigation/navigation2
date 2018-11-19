@@ -28,4 +28,4 @@ script:
       dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params 
       nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks 
       nav2_util nav2_voxel_grid"
-  - docker exec nav2_bash bash -c "if (grep -r FAIL log/latest) then /bin/false; else /bin/true; fi"
+  - docker exec nav2_bash bash -c "colcon test-result" 
