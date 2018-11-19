@@ -21,13 +21,13 @@ def generate_launch_description():
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
+            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint']),
 
         launch_ros.actions.Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan_link']),
+            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_scan']),
 
         launch_ros.actions.Node(
             package='nav2_map_server',
@@ -47,6 +47,7 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
+            remappings=[('scan', 'tb3/scan')],
             parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
@@ -54,6 +55,7 @@ def generate_launch_description():
             node_executable='dwb_controller',
             node_name='FollowPathNode',
             output='screen',
+            remappings=[('/cmd_vel', 'tb3/cmd_vel')],
             parameters=[{ 'prune_plan': False }, {'debug_trajectory_details': True }, { 'use_sim_time': use_sim_time }]),
 
         launch_ros.actions.Node(
