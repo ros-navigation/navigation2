@@ -70,6 +70,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 {
   node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
+#if 0
   // Set Parameters if not set
   set_parameter_if_not_set("transform_tolerance",0.3);
   set_parameter_if_not_set("update_frequency", 5.0);
@@ -82,6 +83,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   set_parameter_if_not_set("footprint", "[]");
   set_parameter_if_not_set("footprint_padding", 0.01);
   set_parameter_if_not_set("robot_radius", 0.1);
+#endif
 
   std::vector<std::string> plugin_names;
   std::vector<std::string> plugin_types; 
@@ -176,6 +178,19 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
     "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius", "footprint"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
+
+  // Set Parameters if not set
+  set_parameter_if_not_set("transform_tolerance",0.3);
+  set_parameter_if_not_set("update_frequency", 5.0);
+  set_parameter_if_not_set("publish_frequency", 1.0);
+  set_parameter_if_not_set("width", 10);
+  set_parameter_if_not_set("height", 10);
+  set_parameter_if_not_set("resolution", 0.1);
+  set_parameter_if_not_set("origin_x", 0.0);
+  set_parameter_if_not_set("origin_y", 0.0);
+  set_parameter_if_not_set("footprint", "[]");
+  set_parameter_if_not_set("footprint_padding", 0.01);
+  set_parameter_if_not_set("robot_radius", 0.1);
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(
