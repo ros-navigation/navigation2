@@ -36,11 +36,16 @@ Spin::Spin() : Node("Spin")
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
+  reset_is_stuck_pub_ =
+    this->create_publisher<std_msgs::msg::Empty>("/reset_stuck", 1);
+
   task_server_ = std::make_unique<nav2_tasks::SpinTaskServer>(temp_node, false);
   task_server_->setExecuteCallback(std::bind(&Spin::spin, this, std::placeholders::_1));
 
   // Start listening for incoming Spin task requests
   task_server_->startWorkerThread();
+
+  RCLCPP_INFO(get_logger(), "Initialized the Spin  behavior");
 }
 
 Spin::~Spin()
@@ -98,6 +103,11 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
       break;
     }
   }
+
+  // -TESTING- Send message that the robot is no longer stuck
+  RCLCPP_INFO(get_logger(), "Sending message to reset is_stuck_condition");
+  std_msgs::msg::Empty empty_msg;
+  reset_is_stuck_pub_->publish(empty_msg);
 
   nav2_tasks::SpinResult result;
   task_server_->setResult(result);

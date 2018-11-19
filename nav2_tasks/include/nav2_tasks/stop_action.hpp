@@ -18,11 +18,11 @@
 #include <string>
 #include <memory>
 #include <cmath>
-#include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 // #include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_tasks
 {
@@ -33,7 +33,12 @@ public:
   explicit StopAction(const std::string & action_name)
   : BT::ActionNode(action_name), Node("StopAction")
   {
-    std::cout << "StopAction::StopAction" << std::endl;
+    RCLCPP_INFO(get_logger(), "StopAction::constructor");
+
+    // TODO(orduno): should we get the node from the BT::blackboard instead?
+    auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+
+    controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
     node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
     vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
@@ -45,8 +50,12 @@ public:
 
   BT::NodeStatus tick() override
   {
-    std::cout << "StopAction::tick: publishing stop command" << std::endl;
+    RCLCPP_INFO(get_logger(), "tick:: sending 'cancel' command to controller");
+    // Send a cancel message to the path following controller task server
+    controller_client_->cancel();
 
+    RCLCPP_INFO(get_logger(), "tick:: publishing zero velocity command");
+    // Publish a zero velocity command to the robot
     geometry_msgs::msg::Twist twist;
     twist.linear.x = 0;
     twist.linear.y = 0;
@@ -65,7 +74,12 @@ public:
 
 private:
   rclcpp::Node::SharedPtr node_;
+
+  // For publishing a zero velocity command to the robot
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+
+  // For stopping the path following controller from sending commands to the robot
+  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
 };
 
 }  // namespace nav2_tasks

@@ -64,7 +64,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
     // Log a message every second
     auto current_time = std::chrono::system_clock::now();
     if (current_time - time_since_msg >= 1s) {
-      RCLCPP_WARN(get_logger(), "Following path");
+      RCLCPP_INFO(get_logger(), "Following path");
       time_since_msg = std::chrono::system_clock::now();
     }
 
@@ -79,8 +79,8 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
       return TaskStatus::CANCELED;
     }
 
-    if (current_time - start_time >= 8s) {
-      RCLCPP_WARN(get_logger(), "Reached end point");
+    if (current_time - start_time >= 10s) {
+      RCLCPP_INFO(get_logger(), "Reached end point");
       break;
     }
   }

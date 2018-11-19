@@ -16,23 +16,34 @@
 #define NAV2_TASKS__IS_STUCK_CONDITION_HPP
 
 #include <string>
-
-#include "rclcpp/rclcpp.hpp"
 #include <chrono>
 #include <ctime>
-#include <iostream>
+#include <thread>
 
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "behavior_tree_core/condition_node.h"
 
 namespace nav2_tasks
 {
 
-class IsStuckCondition : public BT::ConditionNode
+class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
 {
 public:
   explicit IsStuckCondition(const std::string & condition_name)
-  : BT::ConditionNode(condition_name)
+  : BT::ConditionNode(condition_name),
+    Node("IsStuckCondition"),
+    is_stuck_(false)
   {
+    RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
+
+    trigger_is_stuck_sub_ = this->create_subscription<std_msgs::msg::Empty>(
+      "trigger_stuck",
+      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = true;});
+
+    reset_is_stuck_sub_ = this->create_subscription<std_msgs::msg::Empty>(
+      "reset_stuck",
+      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = false;});
   }
 
   IsStuckCondition() = delete;
@@ -43,34 +54,56 @@ public:
 
   BT::NodeStatus tick() override
   {
+    using namespace std::chrono_literals;
+
     // TODO(orduno) Detect if robot is stuck
     //              i.e. compare the actual robot motion with the velocity command
 
+    // Fake some time used for checking condition
+    std::this_thread::sleep_for(50ms);
+
+    // Spin the node to get messages from the subscriptions
+    rclcpp::spin_some(this->get_node_base_interface());
+
+    if (is_stuck_) {
+      // if (current_time - time_since_msg >= 1s) {
+        // RCLCPP_WARN(get_logger(), "tick(): Robot stuck!");
+        // time_since_msg = std::chrono::system_clock::now();
+      // }
+      logMessage("tick(): Robot stuck!");
+      return BT::NodeStatus::SUCCESS;
+    }
+
+    logMessage("tick(): Robot not stuck");
+    // if (current_time - time_since_msg >= 1s) {
+    //   RCLCPP_INFO(get_logger(), "tick(): Robot not stuck");
+    //   time_since_msg = std::chrono::system_clock::now();
+    // }
+
+    return BT::NodeStatus::FAILURE;
+  }
+
+  void logMessage(const std::string & msg) const {
     using namespace std::chrono_literals;
 
-    static int seconds_counter = 0;
+    // Log messages once per second
+    static auto time_since_msg = std::chrono::system_clock::now();
+    auto current_time = std::chrono::system_clock::now();
 
-    static auto start_time = std::chrono::system_clock::now();
-    auto end_time = std::chrono::system_clock::now();
-
-    if (end_time - start_time >= 1s) {
-      ++seconds_counter;
-      std::cout << "IsStuckCondition::tick: Robot not stuck" << std::endl;
-      start_time = std::chrono::system_clock::now();
+    if (current_time - time_since_msg >= 1s) {
+      RCLCPP_WARN(get_logger(), msg);
+      time_since_msg = std::chrono::system_clock::now();
     }
-
-    if (seconds_counter >= 3) {
-      std::cout << "IsStuckCondition::tick: Robot is stuck" << std::endl;
-      return BT::NodeStatus::SUCCESS;  // the condition was detected
-    }
-
-    return BT::NodeStatus::FAILURE;  // the condition was not detected
   }
 
   void halt() override
   {
   }
 
+private:
+  bool is_stuck_;
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr trigger_is_stuck_sub_;
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr reset_is_stuck_sub_;
 };
 
 }  // namespace nav2_tasks

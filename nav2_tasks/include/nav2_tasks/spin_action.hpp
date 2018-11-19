@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 #include <cmath>
-#include <iostream>
 
 #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
@@ -36,8 +35,6 @@ public:
   explicit SpinAction(const std::string & action_name)
   : BtActionNode<SpinCommand, SpinResult>(action_name)
   {
-    std::cout << "SpinAction::SpinAction" << std::endl;
-
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::SpinCommand>();
     result_ = std::make_shared<nav2_tasks::SpinResult>();

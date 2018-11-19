@@ -61,7 +61,7 @@ FakePlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Share
     return TaskStatus::CANCELED;
   }
 
-  RCLCPP_WARN(get_logger(), "Found a fake path");
+  RCLCPP_INFO(get_logger(), "Found a fake path");
 
   nav2_tasks::ComputePathToPoseResult result;
   task_server_->setResult(result);
