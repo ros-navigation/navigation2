@@ -264,7 +264,7 @@ NavfnPlanner::makePlan(
 }
 
 void
-SmartPlanner::smoothApproachToGoal(
+NavfnPlanner::smoothApproachToGoal(
   const geometry_msgs::msg::Pose & goal,
   nav2_msgs::msg::Path & plan)
 {
