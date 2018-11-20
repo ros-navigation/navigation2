@@ -70,7 +70,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
 
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 10.0;
+    cmd_vel.linear.x = 1.22;
     vel_pub_->publish(cmd_vel);
 
     if (task_server_->cancelRequested()) {

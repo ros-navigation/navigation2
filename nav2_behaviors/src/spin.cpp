@@ -83,7 +83,7 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
     // Log a message every second
     auto current_time = std::chrono::system_clock::now();
     if (current_time - time_since_msg >= 500ms) {
-      RCLCPP_WARN(get_logger(), "Spinning...");
+      RCLCPP_INFO(get_logger(), "Spinning...");
       time_since_msg = std::chrono::system_clock::now();
     }
 
@@ -99,7 +99,7 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
     }
 
     if (current_time - start_time >= 5s) {
-      RCLCPP_WARN(get_logger(), "Completed rotation");
+      RCLCPP_INFO(get_logger(), "Completed rotation");
       break;
     }
   }
