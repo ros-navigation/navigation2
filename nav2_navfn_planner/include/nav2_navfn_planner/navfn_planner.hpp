@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_SMART_PLANNER__SMART_PLANNER_HPP_
-#define NAV2_SMART_PLANNER__SMART_PLANNER_HPP_
+#ifndef NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
+#define NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
 
 #include <string>
 #include <vector>
@@ -24,20 +24,20 @@
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_tasks/costmap_service_client.hpp"
-#include "nav2_smart_planner/navfn.hpp"
+#include "nav2_navfn_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
-namespace nav2_smart_planner
+namespace nav2_navfn_planner
 {
 
-class SmartPlanner : public rclcpp::Node
+class NavfnPlanner : public rclcpp::Node
 {
 public:
-  SmartPlanner();
-  ~SmartPlanner();
+  NavfnPlanner();
+  ~NavfnPlanner();
 
   nav2_tasks::TaskStatus computePathToPose(
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
@@ -135,6 +135,6 @@ private:
   bool use_astar_;
 };
 
-}  // namespace nav2_smart_planner
+}  // namespace nav2_navfn_planner
 
-#endif  // NAV2_SMART_PLANNER__SMART_PLANNER_HPP_
+#endif  // NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
