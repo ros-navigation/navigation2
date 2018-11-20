@@ -27,5 +27,7 @@ script:
   - docker exec nav2_bash bash -c "colcon test --packages-skip
       dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params 
       nav2_map_server nav2_smart_planner nav2_system_tests nav2_tasks 
-      nav2_util nav2_voxel_grid"
+      nav2_util nav2_voxel_grid costmap_queue dwb_critics dwb_plugins 
+      nav2_bt_navigator nav2_mission_executor nav2_robot 
+      nav2_simple_navigator nav2_world_model nav_2d_utils"
   - docker exec nav2_bash bash -c "colcon test-result" 
