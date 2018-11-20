@@ -241,4 +241,6 @@ private:
   int scan_error_count_ = 0;
 };
 
+extern std::shared_ptr<rclcpp::Clock> simtime_clock;
+
 #endif  // AMCL_NODE_HPP_

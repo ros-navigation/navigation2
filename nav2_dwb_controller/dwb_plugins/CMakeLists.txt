@@ -34,7 +34,8 @@ add_library(simple_goal_checker SHARED src/simple_goal_checker.cpp)
 ament_target_dependencies(simple_goal_checker ${dependencies})
 
 add_library(stopped_goal_checker SHARED src/stopped_goal_checker.cpp)
-ament_target_dependencies(stopped_goal_checker simple_goal_checker ${dependencies})
+target_link_libraries(stopped_goal_checker simple_goal_checker)
+ament_target_dependencies(stopped_goal_checker ${dependencies})
 
 add_library(standard_traj_generator SHARED
             src/standard_traj_generator.cpp

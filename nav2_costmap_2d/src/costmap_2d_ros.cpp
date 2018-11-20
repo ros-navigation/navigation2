@@ -283,7 +283,7 @@ void Costmap2DROS::readFootprintFromConfig()
   dynamic_param_client_->get_event_param("footprint", footprint); 
   dynamic_param_client_->get_event_param("robot_radius", robot_radius); 
 
-  if (!dynamic_param_client_->is_in_event("footprint") ||
+  if (!dynamic_param_client_->is_in_event("footprint") &&
     !dynamic_param_client_->is_in_event("robot_radius"))
     {
       return;
