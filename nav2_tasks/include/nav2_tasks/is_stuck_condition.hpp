@@ -36,8 +36,7 @@ public:
   explicit IsStuckCondition(const std::string & condition_name)
   : BT::ConditionNode(condition_name),
     Node("IsStuckCondition"),
-    is_stuck_(false),
-    test_mode_(true)
+    is_stuck_(false)
   {
     RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
 
@@ -50,11 +49,12 @@ public:
       [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = false;});
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "cmd_vel",
+      "tb3/cmd_vel",
       [this](geometry_msgs::msg::Twist::SharedPtr msg) {current_vel_cmd_ = msg;});
 
-    auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-    robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "tb3/odom",
+      [this](nav_msgs::msg::Odometry::SharedPtr msg) {current_velocity_ = msg;});
   }
 
   IsStuckCondition() = delete;
@@ -69,38 +69,50 @@ public:
     rclcpp::spin_some(this->get_node_base_interface());
 
     if (isStuck()) {
-      logMessage("tick(): Robot stuck!");
+      // logMessage("tick(): Robot stuck!");
+      RCLCPP_WARN(get_logger(), "tick(): Robot stuck!");
       return BT::NodeStatus::SUCCESS;
     }
 
-    logMessage("tick(): Robot not stuck");
+    // logMessage("tick(): Robot not stuck");
+    RCLCPP_WARN(get_logger(), "tick(): Robot not stuck");
     return BT::NodeStatus::FAILURE;
   }
 
   bool isStuck()
   {
-    using namespace std::chrono_literals;
+    // TODO(orduno) Move the isStuck algorithm to the robot class. For that, make sure the other
+    //              modules are using have the robot class, i.e. controller is not.
+    // return robot_.isStuck();
 
-    if (test_mode_) {
-      // Fake some time used for checking condition
-      std::this_thread::sleep_for(50ms);
-      return is_stuck_;
+    if (current_velocity_ == nullptr) {
+      RCLCPP_WARN(get_logger(), "Initial odometry not yet received.");
+      return false;
     }
 
-    auto current_velocity = std::make_shared<nav_msgs::msg::Odometry>();
-    robot_->getCurrentVelocity(current_velocity);
+    if (current_vel_cmd_ == nullptr) {
+      RCLCPP_WARN(get_logger(), "No velocity command has been published.");
+      return false;
+    }
 
-    // TODO(orduno) For now we only address the case where the commanded velocity is non-zero
-    //              but the robot is close to not moving.
+    // When the robot gets stuck it can have different kinds of motion (not moving at all,
+    // random oscillations, etc). For now, we only address the case where the commanded
+    // velocity is non-zero but the robot is close to not moving. A better approach would be to
+    // forward simulate the robot motion according to the commanded velocity and compare it with
+    // the actual motion.
 
-    double threshold = 0.01;
-    if (current_vel_cmd_->linear.x != 0.0) {
-      if (current_velocity->twist.linear.x < threshold) {
-        return true;
+    if (!is_stuck_) {
+      double threshold = 0.2;  // TODO(orduno) check odom linear velocity calculation error
+      if (current_vel_cmd_->linear.x > threshold) {
+        // Commanded velocity is non-zero
+        if (current_velocity_->twist.twist.linear.x < threshold) {
+          // However the robot is almost not moving
+          is_stuck_ = true;
+        }
       }
     }
 
-    return false;
+    return is_stuck_;
   }
 
   void logMessage(const std::string & msg) const
@@ -123,17 +135,18 @@ public:
 
 private:
   bool is_stuck_;
-  bool test_mode_;
 
-  std::unique_ptr<nav2_robot::Robot> robot_;
+  // Listen to odometry
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  // The current velocity as received from the Odometry subscription
+  std::shared_ptr<nav_msgs::msg::Odometry> current_velocity_;
 
+  // Listen to the controller publishing velocity commands
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
   // The last velocity command published by the controller
   std::shared_ptr<geometry_msgs::msg::Twist> current_vel_cmd_;
 
-  // Listen to controller publishing velocity commands
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
-
-  // Trigger and reset for testing the condition
+  // Trigger and reset for testing the stuck condition
   rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr trigger_is_stuck_sub_;
   rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr reset_is_stuck_sub_;
 };

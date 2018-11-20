@@ -32,7 +32,7 @@ FakeController::FakeController() : Node("FakeController")
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+    this->create_publisher<geometry_msgs::msg::Twist>("tb3/cmd_vel", 1);
 
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
@@ -70,7 +70,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
 
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 1.22;
+    cmd_vel.linear.x = 0.22;
     vel_pub_->publish(cmd_vel);
 
     if (task_server_->cancelRequested()) {

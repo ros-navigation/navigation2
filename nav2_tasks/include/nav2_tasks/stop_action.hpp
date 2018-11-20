@@ -41,7 +41,10 @@ public:
     controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
     node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("tb3/cmd_vel", 1);
+
+    // TODO(orduno) why aren't we creating the publisher like this?
+    // vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("tb3/cmd_vel", 1);
   }
 
   StopAction() = delete;
@@ -57,7 +60,7 @@ public:
     RCLCPP_INFO(get_logger(), "tick:: publishing zero velocity command");
     // Publish a zero velocity command to the robot
     geometry_msgs::msg::Twist twist;
-    twist.linear.x = 0;
+    twist.linear.x = -0.1;
     twist.linear.y = 0;
     twist.linear.z = 0;
     twist.angular.x = 0;
