@@ -34,7 +34,7 @@ Spin::Spin() : Node("Spin")
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+    this->create_publisher<geometry_msgs::msg::Twist>("tb3/cmd_vel", 1);
 
   reset_is_stuck_pub_ =
     this->create_publisher<std_msgs::msg::Empty>("/reset_stuck", 1);
@@ -69,16 +69,56 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
     " , will only spin in Z.");
   }
 
-  RCLCPP_INFO(get_logger(), "Spinning in Z by %.2f degrees.", yaw * 180.0 / M_PI);
+  RCLCPP_INFO(get_logger(), "Spinning in Z by %.1f degrees.", yaw * 180.0 / M_PI);
 
   auto start_time = std::chrono::system_clock::now();
   auto time_since_msg = std::chrono::system_clock::now();
 
-  while (true) {
-    // TODO(orduno): for now faking the spinning control
+  // Before spinning we need to back up a bit
+  // TODO(orduno): Create a separate behavior and bt node for backing up
 
-    // Fake computation time
-    std::this_thread::sleep_for(50ms);
+  while (true) {
+    if (task_server_->cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "Task cancelled");
+      task_server_->setCanceled();
+      return TaskStatus::CANCELED;
+    }
+
+    // TODO(orduno): For now, backing up is time based
+    auto duration = 2s;
+
+    // Log a message every second
+    auto current_time = std::chrono::system_clock::now();
+    if (current_time - time_since_msg >= 500ms) {
+      RCLCPP_INFO(get_logger(), "Backing up...");
+      time_since_msg = std::chrono::system_clock::now();
+    }
+
+    // Output control command
+    geometry_msgs::msg::Twist cmd_vel;
+    // TODO (orduno): assuming robot was moving fwd when it got stuck
+    cmd_vel.linear.x = -0.05;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.0;
+    vel_pub_->publish(cmd_vel);
+
+    if (current_time - start_time >= duration) {
+      cmd_vel.linear.x = 0.0;
+      vel_pub_->publish(cmd_vel);
+      RCLCPP_INFO(get_logger(), "Completed backing up");
+      break;
+    }
+  }
+
+  while (true) {
+    if (task_server_->cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "Task cancelled");
+      task_server_->setCanceled();
+      return TaskStatus::CANCELED;
+    }
+
+    // TODO(orduno): For now, spinning is time based
+    auto duration = 5s;
 
     // Log a message every second
     auto current_time = std::chrono::system_clock::now();
@@ -89,22 +129,21 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
 
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.angular.z = 2.0;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.2;
     vel_pub_->publish(cmd_vel);
 
-    if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Task cancelled");
-      task_server_->setCanceled();
-      return TaskStatus::CANCELED;
-    }
-
-    if (current_time - start_time >= 5s) {
+    if (current_time - start_time >= duration) {
+      cmd_vel.angular.z = 0.0;
+      vel_pub_->publish(cmd_vel);
       RCLCPP_INFO(get_logger(), "Completed rotation");
       break;
     }
   }
 
-  // -TESTING- Send message that the robot is no longer stuck
+  // **TESTING**
+  // Send message that the robot is no longer stuck
   RCLCPP_INFO(get_logger(), "Sending message to reset is_stuck_condition");
   std_msgs::msg::Empty empty_msg;
   reset_is_stuck_pub_->publish(empty_msg);

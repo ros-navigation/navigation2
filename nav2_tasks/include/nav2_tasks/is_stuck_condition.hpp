@@ -103,6 +103,7 @@ public:
 
     if (!is_stuck_) {
       double threshold = 0.2;  // TODO(orduno) check odom linear velocity calculation error
+      // TODO(orduno) assuming robot is moving forward
       if (current_vel_cmd_->linear.x > threshold) {
         // Commanded velocity is non-zero
         if (current_velocity_->twist.twist.linear.x < threshold) {

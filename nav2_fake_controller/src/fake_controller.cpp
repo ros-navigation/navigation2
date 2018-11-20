@@ -78,7 +78,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
     cmd_vel.linear.x = 0.22;
     vel_pub_->publish(cmd_vel);
 
-    if (current_time - start_time >= 10s) {
+    if (current_time - start_time >= 30s) {
       RCLCPP_INFO(get_logger(), "Reached end point");
       break;
     }

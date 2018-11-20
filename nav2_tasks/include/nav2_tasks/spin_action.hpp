@@ -40,8 +40,8 @@ public:
     result_ = std::make_shared<nav2_tasks::SpinResult>();
 
     tf2::Quaternion quaternion;
-    // yaw, pitch and roll are rotation in z, y, x respectively, in radians
-    quaternion.setRPY(0, 0, 2 * M_PI);
+    // Rotate 90deg CCW
+    quaternion.setRPY(0, 0, M_PI/2); // yaw, pitch and roll are rotation in z, y, x respectively
     // quaternion.normalize();
 
     geometry_msgs::msg::Quaternion quaternion_msg;
