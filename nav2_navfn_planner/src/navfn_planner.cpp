@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <exception>
+#include <cmath>
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
@@ -168,7 +169,7 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
-  // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
+  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
   double wy = start.position.y;
@@ -201,17 +202,11 @@ NavfnPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  if (worldToMap(wx, wy, mx, my)) {
-    if (tolerance <= 0.0) {
-      std::cout << "tolerance: " << tolerance << std::endl;
-      RCLCPP_WARN(
-        get_logger(),
-        "The goal sent to the planner is off the global costmap."
-        " Planning will always fail to this goal.");
-      return false;
-    }
-    mx = 0;
-    my = 0;
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(get_logger(),
+      "The goal sent to the planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
   }
 
   int map_goal[2];
@@ -256,8 +251,7 @@ NavfnPlanner::makePlan(
   if (found_legal) {
     // extract the plan
     if (getPlanFromPotential(best_pose, plan)) {
-      geometry_msgs::msg::Pose goal_copy = best_pose;
-      plan.poses.push_back(goal_copy);
+      smoothApproachToGoal(best_pose, plan);
     } else {
       RCLCPP_ERROR(
         get_logger(),
@@ -267,6 +261,27 @@ NavfnPlanner::makePlan(
   }
 
   return !plan.poses.empty();
+}
+
+void
+SmartPlanner::smoothApproachToGoal(
+  const geometry_msgs::msg::Pose & goal,
+  nav2_msgs::msg::Path & plan)
+{
+  // Replace the last pose of the computed path if it's actually further away
+  // to the second to last pose than the goal pose.
+
+  auto second_to_last_pose = plan.poses.end()[-2];
+  auto last_pose = plan.poses.back();
+  if (
+    squared_distance(last_pose, second_to_last_pose) >
+    squared_distance(goal, second_to_last_pose)
+  ) {
+    plan.poses.back() = goal;
+  } else {
+    geometry_msgs::msg::Pose goal_copy = goal;
+    plan.poses.push_back(goal_copy);
+  }
 }
 
 bool
@@ -411,8 +426,10 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     return false;
   }
 
-  mx = static_cast<int>((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution);
-  my = static_cast<int>((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution);
+  mx = static_cast<int>(
+    std::round((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution));
+  my = static_cast<int>(
+    std::round((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution));
 
   if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
     return true;
@@ -446,7 +463,7 @@ NavfnPlanner::getCostmap(
   const std::chrono::milliseconds /*waitTime*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
-  //               including master (aggreate) layer
+  //               including master (aggregate) layer
 
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
