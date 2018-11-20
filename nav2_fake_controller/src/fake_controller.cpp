@@ -61,6 +61,12 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
     // Fake controller computation time
     std::this_thread::sleep_for(50ms);
 
+    if (task_server_->cancelRequested()) {
+      RCLCPP_INFO(get_logger(), "Task cancelled");
+      task_server_->setCanceled();
+      return TaskStatus::CANCELED;
+    }
+
     // Log a message every second
     auto current_time = std::chrono::system_clock::now();
     if (current_time - time_since_msg >= 1s) {
@@ -72,12 +78,6 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
     geometry_msgs::msg::Twist cmd_vel;
     cmd_vel.linear.x = 0.22;
     vel_pub_->publish(cmd_vel);
-
-    if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Task cancelled");
-      task_server_->setCanceled();
-      return TaskStatus::CANCELED;
-    }
 
     if (current_time - start_time >= 10s) {
       RCLCPP_INFO(get_logger(), "Reached end point");

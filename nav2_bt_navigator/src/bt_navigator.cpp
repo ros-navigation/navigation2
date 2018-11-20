@@ -69,6 +69,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
+<<<<<<< 524956f82813e4412b35902ed45e1895e178d1c9
   // Get the filename to use from the parameter
   get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_,
     std::string("bt_navigator.xml"));
@@ -86,6 +87,33 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
 
   RCLCPP_INFO(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename_.c_str());
   RCLCPP_INFO(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
+=======
+  std::string xml_text =
+    R"(
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <Sequence name="check_preconditions">
+        <Fallback name="check_motion">
+          <Inverter name="is_stuck">
+            <IsStuck/>
+          </Inverter>
+          <Sequence name="stuck_recovery">
+            <Stop/>
+            <Spin/>
+          </Sequence>
+        </Fallback>
+      </Sequence>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <FollowPath path="${path}"/>
+      </SequenceStar>
+    </Sequence>
+  </BehaviorTree>
+</root>)";
+
+  RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", xml_text.c_str());
+>>>>>>> Fixed bugs:
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
