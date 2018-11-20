@@ -90,7 +90,7 @@ class NavTester(Node):
 
         while not goalReached:
             rclpy.spin_once(self, timeout_sec=1)
-            if self.distanceFromGoal() < 1: # just get within one meter for now
+            if self.distanceFromGoal() < 0.2: # get within 20cm of goal
                 goalReached = True
                 print("*** GOAL REACHED ***")
                 return True
@@ -124,8 +124,8 @@ def test_whenGivenAGoalPose_RobotMovesToGoal(testRobot):
     # Set initial pose to the Turtlebot3 starting position -2, 0, 0, facing towards positive X
     initialPose = Pose()
     initialPose.position.x = -2.0
-    initialPose.position.y =  0.0
-    initialPose.position.z =  0.0
+    initialPose.position.y = -0.5
+    initialPose.position.z =  0.01
     initialPose.orientation.x = 0.0
     initialPose.orientation.y = 0.0
     initialPose.orientation.z = 0.0
