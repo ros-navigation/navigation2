@@ -1033,6 +1033,11 @@ AmclNode::applyInitialPose()
 nav2_util::Laser *
 AmclNode::createLaserObject()
 {
+  if (map_ == NULL)
+  {
+    RCLCPP_WARN(get_logger(), "Map is not received yet.");
+    return NULL;
+  }
   if (sensor_model_type_ == "beam") {
     laser_ = new BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
         0.0, max_beams_, map_);

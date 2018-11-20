@@ -88,7 +88,6 @@ public:
 
 private:
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
-  double max_occ_dist_;
 };
 
 class LikelihoodFieldModelProb : public Laser
@@ -103,7 +102,6 @@ public:
 
 private:
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
-  double max_occ_dist_;
   bool do_beamskip_;
   double beam_skip_distance_;
   double beam_skip_threshold_;
