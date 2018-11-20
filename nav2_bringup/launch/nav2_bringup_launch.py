@@ -59,9 +59,9 @@ def generate_launch_description():
             parameters=[{ 'prune_plan': False }, {'debug_trajectory_details': True }, { 'use_sim_time': use_sim_time }]),
 
         launch_ros.actions.Node(
-            package='nav2_smart_planner',
-            node_executable='smart_planner_node',
-            node_name='smart_planner',
+            package='nav2_navfn_planner',
+            node_executable='navfn_planner',
+            node_name='navfn_planner',
             output='screen',
             parameters=[{ 'use_sim_time': use_sim_time}]),
 
