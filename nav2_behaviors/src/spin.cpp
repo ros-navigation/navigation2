@@ -34,7 +34,7 @@ Spin::Spin() : Node("Spin")
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("tb3/cmd_vel", 1);
+    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   reset_is_stuck_pub_ =
     this->create_publisher<std_msgs::msg::Empty>("/reset_stuck", 1);
@@ -97,7 +97,7 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
     // TODO (orduno): assuming robot was moving fwd when it got stuck
-    cmd_vel.linear.x = -0.2;
+    cmd_vel.linear.x = -0.05;
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
     vel_pub_->publish(cmd_vel);
@@ -132,7 +132,7 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
     geometry_msgs::msg::Twist cmd_vel;
     cmd_vel.linear.x = 0.0;
     cmd_vel.linear.y = 0.0;
-    cmd_vel.angular.z = 1.0;
+    cmd_vel.angular.z = 0.5;
     vel_pub_->publish(cmd_vel);
 
     if (current_time - start_time >= duration) {

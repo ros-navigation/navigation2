@@ -49,11 +49,11 @@ public:
       [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = false;});
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "tb3/cmd_vel",
+      "cmd_vel",
       [this](geometry_msgs::msg::Twist::SharedPtr msg) {current_vel_cmd_ = msg;});
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "tb3/odom",
+      "odom",
       [this](nav_msgs::msg::Odometry::SharedPtr msg) {current_velocity_ = msg;});
   }
 
@@ -69,13 +69,11 @@ public:
     rclcpp::spin_some(this->get_node_base_interface());
 
     if (isStuck()) {
-      // logMessage("tick(): Robot stuck!");
-      RCLCPP_WARN_ONCE(get_logger(), "tick(): Robot stuck!");
+      logMessage("tick(): Robot stuck!");
       return BT::NodeStatus::SUCCESS;
     }
 
-    // logMessage("tick(): Robot not stuck");
-    RCLCPP_INFO_ONCE(get_logger(), "tick(): Robot not stuck");
+    logMessage("tick(): Robot not stuck");
     return BT::NodeStatus::FAILURE;
   }
 
@@ -104,7 +102,9 @@ public:
 
     if (!is_stuck_) {
       // TODO(orduno) replace with actual odom error / vel fluctuation
-      double odom_linear_vel_error = 0.0002;  // tuned using Gazebo + TB3
+
+      // Tunned using Gazebo + TB3, most of the time is < 0.0005
+      double odom_linear_vel_error = 0.002;  // tuned using Gazebo + TB3
       double vel_cmd = current_vel_cmd_->linear.x;
 
       // TODO(orduno) assuming robot is moving forward
@@ -129,16 +129,14 @@ public:
 
   void logMessage(const std::string & msg) const
   {
-    using namespace std::chrono_literals;
+    static std::string prev_msg;
 
-    // Log message once per second
-    static auto time_since_msg = std::chrono::system_clock::now();
-    auto current_time = std::chrono::system_clock::now();
-
-    if (current_time - time_since_msg >= 1s) {
-      RCLCPP_WARN(get_logger(), msg);
-      time_since_msg = std::chrono::system_clock::now();
+    if (msg == prev_msg) {
+      return;
     }
+
+    RCLCPP_INFO(get_logger(), msg);
+    prev_msg = msg;
   }
 
   void halt() override

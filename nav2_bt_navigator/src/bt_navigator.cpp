@@ -94,15 +94,15 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <Sequence name="check_preconditions">
-        <Fallback name="check_motion">
-          <Inverter name="is_stuck">
+        <FallbackStar name="check_motion">
+          <Inverter name="is_not_stuck">
             <IsStuck/>
           </Inverter>
-          <Sequence name="stuck_recovery">
+          <SequenceStar name="stuck_recovery">
             <Stop/>
             <Spin/>
-          </Sequence>
-        </Fallback>
+          </SequenceStar>
+        </FallbackStar>
       </Sequence>
       <SequenceStar name="navigate">
         <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
