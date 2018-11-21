@@ -38,8 +38,6 @@ protected:
   std::unique_ptr<nav2_tasks::SpinTaskServer> task_server_;
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
-
-  std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Empty>> reset_is_stuck_pub_;
 };
 
 }  // nav2_behaviors

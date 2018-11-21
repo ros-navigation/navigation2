@@ -86,6 +86,8 @@ public:
       // return BT::NodeStatus::RUNNING;
     }
 
+    // TODO(orduno) What should this node return for a long running action
+
     // Give some time to the robot to get stable
     // TODO(orduno) Use the robot interface instead
     // robot_.waitUntilStable();

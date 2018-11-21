@@ -35,18 +35,9 @@ class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
 public:
   explicit IsStuckCondition(const std::string & condition_name)
   : BT::ConditionNode(condition_name),
-    Node("IsStuckCondition"),
-    is_stuck_(false)
+    Node("IsStuckCondition")
   {
     RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
-
-    trigger_is_stuck_sub_ = this->create_subscription<std_msgs::msg::Empty>(
-      "trigger_stuck",
-      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = true;});
-
-    reset_is_stuck_sub_ = this->create_subscription<std_msgs::msg::Empty>(
-      "reset_stuck",
-      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {is_stuck_ = false;});
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "cmd_vel",
@@ -100,31 +91,29 @@ public:
     // A better approach is to do a forward simulation of the robot motion (corresponding
     // to the commanded velocity) and compare it with the actual one.
 
-    if (!is_stuck_) {
-      // TODO(orduno) replace with actual odom error / vel fluctuation
+    // TODO(orduno) replace with actual odom error / vel fluctuation
 
-      // Tunned using Gazebo + TB3, most of the time is < 0.0005
-      double odom_linear_vel_error = 0.002;  // tuned using Gazebo + TB3
-      double vel_cmd = current_vel_cmd_->linear.x;
+    // Tunned using Gazebo + TB3, most of the time is < 0.0005
+    double odom_linear_vel_error = 0.002;  // tuned using Gazebo + TB3
+    double vel_cmd = current_vel_cmd_->linear.x;
 
-      // TODO(orduno) assuming robot is moving forward
-      if (vel_cmd > odom_linear_vel_error) {
-        // Commanded velocity is non-zero
+    // TODO(orduno) assuming robot is moving forward
+    if (vel_cmd > odom_linear_vel_error) {
+      // Commanded velocity is non-zero
 
-        // Assume the robot is free if it's accelerating forward
-        double v1 = current_velocity_->twist.twist.linear.x;
-        std::this_thread::sleep_for(1s);
-        rclcpp::spin_some(this->get_node_base_interface());
-        double v2 = current_velocity_->twist.twist.linear.x;
+      // Assume the robot is free if it's accelerating forward
+      double v1 = current_velocity_->twist.twist.linear.x;
+      std::this_thread::sleep_for(1s);
+      rclcpp::spin_some(this->get_node_base_interface());
+      double v2 = current_velocity_->twist.twist.linear.x;
 
-        if ((v2 + odom_linear_vel_error) < v1) {
-          RCLCPP_WARN(get_logger(), "The robot is not accelerating, v1: %.6f, v2: %.6f", v1, v2);
-          is_stuck_ = true;
-        }
+      if ((v2 + odom_linear_vel_error) < v1) {
+        RCLCPP_WARN(get_logger(), "The robot is not accelerating, v1: %.6f, v2: %.6f", v1, v2);
+        return true;
       }
     }
 
-    return is_stuck_;
+    return false;
   }
 
   void logMessage(const std::string & msg) const
@@ -155,10 +144,6 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
   // The last velocity command published by the controller
   std::shared_ptr<geometry_msgs::msg::Twist> current_vel_cmd_;
-
-  // Trigger and reset for testing the stuck condition
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr trigger_is_stuck_sub_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr reset_is_stuck_sub_;
 };
 
 }  // namespace nav2_tasks
