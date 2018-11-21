@@ -16,7 +16,7 @@
 
 #include <string>
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "Blackboard/blackboard_local.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
