@@ -164,7 +164,7 @@ AmclNode::AmclNode()
         std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
-    requestMap(); // TODO:(mkhansen) This seems to hang indefinitely - see issue #330
+    requestMap();  // TODO(mkhansen): This seems to hang indefinitely - see issue #330
   }
   m_force_update = false;
 
@@ -480,12 +480,14 @@ AmclNode::getOdomPose(
     this->tf_->transform(ident, odom_pose, odom_frame_id_, TRANSFORM_TIMEOUT);
   } catch (tf2::TransformException e) {
     ++scan_error_count_;
-    if (scan_error_count_%20 == 0) {
-    	RCLCPP_ERROR(get_logger(), "(%d) consecutive laser scan transforms failed: (%s)",scan_error_count_, e.what());
+    if (scan_error_count_ % 20 == 0) {
+      RCLCPP_ERROR(
+        get_logger(), "(%d) consecutive laser scan transforms failed: (%s)", scan_error_count_,
+        e.what());
     }
     return false;
   }
-  scan_error_count_ = 0; // reset since we got a good transform
+  scan_error_count_ = 0;  // reset since we got a good transform
   x = odom_pose.pose.position.x;
   y = odom_pose.pose.position.y;
   yaw = tf2::getYaw(odom_pose.pose.orientation);
@@ -1033,8 +1035,7 @@ AmclNode::applyInitialPose()
 nav2_util::Laser *
 AmclNode::createLaserObject()
 {
-  if (map_ == NULL)
-  {
+  if (map_ == NULL) {
     RCLCPP_WARN(get_logger(), "Map is not received yet.");
     return NULL;
   }
@@ -1071,7 +1072,8 @@ void
 AmclNode::initAmclParams()
 {
   // Grab params off the param server
-  get_parameter_or_set("use_map_topic_", use_map_topic_, true); // When false AMCL hangs in constructor (issue #330)
+  get_parameter_or_set("use_map_topic_", use_map_topic_, true);  // When false AMCL hangs
+                                                                 // in constructor (issue #330)
   get_parameter_or_set("first_map_only_", first_map_only_, true);
   double save_pose_rate;
   get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
