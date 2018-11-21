@@ -133,8 +133,6 @@ public:
   }
 
 private:
-  bool is_stuck_;
-
   // Listen to odometry
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   // The current velocity as received from the Odometry subscription
