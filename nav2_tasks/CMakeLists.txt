@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror -fPIC)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -24,7 +24,7 @@ include_directories(
 
 set(library_name ${PROJECT_NAME})
 
-add_library(${library_name}
+add_library(${library_name} SHARED
   src/behavior_tree_engine.cpp
 )
 

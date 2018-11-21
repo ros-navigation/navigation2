@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror -fPIC)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -29,7 +29,7 @@ add_executable(${executable_name}
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name}
+add_library(${library_name} SHARED
   src/simple_navigator.cpp
 )
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_smart_planner)
+project(nav2_navfn_planner)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror -fPIC)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -23,8 +23,8 @@ include_directories(
   include
 )
 
-set(library_name smart_planner)
-set(executable_name ${library_name}_node)
+set(executable_name navfn_planner)
+set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
@@ -36,9 +36,8 @@ set(dependencies
   nav_msgs
 )
 
-# Library
-add_library(${library_name}
-  src/smart_planner.cpp
+add_library(${library_name} SHARED
+  src/navfn_planner.cpp
   src/navfn.cpp
 )
 
@@ -46,7 +45,6 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-# Executable
 add_executable(${executable_name}
   src/main.cpp
 )

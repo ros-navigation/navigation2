@@ -28,8 +28,9 @@
 #include <iomanip>
 #include <algorithm>
 #include <exception>
-#include "nav2_smart_planner/smart_planner.hpp"
-#include "nav2_smart_planner/navfn.hpp"
+#include <cmath>
+#include "nav2_navfn_planner/navfn_planner.hpp"
+#include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
@@ -42,17 +43,17 @@
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
 
-namespace nav2_smart_planner
+namespace nav2_navfn_planner
 {
 
-SmartPlanner::SmartPlanner()
-: Node("SmartPlanner"),
+NavfnPlanner::NavfnPlanner()
+: Node("NavfnPlanner"),
   global_frame_("map"),
   allow_unknown_(true),
   default_tolerance_(1.0),
   use_astar_(false)
 {
-  RCLCPP_INFO(get_logger(), "Initializing SmartPlanner...");
+  RCLCPP_INFO(get_logger(), "Initializing.");
 
   // Grab params off the param server
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
@@ -69,21 +70,21 @@ SmartPlanner::SmartPlanner()
 
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&SmartPlanner::computePathToPose, this, std::placeholders::_1));
+    std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->startWorkerThread();
 }
 
-SmartPlanner::~SmartPlanner()
+NavfnPlanner::~NavfnPlanner()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down SmartPlanner");
+  RCLCPP_INFO(get_logger(), "Shutting down.");
 }
 
 TaskStatus
-SmartPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "SmartPlanner: Attempting to a find path from (%.2f, %.2f) to "
+  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
     command->goal.position.x, command->goal.position.y);
 
@@ -91,7 +92,7 @@ SmartPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
   try {
     // Get an updated costmap
     getCostmap(costmap_);
-    RCLCPP_DEBUG(get_logger(), "SmartPlanner: Costmap size: %d,%d",
+    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     // Create a planner based on the new costmap size
@@ -106,41 +107,41 @@ SmartPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "SmartPlanner: Cancelled global planning task.");
+      RCLCPP_INFO(get_logger(), "Cancelled global planning task.");
       task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
 
     if (!foundPath) {
-      RCLCPP_WARN(get_logger(), "SmartPlanner: Planning algorithm failed to generate a valid"
+      RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", command->goal.position.x, command->goal.position.y);
       return TaskStatus::FAILED;
     }
 
     RCLCPP_INFO(get_logger(),
-      "SmartPlanner: Found valid path of size %u", result.poses.size());
+      "Found valid path of size %u", result.poses.size());
 
     // Publish the plan for visualization purposes
-    RCLCPP_INFO(get_logger(), "SmartPlanner: Publishing the valid path.");
+    RCLCPP_INFO(get_logger(), "Publishing the valid path.");
     publishPlan(result);
     publishEndpoints(command);
 
     // TODO(orduno): Enable potential visualization
 
     RCLCPP_INFO(get_logger(),
-      "SmartPlanner: Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
+      "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
       command->goal.position.x, command->goal.position.y, command->tolerance);
     task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
-    RCLCPP_WARN(get_logger(), "SmartPlanner: Plan calculation to (%.2f, %.2f) failed: \"%s\"",
+    RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
       command->goal.position.x, command->goal.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     return TaskStatus::FAILED;
   } catch (...) {
-    RCLCPP_WARN(get_logger(), "SmartPlanner: Plan calculation failed");
+    RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
@@ -149,7 +150,7 @@ SmartPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 }
 
 bool
-SmartPlanner::isPlannerOutOfDate()
+NavfnPlanner::isPlannerOutOfDate()
 {
   if (!planner_.get() || current_costmap_size_[0] != costmap_.metadata.size_x ||
     current_costmap_size_[1] != costmap_.metadata.size_y)
@@ -160,7 +161,7 @@ SmartPlanner::isPlannerOutOfDate()
 }
 
 bool
-SmartPlanner::makePlan(
+NavfnPlanner::makePlan(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & goal, double tolerance,
   nav2_msgs::msg::Path & plan)
@@ -168,19 +169,19 @@ SmartPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
-  // TODO(orduno): add checks for start and goal reference frame -- should be in gobal frame
+  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
   double wy = start.position.y;
 
-  RCLCPP_INFO(get_logger(), "SmartPlanner: Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+  RCLCPP_INFO(get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
       get_logger(),
-      "SmartPlanner: Cannot create a plan: the robot's start position is off the global"
+      "Cannot create a plan: the robot's start position is off the global"
       " costmap. Planning will always fail, are you sure"
       " the robot has been properly localized?");
     return false;
@@ -201,17 +202,11 @@ SmartPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  if (worldToMap(wx, wy, mx, my)) {
-    if (tolerance <= 0.0) {
-      std::cout << "tolerance: " << tolerance << std::endl;
-      RCLCPP_WARN(
-        get_logger(),
-        "SmartPlanner: The goal sent to the planner is off the global costmap."
-        " Planning will always fail to this goal.");
-      return false;
-    }
-    mx = 0;
-    my = 0;
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(get_logger(),
+      "The goal sent to the planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
   }
 
   int map_goal[2];
@@ -256,12 +251,11 @@ SmartPlanner::makePlan(
   if (found_legal) {
     // extract the plan
     if (getPlanFromPotential(best_pose, plan)) {
-      geometry_msgs::msg::Pose goal_copy = best_pose;
-      plan.poses.push_back(goal_copy);
+      smoothApproachToGoal(best_pose, plan);
     } else {
       RCLCPP_ERROR(
         get_logger(),
-        "SmartPlanner: Failed to create a plan from potential when a legal"
+        "Failed to create a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
   }
@@ -269,8 +263,29 @@ SmartPlanner::makePlan(
   return !plan.poses.empty();
 }
 
+void
+NavfnPlanner::smoothApproachToGoal(
+  const geometry_msgs::msg::Pose & goal,
+  nav2_msgs::msg::Path & plan)
+{
+  // Replace the last pose of the computed path if it's actually further away
+  // to the second to last pose than the goal pose.
+
+  auto second_to_last_pose = plan.poses.end()[-2];
+  auto last_pose = plan.poses.back();
+  if (
+    squared_distance(last_pose, second_to_last_pose) >
+    squared_distance(goal, second_to_last_pose)
+  ) {
+    plan.poses.back() = goal;
+  } else {
+    geometry_msgs::msg::Pose goal_copy = goal;
+    plan.poses.push_back(goal_copy);
+  }
+}
+
 bool
-SmartPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
+NavfnPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 {
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
@@ -304,7 +319,7 @@ SmartPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 }
 
 bool
-SmartPlanner::getPlanFromPotential(
+NavfnPlanner::getPlanFromPotential(
   const geometry_msgs::msg::Pose & goal,
   nav2_msgs::msg::Path & plan)
 {
@@ -361,7 +376,7 @@ SmartPlanner::getPlanFromPotential(
 }
 
 double
-SmartPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
+NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   unsigned int mx, my;
   if (!worldToMap(world_point.x, world_point.y, mx, my)) {
@@ -373,13 +388,13 @@ SmartPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 }
 
 bool
-SmartPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
+NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   return validPointPotential(world_point, default_tolerance_);
 }
 
 bool
-SmartPlanner::validPointPotential(
+NavfnPlanner::validPointPotential(
   const geometry_msgs::msg::Point & world_point, double tolerance)
 {
   double resolution = costmap_.metadata.resolution;
@@ -403,7 +418,7 @@ SmartPlanner::validPointPotential(
 }
 
 bool
-SmartPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
+NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_.metadata.origin.position.x || wy < costmap_.metadata.origin.position.y) {
     RCLCPP_ERROR(get_logger(), "wordToMap failed: wx,wy: %f,%f, size_x,size_y: %d,%d", wx, wy,
@@ -411,8 +426,10 @@ SmartPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     return false;
   }
 
-  mx = static_cast<int>((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution);
-  my = static_cast<int>((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution);
+  mx = static_cast<int>(
+    std::round((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution));
+  my = static_cast<int>(
+    std::round((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution));
 
   if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
     return true;
@@ -425,14 +442,14 @@ SmartPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
 }
 
 void
-SmartPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
+NavfnPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
 {
   wx = costmap_.metadata.origin.position.x + mx * costmap_.metadata.resolution;
   wy = costmap_.metadata.origin.position.y + my * costmap_.metadata.resolution;
 }
 
 void
-SmartPlanner::clearRobotCell(unsigned int mx, unsigned int my)
+NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 {
   // TODO(orduno): check usage of this function, might instead be a request to
   //               world_model / map server
@@ -441,12 +458,12 @@ SmartPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 }
 
 void
-SmartPlanner::getCostmap(
+NavfnPlanner::getCostmap(
   nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
   const std::chrono::milliseconds /*waitTime*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
-  //               including master (aggreate) layer
+  //               including master (aggregate) layer
 
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
@@ -456,7 +473,7 @@ SmartPlanner::getCostmap(
 }
 
 void
-SmartPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
+NavfnPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 {
   std::cout << "Costmap" << std::endl;
   std::cout << "  size:       " <<
@@ -483,7 +500,7 @@ SmartPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 }
 
 void
-SmartPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints)
+NavfnPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints)
 {
   visualization_msgs::msg::Marker marker;
 
@@ -550,7 +567,7 @@ SmartPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::Share
 }
 
 void
-SmartPlanner::publishPlan(const nav2_msgs::msg::Path & path)
+NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
 {
   // Publish as a nav1 path msg
   nav_msgs::msg::Path rviz_path;
@@ -567,4 +584,4 @@ SmartPlanner::publishPlan(const nav2_msgs::msg::Path & path)
   plan_publisher_->publish(rviz_path);
 }
 
-}  // namespace nav2_smart_planner
+}  // namespace nav2_navfn_planner

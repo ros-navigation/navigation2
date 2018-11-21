@@ -16,7 +16,9 @@ find_package(rclcpp REQUIRED)
 include_directories(
   include)
 
-add_library(voxel_grid src/voxel_grid.cpp)
+add_library(voxel_grid SHARED
+  src/voxel_grid.cpp
+)
 
 set(dependencies
   rclcpp
