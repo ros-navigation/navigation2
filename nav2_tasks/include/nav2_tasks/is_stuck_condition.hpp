@@ -69,38 +69,38 @@ public:
     rclcpp::spin_some(this->get_node_base_interface());
 
     if (isStuck()) {
-      logMessage("tick(): Robot stuck!");
-      // RCLCPP_WARN(get_logger(), "tick(): Robot stuck!");
+      // logMessage("tick(): Robot stuck!");
+      RCLCPP_WARN_ONCE(get_logger(), "tick(): Robot stuck!");
       return BT::NodeStatus::SUCCESS;
     }
 
-    logMessage("tick(): Robot not stuck");
-    // RCLCPP_WARN(get_logger(), "tick(): Robot not stuck");
+    // logMessage("tick(): Robot not stuck");
+    RCLCPP_INFO_ONCE(get_logger(), "tick(): Robot not stuck");
     return BT::NodeStatus::FAILURE;
   }
 
   bool isStuck()
   {
-    using namespace std::chrono_literals;
-    // TODO(orduno) Move the isStuck algorithm to the robot class. For that, make sure the other
-    //              modules are using have the robot class, i.e. controller is not.
+    // TODO(orduno) Move algorithm to the robot class
     // return robot_.isStuck();
 
+    using namespace std::chrono_literals;
+
     if (current_velocity_ == nullptr) {
-      RCLCPP_WARN(get_logger(), "Initial odometry not yet received.");
+      RCLCPP_WARN_ONCE(get_logger(), "Initial odometry not yet received.");
       return false;
     }
 
     if (current_vel_cmd_ == nullptr) {
-      RCLCPP_WARN(get_logger(), "No velocity command has been published.");
+      RCLCPP_WARN_ONCE(get_logger(), "Velocity commands have not been published.");
       return false;
     }
 
-    // When the robot gets stuck it can have different types of motion (not moving at all,
-    // random oscillations, etc). For now, we only address the case where the commanded
-    // velocity is non-zero but the robot is not accelerating. A better approach would be to
-    // forward simulate the robot motion according to the commanded velocity and compare it with
-    // the actual motion.
+    // TODO(orduno) When the robot gets stuck it can have different types of motion
+    // (not moving at all, random oscillations, etc). For now, we only address the case
+    // where the commanded velocity is non-zero but the robot is not accelerating.
+    // A better approach is to do a forward simulation of the robot motion (corresponding
+    // to the commanded velocity) and compare it with the actual one.
 
     if (!is_stuck_) {
       // TODO(orduno) replace with actual odom error / vel fluctuation
