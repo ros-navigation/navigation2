@@ -33,6 +33,8 @@ public:
     const nav2_tasks::FollowPathCommand::SharedPtr command);
 
 private:
+  void setZeroVelocity();
+
   std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;

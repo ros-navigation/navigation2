@@ -69,18 +69,19 @@ public:
     rclcpp::spin_some(this->get_node_base_interface());
 
     if (isStuck()) {
-      // logMessage("tick(): Robot stuck!");
-      RCLCPP_WARN(get_logger(), "tick(): Robot stuck!");
+      logMessage("tick(): Robot stuck!");
+      // RCLCPP_WARN(get_logger(), "tick(): Robot stuck!");
       return BT::NodeStatus::SUCCESS;
     }
 
-    // logMessage("tick(): Robot not stuck");
-    RCLCPP_WARN(get_logger(), "tick(): Robot not stuck");
+    logMessage("tick(): Robot not stuck");
+    // RCLCPP_WARN(get_logger(), "tick(): Robot not stuck");
     return BT::NodeStatus::FAILURE;
   }
 
   bool isStuck()
   {
+    using namespace std::chrono_literals;
     // TODO(orduno) Move the isStuck algorithm to the robot class. For that, make sure the other
     //              modules are using have the robot class, i.e. controller is not.
     // return robot_.isStuck();
@@ -95,19 +96,29 @@ public:
       return false;
     }
 
-    // When the robot gets stuck it can have different kinds of motion (not moving at all,
+    // When the robot gets stuck it can have different types of motion (not moving at all,
     // random oscillations, etc). For now, we only address the case where the commanded
-    // velocity is non-zero but the robot is close to not moving. A better approach would be to
+    // velocity is non-zero but the robot is not accelerating. A better approach would be to
     // forward simulate the robot motion according to the commanded velocity and compare it with
     // the actual motion.
 
     if (!is_stuck_) {
-      double threshold = 0.2;  // TODO(orduno) check odom linear velocity calculation error
+      // TODO(orduno) replace with actual odom error / vel fluctuation
+      double odom_linear_vel_error = 0.0002;  // tuned using Gazebo + TB3
+      double vel_cmd = current_vel_cmd_->linear.x;
+
       // TODO(orduno) assuming robot is moving forward
-      if (current_vel_cmd_->linear.x > threshold) {
+      if (vel_cmd > odom_linear_vel_error) {
         // Commanded velocity is non-zero
-        if (current_velocity_->twist.twist.linear.x < threshold) {
-          // However the robot is almost not moving
+
+        // Assume the robot is free if it's accelerating forward
+        double v1 = current_velocity_->twist.twist.linear.x;
+        std::this_thread::sleep_for(1s);
+        rclcpp::spin_some(this->get_node_base_interface());
+        double v2 = current_velocity_->twist.twist.linear.x;
+
+        if ((v2 + odom_linear_vel_error) < v1) {
+          RCLCPP_WARN(get_logger(), "The robot is not accelerating, v1: %.6f, v2: %.6f", v1, v2);
           is_stuck_ = true;
         }
       }

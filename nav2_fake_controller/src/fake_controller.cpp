@@ -62,6 +62,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
 
     if (task_server_->cancelRequested()) {
       RCLCPP_INFO(get_logger(), "Task cancelled");
+      setZeroVelocity();
       task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
@@ -75,11 +76,12 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
 
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.22;
+    cmd_vel.linear.x = 0.3;
     vel_pub_->publish(cmd_vel);
 
     if (current_time - start_time >= 30s) {
       RCLCPP_INFO(get_logger(), "Reached end point");
+      setZeroVelocity();
       break;
     }
   }
@@ -88,6 +90,15 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
   task_server_->setResult(result);
 
   return TaskStatus::SUCCEEDED;
+}
+
+void FakeController::setZeroVelocity()
+{
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = 0.0;
+  vel_pub_->publish(cmd_vel);
 }
 
 }  // namespace nav2_fake_controller
