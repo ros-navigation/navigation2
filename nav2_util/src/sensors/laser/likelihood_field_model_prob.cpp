@@ -40,11 +40,11 @@ LikelihoodFieldModelProb::LikelihoodFieldModelProb(
   z_hit_ = z_hit;
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
-  max_occ_dist_ = max_occ_dist;
   do_beamskip_ = do_beamskip;
   beam_skip_distance_ = beam_skip_distance;
   beam_skip_threshold_ = beam_skip_threshold;
   beam_skip_error_threshold_ = beam_skip_error_threshold;
+  map_update_cspace(map, max_occ_dist);
 }
 
 // Determine the probability for the given pose
