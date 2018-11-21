@@ -73,6 +73,7 @@ set(dependencies
   nav2_util
   nav2_voxel_grid
   nav2_msgs
+  visualization_msgs
 )
 
 ament_target_dependencies(nav2_costmap_2d
