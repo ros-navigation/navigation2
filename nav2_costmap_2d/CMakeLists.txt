@@ -44,13 +44,6 @@ include_directories(
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
-# TODO(bpwilcox): Separate msgs generation into separate package
-#rosidl_generate_interfaces(${PROJECT_NAME}
-#  "msg/VoxelGrid.msg"
-#
-#	DEPENDENCIES std_msgs geometry_msgs map_msgs
-#)
-
 add_library(nav2_costmap_2d SHARED
   src/array_parser.cpp
   src/costmap_2d.cpp
@@ -100,12 +93,11 @@ target_link_libraries(layers
   nav2_costmap_2d
 )
 
-# TODO(bpwilcox): port costmap_2d_markers
-#add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
-#ament_target_dependencies(costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(costmap_2d_markers
-  #costmap_2d
-#)
+add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
+ament_target_dependencies(nav2_costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
+target_link_libraries(nav2_costmap_2d_markers
+  nav2_costmap_2d
+)
 
 # TODO(bpwilcox): port nav2_costmap_2d_cloud
 #add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
