@@ -38,7 +38,7 @@
  *********************************************************************/
 
 #include "rclcpp/rclcpp.hpp"
-#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 #include <nav2_msgs/msg/voxel_grid.hpp>
 #include <nav2_voxel_grid/voxel_grid.hpp>
 #include <nav2_util/execution_timer.hpp>
@@ -57,13 +57,11 @@ float g_colors_g[] = {0.0f, 0.0f, 0.0f};
 float g_colors_b[] = {0.0f, 1.0f, 0.0f};
 float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
-typedef rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mkr_pub;
-
 std::string g_marker_ns;
 V_Cell g_cells;
 rclcpp::Node::SharedPtr g_node;
-void voxelCallback(const mkr_pub & pub,
-  const nav2_msgs::msg::VoxelGrid::ConstSharedPtr & grid)
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
     RCLCPP_ERROR(g_node->get_logger(), "Received voxel grid");
@@ -149,13 +147,13 @@ int main(int argc, char ** argv)
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
-  auto pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
-    "visualization_marker");
+  pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
+    "visualization_marker", 1);
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
-    "voxel_grid", std::bind(voxelCallback, pub, std::placeholders::_1));
+    "voxel_grid", voxelCallback);
   
-  g_marker_ns = g_node.get_namespace();
+  g_marker_ns = g_node->get_namespace();
 
   rclcpp::spin(g_node);
 }

@@ -59,14 +59,12 @@ float g_colors_g[] = {0.0f, 0.0f, 0.0f};
 float g_colors_b[] = {0.0f, 1.0f, 0.0f};
 float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
-typedef rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr cld_pub;
-
 V_Cell g_marked;
 V_Cell g_unknown;
 rclcpp::Node::SharedPtr g_node;
-void voxelCallback(const cld_pub & pub_marked,
-  const cld_pub & pub_unknown,
-  const nav2_msgs::msg::VoxelGrid::ConstSharedPtr & grid)
+rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_marked;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_unknown;
+void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
     RCLCPP_ERROR(g_node->get_logger(), "Received empty voxel grid");
@@ -197,13 +195,12 @@ int main(int argc, char ** argv)
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
-  auto pub_marked = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
-    "voxel_marked_cloud");
-  auto pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
-    "voxel_unknown_cloud");
+  pub_marked = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
+    "voxel_marked_cloud", 1);
+  pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
+    "voxel_unknown_cloud", 1);
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
-    "voxel_grid", std::bind(voxelCallback, pub_marked, pub_unknown,
-     std::placeholders::_1));
+    "voxel_grid", voxelCallback);
 
   rclcpp::spin(g_node);
 }
