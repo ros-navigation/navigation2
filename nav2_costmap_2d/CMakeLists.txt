@@ -99,12 +99,11 @@ target_link_libraries(nav2_costmap_2d_markers
   nav2_costmap_2d
 )
 
-# TODO(bpwilcox): port nav2_costmap_2d_cloud
-#add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
-#ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(nav2_costmap_2d_cloud
-  #nav2_costmap_2d
-#)
+add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
+ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
+target_link_libraries(nav2_costmap_2d_cloud
+  nav2_costmap_2d
+)
 
 add_executable(nav2_costmap_2d_node src/costmap_2d_node.cpp)
 ament_target_dependencies(nav2_costmap_2d_node
