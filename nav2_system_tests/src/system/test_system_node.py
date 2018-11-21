@@ -37,10 +37,10 @@ class NavTester(Node):
         self.goal_pub = self.create_publisher(PoseStamped, 'move_base_simple/goal')
         
         # Can't get/set model state from Gazebo yet -see https://github.com/ros-simulation/gazebo_ros_pkgs/issues/838
-        # self.model_pose_sub = self.create_subscription(ModelStates, '/gazebo/model_states', self.modelStateCallback)
+        # self.model_pose_sub = self.create_subscription(ModelStates, '/gazebo/model_states', self.poseCallback)
         # self.setPoseClient = self.create_client(SetModelState, "/gazebo/set_model_state")
         # So for now we subscribe to amcl_pose instead
-        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.modelStateCallback)
+        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.poseCallback)
 
         self.tfParamClient = self.create_client(SetParameters, "/static_transform_publisher/set_parameters") # TODO: remove this when TB transforms are fixed
         self.robotModel = 'turtlebot3' # TODO: make robotModel a param
@@ -78,10 +78,10 @@ class NavTester(Node):
         msg.pose = pose
         self.goal_pub.publish(msg)
 
-    def modelStateCallback(self, msg):
+    def poseCallback(self, msg):
         #index = msg.name.index(self.robotModel)
         #self.currentPose = msg.pose[index]
-        print("Recieved amcl_pose")
+        print("Received amcl_pose")
         self.currentPose = msg.pose.pose
 
     def reachesGoal(self, timeout):
