@@ -3,18 +3,17 @@
 The `nav2_bringup` package is an example bringup system for navigation2 applications.
 
 ## Launch Navigation2 in simulation with Gazebo
- - Launch Gazebo and Rviz2
+Launch Gazebo and Rviz2
  
-```
-ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>
-```
- - Launch your robot specific transforms
-Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
-```
-ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py
-```
+`ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>`
 
- - Launch map_server and AMCL
+Launch your robot specific transforms
+
+Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
+
+`ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py`
+
+Launch map_server and AMCL
  
 `ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
 
@@ -22,23 +21,12 @@ In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
 
- - Run the rest of the Navigation2 bringup
+Run the rest of the Navigation2 bringup
 
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
- - Run the rest of the Navigation2 bringup
-
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
+`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
 
 In RVIZ:
 * Send the robot a goal using “2D Nav Goal” button.
-
- - system_test.rviz
-
-There is an rviz configuration for testing base navigation2 systems.
-
- - map
-
-There is also an example map (pgm and yaml) for system level tests.
 
 ## Launch Navigation2 on a Robot
 
@@ -63,13 +51,12 @@ In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
 
- - Run the rest of the Navigation2 bringup
+Run the rest of the Navigation2 bringup
 
 `ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
 
 In RVIZ:
 * Send the robot a goal using “2D Nav Goal” button.
-
 
 ## Future Work
 
