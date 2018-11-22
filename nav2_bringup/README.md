@@ -15,7 +15,7 @@ Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simul
 
 Launch map_server and AMCL
  
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True`
 
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
