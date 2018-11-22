@@ -35,7 +35,7 @@ class NavTester(Node):
         super().__init__("navtester")
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped, 'initialpose')
         self.goal_pub = self.create_publisher(PoseStamped, 'move_base_simple/goal')
-        
+
         # Can't get/set model state from Gazebo yet -see https://github.com/ros-simulation/gazebo_ros_pkgs/issues/838
         # self.model_pose_sub = self.create_subscription(ModelStates, '/gazebo/model_states', self.poseCallback)
         # self.setPoseClient = self.create_client(SetModelState, "/gazebo/set_model_state")
@@ -44,9 +44,10 @@ class NavTester(Node):
 
         self.tfParamClient = self.create_client(SetParameters, "/static_transform_publisher/set_parameters") # TODO: remove this when TB transforms are fixed
         self.robotModel = 'turtlebot3' # TODO: make robotModel a param
+        self.initial_pose_received = False
 
     def setInitialPose(self, pose):
-        self.initialPose = pose
+        self.initial_pose = pose
         self.currentPose = pose
         self.setNavstackInitialPose(pose)
         # setGazeboToInitialPose() doesn't work because of this gazebo_ros issue: https://github.com/ros-simulation/gazebo_ros_pkgs/issues/838
@@ -83,6 +84,7 @@ class NavTester(Node):
         #self.currentPose = msg.pose[index]
         print("Received amcl_pose")
         self.currentPose = msg.pose.pose
+        self.initial_pose_received = True
 
     def reachesGoal(self, timeout):
         goalReached = False
@@ -105,7 +107,7 @@ class NavTester(Node):
         distance = math.sqrt(d_x*d_x + d_y*d_y)
         print ("Distance from goal is: ", distance)
         return distance
-    
+
     def setSimTime(self):
         print("Setting transforms to use sim time from gazebo")
         from subprocess import call
@@ -114,41 +116,51 @@ class NavTester(Node):
             while (call(["ros2", "param", "set", nav2_node, "use_sim_time", "True"])):
                 print("Error couldn't set use_sim_time param on: ", nav2_node, " retrying...")
 
-
-def test_whenGivenAGoalPose_RobotMovesToGoal(testRobot):
-    # set transforms to use_sim_time
-    testRobot.setSimTime()
-    print ("Waiting for time to reset")
-    sleep(5) # give time for everything to reset to sim time
-    
+def test_InitialPose(test_robot,timeout):
     # Set initial pose to the Turtlebot3 starting position -2, 0, 0, facing towards positive X
-    initialPose = Pose()
-    initialPose.position.x = -2.0
-    initialPose.position.y = -0.5
-    initialPose.position.z =  0.01
-    initialPose.orientation.x = 0.0
-    initialPose.orientation.y = 0.0
-    initialPose.orientation.z = 0.0
-    initialPose.orientation.w = 1.0
-    # Debug
+    initial_pose = Pose()
+    initial_pose.position.x = -2.0
+    initial_pose.position.y = -0.5
+    initial_pose.position.z =  0.01
+    initial_pose.orientation.x = 0.0
+    initial_pose.orientation.y = 0.0
+    initial_pose.orientation.z = 0.0
+    initial_pose.orientation.w = 1.0
     print("Setting initial pose")
-    testRobot.setInitialPose(initialPose)
-    
-    print("Waiting for pose to propagate to nodes")
-    sleep(5)
-    
-    goalPose = copy.deepcopy(initialPose)
-    goalPose.position.x = 0.0
-    goalPose.position.y = 2.0
+    initial_pose_received = False
+    test_robot.setInitialPose(initial_pose)
+    quit_time = time.time() + timeout
+    print("Waiting for initial pose to be received")
+    while not test_robot.initial_pose_received and time.time() < quit_time:
+        rclpy.spin_once(test_robot) # wait for poseCallback
+
+    if (test_robot.initial_pose_received):
+        print("test_InitialPose PASSED")
+    else:
+        print("test_InitialPose FAILED")
+    return test_robot.initial_pose_received
+
+def test_RobotMovesToGoal(test_robot):
+    goal_pose = Pose()
+    goal_pose.position.x = 0.0
+    goal_pose.position.y = 2.0
+    goal_pose.position.z =  0.01
+    goal_pose.orientation.x = 0.0
+    goal_pose.orientation.y = 0.0
+    goal_pose.orientation.z = 0.0
+    goal_pose.orientation.w = 1.0
     print("Setting goal pose")
-    testRobot.setGoalPose(goalPose)
-    
+    test_robot.setGoalPose(goal_pose)
     print("Waiting 30 seconds for robot to reach goal")
-    return testRobot.reachesGoal(timeout=30)
+    return test_robot.reachesGoal(timeout=30)
 
 def test_all():
-    testRobot = NavTester()
-    result = test_whenGivenAGoalPose_RobotMovesToGoal(testRobot)
+    # set transforms to use_sim_time
+    test_robot = NavTester()
+    test_robot.setSimTime()
+    result = True
+    if (result): result = test_InitialPose(test_robot, 10)
+    if (result): result = test_RobotMovesToGoal(test_robot)
     # Add more tests here if desired
     return result
 
@@ -164,6 +176,6 @@ def main(argv=sys.argv[1:]):
         print("Test PASSED")
     else:
         raise Exception("Test FAILED") # raise Exception so that colcon test will fail
-    
+
 if __name__ == '__main__':
     main()
