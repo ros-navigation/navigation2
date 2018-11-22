@@ -21,7 +21,9 @@
 
 #include "nav2_tasks/spin_task.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "std_msgs/msg/empty.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_behaviors
 {
@@ -35,9 +37,25 @@ public:
   nav2_tasks::TaskStatus spin(const nav2_tasks::SpinCommand::SharedPtr command);
 
 protected:
+  double min_rotational_vel_, max_rotational_vel_, rotational_acc_lim_, goal_tolerance_angle_;
+
+  std::unique_ptr<nav2_robot::Robot> robot_;
+
   std::unique_ptr<nav2_tasks::SpinTaskServer> task_server_;
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
+
+  nav2_tasks::TaskStatus time_based_backup();
+
+  nav2_tasks::TaskStatus time_based_spin();
+
+  nav2_tasks::TaskStatus controlled_spin();
+
+  void getAnglesFromQuaternion(
+    const geometry_msgs::msg::Quaternion & quaternion,
+    double & yaw, double & pitch, double & roll);
+
+  bool getRobotYaw(double & yaw);
 };
 
 }  // nav2_behaviors
