@@ -8,30 +8,43 @@ The `nav2_bringup` package is an example bringup system for navigation2 applicat
 ```
 ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>
 ```
- - Launch Navigation2
+ - Launch your robot specific transforms
+Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
+```
+ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py
+```
+
+ - Launch map_server and AMCL
  
-```
-ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml use_sim_time:=True 
-```
- - Set 'use\_sim\_time' parameter for static transforms
-* This is due to a bug in static\_transform\_publisher - [https://github.com/ros2/geometry2/issues/80](https://github.com/ros2/geometry2/issues/80)
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
 
-```
-ros2 param set /static_transform_publisher use_sim_time True
-```
+In RVIZ:
+* Make sure all transforms from odom are present. (odom->base_link->base_scan)
+* Localize the robot using “2D Pose Estimate” button.
 
-## system_test.rviz
+ - Run the rest of the Navigation2 bringup
+
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
+ - Run the rest of the Navigation2 bringup
+
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml use_sim_time:=True`
+
+In RVIZ:
+* Send the robot a goal using “2D Nav Goal” button.
+
+ - system_test.rviz
 
 There is an rviz configuration for testing base navigation2 systems.
 
-## map
+ - map
 
 There is also an example map (pgm and yaml) for system level tests.
 
 ## Launch Navigation2 on a Robot
 
 Pre-requisites:
--	You will need to run SLAM or Cartographer with tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done. If not, it can be done in ROS1 before beginning to install our code.
+* Run SLAM or Cartographer with tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done. If not, it can be done in ROS1 before beginning to install our code.
+* Publish all the transforms from your robot from base_link to base_scan
 
 Note: We recommend doing this on a Ubuntu 18.04 installation. We’re currently having build issues on 16.04. 
 
@@ -40,7 +53,7 @@ https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md
 
 Launch the code using this launch file and your map.yaml:
 
-`ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>`
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml>`
 
 In another terminal, run RVIZ:
 
@@ -49,7 +62,14 @@ In another terminal, run RVIZ:
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
-* Send it a goal using “2D Nav Goal” button.
+
+ - Run the rest of the Navigation2 bringup
+
+`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
+
+In RVIZ:
+* Send the robot a goal using “2D Nav Goal” button.
+
 
 ## Future Work
 
