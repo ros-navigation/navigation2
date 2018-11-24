@@ -45,9 +45,9 @@ protected:
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 
-  nav2_tasks::TaskStatus time_based_backup();
+  nav2_tasks::TaskStatus timed_backup();
 
-  nav2_tasks::TaskStatus time_based_spin();
+  nav2_tasks::TaskStatus timed_spin();
 
   nav2_tasks::TaskStatus controlled_spin();
 

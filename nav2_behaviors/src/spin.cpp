@@ -74,9 +74,9 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
 
   // Before spinning we need to back up a bit
   // TODO(orduno): Create a separate behavior and bt node for backing up
-  time_based_backup();
+  timed_backup();
 
-  time_based_spin();
+  timed_spin();
 
   nav2_tasks::SpinResult result;
   task_server_->setResult(result);
@@ -84,7 +84,7 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
   return TaskStatus::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Spin::time_based_backup()
+nav2_tasks::TaskStatus Spin::timed_backup()
 {
   auto start_time = std::chrono::system_clock::now();
   auto time_since_msg = std::chrono::system_clock::now();
@@ -124,7 +124,7 @@ nav2_tasks::TaskStatus Spin::time_based_backup()
   return TaskStatus::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Spin::time_based_spin()
+nav2_tasks::TaskStatus Spin::timed_spin()
 {
   auto start_time = std::chrono::system_clock::now();
   auto time_since_msg = std::chrono::system_clock::now();
@@ -163,7 +163,7 @@ nav2_tasks::TaskStatus Spin::time_based_spin()
   return TaskStatus::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Spin::controller_based_spin()
+nav2_tasks::TaskStatus Spin::controlled_spin()
 {
   // Get current robot orientation
   double start_yaw, current_yaw;
@@ -195,12 +195,12 @@ nav2_tasks::TaskStatus Spin::controller_based_spin()
     // limit velocity
     vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-    geometry_msgs::Twist cmd_vel;
+    geometry_msgs::msg::Twist cmd_vel;
     cmd_vel.linear.x = 0.0;
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = vel;
 
-    vel_pub.publish(cmd_vel);
+    vel_pub_->publish(cmd_vel);
 
     // check if we are done
     if (dist_left >= (0.0 - goal_tolerance_angle_)) {
@@ -217,8 +217,7 @@ void Spin::getAnglesFromQuaternion(
 {
   tf2::Matrix3x3(
   tf2::Quaternion(
-    command->quaternion.x, command->quaternion.y,
-    command->quaternion.z, command->quaternion.w)).getEulerYPR(yaw, pitch, roll);
+    quaternion.x, quaternion.y, quaternion.z, quaternion.w)).getEulerYPR(yaw, pitch, roll);
 }
 
 bool Spin::getRobotYaw(double & yaw)
@@ -227,11 +226,11 @@ bool Spin::getRobotYaw(double & yaw)
 
   if (!robot_->getCurrentPose(current_pose)) {
     RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-    return false
+    return false;
   }
 
   double pitch, roll;
-  getAnglesFromQuaternion(current_pose->pose.orientation, yaw, pitch, roll);
+  getAnglesFromQuaternion(current_pose->pose.pose.orientation, yaw, pitch, roll);
 
   return true;
 }
