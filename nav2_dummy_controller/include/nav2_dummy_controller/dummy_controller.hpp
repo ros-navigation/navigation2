@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_
-#define NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_
+#ifndef NAV2_DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_
+#define NAV2_DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_
 
 #include <memory>
 
 #include "nav2_tasks/follow_path_task.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
-namespace nav2_fake_controller
+namespace nav2_dummy_controller
 {
 
-class FakeController : public rclcpp::Node
+class DummyController : public rclcpp::Node
 {
 public:
-  FakeController();
-  ~FakeController();
+  DummyController();
+  ~DummyController();
 
   nav2_tasks::TaskStatus followPath(
     const nav2_tasks::FollowPathCommand::SharedPtr command);
@@ -40,6 +40,6 @@ private:
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 };
 
-}  // namespace nav2_fake_controller
+}  // namespace nav2_dummy_controller
 
-#endif  // NAV2_FAKE_CONTROLLER__FAKE_CONTROLLER_HPP_
+#endif  // NAV2_DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_

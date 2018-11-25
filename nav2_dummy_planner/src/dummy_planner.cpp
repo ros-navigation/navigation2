@@ -15,43 +15,43 @@
 #include <chrono>
 #include <thread>
 
-#include "nav2_fake_planner/fake_planner.hpp"
+#include "nav2_dummy_planner/dummy_planner.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_fake_planner
+namespace nav2_dummy_planner
 {
 
-FakePlanner::FakePlanner() : Node("FakePlanner")
+DummyPlanner::DummyPlanner() : Node("DummyPlanner")
 {
-  RCLCPP_INFO(get_logger(), "Initializing FakePlanner...");
+  RCLCPP_INFO(get_logger(), "Initializing DummyPlanner...");
 
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&FakePlanner::computePathToPose, this, std::placeholders::_1));
+    std::bind(&DummyPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->startWorkerThread();
 
-  RCLCPP_INFO(get_logger(), "Initialized FakePlanner");
+  RCLCPP_INFO(get_logger(), "Initialized DummyPlanner");
 }
 
-FakePlanner::~FakePlanner()
+DummyPlanner::~DummyPlanner()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down FakePlanner");
+  RCLCPP_INFO(get_logger(), "Shutting down DummyPlanner");
 }
 
 TaskStatus
-FakePlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+DummyPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
   "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
   command->goal.position.x, command->goal.position.y);
 
-  // Fake path computation time
+  // Dummy path computation time
   std::this_thread::sleep_for(500ms);
 
   if (task_server_->cancelRequested()) {
@@ -60,7 +60,7 @@ FakePlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Share
     return TaskStatus::CANCELED;
   }
 
-  RCLCPP_INFO(get_logger(), "Found a fake path");
+  RCLCPP_INFO(get_logger(), "Found a dummy path");
 
   nav2_tasks::ComputePathToPoseResult result;
   task_server_->setResult(result);
@@ -68,4 +68,4 @@ FakePlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Share
   return TaskStatus::SUCCEEDED;
 }
 
-}  // namespace nav2_fake_planner
+}  // namespace nav2_dummy_planner

@@ -10,31 +10,17 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_
-#define NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_
+// limitations under the License. Reserved.
 
 #include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_dummy_planner/dummy_planner.hpp"
 
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-
-namespace nav2_fake_planner
+int main(int argc, char ** argv)
 {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<nav2_dummy_planner::DummyPlanner>());
+  rclcpp::shutdown();
 
-class FakePlanner : public rclcpp::Node
-{
-public:
-  FakePlanner();
-  ~FakePlanner();
-
-  nav2_tasks::TaskStatus computePathToPose(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
-
-private:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
-};
-
-}  // namespace nav2_fake_planner
-
-#endif  // NAV2_FAKE_PLANNER__FAKE_PLANNER_HPP_
+  return 0;
+}

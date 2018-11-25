@@ -28,6 +28,7 @@ int main(int argc, char ** argv)
 
   auto spin = std::make_shared<nav2_behaviors::Spin>();
   exec.add_node(spin);
+
   auto back_up = std::make_shared<nav2_behaviors::BackUp>();
   exec.add_node(back_up);
 

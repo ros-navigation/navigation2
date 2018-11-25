@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_fake_planner)
+project(nav2_dummy_planner)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -22,7 +22,7 @@ include_directories(
   include
 )
 
-set(library_name fake_planner)
+set(library_name dummy_planner)
 set(executable_name ${library_name}_node)
 
 set(dependencies
@@ -36,7 +36,7 @@ set(dependencies
 
 # Library
 add_library(${library_name}
-  src/fake_planner.cpp
+  src/dummy_planner.cpp
 )
 
 ament_target_dependencies(${library_name}

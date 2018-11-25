@@ -16,17 +16,17 @@
 #include <ctime>
 #include <thread>
 
-#include "nav2_fake_controller/fake_controller.hpp"
+#include "nav2_dummy_controller/dummy_controller.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_fake_controller
+namespace nav2_dummy_controller
 {
 
-FakeController::FakeController() : Node("FakeController")
+DummyController::DummyController() : Node("DummyController")
 {
-  RCLCPP_INFO(get_logger(), "Initializing FakeController...");
+  RCLCPP_INFO(get_logger(), "Initializing DummyController...");
 
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
@@ -35,21 +35,21 @@ FakeController::FakeController() : Node("FakeController")
 
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&FakeController::followPath, this, std::placeholders::_1));
+    std::bind(&DummyController::followPath, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->startWorkerThread();
 
-  RCLCPP_INFO(get_logger(), "Initialized FakeController");
+  RCLCPP_INFO(get_logger(), "Initialized DummyController");
 }
 
-FakeController::~FakeController()
+DummyController::~DummyController()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down FakeController");
+  RCLCPP_INFO(get_logger(), "Shutting down DummyController");
 }
 
 TaskStatus
-FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DummyController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "Starting controller ");
 
@@ -57,7 +57,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
   auto time_since_msg = std::chrono::system_clock::now();
 
   while (true) {
-    // Fake controller computation time
+    // Dummy controller computation time
     std::this_thread::sleep_for(50ms);
 
     if (task_server_->cancelRequested()) {
@@ -92,7 +92,7 @@ FakeController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comm
   return TaskStatus::SUCCEEDED;
 }
 
-void FakeController::setZeroVelocity()
+void DummyController::setZeroVelocity()
 {
   geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -101,4 +101,4 @@ void FakeController::setZeroVelocity()
   vel_pub_->publish(cmd_vel);
 }
 
-}  // namespace nav2_fake_controller
+}  // namespace nav2_dummy_controller
