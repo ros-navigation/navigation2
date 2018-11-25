@@ -12,49 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIORS__SPIN_HPP_
-#define NAV2_BEHAVIORS__SPIN_HPP_
+#ifndef NAV2_BEHAVIORS__BACK_UP_HPP_
+#define NAV2_BEHAVIORS__BACK_UP_HPP_
 
 #include <string>
 #include <memory>
 
-#include "nav2_tasks/spin_task.hpp"
+#include "nav2_tasks/back_up_task.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_robot/robot.hpp"
 
 namespace nav2_behaviors
 {
 
-class Spin : public rclcpp::Node
+class BackUp : public rclcpp::Node
 {
 public:
-  Spin();
-  ~Spin();
+  BackUp();
+  ~BackUp();
 
-  nav2_tasks::TaskStatus spin(const nav2_tasks::SpinCommand::SharedPtr command);
+  nav2_tasks::TaskStatus backUp(const nav2_tasks::BackUpCommand::SharedPtr command);
 
 protected:
-  double min_rotational_vel_, max_rotational_vel_, rotational_acc_lim_, goal_tolerance_angle_;
+  double min_linear_vel_, max_linear_vel_, linear_acc_lim_, goal_tolerance_distance_;
 
   std::unique_ptr<nav2_robot::Robot> robot_;
 
-  std::unique_ptr<nav2_tasks::SpinTaskServer> task_server_;
+  std::unique_ptr<nav2_tasks::BackUpTaskServer> task_server_;
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 
-  nav2_tasks::TaskStatus timedSpin();
+  nav2_tasks::TaskStatus timedBackup();
 
-  nav2_tasks::TaskStatus controlledSpin();
-
-  void getAnglesFromQuaternion(
-    const geometry_msgs::msg::Quaternion & quaternion,
-    double & yaw, double & pitch, double & roll);
-
-  bool getRobotYaw(double & yaw);
+  nav2_tasks::TaskStatus controlledBackup();
 };
 
 }  // nav2_behaviors
 
-#endif  // NAV2_BEHAVIORS__SPIN_HPP_
+#endif  // NAV2_BEHAVIORS__BACK_UP_HPP_

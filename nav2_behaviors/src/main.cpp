@@ -15,13 +15,23 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_behaviors/spin.hpp"
+#include "nav2_behaviors/back_up.hpp"
 
 int main(int argc, char ** argv)
 {
+  // Force flush of the stdout buffer.
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
   rclcpp::init(argc, argv);
 
-  // TODO(orduno) Use node composition for multiple behaviors
-  rclcpp::spin(std::make_shared<nav2_behaviors::Spin>());
+  rclcpp::executors::SingleThreadedExecutor exec;
+
+  auto spin = std::make_shared<nav2_behaviors::Spin>();
+  exec.add_node(spin);
+  auto back_up = std::make_shared<nav2_behaviors::BackUp>();
+  exec.add_node(back_up);
+
+  exec.spin();
 
   rclcpp::shutdown();
 

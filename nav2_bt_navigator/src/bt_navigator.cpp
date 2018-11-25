@@ -100,6 +100,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
           </Inverter>
           <SequenceStar name="stuck_recovery">
             <Stop/>
+            <BackUp/>
             <Spin/>
           </SequenceStar>
         </FallbackStar>
