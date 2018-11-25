@@ -68,11 +68,9 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported"
     " , will only spin in Z.");
-  } else if ((yaw * 180.0 / M_PI) != 180.0) {
-    RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
-    return TaskStatus::FAILED;
   }
 
+  RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
   TaskStatus status = timedSpin();
 
   nav2_tasks::SpinResult result;

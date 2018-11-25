@@ -63,11 +63,9 @@ nav2_tasks::TaskStatus BackUp::backUp(const nav2_tasks::BackUpCommand::SharedPtr
   if (command->y != 0.0 || command->z != 0.0) {
     RCLCPP_INFO(get_logger(), "Backing up in Y and Z not supported"
     " , will only spin in Z.");
-  } else if (command->x != 0.0) {
-    RCLCPP_INFO(get_logger(), "Currently only supported backing up by a fixed distance");
-    return TaskStatus::FAILED;
   }
 
+  RCLCPP_INFO(get_logger(), "Currently only supported backing up by a fixed distance");
   TaskStatus status = timedBackup();
 
   nav2_tasks::BackUpResult result;
