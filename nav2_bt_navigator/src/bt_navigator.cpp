@@ -48,10 +48,10 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   // Get the current pose from the robot
   auto current = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  // if (!robot_->getCurrentPose(current)) {
-  //   RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-  //   return TaskStatus::FAILED;
-  // }
+  if (!robot_->getCurrentPose(current)) {
+    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+    return TaskStatus::FAILED;
+  }
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
