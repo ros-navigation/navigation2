@@ -30,21 +30,20 @@ using dwb_core::CostmapROSPtr;
 namespace nav2_dwb_controller
 {
 
-DwbController::DwbController(rclcpp::executor::Executor & /*executor*/)
+DwbController::DwbController(rclcpp::executor::Executor & executor)
 : Node("DwbController"),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-#if 0
+
   cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
   executor.add_node(cm_);
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-#endif
-  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
 
+  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));
 }
@@ -54,9 +53,10 @@ DwbController::~DwbController()
 }
 
 TaskStatus
-DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*command*/)
+DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
-#if 1
+#if 0
+  // Example code to integrate updates into the main DWB loop
   RCLCPP_INFO(get_logger(), "Starting controller");
 
   for (int i=0; i<1000; i++) {
@@ -79,7 +79,8 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comma
 
   RCLCPP_INFO(get_logger(), "Completed control task");
   return TaskStatus::SUCCEEDED;
-#else
+#endif
+
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
@@ -117,7 +118,6 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*comma
   task_server_->setResult(result);
 
   return TaskStatus::SUCCEEDED;
-#endif
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
