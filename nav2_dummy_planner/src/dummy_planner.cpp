@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <thread>
+#include <memory>
 
 #include "nav2_dummy_planner/dummy_planner.hpp"
 
@@ -23,7 +24,8 @@ using namespace std::chrono_literals;
 namespace nav2_dummy_planner
 {
 
-DummyPlanner::DummyPlanner() : Node("DummyPlanner")
+DummyPlanner::DummyPlanner()
+: Node("DummyPlanner")
 {
   RCLCPP_INFO(get_logger(), "Initializing DummyPlanner...");
 
@@ -48,8 +50,8 @@ TaskStatus
 DummyPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-  "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
-  command->goal.position.x, command->goal.position.y);
+    "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
+    command->goal.position.x, command->goal.position.y);
 
   // Dummy path computation time
   std::this_thread::sleep_for(500ms);

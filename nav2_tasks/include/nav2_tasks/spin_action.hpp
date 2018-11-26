@@ -41,7 +41,7 @@ public:
 
     tf2::Quaternion quaternion;
     // Rotate 90deg CCW
-    quaternion.setRPY(0, 0, M_PI/2); // yaw, pitch and roll are rotation in z, y, x respectively
+    quaternion.setRPY(0, 0, M_PI / 2);  // yaw, pitch and roll are rotation in z, y, x respectively
     // quaternion.normalize();
 
     geometry_msgs::msg::Quaternion quaternion_msg;

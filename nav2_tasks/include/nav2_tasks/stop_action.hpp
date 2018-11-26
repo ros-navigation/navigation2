@@ -23,8 +23,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-// #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
+
+using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_tasks
 {
@@ -51,12 +52,10 @@ public:
 
   StopAction() = delete;
 
-  ~StopAction(){}
+  ~StopAction() {}
 
   BT::NodeStatus tick() override
   {
-    using namespace std::chrono_literals;
-
     static auto start_time = std::chrono::system_clock::now();
 
     static bool new_call = true;

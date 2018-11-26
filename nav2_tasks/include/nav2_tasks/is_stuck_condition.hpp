@@ -12,26 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__IS_STUCK_CONDITION_HPP
-#define NAV2_TASKS__IS_STUCK_CONDITION_HPP
+#ifndef NAV2_TASKS__IS_STUCK_CONDITION_HPP_
+#define NAV2_TASKS__IS_STUCK_CONDITION_HPP_
 
 #include <string>
 #include <chrono>
 #include <ctime>
 #include <cmath>
 #include <thread>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "behavior_tree_core/condition_node.h"
 #include "nav2_robot/robot.hpp"
 
+using namespace std::chrono_literals; // NOLINT
+
 namespace nav2_tasks
 {
 
 class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
 {
-
 public:
   explicit IsStuckCondition(const std::string & condition_name)
   : BT::ConditionNode(condition_name),
@@ -72,8 +74,6 @@ public:
   {
     // TODO(orduno) Move algorithm to the robot class
     // return robot_.isStuck();
-
-    using namespace std::chrono_literals;
 
     if (current_velocity_ == nullptr) {
       RCLCPP_WARN_ONCE(get_logger(), "Initial odometry not yet received.");
@@ -146,4 +146,4 @@ private:
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__IS_STUCK_CONDITION_HPP
+#endif  // NAV2_TASKS__IS_STUCK_CONDITION_HPP_

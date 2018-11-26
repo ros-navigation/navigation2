@@ -16,6 +16,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include <memory>
 
 #include "nav2_behaviors/back_up.hpp"
 
@@ -25,7 +26,8 @@ using namespace std::chrono_literals;
 namespace nav2_behaviors
 {
 
-BackUp::BackUp() : Node("BackUp")
+BackUp::BackUp()
+: Node("BackUp")
 {
   RCLCPP_INFO(get_logger(), "Initializing the BackUp behavior");
 
@@ -61,8 +63,8 @@ nav2_tasks::TaskStatus BackUp::backUp(const nav2_tasks::BackUpCommand::SharedPtr
   RCLCPP_INFO(get_logger(), "Attempting to back up");
 
   if (command->y != 0.0 || command->z != 0.0) {
-    RCLCPP_INFO(get_logger(), "Backing up in Y and Z not supported"
-    " , will only spin in Z.");
+    RCLCPP_INFO(get_logger(), "Backing up in Y and Z not supported, "
+      "will only spin in Z.");
   }
 
   RCLCPP_INFO(get_logger(), "Currently only supported backing up by a fixed distance");
@@ -98,7 +100,7 @@ nav2_tasks::TaskStatus BackUp::timedBackup()
 
     // Output control command
     geometry_msgs::msg::Twist cmd_vel;
-    // TODO (orduno): assuming robot was moving fwd when it got stuck
+    // TODO(orduno): assuming robot was moving fwd when it got stuck
     cmd_vel.linear.x = -0.05;
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;

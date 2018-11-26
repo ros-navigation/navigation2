@@ -48,6 +48,6 @@ protected:
   nav2_tasks::TaskStatus controlledBackup();
 };
 
-}  // nav2_behaviors
+}  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__BACK_UP_HPP_

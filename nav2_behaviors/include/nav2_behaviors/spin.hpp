@@ -55,6 +55,6 @@ protected:
   bool getRobotYaw(double & yaw);
 };
 
-}  // nav2_behaviors
+}  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__SPIN_HPP_

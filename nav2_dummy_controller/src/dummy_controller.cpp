@@ -15,6 +15,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include <memory>
 
 #include "nav2_dummy_controller/dummy_controller.hpp"
 
@@ -24,7 +25,8 @@ using namespace std::chrono_literals;
 namespace nav2_dummy_controller
 {
 
-DummyController::DummyController() : Node("DummyController")
+DummyController::DummyController()
+: Node("DummyController")
 {
   RCLCPP_INFO(get_logger(), "Initializing DummyController...");
 

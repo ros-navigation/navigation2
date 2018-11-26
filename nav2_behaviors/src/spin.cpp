@@ -16,6 +16,8 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include <algorithm>
+#include <memory>
 
 #include "nav2_behaviors/spin.hpp"
 #include "tf2/LinearMath/Quaternion.h"
@@ -27,7 +29,8 @@ using namespace std::chrono_literals;
 namespace nav2_behaviors
 {
 
-Spin::Spin() : Node("Spin")
+Spin::Spin()
+: Node("Spin")
 {
   RCLCPP_INFO(get_logger(), "Initializing the Spin behavior");
 
@@ -66,8 +69,8 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
   getAnglesFromQuaternion(command->quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
-    RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported"
-    " , will only spin in Z.");
+    RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported, "
+      "will only spin in Z.");
   }
 
   RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
@@ -173,8 +176,8 @@ void Spin::getAnglesFromQuaternion(
   double & yaw, double & pitch, double & roll)
 {
   tf2::Matrix3x3(
-  tf2::Quaternion(
-    quaternion.x, quaternion.y, quaternion.z, quaternion.w)).getEulerYPR(yaw, pitch, roll);
+    tf2::Quaternion(
+      quaternion.x, quaternion.y, quaternion.z, quaternion.w)).getEulerYPR(yaw, pitch, roll);
 }
 
 bool Spin::getRobotYaw(double & yaw)
