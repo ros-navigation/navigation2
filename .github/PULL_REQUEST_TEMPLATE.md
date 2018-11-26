@@ -8,9 +8,9 @@
 | ------ | ----------- |
 | Ticket(s) this addresses   | (add tickets here #1) |
 | Primary OS tested on | (Ubuntu, MacOS, Windows) |
-| Primary platform tested on | (Steve's Robot, gazebo simulation of Tally, hardware turtlebot) |
+| Robotic platform tested on | (Steve's Robot, gazebo simulation of Tally, hardware turtlebot) |
 
---- 
+---
 
 ## Description of contribution in a few bullet points
 
@@ -19,7 +19,7 @@
 * Also fixed a typo in a parameter name in nav2_costmap_2d
 -->
 
---- 
+---
 
 ## Future work that may be required in bullet points
 
@@ -31,6 +31,6 @@
 
 ---
 
-<!-- OPTIONAL --> 
+<!-- OPTIONAL -->
 
-I'd like to request maintainer: <blank> to review this PR. 
+I'd like to request maintainer: <blank> to review this PR.
