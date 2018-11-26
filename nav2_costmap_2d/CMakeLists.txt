@@ -96,13 +96,11 @@ target_link_libraries(layers
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
-ament_target_dependencies(nav2_costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
 target_link_libraries(nav2_costmap_2d_markers
   nav2_costmap_2d_core
 )
 
 add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
-ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
 target_link_libraries(nav2_costmap_2d_cloud
   nav2_costmap_2d_core
 )
