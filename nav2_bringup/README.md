@@ -13,6 +13,10 @@ Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simul
 
 `ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py`
 
+Set the tf publisher node to use simulation time or AMCL won't get the transforms correctly
+
+`ros2 param set /robot_state_publisher use_sim_time True`
+
 Launch map_server and AMCL
  
 `ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True`
