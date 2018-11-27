@@ -70,18 +70,19 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
   // Get the filename to use from the parameter
-  get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_, std::string("bt_navigator.xml"));
+  get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_,
+    std::string("bt_navigator.xml"));
 
   // Read the input BT XML file into a string
   std::ifstream xml_file(bt_xml_filename_);
 
   if (!xml_file.good()) {
     RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename_.c_str());
-    return TaskStatus::FAILED;  
+    return TaskStatus::FAILED;
   }
 
   std::string xml_string((std::istreambuf_iterator<char>(xml_file)),
-                          std::istreambuf_iterator<char>());
+    std::istreambuf_iterator<char>());
 
   RCLCPP_INFO(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename_.c_str());
   RCLCPP_INFO(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());

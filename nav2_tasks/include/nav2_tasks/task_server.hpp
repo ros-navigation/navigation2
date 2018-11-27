@@ -90,7 +90,7 @@ public:
 
   void getCommandUpdate(typename CommandMsg::SharedPtr & command)
   {
-     *command = *updateMsg_;
+    *command = *updateMsg_;
   }
 
   bool updateRequested()

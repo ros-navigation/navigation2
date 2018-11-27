@@ -11,10 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-  
+
 #ifndef NAV2_TASKS__RATE_CONTROLLER_NODE_HPP_
 #define NAV2_TASKS__RATE_CONTROLLER_NODE_HPP_
 
+#include <string>
 #include <chrono>
 #include "behavior_tree_core/decorator_node.h"
 
@@ -24,12 +25,12 @@ namespace nav2_tasks
 class RateController : public BT::DecoratorNode
 {
 public:
-  RateController(const std::string& name, const BT::NodeParameters & params)
+  RateController(const std::string & name, const BT::NodeParameters & params)
   : BT::DecoratorNode(name, params)
   {
     unsigned int hz = 1;
     getParam<unsigned int>("hz", hz);
-    period_ = 1.0/hz;
+    period_ = 1.0 / hz;
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
@@ -40,7 +41,7 @@ public:
   }
 
 private:
-  virtual BT::NodeStatus tick() override;
+  BT::NodeStatus tick() override;
 
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
@@ -52,11 +53,6 @@ inline BT::NodeStatus RateController::tick()
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
-
-	// Go ahead and return since we know that the time interval hasn't
-	// expired yet
-    //setStatus(BT::NodeStatus::RUNNING);
-    //return status();
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -73,8 +69,7 @@ inline BT::NodeStatus RateController::tick()
   if (seconds.count() >= period_) {
     const BT::NodeStatus child_state = child_node_->executeTick();
 
-    switch (child_state)
-    {
+    switch (child_state) {
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
         RCLCPP_DEBUG(rclcpp::get_logger("RateController"), "seconds.count: %lf", seconds.count());

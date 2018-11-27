@@ -32,7 +32,7 @@ public:
 private:
   // Support for a BT SimpleActionNode that updates the FollowPath task
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> task_client_;
+  std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -56,29 +56,23 @@ TaskStatus
 DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
 #if 0
-  // Example code to integrate updates into the main DWB loop
-  RCLCPP_INFO(get_logger(), "Starting controller");
+  // TODO(mjeronimo): Integrate the following example code into the
+  // main loop below
 
-  for (int i=0; i<1000; i++) {
+  while (true) {
+
+    ...
+
     if (task_server_->updateRequested()) {
       auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
       task_server_->getCommandUpdate(new_path);
       task_server_->setUpdated();
 
-      RCLCPP_INFO(get_logger(), "Received path update of size %u", new_path->poses.size());
-      int index = 0;
-      for (auto pose : new_path->poses) {
-        RCLCPP_INFO(get_logger(), "point %u x: %0.2f, y: %0.2f", index,
-          pose.position.x, pose.position.y);
-        index++;
-      }
+      // Update the target path
     }
 
-    std::this_thread::sleep_for(10ms);
+    ...
   }
-
-  RCLCPP_INFO(get_logger(), "Completed control task");
-  return TaskStatus::SUCCEEDED;
 #endif
 
   RCLCPP_INFO(get_logger(), "Starting controller");
