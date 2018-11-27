@@ -27,7 +27,7 @@ def generate_launch_description():
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan_link']),
+            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 
         launch_ros.actions.Node(
             package='nav2_map_server',
