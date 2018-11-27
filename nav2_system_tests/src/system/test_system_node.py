@@ -29,6 +29,7 @@ from rcl_interfaces.srv._set_parameters import SetParameters
 from rclpy.parameter import Parameter
 from rcl_interfaces.srv._set_parameters__request import SetParameters_Request
 from time import sleep
+from sys import exit
 
 class NavTester(Node):
     def __init__(self):
@@ -36,13 +37,7 @@ class NavTester(Node):
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped, 'initialpose')
         self.goal_pub = self.create_publisher(PoseStamped, 'move_base_simple/goal')
 
-        # Can't get/set model state from Gazebo yet -see https://github.com/ros-simulation/gazebo_ros_pkgs/issues/838
-        # self.model_pose_sub = self.create_subscription(ModelStates, '/gazebo/model_states', self.poseCallback)
-        # self.setPoseClient = self.create_client(SetModelState, "/gazebo/set_model_state")
-        # So for now we subscribe to amcl_pose instead
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.poseCallback)
-
-        self.tfParamClient = self.create_client(SetParameters, "/static_transform_publisher/set_parameters") # TODO: remove this when TB transforms are fixed
         self.robotModel = 'turtlebot3' # TODO: make robotModel a param
         self.initial_pose_received = False
 
@@ -50,16 +45,13 @@ class NavTester(Node):
         self.initial_pose = pose
         self.currentPose = pose
         self.setNavstackInitialPose(pose)
-        # setGazeboToInitialPose() doesn't work because of this gazebo_ros issue: https://github.com/ros-simulation/gazebo_ros_pkgs/issues/838
-        # --- the /gazebo/set_model_state service is not present, running Gazebo 9, Ubuntu 18.04
-        # Luckily, we don't need this if the initial pose already is matched
-        #self.setGazeboToInitialPose(pose)
+
 
     def setNavstackInitialPose(self, pose):
         msg = PoseWithCovarianceStamped()
         msg.pose.pose = pose
         msg.header.frame_id = "map"
-        print("Publishing Initial Pose")
+        self.get_logger().info("Publishing Initial Pose")
         self.initial_pose_pub.publish(msg)
 
     def setGazeboToInitialPose(self, pose):
@@ -68,7 +60,7 @@ class NavTester(Node):
         modelState.model_state.pose = pose
         modelState.model_state.reference_frame = 'world'
         while not self.setPoseClient.wait_for_service(timeout_sec=5.0):
-            self.get_logger().info('/gazebo/set_model_state service not available, waiting again...')
+            self.get_logger().warn('/gazebo/set_model_state service not available, waiting again...')
         future = self.setPoseClient.call_async(modelState)
         rclpy.spin_until_future_complete(self, future)
 
@@ -80,9 +72,7 @@ class NavTester(Node):
         self.goal_pub.publish(msg)
 
     def poseCallback(self, msg):
-        #index = msg.name.index(self.robotModel)
-        #self.currentPose = msg.pose[index]
-        print("Received amcl_pose")
+        self.get_logger().info("Received amcl_pose")
         self.currentPose = msg.pose.pose
         self.initial_pose_received = True
 
@@ -94,27 +84,27 @@ class NavTester(Node):
             rclpy.spin_once(self, timeout_sec=1)
             if self.distanceFromGoal() < 0.2: # get within 20cm of goal
                 goalReached = True
-                print("*** GOAL REACHED ***")
+                self.get_logger().info("*** GOAL REACHED ***")
                 return True
             elif timeout is not None:
                 if (time.time() - startTime) > timeout:
-                    print("Robot timed out reaching its goal!")
+                    self.get_logger().error("Robot timed out reaching its goal!")
                     return False
 
     def distanceFromGoal(self):
         d_x = self.currentPose.position.x - self.goalPose.position.x
         d_y = self.currentPose.position.y - self.goalPose.position.y
         distance = math.sqrt(d_x*d_x + d_y*d_y)
-        print ("Distance from goal is: ", distance)
+        self.get_logger().info ("Distance from goal is: " + str(distance))
         return distance
 
     def setSimTime(self):
-        print("Setting transforms to use sim time from gazebo")
+        self.get_logger().info("Setting transforms to use sim time from gazebo")
         from subprocess import call
         # loop through the problematic nodes
-        for nav2_node in ("/static_transform_publisher", "/amcl", "/map_server"):
+        for nav2_node in ("/static_transform_publisher", "/map_server"):
             while (call(["ros2", "param", "set", nav2_node, "use_sim_time", "True"])):
-                print("Error couldn't set use_sim_time param on: ", nav2_node, " retrying...")
+                self.get_logger().error("Error couldn't set use_sim_time param on: " + nav2_node + " retrying...")
 
 def test_InitialPose(test_robot,timeout):
     # Set initial pose to the Turtlebot3 starting position -2, 0, 0, facing towards positive X
@@ -126,18 +116,18 @@ def test_InitialPose(test_robot,timeout):
     initial_pose.orientation.y = 0.0
     initial_pose.orientation.z = 0.0
     initial_pose.orientation.w = 1.0
-    print("Setting initial pose")
+    test_robot.get_logger().info("Setting initial pose")
     initial_pose_received = False
     test_robot.setInitialPose(initial_pose)
     quit_time = time.time() + timeout
-    print("Waiting for initial pose to be received")
+    test_robot.get_logger().info("Waiting for initial pose to be received")
     while not test_robot.initial_pose_received and time.time() < quit_time:
         rclpy.spin_once(test_robot) # wait for poseCallback
 
     if (test_robot.initial_pose_received):
-        print("test_InitialPose PASSED")
+        test_robot.get_logger().info("test_InitialPose PASSED")
     else:
-        print("test_InitialPose FAILED")
+        test_robot.get_logger().info("test_InitialPose FAILED")
     return test_robot.initial_pose_received
 
 def test_RobotMovesToGoal(test_robot):
@@ -149,14 +139,13 @@ def test_RobotMovesToGoal(test_robot):
     goal_pose.orientation.y = 0.0
     goal_pose.orientation.z = 0.0
     goal_pose.orientation.w = 1.0
-    print("Setting goal pose")
+    test_robot.get_logger().info("Setting goal pose")
     test_robot.setGoalPose(goal_pose)
-    print("Waiting 30 seconds for robot to reach goal")
+    test_robot.get_logger().info("Waiting 30 seconds for robot to reach goal")
     return test_robot.reachesGoal(timeout=30)
 
-def test_all():
+def test_all(test_robot):
     # set transforms to use_sim_time
-    test_robot = NavTester()
     test_robot.setSimTime()
     result = True
     if (result): result = test_InitialPose(test_robot, 10)
@@ -165,17 +154,22 @@ def test_all():
     return result
 
 def main(argv=sys.argv[1:]):
-    print("Starting test_system_node")
     rclpy.init()
+
+    test_robot = NavTester()
+    test_robot.get_logger().info("Starting test_system_node")
+
     # wait a few seconds to make sure entire stack is up and running
-    print("Waiting for a few seconds for all nodes to initialize")
+    test_robot.get_logger().info("Waiting for a few seconds for all nodes to initialize")
     sleep(5)
+
     # run tests
-    result =  test_all()
+    result =  test_all(test_robot)
     if (result):
-        print("Test PASSED")
+        test_robot.get_logger().info("Test PASSED")
     else:
-        raise Exception("Test FAILED") # raise Exception so that colcon test will fail
+        test_robot.get_logger().error("Test FAILED")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
