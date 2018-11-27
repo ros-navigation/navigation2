@@ -78,6 +78,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         if (task_server_->cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
           task_server_->setCanceled();
+          publishZeroVelocity();
           return TaskStatus::CANCELED;
         }
       }
@@ -85,11 +86,13 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
+    publishZeroVelocity();
     return TaskStatus::FAILED;
   }
 
   nav2_tasks::FollowPathResult result;
   task_server_->setResult(result);
+  publishZeroVelocity();
 
   return TaskStatus::SUCCEEDED;
 }
