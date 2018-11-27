@@ -30,4 +30,4 @@ script:
       nav2_util nav2_voxel_grid dwb_critics dwb_plugins 
       nav2_bt_navigator nav2_mission_executor nav2_robot 
       nav2_simple_navigator nav2_world_model nav_2d_utils"
-  - docker exec nav2_bash bash -c "colcon test-result" 
+  - docker exec nav2_bash bash -c "colcon test-result --verbose" 
