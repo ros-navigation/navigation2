@@ -47,7 +47,12 @@ tf2_ros::Buffer * tf_;
 
 TEST(nav2_costmap_2d::Costmap2DROS, unpadded_footprint_from_string_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("unpadded/string", *tf_);
+  nav2_costmap_2d::Costmap2DROS cm("costmap_unpadded_test", *tf_);
+  cm.set_parameters({
+    rclcpp::Parameter("footprint_padding", 0.0),
+    rclcpp::Parameter("footprint", "[[1, 1], [-1, 1], [-1, -1]]")
+  });
+
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
@@ -66,7 +71,7 @@ TEST(nav2_costmap_2d::Costmap2DROS, unpadded_footprint_from_string_param)
 
 TEST(nav2_costmap_2d::Costmap2DROS, padded_footprint_from_string_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("padded/string", *tf_);
+  nav2_costmap_2d::Costmap2DROS cm("costmap_padded_test", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
@@ -85,7 +90,7 @@ TEST(nav2_costmap_2d::Costmap2DROS, padded_footprint_from_string_param)
 
 TEST(nav2_costmap_2d::Costmap2DROS, radius_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("radius/sub", *tf_);
+  nav2_costmap_2d::Costmap2DROS cm("costmap_radius_test", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
   // Circular robot has 16-point footprint auto-generated.
   EXPECT_EQ(16, footprint.size());
@@ -126,7 +131,7 @@ TEST(nav2_costmap_2d::Costmap2DROS, radius_param)
 
 TEST(nav2_costmap_2d::Costmap2DROS, footprint_from_same_level_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("same_level", *tf_);
+  nav2_costmap_2d::Costmap2DROS cm("costmap_same_level_test", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
@@ -150,7 +155,7 @@ TEST(nav2_costmap_2d::Costmap2DROS, footprint_from_xmlrpc_param_failure)
 
 TEST(nav2_costmap_2d::Costmap2DROS, footprint_empty)
 {
-  nav2_costmap_2d::Costmap2DROS cm("empty", *tf_);
+  nav2_costmap_2d::Costmap2DROS cm("costmap_empty_test", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
   // With no specification of footprint or radius,
   // defaults to 0.46 meter radius plus 0.01 meter padding.
