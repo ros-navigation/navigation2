@@ -50,7 +50,7 @@ BackUp::BackUp()
   // Start listening for incoming BackUp task requests
   task_server_->startWorkerThread();
 
-  RCLCPP_INFO(get_logger(), "Initialized the BackUp  behavior");
+  RCLCPP_INFO(get_logger(), "Initialized the BackUp behavior");
 }
 
 BackUp::~BackUp()
