@@ -50,9 +50,6 @@ public:
 
     robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
 
-    vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-
     task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(
       temp_node, false);
 
@@ -106,7 +103,7 @@ protected:
 
     nav2_tasks::TaskStatus status;
 
-    while (true) {
+    while (rclcpp::ok()) {
       if (task_server_->cancelRequested()) {
         RCLCPP_INFO(get_logger(), "%s cancelled", taskName_.c_str());
         task_server_->setCanceled();
@@ -148,12 +145,8 @@ protected:
   std::shared_ptr<nav2_robot::Robot> robot_;
 
   typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
-  // typename CommandMsg::SharedPtr command_;
-  // typename ResultMsg::SharedPtr result_;
 
   std::string taskName_;
-
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 };
 
 }  // namespace nav2_behaviors

@@ -37,6 +37,7 @@ Spin::Spin()
   min_rotational_vel_ = 0.4;
   rotational_acc_lim_ = 3.2;
   goal_tolerance_angle_ = 0.10;
+  start_yaw_ = 0.0;
 }
 
 Spin::~Spin()
@@ -52,6 +53,11 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
     RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported, "
       "will only spin in Z.");
   }
+
+  // Testing
+  // if (!getRobotYaw(start_yaw_)) {
+  //   return TaskStatus::FAILED;
+  // }
 
   RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
 
@@ -84,14 +90,14 @@ nav2_tasks::TaskStatus Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
-  vel_pub_->publish(cmd_vel);
+  robot_->sendVelocity(cmd_vel);
 
   // TODO(orduno) fixed time
   auto current_time = std::chrono::system_clock::now();
   if (current_time - * start_time_ >= 4s) {
     // Stop the robot
     cmd_vel.angular.z = 0.0;
-    vel_pub_->publish(cmd_vel);
+    robot_->sendVelocity(cmd_vel);
     RCLCPP_INFO(get_logger(), "Completed rotation");
     return TaskStatus::SUCCEEDED;
   }
@@ -101,52 +107,44 @@ nav2_tasks::TaskStatus Spin::timedSpin()
 
 nav2_tasks::TaskStatus Spin::controlledSpin()
 {
-  // TODO(orduno) Test controller
+  // TODO(orduno) Test and tune controller
+  //              check it doesn't abruptly start and stop
+  //              or cause massive wheel slippage when accelerating
 
   // Get current robot orientation
-  double start_yaw, current_yaw;
+  double current_yaw;
 
-  if (!getRobotYaw(start_yaw)) {
+  if (!getRobotYaw(current_yaw)) {
     return TaskStatus::FAILED;
   }
 
-  while (true) {
-    if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Task cancelled");
-      task_server_->setCanceled();
-      return TaskStatus::CANCELED;
-    }
+  double current_angle = current_yaw - start_yaw_;
 
-    getRobotYaw(current_yaw);
+  double dist_left = M_PI - current_angle;
 
-    double current_angle = current_yaw - start_yaw;
+  // TODO(orduno) forward simulation to check if future position is feasible
 
-    double dist_left = M_PI - current_angle;
+  // compute the velocity that will let us stop by the time we reach the goal
+  // v_f^2 == v_i^2 + 2 * a * d
+  // solving for v_i if v_f = 0
+  double vel = sqrt(2 * rotational_acc_lim_ * dist_left);
 
-    // TODO(orduno) forward simulation to check if future position is feasible
+  // limit velocity
+  vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-    // compute the velocity that will let us stop by the time we reach the goal
-    // v_f^2 == v_i^2 + 2 * a * d
-    // solving for v_i if v_f = 0
-    double vel = sqrt(2 * rotational_acc_lim_ * dist_left);
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = vel;
 
-    // limit velocity
-    vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
+  robot_->sendVelocity(cmd_vel);
 
-    geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
-    cmd_vel.linear.y = 0.0;
-    cmd_vel.angular.z = vel;
-
-    vel_pub_->publish(cmd_vel);
-
-    // check if we are done
-    if (dist_left >= (0.0 - goal_tolerance_angle_)) {
-      break;
-    }
+  // check if we are done
+  if (dist_left >= (0.0 - goal_tolerance_angle_)) {
+    return TaskStatus::SUCCEEDED;
   }
 
-  return TaskStatus::SUCCEEDED;
+  return TaskStatus::RUNNING;
 }
 
 void Spin::getAnglesFromQuaternion(

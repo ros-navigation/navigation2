@@ -75,14 +75,14 @@ nav2_tasks::TaskStatus BackUp::timedBackup()
   cmd_vel.linear.x = -0.05;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
-  vel_pub_->publish(cmd_vel);
+  robot_->sendVelocity(cmd_vel);
 
 // TODO(orduno): fixed time
   auto current_time = std::chrono::system_clock::now();
   if (current_time - * start_time_ >= 3s) {
     // Stop the robot
     cmd_vel.linear.x = 0.0;
-    vel_pub_->publish(cmd_vel);
+    robot_->sendVelocity(cmd_vel);
 
     RCLCPP_INFO(get_logger(), "Completed backing up");
     return TaskStatus::SUCCEEDED;

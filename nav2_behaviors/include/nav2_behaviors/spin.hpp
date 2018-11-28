@@ -42,6 +42,8 @@ protected:
   double rotational_acc_lim_;
   double goal_tolerance_angle_;
 
+  double start_yaw_;
+
   std::chrono::system_clock::time_point * start_time_;
 
   nav2_tasks::TaskStatus timedSpin();
