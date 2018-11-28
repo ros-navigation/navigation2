@@ -33,6 +33,7 @@
 #include <experimental/filesystem>
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <memory>
 
 #include "nav2_map_server/occ_grid_loader.hpp"
@@ -52,11 +53,13 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
+static const vector<double> g_origin({0, 0, 0});
+
 class TestMapLoader : public nav2_map_server::OccGridLoader
 {
 public:
   explicit TestMapLoader(rclcpp::Node * node)
-  : OccGridLoader(node)
+  : OccGridLoader(node, g_origin, g_valid_image_res)
   {
   }
 
@@ -71,7 +74,7 @@ class MapLoaderTest : public ::testing::Test
 public:
   MapLoaderTest()
   {
-    node_ = std::make_shared<rclcpp::Node>("MapLoaderTest");
+    node_ = std::make_shared<rclcpp::Node>("map_server");
     map_loader_ = new TestMapLoader(node_.get());
   }
 

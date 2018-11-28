@@ -52,19 +52,22 @@ const char * OccGridLoader::frame_id_ = "map";
 const char * OccGridLoader::topic_name_ = "occ_grid";
 const char * OccGridLoader::service_name_ = "occ_grid";
 
-OccGridLoader::OccGridLoader(rclcpp::Node * node)
-: node_(node)
+OccGridLoader::OccGridLoader(
+  rclcpp::Node * node,
+  const std::vector<double> & origin, double resolution)
+: node_(node), origin_(origin), resolution_(resolution)
+{
+  getConversionParameters();
+}
+
+void OccGridLoader::getConversionParameters()
 {
   std::string mode_str;
 
-  // Get this node's default parameter values, using defaults if not supplied in the YAML file
-  node_->get_parameter_or_set("resolution", resolution_, 0.1);
-  node_->get_parameter_or_set("negate", negate_, 0);
+  // Settings for the conversion process from map image to occupancy grid
   node_->get_parameter_or_set("occupied_thresh", occupied_thresh_, 0.65);
   node_->get_parameter_or_set("free_thresh", free_thresh_, 0.196);
   node_->get_parameter_or_set("mode", mode_str, std::string("trinary"));
-  node_->get_parameter_or_set("origin", origin_,
-    std::vector<double>({-15.400000, -12.200000, 0.000000}));
 
   // Convert the string version of the mode name to one of the enumeration values
   if (mode_str == "trinary") {
@@ -79,17 +82,24 @@ OccGridLoader::OccGridLoader(rclcpp::Node * node)
       mode_str.c_str());
     mode_ = TRINARY;
   }
+
+  node_->get_parameter_or_set("negate", negate_, 0);
+
+  RCLCPP_DEBUG(node_->get_logger(), "occupied_thresh: %f", occupied_thresh_);
+  RCLCPP_DEBUG(node_->get_logger(), "free_thresh: %f", free_thresh_);
+  RCLCPP_DEBUG(node_->get_logger(), "mode_str: %s", mode_str.c_str());
+  RCLCPP_DEBUG(node_->get_logger(), "mode: %d", mode_);
+  RCLCPP_DEBUG(node_->get_logger(), "negate: %d", negate_);
 }
 
-void
-OccGridLoader::loadMapFromFile(const std::string & filename)
+void OccGridLoader::loadMapFromFile(const std::string & filename)
 {
   // Load the image using SDL.  If we get NULL back, the image load failed.
   SDL_Surface * img;
   if (!(img = IMG_Load(filename.c_str()))) {
     std::string errmsg = std::string("failed to open image file \"") +
       filename + std::string("\": ") + IMG_GetError();
-    RCLCPP_ERROR(rclcpp::get_logger("map_server"), "%s", errmsg.c_str());
+    RCLCPP_ERROR(node_->get_logger(), "%s", errmsg.c_str());
 
     throw std::runtime_error(errmsg);
   }
@@ -193,8 +203,7 @@ OccGridLoader::loadMapFromFile(const std::string & filename)
     msg_.info.resolution);
 }
 
-void
-OccGridLoader::initServices()
+void OccGridLoader::initServices()
 {
   // Create a service callback handle
   auto handle_occ_callback = [this](

@@ -30,7 +30,9 @@ namespace nav2_map_server
 class OccGridLoader : public MapLoader
 {
 public:
-  explicit OccGridLoader(rclcpp::Node * node);
+  explicit OccGridLoader(
+    rclcpp::Node * node,
+    const std::vector<double> & origin, double resolution);
   OccGridLoader() = delete;
 
   // Load the image and generate an occupancy grid
@@ -40,6 +42,8 @@ public:
   void initServices() override;
 
 protected:
+  void getConversionParameters();
+
   // The frame ID used in the returned occupancy grid message
   static const char * frame_id_;
 
@@ -49,17 +53,17 @@ protected:
   // The name of the service to GetMap
   static const char * service_name_;
 
-  // Map parameters retrieved from the node
-  double resolution_;
-  int negate_;
-  double occupied_thresh_;
-  double free_thresh_;
-  enum MapMode { TRINARY, SCALE, RAW };
-  MapMode mode_ = TRINARY;
-  std::vector<double> origin_;
-
   // The ROS node to use for ROS-related operations such as creating a service
   rclcpp::Node * node_;
+
+  // Conversion parameters
+  std::vector<double> origin_;
+  double resolution_;
+  double free_thresh_;
+  double occupied_thresh_;
+  enum MapMode { TRINARY, SCALE, RAW };
+  MapMode mode_;
+  int negate_;
 
   // A service to provide the ouccpancy grid (GetMap) and the message to return
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;

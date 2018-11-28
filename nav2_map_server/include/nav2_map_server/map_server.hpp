@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_loader.hpp"
 
@@ -30,12 +31,15 @@ public:
   MapServer();
 
 private:
-  // Only one map loader so far
   std::unique_ptr<MapLoader> map_loader_;
 
-  // The name and type of the map to load
-  std::string map_name_;
+  void getInputParameters();
+
+  std::string yaml_filename_;
   std::string map_type_;
+  std::string map_name_;
+  double resolution_;
+  std::vector<double> origin_;
 };
 
 }  // namespace nav2_map_server
