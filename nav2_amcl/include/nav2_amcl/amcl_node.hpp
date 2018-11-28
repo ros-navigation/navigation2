@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef AMCL_NODE_HPP_
-#define AMCL_NODE_HPP_
+#ifndef NAV2_AMCL__AMCL_NODE_HPP_
+#define NAV2_AMCL__AMCL_NODE_HPP_
 
 #include <vector>
 #include <string>
@@ -243,4 +243,4 @@ private:
 
 extern std::shared_ptr<rclcpp::Clock> simtime_clock;
 
-#endif  // AMCL_NODE_HPP_
+#endif  // NAV2_AMCL__AMCL_NODE_HPP_

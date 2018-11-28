@@ -25,7 +25,7 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
-#include "amcl_node.hpp"
+#include "nav2_amcl/amcl_node.hpp"
 #include "nav2_util/pf/pf.hpp"  // pf_vector_t
 #include "nav2_util/strutils.hpp"
 #include "nav2_tasks/map_service_client.hpp"

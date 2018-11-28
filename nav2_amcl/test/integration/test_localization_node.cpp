@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 #include <memory>
-#include "amcl_node.hpp"
+#include "nav2_amcl/amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
