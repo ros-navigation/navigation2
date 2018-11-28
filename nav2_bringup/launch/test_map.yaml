@@ -1,0 +1,3 @@
+image: "test_map.pgm"
+origin: [-15.400000, -12.200000, 0.000000]
+resolution: 0.1
