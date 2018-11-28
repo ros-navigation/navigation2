@@ -167,9 +167,11 @@ def main(argv=sys.argv[1:]):
     result =  test_all(test_robot)
     if (result):
         test_robot.get_logger().info("Test PASSED")
+        return 0
     else:
         test_robot.get_logger().error("Test FAILED")
-        sys.exit(1)
+        return 1
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
+
