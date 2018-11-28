@@ -138,7 +138,7 @@ AmclNode::AmclNode()
   set_map_srv_ = create_service<nav_msgs::srv::SetMap>("set_map", handle_set_map_callback);
 
 
-  custom_qos_profile.depth = 100;
+  custom_qos_profile.depth = 1;
   // laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this,
   //                   scan_topic_, custom_qos_profile);
   // Disabling laser_scan_filter
