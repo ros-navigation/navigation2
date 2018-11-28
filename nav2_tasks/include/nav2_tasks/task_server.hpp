@@ -38,12 +38,17 @@ public:
   : node_(node),
     workerThread_(nullptr),
     commandReceived_(false),
+    updateReceived_(false),
     cancelReceived_(false),
     eptr_(nullptr)
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
+
     commandSub_ = node_->create_subscription<CommandMsg>(taskName + "_command",
         std::bind(&TaskServer::onCommandReceived, this, std::placeholders::_1));
+
+    updateSub_ = node_->create_subscription<CommandMsg>(taskName + "_update",
+        std::bind(&TaskServer::onUpdateReceived, this, std::placeholders::_1));
 
     cancelSub_ = node_->create_subscription<std_msgs::msg::Empty>(taskName + "_cancel",
         std::bind(&TaskServer::onCancelReceived, this, std::placeholders::_1));
@@ -83,6 +88,21 @@ public:
     cancelReceived_ = false;
   }
 
+  void getCommandUpdate(typename CommandMsg::SharedPtr & command)
+  {
+    *command = *updateMsg_;
+  }
+
+  bool updateRequested()
+  {
+    return updateReceived_;
+  }
+
+  void setUpdated()
+  {
+    updateReceived_ = false;
+  }
+
   void setResult(const ResultMsg & result)
   {
     resultMsg_ = result;
@@ -99,6 +119,7 @@ protected:
   ExecuteCallback execute_callback_;
 
   typename CommandMsg::SharedPtr commandMsg_;
+  typename CommandMsg::SharedPtr updateMsg_;
   ResultMsg resultMsg_;
 
   // These messages are internal to the TaskClient implementation
@@ -187,10 +208,8 @@ protected:
   std::mutex commandMutex_;
   bool commandReceived_;
   std::condition_variable cvCommand_;
-
-  // Variables to handle the communication of the cancel request to the execute thread
+  std::atomic<bool> updateReceived_;
   std::atomic<bool> cancelReceived_;
-  std::condition_variable cvCancel_;
 
   // The callbacks for our subscribers
   void onCommandReceived(const typename CommandMsg::SharedPtr msg)
@@ -204,14 +223,20 @@ protected:
     cvCommand_.notify_one();
   }
 
+  void onUpdateReceived(const typename CommandMsg::SharedPtr msg)
+  {
+    updateMsg_ = msg;
+    updateReceived_ = true;
+  }
+
   void onCancelReceived(const CancelMsg::SharedPtr /*msg*/)
   {
     cancelReceived_ = true;
-    cvCancel_.notify_one();
   }
 
   // The subscribers: command and cancel
   typename rclcpp::Subscription<CommandMsg>::SharedPtr commandSub_;
+  typename rclcpp::Subscription<CommandMsg>::SharedPtr updateSub_;
   rclcpp::Subscription<CancelMsg>::SharedPtr cancelSub_;
 
   // The publishers for the result from this task

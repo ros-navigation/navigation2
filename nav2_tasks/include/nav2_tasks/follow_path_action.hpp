@@ -32,8 +32,12 @@ public:
   explicit FollowPathAction(const std::string & action_name)
   : BtActionNode<FollowPathCommand, FollowPathResult>(action_name)
   {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::FollowPathCommand>();
+  }
+
+  void onInit() override
+  {
+    // Set up the input and output messages
+    command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
     result_ = std::make_shared<nav2_tasks::FollowPathResult>();
   }
 };

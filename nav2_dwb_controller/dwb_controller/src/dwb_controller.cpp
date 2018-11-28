@@ -55,6 +55,26 @@ DwbController::~DwbController()
 TaskStatus
 DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
+#if 0
+  // TODO(mjeronimo): Integrate the following example code into the
+  // main loop below
+
+  while (true) {
+
+    ...
+
+    if (task_server_->updateRequested()) {
+      auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
+      task_server_->getCommandUpdate(new_path);
+      task_server_->setUpdated();
+
+      // Update the target path
+    }
+
+    ...
+  }
+#endif
+
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
