@@ -99,6 +99,7 @@ protected:
   nav2_tasks::TaskStatus cycle(ResultMsg & result)
   {
     auto time_since_msg = std::chrono::system_clock::now();
+    auto start_time = std::chrono::system_clock::now();
     auto current_time = std::chrono::system_clock::now();
 
     nav2_tasks::TaskStatus status;
@@ -136,8 +137,10 @@ protected:
       }
     }
 
-    current_time = std::chrono::system_clock::now();
-    RCLCPP_INFO(get_logger(), "Behavior ran for %d seconds", current_time);
+    auto end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+
+    RCLCPP_INFO(get_logger(), "Behavior ran for %.2f seconds", elapsed_seconds.count());
 
     return status;
   }

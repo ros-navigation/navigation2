@@ -61,13 +61,13 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
 
   RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
 
+  start_time_ = std::chrono::system_clock::now();
+
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
 nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
 {
-  * start_time_ = std::chrono::system_clock::now();
-
   // Currently only an open-loop controller is implemented
   // TODO(orduno) Create a base class for open-loop controlled behaviors
   //              controlledSpin() has not been fully tested
@@ -94,11 +94,11 @@ nav2_tasks::TaskStatus Spin::timedSpin()
 
   // TODO(orduno) fixed time
   auto current_time = std::chrono::system_clock::now();
-  if (current_time - * start_time_ >= 4s) {
+  if (current_time - start_time_ >= 4s) {
     // Stop the robot
     cmd_vel.angular.z = 0.0;
     robot_->sendVelocity(cmd_vel);
-    RCLCPP_INFO(get_logger(), "Completed rotation");
+
     return TaskStatus::SUCCEEDED;
   }
 

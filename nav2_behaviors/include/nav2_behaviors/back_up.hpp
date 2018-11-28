@@ -40,7 +40,7 @@ protected:
   double linear_acc_lim_;
   double goal_tolerance_distance_;
 
-  std::chrono::system_clock::time_point * start_time_;
+  std::chrono::system_clock::time_point start_time_;
 
   nav2_tasks::TaskStatus timedBackup();
 

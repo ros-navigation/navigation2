@@ -32,6 +32,8 @@ BackUp::BackUp()
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
   goal_tolerance_distance_ = 0.0;
+
+  start_time_ = std::chrono::system_clock::now();
 }
 
 BackUp::~BackUp()
@@ -47,13 +49,13 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
 
   RCLCPP_INFO(get_logger(), "Currently only supported backing up by a fixed distance");
 
+   start_time_ = std::chrono::system_clock::now();
+
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
 nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 {
-  * start_time_ = std::chrono::system_clock::now();
-
   // Currently only an open-loop controller is implemented
   // TODO(orduno) Create a base class for open-loop controlled behaviors
   TaskStatus status = timedBackup();
@@ -72,19 +74,18 @@ nav2_tasks::TaskStatus BackUp::timedBackup()
 
   // TODO(orduno): assuming robot was moving fwd when it got stuck
   //               fixed speed
-  cmd_vel.linear.x = -0.05;
+  cmd_vel.linear.x = -0.025;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
   robot_->sendVelocity(cmd_vel);
 
 // TODO(orduno): fixed time
   auto current_time = std::chrono::system_clock::now();
-  if (current_time - * start_time_ >= 3s) {
+  if (current_time - start_time_ >= 3s) {
     // Stop the robot
     cmd_vel.linear.x = 0.0;
     robot_->sendVelocity(cmd_vel);
 
-    RCLCPP_INFO(get_logger(), "Completed backing up");
     return TaskStatus::SUCCEEDED;
   }
 
