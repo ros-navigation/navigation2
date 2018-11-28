@@ -30,41 +30,21 @@ namespace nav2_behaviors
 {
 
 Spin::Spin()
-: Node("Spin")
+: Behavior<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>("Spin")
 {
-  RCLCPP_INFO(get_logger(), "Initializing the Spin behavior");
-
   // TODO(orduno) Pull values from param server or robot
   max_rotational_vel_ = 1.0;
   min_rotational_vel_ = 0.4;
   rotational_acc_lim_ = 3.2;
   goal_tolerance_angle_ = 0.10;
-
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
-  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
-  vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-
-  task_server_ = std::make_unique<nav2_tasks::SpinTaskServer>(temp_node, false);
-  task_server_->setExecuteCallback(std::bind(&Spin::spin, this, std::placeholders::_1));
-
-  // Start listening for incoming Spin task requests
-  task_server_->startWorkerThread();
-
-  RCLCPP_INFO(get_logger(), "Initialized the Spin  behavior");
 }
 
 Spin::~Spin()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down the Spin behavior");
 }
 
-nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr command)
+nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Attempting to spin");
-
   double yaw, pitch, roll;
   getAnglesFromQuaternion(command->quaternion, yaw, pitch, roll);
 
@@ -74,51 +54,49 @@ nav2_tasks::TaskStatus Spin::spin(const nav2_tasks::SpinCommand::SharedPtr comma
   }
 
   RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
+
+  return nav2_tasks::TaskStatus::SUCCEEDED;
+}
+
+nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
+{
+  * start_time_ = std::chrono::system_clock::now();
+
+  // Currently only an open-loop controller is implemented
+  // TODO(orduno) Create a base class for open-loop controlled behaviors
+  //              controlledSpin() has not been fully tested
   TaskStatus status = timedSpin();
 
-  nav2_tasks::SpinResult result;
-  task_server_->setResult(result);
+  // For now sending an empty task result
+  nav2_tasks::SpinResult empty_result;
+  result = empty_result;
+
 
   return status;
 }
 
 nav2_tasks::TaskStatus Spin::timedSpin()
 {
-  auto start_time = std::chrono::system_clock::now();
-  auto time_since_msg = std::chrono::system_clock::now();
+  // Output control command
+  geometry_msgs::msg::Twist cmd_vel;
 
-  while (true) {
-    if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Task cancelled");
-      task_server_->setCanceled();
-      return TaskStatus::CANCELED;
-    }
+  // TODO(orduno) fixed speed
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = 0.5;
+  vel_pub_->publish(cmd_vel);
 
-    // TODO(orduno): For now, spinning is time based
-    auto duration = 4s;
-
-    // Log a message every second
-    auto current_time = std::chrono::system_clock::now();
-    if (current_time - time_since_msg >= 500ms) {
-      RCLCPP_INFO(get_logger(), "Spinning...");
-      time_since_msg = std::chrono::system_clock::now();
-    }
-
-    // Output control command
-    geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
-    cmd_vel.linear.y = 0.0;
-    cmd_vel.angular.z = 0.5;
+  // TODO(orduno) fixed time
+  auto current_time = std::chrono::system_clock::now();
+  if (current_time - * start_time_ >= 4s) {
+    // Stop the robot
+    cmd_vel.angular.z = 0.0;
     vel_pub_->publish(cmd_vel);
-
-    if (current_time - start_time >= duration) {
-      cmd_vel.angular.z = 0.0;
-      vel_pub_->publish(cmd_vel);
-      RCLCPP_INFO(get_logger(), "Completed rotation");
-      break;
-    }
+    RCLCPP_INFO(get_logger(), "Completed rotation");
+    return TaskStatus::SUCCEEDED;
   }
-  return TaskStatus::SUCCEEDED;
+
+  return TaskStatus::RUNNING;
 }
 
 nav2_tasks::TaskStatus Spin::controlledSpin()

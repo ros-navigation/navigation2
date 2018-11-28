@@ -15,33 +15,32 @@
 #ifndef NAV2_BEHAVIORS__BACK_UP_HPP_
 #define NAV2_BEHAVIORS__BACK_UP_HPP_
 
-#include <string>
+#include <chrono>
 #include <memory>
 
+#include "nav2_behaviors/behavior.hpp"
 #include "nav2_tasks/back_up_task.hpp"
-#include "geometry_msgs/msg/twist.hpp"
-#include "std_msgs/msg/empty.hpp"
-#include "nav2_robot/robot.hpp"
 
 namespace nav2_behaviors
 {
 
-class BackUp : public rclcpp::Node
+class BackUp : public Behavior<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>
 {
 public:
   BackUp();
   ~BackUp();
 
-  nav2_tasks::TaskStatus backUp(const nav2_tasks::BackUpCommand::SharedPtr command);
+  nav2_tasks::TaskStatus onRun(const nav2_tasks::BackUpCommand::SharedPtr command) override;
+
+  nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::BackUpResult & result) override;
 
 protected:
-  double min_linear_vel_, max_linear_vel_, linear_acc_lim_, goal_tolerance_distance_;
+  double min_linear_vel_;
+  double max_linear_vel_;
+  double linear_acc_lim_;
+  double goal_tolerance_distance_;
 
-  std::unique_ptr<nav2_robot::Robot> robot_;
-
-  std::unique_ptr<nav2_tasks::BackUpTaskServer> task_server_;
-
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
+  std::chrono::system_clock::time_point * start_time_;
 
   nav2_tasks::TaskStatus timedBackup();
 

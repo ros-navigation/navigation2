@@ -15,34 +15,34 @@
 #ifndef NAV2_BEHAVIORS__SPIN_HPP_
 #define NAV2_BEHAVIORS__SPIN_HPP_
 
+#include <chrono>
 #include <string>
 #include <memory>
 
+#include "nav2_behaviors/behavior.hpp"
 #include "nav2_tasks/spin_task.hpp"
-#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "std_msgs/msg/empty.hpp"
-#include "nav2_robot/robot.hpp"
 
 namespace nav2_behaviors
 {
 
-class Spin : public rclcpp::Node
+class Spin : public Behavior<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>
 {
 public:
   Spin();
   ~Spin();
 
-  nav2_tasks::TaskStatus spin(const nav2_tasks::SpinCommand::SharedPtr command);
+  nav2_tasks::TaskStatus onRun(const nav2_tasks::SpinCommand::SharedPtr command) override;
+
+  nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::SpinResult & result) override;
 
 protected:
-  double min_rotational_vel_, max_rotational_vel_, rotational_acc_lim_, goal_tolerance_angle_;
+  double min_rotational_vel_;
+  double max_rotational_vel_;
+  double rotational_acc_lim_;
+  double goal_tolerance_angle_;
 
-  std::unique_ptr<nav2_robot::Robot> robot_;
-
-  std::unique_ptr<nav2_tasks::SpinTaskServer> task_server_;
-
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
+  std::chrono::system_clock::time_point * start_time_;
 
   nav2_tasks::TaskStatus timedSpin();
 
