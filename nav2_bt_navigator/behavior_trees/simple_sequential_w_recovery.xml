@@ -1,0 +1,27 @@
+<!--
+TODO(orduno):
+- Provide an explanation
+- A recovery node (e.g. stuck_recovery) returns SUCCESS if it was able to execute all actions.
+  That doesn't mean we fixed the failure, we need to check the condition again.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <FallbackStar name="check_motion">
+        <Inverter name="is_not_stuck">
+          <IsStuck/>
+        </Inverter>
+        <SequenceStar name="stuck_recovery">
+          <Stop/>
+          <BackUp/>
+          <Spin/>
+        </SequenceStar>
+      </FallbackStar>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <FollowPath path="${path}"/>
+      </SequenceStar>
+    </Sequence>
+  </BehaviorTree>
+</root>
