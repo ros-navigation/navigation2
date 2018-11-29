@@ -94,12 +94,12 @@ void ObstacleLayer::onInitialize()
     double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
-  
+
     node_->get_parameter_or(source + "." + "topic", topic, source);
     node_->get_parameter_or(source + "." + "sensor_frame", sensor_frame, std::string(""));
     node_->get_parameter_or(source + "." + "observation_persistence", observation_keep_time, 0.0);
     node_->get_parameter_or(source + "." + "expected_update_rate", expected_update_rate, 0.0);
-    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("PointCloud"));
+    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("LaserScan"));
     node_->get_parameter_or(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "inf_is_valid", inf_is_valid, false);
