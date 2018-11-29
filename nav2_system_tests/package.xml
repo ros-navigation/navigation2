@@ -5,7 +5,6 @@
   <version>0.1.0</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
-  <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -16,6 +15,7 @@
   <build_depend>nav2_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend>nav2_amcl</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>

@@ -1,3 +1,5 @@
+higher level cmake:
+
 cmake_minimum_required(VERSION 3.5)
 project(nav2_system_tests)
 
@@ -19,6 +21,8 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
+find_package(nav2_amcl REQUIRED)
+
 set(dependencies
   rclcpp
   nav2_tasks
@@ -26,6 +30,7 @@ set(dependencies
   nav2_msgs
   nav_msgs
   visualization_msgs
+  nav2_amcl
 )
 
 if(BUILD_TESTING)

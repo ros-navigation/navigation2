@@ -1,3 +1,5 @@
+localization python launch file:
+
 #!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation
@@ -18,6 +20,8 @@ import os
 import sys
 
 from launch import LaunchDescription
+import launch_ros.actions
+import launch.actions
 from launch import LaunchService
 from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
@@ -26,11 +30,38 @@ from launch_testing import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'localization_node.launch.py')
+    mapFile = os.getenv('TEST_MAP')
     testExecutable = os.getenv('TEST_EXECUTABLE')
-    ld = LaunchDescription(
-        [IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile]))]
-    )
+    world = os.getenv('TEST_WORLD')
+    
+    #launch_file = os.path.join(os.getenv('BRINGUP_DIR'), 'launch/nav2_bringup_launch.py')
+    sim_launch_file = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'gazebo_launch.py')
+    
+    launch_gazebo = launch.actions.ExecuteProcess(
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
+        output='screen')
+    link_footprint = launch_ros.actions.Node(
+        package='tf2_ros',
+        node_executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
+    footprint_scan = launch_ros.actions.Node(
+        package='tf2_ros',
+        node_executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
+    run_map_server = launch_ros.actions.Node(
+        package='nav2_map_server',
+        node_executable='map_server',
+        output='screen',
+        arguments=[[mapFile], 'occupancy'])
+    run_amcl = launch_ros.actions.Node(
+        package='nav2_amcl',
+        node_executable='amcl',
+        output='screen')
+    ld = LaunchDescription([launch_gazebo, link_footprint, footprint_scan,
+                            run_map_server, run_amcl])
+
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
         name='test_localization_node',
