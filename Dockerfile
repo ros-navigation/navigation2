@@ -63,21 +63,9 @@ WORKDIR /ros2_ws
 RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
 RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
 
-# clone navigation2 repo
+# Copy navigation2 repo
 WORKDIR /ros2_ws/navigation2_ws/src
-RUN git clone https://github.com/ros-planning/navigation2.git
-
-# change to correct branch if $BRANCH is not = master
-WORKDIR /ros2_ws/navigation2_ws/src/navigation2
-ARG PULLREQ=false
-RUN echo "pullreq is $PULLREQ"
-RUN if [ "$PULLREQ" == "false" ]; \
-    then \
-      echo "No pull request number given - defaulting to master branch"; \
-    else \
-      git fetch origin pull/$PULLREQ/head:pr_branch; \
-      git checkout pr_branch; \
-    fi
+COPY ./ navigation2/
 
 # Download dependencies
 RUN echo "Downloading the ROS 2 navstack dependencies workspace"
