@@ -12,15 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
 #include <memory>
+#include <stdexcept>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_server.hpp"
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_map_server::MapServer>());
-  rclcpp::shutdown();
+  std::string node_name("map_server");
+
+  try {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<nav2_map_server::MapServer>(node_name));
+    rclcpp::shutdown();
+  } catch (std::exception & ex) {
+    RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());
+    RCLCPP_INFO(rclcpp::get_logger(node_name.c_str()),
+      "Missing 'yaml_filename' in the '%s' Node parameters?", node_name.c_str());
+  }
 
   return 0;
 }

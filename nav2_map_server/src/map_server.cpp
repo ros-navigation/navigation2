@@ -58,7 +58,7 @@ void MapServer::getInputParameters()
   // Make sure that there's a valid file there
   std::ifstream fin(yaml_filename_.c_str());
   if (fin.fail()) {
-    RCLCPP_ERROR(get_logger(), "Could not open %s", yaml_filename_.c_str());
+    RCLCPP_ERROR(get_logger(), "Could not open '%s'", yaml_filename_.c_str());
     throw std::runtime_error("File not found");
   }
 
