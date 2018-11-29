@@ -139,7 +139,6 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  # TODO(bpwilcox): Port/Add unit and component tests
   add_subdirectory(test)
 endif()
 

@@ -231,6 +231,7 @@ protected:
   std::string global_frame_;  ///< @brief The global frame for the costmap
   std::string robot_base_frame_;  ///< @brief The frame_id of the robot base
   double transform_tolerance_;  ///< timeout before transform errors
+  float footprint_padding_;
 
 private:
   /** @brief Set the footprint from the new_config object.
@@ -264,7 +265,6 @@ private:
 
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
-  float footprint_padding_;
 };
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d

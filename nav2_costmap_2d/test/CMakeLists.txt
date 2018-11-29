@@ -1,10 +1,5 @@
-ament_add_gtest(array_parser_test array_parser_test.cpp)
-target_link_libraries(array_parser_test
-  nav2_costmap_2d
-)
+set(TEST_MAP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/map)
+set(TEST_LAUNCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_launch_files)
 
-ament_add_gtest(footprint_tests footprint_tests.cpp)
-ament_target_dependencies(footprint_tests ${dependencies})
-target_link_libraries(footprint_tests
-  nav2_costmap_2d
-)
+add_subdirectory(unit)
+add_subdirectory(integration)

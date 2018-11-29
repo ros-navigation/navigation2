@@ -25,5 +25,6 @@ def generate_launch_description():
             package='nav2_map_server',
             node_executable='map_server',
             output='screen',
-            arguments=['/home/brian/ros2_overlay_ws/src/navigation2/nav2_costmap_2d/test/TenByTen.yaml']),
+            arguments=[os.path.join(os.getenv('TEST_MAP_DIR'), 'TenByTen.yaml')]),
+
     ])

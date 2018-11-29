@@ -45,15 +45,57 @@
 tf2_ros::TransformListener * tfl_;
 tf2_ros::Buffer * tf_;
 
-TEST(nav2_costmap_2d::Costmap2DROS, unpadded_footprint_from_string_param)
+class FootprintTestNode : public Costmap2DROS
 {
-  nav2_costmap_2d::Costmap2DROS cm("costmap_unpadded_test", *tf_);
-  cm.set_parameters({
-    rclcpp::Parameter("footprint_padding", 0.0),
-    rclcpp::Parameter("footprint", "[[1, 1], [-1, 1], [-1, -1]]")
-  });
+public:
+  FootprintTestNode(std::string name, tf2_ros::Buffer & buffer)
+    : Costmap2DROS(name, buffer)
+  {}
 
+  void testFootprint(double footprint_padding, std::string footprint)
+  {
+    footprint_padding_ = footprint_padding;
+    if (footprint != "" && footprint != "[]")
+    {
+      std::vector<geometry_msgs::msg::Point> new_footprint;
+      if (makeFootprintFromString(footprint, new_footprint))
+      {
+          setUnpaddedRobotFootprint(new_footprint);
+      }
+      else
+      {
+          RCLCPP_ERROR(get_logger(),"Invalid footprint string");
+      }
+    }
+  }
+  void testFootprint(double footprint_padding, double robot_radius)
+  {
+    footprint_padding_ = footprint_padding;
+    setUnpaddedRobotFootprint(makeFootprintFromRadius(robot_radius));
+  }
+};
+
+FootprintTestNode * costmap_;
+
+// Start with empty test before updating test footprints
+TEST(FootprintTestNode, footprint_empty)
+{
+  FootprintTestNode cm("costmap_footprint_empty", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
+  // With no specification of footprint or radius,
+  // defaults to 0.1 meter radius plus 0.01 meter padding.
+  EXPECT_EQ(16, footprint.size());
+
+  EXPECT_NEAR(0.11f, footprint[ 0 ].x, 0.0001);
+  EXPECT_NEAR(0.0f, footprint[ 0 ].y, 0.0001);
+  EXPECT_EQ(0.0f, footprint[ 0 ].z );
+}
+
+TEST(FootprintTestNode, unpadded_footprint_from_string_param)
+{
+  costmap_->testFootprint(0.0, "[[1, 1], [-1, 1], [-1, -1]]");
+
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
   EXPECT_EQ(1.0f, footprint[0].x);
@@ -69,10 +111,11 @@ TEST(nav2_costmap_2d::Costmap2DROS, unpadded_footprint_from_string_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-TEST(nav2_costmap_2d::Costmap2DROS, padded_footprint_from_string_param)
+TEST(FootprintTestNode, padded_footprint_from_string_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("costmap_padded_test", *tf_);
-  std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
+  costmap_->testFootprint(0.5, "[[1, 1], [-1, 1], [-1, -1]]");
+
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
   EXPECT_EQ(1.5f, footprint[0].x);
@@ -88,10 +131,10 @@ TEST(nav2_costmap_2d::Costmap2DROS, padded_footprint_from_string_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-TEST(nav2_costmap_2d::Costmap2DROS, radius_param)
+TEST(FootprintTestNode, radius_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("costmap_radius_test", *tf_);
-  std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
+  costmap_->testFootprint(0, 10.0);
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   // Circular robot has 16-point footprint auto-generated.
   EXPECT_EQ(16, footprint.size());
 
@@ -106,33 +149,10 @@ TEST(nav2_costmap_2d::Costmap2DROS, radius_param)
   EXPECT_EQ(0.0f, footprint[4].z);
 }
 
-/* TEST( Costmap2DROS, footprint_from_xmlrpc_param )
+TEST(FootprintTestNode, footprint_from_same_level_param)
 {
-  nav2_costmap_2d::Costmap2DROS cm("xmlrpc", *tf_);
-  std::vector<geometry_msgs::Point> footprint = cm.getRobotFootprint();
-  EXPECT_EQ(4, footprint.size());
-
-  EXPECT_EQ(0.1f, footprint[0].x);
-  EXPECT_EQ(0.1f, footprint[0].y);
-  EXPECT_EQ(0.0f, footprint[0].z);
-
-  EXPECT_EQ(-0.1f, footprint[1].x);
-  EXPECT_EQ(0.1f, footprint[1].y);
-  EXPECT_EQ(0.0f, footprint[1].z);
-
-  EXPECT_EQ(-0.1f, footprint[2].x);
-  EXPECT_EQ(-0.1f, footprint[2].y);
-  EXPECT_EQ(0.0f, footprint[2].z);
-
-  EXPECT_EQ(0.1f, footprint[3].x);
-  EXPECT_EQ(-0.1f, footprint[3].y);
-  EXPECT_EQ(0.0f, footprint[3].z);
-}
-
-TEST(nav2_costmap_2d::Costmap2DROS, footprint_from_same_level_param)
-{
-  nav2_costmap_2d::Costmap2DROS cm("costmap_same_level_test", *tf_);
-  std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
+  costmap_->testFootprint(0.0, "[[1, 2], [3, 4], [5, 6]]");
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   EXPECT_EQ(3, footprint.size());
 
   EXPECT_EQ(1.0f, footprint[0].x);
@@ -148,25 +168,7 @@ TEST(nav2_costmap_2d::Costmap2DROS, footprint_from_same_level_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-TEST(nav2_costmap_2d::Costmap2DROS, footprint_from_xmlrpc_param_failure)
-{
-  ASSERT_ANY_THROW(nav2_costmap_2d::Costmap2DROS cm("xmlrpc_fail", *tf_));
-}
-
-TEST(nav2_costmap_2d::Costmap2DROS, footprint_empty)
-{
-  nav2_costmap_2d::Costmap2DROS cm("costmap_empty_test", *tf_);
-  std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
-  // With no specification of footprint or radius,
-  // defaults to 0.46 meter radius plus 0.01 meter padding.
-  EXPECT_EQ(16, footprint.size() );
-
-  EXPECT_NEAR(0.47f, footprint[0].x, 0.0001);
-  EXPECT_NEAR(0.0f, footprint[0].y, 0.0001);
-  EXPECT_EQ(0.0f, footprint[0].z);
-}
-
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("footprint_tests");
@@ -184,6 +186,7 @@ int main(int argc, char ** argv)
   base_rel_map.header.stamp = node->now();
   tf_->setTransform(base_rel_map, "footprint_tests");
 
+  costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

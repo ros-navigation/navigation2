@@ -32,9 +32,9 @@
  * Test harness for StaticMap Layer for Costmap2D
  */
 
-#include <gtest/gtest.h>
 #include <set>
 
+#include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
@@ -320,9 +320,9 @@ TEST(costmap, testStaticMap){
 
 //*/
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "obstacle_tests");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

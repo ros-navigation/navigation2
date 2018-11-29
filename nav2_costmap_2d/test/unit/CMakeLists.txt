@@ -1,0 +1,4 @@
+ament_add_gtest(array_parser_test array_parser_test.cpp)
+target_link_libraries(array_parser_test
+  nav2_costmap_2d_core
+)
