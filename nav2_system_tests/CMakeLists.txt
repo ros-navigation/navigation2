@@ -1,5 +1,3 @@
-higher level cmake:
-
 cmake_minimum_required(VERSION 3.5)
 project(nav2_system_tests)
 

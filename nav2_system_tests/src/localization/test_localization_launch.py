@@ -1,5 +1,3 @@
-localization python launch file:
-
 #!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation
@@ -33,10 +31,7 @@ def main(argv=sys.argv[1:]):
     mapFile = os.getenv('TEST_MAP')
     testExecutable = os.getenv('TEST_EXECUTABLE')
     world = os.getenv('TEST_WORLD')
-    
-    #launch_file = os.path.join(os.getenv('BRINGUP_DIR'), 'launch/nav2_bringup_launch.py')
-    sim_launch_file = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'gazebo_launch.py')
-    
+       
     launch_gazebo = launch.actions.ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
         output='screen')
