@@ -45,7 +45,7 @@
 #include <nav2_costmap_2d/footprint.hpp>
 
 #include "laser_geometry/laser_geometry.hpp"
-//#include <tf2_ros/message_filter.h>
+#include <tf2_ros/message_filter.h>
 #include <message_filters/subscriber.h>
 
 #include <nav_msgs/msg/occupancy_grid.hpp>
@@ -153,14 +153,9 @@ protected:
 
   laser_geometry::LaserProjection projector_;  ///< @brief Used to project laser scans into point clouds
 
-  // TODO(bpwilcox): re-enable when message filters are ported
-  //std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
-  //std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
-  
-  // replacement for message filters subscriptions, stores sensor subscriptions
-  std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr> observation_laser_subscribers_;
-  std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::ConstSharedPtr> observation_point_subscribers_;
-
+  std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
+  std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
+ 
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
