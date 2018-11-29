@@ -34,7 +34,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "amcl_node.hpp"
+#include "nav2_amcl/amcl_node.hpp"
 
 std::shared_ptr<rclcpp::Clock> simtime_clock;
 
