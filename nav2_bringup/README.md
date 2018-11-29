@@ -29,6 +29,10 @@ Run the rest of the Navigation2 bringup
 
 `ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
 
+Set the World Model node to use simulation time
+
+`ros2 param set /world_model use_sim_time True`
+
 In RVIZ:
 * Send the robot a goal using “2D Nav Goal” button.
 
