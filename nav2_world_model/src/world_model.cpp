@@ -39,11 +39,6 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor, const string & nam
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-WorldModel::WorldModel()
-: WorldModel("WorldModel")
-{
-}
-
 void WorldModel::costmap_callback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
