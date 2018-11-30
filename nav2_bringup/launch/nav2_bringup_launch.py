@@ -40,7 +40,6 @@ def generate_launch_description():
             node_executable='world_model',
             node_name='world_model',
             output='screen',
-            remappings=[('occ_grid', '/occ_grid')],
             parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
@@ -54,7 +53,6 @@ def generate_launch_description():
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
-            remappings=[('occ_grid', '/occ_grid')],
             parameters=[params_file]),
 
         launch_ros.actions.Node(
