@@ -20,6 +20,7 @@ notifications:
       - matthew.k.hansen@intel.com
 
 before_install:
+  - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ]; then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1; fi
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
 
 script:
