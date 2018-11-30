@@ -38,7 +38,6 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerNodeType<nav2_tasks::StopAction>("Stop");
   factory_.registerNodeType<nav2_tasks::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_tasks::SpinAction>("Spin");
-  factory_.registerNodeType<nav2_tasks::StopAction>("Stop");
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
