@@ -52,7 +52,7 @@ namespace nav2_costmap_2d
 {
 
 Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
-  : Node(name),
+  : Node(name, name),
   layered_costmap_(NULL),
   name_(name),
   tf_(tf),
