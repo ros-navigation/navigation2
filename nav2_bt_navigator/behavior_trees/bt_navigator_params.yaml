@@ -1,0 +1,3 @@
+BtNavigator:
+    ros__parameters:
+        bt_xml_filename: "/home/caorduno/ros2_overlay_ws/src/navigation2/nav2_bt_navigator/behavior_trees/simple_sequential_w_recovery.xml"
