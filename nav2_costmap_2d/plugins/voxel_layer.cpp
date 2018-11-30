@@ -102,16 +102,16 @@ void VoxelLayer::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "VoxelLayer:: Event Callback");
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
-  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
-  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
-  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_);
+  dynamic_param_client_->get_event_param(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  dynamic_param_client_->get_event_param(name_ + "." + "z_voxels", size_z_);
+  dynamic_param_client_->get_event_param(name_ + "." + "origin_z", origin_z_);
+  dynamic_param_client_->get_event_param(name_ + "." + "z_resolution", z_resolution_);
+  dynamic_param_client_->get_event_param(name_ + "." + "unknown_threshold", unknown_threshold_);
   unknown_threshold_ += (VOXEL_BITS - size_z_);
-  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
+  dynamic_param_client_->get_event_param(name_ + "." + "mark_threshold", mark_threshold_);
+  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_);
   matchSize();
 }
 
