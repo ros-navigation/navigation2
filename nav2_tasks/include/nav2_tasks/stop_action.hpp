@@ -62,10 +62,10 @@ public:
     static bool new_call = true;
 
     if (new_call) {
-      RCLCPP_INFO(node_->get_logger(), "StopAction::tick: cancelling path following task server");
+      RCLCPP_INFO(node_->get_logger(), "StopAction: cancelling path following task server");
       controller_client_->cancel();
 
-      RCLCPP_INFO(node_->get_logger(), "StopAction::tick:: publishing zero velocity command");
+      RCLCPP_INFO(node_->get_logger(), "StopAction: publishing zero velocity command");
 
       // TODO(orduno) Implement a stop method on the robot
       // robot_.stop();
@@ -81,7 +81,7 @@ public:
 
       start_time = std::chrono::system_clock::now();
       new_call = false;
-      RCLCPP_INFO(node_->get_logger(), "StopAction::tick:: stabilizing robot");
+      RCLCPP_INFO(node_->get_logger(), "StopAction: stabilizing robot");
 
       // return BT::NodeStatus::RUNNING;
     }
@@ -107,10 +107,10 @@ public:
     // new_call = true;
 
     auto sleep_time = 5s;
-    RCLCPP_INFO(node_->get_logger(), "StopAction::tick: sleeping for %d seconds",
+    RCLCPP_INFO(node_->get_logger(), "StopAction: sleeping for %d seconds",
       sleep_time.count());
     std::this_thread::sleep_for(5s);
-    RCLCPP_INFO(node_->get_logger(), "StopAction::tick: finished sleeping");
+    RCLCPP_INFO(node_->get_logger(), "StopAction: finished sleeping");
 
     new_call = true;
 
