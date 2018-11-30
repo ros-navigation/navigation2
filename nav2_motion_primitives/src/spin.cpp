@@ -30,8 +30,8 @@ using namespace std::chrono_literals;
 namespace nav2_motion_primitives
 {
 
-Spin::Spin()
-: MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>("Spin")
+Spin::Spin(rclcpp::Node::SharedPtr & node)
+: MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
 {
   // TODO(orduno) Pull values from param server or robot
   max_rotational_vel_ = 1.0;
@@ -51,11 +51,11 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
   tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
-    RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported, "
+    RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
       "will only spin in Z.");
   }
 
-  RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
+  RCLCPP_INFO(node_->get_logger(), "Currently only supported spinning by a fixed amount");
 
   start_time_ = std::chrono::system_clock::now();
 
@@ -109,7 +109,7 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   // Get current robot orientation
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
   if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
 

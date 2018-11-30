@@ -24,16 +24,15 @@ int main(int argc, char ** argv)
 
   rclcpp::init(argc, argv);
 
-  rclcpp::executors::SingleThreadedExecutor exec;
+  auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");
 
-  auto spin = std::make_shared<nav2_motion_primitives::Spin>();
-  exec.add_node(spin);
+  auto spin = std::make_shared<nav2_motion_primitives::Spin>(
+    motion_primitives_node);
 
-  auto back_up = std::make_shared<nav2_motion_primitives::BackUp>();
-  exec.add_node(back_up);
+  auto back_up = std::make_shared<nav2_motion_primitives::BackUp>(
+    motion_primitives_node);
 
-  exec.spin();
-
+  rclcpp::spin(motion_primitives_node);
   rclcpp::shutdown();
 
   return 0;

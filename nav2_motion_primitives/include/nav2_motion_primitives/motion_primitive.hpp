@@ -15,7 +15,6 @@
 #ifndef NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
 #define NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
 
-
 #include <memory>
 #include <string>
 #include <cmath>
@@ -32,33 +31,30 @@
 namespace nav2_motion_primitives
 {
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;  //NOLINT
 
 template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
 
 template<class CommandMsg, class ResultMsg>
-class MotionPrimitive : public rclcpp::Node
+class MotionPrimitive
 {
 public:
-  explicit MotionPrimitive(const std::string & node_name)
-  : Node(node_name),
+  explicit MotionPrimitive(rclcpp::Node::SharedPtr & node)
+  : node_(node),
     task_server_(nullptr),
     taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
   {
-    auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+    robot_ = std::make_unique<nav2_robot::Robot>(node);
 
-    robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
-    task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(
-      temp_node, false);
+    task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(node, false);
 
     task_server_->setExecuteCallback(std::bind(&MotionPrimitive::run, this, std::placeholders::_1));
 
     // Start listening for incoming Spin task requests
     task_server_->startWorkerThread();
 
-    RCLCPP_INFO(get_logger(), "Initialized the %s server", taskName_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Initialized the %s server", taskName_.c_str());
   }
 
   virtual ~MotionPrimitive() {}
@@ -80,8 +76,7 @@ public:
   nav2_tasks::TaskStatus run(
     const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command)
   {
-    RCLCPP_INFO(get_logger(), "Attempting behavior");
-
+    RCLCPP_INFO(node_->get_logger(), "Attempting behavior");
 
     ResultMsg result;
     nav2_tasks::TaskStatus status;
@@ -98,7 +93,6 @@ public:
   }
 
 protected:
-
   nav2_tasks::TaskStatus cycle(ResultMsg & result)
   {
     auto time_since_msg = std::chrono::system_clock::now();
@@ -109,7 +103,7 @@ protected:
 
     while (rclcpp::ok()) {
       if (task_server_->cancelRequested()) {
-        RCLCPP_INFO(get_logger(), "%s cancelled", taskName_.c_str());
+        RCLCPP_INFO(node_->get_logger(), "%s cancelled", taskName_.c_str());
         task_server_->setCanceled();
         return nav2_tasks::TaskStatus::CANCELED;
       }
@@ -117,25 +111,25 @@ protected:
       // Log a message every second
       current_time = std::chrono::system_clock::now();
       if (current_time - time_since_msg >= 1s) {
-        RCLCPP_INFO(get_logger(), "running...");
+        RCLCPP_INFO(node_->get_logger(), "running...");
         time_since_msg = std::chrono::system_clock::now();
       }
 
       status = onCycleUpdate(result);
 
       if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
-        RCLCPP_INFO(get_logger(), "MotionPrimitive completed successfully");
+        RCLCPP_INFO(node_->get_logger(), "MotionPrimitive completed successfully");
         break;
       }
 
       if (status == nav2_tasks::TaskStatus::FAILED) {
-        RCLCPP_WARN(get_logger(), "MotionPrimitive was not completed");
+        RCLCPP_WARN(node_->get_logger(), "MotionPrimitive was not completed");
         break;
       }
 
       if (status == nav2_tasks::TaskStatus::CANCELED) {
-        RCLCPP_WARN(get_logger(), "onCycleUpdate() should not check for task cancellation,"
-         " it will be checked by the base class.");
+        RCLCPP_WARN(node_->get_logger(), "onCycleUpdate() should not check for task cancellation,"
+          " it will be checked by the base class.");
         break;
       }
     }
@@ -143,10 +137,12 @@ protected:
     auto end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end_time - start_time;
 
-    RCLCPP_INFO(get_logger(), "MotionPrimitive ran for %.2f seconds", elapsed_seconds.count());
+    RCLCPP_INFO(node_->get_logger(), "MotionPrimitive ran for %.2f seconds", elapsed_seconds.count());
 
     return status;
   }
+
+  rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<nav2_robot::Robot> robot_;
 

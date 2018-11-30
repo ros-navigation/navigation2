@@ -301,7 +301,7 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
   std::uniform_int_distribution<> distribution_x(0, costmap_->getProperties().size_x);
   std::uniform_int_distribution<> distribution_y(0, costmap_->getProperties().size_y);
 
-  auto generate_random = [&]() mutable -> std::pair<int, int>{
+  auto generate_random = [&]() mutable -> std::pair<int, int> {
       bool point_is_free = false;
       int x, y;
       while (!point_is_free) {

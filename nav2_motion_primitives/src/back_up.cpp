@@ -24,8 +24,8 @@ using namespace std::chrono_literals;
 namespace nav2_motion_primitives
 {
 
-BackUp::BackUp()
-: MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>("BackUp")
+BackUp::BackUp(rclcpp::Node::SharedPtr & node)
+: MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
   // TODO(orduno) Pull values from param server or robot
   max_linear_vel_ = 0.0;
@@ -43,13 +43,13 @@ BackUp::~BackUp()
 nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr command)
 {
   if (command->y != 0.0 || command->z != 0.0) {
-    RCLCPP_INFO(get_logger(), "Backing up in Y and Z not supported, "
+    RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
 
-  RCLCPP_INFO(get_logger(), "Currently only supported backing up by a fixed distance");
+  RCLCPP_INFO(node_->get_logger(), "Currently only supported backing up by a fixed distance");
 
-   start_time_ = std::chrono::system_clock::now();
+  start_time_ = std::chrono::system_clock::now();
 
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
@@ -97,14 +97,14 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
   if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
 
   // TODO(orduno): Implement controller for moving the robot by a given distance
   //               starting from the current pose
 
-  RCLCPP_ERROR(get_logger(), "Back up controller not implement yet.");
+  RCLCPP_ERROR(node_->get_logger(), "Back up controller not implement yet.");
 
   return TaskStatus::FAILED;
 }
