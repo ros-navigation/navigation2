@@ -197,7 +197,7 @@ Visualization Manager:
           Queue Size: 10
           Topic: /endpoints
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
