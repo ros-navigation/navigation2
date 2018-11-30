@@ -24,30 +24,19 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
+#include "nav2_robot/robot.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_tasks
 {
 
-class StopAction : public BT::ActionNode, public rclcpp::Node
+class StopAction : public BT::ActionNode
 {
 public:
   explicit StopAction(const std::string & action_name)
-  : BT::ActionNode(action_name), Node("StopAction")
+  : BT::ActionNode(action_name), initialized_(false)
   {
-    RCLCPP_INFO(get_logger(), "StopAction::constructor");
-
-    // TODO(orduno): should we get the node from the BT::blackboard instead?
-    auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
-    controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
-
-    node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-
-    // TODO(orduno) why aren't we creating the publisher like this?
-    // vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
   }
 
   StopAction() = delete;
@@ -56,17 +45,29 @@ public:
 
   BT::NodeStatus tick() override
   {
+    // A BT node can't get values from the blackboard in the constructor since
+    // the BT library doesn't set the blackboard until after the tree if build.
+    if (!initialized_) {
+    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+
+    robot_ = std::make_unique<nav2_robot::Robot>(node_);
+
+    controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node_);
+
+    initialized_ = true;
+    }
+
     static auto start_time = std::chrono::system_clock::now();
 
     static bool new_call = true;
 
     if (new_call) {
-      RCLCPP_INFO(get_logger(), "tick:: cancelling path following task server");
+      RCLCPP_INFO(node_->get_logger(), "StopAction::tick: cancelling path following task server");
       controller_client_->cancel();
 
-      RCLCPP_INFO(get_logger(), "tick:: publishing zero velocity command");
+      RCLCPP_INFO(node_->get_logger(), "StopAction::tick:: publishing zero velocity command");
 
-      // TODO(orduno) Use the robot interface instead.
+      // TODO(orduno) Implement a stop method on the robot
       // robot_.stop();
 
       geometry_msgs::msg::Twist twist;
@@ -76,11 +77,11 @@ public:
       twist.angular.x = 0.0;
       twist.angular.y = 0.0;
       twist.angular.z = 0.0;
-      vel_pub_->publish(twist);
+      robot_->sendVelocity(twist);
 
       start_time = std::chrono::system_clock::now();
       new_call = false;
-      RCLCPP_INFO(get_logger(), "tick:: stabilizing robot");
+      RCLCPP_INFO(node_->get_logger(), "StopAction::tick:: stabilizing robot");
 
       // return BT::NodeStatus::RUNNING;
     }
@@ -106,9 +107,10 @@ public:
     // new_call = true;
 
     auto sleep_time = 5s;
-    RCLCPP_INFO(get_logger(), "tick:: sleeping for %d seconds", sleep_time.count());
+    RCLCPP_INFO(node_->get_logger(), "StopAction::tick: sleeping for %d seconds",
+      sleep_time.count());
     std::this_thread::sleep_for(5s);
-    RCLCPP_INFO(get_logger(), "tick:: finished sleeping");
+    RCLCPP_INFO(node_->get_logger(), "StopAction::tick: finished sleeping");
 
     new_call = true;
 
@@ -124,11 +126,15 @@ public:
 private:
   rclcpp::Node::SharedPtr node_;
 
+  std::shared_ptr<nav2_robot::Robot> robot_;
+
   // For publishing a zero velocity command to the robot
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
 
   // For stopping the path following controller from sending commands to the robot
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
+
+  bool initialized_;
 };
 
 }  // namespace nav2_tasks
