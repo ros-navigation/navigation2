@@ -19,6 +19,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -36,6 +37,7 @@ set(dependencies
   nav2_robot
   nav_msgs
   tf2
+  tf2_geometry_msgs
 )
 
 # Library

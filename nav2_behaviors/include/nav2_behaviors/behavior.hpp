@@ -66,16 +66,19 @@ public:
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
   // once and should return SUCCEEDED otherwise behavior will return FAILED.
-  virtual nav2_tasks::TaskStatus onRun(const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command) = 0;
+  virtual nav2_tasks::TaskStatus onRun(
+    const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command) = 0;
 
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
   // and provides a status.
-  virtual nav2_tasks::TaskStatus onCycleUpdate(/*nav2_tasks::*/ ResultMsg & result) = 0;
+  virtual nav2_tasks::TaskStatus onCycleUpdate(
+    /*nav2_tasks::*/ ResultMsg & result) = 0;
 
   // Runs the behavior
-  nav2_tasks::TaskStatus run(const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command)
+  nav2_tasks::TaskStatus run(
+    const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command)
   {
     RCLCPP_INFO(get_logger(), "Attempting behavior");
 

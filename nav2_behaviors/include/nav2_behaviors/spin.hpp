@@ -49,12 +49,6 @@ protected:
   nav2_tasks::TaskStatus timedSpin();
 
   nav2_tasks::TaskStatus controlledSpin();
-
-  void getAnglesFromQuaternion(
-    const geometry_msgs::msg::Quaternion & quaternion,
-    double & yaw, double & pitch, double & roll);
-
-  bool getRobotYaw(double & yaw);
 };
 
 }  // namespace nav2_behaviors

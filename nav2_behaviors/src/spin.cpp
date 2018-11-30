@@ -20,8 +20,9 @@
 #include <memory>
 
 #include "nav2_behaviors/spin.hpp"
+#include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
@@ -47,17 +48,12 @@ Spin::~Spin()
 nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
 {
   double yaw, pitch, roll;
-  getAnglesFromQuaternion(command->quaternion, yaw, pitch, roll);
+  tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(get_logger(), "Spinning on Y and X not supported, "
       "will only spin in Z.");
   }
-
-  // Testing
-  // if (!getRobotYaw(start_yaw_)) {
-  //   return TaskStatus::FAILED;
-  // }
 
   RCLCPP_INFO(get_logger(), "Currently only supported spinning by a fixed amount");
 
@@ -76,7 +72,6 @@ nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
   // For now sending an empty task result
   nav2_tasks::SpinResult empty_result;
   result = empty_result;
-
 
   return status;
 }
@@ -112,11 +107,13 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   //              or cause massive wheel slippage when accelerating
 
   // Get current robot orientation
-  double current_yaw;
-
-  if (!getRobotYaw(current_yaw)) {
+  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  if (!robot_->getCurrentPose(current_pose)) {
+    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
     return TaskStatus::FAILED;
   }
+
+  double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
 
   double current_angle = current_yaw - start_yaw_;
 
@@ -145,30 +142,6 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   }
 
   return TaskStatus::RUNNING;
-}
-
-void Spin::getAnglesFromQuaternion(
-  const geometry_msgs::msg::Quaternion & quaternion,
-  double & yaw, double & pitch, double & roll)
-{
-  tf2::Matrix3x3(
-    tf2::Quaternion(
-      quaternion.x, quaternion.y, quaternion.z, quaternion.w)).getEulerYPR(yaw, pitch, roll);
-}
-
-bool Spin::getRobotYaw(double & yaw)
-{
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-
-  if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-    return false;
-  }
-
-  double pitch, roll;
-  getAnglesFromQuaternion(current_pose->pose.pose.orientation, yaw, pitch, roll);
-
-  return true;
 }
 
 }  // namespace nav2_behaviors
