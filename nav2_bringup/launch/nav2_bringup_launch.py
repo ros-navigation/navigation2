@@ -6,7 +6,8 @@ import launch_ros.actions
 def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
-    params_file = launch.substitutions.LaunchConfiguration('params', default='nav2_params.yaml')
+    params_file = launch.substitutions.LaunchConfiguration('params', default=
+        [launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
     launch_dir = os.path.dirname(os.path.abspath(__file__))
 
     return LaunchDescription([
@@ -54,7 +55,7 @@ def generate_launch_description():
             node_executable='dwb_controller',
             output='screen',
             remappings=[('occ_grid', '/occ_grid')],
-            parameters=[os.path.join(launch_dir, 'dwb_controller_config.yaml')]),
+            parameters=[params_file]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
