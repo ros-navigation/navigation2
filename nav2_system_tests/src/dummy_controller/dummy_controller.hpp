@@ -12,29 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DUMMY_PLANNER__DUMMY_PLANNER_HPP_
-#define NAV2_DUMMY_PLANNER__DUMMY_PLANNER_HPP_
+#ifndef DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_
+#define DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_
 
 #include <memory>
 
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
-namespace nav2_dummy_planner
+namespace nav2_system_tests
 {
 
-class DummyPlanner : public rclcpp::Node
+class DummyController : public rclcpp::Node
 {
 public:
-  DummyPlanner();
-  ~DummyPlanner();
+  DummyController();
+  ~DummyController();
 
-  nav2_tasks::TaskStatus computePathToPose(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
+  nav2_tasks::TaskStatus followPath(
+    const nav2_tasks::FollowPathCommand::SharedPtr command);
 
 private:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+  void setZeroVelocity();
+
+  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
+
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 };
 
-}  // namespace nav2_dummy_planner
+}  // namespace nav2_system_tests
 
-#endif  // NAV2_DUMMY_PLANNER__DUMMY_PLANNER_HPP_
+#endif  // DUMMY_CONTROLLER__DUMMY_CONTROLLER_HPP_

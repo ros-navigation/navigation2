@@ -14,12 +14,12 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_dummy_controller/dummy_controller.hpp"
+#include "dummy_planner.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_dummy_controller::DummyController>());
+  rclcpp::spin(std::make_shared<nav2_system_tests::DummyPlanner>());
   rclcpp::shutdown();
 
   return 0;

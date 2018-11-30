@@ -17,12 +17,12 @@
 #include <thread>
 #include <memory>
 
-#include "nav2_dummy_controller/dummy_controller.hpp"
+#include "dummy_controller.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_dummy_controller
+namespace nav2_system_tests
 {
 
 DummyController::DummyController()
@@ -103,4 +103,4 @@ void DummyController::setZeroVelocity()
   vel_pub_->publish(cmd_vel);
 }
 
-}  // namespace nav2_dummy_controller
+}  // namespace nav2_system_tests

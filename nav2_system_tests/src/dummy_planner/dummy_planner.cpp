@@ -16,12 +16,12 @@
 #include <thread>
 #include <memory>
 
-#include "nav2_dummy_planner/dummy_planner.hpp"
+#include "dummy_planner.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_dummy_planner
+namespace nav2_system_tests
 {
 
 DummyPlanner::DummyPlanner()
@@ -70,4 +70,4 @@ DummyPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
   return TaskStatus::SUCCEEDED;
 }
 
-}  // namespace nav2_dummy_planner
+}  // namespace nav2_system_tests
