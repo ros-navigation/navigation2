@@ -256,10 +256,10 @@ void ObstacleLayer::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "ObstacleLayer:: Event Callback");
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_); 
-  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_); 
-  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_); 
-  node_->get_parameter(name_ + "." + "combination_method", combination_method_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_); 
+  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_); 
 }
 
 void ObstacleLayer::laserScanCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr message,
