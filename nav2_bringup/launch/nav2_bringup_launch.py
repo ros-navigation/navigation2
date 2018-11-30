@@ -7,6 +7,7 @@ def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
     params_file = launch.substitutions.LaunchConfiguration('params', default='nav2_params.yaml')
+    launch_dir = os.path.dirname(os.path.abspath(__file__))
 
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
@@ -38,6 +39,7 @@ def generate_launch_description():
             node_executable='world_model',
             node_name='world_model',
             output='screen',
+            remappings=[('occ_grid', '/occ_grid')],
             parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
@@ -50,9 +52,9 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
-            node_name='FollowPathNode',
             output='screen',
-            parameters=[{ 'prune_plan': False }, {'debug_trajectory_details': True }, { 'use_sim_time': use_sim_time }]),
+            remappings=[('occ_grid', '/occ_grid')],
+            parameters=[os.path.join(launch_dir, 'dwb_controller_config.yaml')]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
