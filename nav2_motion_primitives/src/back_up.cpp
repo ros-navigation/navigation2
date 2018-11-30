@@ -16,16 +16,16 @@
 #include <ctime>
 #include <memory>
 
-#include "nav2_behaviors/back_up.hpp"
+#include "nav2_motion_primitives/back_up.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_behaviors
+namespace nav2_motion_primitives
 {
 
 BackUp::BackUp()
-: Behavior<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>("BackUp")
+: MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>("BackUp")
 {
   // TODO(orduno) Pull values from param server or robot
   max_linear_vel_ = 0.0;
@@ -57,7 +57,7 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
 nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 {
   // Currently only an open-loop controller is implemented
-  // TODO(orduno) Create a base class for open-loop controlled behaviors
+  // TODO(orduno) Create a base class for open-loop controlled motion_primitives
   TaskStatus status = timedBackup();
 
   // For now sending an empty task result
@@ -109,4 +109,4 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   return TaskStatus::FAILED;
 }
 
-}  // namespace nav2_behaviors
+}  // namespace nav2_motion_primitives

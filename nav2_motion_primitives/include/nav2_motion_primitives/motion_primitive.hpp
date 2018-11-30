@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIORS__BEHAVIOR_HPP_
-#define NAV2_BEHAVIORS__BEHAVIOR_HPP_
+#ifndef NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
+#define NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
 
 
 #include <memory>
@@ -29,7 +29,7 @@
 #include "nav2_tasks/task_server.hpp"
 #include "nav2_robot/robot.hpp"
 
-namespace nav2_behaviors
+namespace nav2_motion_primitives
 {
 
 using namespace std::chrono_literals;
@@ -38,10 +38,10 @@ template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
 
 template<class CommandMsg, class ResultMsg>
-class Behavior : public rclcpp::Node
+class MotionPrimitive : public rclcpp::Node
 {
 public:
-  explicit Behavior(const std::string & node_name)
+  explicit MotionPrimitive(const std::string & node_name)
   : Node(node_name),
     task_server_(nullptr),
     taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
@@ -53,7 +53,7 @@ public:
     task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(
       temp_node, false);
 
-    task_server_->setExecuteCallback(std::bind(&Behavior::run, this, std::placeholders::_1));
+    task_server_->setExecuteCallback(std::bind(&MotionPrimitive::run, this, std::placeholders::_1));
 
     // Start listening for incoming Spin task requests
     task_server_->startWorkerThread();
@@ -61,7 +61,7 @@ public:
     RCLCPP_INFO(get_logger(), "Initialized the %s server", taskName_.c_str());
   }
 
-  virtual ~Behavior() {}
+  virtual ~MotionPrimitive() {}
 
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
@@ -124,12 +124,12 @@ protected:
       status = onCycleUpdate(result);
 
       if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
-        RCLCPP_INFO(get_logger(), "Behavior completed successfully");
+        RCLCPP_INFO(get_logger(), "MotionPrimitive completed successfully");
         break;
       }
 
       if (status == nav2_tasks::TaskStatus::FAILED) {
-        RCLCPP_WARN(get_logger(), "Behavior was not completed");
+        RCLCPP_WARN(get_logger(), "MotionPrimitive was not completed");
         break;
       }
 
@@ -143,7 +143,7 @@ protected:
     auto end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end_time - start_time;
 
-    RCLCPP_INFO(get_logger(), "Behavior ran for %.2f seconds", elapsed_seconds.count());
+    RCLCPP_INFO(get_logger(), "MotionPrimitive ran for %.2f seconds", elapsed_seconds.count());
 
     return status;
   }
@@ -155,6 +155,6 @@ protected:
   std::string taskName_;
 };
 
-}  // namespace nav2_behaviors
+}  // namespace nav2_motion_primitives
 
-#endif  // NAV2_BEHAVIORS__BEHAVIOR_HPP_
+#endif  // NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_

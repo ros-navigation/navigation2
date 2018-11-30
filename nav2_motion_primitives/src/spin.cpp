@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_behaviors/spin.hpp"
+#include "nav2_motion_primitives/spin.hpp"
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -27,11 +27,11 @@
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_behaviors
+namespace nav2_motion_primitives
 {
 
 Spin::Spin()
-: Behavior<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>("Spin")
+: MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>("Spin")
 {
   // TODO(orduno) Pull values from param server or robot
   max_rotational_vel_ = 1.0;
@@ -65,7 +65,7 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
 nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
 {
   // Currently only an open-loop controller is implemented
-  // TODO(orduno) Create a base class for open-loop controlled behaviors
+  // TODO(orduno) Create a base class for open-loop controlled motion_primitives
   //              controlledSpin() has not been fully tested
   TaskStatus status = timedSpin();
 
@@ -144,4 +144,4 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   return TaskStatus::RUNNING;
 }
 
-}  // namespace nav2_behaviors
+}  // namespace nav2_motion_primitives

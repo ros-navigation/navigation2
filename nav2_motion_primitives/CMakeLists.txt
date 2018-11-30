@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_behaviors)
+project(nav2_motion_primitives)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -25,7 +25,7 @@ include_directories(
   include
 )
 
-set(library_name behaviors)
+set(library_name motion_primitives)
 set(executable_name ${library_name}_node)
 
 set(dependencies

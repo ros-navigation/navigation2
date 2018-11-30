@@ -14,8 +14,8 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_behaviors/spin.hpp"
-#include "nav2_behaviors/back_up.hpp"
+#include "nav2_motion_primitives/spin.hpp"
+#include "nav2_motion_primitives/back_up.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -26,10 +26,10 @@ int main(int argc, char ** argv)
 
   rclcpp::executors::SingleThreadedExecutor exec;
 
-  auto spin = std::make_shared<nav2_behaviors::Spin>();
+  auto spin = std::make_shared<nav2_motion_primitives::Spin>();
   exec.add_node(spin);
 
-  auto back_up = std::make_shared<nav2_behaviors::BackUp>();
+  auto back_up = std::make_shared<nav2_motion_primitives::BackUp>();
   exec.add_node(back_up);
 
   exec.spin();
