@@ -43,7 +43,15 @@ public:
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "cmd_vel",
-      [this](geometry_msgs::msg::Twist::SharedPtr msg) {current_vel_cmd_ = msg;});
+      [this](geometry_msgs::msg::Twist::SharedPtr msg) {
+        if (current_vel_cmd_ != nullptr) {
+          previous_vel_cmd_ = current_vel_cmd_;
+        } else {
+          previous_vel_cmd_ = msg;
+        }
+        current_vel_cmd_ = msg;
+      }
+    );
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
       "odom",
@@ -94,22 +102,43 @@ public:
     // TODO(orduno) replace with actual odom error / vel fluctuation
 
     // Tunned using Gazebo + TB3, most of the time is < 0.0005
-    double odom_linear_vel_error = 0.002;  // tuned using Gazebo + TB3
-    double vel_cmd = current_vel_cmd_->linear.x;
+    double odom_linear_vel_error = 0.002;
 
     // TODO(orduno) assuming robot is moving forward
-    if (vel_cmd > odom_linear_vel_error) {
+
+    double curr_cmd = current_vel_cmd_->linear.x;
+    double prev_cmd = previous_vel_cmd_->linear.x;
+
+    if (std::abs(curr_cmd) > odom_linear_vel_error) {
       // Commanded velocity is non-zero
 
-      // Assume the robot is free if it's accelerating forward
       double v1 = current_velocity_->twist.twist.linear.x;
       std::this_thread::sleep_for(1s);
       rclcpp::spin_some(this->get_node_base_interface());
       double v2 = current_velocity_->twist.twist.linear.x;
 
-      if ((v2 + odom_linear_vel_error) < v1) {
-        RCLCPP_WARN(get_logger(), "The robot is not accelerating, v1: %.6f, v2: %.6f", v1, v2);
-        return true;
+      // TODO(orduno) Assuming for now smooth velocity commands
+      //              Address case where the robot is moving backwards
+      if (curr_cmd >= prev_cmd) {
+        // Robot should be accelerating
+        if ((v2 + odom_linear_vel_error) < v1) {
+          RCLCPP_WARN(get_logger(),
+            "The robot is not accelerating,"
+            " previous cmd: %.1f, current cmd: %.1f,"
+            "  v1: %.6f, v2: %.6f"
+            , curr_cmd, prev_cmd, v1, v2);
+          return true;
+        }
+      } else {
+        // Robot should be decelerating
+        if ((v2 - odom_linear_vel_error) > v1) {
+          RCLCPP_WARN(get_logger(),
+            "The robot is not decelerating,"
+            " previous cmd: %.1f, current cmd: %.1f,"
+            "  v1: %.6f, v2: %.6f"
+            , curr_cmd, prev_cmd, v1, v2);
+          return true;
+        }
       }
     }
 
@@ -142,6 +171,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
   // The last velocity command published by the controller
   std::shared_ptr<geometry_msgs::msg::Twist> current_vel_cmd_;
+  std::shared_ptr<geometry_msgs::msg::Twist> previous_vel_cmd_;
 };
 
 }  // namespace nav2_tasks
