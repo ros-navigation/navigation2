@@ -53,13 +53,11 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
-static const vector<double> g_origin({0, 0, 0});
-
 class TestMapLoader : public nav2_map_server::OccGridLoader
 {
 public:
-  explicit TestMapLoader(rclcpp::Node * node)
-  : OccGridLoader(node, g_origin, g_valid_image_res)
+  explicit TestMapLoader(rclcpp::Node * node, YAML::Node & doc)
+  : OccGridLoader(node, doc)
   {
   }
 
@@ -74,13 +72,23 @@ class MapLoaderTest : public ::testing::Test
 public:
   MapLoaderTest()
   {
+    // Set up a fake YAML document with the required fields
+    doc_["resolution"] = "0.1";
+    doc_["origin"][0] = "2.0";
+    doc_["origin"][1] = "3.0";
+    doc_["origin"][2] = "1.0";
+    doc_["negate"] = "0";
+    doc_["occupied_thresh"] = "0.65";
+    doc_["free_thresh"] = "0.196";
+
     node_ = std::make_shared<rclcpp::Node>("map_server");
-    map_loader_ = new TestMapLoader(node_.get());
+    map_loader_ = new TestMapLoader(node_.get(), doc_);
   }
 
 protected:
   rclcpp::Node::SharedPtr node_;
   TestMapLoader * map_loader_;
+  YAML::Node doc_;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -110,6 +118,7 @@ TEST_F(MapLoaderTest, loadValidPNG)
 TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
+
 
   ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
   nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();

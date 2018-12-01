@@ -26,7 +26,7 @@ public:
   virtual ~MapLoader() {}
 
   virtual void loadMapFromFile(const std::string & filename) = 0;
-  virtual void initServices() = 0;
+  virtual void startServices() = 0;
 };
 
 }  // namespace nav2_map_server

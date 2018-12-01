@@ -28,8 +28,7 @@ int main(int argc, char ** argv)
     rclcpp::shutdown();
   } catch (std::exception & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());
-    RCLCPP_INFO(rclcpp::get_logger(node_name.c_str()),
-      "Missing 'yaml_filename' in the '%s' Node parameters?", node_name.c_str());
+    RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), "Exiting");
   }
 
   return 0;

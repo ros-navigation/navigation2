@@ -38,7 +38,6 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
-#include <chrono>
 
 #include "LinearMath/btQuaternion.h"
 #include "SDL/SDL_image.h"
@@ -52,55 +51,81 @@ const char * OccGridLoader::frame_id_ = "map";
 const char * OccGridLoader::topic_name_ = "occ_grid";
 const char * OccGridLoader::service_name_ = "occ_grid";
 
-OccGridLoader::OccGridLoader(
-  rclcpp::Node * node,
-  const std::vector<double> & origin, double resolution)
-: node_(node), origin_(origin), resolution_(resolution)
+OccGridLoader::OccGridLoader(rclcpp::Node * node, YAML::Node & doc)
+: node_(node), doc_(doc), origin_(3)
 {
-  getConversionParameters();
-}
+  try {
+    resolution_ = doc_["resolution"].as<double>();
+  } catch (YAML::Exception) {
+    throw std::runtime_error("The map does not contain a resolution tag or it is invalid");
+  }
 
-void OccGridLoader::getConversionParameters()
-{
+  try {
+    origin_[0] = doc_["origin"][0].as<double>();
+    origin_[1] = doc_["origin"][1].as<double>();
+    origin_[2] = doc_["origin"][2].as<double>();
+  } catch (YAML::Exception) {
+    throw std::runtime_error("The map does not contain an origin tag or it is invalid");
+  }
+
+  try {
+    free_thresh_ = doc_["free_thresh"].as<double>();
+  } catch (YAML::Exception) {
+    throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid");
+  }
+
+  try {
+    occupied_thresh_ = doc_["occupied_thresh"].as<double>();
+  } catch (YAML::Exception) {
+    throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid");
+  }
+
   std::string mode_str;
+  try {
+    mode_str = doc_["mode"].as<std::string>();
 
-  // Settings for the conversion process from map image to occupancy grid
-  node_->get_parameter_or_set("occupied_thresh", occupied_thresh_, 0.65);
-  node_->get_parameter_or_set("free_thresh", free_thresh_, 0.196);
-  node_->get_parameter_or_set("mode", mode_str, std::string("trinary"));
-
-  // Convert the string version of the mode name to one of the enumeration values
-  if (mode_str == "trinary") {
-    mode_ = TRINARY;
-  } else if (mode_str == "scale") {
-    mode_ = SCALE;
-  } else if (mode_str == "raw") {
-    mode_ = RAW;
-  } else {
-    RCLCPP_WARN(node_->get_logger(),
-      "Mode parameter not recognized: '%s', using default value (trinary)",
-      mode_str.c_str());
+    // Convert the string version of the mode name to one of the enumeration values
+    if (mode_str == "trinary") {
+      mode_ = TRINARY;
+    } else if (mode_str == "scale") {
+      mode_ = SCALE;
+    } else if (mode_str == "raw") {
+      mode_ = RAW;
+    } else {
+      RCLCPP_WARN(node_->get_logger(),
+        "Mode parameter not recognized: '%s', using default value (trinary)",
+        mode_str.c_str());
+      mode_ = TRINARY;
+    }
+  } catch (YAML::Exception &) {
+    RCLCPP_WARN(node_->get_logger(), "Mode parameter not set, using default value (trinary)");
     mode_ = TRINARY;
   }
 
-  node_->get_parameter_or_set("negate", negate_, 0);
+  try {
+    negate_ = doc_["negate"].as<int>();
+  } catch (YAML::Exception) {
+    throw std::runtime_error("The map does not contain a negate tag or it is invalid");
+  }
 
-  RCLCPP_DEBUG(node_->get_logger(), "occupied_thresh: %f", occupied_thresh_);
+  RCLCPP_DEBUG(node_->get_logger(), "resolution: %f", resolution_);
+  RCLCPP_DEBUG(node_->get_logger(), "origin[0]: %f", origin_[0]);
+  RCLCPP_DEBUG(node_->get_logger(), "origin[1]: %f", origin_[1]);
+  RCLCPP_DEBUG(node_->get_logger(), "origin[2]: %f", origin_[2]);
   RCLCPP_DEBUG(node_->get_logger(), "free_thresh: %f", free_thresh_);
+  RCLCPP_DEBUG(node_->get_logger(), "occupied_thresh: %f", occupied_thresh_);
   RCLCPP_DEBUG(node_->get_logger(), "mode_str: %s", mode_str.c_str());
   RCLCPP_DEBUG(node_->get_logger(), "mode: %d", mode_);
   RCLCPP_DEBUG(node_->get_logger(), "negate: %d", negate_);
 }
 
-void OccGridLoader::loadMapFromFile(const std::string & filename)
+void OccGridLoader::loadMapFromFile(const std::string & map_name)
 {
   // Load the image using SDL.  If we get NULL back, the image load failed.
   SDL_Surface * img;
-  if (!(img = IMG_Load(filename.c_str()))) {
+  if (!(img = IMG_Load(map_name.c_str()))) {
     std::string errmsg = std::string("failed to open image file \"") +
-      filename + std::string("\": ") + IMG_GetError();
-    RCLCPP_ERROR(node_->get_logger(), "%s", errmsg.c_str());
-
+      map_name + std::string("\": ") + IMG_GetError();
     throw std::runtime_error(errmsg);
   }
 
@@ -197,13 +222,13 @@ void OccGridLoader::loadMapFromFile(const std::string & filename)
   msg_.header.stamp = node_->now();
 
   RCLCPP_DEBUG(node_->get_logger(), "Read map %s: %d X %d map @ %.3lf m/cell",
-    filename.c_str(),
+    map_name.c_str(),
     msg_.info.width,
     msg_.info.height,
     msg_.info.resolution);
 }
 
-void OccGridLoader::initServices()
+void OccGridLoader::startServices()
 {
   // Create a service callback handle
   auto handle_occ_callback = [this](

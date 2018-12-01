@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_map_server/map_loader.hpp"
+#include "yaml-cpp/yaml.h"
 
 namespace nav2_map_server
 {
@@ -30,35 +31,25 @@ namespace nav2_map_server
 class OccGridLoader : public MapLoader
 {
 public:
-  explicit OccGridLoader(
-    rclcpp::Node * node,
-    const std::vector<double> & origin, double resolution);
+  explicit OccGridLoader(rclcpp::Node * node, YAML::Node & doc);
   OccGridLoader() = delete;
 
-  // Load the image and generate an occupancy grid
+  // Load the image and generate an OccupancyGrid
   void loadMapFromFile(const std::string & filename) override;
 
-  // Make the occupancy griad available via ROS topic and service
-  void initServices() override;
+  // Make the OccupancyGrid available via ROS topic and service
+  void startServices() override;
 
 protected:
-  void getConversionParameters();
-
-  // The frame ID used in the returned occupancy grid message
-  static const char * frame_id_;
-
-  // The name for the topic on which the map will be published
-  static const char * topic_name_;
-
-  // The name of the service to GetMap
-  static const char * service_name_;
-
   // The ROS node to use for ROS-related operations such as creating a service
   rclcpp::Node * node_;
 
-  // Conversion parameters
-  std::vector<double> origin_;
+  // The YAML file from which to get the conversion parameters
+  YAML::Node & doc_;
+
+  // Conversion parameters read from the YAML document
   double resolution_;
+  std::vector<double> origin_;
   double free_thresh_;
   double occupied_thresh_;
   enum MapMode { TRINARY, SCALE, RAW };
@@ -73,6 +64,15 @@ protected:
 
   // The message to publish on the occupancy grid topic
   nav_msgs::msg::OccupancyGrid msg_;
+
+  // The frame ID used in the returned OccupancyGrid message
+  static const char * frame_id_;
+
+  // The name for the topic on which the map will be published
+  static const char * topic_name_;
+
+  // The name of the service for getting a map
+  static const char * service_name_;
 
   // For now, use a timer to publish the map periodically so that it is sure
   // to be received on the ROS1 side across the ROS1 bridge
