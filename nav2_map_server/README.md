@@ -18,22 +18,20 @@ derived class, the `OccGridLoader`, which converts an input image to an Occupanc
 makes this available via topic and service interfaces. The `MapServer` class is a ROS2 node
 that uses the appropriate loader, based on an input parameter.
 
-### ROS2 Node
+### Command-line arguments, ROS2 Node Parameters, and YAML files
 
 The Map Server is a composable ROS2 node. By default, there is a map_server executable that
 instances one of these nodes, but it is possible to compose multiple map server nodes into
 a single process, if desired.
 
-### Command-line arguments, ROS2 Node Parameters, and YAML files
-
-Because the map server is now a composable node, the command line for the map server is different
-that it was with ROS1. With ROS1, one invoked the map server, passing the map YAML filename:
+The command line for the map server executable is slightly different that it was with ROS1.
+With ROS1, one invoked the map server and passing the map YAML filename, like this:
 
 ```
-$ ./map_server map.yaml
+$ map_server map.yaml
 ```
 
-Where the YAML file specified the various parameters. For example, 
+Where the YAML file specified contained the various map metadata, such as:
 
 ```
 image: testmap.png
@@ -44,41 +42,42 @@ occupied_thresh: 0.65
 free_thresh: 0.196
 ```
 
-With ROS2 and node composition, node parameters come through a parameter file, which can
-contain parameters for one or more nodes. For example, for a node named 'map_server', the 
-parameter file could look like this:
+The Navigation2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
+mechanism to get the name of the YAML file to use. This effectively introduces a 
+level of indirection to get the map yaml filename. For example, for a node named 'map_server', 
+the parameter file would look like this:
 
 ```
+# map_server_params.yaml
 map_server:
     ros__parameters:
-        <params>
+        yaml_filename: "map.yaml"
 ```
 
-With nav1, some of these parameters specified in the map YAML file are map-specific 
-metadata (resolution, origin), while others are parameters for the conversion process (free threshold,
-occupied threshold, etc.). These parameters have been split into two files. The first file is like
-ROS1 where the map-specific metadata is in a ROS1-like YAML file and, for convenience, can physically
-reside alongside the map file. For example,
+One can invoke the map service executable directly, passing the params file on the command line,
+like this:
 
 ```
-# Example YAML file that resides with the image (testmap.yaml)
-image: testmap.png
-resolution: 0.1
-origin: [2.0, 3.0, 1.0]
+$ map_server __params:=map_server_params.yaml
 ```
 
-The other file contains the parameters for the Map Server which configure the loader. For example,
+There is also possibility of having multiple map server nodes in a single process, like this:
 
 ```
-# Example ROS2 configuration file that configures the map server node (map_server_params.yaml)
-map_server:
+# combined_params.yaml
+map_server1:
     ros__parameters:
-        yaml_filename: "testmap.yaml"
-        map_type: "occupancy"
-        free_thresh: 0.196
-        occupied_thresh: 0.65
-        mode: "trinary"
-        negate: 0
+        yaml_filename: "some_map.yaml"
+
+map_server2:
+    ros__parameters:
+        yaml_filename: "another_map.yaml"
+```
+
+Then, one would invoke this process with the params file that contains the parameters for both nodes:
+
+```
+$ process_with_multiple_map_servers __params:=combined_params.yaml
 ```
 
 ## Currently Supported Map Types
