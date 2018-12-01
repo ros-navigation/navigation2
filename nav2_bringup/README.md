@@ -18,7 +18,7 @@ Pre-requisites:
 * A map of that world saved to a map.pgm and map.yaml (see ROS Navigation tutorials)
 
 Launch Gazebo and Rviz2
- 
+
 `ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>`
 
 Launch your robot specific transforms
@@ -32,7 +32,7 @@ Set the tf publisher node to use simulation time or AMCL won't get the transform
 `ros2 param set /robot_state_publisher use_sim_time True`
 
 Launch map_server and AMCL
- 
+
 `ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True`
 
 In RVIZ:
@@ -99,7 +99,7 @@ ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>
 ```
 If running in simulation:
 ```
-ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True
+ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True
 ros2 param set /world_model use_sim_time True
 ```
 
