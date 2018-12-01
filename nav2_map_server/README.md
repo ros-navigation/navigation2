@@ -61,7 +61,7 @@ like this:
 $ map_server __params:=map_server_params.yaml
 ```
 
-There is also possibility of having multiple map server nodes in a single process, like this:
+There is also possibility of having multiple map server nodes in a single process, where the parameters file would separate the parameters by node name, like this:
 
 ```
 # combined_params.yaml
