@@ -66,7 +66,7 @@ public:
         topic, callback);
       event_subscriptions_.push_back(event_sub);
       // TODO(bpwilcox): Fix hanging problem for list parameters service call
-      //get_param_list(node_namespace);
+      // get_param_list(node_namespace);
     }
   }
 
@@ -182,7 +182,7 @@ public:
   template<class T>
   bool get_event_param(const std::string & param_name, T & new_value)
   {
-    return get_event_param<T>("", param_name, new_value);
+    return get_event_param<T>(node_->get_namespace(), param_name, new_value);
   }
 
   // retreive parameter or assign default value if not set
@@ -203,7 +203,7 @@ public:
   template<class T>
   bool get_event_param_or(const std::string & param_name, T & new_value, const T & default_value)
   {
-    return get_event_param_or<T>("", param_name, new_value, default_value);
+    return get_event_param_or<T>(node_->get_namespace(), param_name, new_value, default_value);
   }
 
   // A check to filter whether parameter name is part of the lastest event
