@@ -8,7 +8,8 @@ Panels:
         - /RobotModel1/Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Gobal Planner1/Global Costmap1
+        - /Global Planner1
+        - /Global Planner1/Global Costmap1
       Splitter Ratio: 0.5833333134651184
     Tree Height: 574
   - Class: rviz_common/Selection
@@ -230,7 +231,7 @@ Visualization Manager:
           Unreliable: false
           Value: false
       Enabled: true
-      Name: Gobal Planner
+      Name: Global Planner
     - Class: rviz_common/Group
       Displays:
         - Alpha: 0.699999988
