@@ -73,8 +73,9 @@ WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 ARG PULLREQ=false
 ARG BRANCH=master
 RUN echo "pullreq is $PULLREQ"
-RUN if [ "$PULLREQ" == "false" ]; \
-    then \
+RUN if [ "$PULLREQ" == "false" ] && [ "$BRANCH" == "master" ]; then \ 
+      echo "No pull request number given - defaulting to master branch"; \
+    elif [ "$BRANCH" != "master" ]; then \
       cd navigation2; \
       git fetch origin $BRANCH:temp_branch; \
       git checkout temp_branch; \
