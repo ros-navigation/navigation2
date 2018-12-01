@@ -22,6 +22,4 @@ local_costmap:
   local_costmap:
     ros__parameters:
       always_send_full_costmap: True
-      scan:
-        topic: /scan
 
