@@ -60,20 +60,27 @@ RUN apt-get install -y \
 
 # get the latest nightly ROS2 build -> ros2_ws/ros2_linux
 WORKDIR /ros2_ws
-RUN wget -nv https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
+RUN wget -nv -t 5 https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
 RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
 
 # clone navigation2 repo
 WORKDIR /ros2_ws/navigation2_ws/src
-RUN git clone https://github.com/ros-planning/navigation2.git
+ARG USER=ros-planning
+RUN git clone https://github.com/$USER/navigation2.git
 
 # change to correct branch if $BRANCH is not = master
 WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 ARG PULLREQ=false
+ARG BRANCH=master
 RUN echo "pullreq is $PULLREQ"
-RUN if [ "$PULLREQ" == "false" ]; \
-    then \
+RUN if [ "$PULLREQ" == "false" ] && [ "$BRANCH" == "master" ]; then \ 
       echo "No pull request number given - defaulting to master branch"; \
+    elif [ "$BRANCH" != "master" ]; then \
+      cd navigation2; \
+      git fetch origin $BRANCH:temp_branch; \
+      git checkout temp_branch; \
+      cd -; \
+      echo "No pull request number given - defaulting to $BRANCH branch"; \
     else \
       git fetch origin pull/$PULLREQ/head:pr_branch; \
       git checkout pr_branch; \
