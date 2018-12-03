@@ -25,14 +25,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud.h>
-#include <nav2_costmap_2d/VoxelGrid.h>
-#include <voxel_grid/voxel_grid.h>
+#include "rclcpp/rclcpp.hpp"
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/channel_float32.hpp>
+#include <nav2_voxel_grid/voxel_grid.hpp>
+#include <nav2_msgs/msg/voxel_grid.hpp>
+#include <nav2_util/execution_timer.hpp>
 
-static inline void mapToWorld3D(const unsigned int mx, const unsigned int my, const unsigned int mz,
+static inline void mapToWorld3D(const unsigned int mx,
+  const unsigned int my, const unsigned int mz,
   const double origin_x, const double origin_y, const double origin_z,
-  const double x_resolution, const double y_resolution, const double z_resolution,
+  const double x_resolution, const double y_resolution,
+  const double z_resolution,
   double & wx, double & wy, double & wz)
 {
   // returns the center point of the cell
@@ -46,7 +50,7 @@ struct Cell
   double x;
   double y;
   double z;
-  voxel_grid::VoxelStatus status;
+  nav2_voxel_grid::VoxelStatus status;
 };
 typedef std::vector<Cell> V_Cell;
 
@@ -57,19 +61,22 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
 V_Cell g_marked;
 V_Cell g_unknown;
-void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub_unknown,
-  const nav2_costmap_2d::VoxelGridConstPtr & grid)
+rclcpp::Node::SharedPtr g_node;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_marked;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_unknown;
+void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
-    ROS_ERROR("Received empty voxel grid");
+    RCLCPP_ERROR(g_node->get_logger(), "Received empty voxel grid");
     return;
   }
 
-  ros::WallTime start = ros::WallTime::now();
+  nav2_util::ExecutionTimer timer;
+  timer.start();
 
-  ROS_DEBUG("Received voxel grid");
+  RCLCPP_DEBUG(g_node->get_logger(), "Received voxel grid");
   const std::string frame_id = grid->header.frame_id;
-  const ros::Time stamp = grid->header.stamp;
+  const rclcpp::Time stamp = grid->header.stamp;
   const uint32_t * data = &grid->data.front();
   const double x_origin = grid->origin.x;
   const double y_origin = grid->origin.y;
@@ -88,24 +95,23 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
   for (uint32_t y_grid = 0; y_grid < y_size; ++y_grid) {
     for (uint32_t x_grid = 0; x_grid < x_size; ++x_grid) {
       for (uint32_t z_grid = 0; z_grid < z_size; ++z_grid) {
-        voxel_grid::VoxelStatus status =
-          voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid, z_grid, x_size, y_size, z_size,
-          data);
-
-        if (status == voxel_grid::UNKNOWN) {
+        nav2_voxel_grid::VoxelStatus status =
+          nav2_voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid,
+            z_grid, x_size, y_size, z_size, data);
+        if (status == nav2_voxel_grid::UNKNOWN) {
           Cell c;
           c.status = status;
-          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin, z_origin, x_res, y_res,
-            z_res, c.x, c.y, c.z);
+          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin,
+            z_origin, x_res, y_res, z_res, c.x, c.y, c.z);
 
           g_unknown.push_back(c);
 
           ++num_unknown;
-        } else if (status == voxel_grid::MARKED) {
+        } else if (status == nav2_voxel_grid::MARKED) {
           Cell c;
           c.status = status;
-          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin, z_origin, x_res, y_res,
-            z_res, c.x, c.y, c.z);
+          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin,
+            z_origin, x_res, y_res, z_res, c.x, c.y, c.z);
 
           g_marked.push_back(c);
 
@@ -116,7 +122,7 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
   }
 
   {
-    sensor_msgs::PointCloud cloud;
+    sensor_msgs::msg::PointCloud cloud;
     cloud.points.resize(num_marked);
     cloud.channels.resize(1);
     cloud.channels[0].values.resize(num_marked);
@@ -124,9 +130,9 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    sensor_msgs::ChannelFloat32 & chan = cloud.channels[0];
+    sensor_msgs::msg::ChannelFloat32 & chan = cloud.channels[0];
     for (uint32_t i = 0; i < num_marked; ++i) {
-      geometry_msgs::Point32 & p = cloud.points[i];
+      geometry_msgs::msg::Point32 & p = cloud.points[i];
       float & cval = chan.values[i];
       Cell & c = g_marked[i];
 
@@ -143,11 +149,11 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
       cval = *reinterpret_cast<float *>(&col);
     }
 
-    pub_marked.publish(cloud);
+    pub_marked->publish(cloud);
   }
 
   {
-    sensor_msgs::PointCloud cloud;
+    sensor_msgs::msg::PointCloud cloud;
     cloud.points.resize(num_unknown);
     cloud.channels.resize(1);
     cloud.channels[0].values.resize(num_unknown);
@@ -155,9 +161,9 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    sensor_msgs::ChannelFloat32 & chan = cloud.channels[0];
+    sensor_msgs::msg::ChannelFloat32 & chan = cloud.channels[0];
     for (uint32_t i = 0; i < num_unknown; ++i) {
-      geometry_msgs::Point32 & p = cloud.points[i];
+      geometry_msgs::msg::Point32 & p = cloud.points[i];
       float & cval = chan.values[i];
       Cell & c = g_unknown[i];
 
@@ -174,24 +180,27 @@ void voxelCallback(const ros::Publisher & pub_marked, const ros::Publisher & pub
       cval = *reinterpret_cast<float *>(&col);
     }
 
-    pub_unknown.publish(cloud);
+    pub_unknown->publish(cloud);
   }
 
-  ros::WallTime end = ros::WallTime::now();
-  ROS_DEBUG("Published %d points in %f seconds", num_marked + num_unknown, (end - start).toSec());
+  timer.end();
+  RCLCPP_DEBUG(g_node->get_logger(), "Published %d points in %f seconds",
+    num_marked + num_unknown, timer.elapsed_time_in_seconds());
 }
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "nav2_costmap_2d_cloud");
-  ros::NodeHandle n;
+  rclcpp::init(argc, argv);
+  g_node = rclcpp::Node::make_shared("costmap_2d_cloud");
 
-  ROS_DEBUG("Startup");
+  RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
-  ros::Publisher pub_marked = n.advertise<sensor_msgs::PointCloud>("voxel_marked_cloud", 2);
-  ros::Publisher pub_unknown = n.advertise<sensor_msgs::PointCloud>("voxel_unknown_cloud", 2);
-  ros::Subscriber sub = n.subscribe<nav2_costmap_2d::VoxelGrid
-    >("voxel_grid", 1, std::bind(voxelCallback, pub_marked, pub_unknown, _1));
+  pub_marked = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
+    "voxel_marked_cloud", 1);
+  pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
+    "voxel_unknown_cloud", 1);
+  auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
+    "voxel_grid", voxelCallback);
 
-  ros::spin();
+  rclcpp::spin(g_node);
 }

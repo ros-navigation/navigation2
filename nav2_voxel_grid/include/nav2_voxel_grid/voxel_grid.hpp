@@ -174,12 +174,11 @@ public:
     return bit_count;
   }
 
-  VoxelStatus getVoxel(
+  static VoxelStatus getVoxel(
     unsigned int x, unsigned int y, unsigned int z,
     unsigned int size_x, unsigned int size_y, unsigned int size_z, const uint32_t * data)
   {
     if (x >= size_x || y >= size_y || z >= size_z) {
-      RCLCPP_DEBUG(logger, "Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
       return UNKNOWN;
     }
     uint32_t full_mask = ((uint32_t)1 << z << 16) | (1 << z);

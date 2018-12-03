@@ -34,19 +34,21 @@
  *
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
+ *         Steve Macenski
  *********************************************************************/
 
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <nav2_costmap_2d/VoxelGrid.h>
-#include <voxel_grid/voxel_grid.h>
+#include "rclcpp/rclcpp.hpp"
+#include <visualization_msgs/msg/marker.hpp>
+#include <nav2_msgs/msg/voxel_grid.hpp>
+#include <nav2_voxel_grid/voxel_grid.hpp>
+#include <nav2_util/execution_timer.hpp>
 
 struct Cell
 {
   double x;
   double y;
   double z;
-  voxel_grid::VoxelStatus status;
+  nav2_voxel_grid::VoxelStatus status;
 };
 typedef std::vector<Cell> V_Cell;
 
@@ -57,18 +59,22 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
 std::string g_marker_ns;
 V_Cell g_cells;
-void voxelCallback(const ros::Publisher & pub, const nav2_costmap_2d::VoxelGridConstPtr & grid)
+rclcpp::Node::SharedPtr g_node;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
-    ROS_ERROR("Received empty voxel grid");
+    RCLCPP_ERROR(g_node->get_logger(), "Received voxel grid");
     return;
   }
 
-  ros::WallTime start = ros::WallTime::now();
+  nav2_util::ExecutionTimer timer;
+  timer.start();
 
-  ROS_DEBUG("Received voxel grid");
+  RCLCPP_DEBUG(g_node->get_logger(), "Received voxel grid");
+
   const std::string frame_id = grid->header.frame_id;
-  const ros::Time stamp = grid->header.stamp;
+  const rclcpp::Time stamp = grid->header.stamp;
   const uint32_t * data = &grid->data.front();
   const double x_origin = grid->origin.x;
   const double y_origin = grid->origin.y;
@@ -85,11 +91,10 @@ void voxelCallback(const ros::Publisher & pub, const nav2_costmap_2d::VoxelGridC
   for (uint32_t y_grid = 0; y_grid < y_size; ++y_grid) {
     for (uint32_t x_grid = 0; x_grid < x_size; ++x_grid) {
       for (uint32_t z_grid = 0; z_grid < z_size; ++z_grid) {
-        voxel_grid::VoxelStatus status =
-          voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid, z_grid, x_size, y_size, z_size,
-          data);
-
-        if (status == voxel_grid::MARKED) {
+        nav2_voxel_grid::VoxelStatus status =
+          nav2_voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid,
+            z_grid, x_size, y_size, z_size, data);
+        if (status == nav2_voxel_grid::MARKED) {
           Cell c;
           c.status = status;
           c.x = x_origin + (x_grid + 0.5) * x_res;
@@ -103,47 +108,52 @@ void voxelCallback(const ros::Publisher & pub, const nav2_costmap_2d::VoxelGridC
     }
   }
 
-  visualization_msgs::Marker m;
+  visualization_msgs::msg::Marker m;
   m.header.frame_id = frame_id;
   m.header.stamp = stamp;
   m.ns = g_marker_ns;
   m.id = 0;
-  m.type = visualization_msgs::Marker::CUBE_LIST;
-  m.action = visualization_msgs::Marker::ADD;
+  m.type = visualization_msgs::msg::Marker::CUBE_LIST;
+  m.action = visualization_msgs::msg::Marker::ADD;
   m.pose.orientation.w = 1.0;
   m.scale.x = x_res;
   m.scale.y = y_res;
   m.scale.z = z_res;
-  m.color.r = g_colors_r[voxel_grid::MARKED];
-  m.color.g = g_colors_g[voxel_grid::MARKED];
-  m.color.b = g_colors_b[voxel_grid::MARKED];
-  m.color.a = g_colors_a[voxel_grid::MARKED];
+  m.color.r = g_colors_r[nav2_voxel_grid::MARKED];
+  m.color.g = g_colors_g[nav2_voxel_grid::MARKED];
+  m.color.b = g_colors_b[nav2_voxel_grid::MARKED];
+  m.color.a = g_colors_a[nav2_voxel_grid::MARKED];
   m.points.resize(num_markers);
   for (uint32_t i = 0; i < num_markers; ++i) {
     Cell & c = g_cells[i];
-    geometry_msgs::Point & p = m.points[i];
+    geometry_msgs::msg::Point & p = m.points[i];
     p.x = c.x;
     p.y = c.y;
     p.z = c.z;
   }
 
-  pub.publish(m);
+  pub->publish(m);
 
-  ros::WallTime end = ros::WallTime::now();
-  ROS_DEBUG("Published %d markers in %f seconds", num_markers, (end - start).toSec());
+  timer.end();
+  RCLCPP_INFO(g_node->get_logger(), "Published %d markers in %f seconds",
+    num_markers, timer.elapsed_time_in_seconds());
+
 }
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "nav2_costmap_2d_markers");
-  ros::NodeHandle n;
+  rclcpp::init(argc, argv);
+  g_node = rclcpp::Node::make_shared("costmap_2d_marker");
 
-  ROS_DEBUG("Startup");
+  RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
-  ros::Publisher pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  ros::Subscriber sub =
-    n.subscribe<nav2_costmap_2d::VoxelGrid>("voxel_grid", 1, std::bind(voxelCallback, pub, _1));
-  g_marker_ns = n.resolveName("voxel_grid");
+  pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
+    "visualization_marker", 1);
 
-  ros::spin();
+  auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
+    "voxel_grid", voxelCallback);
+  
+  g_marker_ns = g_node->get_namespace();
+
+  rclcpp::spin(g_node);
 }
