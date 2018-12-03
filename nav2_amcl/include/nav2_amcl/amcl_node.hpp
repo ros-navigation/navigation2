@@ -29,6 +29,7 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
+#include "tf2_ros/message_filter.h"
 #include "nav_msgs/srv/set_map.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -150,12 +151,10 @@ private:
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose;
 
   map_t * map_;
-
+  
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
-  // Disabling MessageFilter Subscriber and creating a regular sub without filtering
-  // tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr laser_scan_filter_;
-
+  tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
+ 
   std::vector<nav2_util::Laser *> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
