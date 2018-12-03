@@ -29,7 +29,11 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wreorder"
 #include "tf2_ros/message_filter.h"
+#pragma GCC diagnostic pop
 #include "nav_msgs/srv/set_map.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -151,7 +155,7 @@ private:
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose;
 
   map_t * map_;
-  
+
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
   tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
  
@@ -239,7 +243,5 @@ private:
   bool tf_broadcast_;
   int scan_error_count_ = 0;
 };
-
-extern std::shared_ptr<rclcpp::Clock> simtime_clock;
 
 #endif  // NAV2_AMCL__AMCL_NODE_HPP_

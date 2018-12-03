@@ -62,10 +62,6 @@ using nav2_util::LaserData;
 
 using namespace std::chrono_literals;
 
-// TODO(crdelsey): This timeout value can probably be entirely removed when
-// message filter support is re-enabled. See issue #339
-static const auto TRANSFORM_TIMEOUT = 1s;
-
 static const char scan_topic_[] = "scan";
 
 #if NEW_UNIFORM_SAMPLING
@@ -99,7 +95,7 @@ AmclNode::AmclNode()
   updatePoseFromServer();
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(node_));
-  tf_.reset(new tf2_ros::Buffer(simtime_clock));
+  tf_.reset(new tf2_ros::Buffer(get_clock()));
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
 
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
@@ -150,9 +146,6 @@ AmclNode::AmclNode()
   laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
                                                    this, std::placeholders::_1));
   
-  //laser_scan_filter_ = this->create_subscription<sensor_msgs::msg::LaserScan>(scan_topic_,
-   //   std::bind(&AmclNode::laserReceived, this, std::placeholders::_1), custom_qos_profile);
-
   initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose",
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
@@ -475,7 +468,7 @@ AmclNode::getOdomPose(
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
 
   try {
-    this->tf_->transform(ident, odom_pose, odom_frame_id_, TRANSFORM_TIMEOUT);
+    this->tf_->transform(ident, odom_pose, odom_frame_id_);
   } catch (tf2::TransformException e) {
     ++scan_error_count_;
     if (scan_error_count_ % 20 == 0) {
@@ -600,7 +593,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     geometry_msgs::msg::PoseStamped laser_pose;
     try {
-      this->tf_->transform(ident, laser_pose, base_frame_id_, TRANSFORM_TIMEOUT);
+      this->tf_->transform(ident, laser_pose, base_frame_id_);
     } catch (tf2::TransformException & e) {
       RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
         "even though the message notifier is in use",
@@ -708,8 +701,8 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     inc_q.header = min_q.header;
     tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
     try {
-      tf_->transform(min_q, min_q, base_frame_id_, TRANSFORM_TIMEOUT);
-      tf_->transform(inc_q, inc_q, base_frame_id_, TRANSFORM_TIMEOUT);
+      tf_->transform(min_q, min_q, base_frame_id_);
+      tf_->transform(inc_q, inc_q, base_frame_id_);
     } catch (tf2::TransformException & e) {
       RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
         e.what());
@@ -885,7 +878,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
         tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
-        this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_, TRANSFORM_TIMEOUT);
+        this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
       } catch (tf2::TransformException) {
         RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
         return;
