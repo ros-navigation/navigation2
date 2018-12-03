@@ -35,8 +35,7 @@ Costmap::Costmap(
 : node_(node), trinary_costmap_(trinary_costmap), track_unknown_space_(track_unknown_space),
   lethal_threshold_(lethal_threshold), unknown_cost_value_(unknown_cost_value)
 {
-  if (lethal_threshold_ < 0. || lethal_threshold_ > 100.)
-  {
+  if (lethal_threshold_ < 0. || lethal_threshold_ > 100.) {
     RCLCPP_WARN(node_->get_logger(), "Costmap: Lethal threshold set to %.2f, it should be within"
       " bounds 0-100. This could result in potential collisions!", lethal_threshold_);
     //lethal_threshold_ = std::max(std::min(lethal_threshold_, 100), 0);
