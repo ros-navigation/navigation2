@@ -94,7 +94,7 @@ public:
     }
 
     // TODO(orduno) When the robot gets stuck it can have different types of motion
-    // (not moving at all, random oscillations, etc). For now, we only address the case
+    // (not moving at all, random oscillations, sudden change in acceletc). For now, we only address the case
     // where the commanded velocity is non-zero but the robot is not accelerating.
     // A better approach is to do a forward simulation of the robot motion (corresponding
     // to the commanded velocity) and compare it with the actual one.

@@ -39,18 +39,10 @@ public:
     command_ = std::make_shared<nav2_tasks::SpinCommand>();
     result_ = std::make_shared<nav2_tasks::SpinResult>();
 
-    tf2::Quaternion quaternion;
     // Rotate 90deg CCW
+    tf2::Quaternion quaternion;
     quaternion.setRPY(0, 0, M_PI / 2);  // yaw, pitch and roll are rotation in z, y, x respectively
-    // quaternion.normalize();
-
-    geometry_msgs::msg::Quaternion quaternion_msg;
-    quaternion_msg = tf2::toMsg(quaternion);
-
-    command_->quaternion.x = quaternion_msg.x;
-    command_->quaternion.y = quaternion_msg.y;
-    command_->quaternion.z = quaternion_msg.z;
-    command_->quaternion.w = quaternion_msg.w;
+    command_->quaternion = tf2::toMsg(quaternion);
   }
 };
 

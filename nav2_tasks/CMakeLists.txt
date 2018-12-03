@@ -36,6 +36,7 @@ set(dependencies
   nav2_msgs
   behaviortree_cpp
   tf2
+  tf2_geometry_msgs
 )
 
 ament_target_dependencies(${library_name}
@@ -63,5 +64,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
 
 ament_package()
