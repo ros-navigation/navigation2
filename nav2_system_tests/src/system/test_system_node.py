@@ -13,32 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import copy
 import math
+import sys
 import time
-import rclpy
-from rclpy.node import Node
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from geometry_msgs.msg import PoseStamped
+
 from geometry_msgs.msg import Pose
-from gazebo_msgs.msg import ModelStates
-from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState
-from rcl_interfaces.srv._set_parameters import SetParameters
-from rclpy.parameter import Parameter
-from rcl_interfaces.srv._set_parameters__request import SetParameters_Request
-from time import sleep
-from sys import exit
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
+import rclpy
+from rclpy import Node
+
 
 class NavTester(Node):
+
     def __init__(self):
-        super().__init__("navtester")
-        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped, 'initialpose')
+        super().__init__('navtester')
+        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
+                                                      'initialpose')
         self.goal_pub = self.create_publisher(PoseStamped, 'move_base_simple/goal')
 
-        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.poseCallback)
-        self.robotModel = 'turtlebot3' # TODO: make robotModel a param
+        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
+                                                       '/amcl_pose', self.poseCallback)
+        self.robotModel = 'turtlebot3'  # TODO: make robotModel a param
         self.initial_pose_received = False
 
     def setInitialPose(self, pose):
@@ -46,33 +42,22 @@ class NavTester(Node):
         self.currentPose = pose
         self.setNavstackInitialPose(pose)
 
-
     def setNavstackInitialPose(self, pose):
         msg = PoseWithCovarianceStamped()
         msg.pose.pose = pose
-        msg.header.frame_id = "map"
-        self.get_logger().info("Publishing Initial Pose")
+        msg.header.frame_id = 'map'
+        self.get_logger().info('Publishing Initial Pose')
         self.initial_pose_pub.publish(msg)
-
-    def setGazeboToInitialPose(self, pose):
-        modelState = SetModelState.Request()
-        modelState.model_state.model_name = self.robotModel
-        modelState.model_state.pose = pose
-        modelState.model_state.reference_frame = 'world'
-        while not self.setPoseClient.wait_for_service(timeout_sec=5.0):
-            self.get_logger().warn('/gazebo/set_model_state service not available, waiting again...')
-        future = self.setPoseClient.call_async(modelState)
-        rclpy.spin_until_future_complete(self, future)
 
     def setGoalPose(self, pose):
         self.goalPose = pose
         msg = PoseStamped()
-        msg.header.frame_id = "map"
+        msg.header.frame_id = 'map'
         msg.pose = pose
         self.goal_pub.publish(msg)
 
     def poseCallback(self, msg):
-        self.get_logger().info("Received amcl_pose")
+        self.get_logger().info('Received amcl_pose')
         self.currentPose = msg.pose.pose
         self.initial_pose_received = True
 
@@ -82,96 +67,103 @@ class NavTester(Node):
 
         while not goalReached:
             rclpy.spin_once(self, timeout_sec=1)
-            if self.distanceFromGoal() < 0.2: # get within 20cm of goal
+            if self.distanceFromGoal() < 0.25:  # get within 25cm of goal
                 goalReached = True
-                self.get_logger().info("*** GOAL REACHED ***")
+                self.get_logger().info('*** GOAL REACHED ***')
                 return True
             elif timeout is not None:
                 if (time.time() - startTime) > timeout:
-                    self.get_logger().error("Robot timed out reaching its goal!")
+                    self.get_logger().error('Robot timed out reaching its goal!')
                     return False
 
     def distanceFromGoal(self):
         d_x = self.currentPose.position.x - self.goalPose.position.x
         d_y = self.currentPose.position.y - self.goalPose.position.y
-        distance = math.sqrt(d_x*d_x + d_y*d_y)
-        self.get_logger().info ("Distance from goal is: " + str(distance))
+        distance = math.sqrt(d_x * d_x + d_y * d_y)
+        self.get_logger().info('Distance from goal is: ' + str(distance))
         return distance
 
     def setSimTime(self):
-        self.get_logger().info("Setting transforms to use sim time from gazebo")
+        self.get_logger().info('Setting transforms to use sim time from gazebo')
         from subprocess import call
         # loop through the problematic nodes
-        for nav2_node in ("/static_transform_publisher", "/map_server"):
-            while (call(["ros2", "param", "set", nav2_node, "use_sim_time", "True"])):
-                self.get_logger().error("Error couldn't set use_sim_time param on: " + nav2_node + " retrying...")
+        for nav2_node in ('/static_transform_publisher', '/map_server'):
+            while (call(['ros2', 'param', 'set', nav2_node, 'use_sim_time', 'True'])):
+                self.get_logger().error("Error couldn't set use_sim_time param on: " +
+                                        nav2_node + ' retrying...')
 
-def test_InitialPose(test_robot,timeout):
+
+def test_InitialPose(test_robot, timeout):
     # Set initial pose to the Turtlebot3 starting position -2, 0, 0, facing towards positive X
     initial_pose = Pose()
     initial_pose.position.x = -2.0
     initial_pose.position.y = -0.5
-    initial_pose.position.z =  0.01
+    initial_pose.position.z = 0.01
     initial_pose.orientation.x = 0.0
     initial_pose.orientation.y = 0.0
     initial_pose.orientation.z = 0.0
     initial_pose.orientation.w = 1.0
-    test_robot.get_logger().info("Setting initial pose")
-    initial_pose_received = False
+    test_robot.get_logger().info('Setting initial pose')
+    test_robot.initial_pose_received = False
     test_robot.setInitialPose(initial_pose)
     quit_time = time.time() + timeout
-    test_robot.get_logger().info("Waiting for initial pose to be received")
+    test_robot.get_logger().info('Waiting for initial pose to be received')
     while not test_robot.initial_pose_received and time.time() < quit_time:
-        rclpy.spin_once(test_robot) # wait for poseCallback
+        rclpy.spin_once(test_robot)  # wait for poseCallback
 
     if (test_robot.initial_pose_received):
-        test_robot.get_logger().info("test_InitialPose PASSED")
+        test_robot.get_logger().info('test_InitialPose PASSED')
     else:
-        test_robot.get_logger().info("test_InitialPose FAILED")
+        test_robot.get_logger().info('test_InitialPose FAILED')
     return test_robot.initial_pose_received
+
 
 def test_RobotMovesToGoal(test_robot):
     goal_pose = Pose()
     goal_pose.position.x = 0.0
     goal_pose.position.y = 2.0
-    goal_pose.position.z =  0.01
+    goal_pose.position.z = 0.01
     goal_pose.orientation.x = 0.0
     goal_pose.orientation.y = 0.0
     goal_pose.orientation.z = 0.0
     goal_pose.orientation.w = 1.0
-    test_robot.get_logger().info("Setting goal pose")
+    test_robot.get_logger().info('Setting goal pose')
     test_robot.setGoalPose(goal_pose)
-    test_robot.get_logger().info("Waiting 30 seconds for robot to reach goal")
+    test_robot.get_logger().info('Waiting 30 seconds for robot to reach goal')
     return test_robot.reachesGoal(timeout=30)
+
 
 def test_all(test_robot):
     # set transforms to use_sim_time
     test_robot.setSimTime()
     result = True
-    if (result): result = test_InitialPose(test_robot, 10)
-    if (result): result = test_RobotMovesToGoal(test_robot)
+    if (result):
+        result = test_InitialPose(test_robot, 10)
+    if (result):
+        result = test_RobotMovesToGoal(test_robot)
     # Add more tests here if desired
     return result
+
 
 def main(argv=sys.argv[1:]):
     rclpy.init()
 
     test_robot = NavTester()
-    test_robot.get_logger().info("Starting test_system_node")
+    test_robot.get_logger().info('Starting test_system_node')
 
     # wait a few seconds to make sure entire stack is up and running
-    test_robot.get_logger().info("Waiting for a few seconds for all nodes to initialize")
-    sleep(5)
+    test_robot.get_logger().info('Waiting for a few seconds for all nodes to initialize')
+    time.sleep(5)
 
     # run tests
-    result =  test_all(test_robot)
+    result = test_all(test_robot)
     if (result):
-        test_robot.get_logger().info("Test PASSED")
+        test_robot.get_logger().info('Test PASSED')
         return 0
     else:
-        test_robot.get_logger().error("Test FAILED")
+        test_robot.get_logger().error('Test FAILED')
         return 1
+
 
 if __name__ == '__main__':
     sys.exit(main())
-
