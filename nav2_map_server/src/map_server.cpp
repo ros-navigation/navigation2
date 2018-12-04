@@ -84,8 +84,8 @@ void MapServer::getParameters()
   try {
     map_type_ = doc_["map_type"].as<std::string>();
   } catch (YAML::Exception) {
-    std::string msg = "'" + yaml_filename_ + "' does not contain a map_type tag or it is invalid";
-    throw std::runtime_error(msg);
+    // Default to occupancy grid if not specified in the YAML file
+    map_type_ = "occupancy";
   }
 }
 
