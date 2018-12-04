@@ -22,6 +22,7 @@
 #include <thread>
 #include <atomic>
 #include <memory>
+#include <deque>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
@@ -45,7 +46,12 @@ public:
     update_stuck_(true),
     spinning_ok_(false),
     new_odom_(false),
-    new_cmd_(false)
+    new_cmd_(false),
+    odom_history_size_(10),
+    cmd_history_size_(10),
+    current_accel_(0.0),
+    minimum_measured_accel_(0.0),
+    brake_accel_limit_(-10.0)
   {
     RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
 
@@ -54,28 +60,29 @@ public:
     //              #383 Once all nodes use the Robot class we can change this as well.
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
-        [this](geometry_msgs::msg::Twist::SharedPtr msg) {
-          std::lock_guard<std::mutex> lock(msg_mutex_);
+      [this](geometry_msgs::msg::Twist::SharedPtr msg) {
 
-          if (current_vel_cmd_ != nullptr) {
-            // Keep track of the previous *different* forward velocity command
-            if (previous_vel_cmd_->linear.x != current_vel_cmd_->linear.x) {
-              previous_vel_cmd_ = current_vel_cmd_;
-            }
-          } else {
-            // We set current and previous to same value at startup
-            previous_vel_cmd_ = msg;
-          }
+        std::lock_guard<std::mutex> lock(msg_mutex_);
 
-          current_vel_cmd_ = msg;
-          new_cmd_ = true;
+        while (cmd_history_.size() >= cmd_history_size_) {
+          cmd_history_.pop_front();
+        }
+
+        cmd_history_.push_back(* msg);
+        new_cmd_ = true;
       }
     );
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
       [this](nav_msgs::msg::Odometry::SharedPtr msg) {
+
         std::lock_guard<std::mutex> lock(msg_mutex_);
-        current_velocity_ = msg;
+
+        while (odom_history_.size() >= odom_history_size_) {
+          odom_history_.pop_front();
+        }
+
+        odom_history_.push_back(* msg);
         new_odom_ = true;
       }
     );
@@ -93,16 +100,16 @@ public:
   BT::NodeStatus tick() override
   {
     if (is_stuck_) {
-      logMessage("tick(): Robot stuck!");
+      logStuck("Robot got stuck!");
       update_stuck_ = true;
       return BT::NodeStatus::SUCCESS;  // Successfully detected a stuck condition
     }
 
-    logMessage("tick(): Robot not stuck");
+    logStuck("Robot is free");
     return BT::NodeStatus::FAILURE;  // Failed to detected a stuck condition
   }
 
-  void logMessage(const std::string & msg) const
+  void logStuck(const std::string & msg) const
   {
     static std::string prev_msg;
 
@@ -135,17 +142,27 @@ public:
       // Spin the node to get messages from the subscriptions
       rclcpp::spin_some(this->get_node_base_interface());
 
+      while (!new_odom_) {
+        RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        rclcpp::spin_some(this->get_node_base_interface());
+      }
+
+      RCLCPP_INFO_ONCE(get_logger(), "Got odometry");
+
+      updateStates();
+
       // Check if the robot got stuck and change state, only if it was already reported
       if (update_stuck_) {
         is_stuck_ = isStuck();
 
-        // TODO(orduno) #383 Move algorithm to the robot class
+        // TODO(orduno) #383 Move algorithm to the robot class, perhaps with the rest of the thread
         // is_stuck_ = robot_.isStuck();
 
-        update_stuck_ = false;
+        if (is_stuck_) {
+          update_stuck_ = false;
+        }
       }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
 
@@ -153,74 +170,48 @@ public:
   {
     std::unique_lock<std::mutex> lock(msg_mutex_);
 
-    if (current_velocity_ == nullptr) {
-      RCLCPP_WARN_ONCE(get_logger(), "Can't check if stuck, "
-      "initial odometry not yet received.");
-      return false;
-    }
-
-    if (current_vel_cmd_ == nullptr) {
-      RCLCPP_WARN_ONCE(get_logger(), "Can't check if stuck, "
-        "velocity commands have not been published.");
-      return false;
-    }
-
-    RCLCPP_INFO_ONCE(get_logger(), "Initial odometry and velocity commands received.");
-
     // TODO(orduno) #400 The robot getting stuck can result on different types of motion
     // depending on the state prior to getting stuck (sudden change in accel, not moving at all,
-    // random oscillations, etc). For now, we only address the case where the commanded velocity
-    // is non-zero but the robot is not accelerating. A better approach is to do a forward
+    // random oscillations, etc). For now, we only address the case where there is a sudden
+    // harsh deceleration. A better approach to capture all situations would be to do a forward
     // simulation of the robot motion and compare it with the actual one.
 
-    #if 0
-
-    // Noise in the odom measurements observed in simulation with Gazebo with Turtlebot3
-    double odom_linear_vel_error = 0.0005;
-
-    // TODO(orduno) assuming the robot is moving forward
-
-    double v1 = current_velocity_->twist.twist.linear.x;
-    std::this_thread::sleep_for(1s);
-    rclcpp::spin_some(this->get_node_base_interface());
-    double v2 = current_velocity_->twist.twist.linear.x;
-
-    if (std::abs(current_vel_cmd_->linear.x) > odom_linear_vel_error) {
-      // Commanded velocity is non-zero
-
-      // TODO(orduno) Check if there was a change in traveling direction
-
-      // Only considering forward velocity
-      double curr_cmd = current_vel_cmd_->linear.x;
-      double prev_cmd = previous_vel_cmd_->linear.x;
-
-      // Assuming smooth velocity commands
-      // TODO(orduno) Address case where the robot is moving backwards
-
-      // Allow velocity fluctuations up to 20% of vel command
-      double tolerance = curr_cmd * 0.2;
-
-      if (curr_cmd >= prev_cmd) {
-        // Robot should be accelerating, it's ok if velocity overshoots command
-        if ((v2 + tolerance + odom_linear_vel_error) < v1) {
-          RCLCPP_WARN(get_logger(),
-            "The robot is not accelerating, previous cmd: %.6f, current cmd: %.6f,"
-            "  v1: %.6f, v2: %.6f", prev_cmd, curr_cmd, v1, v2);
-          return true;
-        }
-      } else {
-        // Robot should be decelerating
-        if ((v2 - tolerance - odom_linear_vel_error) > v1) {
-          RCLCPP_WARN(get_logger(),
-            "The robot is not decelerating, previous cmd: %.6f, current cmd: %.6f,"
-            "  v1: %.6f, v2: %.6f", prev_cmd, curr_cmd, v1, v2);
-          return true;
-        }
-      }
+    // Detect if robot bumped into something by checking for abnormal deceleration
+    if (current_accel_ < brake_accel_limit_)
+    {
+      RCLCPP_INFO_ONCE(get_logger(), "Current acceleration is below brake limit.");
+      return true;
     }
-    #endif
 
     return false;
+  }
+
+  void updateStates()
+  {
+    // Approximate acceleration
+    // TODO(orduno) #400 Smooth out velocity history for better accel approx.
+    if (odom_history_.size() > 2) {
+
+      auto curr_odom = odom_history_.end()[-1];
+      double t2 = static_cast<double>(curr_odom.header.stamp.sec);
+      t2 += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9 ;
+
+      auto prev_odom = odom_history_.end()[-2];
+      double t1 = static_cast<double>(prev_odom.header.stamp.sec);
+      t1 += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9 ;
+
+      double dt = t2 - t1;
+      double vel_diff = static_cast<double>(
+        curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
+      current_accel_ = vel_diff / dt;
+
+      if (current_accel_ < minimum_measured_accel_) {
+        minimum_measured_accel_ = current_accel_;
+        RCLCPP_DEBUG(get_logger(),
+          "Acceleration approximation - dt: %.6f s, vel diff: %.6f m/s, accel: %.6f m/s^2",
+          dt, vel_diff, current_accel_);
+      }
+    }
   }
 
   void halt() override
@@ -241,14 +232,22 @@ private:
 
   // Listen to odometry
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  // The current velocity as received from the Odometry subscription
-  std::shared_ptr<nav_msgs::msg::Odometry> current_velocity_;
+  // Store history of odometry measurements
+  std::deque<nav_msgs::msg::Odometry> odom_history_;
+  std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
 
   // Listen to the controller publishing velocity commands
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
-  // The last velocity command published by the controller
-  std::shared_ptr<geometry_msgs::msg::Twist> current_vel_cmd_;
-  std::shared_ptr<geometry_msgs::msg::Twist> previous_vel_cmd_;
+  // Store history of velocity commands
+  std::deque<geometry_msgs::msg::Twist> cmd_history_;
+  std::deque<geometry_msgs::msg::Twist>::size_type cmd_history_size_;
+
+  // Calculated states
+  double current_accel_;
+  double minimum_measured_accel_;
+
+  // Robot specific paramters
+  double brake_accel_limit_;
 };
 
 }  // namespace nav2_tasks
