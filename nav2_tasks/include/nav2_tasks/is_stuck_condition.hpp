@@ -41,11 +41,16 @@ public:
   {
     RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
 
+    // Capture velocity commands published by other nodes
+    // TODO(orduno) #381 Currently DWB is publishing commands directly, not using the Robot class.
+    //              #383 Once all nodes use the Robot class we can change this as well.
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "cmd_vel",
       [this](geometry_msgs::msg::Twist::SharedPtr msg) {
         if (current_vel_cmd_ != nullptr) {
-          previous_vel_cmd_ = current_vel_cmd_;
+          if (previous_vel_cmd_->linear.x != current_vel_cmd_->linear.x) {
+            previous_vel_cmd_ = current_vel_cmd_;
+          }
         } else {
           previous_vel_cmd_ = msg;
         }
@@ -66,9 +71,6 @@ public:
 
   BT::NodeStatus tick() override
   {
-    // Spin the node to get messages from the subscriptions
-    rclcpp::spin_some(this->get_node_base_interface());
-
     if (isStuck()) {
       logMessage("tick(): Robot stuck!");
       return BT::NodeStatus::SUCCESS;
@@ -80,8 +82,11 @@ public:
 
   bool isStuck()
   {
-    // TODO(orduno) Move algorithm to the robot class
+    // TODO(orduno) #383 Move algorithm to the robot class
     // return robot_.isStuck();
+
+    // Spin the node to get messages from the subscriptions
+    rclcpp::spin_some(this->get_node_base_interface());
 
     if (current_velocity_ == nullptr) {
       RCLCPP_WARN_ONCE(get_logger(), "Initial odometry not yet received.");
@@ -93,52 +98,53 @@ public:
       return false;
     }
 
-    // TODO(orduno) When the robot gets stuck it can have different types of motion
-    // (not moving at all, random oscillations, sudden change in acceletc). For now, we only address the case
-    // where the commanded velocity is non-zero but the robot is not accelerating.
-    // A better approach is to do a forward simulation of the robot motion (corresponding
-    // to the commanded velocity) and compare it with the actual one.
+    // TODO(orduno) #400 The robot getting stuck can result on different types of motion
+    // depending on the state prior to getting stuck (sudden change in accel, not moving at all,
+    // random oscillations, etc). For now, we only address the case where the commanded velocity
+    // is non-zero but the robot is not accelerating. A better approach is to do a forward
+    // simulation of the robot motion and compare it with the actual one.
 
-    // TODO(orduno) replace with actual odom error / vel fluctuation
+    // Noise in the odom measurements observed in simulation with Gazebo with Turtlebot3
+    double odom_linear_vel_error = 0.0005;
 
-    // Tunned using Gazebo + TB3, most of the time is < 0.0005
-    double odom_linear_vel_error = 0.002;
+    // TODO(orduno) assuming the robot is moving forward
 
-    // TODO(orduno) assuming robot is moving forward
+    double v1 = current_velocity_->twist.twist.linear.x;
+    std::this_thread::sleep_for(1s);
+    rclcpp::spin_some(this->get_node_base_interface());
+    double v2 = current_velocity_->twist.twist.linear.x;
 
-    double curr_cmd = current_vel_cmd_->linear.x;
-    double prev_cmd = previous_vel_cmd_->linear.x;
-
-    if (std::abs(curr_cmd) > odom_linear_vel_error) {
+    if (std::abs(current_vel_cmd_->linear.x) > odom_linear_vel_error) {
       // Commanded velocity is non-zero
 
-      double v1 = current_velocity_->twist.twist.linear.x;
-      std::this_thread::sleep_for(1s);
-      rclcpp::spin_some(this->get_node_base_interface());
-      double v2 = current_velocity_->twist.twist.linear.x;
+      // TODO(orduno) Check if there was a change in traveling direction
 
-      // TODO(orduno) Assuming for now smooth velocity commands
-      //              Address case where the robot is moving backwards
+      // Only considering forward velocity
+      double curr_cmd = current_vel_cmd_->linear.x;
+      double prev_cmd = previous_vel_cmd_->linear.x;
+
+      // Assuming smooth velocity commands
+      // TODO(orduno) Address case where the robot is moving backwards
+
+      // Allow velocity fluctuations up to 20% of vel command
+      double tolerance = curr_cmd * 0.2;
+
       if (curr_cmd >= prev_cmd) {
-        // Robot should be accelerating
-        if ((v2 + odom_linear_vel_error) < v1) {
+        // Robot should be accelerating, it's ok if velocity overshoots command
+        if ((v2 + tolerance + odom_linear_vel_error) < v1) {
           RCLCPP_WARN(get_logger(),
-            "The robot is not accelerating,"
-            " previous cmd: %.1f, current cmd: %.1f,"
-            "  v1: %.6f, v2: %.6f"
-            , curr_cmd, prev_cmd, v1, v2);
+            "The robot is not accelerating, previous cmd: %.6f, current cmd: %.6f,"
+            "  v1: %.6f, v2: %.6f", prev_cmd, curr_cmd, v1, v2);
           return true;
         }
       } else {
-        // Robot should be decelerating
-        if ((v2 - odom_linear_vel_error) > v1) {
-          RCLCPP_WARN(get_logger(),
-            "The robot is not decelerating,"
-            " previous cmd: %.1f, current cmd: %.1f,"
-            "  v1: %.6f, v2: %.6f"
-            , curr_cmd, prev_cmd, v1, v2);
-          return true;
-        }
+        // // Robot should be decelerating
+        // if ((v2 - tolerance - odom_linear_vel_error) > v1) {
+        //   RCLCPP_WARN(get_logger(),
+        //     "The robot is not decelerating, previous cmd: %.6f, current cmd: %.6f,"
+        //     "  v1: %.6f, v2: %.6f", prev_cmd, curr_cmd, v1, v2);
+        //   return true;
+        // }
       }
     }
 
