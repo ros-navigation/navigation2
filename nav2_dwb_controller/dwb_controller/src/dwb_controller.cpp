@@ -59,9 +59,11 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
+
     planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
+
     while (true) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
@@ -75,6 +77,8 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity");
+
+        // Check if this task has been canceled
         if (task_server_->cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
           task_server_->setCanceled();
@@ -90,7 +94,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
           task_server_->getCommandUpdate(path_cmd);
           task_server_->setUpdated();
 
-          // Pass it to the local planner
+          // and pass it to the local planner
           auto path = nav_2d_utils::pathToPath2D(*path_cmd);
           planner_.setPlan(path);
         }

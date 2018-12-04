@@ -21,7 +21,6 @@
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_robot/robot.hpp"
 
 namespace nav2_simple_navigator
 {
@@ -35,7 +34,6 @@ public:
   nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
 private:
-  std::unique_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;

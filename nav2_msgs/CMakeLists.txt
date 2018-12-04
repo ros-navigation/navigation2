@@ -20,7 +20,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/Path.msg"
-  "msg/PathEndPoints.msg"
   "msg/MissionPlan.msg"
   "msg/TaskStatus.msg"
   "msg/VoxelGrid.msg"

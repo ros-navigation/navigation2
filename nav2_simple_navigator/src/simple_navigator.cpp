@@ -32,8 +32,6 @@ SimpleNavigator::SimpleNavigator()
 
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
-  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
   planner_client_ =
     std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
 
@@ -53,35 +51,22 @@ SimpleNavigator::~SimpleNavigator()
 TaskStatus
 SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Begin navigating to (%.2f, %.2f)",
+  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
 
-  // Get the current pose from the robot
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-
-  if (!robot_->getCurrentPose(current_pose)) {
-    // TODO(mhpanah): use either last known pose, current pose from odom, wait, or try again.
-    RCLCPP_WARN(get_logger(), "Current robot pose is not available.");
-    return TaskStatus::FAILED;
-  }
-
-  // Create a PathEndPoints message for the global planner
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-  endpoints->start = current_pose->pose.pose;
-  endpoints->goal = command->pose;
-  endpoints->tolerance = 2.0;  // TODO(mjeronimo): this will come in the command message
+  // Create the path to be returned from ComputePath and sent to the FollowPath task
+  auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
-  RCLCPP_DEBUG(get_logger(), "goal.position.x: %f", endpoints->goal.position.x);
-  RCLCPP_DEBUG(get_logger(), "goal.position.y: %f", endpoints->goal.position.y);
-  RCLCPP_DEBUG(get_logger(), "goal.position.z: %f", endpoints->goal.position.z);
-  RCLCPP_DEBUG(get_logger(), "goal.orientation.x: %f", endpoints->goal.orientation.x);
-  RCLCPP_DEBUG(get_logger(), "goal.orientation.y: %f", endpoints->goal.orientation.y);
-  RCLCPP_DEBUG(get_logger(), "goal.orientation.z: %f", endpoints->goal.orientation.z);
-  RCLCPP_DEBUG(get_logger(), "goal.orientation.w: %f", endpoints->goal.orientation.w);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.position.x: %f", command->pose.position.x);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.position.y: %f", command->pose.position.y);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.position.z: %f", command->pose.position.z);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.x: %f", command->pose.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.y: %f", command->pose.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.z: %f", command->pose.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.w: %f", command->pose.orientation.w);
 
-  auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  planner_client_->sendCommand(endpoints);
+  planner_client_->sendCommand(command);
 
   // Loop until the subtasks are completed
   for (;; ) {

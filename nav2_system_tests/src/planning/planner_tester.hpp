@@ -51,7 +51,7 @@ public:
   // Sucess criteria is a collision free path.
   // TODO(orduno): assuming a robot the size of a costmap cell
   bool plannerTest(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path);
 
   // Sends the request to the planner and gets the result.
@@ -74,7 +74,7 @@ private:
   void startCostmapServer(std::string serviceName);
 
   nav2_tasks::TaskStatus sendRequest(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
+    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path
   );
 

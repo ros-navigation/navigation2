@@ -40,7 +40,6 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_msgs
-  nav2_robot
   behaviortree_cpp
 )
 
