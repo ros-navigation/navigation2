@@ -24,9 +24,9 @@ import launch.actions
 import launch_ros.actions
 from launch_testing import LaunchTestService
 
+
 def generate_launch_description():
-    map_file = os.getenv('TEST_MAP')
-    map_type = 'occupancy'
+    map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
     use_sim_time = True
 
@@ -36,7 +36,7 @@ def generate_launch_description():
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
             output='screen'),
 
-    # Launch navigation2 nodes
+        # Launch navigation2 nodes
         launch_ros.actions.Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
@@ -52,57 +52,60 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
+            node_name='map_server',
             output='screen',
-            arguments=[map_file, map_type]),
+            parameters=[{'use_sim_time': use_sim_time}, {'yaml_filename': map_yaml_file}]),
 
         launch_ros.actions.Node(
             package='nav2_amcl',
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_world_model',
             node_executable='world_model',
             node_name='world_model',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             node_name='FollowPathNode',
             output='screen',
-            parameters=[{ 'prune_plan': False }, {'debug_trajectory_details': True }, { 'use_sim_time': use_sim_time }]),
+            parameters=[{'prune_plan': False}, {'debug_trajectory_details': True},
+                        {'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_simple_navigator',
             node_executable='simple_navigator',
             node_name='simple_navigator',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_mission_executor',
             node_executable='mission_executor',
             node_name='mission_executor',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
-        ])
+            parameters=[{'use_sim_time': use_sim_time}]),
+    ])
+
 
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'),'test_system_node.py')],
+        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_system_node.py')],
         name='test_system_node',
         output='screen')
 
