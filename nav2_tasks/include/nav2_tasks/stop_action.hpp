@@ -82,29 +82,9 @@ public:
       start_time = std::chrono::system_clock::now();
       new_call = false;
       RCLCPP_INFO(node_->get_logger(), "StopAction: stabilizing robot");
-
-      // return BT::NodeStatus::RUNNING;
     }
 
     // TODO(orduno) What should this node return for a long running action
-
-    // Give some time to the robot to get stable
-    // TODO(orduno) Use the robot interface instead
-    // robot_.waitUntilStable();
-
-    // auto current_time = std::chrono::system_clock::now();
-    // std::chrono::duration<double> elapsed_time = current_time - start_time;
-    // std::chrono::duration<double> hold_still_time(5);
-    // std::chrono::duration<double> remaining = hold_still_time - elapsed_time;
-
-    // if (elapsed_time < hold_still_time) {
-    //   RCLCPP_INFO(get_logger(), "tick:: %.2f seconds remaining.",
-    //     remaining.count());
-    //   return BT::NodeStatus::RUNNING;
-    // }
-
-    // RCLCPP_INFO(get_logger(), "tick:: completed");
-    // new_call = true;
 
     auto sleep_time = 5s;
     RCLCPP_INFO(node_->get_logger(), "StopAction: sleeping for %d seconds",

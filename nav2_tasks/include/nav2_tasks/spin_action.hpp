@@ -35,6 +35,10 @@ public:
   explicit SpinAction(const std::string & action_name)
   : BtActionNode<SpinCommand, SpinResult>(action_name)
   {
+  }
+
+  void onInit() override
+  {
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::SpinCommand>();
     result_ = std::make_shared<nav2_tasks::SpinResult>();
