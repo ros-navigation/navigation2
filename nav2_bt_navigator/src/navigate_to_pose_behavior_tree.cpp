@@ -18,6 +18,11 @@
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/rate_controller_node.hpp"
+#include "nav2_tasks/is_stuck_condition.hpp"
+#include "nav2_tasks/stop_action.hpp"
+#include "nav2_tasks/back_up_action.hpp"
+#include "nav2_tasks/spin_action.hpp"
+
 
 using namespace std::chrono_literals;
 
@@ -30,6 +35,12 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   // Register our custom action nodes so that they can be included in XML description
   factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
   factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
+  factory_.registerNodeType<nav2_tasks::StopAction>("Stop");
+  factory_.registerNodeType<nav2_tasks::BackUpAction>("BackUp");
+  factory_.registerNodeType<nav2_tasks::SpinAction>("Spin");
+
+  // Register our custom condition nodes
+  factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
 
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
