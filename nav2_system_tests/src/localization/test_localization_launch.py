@@ -18,12 +18,10 @@ import os
 import sys
 
 from launch import LaunchDescription
-import launch_ros.actions
-import launch.actions
 from launch import LaunchService
+import launch.actions
 from launch.actions import ExecuteProcess
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+import launch_ros.actions
 from launch_testing import LaunchTestService
 
 
@@ -31,7 +29,7 @@ def main(argv=sys.argv[1:]):
     mapFile = os.getenv('TEST_MAP')
     testExecutable = os.getenv('TEST_EXECUTABLE')
     world = os.getenv('TEST_WORLD')
-       
+
     launch_gazebo = launch.actions.ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
         output='screen')
@@ -48,8 +46,9 @@ def main(argv=sys.argv[1:]):
     run_map_server = launch_ros.actions.Node(
         package='nav2_map_server',
         node_executable='map_server',
+        node_name='map_server',
         output='screen',
-        arguments=[[mapFile], 'occupancy'])
+        parameters=[{'yaml_filename': mapFile}])
     run_amcl = launch_ros.actions.Node(
         package='nav2_amcl',
         node_executable='amcl',
