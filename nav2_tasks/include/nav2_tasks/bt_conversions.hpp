@@ -16,7 +16,8 @@
 #define NAV2_TASKS__BT_CONVERSIONS_HPP_
 
 #include <string>
-#include "behavior_tree_core/behavior_tree.h"
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard/blackboard.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/msg/path.hpp"
@@ -29,25 +30,25 @@ namespace BT
 // but are not actually called. TODO(mjeronimo): See if we can avoid these.
 
 template<>
-inline rclcpp::Node::SharedPtr convertFromString(const std::string & /*key*/)
+inline rclcpp::Node::SharedPtr convertFromString(const StringView & /*key*/)
 {
   return nullptr;
 }
 
 template<>
-inline std::chrono::milliseconds convertFromString(const std::string & /*key*/)
+inline std::chrono::milliseconds convertFromString(const StringView & /*key*/)
 {
   return std::chrono::milliseconds(0);
 }
 
 template<>
-inline nav2_msgs::msg::Path::SharedPtr convertFromString(const std::string & /*key*/)
+inline nav2_msgs::msg::Path::SharedPtr convertFromString(const StringView & /*key*/)
 {
   return nullptr;
 }
 
 template<>
-inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const std::string & /*key*/)
+inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const StringView & /*key*/)
 {
   return nullptr;
 }
@@ -55,7 +56,7 @@ inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const std::str
 // These are needed to be able to set parameters for these types in the BT XML
 
 template<>
-inline geometry_msgs::msg::Point convertFromString(const std::string & key)
+inline geometry_msgs::msg::Point convertFromString(const StringView & key)
 {
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
@@ -71,7 +72,7 @@ inline geometry_msgs::msg::Point convertFromString(const std::string & key)
 }
 
 template<>
-inline geometry_msgs::msg::Quaternion convertFromString(const std::string & key)
+inline geometry_msgs::msg::Quaternion convertFromString(const StringView & key)
 {
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');

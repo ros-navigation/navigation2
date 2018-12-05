@@ -22,8 +22,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/task_client.hpp"
-#include "behavior_tree_core/action_node.h"
-#include "behavior_tree_core/bt_factory.h"
+#include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 namespace nav2_tasks
 {

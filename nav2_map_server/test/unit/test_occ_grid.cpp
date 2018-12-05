@@ -33,8 +33,10 @@
 #include <experimental/filesystem>
 #include <stdexcept>
 #include <string>
+#include <vector>
+#include <memory>
 
-#include "nav2_map_server/map_representations/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_loader.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -42,28 +44,51 @@
 using namespace std; // NOLINT
 using std::experimental::filesystem::path;
 
-class OccGridTest : public nav2_map_server::OccGridServer
+class RclCppFixture
 {
 public:
-  OccGridTest() {}
-  ~OccGridTest() {}
-
-  nav_msgs::srv::GetMap::Response GetMap() {return occ_resp_;}
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 
-class MapServerTest : public ::testing::Test
+RclCppFixture g_rclcppfixture;
+
+class TestMapLoader : public nav2_map_server::OccGridLoader
 {
 public:
-  MapServerTest()
+  explicit TestMapLoader(rclcpp::Node * node, YAML::Node & doc)
+  : OccGridLoader(node, doc)
   {
-    OccTest = new OccGridTest;
-    auto test_yaml = path(TEST_DIR) / path(g_valid_yaml_file);
-    OccTest->LoadMapInfoFromFile(test_yaml.string());
+  }
+
+  nav_msgs::msg::OccupancyGrid getOccupancyGrid()
+  {
+    return msg_;
+  }
+};
+
+class MapLoaderTest : public ::testing::Test
+{
+public:
+  MapLoaderTest()
+  {
+    // Set up a fake YAML document with the required fields
+    doc_["resolution"] = "0.1";
+    doc_["origin"][0] = "2.0";
+    doc_["origin"][1] = "3.0";
+    doc_["origin"][2] = "1.0";
+    doc_["negate"] = "0";
+    doc_["occupied_thresh"] = "0.65";
+    doc_["free_thresh"] = "0.196";
+
+    node_ = std::make_shared<rclcpp::Node>("map_server");
+    map_loader_ = new TestMapLoader(node_.get(), doc_);
   }
 
 protected:
-  OccGridTest * OccTest;
-  nav_msgs::srv::GetMap::Response map_resp;
+  rclcpp::Node::SharedPtr node_;
+  TestMapLoader * map_loader_;
+  YAML::Node doc_;
 };
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
@@ -72,43 +97,44 @@ protected:
  * This test can fail on OS X, due to an apparent limitation of the
  * underlying SDL_Image library. */
 
-TEST_F(MapServerTest, loadValidPNG)
+TEST_F(MapLoaderTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
-  ASSERT_NO_THROW(OccTest->LoadMapFromFile(test_png.string()));
-  OccTest->SetMap();
-  map_resp = OccTest->GetMap();
 
-  EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-  EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-  EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-  for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
-    EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string()));
+  nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
+
+  EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
+  EXPECT_EQ(map_msg.info.width, g_valid_image_width);
+  EXPECT_EQ(map_msg.info.height, g_valid_image_height);
+  for (unsigned int i = 0; i < map_msg.info.width * map_msg.info.height; i++) {
+    EXPECT_EQ(g_valid_image_content[i], map_msg.data[i]);
   }
 }
 
 /* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
  * the loaded image matches the known dimensions and content of the file. */
 
-TEST_F(MapServerTest, loadValidBMP)
+TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
-  ASSERT_NO_THROW(OccTest->LoadMapFromFile(test_bmp.string()));
-  OccTest->SetMap();
-  map_resp = OccTest->GetMap();
 
-  EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
-  EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
-  EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
-  for (unsigned int i = 0; i < map_resp.map.info.width * map_resp.map.info.height; i++) {
-    EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
+  nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
+
+  EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
+  EXPECT_EQ(map_msg.info.width, g_valid_image_width);
+  EXPECT_EQ(map_msg.info.height, g_valid_image_height);
+  for (unsigned int i = 0; i < map_msg.info.width * map_msg.info.height; i++) {
+    EXPECT_EQ(g_valid_image_content[i], map_msg.data[i]);
   }
 }
 
 /* Try to load an invalid file.  Succeeds if a std::runtime exception is thrown */
 
-TEST_F(MapServerTest, loadInvalidFile)
+TEST_F(MapLoaderTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
-  ASSERT_THROW(OccTest->LoadMapFromFile(test_invalid.string()), std::runtime_error);
+  ASSERT_THROW(map_loader_->loadMapFromFile(test_invalid.string()), std::runtime_error);
 }

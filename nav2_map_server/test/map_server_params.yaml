@@ -1,0 +1,3 @@
+map_server:
+    ros__parameters:
+        yaml_filename: "../testmap.yaml"

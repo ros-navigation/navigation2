@@ -204,7 +204,7 @@ void Costmap2DROS::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "Costmap2DROS:: Event Callback");
 
-  get_parameter("transform_tolerance", transform_tolerance_);
+  dynamic_param_client_->get_event_param("transform_tolerance", transform_tolerance_);
 
   if (map_update_thread_ != NULL)
   {
@@ -214,10 +214,10 @@ void Costmap2DROS::reconfigureCB()
   }
   map_update_thread_shutdown_ = false;
   double map_update_frequency = 1.0;
-  get_parameter("update_frequency", map_update_frequency);
+  dynamic_param_client_->get_event_param("update_frequency", map_update_frequency);
 
   double map_publish_frequency = 5.0;
-  get_parameter("publish_frequency", map_publish_frequency);
+  dynamic_param_client_->get_event_param("publish_frequency", map_publish_frequency);
 
   if (map_publish_frequency > 0)
     publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency);
@@ -228,11 +228,11 @@ void Costmap2DROS::reconfigureCB()
   double resolution, origin_x, origin_y;
   int map_width_meters, map_height_meters;
 
-  get_parameter("width", map_width_meters);
-  get_parameter("height", map_height_meters);
-  get_parameter("resolution", resolution);
-  get_parameter("origin_x", origin_x);
-  get_parameter("origin_y", origin_y);
+  dynamic_param_client_->get_event_param("width", map_width_meters);
+  dynamic_param_client_->get_event_param("height", map_height_meters);
+  dynamic_param_client_->get_event_param("resolution", resolution);
+  dynamic_param_client_->get_event_param("origin_x", origin_x);
+  dynamic_param_client_->get_event_param("origin_y", origin_y);
 
   if (!layered_costmap_->isSizeLocked())
   {
@@ -243,7 +243,7 @@ void Costmap2DROS::reconfigureCB()
   // If the padding has changed, call setUnpaddedRobotFootprint() to
   // re-apply the padding.
   float footprint_padding;
-  node_->get_parameter("footprint_padding", footprint_padding);
+  dynamic_param_client_->get_event_param("footprint_padding", footprint_padding);
 
   if (footprint_padding_ != footprint_padding)
   {
@@ -265,8 +265,8 @@ void Costmap2DROS::readFootprintFromConfig()
 
   std::string footprint;
   double robot_radius;
-  get_parameter("footprint", footprint);
-  get_parameter("robot_radius", robot_radius);
+  dynamic_param_client_->get_event_param("footprint", footprint);
+  dynamic_param_client_->get_event_param("robot_radius", robot_radius);
 
   if (footprint != "" && footprint != "[]")
   {

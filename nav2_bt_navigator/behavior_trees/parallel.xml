@@ -19,7 +19,7 @@
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
       <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-      <Parallel threshold_M="1">
+      <ParallelNode threshold="1">
         <FollowPath path="${path}"/>
         <Sequence>
           <RateController hz="2">
@@ -27,7 +27,7 @@
           </RateController>
           <UpdatePath/>
         </Sequence>
-      </Parallel>
+      </ParallelNode>
     </SequenceStar>
   </BehaviorTree>
 </root>

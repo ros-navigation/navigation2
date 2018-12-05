@@ -28,5 +28,5 @@ script:
   - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
       colcon test --packages-skip dwb_controller nav2_costmap_2d
         nav2_dynamic_params nav2_map_server nav2_navfn_planner nav2_robot nav2_system_tests
-        nav2_tasks nav2_util'
+        nav2_tasks'
   - docker exec nav2_bash bash -c "colcon test-result --verbose"

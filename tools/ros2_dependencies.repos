@@ -1,12 +1,8 @@
 repositories:
-  ros2_message_filters:
-    type: git
-    url: https://github.com/intel/ros2_message_filters.git
-    version: master
   behavior_tree_core:
     type: git
-    url: https://github.com/mjeronimo/BehaviorTree.CPP
-    version: master
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 5904431
   angles:
     type: git
     url: https://github.com/ros/angles.git

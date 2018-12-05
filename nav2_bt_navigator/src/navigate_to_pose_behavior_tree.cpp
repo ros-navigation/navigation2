@@ -38,9 +38,6 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerSimpleAction("UpdatePath",
     std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
-  // The parallel node is not yet registered in the BehaviorTree.CPP library
-  factory_.registerNodeType<BT::ParallelNode>("Parallel");
-
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
 }
 
