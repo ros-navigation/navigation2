@@ -38,14 +38,16 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_HPP_
 
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include <algorithm>
 #include <cmath>
+#include <string>
 #include <vector>
 #include <queue>
 #include <mutex>
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <geometry_msgs/msg/point.hpp>
+#include "geometry_msgs/msg/point.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -75,8 +77,9 @@ public:
    * @param  origin_y The y origin of the map
    * @param  default_value Default Value
    */
-  Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, double resolution,
-      double origin_x, double origin_y, unsigned char default_value = 0);
+  Costmap2D(
+    unsigned int cells_size_x, unsigned int cells_size_y, double resolution,
+    double origin_x, double origin_y, unsigned char default_value = 0);
 
   /**
    * @brief  Copy constructor for a costmap, creates a copy efficiently
@@ -99,9 +102,10 @@ public:
    * @param win_size_x The x size of the window, in meters
    * @param win_size_y The y size of the window, in meters
    */
-  bool copyCostmapWindow(const Costmap2D & map, double win_origin_x, double win_origin_y,
-      double win_size_x,
-      double win_size_y);
+  bool copyCostmapWindow(
+    const Costmap2D & map, double win_origin_x, double win_origin_y,
+    double win_size_x,
+    double win_size_y);
 
   /**
    * @brief  Default constructor
@@ -255,24 +259,27 @@ public:
    * @param cost_value The value to set costs to
    * @return True if the polygon was filled... false if it could not be filled
    */
-  bool setConvexPolygonCost(const std::vector<geometry_msgs::msg::Point> & polygon,
-      unsigned char cost_value);
+  bool setConvexPolygonCost(
+    const std::vector<geometry_msgs::msg::Point> & polygon,
+    unsigned char cost_value);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
    * @param polygon The polygon in map coordinates to rasterize
    * @param polygon_cells Will be set to the cells contained in the outline of the polygon
    */
-  void polygonOutlineCells(const std::vector<MapLocation> & polygon,
-      std::vector<MapLocation> & polygon_cells);
+  void polygonOutlineCells(
+    const std::vector<MapLocation> & polygon,
+    std::vector<MapLocation> & polygon_cells);
 
   /**
    * @brief  Get the map cells that fill a convex polygon
    * @param polygon The polygon in map coordinates to rasterize
    * @param polygon_cells Will be set to the cells that fill the polygon
    */
-  void convexFillCells(const std::vector<MapLocation> & polygon,
-      std::vector<MapLocation> & polygon_cells);
+  void convexFillCells(
+    const std::vector<MapLocation> & polygon,
+    std::vector<MapLocation> & polygon_cells);
 
   /**
    * @brief  Move the origin of the costmap to a new location.... keeping data when it can
@@ -287,8 +294,9 @@ public:
    */
   bool saveMap(std::string file_name);
 
-  void resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
-      double origin_y);
+  void resizeMap(
+    unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
+    double origin_y);
 
   void resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn);
 
@@ -321,11 +329,12 @@ protected:
    * @param region_size_y The y size of the region to copy
    */
   template<typename data_type>
-  void copyMapRegion(data_type * source_map, unsigned int sm_lower_left_x,
-      unsigned int sm_lower_left_y,
-      unsigned int sm_size_x, data_type * dest_map, unsigned int dm_lower_left_x,
-      unsigned int dm_lower_left_y, unsigned int dm_size_x, unsigned int region_size_x,
-      unsigned int region_size_y)
+  void copyMapRegion(
+    data_type * source_map, unsigned int sm_lower_left_x,
+    unsigned int sm_lower_left_y,
+    unsigned int sm_size_x, data_type * dest_map, unsigned int dm_lower_left_x,
+    unsigned int dm_lower_left_y, unsigned int dm_size_x, unsigned int region_size_x,
+    unsigned int region_size_y)
   {
     // we'll first need to compute the starting points for each map
     data_type * sm_index = source_map + (sm_lower_left_y * sm_size_x + sm_lower_left_x);
@@ -366,9 +375,10 @@ protected:
    * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
    */
   template<class ActionType>
-  inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1,
-      unsigned int y1,
-      unsigned int max_length = UINT_MAX)
+  inline void raytraceLine(
+    ActionType at, unsigned int x0, unsigned int y0, unsigned int x1,
+    unsigned int y1,
+    unsigned int max_length = UINT_MAX)
   {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -381,7 +391,8 @@ protected:
 
     unsigned int offset = y0 * size_x_ + x0;
 
-    // we need to chose how much to scale our dominant dimension, based on the maximum length of the line
+    // we need to chose how much to scale our dominant dimension,
+    // based on the maximum length of the line
     double dist = std::hypot(dx, dy);
     double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
 
@@ -389,14 +400,14 @@ protected:
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
       bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
-          (unsigned int)(scale * abs_dx));
+        (unsigned int)(scale * abs_dx));
       return;
     }
 
     // otherwise y is dominant
     int error_x = abs_dy / 2;
     bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
-        (unsigned int)(scale * abs_dy));
+      (unsigned int)(scale * abs_dy));
   }
 
 private:
@@ -404,10 +415,11 @@ private:
    * @brief  A 2D implementation of Bresenham's raytracing algorithm... applies an action at each step
    */
   template<class ActionType>
-  inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b,
-      int offset_a,
-      int offset_b, unsigned int offset,
-      unsigned int max_length)
+  inline void bresenham2D(
+    ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b,
+    int offset_a,
+    int offset_b, unsigned int offset,
+    unsigned int max_length)
   {
     unsigned int end = std::min(max_length, abs_da);
     for (unsigned int i = 0; i < end; ++i) {
@@ -442,7 +454,7 @@ protected:
   {
 public:
     MarkCell(unsigned char * costmap, unsigned char value)
-      : costmap_(costmap), value_(value)
+    : costmap_(costmap), value_(value)
     {
     }
     inline void operator()(unsigned int offset)
@@ -458,9 +470,10 @@ private:
   class PolygonOutlineCells
   {
 public:
-    PolygonOutlineCells(const Costmap2D & costmap, const unsigned char * char_map,
-        std::vector<MapLocation> & cells)
-      : costmap_(costmap), char_map_(char_map), cells_(cells)
+    PolygonOutlineCells(
+      const Costmap2D & costmap, const unsigned char * char_map,
+      std::vector<MapLocation> & cells)
+    : costmap_(costmap), char_map_(char_map), cells_(cells)
     {
     }
 
@@ -480,4 +493,4 @@ private:
 };
 }  // namespace nav2_costmap_2d
 
-#endif // NAV2_COSTMAP_2D__COSTMAP_2D_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_HPP_

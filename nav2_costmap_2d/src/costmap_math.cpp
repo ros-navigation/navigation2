@@ -29,6 +29,8 @@
 
 #include <nav2_costmap_2d/costmap_math.hpp>
 
+#include <vector>
+
 double distanceToLine(double pX, double pY, double x0, double y0, double x1, double y1)
 {
   double A = pX - x0;
@@ -70,7 +72,8 @@ bool intersects(std::vector<geometry_msgs::msg::Point> & polygon, float testx, f
   return c;
 }
 
-bool intersects_helper(std::vector<geometry_msgs::msg::Point> & polygon1,
+bool intersects_helper(
+  std::vector<geometry_msgs::msg::Point> & polygon1,
   std::vector<geometry_msgs::msg::Point> & polygon2)
 {
   for (unsigned int i = 0; i < polygon1.size(); i++) {
@@ -81,7 +84,8 @@ bool intersects_helper(std::vector<geometry_msgs::msg::Point> & polygon1,
   return false;
 }
 
-bool intersects(std::vector<geometry_msgs::msg::Point> & polygon1,
+bool intersects(
+  std::vector<geometry_msgs::msg::Point> & polygon1,
   std::vector<geometry_msgs::msg::Point> & polygon2)
 {
   return intersects_helper(polygon1, polygon2) || intersects_helper(polygon2, polygon1);

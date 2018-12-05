@@ -35,10 +35,14 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
+#include "nav2_costmap_2d/voxel_layer.hpp"
+
 #include <assert.h>
-#include <nav2_costmap_2d/voxel_layer.hpp>
-#include <pluginlib/class_list_macros.hpp>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <algorithm>
+#include <vector>
+
+#include "pluginlib/class_list_macros.hpp"
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 
 #define VOXEL_BITS 16
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::VoxelLayer, nav2_costmap_2d::Layer)
@@ -71,25 +75,28 @@ void VoxelLayer::onInitialize()
   custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
 
   if (publish_voxel_) {
-    voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>("voxel_grid", custom_qos_profile);
+    voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+      "voxel_grid", custom_qos_profile);
   }
 
-  clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>("clearing_endpoints", custom_qos_profile);
+  clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
+    "clearing_endpoints", custom_qos_profile);
 }
 
 void VoxelLayer::setupDynamicReconfigure()
 {
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
   dynamic_param_client_->add_parameters({
-    name_ + "." + "enabled",
-    name_ + "." + "footprint_clearing_enabled",
-    name_ + "." + "max_obstacle_height",
-    name_ + "." + "z_voxels",
-    name_ + "." + "origin_z",
-    name_ + "." + "z_resolution",
-    name_ + "." + "unknown_threshold",
-    name_ + "." + "mark_threshold",
-    name_ + "." + "combination_method"});
+      name_ + "." + "enabled",
+      name_ + "." + "footprint_clearing_enabled",
+      name_ + "." + "max_obstacle_height",
+      name_ + "." + "z_voxels",
+      name_ + "." + "origin_z",
+      name_ + "." + "z_resolution",
+      name_ + "." + "unknown_threshold",
+      name_ + "." + "mark_threshold",
+      name_ + "." + "combination_method"
+    });
 
   dynamic_param_client_->set_callback(std::bind(&VoxelLayer::reconfigureCB, this));
 }
@@ -136,8 +143,9 @@ void VoxelLayer::resetMaps()
   voxel_grid_.reset();
 }
 
-void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-    double * min_y, double * max_x, double * max_y)
+void VoxelLayer::updateBounds(
+  double robot_x, double robot_y, double robot_yaw, double * min_x,
+  double * min_y, double * max_x, double * max_y)
 {
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
@@ -166,7 +174,7 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end();
-      ++it)
+    ++it)
   {
     const Observation & obs = *it;
 
@@ -186,8 +194,8 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
 
       // compute the squared distance from the hitpoint to the pointcloud's origin
       double sq_dist = (*iter_x - obs.origin_.x) * (*iter_x - obs.origin_.x) +
-          (*iter_y - obs.origin_.y) * (*iter_y - obs.origin_.y) +
-          (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
+        (*iter_y - obs.origin_.y) * (*iter_y - obs.origin_.y) +
+        (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range) {
@@ -209,7 +217,8 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
-        touch(double(*iter_x), double(*iter_y), min_x, min_y, max_x, max_y);
+        touch(static_cast<double>(*iter_x), static_cast<double>(*iter_y),
+          min_x, min_y, max_x, max_y);
       }
     }
   }
@@ -238,8 +247,9 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y,
-    bool clear_no_info)
+void VoxelLayer::clearNonLethal(
+  double wx, double wy, double w_size_x, double w_size_y,
+  bool clear_no_info)
 {
   // get the cell coordinates of the center point of the window
   unsigned int mx, my;
@@ -268,12 +278,14 @@ void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_
     return;
   }
 
-  // we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
+  // we know that we want to clear all non-lethal obstacles in this
+  // window to get it ready for inflation
   unsigned int index = getIndex(map_sx, map_sy);
   unsigned char * current = &costmap_[index];
   for (unsigned int j = map_sy; j <= map_ey; ++j) {
     for (unsigned int i = map_sx; i <= map_ex; ++i) {
-      // if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
+      // if the cell is a lethal obstacle... we'll keep it and queue it,
+      // otherwise... we'll clear it
       if (*current != LETHAL_OBSTACLE) {
         if (clear_no_info || *current != NO_INFORMATION) {
           *current = FREE_SPACE;
@@ -288,13 +300,14 @@ void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_
   }
 }
 
-void VoxelLayer::raytraceFreespace(const Observation & clearing_observation, double * min_x,
-    double * min_y,
-    double * max_x,
-    double * max_y)
+void VoxelLayer::raytraceFreespace(
+  const Observation & clearing_observation, double * min_x,
+  double * min_y,
+  double * max_x,
+  double * max_y)
 {
   size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
-      clearing_observation.cloud_->width;
+    clearing_observation.cloud_->width;
   if (clearing_observation_cloud_size == 0) {
     return;
   }
@@ -306,7 +319,7 @@ void VoxelLayer::raytraceFreespace(const Observation & clearing_observation, dou
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(node_->get_logger(),
-      "The origin for the sensor at (%.2f, %.2f, %.2f) is out of map bounds. So, the costmap cannot raytrace for it.",
+      "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
       ox, oy, oz);
     return;
   }
@@ -346,9 +359,8 @@ void VoxelLayer::raytraceFreespace(const Observation & clearing_observation, dou
     if (wpz > max_obstacle_height_) {
       // we know we want the vector's z value to be max_z
       t = std::max(0.0, std::min(t, (max_obstacle_height_ - 0.01 - oz) / c));
-    }
-    // and we can only raytrace down to the floor
-    else if (wpz < origin_z_) {
+    } else if (wpz < origin_z_) {
+      // and we can only raytrace down to the floor
       // we know we want the vector's z value to be 0.0
       t = std::min(t, (origin_z_ - oz) / c);
     }
@@ -379,13 +391,13 @@ void VoxelLayer::raytraceFreespace(const Observation & clearing_observation, dou
 
       // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
       voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
-          costmap_,
-          unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
-          cell_raytrace_range);
+        costmap_,
+        unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
+        cell_raytrace_range);
 
       updateRaytraceBounds(ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y,
-          max_x,
-          max_y);
+        max_x,
+        max_y);
 
       if (publish_clearing_points) {
         geometry_msgs::msg::Point32 point;
@@ -409,8 +421,8 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
 {
   // project the new origin into the grid
   int cell_ox, cell_oy;
-  cell_ox = int((new_origin_x - origin_x_) / resolution_);
-  cell_oy = int((new_origin_y - origin_y_) / resolution_);
+  cell_ox = static_cast<int>((new_origin_x - origin_x_) / resolution_);
+  cell_oy = static_cast<int>((new_origin_y - origin_y_) / resolution_);
 
   // compute the associated world coordinates for the origin cell
   // beacuase we want to keep things grid-aligned
@@ -439,11 +451,11 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
 
   // copy the local window in the costmap to the local map
   copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
-      cell_size_x,
-      cell_size_y);
+    cell_size_x,
+    cell_size_y);
   copyMapRegion(voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x,
-      cell_size_x,
-      cell_size_y);
+    cell_size_x,
+    cell_size_y);
 
   // we'll reset our maps to unknown space if appropriate
   resetMaps();
@@ -458,10 +470,10 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
 
   // now we want to copy the overlapping information back into the map, but in its new location
   copyMapRegion(local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
-      cell_size_y);
+    cell_size_y);
   copyMapRegion(local_voxel_map, 0, 0, cell_size_x, voxel_map, start_x, start_y, size_x_,
-      cell_size_x,
-      cell_size_y);
+    cell_size_x,
+    cell_size_y);
 
   // make sure to clean up
   delete[] local_map;

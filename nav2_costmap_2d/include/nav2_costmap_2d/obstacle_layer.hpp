@@ -38,21 +38,23 @@
 #ifndef NAV2_COSTMAP_2D__OBSTACLE_LAYER_HPP_
 #define NAV2_COSTMAP_2D__OBSTACLE_LAYER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/costmap_layer.hpp>
-#include <nav2_costmap_2d/layered_costmap.hpp>
-#include <nav2_costmap_2d/observation_buffer.hpp>
-#include <nav2_costmap_2d/footprint.hpp>
+#include <memory>
+#include <string>
+#include <vector>
 
+#include "rclcpp/rclcpp.hpp"
 #include "laser_geometry/laser_geometry.hpp"
-#include <tf2_ros/message_filter.h>
-#include <message_filters/subscriber.h>
-
-#include <nav_msgs/msg/occupancy_grid.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
-#include <sensor_msgs/msg/point_cloud.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
+#include "tf2_ros/message_filter.h"
+#include "message_filters/subscriber.h"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "sensor_msgs/msg/point_cloud.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/observation_buffer.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -67,12 +69,14 @@ public:
 
   virtual ~ObstacleLayer();
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-      double * min_y,
-      double * max_x,
-      double * max_y);
-  virtual void updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
-      int max_j);
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
+  virtual void updateCosts(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j);
 
   virtual void activate();
   virtual void deactivate();
@@ -83,24 +87,27 @@ public:
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr message,
-      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
+  void laserScanCallback(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr message,
+    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief A callback to handle buffering LaserScan messages which need filtering to turn Inf values into range_max.
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void laserScanValidInfCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr message,
-      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
+  void laserScanValidInfCallback(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr message,
+    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   /**
    * @brief  A callback to handle buffering PointCloud2 messages
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
    */
-  void pointCloud2Callback(sensor_msgs::msg::PointCloud2::ConstSharedPtr message,
-      const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
+  void pointCloud2Callback(
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr message,
+    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
   void addStaticObservation(nav2_costmap_2d::Observation & obs, bool marking, bool clearing);
@@ -114,14 +121,16 @@ protected:
    * @param marking_observations A reference to a vector that will be populated with the observations
    * @return True if all the observation buffers are current, false otherwise
    */
-  bool getMarkingObservations(std::vector<nav2_costmap_2d::Observation> & marking_observations) const;
+  bool getMarkingObservations(
+    std::vector<nav2_costmap_2d::Observation> & marking_observations) const;
 
   /**
    * @brief  Get the observations used to clear space
    * @param clearing_observations A reference to a vector that will be populated with the observations
    * @return True if all the observation buffers are current, false otherwise
    */
-  bool getClearingObservations(std::vector<nav2_costmap_2d::Observation> & clearing_observations) const;
+  bool getClearingObservations(
+    std::vector<nav2_costmap_2d::Observation> & clearing_observations) const;
 
   /**
    * @brief  Clear freespace based on one observation
@@ -131,37 +140,45 @@ protected:
    * @param max_x
    * @param max_y
    */
-  virtual void raytraceFreespace(const nav2_costmap_2d::Observation & clearing_observation,
-      double * min_x, double * min_y,
-      double * max_x,
-      double * max_y);
+  virtual void raytraceFreespace(
+    const nav2_costmap_2d::Observation & clearing_observation,
+    double * min_x, double * min_y,
+    double * max_x,
+    double * max_y);
 
-  void updateRaytraceBounds(double ox, double oy, double wx, double wy, double range,
-      double * min_x, double * min_y,
-      double * max_x,
-      double * max_y);
+  void updateRaytraceBounds(
+    double ox, double oy, double wx, double wy, double range,
+    double * min_x, double * min_y,
+    double * max_x,
+    double * max_y);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
-  void updateFootprint(double robot_x, double robot_y, double robot_yaw, double * min_x,
-      double * min_y,
-      double * max_x,
-      double * max_y);
+  void updateFootprint(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
 
-  std::string global_frame_;  ///< @brief The global frame for the costmap
-  double max_obstacle_height_;  ///< @brief Max Obstacle Height
+  std::string global_frame_;  /// @brief The global frame for the costmap
+  double max_obstacle_height_;  /// @brief Max Obstacle Height
 
-  laser_geometry::LaserProjection projector_;  ///< @brief Used to project laser scans into point clouds
-
-  std::vector<std::shared_ptr<message_filters::SubscriberBase> > observation_subscribers_;  ///< @brief Used for the observation message filters
-  std::vector<std::shared_ptr<tf2_ros::MessageFilterBase> > observation_notifiers_;  ///< @brief Used to make sure that transforms are available for each sensor
- 
-  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > observation_buffers_;  ///< @brief Used to store observations from various sensors
-  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > marking_buffers_;  ///< @brief Used to store observation buffers used for marking obstacles
-  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer> > clearing_buffers_;  ///< @brief Used to store observation buffers used for clearing obstacles
+  // Used to project laser scans into point clouds
+  laser_geometry::LaserProjection projector_;
+  // Used for the observation message filters
+  std::vector<std::shared_ptr<message_filters::SubscriberBase>> observation_subscribers_;
+  // Used to make sure that transforms are available for each sensor
+  std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
+  // Used to store observations from various sensors
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> observation_buffers_;
+  // Used to store observation buffers used for marking obstacles
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> marking_buffers_;
+  // Used to store observation buffers used for clearing obstacles
+  std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> clearing_buffers_;
 
   // Used only for testing purposes
-  std::vector<nav2_costmap_2d::Observation> static_clearing_observations_, static_marking_observations_;
+  std::vector<nav2_costmap_2d::Observation> static_clearing_observations_;
+  std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
 
