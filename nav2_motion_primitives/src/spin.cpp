@@ -20,7 +20,9 @@
 #include <memory>
 
 #include "nav2_motion_primitives/spin.hpp"
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
