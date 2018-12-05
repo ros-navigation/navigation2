@@ -1,8 +1,7 @@
 <!--
-TODO(orduno
--Provide an explanation
-- A recovery node (e.g. stuck_recovery) returns SUCCESS if it was able to execute all actions.
-  That doesn't mean we fixed the failure, we need to check the condition again.
+  This Behavior Tree first goes into a branch where it will check if the robot is stuck.
+  If that is the case, it will attempt to recover. Otherwise it will continue with
+  the navigation branch. In this case the navigation branch is based on `parallel.xml`.
 -->
 
 <root main_tree_to_execute="MainTree">
