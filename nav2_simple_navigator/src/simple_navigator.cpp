@@ -40,6 +40,7 @@ SimpleNavigator::SimpleNavigator()
   controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
 
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
+
   task_server_->setExecuteCallback(
     std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
 }

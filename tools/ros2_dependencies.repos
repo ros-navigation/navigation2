@@ -1,13 +1,5 @@
 repositories:
-  ros2_message_filters:
-    type: git
-    url: https://github.com/intel/ros2_message_filters.git
-    version: master
-  ros2/launch:
-    type: git
-    url: https://github.com/crdelsey/launch.git
-    version: TimerActionWorkaround
   behavior_tree_core:
     type: git
-    url: https://github.com/mjeronimo/BehaviorTree.CPP
-    version: master
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 5904431

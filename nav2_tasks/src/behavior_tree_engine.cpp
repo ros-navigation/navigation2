@@ -16,7 +16,7 @@
 
 #include <string>
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "Blackboard/blackboard_local.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/navigate_to_pose_action.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
@@ -40,7 +40,7 @@ TaskStatus BehaviorTreeEngine::run(
 {
   // Set a couple values that all of the action nodes expect/require
   blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100)); // NOLINT
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
 
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes
   // out of scope, all the nodes are destroyed

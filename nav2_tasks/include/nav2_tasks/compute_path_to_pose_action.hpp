@@ -35,7 +35,7 @@ public:
   {
   }
 
-  void init() override
+  void onInit() override
   {
     command_ =
       blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints");

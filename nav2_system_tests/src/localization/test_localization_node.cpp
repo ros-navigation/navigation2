@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 #include <memory>
-#include "amcl_node.hpp"
+#include "nav2_amcl/amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -36,25 +36,27 @@ class TestAmclPose : public ::testing::Test
 public:
   TestAmclPose()
   {
-    // Initializing amcl_pose x and y to NaN
-    amcl_pose_x = 0.0 / 0.0;
-    amcl_pose_y = 0.0 / 0.0;
     pose_callback_ = false;
+    initTestPose();
+    tol_ = 0.25;
 
     node = rclcpp::Node::make_shared("localization_test");
 
     while (node->count_subscribers("/scan") < 1) {
       rclcpp::spin_some(node);
     }
-
+    initial_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "initialpose");
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "amcl_pose",
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
+      initial_pose_pub_->publish(testPose_);
   }
   bool defaultAmclTest();
 
 protected:
   std::shared_ptr<rclcpp::Node> node;
+  void initTestPose();
 
 private:
   void amcl_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -64,22 +66,46 @@ private:
     amcl_pose_y = amcl_pose.pose.position.y;
     pose_callback_ = true;
   }
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
+  geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   double amcl_pose_x;
   double amcl_pose_y;
   bool pose_callback_;
+  float tol_;
 };
 
 bool TestAmclPose::defaultAmclTest()
 {
   while (!pose_callback_) {
+    initial_pose_pub_->publish(testPose_);
     rclcpp::spin_some(node);
   }
-  if (!std::isnan(amcl_pose_x) && !std::isnan(amcl_pose_y)) {
+  if (std::abs(amcl_pose_x-testPose_.pose.pose.position.x) < tol_ && 
+      std::abs(amcl_pose_y-testPose_.pose.pose.position.y) < tol_) {
     return true;
   } else {
     return false;
   }
+}
+
+void TestAmclPose::initTestPose()
+{
+  testPose_.header.frame_id = "map";
+  testPose_.header.stamp = rclcpp::Time();
+  testPose_.pose.pose.position.x = -2.0;
+  testPose_.pose.pose.position.y = -0.5;
+  testPose_.pose.pose.position.z = 0.0;
+  testPose_.pose.pose.orientation.x = 0.0;
+  testPose_.pose.pose.orientation.y = 0.0;
+  testPose_.pose.pose.orientation.z = 0.0;
+  testPose_.pose.pose.orientation.w = 1.0;
+  for (int i = 0; i < 35; i++) {
+    testPose_.pose.covariance[i] = 0.0;
+  }
+  testPose_.pose.covariance[0] = 0.08;
+  testPose_.pose.covariance[7] = 0.08;
+  testPose_.pose.covariance[35] = 0.05;
 }
 
 TEST_F(TestAmclPose, SimpleAmclTest)

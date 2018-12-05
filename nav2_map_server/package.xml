@@ -6,7 +6,6 @@
   <description>
     Refactored map server for ROS2 Navigation
   </description>
-  <author>Brian Gerkey, Tony Pratkanis</author>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
   <license>Apache License 2.0</license>
 

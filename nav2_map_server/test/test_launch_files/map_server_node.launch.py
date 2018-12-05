@@ -26,5 +26,6 @@ def generate_launch_description():
             package='nav2_map_server',
             node_executable='map_server',
             output='screen',
-            arguments=[os.path.join(os.getenv('TEST_DIR'), 'testmap.yaml')])
+            arguments=['__params:=' + os.path.join(os.getenv('TEST_DIR'),
+                                                   'map_server_params.yaml')])
     ])

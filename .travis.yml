@@ -20,14 +20,13 @@ notifications:
       - matthew.k.hansen@intel.com
 
 before_install:
+  - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ]; then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1; fi
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
 
 script:
   - docker run --name nav2_bash --rm -d -i -t nav2:latest bash -l
-  - docker exec nav2_bash bash -c "colcon test --packages-skip
-      dwb_controller dwb_core nav2_amcl nav2_costmap_2d nav2_dynamic_params 
-      nav2_map_server nav2_navfn_planner nav2_system_tests nav2_tasks 
-      nav2_util nav2_voxel_grid costmap_queue dwb_critics dwb_plugins 
-      nav2_bt_navigator nav2_mission_executor nav2_robot 
-      nav2_simple_navigator nav2_world_model nav_2d_utils"
-  - docker exec nav2_bash bash -c "colcon test-result" 
+  - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
+      colcon test --packages-skip dwb_controller dwb_core nav2_amcl nav2_costmap_2d
+        nav2_dynamic_params nav2_map_server nav2_navfn_planner nav2_robot nav2_system_tests
+        nav2_tasks nav2_util'
+  - docker exec nav2_bash bash -c "colcon test-result --verbose" 

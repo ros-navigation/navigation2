@@ -17,10 +17,10 @@
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "behavior_tree_core/behavior_tree.h"
-#include "behavior_tree_core/bt_factory.h"
-#include "behavior_tree_core/xml_parsing.h"
-#include "Blackboard/blackboard_local.h"
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/xml_parsing.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
@@ -36,7 +36,7 @@ public:
     BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(100));
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
 protected:
   // The ROS node to use for any task clients

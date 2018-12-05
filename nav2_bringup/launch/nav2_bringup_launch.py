@@ -4,8 +4,7 @@ import launch.actions
 import launch_ros.actions
 
 def generate_launch_description():
-    map_file = launch.substitutions.LaunchConfiguration('map')
-    map_type = launch.substitutions.LaunchConfiguration('map_type', default='occupancy')
+    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
     params_file = launch.substitutions.LaunchConfiguration('params', default='nav2_params.yaml')
 
@@ -13,27 +12,26 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             'map', description='Full path to map file to load'),
         launch.actions.DeclareLaunchArgument(
-            'map_type', default_value='occupancy', description='Type of map to load'),
-        launch.actions.DeclareLaunchArgument(
             'use_sim_time', default_value='false', description='Use simulation (Gazebo) clock if true'),
 
         launch_ros.actions.Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint']),
+            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
 
         launch_ros.actions.Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_scan']),
+            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 
         launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
+            node_name='map_server',
             output='screen',
-            arguments=[map_file, map_type]),
+            parameters=[{ 'use_sim_time': use_sim_time}, { 'yaml_filename': map_yaml_file }]),
 
         launch_ros.actions.Node(
             package='nav2_world_model',
@@ -47,7 +45,6 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            remappings=[('scan', 'tb3/scan')],
             parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
@@ -55,7 +52,6 @@ def generate_launch_description():
             node_executable='dwb_controller',
             node_name='FollowPathNode',
             output='screen',
-            remappings=[('/cmd_vel', 'tb3/cmd_vel')],
             parameters=[{ 'prune_plan': False }, {'debug_trajectory_details': True }, { 'use_sim_time': use_sim_time }]),
 
         launch_ros.actions.Node(
@@ -78,5 +74,4 @@ def generate_launch_description():
             node_name='mission_executor',
             output='screen',
             parameters=[{ 'use_sim_time': use_sim_time}]),
-
     ])

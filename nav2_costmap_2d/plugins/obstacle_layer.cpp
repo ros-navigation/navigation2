@@ -38,7 +38,7 @@
  *********************************************************************/
 #include <nav2_costmap_2d/obstacle_layer.hpp>
 #include <nav2_costmap_2d/costmap_math.hpp>
-//#include <tf2_ros/message_filter.h>
+#include <tf2_ros/message_filter.h>
 #include "nav2_util/duration_conversions.hpp"
 
 #include <pluginlib/class_list_macros.hpp>
@@ -94,12 +94,12 @@ void ObstacleLayer::onInitialize()
     double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
-  
+
     node_->get_parameter_or(source + "." + "topic", topic, source);
     node_->get_parameter_or(source + "." + "sensor_frame", sensor_frame, std::string(""));
     node_->get_parameter_or(source + "." + "observation_persistence", observation_keep_time, 0.0);
     node_->get_parameter_or(source + "." + "expected_update_rate", expected_update_rate, 0.0);
-    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("PointCloud"));
+    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("LaserScan"));
     node_->get_parameter_or(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "inf_is_valid", inf_is_valid, false);
@@ -155,9 +155,8 @@ void ObstacleLayer::onInitialize()
     rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
     custom_qos_profile.depth = 50;
 
-    // TODO(bpwilcox): re-enable message_filters
     // create a callback for the topic
-/*     if (data_type == "LaserScan") {
+    if (data_type == "LaserScan") {
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>
       > sub(new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(node_, topic, custom_qos_profile));
 
@@ -203,37 +202,6 @@ void ObstacleLayer::onInitialize()
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
   }
-   setupDynamicReconfigure(node_);
-} */
-    // TODO(bpwilcox): replace with message filters above when enabled
-    // create a callback for the topic
-    auto buffer = observation_buffers_.back();
-    if (data_type == "LaserScan") {
-      rclcpp::Subscription<sensor_msgs::msg::LaserScan>::ConstSharedPtr sub;
-      if (inf_is_valid) {
-        sub = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-          topic, [&, buffer] (sensor_msgs::msg::LaserScan::ConstSharedPtr message) 
-          { laserScanValidInfCallback(message, buffer); }, custom_qos_profile);
-      } else {
-        sub = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-          topic, [&, buffer] (sensor_msgs::msg::LaserScan::ConstSharedPtr message) 
-          { laserScanCallback(message, buffer); }, custom_qos_profile);
-      }
-
-      observation_laser_subscribers_.push_back(sub);
-    } else {
-      rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::ConstSharedPtr sub;
-      if (inf_is_valid) {
-        RCLCPP_WARN(node_->get_logger(),
-            "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
-      }
-      sub = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-        topic, [&, buffer] (sensor_msgs::msg::PointCloud2::ConstSharedPtr message) 
-        { pointCloud2Callback(message, buffer); }, custom_qos_profile);
-
-      observation_point_subscribers_.push_back(sub);
-    }
-  }
    setupDynamicReconfigure();
 }
 
@@ -256,10 +224,10 @@ void ObstacleLayer::reconfigureCB()
 {
   RCLCPP_DEBUG(node_->get_logger(), "ObstacleLayer:: Event Callback");
 
-  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_); 
-  dynamic_param_client_->get_event_param(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_); 
-  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_); 
-  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_); 
+  node_->get_parameter(name_ + "." + "enabled", enabled_); 
+  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_); 
+  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_); 
+  node_->get_parameter(name_ + "." + "combination_method", combination_method_); 
 }
 
 void ObstacleLayer::laserScanCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr message,
@@ -577,13 +545,12 @@ void ObstacleLayer::raytraceFreespace(const Observation & clearing_observation, 
 
 void ObstacleLayer::activate()
 {
-  // TODO(bpwilcox): re-enable with message_filters
-/*   // if we're stopped we need to re-subscribe to topics
+  // if we're stopped we need to re-subscribe to topics
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->subscribe();
     }
-  } */
+  }
 
   for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
     if (observation_buffers_[i]) {
@@ -593,12 +560,11 @@ void ObstacleLayer::activate()
 }
 void ObstacleLayer::deactivate()
 {
-  // TODO(bpwilcox): re-enable with message_filters
-/*   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
+  for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->unsubscribe();
     }
-  } */
+  }
 }
 
 void ObstacleLayer::updateRaytraceBounds(double ox, double oy, double wx, double wy, double range,

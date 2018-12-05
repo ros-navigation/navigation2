@@ -16,7 +16,7 @@ find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(behavior_tree_core REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 
 include_directories(
   include
@@ -32,7 +32,7 @@ set(dependencies
   rclcpp
   geometry_msgs
   nav2_msgs
-  behavior_tree_core
+  behaviortree_cpp
 )
 
 ament_target_dependencies(${library_name}
