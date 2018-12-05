@@ -31,7 +31,7 @@
   <exec_depend>nav2_voxel_grid</exec_depend>
   
   <export>
-    <metapackage/>
+    <build_type>ament_cmake</build_type>  
   </export>
 
 </package>
