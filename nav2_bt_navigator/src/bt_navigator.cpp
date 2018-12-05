@@ -20,7 +20,7 @@
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
-#include "Blackboard/blackboard_local.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 
 using nav2_tasks::TaskStatus;
 
