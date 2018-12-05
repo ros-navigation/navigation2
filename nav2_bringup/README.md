@@ -11,38 +11,44 @@ Install and build our code by following this guide:
 https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md
 
 ## Launch Navigation2 in simulation with Gazebo (first time users)
-Pre-requisites:
+### Pre-requisites:
 * Gazebo installed on the system
 * gazebo_ros_pkgs for ROS2 installed on the system
 * A Gazebo world for simulating the robot (see Gazebo tutorials)
 * A map of that world saved to a map.pgm and map.yaml (see ROS Navigation tutorials)
 
-Launch Gazebo and Rviz2
+### Terminal 1: Launch Gazebo and Rviz2
 
-`ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>`
+Example: See [turtlebot3_gazebo models](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo/models) for details
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:<full/path/to/my_robot/models>
+ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>
+```
 
-Launch your robot specific transforms
+### Terminal 2: Launch your robot specific transforms
 
 Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
 
 `ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py`
 
-Set the tf publisher node to use simulation time or AMCL won't get the transforms correctly
+### Terminal 3: Launch map_server and AMCL
 
-`ros2 param set /robot_state_publisher use_sim_time True`
-
-Launch map_server and AMCL
-
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True`
-
+```
+# Set the tf publisher node to use simulation time or AMCL won't get the transforms correctly
+ros2 param set /robot_state_publisher use_sim_time True
+# Launch map_server and AMCL, set map_type as "occupancy" by default.
+ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy use_sim_time:=True
+```
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
 
+### Terminal 4:
 Run the rest of the Navigation2 bringup
 
 `ros2 launch nav2_bringup nav2_bringup_2nd_launch.py use_sim_time:=True`
 
+### Terminal 5:
 Set the World Model and the two costmap nodes to use simulation time
 
 ```
@@ -62,6 +68,8 @@ Notes:
 ```
 
 In RVIZ:
+* Add "map" to subscribe topic "/map"
+* Add "RobotModel", set "Description Source" with "File", set "Description File" with the name of the urdf file for your robot (example: turtlebot3_burger.urdf)"
 * Localize the robot using “2D Pose Estimate” button.
 * Send the robot a goal using “2D Nav Goal” button.
 
@@ -73,7 +81,7 @@ Pre-requisites:
 
 Launch the code using this launch file and your map.yaml:
 
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml>`
+`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
 
 In another terminal, run RVIZ:
 
