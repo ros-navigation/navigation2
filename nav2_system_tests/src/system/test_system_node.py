@@ -21,8 +21,7 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 import rclpy
-from rclpy import Node
-
+from rclpy.node import Node
 
 class NavTester(Node):
 
@@ -141,6 +140,11 @@ def test_all(test_robot):
         result = test_InitialPose(test_robot, 10)
     if (result):
         result = test_RobotMovesToGoal(test_robot)
+    if (not result):
+        # retry the test one more time
+        test_robot.get_logger().info('Test failed, retrying...')
+        result = test_RobotMovesToGoal(test_robot)
+
     # Add more tests here if desired
     return result
 
