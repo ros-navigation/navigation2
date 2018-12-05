@@ -65,7 +65,7 @@ nav2_tasks::TaskStatus Stop::onCycleUpdate(nav2_tasks::StopResult & /*result*/)
   std::this_thread::sleep_for(5s);
   RCLCPP_INFO(node_->get_logger(), "Stop: finished sleeping");
 
-  // TODO(orduno) detect if the robot is still oscillating or tipping over
+  // TODO(orduno) #425 detect if the robot is still oscillating or tipping over
 
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
