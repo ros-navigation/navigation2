@@ -27,7 +27,7 @@ namespace nav2_motion_primitives
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
-  // TODO(orduno) Pull values from the robot
+  // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
@@ -56,7 +56,7 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
 nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 {
   // Currently only an open-loop controller is implemented
-  // TODO(orduno) Create a base class for open-loop controlled motion_primitives
+  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
   TaskStatus status = timedBackup();
 
   // For now sending an empty task result
@@ -71,14 +71,14 @@ nav2_tasks::TaskStatus BackUp::timedBackup()
   // Output control command
   geometry_msgs::msg::Twist cmd_vel;
 
-  // TODO(orduno): assuming robot was moving fwd when it got stuck
+  // TODO(orduno): #423 assuming robot was moving fwd when it got stuck
   //               fixed speed
   cmd_vel.linear.x = -0.025;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
   robot_->sendVelocity(cmd_vel);
 
-// TODO(orduno): fixed time
+// TODO(orduno): #423 fixed time
   auto current_time = std::chrono::system_clock::now();
   if (current_time - start_time_ >= 3s) {
     // Stop the robot
@@ -100,7 +100,7 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
     return TaskStatus::FAILED;
   }
 
-  // TODO(orduno): Implement controller for moving the robot by a given distance
+  // TODO(orduno): #423 Implement controller for moving the robot by a given distance
   //               starting from the current pose
 
   RCLCPP_ERROR(node_->get_logger(), "Back up controller not implement yet.");

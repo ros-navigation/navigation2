@@ -40,7 +40,7 @@ public:
     command_ = std::make_shared<nav2_tasks::BackUpCommand>();
     result_ = std::make_shared<nav2_tasks::BackUpResult>();
 
-    // TODO(orduno) Only a timed back up with fixed distance has been implemented
+    // TODO(orduno) #423 Only a timed back up with fixed distance has been implemented
     command_->x = 0.0;
     command_->y = 0.0;
     command_->z = 0.0;

@@ -33,7 +33,7 @@ namespace nav2_motion_primitives
 Spin::Spin(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
 {
-  // TODO(orduno) Pull values from param server or robot
+  // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
   min_rotational_vel_ = 0.4;
   rotational_acc_lim_ = 3.2;
@@ -65,7 +65,7 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
 nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
 {
   // Currently only an open-loop controller is implemented
-  // TODO(orduno) Create a base class for open-loop controlled motion_primitives
+  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
   //              controlledSpin() has not been fully tested
   TaskStatus status = timedSpin();
 
@@ -81,13 +81,13 @@ nav2_tasks::TaskStatus Spin::timedSpin()
   // Output control command
   geometry_msgs::msg::Twist cmd_vel;
 
-  // TODO(orduno) fixed speed
+  // TODO(orduno) #423 fixed speed
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
   robot_->sendVelocity(cmd_vel);
 
-  // TODO(orduno) fixed time
+  // TODO(orduno) #423 fixed time
   auto current_time = std::chrono::system_clock::now();
   if (current_time - start_time_ >= 4s) {
     // Stop the robot
@@ -102,7 +102,7 @@ nav2_tasks::TaskStatus Spin::timedSpin()
 
 nav2_tasks::TaskStatus Spin::controlledSpin()
 {
-  // TODO(orduno) Test and tune controller
+  // TODO(orduno) #423 Test and tune controller
   //              check it doesn't abruptly start and stop
   //              or cause massive wheel slippage when accelerating
 
@@ -119,7 +119,7 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 
   double dist_left = M_PI - current_angle;
 
-  // TODO(orduno) forward simulation to check if future position is feasible
+  // TODO(orduno) #379 forward simulation to check if future position is feasible
 
   // compute the velocity that will let us stop by the time we reach the goal
   // v_f^2 == v_i^2 + 2 * a * d
