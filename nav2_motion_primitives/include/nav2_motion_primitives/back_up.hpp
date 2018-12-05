@@ -27,7 +27,7 @@ namespace nav2_motion_primitives
 class BackUp : public MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>
 {
 public:
-  BackUp(rclcpp::Node::SharedPtr & node);
+  explicit BackUp(rclcpp::Node::SharedPtr & node);
   ~BackUp();
 
   nav2_tasks::TaskStatus onRun(const nav2_tasks::BackUpCommand::SharedPtr command) override;

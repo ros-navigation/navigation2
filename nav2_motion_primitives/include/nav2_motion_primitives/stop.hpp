@@ -28,7 +28,7 @@ namespace nav2_motion_primitives
 class Stop : public MotionPrimitive<nav2_tasks::StopCommand, nav2_tasks::StopResult>
 {
 public:
-  Stop(rclcpp::Node::SharedPtr & node);
+  explicit Stop(rclcpp::Node::SharedPtr & node);
   ~Stop();
 
   nav2_tasks::TaskStatus onRun(const nav2_tasks::StopCommand::SharedPtr command) override;

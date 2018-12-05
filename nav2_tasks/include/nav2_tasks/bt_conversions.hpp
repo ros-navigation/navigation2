@@ -20,7 +20,6 @@
 #include "behaviortree_cpp/blackboard/blackboard.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "geometry_msgs/msg/quaternion_stamped.hpp"
 #include "nav2_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/path_end_points.hpp"
 
@@ -87,13 +86,6 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView & key)
     orientation.w = BT::convertFromString<double>(parts[3]);
     return orientation;
   }
-}
-
-template<>
-inline geometry_msgs::msg::QuaternionStamped convertFromString(const std::string & /*key*/)
-{
-  geometry_msgs::msg::QuaternionStamped quaternion_stamped;
-  return quaternion_stamped;
 }
 
 }  // namespace BT

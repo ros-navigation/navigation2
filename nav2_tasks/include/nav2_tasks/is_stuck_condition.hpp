@@ -26,8 +26,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
-#include "behavior_tree_core/condition_node.h"
-#include "geometry_msgs/Twist.h"
+#include "behaviortree_cpp/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
 
 using namespace std::chrono_literals; // NOLINT
@@ -60,31 +59,29 @@ public:
     //              #383 Once all nodes use the Robot class we can change this as well.
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
-      [this](geometry_msgs::msg::Twist::SharedPtr msg) {
+        [this](geometry_msgs::msg::Twist::SharedPtr msg) {
+          std::lock_guard<std::mutex> lock(msg_mutex_);
 
-        std::lock_guard<std::mutex> lock(msg_mutex_);
+          while (cmd_history_.size() >= cmd_history_size_) {
+            cmd_history_.pop_front();
+          }
 
-        while (cmd_history_.size() >= cmd_history_size_) {
-          cmd_history_.pop_front();
+          cmd_history_.push_back(*msg);
+          new_cmd_ = true;
         }
-
-        cmd_history_.push_back(* msg);
-        new_cmd_ = true;
-      }
     );
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
-      [this](nav_msgs::msg::Odometry::SharedPtr msg) {
+        [this](nav_msgs::msg::Odometry::SharedPtr msg) {
+          std::lock_guard<std::mutex> lock(msg_mutex_);
 
-        std::lock_guard<std::mutex> lock(msg_mutex_);
+          while (odom_history_.size() >= odom_history_size_) {
+            odom_history_.pop_front();
+          }
 
-        while (odom_history_.size() >= odom_history_size_) {
-          odom_history_.pop_front();
+          odom_history_.push_back(*msg);
+          new_odom_ = true;
         }
-
-        odom_history_.push_back(* msg);
-        new_odom_ = true;
-      }
     );
 
     startWorkerThread();
@@ -137,8 +134,7 @@ public:
 
   void workerThread()
   {
-    while(spinning_ok_)
-    {
+    while (spinning_ok_) {
       // Spin the node to get messages from the subscriptions
       rclcpp::spin_some(this->get_node_base_interface());
 
@@ -177,10 +173,9 @@ public:
     // simulation of the robot motion and compare it with the actual one.
 
     // Detect if robot bumped into something by checking for abnormal deceleration
-    if (current_accel_ < brake_accel_limit_)
-    {
-      RCLCPP_INFO_ONCE(get_logger(), "Current acceleration is below brake limit.");
-      return true;
+    if (current_accel_ < brake_accel_limit_) {
+      RCLCPP_INFO_ONCE(get_logger(), "Current acceleration is below brake limit."
+        " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
     }
 
     return false;
@@ -191,14 +186,13 @@ public:
     // Approximate acceleration
     // TODO(orduno) #400 Smooth out velocity history for better accel approx.
     if (odom_history_.size() > 2) {
-
       auto curr_odom = odom_history_.end()[-1];
       double t2 = static_cast<double>(curr_odom.header.stamp.sec);
-      t2 += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9 ;
+      t2 += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
 
       auto prev_odom = odom_history_.end()[-2];
       double t1 = static_cast<double>(prev_odom.header.stamp.sec);
-      t1 += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9 ;
+      t1 += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
 
       double dt = t2 - t1;
       double vel_diff = static_cast<double>(
@@ -208,7 +202,7 @@ public:
       if (current_accel_ < minimum_measured_accel_) {
         minimum_measured_accel_ = current_accel_;
         RCLCPP_DEBUG(get_logger(),
-          "Acceleration approximation - dt: %.6f s, vel diff: %.6f m/s, accel: %.6f m/s^2",
+          "Minimum accel detected, dt: %.6f s, vel diff: %.6f m/s, accel: %.6f m/s^2",
           dt, vel_diff, current_accel_);
       }
     }

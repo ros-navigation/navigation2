@@ -29,7 +29,7 @@ namespace nav2_motion_primitives
 class Spin : public MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>
 {
 public:
-  Spin(rclcpp::Node::SharedPtr & node);
+  explicit Spin(rclcpp::Node::SharedPtr & node);
   ~Spin();
 
   nav2_tasks::TaskStatus onRun(const nav2_tasks::SpinCommand::SharedPtr command) override;
