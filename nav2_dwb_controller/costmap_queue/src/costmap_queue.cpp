@@ -46,6 +46,7 @@ CostmapQueue::CostmapQueue(nav2_costmap_2d::Costmap2D & costmap, bool manhattan)
   cached_max_distance_(-1)
 {
   reset();
+  //fdsafsdafsadfsd
 }
 
 void CostmapQueue::reset()
