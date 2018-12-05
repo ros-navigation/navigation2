@@ -35,6 +35,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <string>
 #include "gtest/gtest.h"
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "dwb_plugins/limited_accel_generator.hpp"
@@ -47,6 +48,39 @@ using dwb_plugins::StandardTrajectoryGenerator;
 geometry_msgs::msg::Pose2D origin;
 nav_2d_msgs::msg::Twist2D zero;
 nav_2d_msgs::msg::Twist2D forward;
+
+std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
+{
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("min_vel_x", 0.0));
+  parameters.push_back(rclcpp::Parameter("max_vel_x", 0.55));
+  parameters.push_back(rclcpp::Parameter("min_vel_y", -0.1));
+  parameters.push_back(rclcpp::Parameter("max_vel_y", 0.1));
+  parameters.push_back(rclcpp::Parameter("max_vel_theta", 1.0));
+
+  parameters.push_back(rclcpp::Parameter("acc_lim_x", 2.5));
+  parameters.push_back(rclcpp::Parameter("acc_lim_y", 2.5));
+  parameters.push_back(rclcpp::Parameter("acc_lim_theta", 3.2));
+  parameters.push_back(rclcpp::Parameter("decel_lim_x", -2.5));
+  parameters.push_back(rclcpp::Parameter("decel_lim_y", -2.5));
+  parameters.push_back(rclcpp::Parameter("decel_lim_theta", -3.2));
+
+  parameters.push_back(rclcpp::Parameter("min_speed_xy", 0.1));
+  parameters.push_back(rclcpp::Parameter("max_speed_xy", 0.55));
+  parameters.push_back(rclcpp::Parameter("min_speed_theta", 0.4));
+
+  return parameters;
+}
+
+rclcpp::Node::SharedPtr makeTestNode(const std::string & name)
+{
+  return rclcpp::Node::make_shared(
+    name,
+    "",  // namespace
+    rclcpp::contexts::default_context::get_global_default_context(),
+    std::vector<std::string>(),  // arguments
+    getDefaultKinematicParameters());
+}
 
 void checkLimits(
   const std::vector<nav_2d_msgs::msg::Twist2D> & twists,
@@ -94,7 +128,7 @@ double durationToSec(builtin_interfaces::msg::Duration d)
 
 TEST(VelocityIterator, standard_gen)
 {
-  auto nh = rclcpp::Node::make_shared("st_gen");
+  auto nh = makeTestNode("st_gen");
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -104,7 +138,7 @@ TEST(VelocityIterator, standard_gen)
 
 TEST(VelocityIterator, max_xy)
 {
-  auto nh = rclcpp::Node::make_shared("max_xy");
+  auto nh = makeTestNode("max_xy");
   nh->set_parameters({rclcpp::Parameter("max_speed_xy", 1.0)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
@@ -117,7 +151,7 @@ TEST(VelocityIterator, max_xy)
 
 TEST(VelocityIterator, min_xy)
 {
-  auto nh = rclcpp::Node::make_shared("min_xy");
+  auto nh = makeTestNode("min_xy");
   nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
@@ -129,7 +163,7 @@ TEST(VelocityIterator, min_xy)
 
 TEST(VelocityIterator, min_theta)
 {
-  auto nh = rclcpp::Node::make_shared("min_theta");
+  auto nh = makeTestNode("min_theta");
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
@@ -141,7 +175,7 @@ TEST(VelocityIterator, min_theta)
 
 TEST(VelocityIterator, no_limits)
 {
-  auto nh = rclcpp::Node::make_shared("no_limits");
+  auto nh = makeTestNode("no_limits");
   nh->set_parameters({rclcpp::Parameter("max_speed_xy", -1.0)});
   nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
@@ -155,7 +189,7 @@ TEST(VelocityIterator, no_limits)
 
 TEST(VelocityIterator, no_limits_samples)
 {
-  auto nh = rclcpp::Node::make_shared("no_limits_samples");
+  auto nh = makeTestNode("no_limits_samples");
   nh->set_parameters({rclcpp::Parameter("max_speed_xy", -1.0)});
   nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
@@ -172,7 +206,7 @@ TEST(VelocityIterator, no_limits_samples)
 
 TEST(VelocityIterator, dwa_gen_exception)
 {
-  auto nh = rclcpp::Node::make_shared("dwa_gen_exception");
+  auto nh = makeTestNode("dwa_gen_exception");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   StandardTrajectoryGenerator gen;
   EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
@@ -180,7 +214,7 @@ TEST(VelocityIterator, dwa_gen_exception)
 
 TEST(VelocityIterator, no_dwa_gen_exception)
 {
-  auto nh = rclcpp::Node::make_shared("no_dwa_gen_exception");
+  auto nh = makeTestNode("no_dwa_gen_exception");
   nh->set_parameters({rclcpp::Parameter("use_dwa", false)});
   dwb_plugins::LimitedAccelGenerator gen;
   EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
@@ -188,7 +222,7 @@ TEST(VelocityIterator, no_dwa_gen_exception)
 
 TEST(VelocityIterator, dwa_gen)
 {
-  auto nh = rclcpp::Node::make_shared("dwa_gen");
+  auto nh = makeTestNode("dwa_gen");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
   dwb_plugins::LimitedAccelGenerator gen;
@@ -201,7 +235,7 @@ TEST(VelocityIterator, dwa_gen)
 
 TEST(VelocityIterator, dwa_gen_no_param)
 {
-  auto nh = rclcpp::Node::make_shared("dwa_gen_no_param");
+  auto nh = makeTestNode("dwa_gen_no_param");
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
@@ -212,7 +246,7 @@ TEST(VelocityIterator, dwa_gen_no_param)
 
 TEST(VelocityIterator, nonzero)
 {
-  auto nh = rclcpp::Node::make_shared("nonzero");
+  auto nh = makeTestNode("nonzero");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
   dwb_plugins::LimitedAccelGenerator gen;
@@ -261,7 +295,7 @@ void matchTwist(
 
 TEST(TrajectoryGenerator, basic)
 {
-  auto nh = rclcpp::Node::make_shared("basic");
+  auto nh = makeTestNode("basic");
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
@@ -277,7 +311,7 @@ TEST(TrajectoryGenerator, basic)
 
 TEST(TrajectoryGenerator, too_slow)
 {
-  auto nh = rclcpp::Node::make_shared("too_slow");
+  auto nh = makeTestNode("too_slow");
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   nav_2d_msgs::msg::Twist2D cmd;
@@ -294,7 +328,7 @@ TEST(TrajectoryGenerator, too_slow)
 
 TEST(TrajectoryGenerator, holonomic)
 {
-  auto nh = rclcpp::Node::make_shared("holonomic");
+  auto nh = makeTestNode("holonomic");
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   nav_2d_msgs::msg::Twist2D cmd;
@@ -313,7 +347,7 @@ TEST(TrajectoryGenerator, holonomic)
 
 TEST(TrajectoryGenerator, twisty)
 {
-  auto nh = rclcpp::Node::make_shared("twisty");
+  auto nh = makeTestNode("twisty");
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   nav_2d_msgs::msg::Twist2D cmd;
@@ -333,7 +367,7 @@ TEST(TrajectoryGenerator, twisty)
 
 TEST(TrajectoryGenerator, sim_time)
 {
-  auto nh = rclcpp::Node::make_shared("sim_time");
+  auto nh = makeTestNode("sim_time");
   nh->set_parameters({rclcpp::Parameter("sim_time", 2.5)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
@@ -350,7 +384,7 @@ TEST(TrajectoryGenerator, sim_time)
 
 TEST(TrajectoryGenerator, accel)
 {
-  auto nh = rclcpp::Node::make_shared("accel");
+  auto nh = makeTestNode("accel");
   nh->set_parameters({rclcpp::Parameter("sim_time", 5.0)});
   nh->set_parameters({rclcpp::Parameter("discretize_by_time", true)});
   nh->set_parameters({rclcpp::Parameter("sim_granularity", 1.0)});
@@ -372,7 +406,7 @@ TEST(TrajectoryGenerator, accel)
 
 TEST(TrajectoryGenerator, dwa)
 {
-  auto nh = rclcpp::Node::make_shared("dwa");
+  auto nh = makeTestNode("dwa");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("sim_period", 1.0)});
   nh->set_parameters({rclcpp::Parameter("sim_time", 5.0)});
