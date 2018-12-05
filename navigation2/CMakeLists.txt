@@ -5,6 +5,6 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-find_package(ament_cmake REQUIRED)
+find_package(catkin REQUIRED)
 
-ament_package()
+catkin_metapackage()

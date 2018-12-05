@@ -10,7 +10,7 @@
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache License 2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
