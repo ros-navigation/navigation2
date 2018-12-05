@@ -27,11 +27,10 @@ namespace nav2_motion_primitives
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
-  // TODO(orduno) Pull values from param server or robot
+  // TODO(orduno) Pull values from the robot
   max_linear_vel_ = 0.0;
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
-  goal_tolerance_distance_ = 0.0;
 
   start_time_ = std::chrono::system_clock::now();
 }

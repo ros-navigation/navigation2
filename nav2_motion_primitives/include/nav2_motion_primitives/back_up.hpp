@@ -38,7 +38,6 @@ protected:
   double min_linear_vel_;
   double max_linear_vel_;
   double linear_acc_lim_;
-  double goal_tolerance_distance_;
 
   std::chrono::system_clock::time_point start_time_;
 

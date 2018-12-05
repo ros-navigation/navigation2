@@ -22,8 +22,6 @@
 #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
 #include "nav2_tasks/back_up_task.hpp"
-#include "geometry_msgs/msg/point.hpp"
-
 
 namespace nav2_tasks
 {

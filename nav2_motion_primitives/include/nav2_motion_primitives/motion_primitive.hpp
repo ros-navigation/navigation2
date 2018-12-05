@@ -76,7 +76,7 @@ public:
   nav2_tasks::TaskStatus run(
     const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command)
   {
-    RCLCPP_INFO(node_->get_logger(), "Attempting behavior");
+    RCLCPP_INFO(node_->get_logger(), "%s attempting behavior", taskName_.c_str());
 
     ResultMsg result;
     nav2_tasks::TaskStatus status;
@@ -111,25 +111,25 @@ protected:
       // Log a message every second
       current_time = std::chrono::system_clock::now();
       if (current_time - time_since_msg >= 1s) {
-        RCLCPP_INFO(node_->get_logger(), "running...");
+        RCLCPP_INFO(node_->get_logger(), "%s running...", taskName_.c_str());
         time_since_msg = std::chrono::system_clock::now();
       }
 
       status = onCycleUpdate(result);
 
       if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
-        RCLCPP_INFO(node_->get_logger(), "MotionPrimitive completed successfully");
+        RCLCPP_INFO(node_->get_logger(), "%s completed successfully", taskName_.c_str());
         break;
       }
 
       if (status == nav2_tasks::TaskStatus::FAILED) {
-        RCLCPP_WARN(node_->get_logger(), "MotionPrimitive was not completed");
+        RCLCPP_WARN(node_->get_logger(), "%s was not completed", taskName_.c_str());
         break;
       }
 
       if (status == nav2_tasks::TaskStatus::CANCELED) {
-        RCLCPP_WARN(node_->get_logger(), "onCycleUpdate() should not check for task cancellation,"
-          " it will be checked by the base class.");
+        RCLCPP_WARN(node_->get_logger(), "%s onCycleUpdate() should not check for"
+          " task cancellation, it will be checked by the base class.", taskName_.c_str());
         break;
       }
     }
@@ -137,7 +137,17 @@ protected:
     auto end_time = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end_time - start_time;
 
-    RCLCPP_INFO(node_->get_logger(), "MotionPrimitive ran for %.2f seconds", elapsed_seconds.count());
+    RCLCPP_INFO(node_->get_logger(), "%s ran for %.2f seconds",
+      taskName_.c_str(), elapsed_seconds.count());
+
+    geometry_msgs::msg::Twist twist;
+    twist.linear.x = 0.0;
+    twist.linear.y = 0.0;
+    twist.linear.z = 0.0;
+    twist.angular.x = 0.0;
+    twist.angular.y = 0.0;
+    twist.angular.z = 0.0;
+    robot_->sendVelocity(twist);
 
     return status;
   }

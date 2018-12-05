@@ -44,6 +44,7 @@ set(dependencies
 add_library(${library_name}
   src/spin.cpp
   src/back_up.cpp
+  src/stop.cpp
 )
 
 ament_target_dependencies(${library_name}

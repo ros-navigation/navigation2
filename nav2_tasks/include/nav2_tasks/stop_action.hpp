@@ -17,104 +17,28 @@
 
 #include <string>
 #include <memory>
-#include <cmath>
-#include <thread>
-#include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/twist.hpp"
-#include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_robot/robot.hpp"
-
-using namespace std::chrono_literals; // NOLINT
+#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_tasks/stop_task.hpp"
 
 namespace nav2_tasks
 {
 
-class StopAction : public BT::ActionNode
+class StopAction : public BtActionNode<StopCommand, StopResult>
 {
 public:
   explicit StopAction(const std::string & action_name)
-  : BT::ActionNode(action_name), initialized_(false)
+  : BtActionNode<StopCommand, StopResult>(action_name)
   {
   }
 
-  StopAction() = delete;
-
-  ~StopAction() {}
-
-  BT::NodeStatus tick() override
+  void onInit() override
   {
-    // A BT node can't get values from the blackboard in the constructor since
-    // the BT library doesn't set the blackboard until after the tree if build.
-    if (!initialized_) {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-
-    robot_ = std::make_unique<nav2_robot::Robot>(node_);
-
-    controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node_);
-
-    initialized_ = true;
-    }
-
-    static auto start_time = std::chrono::system_clock::now();
-
-    static bool new_call = true;
-
-    if (new_call) {
-      RCLCPP_INFO(node_->get_logger(), "StopAction: cancelling path following task server");
-      controller_client_->cancel();
-
-      RCLCPP_INFO(node_->get_logger(), "StopAction: publishing zero velocity command");
-
-      // TODO(orduno) Implement a stop method on the robot
-      // robot_.stop();
-
-      geometry_msgs::msg::Twist twist;
-      twist.linear.x = 0.0;
-      twist.linear.y = 0.0;
-      twist.linear.z = 0.0;
-      twist.angular.x = 0.0;
-      twist.angular.y = 0.0;
-      twist.angular.z = 0.0;
-      robot_->sendVelocity(twist);
-
-      start_time = std::chrono::system_clock::now();
-      new_call = false;
-      RCLCPP_INFO(node_->get_logger(), "StopAction: stabilizing robot");
-    }
-
-    // TODO(orduno) What should this node return for a long running action
-
-    auto sleep_time = 5s;
-    RCLCPP_INFO(node_->get_logger(), "StopAction: sleeping for %d seconds",
-      sleep_time.count());
-    std::this_thread::sleep_for(5s);
-    RCLCPP_INFO(node_->get_logger(), "StopAction: finished sleeping");
-
-    new_call = true;
-
-    // TODO(orduno) detect if the robot is still moving or tipping over
-
-    return BT::NodeStatus::SUCCESS;
+    // Create the input and output messages
+    command_ = std::make_shared<nav2_tasks::StopCommand>();
+    result_ = std::make_shared<nav2_tasks::StopResult>();
   }
-
-  void halt() override
-  {
-  }
-
-private:
-  rclcpp::Node::SharedPtr node_;
-
-  std::shared_ptr<nav2_robot::Robot> robot_;
-
-  // For publishing a zero velocity command to the robot
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-
-  // For stopping the path following controller from sending commands to the robot
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
-
-  bool initialized_;
 };
 
 }  // namespace nav2_tasks
