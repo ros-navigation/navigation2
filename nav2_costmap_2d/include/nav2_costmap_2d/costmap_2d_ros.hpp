@@ -38,14 +38,17 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
-#include <nav2_costmap_2d/layered_costmap.hpp>
-#include <nav2_costmap_2d/layer.hpp>
-#include <nav2_costmap_2d/costmap_2d_publisher.hpp>
-#include <nav2_costmap_2d/footprint.hpp>
-#include <geometry_msgs/msg/polygon.h>
-#include <geometry_msgs/msg/polygon_stamped.h>
-#include <pluginlib/class_loader.hpp>
-#include <tf2/transform_datatypes.h>
+#include <string>
+#include <vector>
+
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
+#include "geometry_msgs/msg/polygon.h"
+#include "geometry_msgs/msg/polygon_stamped.h"
+#include "pluginlib/class_loader.hpp"
+#include "tf2/transform_datatypes.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"

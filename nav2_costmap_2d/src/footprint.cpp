@@ -26,19 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <string>
+#include "nav2_costmap_2d/footprint.hpp"
 
-#include <nav2_costmap_2d/costmap_math.hpp>
-#include <nav2_costmap_2d/footprint.hpp>
-#include <nav2_costmap_2d/array_parser.hpp>
-#include <geometry_msgs/msg/point32.hpp>
+#include <algorithm>
+#include <limits>
+#include <string>
+#include <vector>
+
+#include "geometry_msgs/msg/point32.hpp"
+#include "nav2_costmap_2d/array_parser.hpp"
+#include "nav2_costmap_2d/costmap_math.hpp"
 
 namespace nav2_costmap_2d
 {
 
-void calculateMinAndMaxDistances(const std::vector<geometry_msgs::msg::Point> & footprint,
-    double & min_dist,
-    double & max_dist)
+void calculateMinAndMaxDistances(
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  double & min_dist, double & max_dist)
 {
   min_dist = std::numeric_limits<double>::max();
   max_dist = 0.0;
@@ -100,9 +104,10 @@ std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon
   return pts;
 }
 
-void transformFootprint(double x, double y, double theta,
-    const std::vector<geometry_msgs::msg::Point> & footprint_spec,
-    std::vector<geometry_msgs::msg::Point> & oriented_footprint)
+void transformFootprint(
+  double x, double y, double theta,
+  const std::vector<geometry_msgs::msg::Point> & footprint_spec,
+  std::vector<geometry_msgs::msg::Point> & oriented_footprint)
 {
   // build the oriented footprint at a given location
   oriented_footprint.clear();
@@ -116,9 +121,10 @@ void transformFootprint(double x, double y, double theta,
   }
 }
 
-void transformFootprint(double x, double y, double theta,
-    const std::vector<geometry_msgs::msg::Point> & footprint_spec,
-    geometry_msgs::msg::PolygonStamped & oriented_footprint)
+void transformFootprint(
+  double x, double y, double theta,
+  const std::vector<geometry_msgs::msg::Point> & footprint_spec,
+  geometry_msgs::msg::PolygonStamped & oriented_footprint)
 {
   // build the oriented footprint at a given location
   oriented_footprint.polygon.points.clear();
@@ -162,25 +168,26 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius)
 }
 
 
-bool makeFootprintFromString(const std::string & footprint_string,
-    std::vector<geometry_msgs::msg::Point> & footprint)
+bool makeFootprintFromString(
+  const std::string & footprint_string,
+  std::vector<geometry_msgs::msg::Point> & footprint)
 {
   std::string error;
-  std::vector<std::vector<float> > vvf = parseVVF(footprint_string, error);
+  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
 
   if (error != "") {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
+        "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
     RCLCPP_ERROR(rclcpp::get_logger(
-          "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
+        "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
     return false;
   }
 
   // convert vvf into points.
   if (vvf.size() < 3) {
     RCLCPP_ERROR(rclcpp::get_logger(
-          "nav2_costmap_2d"),
-        "You must specify at least three points for the robot footprint, reverting to previous footprint.");
+        "nav2_costmap_2d"),
+      "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
     return false;
   }
   footprint.reserve(vvf.size());
@@ -193,9 +200,9 @@ bool makeFootprintFromString(const std::string & footprint_string,
       footprint.push_back(point);
     } else {
       RCLCPP_ERROR(rclcpp::get_logger(
-            "nav2_costmap_2d"),
-          "Points in the footprint specification must be pairs of numbers.  Found a point with %d numbers.",
-          int(vvf[i].size()));
+          "nav2_costmap_2d"),
+        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+        static_cast<int>(vvf[i].size()));
       return false;
     }
   }
@@ -210,9 +217,8 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::Sha
   std::vector<geometry_msgs::msg::Point> points;
   std::string footprint;
 
-  node->get_parameter_or<std::string>(full_param_name, footprint, "[]" );
-  if (footprint != "" && footprint != "[]")
-  {
+  node->get_parameter_or<std::string>(full_param_name, footprint, "[]");
+  if (footprint != "" && footprint != "[]") {
     if (makeFootprintFromString(std::string(footprint), points)) {
       writeFootprintToParam(node, points);
       return points;
@@ -224,16 +230,17 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::Sha
   points = makeFootprintFromRadius(robot_radius);
 
   auto set_parameters_results = node->set_parameters({
-        rclcpp::Parameter("robot_radius", robot_radius)
-      });
+      rclcpp::Parameter("robot_radius", robot_radius)
+    });
 
   // Else neither param was found anywhere this knows about, so
   // defaults will come from dynamic_reconfigure stuff
   return points;
 }
 
-void writeFootprintToParam(rclcpp::Node::SharedPtr node,
-    const std::vector<geometry_msgs::msg::Point> & footprint)
+void writeFootprintToParam(
+  rclcpp::Node::SharedPtr node,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   std::ostringstream oss;
   bool first = true;
@@ -248,8 +255,8 @@ void writeFootprintToParam(rclcpp::Node::SharedPtr node,
   }
   oss << "]";
   auto set_parameters_results = node->set_parameters({
-        rclcpp::Parameter("footprint", oss.str().c_str())
-      });
+      rclcpp::Parameter("footprint", oss.str().c_str())
+    });
 }
 
 }  // end namespace nav2_costmap_2d

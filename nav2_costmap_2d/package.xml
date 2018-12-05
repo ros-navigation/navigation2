@@ -44,8 +44,6 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>nav2_map_server</test_depend>
 
- 	<member_of_group>rosidl_interface_packages</member_of_group>
-
   <export>
 	  <build_type>ament_cmake</build_type>
   </export>

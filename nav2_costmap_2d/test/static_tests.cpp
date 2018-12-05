@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2013, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,17 +32,15 @@
  * Test harness for StaticMap Layer for Costmap2D
  */
 
-#include <nav2_costmap_2d/costmap_2d.hpp>
-#include <nav2_costmap_2d/layered_costmap.hpp>
-#include <nav2_costmap_2d/obstacle_layer.hpp>
-#include <nav2_costmap_2d/static_layer.hpp>
-#include <nav2_costmap_2d/observation_buffer.hpp>
-#include <nav2_costmap_2d/testing_helper.hpp>
-#include <set>
 #include <gtest/gtest.h>
+#include <set>
 
-using namespace nav2_costmap_2d;
-
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/obstacle_layer.hpp"
+#include "nav2_costmap_2d/static_layer.hpp"
+#include "nav2_costmap_2d/observation_buffer.hpp"
+#include "nav2_costmap_2d/testing_helper.hpp"
 
 /**
  * Tests the reset method
@@ -255,7 +253,7 @@ TEST(costmap, testOverlapStaticMapUpdate){
 
 
 TEST(costmap, testStaticMap){
-  Costmap2D map(GRID_WIDTH, GRID_HEIGHT, RESOLUTION, 0.0, 0.0, ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS, 
+  Costmap2D map(GRID_WIDTH, GRID_HEIGHT, RESOLUTION, 0.0, 0.0, ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS,
       10.0, MAX_Z, 10.0, 25, MAP_10_BY_10, THRESHOLD);
 
   ASSERT_EQ(map.getSizeInCellsX(), (unsigned int)10);
@@ -322,8 +320,8 @@ TEST(costmap, testStaticMap){
 
 //*/
 
-
-int main(int argc, char** argv){
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "obstacle_tests");
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

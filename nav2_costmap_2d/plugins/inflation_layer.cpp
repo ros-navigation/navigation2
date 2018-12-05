@@ -35,12 +35,17 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
+#include "nav2_costmap_2d/inflation_layer.hpp"
+
 #include <algorithm>
-#include <nav2_costmap_2d/inflation_layer.hpp>
-#include <nav2_costmap_2d/costmap_math.hpp>
-#include <nav2_costmap_2d/footprint.hpp>
-#include <pluginlib/class_list_macros.hpp>
+#include <map>
+#include <vector>
+#include <limits>
+
+#include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
+#include "nav2_costmap_2d/costmap_math.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 
@@ -52,7 +57,7 @@ namespace nav2_costmap_2d
 {
 
 InflationLayer::InflationLayer()
-  : inflation_radius_(0),
+: inflation_radius_(0),
   inscribed_radius_(0),
   weight_(0),
   inflate_unknown_(false),
@@ -82,22 +87,22 @@ void InflationLayer::onInitialize()
     seen_ = NULL;
     seen_size_ = 0;
     need_reinflation_ = false;
-
   }
   matchSize();
 
-  node_->set_parameter_if_not_set(name_ + "." + "enabled",true);
+  node_->set_parameter_if_not_set(name_ + "." + "enabled", true);
   node_->set_parameter_if_not_set(name_ + "." + "inflation_radius", 0.55);
   node_->set_parameter_if_not_set(name_ + "." + "cost_scaling_factor", 10.0);
-  node_->set_parameter_if_not_set(name_ + "." + "inflate_unknown",false);
+  node_->set_parameter_if_not_set(name_ + "." + "inflate_unknown", false);
 
   dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
   dynamic_param_client_->add_parameters({
-    name_ + "." + "enabled",
-    name_ + "." + "inflation_radius",
-    name_ + "." + "cost_scaling_factor",
-    name_ + "." + "inflate_unknown"});   
-  dynamic_param_client_->set_callback(std::bind(&InflationLayer::reconfigureCB, this));  
+      name_ + "." + "enabled",
+      name_ + "." + "inflation_radius",
+      name_ + "." + "cost_scaling_factor",
+      name_ + "." + "inflate_unknown"
+    });
+  dynamic_param_client_->set_callback(std::bind(&InflationLayer::reconfigureCB, this));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins
 }
 
@@ -140,8 +145,9 @@ void InflationLayer::matchSize()
   seen_ = new bool[seen_size_];
 }
 
-void InflationLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-    double * min_y, double * max_x, double * max_y)
+void InflationLayer::updateBounds(
+  double robot_x, double robot_y, double robot_yaw, double * min_x,
+  double * min_y, double * max_x, double * max_y)
 {
   if (need_reinflation_) {
     last_min_x_ = *min_x;
@@ -180,14 +186,15 @@ void InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
-      " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
-      layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
+      "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
+    layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
 
-void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
-    int max_i,
-    int max_j)
+void InflationLayer::updateCosts(
+  nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+  int max_i,
+  int max_j)
 {
   std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
@@ -196,19 +203,19 @@ void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int m
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   RCLCPP_FATAL_EXPRESSION(rclcpp::get_logger("nav2_costmap_2d"),
-      !inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
+    !inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
 
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
 
   if (seen_ == NULL) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array is NULL");
+        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array is NULL");
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];
   } else if (seen_size_ != size_x * size_y) {
     RCLCPP_WARN(rclcpp::get_logger(
-          "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array size is wrong");
+        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array size is wrong");
     delete[] seen_;
     seen_size_ = size_x * size_y;
     seen_ = new bool[seen_size_];
@@ -226,11 +233,13 @@ void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int m
 
   min_i = std::max(0, min_i);
   min_j = std::max(0, min_j);
-  max_i = std::min(int(size_x), max_i);
-  max_j = std::min(int(size_y), max_j);
+  max_i = std::min(static_cast<int>(size_x), max_i);
+  max_j = std::min(static_cast<int>(size_y), max_j);
 
-  // Inflation list; we append cells to visit in a list associated with its distance to the nearest obstacle
-  // We use a map<distance, list> to emulate the priority queue used before, with a notable performance boost
+  // Inflation list; we append cells to visit in a list associated with
+  // its distance to the nearest obstacle
+  // We use a map<distance, list> to emulate the priority queue used before,
+  // with a notable performance boost
 
   // Start with lethal obstacles: by definition distance is 0.0
   std::vector<CellData> & obs_bin = inflation_cells_[0.0];
@@ -244,9 +253,10 @@ void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int m
     }
   }
 
-  // Process cells by increasing distance; new cells are appended to the corresponding distance bin, so they
+  // Process cells by increasing distance; new cells are appended to the
+  // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  std::map<double, std::vector<CellData> >::iterator bin;
+  std::map<double, std::vector<CellData>>::iterator bin;
   for (bin = inflation_cells_.begin(); bin != inflation_cells_.end(); ++bin) {
     for (int i = 0; i < bin->second.size(); ++i) {
       // process all cells at distance dist_bin.first
@@ -270,7 +280,7 @@ void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int m
       unsigned char cost = costLookup(mx, my, sx, sy);
       unsigned char old_cost = master_array[index];
       if (old_cost == NO_INFORMATION &&
-          (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+        (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
       {
         master_array[index] = cost;
       } else {
@@ -305,14 +315,17 @@ void InflationLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int m
  * @param  src_x The x index of the obstacle point inflation started at
  * @param  src_y The y index of the obstacle point inflation started at
  */
-inline void InflationLayer::enqueue(unsigned int index, unsigned int mx, unsigned int my,
-    unsigned int src_x, unsigned int src_y)
+inline void InflationLayer::enqueue(
+  unsigned int index, unsigned int mx, unsigned int my,
+  unsigned int src_x, unsigned int src_y)
 {
   if (!seen_[index]) {
-    // we compute our distance table one cell further than the inflation radius dictates so we can make the check below
+    // we compute our distance table one cell further than the
+    // inflation radius dictates so we can make the check below
     double distance = distanceLookup(mx, my, src_x, src_y);
 
-    // we only want to put the cell in the list if it is within the inflation radius of the obstacle point
+    // we only want to put the cell in the list if it is within
+    // the inflation radius of the obstacle point
     if (distance > cell_inflation_radius_) {
       return;
     }

@@ -41,9 +41,9 @@ namespace nav2_costmap_2d
  * @param input
  * @param error_return
  * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
-std::vector<std::vector<float> > parseVVF(const std::string & input, std::string & error_return)
+std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return)
 {
-  std::vector<std::vector<float> > result;
+  std::vector<std::vector<float>> result;
 
   std::stringstream input_ss(input);
   int depth = 0;
@@ -77,7 +77,7 @@ std::vector<std::vector<float> > parseVVF(const std::string & input, std::string
       case '\t':
         input_ss.get();
         break;
-      default: // All other characters should be part of the numbers.
+      default:  // All other characters should be part of the numbers.
         if (depth != 2) {
           std::stringstream err_ss;
           err_ss << "Numbers at depth other than 2. Char was '" << char(input_ss.peek()) << "'.";

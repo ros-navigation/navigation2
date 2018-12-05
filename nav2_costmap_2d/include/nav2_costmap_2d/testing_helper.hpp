@@ -1,14 +1,15 @@
 #ifndef NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
 #define NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
 
-#include "rclcpp/rclcpp.hpp"
-#include <nav2_costmap_2d/cost_values.hpp>
-#include <nav2_costmap_2d/costmap_2d.hpp>
-#include <nav2_costmap_2d/static_layer.hpp>
-#include <nav2_costmap_2d/obstacle_layer.hpp>
-#include <nav2_costmap_2d/inflation_layer.hpp>
+#include <memory>
 
-#include <sensor_msgs/point_cloud2_iterator.hpp>
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/static_layer.hpp"
+#include "nav2_costmap_2d/obstacle_layer.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 
 const double MAX_Z(1.0);
 
@@ -38,13 +39,15 @@ void printMap(nav2_costmap_2d::Costmap2D & costmap)
   printf("map:\n");
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
     for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
-      printf("%4d", int(costmap.getCost(j, i)));
+      printf("%4d", static_cast<int>(costmap.getCost(j, i)));
     }
     printf("\n\n");
   }
 }
 
-unsigned int countValues(nav2_costmap_2d::Costmap2D & costmap, unsigned char value, bool equal = true)
+unsigned int countValues(
+  nav2_costmap_2d::Costmap2D & costmap,
+  unsigned char value, bool equal = true)
 {
   unsigned int count = 0;
   for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
@@ -65,7 +68,8 @@ void addStaticLayer(nav2_costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & 
   slayer->initialize(&layers, "static", &tf);
 }
 
-nav2_costmap_2d::ObstacleLayer * addObstacleLayer(nav2_costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf)
 {
   nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
@@ -74,7 +78,8 @@ nav2_costmap_2d::ObstacleLayer * addObstacleLayer(nav2_costmap_2d::LayeredCostma
   return olayer;
 }
 
-void addObservation(nav2_costmap_2d::ObstacleLayer * olayer, double x, double y, double z = 0.0,
+void addObservation(
+  nav2_costmap_2d::ObstacleLayer * olayer, double x, double y, double z = 0.0,
   double ox = 0.0, double oy = 0.0, double oz = MAX_Z)
 {
   sensor_msgs::PointCloud2 cloud;
@@ -93,11 +98,13 @@ void addObservation(nav2_costmap_2d::ObstacleLayer * olayer, double x, double y,
   p.y = oy;
   p.z = oz;
 
-  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);  // obstacle range = raytrace range = 100.0
+  // obstacle range = raytrace range = 100.0
+  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);
   olayer->addStaticObservation(obs, true, true);
 }
 
-nav2_costmap_2d::InflationLayer * addInflationLayer(nav2_costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::InflationLayer * addInflationLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf)
 {
   nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();

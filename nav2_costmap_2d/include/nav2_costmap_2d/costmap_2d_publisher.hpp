@@ -38,11 +38,14 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
 
+#include <algorithm>
+#include <string>
+
 #include "rclcpp/rclcpp.hpp"
-#include <nav2_costmap_2d/costmap_2d.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
-#include <map_msgs/msg/occupancy_grid_update.hpp>
-#include <tf2/transform_datatypes.h>
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "map_msgs/msg/occupancy_grid_update.hpp"
+#include "tf2/transform_datatypes.h"
 
 namespace nav2_costmap_2d
 {
@@ -56,10 +59,11 @@ public:
   /**
    * @brief  Constructor for the Costmap2DPublisher
    */
-  Costmap2DPublisher(rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
-      std::string global_frame,
-      std::string topic_name,
-      bool always_send_full_costmap = false);
+  Costmap2DPublisher(
+    rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+    std::string global_frame,
+    std::string topic_name,
+    bool always_send_full_costmap = false);
 
   /**
    * @brief  Destructor
@@ -94,7 +98,7 @@ private:
   void prepareGrid();
 
   /** @brief Publish the latest full costmap to the new subscriber. */
-  //void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
+  // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
   rclcpp::Node::SharedPtr node_;
   Costmap2D * costmap_;
@@ -108,7 +112,8 @@ private:
   rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr costmap_update_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
-  static char * cost_translation_table_;  ///< Translate from 0-255 values in costmap to -1 to 100 values in message.
+  // Translate from 0-255 values in costmap to -1 to 100 values in message.
+  static char * cost_translation_table_;
 };
 }  // namespace nav2_costmap_2d
-#endif // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
