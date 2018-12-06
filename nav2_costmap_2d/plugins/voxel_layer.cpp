@@ -110,7 +110,8 @@ void VoxelLayer::reconfigureCB()
   RCLCPP_DEBUG(node_->get_logger(), "VoxelLayer:: Event Callback");
 
   dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_);
-  dynamic_param_client_->get_event_param(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  dynamic_param_client_->get_event_param(
+    name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   dynamic_param_client_->get_event_param(name_ + "." + "z_voxels", size_z_);
   dynamic_param_client_->get_event_param(name_ + "." + "origin_z", origin_z_);

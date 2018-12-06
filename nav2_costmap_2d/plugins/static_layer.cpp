@@ -131,7 +131,7 @@ void StaticLayer::reconfigureCB()
   RCLCPP_DEBUG(node_->get_logger(), "StaticLayer:: Event Callback");
 
   bool enabled = true;
-  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true); 
+  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
 
   if (enabled != enabled_) {
     enabled_ = enabled;
