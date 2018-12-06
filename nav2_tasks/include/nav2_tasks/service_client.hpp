@@ -35,11 +35,12 @@ public:
   using ResponseType = typename ServiceT::Response;
 
   typename ResponseType::SharedPtr invoke(
-    typename RequestType::SharedPtr & request)
+    typename RequestType::SharedPtr & request,
+    const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     auto result_future = client_->async_send_request(request);
 
-    if (rclcpp::spin_until_future_complete(node_, result_future) !=
+    if (rclcpp::spin_until_future_complete(node_, result_future, timeout) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
       throw std::runtime_error("ServiceClient::async_send_request: service call failed");
