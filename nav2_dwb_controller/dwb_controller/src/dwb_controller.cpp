@@ -25,7 +25,7 @@ using nav2_tasks::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 
-#define NO_OP_DELETER [](auto){}
+#define NO_OP_DELETER [] (auto) {}
 
 namespace nav2_dwb_controller
 {
