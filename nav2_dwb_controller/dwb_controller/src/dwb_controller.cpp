@@ -60,7 +60,6 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   // main loop below
 
   while (true) {
-
     ...
 
     if (task_server_->updateRequested()) {
