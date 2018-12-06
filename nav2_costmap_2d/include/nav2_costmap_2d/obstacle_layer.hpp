@@ -160,20 +160,20 @@ protected:
     double * max_x,
     double * max_y);
 
-  std::string global_frame_;  /// @brief The global frame for the costmap
-  double max_obstacle_height_;  /// @brief Max Obstacle Height
+  std::string global_frame_;  ///< @brief The global frame for the costmap
+  double max_obstacle_height_;  ///< @brief Max Obstacle Height
 
-  // Used to project laser scans into point clouds
+  /// @brief Used to project laser scans into point clouds
   laser_geometry::LaserProjection projector_;
-  // Used for the observation message filters
+  /// @brief Used for the observation message filters
   std::vector<std::shared_ptr<message_filters::SubscriberBase>> observation_subscribers_;
-  // Used to make sure that transforms are available for each sensor
+  /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
-  // Used to store observations from various sensors
+  /// @brief Used to store observations from various sensors
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> observation_buffers_;
-  // Used to store observation buffers used for marking obstacles
+  /// @brief Used to store observation buffers used for marking obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> marking_buffers_;
-  // Used to store observation buffers used for clearing obstacles
+  /// @brief Used to store observation buffers used for clearing obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> clearing_buffers_;
 
   // Used only for testing purposes
