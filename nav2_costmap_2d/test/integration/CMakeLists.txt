@@ -82,7 +82,7 @@ ament_add_test(obstacle_tests
     TEST_EXECUTABLE=$<TARGET_FILE:obstacle_tests_exec>
 )
 
-## TODO(bpwilcox): this test (I believe) is intended to be launched with the simple_driving_test.xml, 
+## TODO(bpwilcox): this test (I believe) is intended to be launched with the simple_driving_test.xml,
 ## which has a dependency on rosbag playback
 
 #ament_add_gtest_executable(costmap_tester

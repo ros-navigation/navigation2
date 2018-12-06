@@ -75,10 +75,10 @@ rclcpp::Node::SharedPtr node_;
 TEST(costmap, testRaytracing) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);  // Not rolling window, not tracking unknown
-  addStaticLayer(layers, tf, node_); // This adds the static map
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  addStaticLayer(layers, tf, node_);
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  
+
   // Add a point at 0, 0, 0
   addObservation(olayer, 0.0, 0.0, MAX_Z / 2, 0, 0, MAX_Z / 2);
 
@@ -241,7 +241,7 @@ TEST(costmap, testMultipleAdditions) {
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
 }
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   node_ = rclcpp::Node::make_shared("obstacle_test_node");

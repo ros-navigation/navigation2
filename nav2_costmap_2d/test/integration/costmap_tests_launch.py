@@ -23,7 +23,7 @@ from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing import LaunchTestService
-import launch_ros.actions
+
 
 def main(argv=sys.argv[1:]):
     launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py')
@@ -45,6 +45,7 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return lts.run(ls)
+
 
 if __name__ == '__main__':
     sys.exit(main())

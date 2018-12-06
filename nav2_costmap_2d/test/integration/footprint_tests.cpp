@@ -34,44 +34,42 @@
 *
 * Author: Dave Hershberger
 *********************************************************************/
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_costmap_2d/costmap_2d_ros.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 tf2_ros::TransformListener * tfl_;
 tf2_ros::Buffer * tf_;
 
-class FootprintTestNode : public Costmap2DROS
+class FootprintTestNode : public nav2_costmap_2d::Costmap2DROS
 {
 public:
   FootprintTestNode(std::string name, tf2_ros::Buffer & buffer)
-    : Costmap2DROS(name, buffer)
+  : nav2_costmap_2d::Costmap2DROS(name, buffer)
   {}
 
   void testFootprint(double footprint_padding, std::string footprint)
   {
     footprint_padding_ = footprint_padding;
-    if (footprint != "" && footprint != "[]")
-    {
+    if (footprint != "" && footprint != "[]") {
       std::vector<geometry_msgs::msg::Point> new_footprint;
-      if (makeFootprintFromString(footprint, new_footprint))
-      {
-          setUnpaddedRobotFootprint(new_footprint);
-      }
-      else
-      {
-          RCLCPP_ERROR(get_logger(),"Invalid footprint string");
+      if (nav2_costmap_2d::makeFootprintFromString(footprint, new_footprint)) {
+        nav2_costmap_2d::Costmap2DROS::setUnpaddedRobotFootprint(new_footprint);
+      } else {
+        RCLCPP_ERROR(get_logger(), "Invalid footprint string");
       }
     }
   }
   void testFootprint(double footprint_padding, double robot_radius)
   {
     footprint_padding_ = footprint_padding;
-    setUnpaddedRobotFootprint(makeFootprintFromRadius(robot_radius));
+    nav2_costmap_2d::Costmap2DROS::setUnpaddedRobotFootprint(
+      nav2_costmap_2d::makeFootprintFromRadius(robot_radius));
   }
 };
 
@@ -86,9 +84,9 @@ TEST(FootprintTestNode, footprint_empty)
   // defaults to 0.1 meter radius plus 0.01 meter padding.
   EXPECT_EQ(16, footprint.size());
 
-  EXPECT_NEAR(0.11f, footprint[ 0 ].x, 0.0001);
-  EXPECT_NEAR(0.0f, footprint[ 0 ].y, 0.0001);
-  EXPECT_EQ(0.0f, footprint[ 0 ].z );
+  EXPECT_NEAR(0.11f, footprint[0].x, 0.0001);
+  EXPECT_NEAR(0.0f, footprint[0].y, 0.0001);
+  EXPECT_EQ(0.0f, footprint[0].z);
 }
 
 TEST(FootprintTestNode, unpadded_footprint_from_string_param)
@@ -168,7 +166,7 @@ TEST(FootprintTestNode, footprint_from_same_level_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("footprint_tests");

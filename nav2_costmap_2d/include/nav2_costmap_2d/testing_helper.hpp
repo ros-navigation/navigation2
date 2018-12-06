@@ -61,14 +61,17 @@ unsigned int countValues(
   return count;
 }
 
-void addStaticLayer(nav2_costmap_2d::LayeredCostmap & layers, tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
+void addStaticLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
 {
   nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf, node);
 }
 
-nav2_costmap_2d::ObstacleLayer * addObstacleLayer(nav2_costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
 {
   nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
@@ -102,7 +105,8 @@ void addObservation(
   olayer->addStaticObservation(obs, true, true);
 }
 
-nav2_costmap_2d::InflationLayer * addInflationLayer(nav2_costmap_2d::LayeredCostmap & layers,
+nav2_costmap_2d::InflationLayer * addInflationLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
 {
   nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();

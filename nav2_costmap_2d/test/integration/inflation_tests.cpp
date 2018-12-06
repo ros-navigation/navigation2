@@ -44,7 +44,7 @@
 #include "nav2_costmap_2d/testing_helper.hpp"
 
 using geometry_msgs::msg::Point;
-
+using nav2_costmap_2d::CellData;
 // Create a node acting as a 'Parameter Server' in lieu of Costmap2DROS
 rclcpp::Node::SharedPtr node_;
 
@@ -84,7 +84,9 @@ void validatePointInflation(
   std::map<double, std::vector<CellData>> m;
   CellData initial(costmap->getIndex(mx, my), mx, my, mx, my);
   m[0].push_back(initial);
-  for (std::map<double, std::vector<CellData>>::iterator bin = m.begin(); bin != m.end(); ++bin) {
+  for (std::map<double, std::vector<CellData>>::iterator bin = m.begin();
+    bin != m.end(); ++bin)
+  {
     for (int i = 0; i < bin->second.size(); ++i) {
       const CellData & cell = bin->second[i];
       if (!seen[cell.index_]) {
@@ -128,7 +130,7 @@ void validatePointInflation(
 
 TEST(costmap, testAdjacentToObstacleCanStillMove) {
   tf2_ros::Buffer tf(node_->get_clock());
-  LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   // Footprint with inscribed radius = 2.1
@@ -170,7 +172,7 @@ TEST(costmap, testInflationShouldNotCreateUnknowns) {
   layers.updateMap(0, 0, 0);
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
-  EXPECT_EQ(countValues(*costmap, NO_INFORMATION), 0);
+  EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 0);
 }
 
 
@@ -405,11 +407,11 @@ TEST(costmap, testInflation3) {
 }
 
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   node_ = rclcpp::Node::make_shared("inflation_test_node");
-  
+
   // Set cost_scaling_factor parameter to 1.0 for inflation layer
   node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
 
