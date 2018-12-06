@@ -30,6 +30,7 @@ set(dependencies
   nav_msgs
   visualization_msgs
   nav2_amcl
+  gazebo_ros_pkgs
 )
 
 if(BUILD_TESTING)
