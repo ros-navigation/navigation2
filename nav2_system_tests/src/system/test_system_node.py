@@ -23,6 +23,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 import rclpy
 from rclpy.node import Node
 
+
 class NavTester(Node):
 
     def __init__(self):
@@ -49,7 +50,7 @@ class NavTester(Node):
         self.initial_pose_pub.publish(msg)
 
     def setGoalPose(self, pose):
-        self.goalPose = pose
+        self.goal_pose = pose
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose = pose
@@ -57,27 +58,27 @@ class NavTester(Node):
 
     def poseCallback(self, msg):
         self.get_logger().info('Received amcl_pose')
-        self.currentPose = msg.pose.pose
+        self.current_pose = msg.pose.pose
         self.initial_pose_received = True
 
     def reachesGoal(self, timeout):
         goalReached = False
-        startTime = time.time()
+        start_time = time.time()
 
         while not goalReached:
             rclpy.spin_once(self, timeout_sec=1)
-            if self.distanceFromGoal() < 0.25:  # get within 25cm of goal
+            if self.distanceFromGoal() < 0.50:  # get within 50cm of goal
                 goalReached = True
                 self.get_logger().info('*** GOAL REACHED ***')
                 return True
             elif timeout is not None:
-                if (time.time() - startTime) > timeout:
+                if (time.time() - start_time) > timeout:
                     self.get_logger().error('Robot timed out reaching its goal!')
                     return False
 
     def distanceFromGoal(self):
-        d_x = self.currentPose.position.x - self.goalPose.position.x
-        d_y = self.currentPose.position.y - self.goalPose.position.y
+        d_x = self.current_pose.position.x - self.goal_pose.position.x
+        d_y = self.current_pose.position.y - self.goal_pose.position.y
         distance = math.sqrt(d_x * d_x + d_y * d_y)
         self.get_logger().info('Distance from goal is: ' + str(distance))
         return distance
@@ -163,11 +164,11 @@ def main(argv=sys.argv[1:]):
     result = test_all(test_robot)
     if (result):
         test_robot.get_logger().info('Test PASSED')
-        return 0
+        return
     else:
         test_robot.get_logger().error('Test FAILED')
-        return 1
+        exit(1)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
