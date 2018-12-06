@@ -275,8 +275,8 @@ NavfnPlanner::smoothApproachToGoal(
   auto last_pose = plan.poses.back();
   if (
     squared_distance(last_pose, second_to_last_pose) >
-    squared_distance(goal, second_to_last_pose)
-  ) {
+    squared_distance(goal, second_to_last_pose))
+  {
     plan.poses.back() = goal;
   } else {
     geometry_msgs::msg::Pose goal_copy = goal;
