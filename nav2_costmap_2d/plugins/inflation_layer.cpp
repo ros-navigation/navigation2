@@ -115,10 +115,14 @@ void InflationLayer::reconfigureCB()
   bool inflate_unknown;
   bool enabled;
 
-  dynamic_param_client_->get_event_param_or(name_ + "." + "inflation_radius", inflation_radius, 0.55);
-  dynamic_param_client_->get_event_param_or(name_ + "." + "cost_scaling_factor", cost_scaling_factor, 10.0);
-  dynamic_param_client_->get_event_param_or(name_ + "." + "inflate_unknown", inflate_unknown, false);
-  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
+  dynamic_param_client_->get_event_param_or(
+    name_ + "." + "inflation_radius", inflation_radius, 0.55);
+  dynamic_param_client_->get_event_param_or(
+    name_ + "." + "cost_scaling_factor", cost_scaling_factor, 10.0);
+  dynamic_param_client_->get_event_param_or(
+    name_ + "." + "inflate_unknown", inflate_unknown, false);
+  dynamic_param_client_->get_event_param_or(
+    name_ + "." + "enabled", enabled, true);
 
   setInflationParameters(inflation_radius, cost_scaling_factor);
 
