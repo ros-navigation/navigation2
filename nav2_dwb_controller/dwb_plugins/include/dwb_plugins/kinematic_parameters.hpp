@@ -104,7 +104,7 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_, max_speed_xy_sq_;
 
-  void reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  void reconfigureCB();
   std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dsrv_;
 };
 

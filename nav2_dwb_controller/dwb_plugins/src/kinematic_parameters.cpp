@@ -86,12 +86,11 @@ void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
   setDecelerationAsNeeded(nh, "theta");
 
   dsrv_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(nh);
-  dsrv_->set_callback([this](auto event){reconfigureCB(event);});
-  reconfigureCB(std::make_shared<rcl_interfaces::msg::ParameterEvent>());
+  dsrv_->set_callback([this](){reconfigureCB();});
 }
 
-#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(event, #name, name##_, 0.0)
-void KinematicParameters::reconfigureCB(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(#name, name##_, 0.0)
+void KinematicParameters::reconfigureCB()
 {
   UPDATE_PARAMETER(min_vel_x);
   UPDATE_PARAMETER(min_vel_y);
