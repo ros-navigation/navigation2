@@ -21,10 +21,12 @@ import launch_ros.actions
 
 
 def generate_launch_description():
+    mapFile = os.getenv('TEST_MAP')
     return LaunchDescription([
         launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
+            node_name='map_server',
             output='screen',
-            arguments=[os.path.join(os.getenv('TEST_MAP_DIR'), 'TenByTen.yaml')]),
+            parameters=[{'yaml_filename': mapFile}])
     ])
