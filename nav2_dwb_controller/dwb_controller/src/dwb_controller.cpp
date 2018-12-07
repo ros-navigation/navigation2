@@ -88,7 +88,6 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
 
         // Check if there is an update to the path to follow
         if (task_server_->updateRequested()) {
-
           // Get the new, updated path
           auto path_cmd = std::make_shared<nav2_tasks::FollowPathCommand>();
           task_server_->getCommandUpdate(path_cmd);
