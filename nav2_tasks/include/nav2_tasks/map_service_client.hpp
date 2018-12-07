@@ -25,7 +25,7 @@ class MapServiceClient : public ServiceClient<nav_msgs::srv::GetMap>
 {
 public:
   MapServiceClient()
-  : ServiceClient<nav_msgs::srv::GetMap>("occ_grid")
+  : ServiceClient<nav_msgs::srv::GetMap>("map")
   {
   }
 

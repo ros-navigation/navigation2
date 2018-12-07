@@ -158,7 +158,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Map
-      Topic: /occ_grid
+      Topic: /map
       Unreliable: false
       Use Timestamp: false
       Value: true
