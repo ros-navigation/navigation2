@@ -42,25 +42,7 @@ int
 main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-
-  // TODO(crdelsey): This is workaround for Issue #339
-  // Depending on a persons particular setup, most of the time when a laser
-  // scan message is received, the transform for it is not available yet. With
-  // the previous implementation, AMCL would discard that data. On some machines
-  // we could go for thousands of scans without a successful transform resulting
-  // in basically an unusable system. Lacking message filters, the fix for this
-  // is to enable transform timeouts, however, at the moment, transform timeouts
-  // hang when use_sim_time is active. This workaround creates a seperate node
-  // for the sole purpose of provide a clock that can keep updating when the
-  // transform code is in a tight loop waiting for transform data or the timeout.
-  rclcpp::executors::MultiThreadedExecutor exec;
-  auto clockNode = rclcpp::Node::make_shared("amcl_clock_node");
-  simtime_clock = clockNode->get_clock();
-  auto amclNode = std::make_shared<AmclNode>();
-  exec.add_node(clockNode);
-  exec.add_node(amclNode);
-  exec.spin();
-
+  rclcpp::spin(std::make_shared<AmclNode>());
   rclcpp::shutdown();
 
   return 0;
