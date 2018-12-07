@@ -1,6 +1,7 @@
 map_server:
-    ros__parameters:
-        yaml_filename: "test_map.yaml"
+  ros__parameters:
+    yaml_filename: "test_map.yaml"
+    use_sim_time: True
 DwbController:
   ros__parameters:
     debug_trajectory_details: True
@@ -18,8 +19,31 @@ DwbController:
     decel_lim_x: -2.5
     decel_lim_y: 0.0
     decel_lim_theta: -3.2
+    use_sim_time: True
 local_costmap:
   local_costmap:
     ros__parameters:
       always_send_full_costmap: True
-
+      use_sim_time: True
+WorldModel_Node:
+  ros__parameters:
+    use_sim_time: True
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: True
+amcl:
+  ros__parameters:
+    use_sim_time: True
+navfn_planner:
+  ros__parameters:
+    use_sim_time: True
+simple_navigator:
+  ros__parameters:
+    use_sim_time: True
+BtNavigator:
+  ros__parameters:
+    use_sim_time: True
+mission_executor:
+  ros__parameters:
+    use_sim_time: True
