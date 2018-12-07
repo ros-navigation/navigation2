@@ -57,6 +57,7 @@ BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
   // Get the updated path from the blackboard and send to the FollowPath task server
   auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>(
     "path");
+
   follow_path_task_client_->sendUpdate(path);
   return BT::NodeStatus::RUNNING;
 }

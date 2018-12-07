@@ -55,32 +55,15 @@ DwbController::~DwbController()
 TaskStatus
 DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command)
 {
-#if 0
-  // TODO(mjeronimo): Integrate the following example code into the
-  // main loop below
-
-  while (true) {
-    ...
-
-    if (task_server_->updateRequested()) {
-      auto new_path = std::make_shared<nav2_tasks::FollowPathCommand>();
-      task_server_->getCommandUpdate(new_path);
-      task_server_->setUpdated();
-
-      // Update the target path
-    }
-
-    ...
-  }
-#endif
-
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
+
     planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
+
     while (true) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
@@ -94,11 +77,25 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity");
+
+        // Check if this task has been canceled
         if (task_server_->cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
           task_server_->setCanceled();
           publishZeroVelocity();
           return TaskStatus::CANCELED;
+        }
+
+        // Check if there is an update to the path to follow
+        if (task_server_->updateRequested()) {
+          // Get the new, updated path
+          auto path_cmd = std::make_shared<nav2_tasks::FollowPathCommand>();
+          task_server_->getCommandUpdate(path_cmd);
+          task_server_->setUpdated();
+
+          // and pass it to the local planner
+          auto path = nav_2d_utils::pathToPath2D(*path_cmd);
+          planner_.setPlan(path);
         }
       }
       std::this_thread::sleep_for(100ms);

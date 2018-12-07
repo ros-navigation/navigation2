@@ -28,8 +28,8 @@ public:
   RateController(const std::string & name, const BT::NodeParameters & params)
   : BT::DecoratorNode(name, params)
   {
-    unsigned int hz = 1;
-    getParam<unsigned int>("hz", hz);
+    double hz = 1.0;
+    getParam<double>("hz", hz);
     period_ = 1.0 / hz;
   }
 

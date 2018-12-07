@@ -20,8 +20,8 @@
 #include "behaviortree_cpp/blackboard/blackboard.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/path_end_points.hpp"
 
 namespace BT
 {
@@ -48,10 +48,11 @@ inline nav2_msgs::msg::Path::SharedPtr convertFromString(const StringView & /*ke
 }
 
 template<>
-inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const StringView & /*key*/)
+inline geometry_msgs::msg::PoseStamped::SharedPtr convertFromString(const StringView & /*key*/)
 {
   return nullptr;
 }
+
 
 // These are needed to be able to set parameters for these types in the BT XML
 

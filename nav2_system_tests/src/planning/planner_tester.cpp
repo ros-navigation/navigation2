@@ -240,7 +240,7 @@ bool PlannerTester::defaultPlannerTest(
     return false;
   }
 
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  auto goal = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   auto costmap_properties = costmap_->getProperties();
 
   // Compose the PathEndPoints message
@@ -248,11 +248,8 @@ bool PlannerTester::defaultPlannerTest(
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerTest:"
       " planning using a fake costmap");
 
-    endpoints->start.position.x = 1.0;
-    endpoints->start.position.y = 1.0;
-    endpoints->goal.position.x = 9.0;
-    endpoints->goal.position.y = 9.0;
-    endpoints->tolerance = 2.0;
+    goal->pose.position.x = 9.0;
+    goal->pose.position.y = 9.0;
 
   } else {
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerTest:"
@@ -260,14 +257,11 @@ bool PlannerTester::defaultPlannerTest(
 
     // Defined with respect to world coordinate system
     //  Planner will do coordinate transformation to map internally
-    endpoints->start.position.x = 390.0;
-    endpoints->start.position.y = 10.0;
-    endpoints->goal.position.x = 10.0;
-    endpoints->goal.position.y = 390.0;
-    endpoints->tolerance = 2.0;
+    goal->pose.position.x = 10.0;
+    goal->pose.position.y = 390.0;
   }
 
-  bool pathIsCollisionFree = plannerTest(endpoints, path);
+  bool pathIsCollisionFree = plannerTest(goal, path);
 
   // TODO(orduno): On a default test, provide the 'right answer' to compare with the planner result
   //               given that we know the start, end and costmap is either preloaded or coming from
@@ -312,7 +306,7 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
       return std::make_pair(x, y);
     };
 
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  auto goal = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   bool all_tests_OK = true;
@@ -321,28 +315,22 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
       " running test #%u", test_num + 1);
 
-    // Compose the path endpoints using random numbers
+    // Compose the goal using random numbers
     // Defined with respect to world coordinate system
     // Planner will do coordinate transformation to map internally
-    auto start = generate_random();
-    auto goal = generate_random();
-    endpoints->start.position.x = start.first;
-    endpoints->start.position.y = start.second;
-    endpoints->goal.position.x = goal.first;
-    endpoints->goal.position.y = goal.second;
-
-    endpoints->tolerance = 2.0;
+    auto vals = generate_random();
+    goal->pose.position.x = vals.first;
+    goal->pose.position.y = vals.second;
 
     // TODO(orduno): Tweak criteria for defining if a path goes into obstacles.
     //               Current Dijkstra planner will sometimes produce paths that cut corners
     //               i.e. some points are around the corner are actually inside the obstacle
-    bool pathIsCollisionFree = plannerTest(endpoints, path);
+    bool pathIsCollisionFree = plannerTest(goal, path);
 
     if (!pathIsCollisionFree) {
       RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
-        " failed or found a collision with start at %0.2f, %0.2f and end at %0.2f, %0.2f",
-        endpoints->start.position.x, endpoints->start.position.y,
-        endpoints->goal.position.x, endpoints->goal.position.y);
+        " failed or found a collision with goal at %0.2f, %0.2f",
+        goal->pose.position.x, goal->pose.position.y);
       all_tests_OK = false;
       ++num_fail;
     }
@@ -355,13 +343,13 @@ bool PlannerTester::defaultPlannerRandomTests(const unsigned int number_tests)
 }
 
 bool PlannerTester::plannerTest(
-  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
+  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
   nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
 {
   RCLCPP_INFO(this->get_logger(), "PlannerTester::plannerTest:"
     " getting the path from the planner");
 
-  TaskStatus status = sendRequest(endpoints, path);
+  TaskStatus status = sendRequest(goal, path);
 
   RCLCPP_INFO(this->get_logger(), "PlannerTester::plannerTest: status: %d", status);
 
@@ -380,10 +368,10 @@ bool PlannerTester::plannerTest(
 }
 
 TaskStatus PlannerTester::sendRequest(
-  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints,
+  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
   nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
 {
-  planner_client_->sendCommand(endpoints);
+  planner_client_->sendCommand(goal);
 
   // Loop until the subtask is completed
   while (true) {
