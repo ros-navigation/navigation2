@@ -51,17 +51,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
-  ament_add_gtest(vtest test/velocity_iterator_test.cpp)
-
-  #find_package(rostest REQUIRED)
-  add_executable(goal_checker test/goal_checker.cpp)
-  target_link_libraries(goal_checker simple_goal_checker stopped_goal_checker ${GTEST_LIBRARIES})
-  #add_rostest(test/goal_checker.launch DEPENDENCIES goal_checker)
-
-  add_executable(twist_gen_test test/twist_gen.cpp)
-  target_link_libraries(twist_gen_test standard_traj_generator ${GTEST_LIBRARIES})
-  #add_rostest(test/twist_gen.launch DEPENDENCIES twist_gen_test)
-
+  add_subdirectory(test)
 endif()
 
 install(TARGETS simple_goal_checker stopped_goal_checker standard_traj_generator

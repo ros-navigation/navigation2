@@ -1,3 +1,0 @@
-<launch>
-  <test test-name="twist_gen_test" pkg="dwb_plugins" type="twist_gen_test" />
-</launch>
