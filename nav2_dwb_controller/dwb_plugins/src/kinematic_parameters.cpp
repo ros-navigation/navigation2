@@ -86,10 +86,25 @@ void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
   setDecelerationAsNeeded(nh, "theta");
 
   dsrv_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(nh);
-  dsrv_->set_callback([this](){reconfigureCB();});
+  dsrv_->add_parameters({
+      "min_vel_x",
+      "min_vel_y",
+      "max_vel_x",
+      "max_vel_y",
+      "max_vel_theta",
+      "min_speed_xy",
+      "max_speed_xy",
+      "acc_lim_x",
+      "acc_lim_y",
+      "acc_lim_theta",
+      "decel_lim_x",
+      "decel_lim_y",
+      "decel_lim_theta"
+    });
+  dsrv_->set_callback([this]() {reconfigureCB();});
 }
 
-#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(#name, name##_, 0.0)
+#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(#name, name ## _, 0.0)
 void KinematicParameters::reconfigureCB()
 {
   UPDATE_PARAMETER(min_vel_x);
