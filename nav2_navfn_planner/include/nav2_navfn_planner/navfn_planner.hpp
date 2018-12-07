@@ -104,7 +104,8 @@ private:
 
   // Publish a path for visualization purposes
   void publishPlan(const nav2_msgs::msg::Path & path);
-  void publishEndpoints(const geometry_msgs::msg::Pose & start,
+  void publishEndpoints(
+    const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal);
 
   // Determine if a new planner object should be made

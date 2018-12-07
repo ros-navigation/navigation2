@@ -58,7 +58,10 @@ NavfnPlanner::NavfnPlanner()
 
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
 
+  // If the goal is obstructed, the tolerance specifies how many meters the planner
+  // can relax the constraint in x and y before failing
   tolerance_ = parameters_client->get_parameter("tolerance", 0.0);
+
   use_astar_ = parameters_client->get_parameter("use_astar", false);
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
@@ -100,7 +103,7 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
       planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
-	  // Get the current pose from the robot
+    // Get the current pose from the robot
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(start)) {
@@ -285,8 +288,8 @@ NavfnPlanner::smoothApproachToGoal(
   auto last_pose = plan.poses.back();
   if (
     squared_distance(last_pose, second_to_last_pose) >
-    squared_distance(goal, second_to_last_pose)
-  ) {
+    squared_distance(goal, second_to_last_pose))
+  {
     plan.poses.back() = goal;
   } else {
     geometry_msgs::msg::Pose goal_copy = goal;
@@ -510,7 +513,9 @@ NavfnPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 }
 
 void
-NavfnPlanner::publishEndpoints(const geometry_msgs::msg::Pose & start, const geometry_msgs::msg::Pose & goal)
+NavfnPlanner::publishEndpoints(
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & goal)
 {
   visualization_msgs::msg::Marker marker;
 

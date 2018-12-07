@@ -48,10 +48,11 @@ inline nav2_msgs::msg::Path::SharedPtr convertFromString(const StringView & /*ke
 }
 
 template<>
-inline geometry_msgs::msg::PoseStamped::SharedPtr convertFromString(const std::string & /*key*/)
+inline geometry_msgs::msg::PoseStamped::SharedPtr convertFromString(const StringView & /*key*/)
 {
   return nullptr;
 }
+
 
 // These are needed to be able to set parameters for these types in the BT XML
 
