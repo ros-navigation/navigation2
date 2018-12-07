@@ -29,20 +29,20 @@ def generate_launch_description():
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[params_file]),
+            parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_simple_navigator',
             node_executable='simple_navigator',
             node_name='simple_navigator',
             output='screen',
-            parameters=[params_file]),
+            parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_mission_executor',
             node_executable='mission_executor',
             node_name='mission_executor',
             output='screen',
-            parameters=[params_file]),
+            parameters=[{ 'use_sim_time': use_sim_time}]),
 
     ])
