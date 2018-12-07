@@ -2,7 +2,7 @@
 
 The `nav2_bringup` package is an example bringup system for navigation2 applications.
 
-Notes: (December 2018, Crystal Release) 
+Notes: (December 2018, Crystal Release)
 * We recommend doing this on a Ubuntu 18.04 installation. We’re currently having build issues on 16.04. (see https://github.com/ros-planning/navigation2/issues/353)
 * This stack and ROS2 are still in heavy development and there are some bugs and stability issues being worked on, so please do not try this on a robot without taking *heavy* safety precautions. THE ROBOT MAY CRASH!
 * It is recommended to start with simulation using Gazebo before proceeding to run on a physical robot
@@ -43,12 +43,17 @@ Run the rest of the Navigation2 bringup
 
 `ros2 launch nav2_bringup nav2_bringup_2nd_launch.py use_sim_time:=True`
 
-Set the World Model node to use simulation time
+Set the World Model and the two costmap nodes to use simulation time
 
-`ros2 param set /world_model use_sim_time True`
+```
+ros2 param set /world_model use_sim_time True
+ros2 param set /global_costmap/global_costmap use_sim_time True
+ros2 param set /local_costmap/local_costmap use_sim_time True
+```
 
 Notes:
 * Setting use_sim_time has to be done dynamically after the nodes are up due to this bug:https://github.com/ros2/rclcpp/issues/595
+* Sim time needs to be set in every namespace individually.
 * Sometimes setting use_sim_time a second time is required for all the nodes to get updated
 * IF you continue to see WARN messages like the ones below, retry setting the use_sim_time parameter
 ```
@@ -91,7 +96,7 @@ Pre-requisites:
 * You've completed bringup of your robot successfully following the 2-step process above
 * You know your transforms are being published correctly and AMCL can localize
 
-Follow directions above *except* 
+Follow directions above *except*
 * Instead of running the `nav2_bringup_1st_launch.py` then the `nav2_bringup_2nd_launch.py`
 * You can do it in one step like this:
 ```
@@ -100,7 +105,7 @@ ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>
 If running in simulation:
 ```
 ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True
-ros2 param set /world_model use_sim_time True
+ros2 param set /world_model use_sim_time True; ros2 param set /global_costmap/global_costmap use_sim_time True; ros2 param set /local_costmap/local_costmap use_sim_time True
 ```
 
 ## Future Work
