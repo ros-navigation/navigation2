@@ -55,7 +55,7 @@ def generate_launch_description():
             node_executable='map_server',
             node_name='map_server',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}, { 'yaml_filename': map_yaml_file }]),
+            parameters=[{'use_sim_time': use_sim_time}, {'yaml_filename': map_yaml_file}]),
 
         launch_ros.actions.Node(
             package='nav2_world_model',
@@ -68,7 +68,7 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
@@ -81,14 +81,14 @@ def generate_launch_description():
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_simple_navigator',
             node_executable='simple_navigator',
             node_name='simple_navigator',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}]),
     ])
 
 

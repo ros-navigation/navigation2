@@ -86,7 +86,8 @@ class NavTester(Node):
         self.get_logger().info('Setting transforms to use sim time from gazebo')
         from subprocess import call
         # loop through the problematic nodes
-        for nav2_node in ('/static_transform_publisher', '/map_server', '/global_costmap/global_costmap', '/local_costmap/local_costmap'):
+        for nav2_node in ('/static_transform_publisher', '/map_server',
+                          '/global_costmap/global_costmap', '/local_costmap/local_costmap'):
             while (call(['ros2', 'param', 'set', nav2_node, 'use_sim_time', 'True'])):
                 self.get_logger().error("Error couldn't set use_sim_time param on: " +
                                         nav2_node + ' retrying...')
