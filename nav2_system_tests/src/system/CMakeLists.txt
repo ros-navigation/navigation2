@@ -7,5 +7,5 @@ ament_add_test(test_system_node
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
-    GAZEBO_MODEL_PATH=$ENV{GAZEBO_MODEL_PATH}
+    GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
 )
