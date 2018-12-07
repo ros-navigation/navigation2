@@ -94,6 +94,7 @@ void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
       "max_vel_theta",
       "min_speed_xy",
       "max_speed_xy",
+      "min_speed_theta",
       "acc_lim_x",
       "acc_lim_y",
       "acc_lim_theta",

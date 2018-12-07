@@ -152,7 +152,7 @@ TEST(VelocityIterator, max_xy)
 TEST(VelocityIterator, min_xy)
 {
   auto nh = makeTestNode("min_xy");
-  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1.0)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -164,7 +164,7 @@ TEST(VelocityIterator, min_xy)
 TEST(VelocityIterator, min_theta)
 {
   auto nh = makeTestNode("min_theta");
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -177,8 +177,8 @@ TEST(VelocityIterator, no_limits)
 {
   auto nh = makeTestNode("no_limits");
   nh->set_parameters({rclcpp::Parameter("max_speed_xy", -1.0)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1.0)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -191,8 +191,8 @@ TEST(VelocityIterator, no_limits_samples)
 {
   auto nh = makeTestNode("no_limits_samples");
   nh->set_parameters({rclcpp::Parameter("max_speed_xy", -1.0)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_xy", -1.0)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   int x_samples = 10, y_samples = 3, theta_samples = 5;
   nh->set_parameters({rclcpp::Parameter("vx_samples", x_samples)});
   nh->set_parameters({rclcpp::Parameter("vy_samples", y_samples)});
@@ -224,7 +224,7 @@ TEST(VelocityIterator, dwa_gen)
 {
   auto nh = makeTestNode("dwa_gen");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -236,7 +236,7 @@ TEST(VelocityIterator, dwa_gen)
 TEST(VelocityIterator, dwa_gen_no_param)
 {
   auto nh = makeTestNode("dwa_gen_no_param");
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
@@ -248,7 +248,7 @@ TEST(VelocityIterator, nonzero)
 {
   auto nh = makeTestNode("nonzero");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1)});
+  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
   nav_2d_msgs::msg::Twist2D initial;
@@ -431,7 +431,9 @@ TEST(TrajectoryGenerator, dwa)
 int main(int argc, char ** argv)
 {
   forward.x = 0.3;
-  rclcpp::init(argc, argv);
+  rclcpp::init(0, nullptr);
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return ret;
 }
