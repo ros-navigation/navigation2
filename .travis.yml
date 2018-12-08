@@ -26,7 +26,7 @@ before_install:
 script:
   - docker run --name nav2_bash --rm -d -i -t nav2:latest bash -l
   - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
-      colcon test --packages-skip nav2_costmap_2d
+      colcon test --packages-skip
         nav2_dynamic_params nav2_map_server nav2_navfn_planner nav2_robot nav2_system_tests
         nav2_tasks'
   - docker exec nav2_bash bash -c "colcon test-result --verbose"
