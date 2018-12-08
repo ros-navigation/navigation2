@@ -157,8 +157,8 @@ private:
   map_t * map_;
 
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> * laser_scan_sub_;
-  tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> *laser_scan_filter_;
- 
+  tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> * laser_scan_filter_;
+
   std::vector<nav2_util::Laser *> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;

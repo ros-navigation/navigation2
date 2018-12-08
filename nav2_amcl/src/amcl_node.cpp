@@ -135,17 +135,17 @@ AmclNode::AmclNode()
 
 
   custom_qos_profile.depth = 1;
-   laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this,
-                     scan_topic_, custom_qos_profile); 
+  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this,
+      scan_topic_, custom_qos_profile);
   laser_scan_filter_ =
-          new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(*laser_scan_sub_,
-                                                             *tf_,
-                                                             odom_frame_id_,
-                                                             100,
-                                                             node_);
+    new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(*laser_scan_sub_,
+      *tf_,
+      odom_frame_id_,
+      100,
+      node_);
   laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
-                                                   this, std::placeholders::_1));
-  
+    this, std::placeholders::_1));
+
   initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose",
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
