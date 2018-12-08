@@ -2,7 +2,7 @@
 
 This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose. 
 
-To run the test:
+## To run the test
 First, build the package
 ```
 colcon build --symlink-install
