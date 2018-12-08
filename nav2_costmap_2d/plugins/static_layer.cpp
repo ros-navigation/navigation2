@@ -70,7 +70,7 @@ void StaticLayer::onInitialize()
   node_->set_parameter_if_not_set(name_ + "." + "enabled",true);
 
   std::string map_topic;
-  node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("/occ_grid"));
+  node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("/map"));
   node_->get_parameter_or<bool>("first_map_only", first_map_only_, false);
   node_->get_parameter_or<bool>("subscribe_to_updates", subscribe_to_updates_, false);
 

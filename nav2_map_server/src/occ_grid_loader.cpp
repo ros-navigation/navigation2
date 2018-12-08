@@ -48,8 +48,8 @@ namespace nav2_map_server
 {
 
 const char * OccGridLoader::frame_id_ = "map";
-const char * OccGridLoader::topic_name_ = "occ_grid";
-const char * OccGridLoader::service_name_ = "occ_grid";
+const char * OccGridLoader::topic_name_ = "map";
+const char * OccGridLoader::service_name_ = "map";
 
 OccGridLoader::OccGridLoader(rclcpp::Node * node, YAML::Node & doc)
 : node_(node), doc_(doc), origin_(3)

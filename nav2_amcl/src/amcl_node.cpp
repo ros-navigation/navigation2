@@ -151,7 +151,7 @@ AmclNode::AmclNode()
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
   if (use_map_topic_) {
-    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("occ_grid",
+    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("map",
         std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   } else {
