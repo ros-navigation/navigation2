@@ -16,18 +16,6 @@ def generate_launch_description():
             'use_sim_time', default_value='false', description='Use simulation (Gazebo) clock if true'),
 
         launch_ros.actions.Node(
-            package='tf2_ros',
-            node_executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
-
-        launch_ros.actions.Node(
-            package='tf2_ros',
-            node_executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
-
-        launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
             node_name='map_server',
