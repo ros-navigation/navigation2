@@ -110,7 +110,7 @@ void ObstacleLayer::onInitialize()
     node_->get_parameter_or(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
     node_->get_parameter_or(source + "." + "inf_is_valid", inf_is_valid, false);
-    node_->get_parameter_or(source + "." + "marking", marking, false);
+    node_->get_parameter_or(source + "." + "marking", marking, true);
     node_->get_parameter_or(source + "." + "clearing", clearing, false);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
@@ -120,15 +120,13 @@ void ObstacleLayer::onInitialize()
               "Only topics that use point cloud2s or laser scans are currently supported");
     }
 
-    std::string raytrace_range_param_name, obstacle_range_param_name;
-
     // get the obstacle range for the sensor
     double obstacle_range;
     node_->get_parameter_or(source + "." + "obstacle_range", obstacle_range, 2.5);
 
     // get the raytrace range for the sensor
     double raytrace_range;
-    node_->get_parameter_or(source + "." + "raytrace_range", obstacle_range, 3.0);
+    node_->get_parameter_or(source + "." + "raytrace_range", raytrace_range, 3.0);
 
     RCLCPP_DEBUG(node_->get_logger(),
       "Creating an observation buffer for source %s, topic %s, frame %s",
