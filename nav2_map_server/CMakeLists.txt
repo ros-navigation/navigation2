@@ -92,8 +92,14 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-ament_target_dependencies(${library_name}
-  ${dependencies}
+#ament_target_dependencies(${library_name}
+#  ${dependencies}
+#)
+
+install(TARGETS ${executable_name} #${library_name}
+#  ARCHIVE DESTINATION lib
+#  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/
