@@ -16,7 +16,9 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>nav2_amcl</build_depend>
+  <build_depend>launch_ros</build_depend>
 
+  <exec_depend>launch_ros</exec_depend>
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
@@ -24,6 +26,7 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
 
+  <test_depend>launch_ros</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>

@@ -33,6 +33,8 @@
   <depend>nav2_util</depend>
   <depend>nav2_tasks</depend>
   <depend>nav2_dynamic_params</depend>
+  <depend>launch_ros</depend>
+
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
