@@ -40,7 +40,7 @@
 #include "ros/ros.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/transform_listener.h"
-#include "costmap_2d/costmap_2d_ros.h"
+#include "nav2_costmap_2d/costmap_2d_ros.h"
 
 tf2_ros::TransformListener * tfl_;
 tf2_ros::Buffer * tf_;
