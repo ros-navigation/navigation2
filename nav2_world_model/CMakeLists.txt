@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(nav2_util)
 find_package(nav2_msgs)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 include_directories(
   include
@@ -37,6 +38,7 @@ set(dependencies
   nav2_util
   nav2_msgs
   nav2_costmap_2d
+  tf2_ros
 )
 
 ament_target_dependencies(${executable_name}

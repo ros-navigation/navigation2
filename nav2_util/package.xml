@@ -16,6 +16,8 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>sdl</build_depend>
+  <build_depend>sdl-image</build_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>rclcpp</exec_depend>
@@ -23,6 +25,8 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>sdl</exec_depend>
+  <exec_depend>sdl-image</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
