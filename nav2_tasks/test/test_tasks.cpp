@@ -130,8 +130,7 @@ protected:
 
   void TearDown() override
   {
-    if (spin_thread_)
-    {
+    if (spin_thread_) {
       spin_thread_->join();
       delete spin_thread_;
     }
