@@ -18,6 +18,7 @@ find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 include_directories(
   include
@@ -67,6 +68,32 @@ install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+set(executable_name map_saver)
+
+add_executable(${executable_name}
+  src/map_saver.cpp
+)
+
+#set(library_name ${executable_name}_core)
+
+#add_library(${library_name} SHARED
+#  src/occ_grid_loader.cpp
+#  src/map_server.cpp
+#)
+
+set(dependencies
+  rclcpp
+  nav_msgs
+  tf2
+)
+
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
 )
 
 install(DIRECTORY include/
