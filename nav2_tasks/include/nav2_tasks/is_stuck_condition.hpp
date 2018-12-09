@@ -34,9 +34,6 @@ using namespace std::chrono_literals; // NOLINT
 namespace nav2_tasks
 {
 
-// TODO(orduno) #383 This should be defined on the robot class
-enum class TravelDirection {forward, backward, stopped};
-
 class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
 {
 public:
@@ -46,40 +43,16 @@ public:
     workerThread_(nullptr),
     is_stuck_(false),
     spinning_ok_(false),
-    new_odom_(false),
     odom_history_size_(10),
-    cmd_history_size_(10),
     current_accel_(0.0),
-    travel_direction_(TravelDirection::stopped),
-    brake_accel_limit_(-10.0),
-    odom_error_(0.001)
+    brake_accel_limit_(-10.0)
   {
-    RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
-
-    // Capture velocity commands published by other nodes
-    // TODO(orduno) #381 Currently DWB is publishing commands directly, not using the Robot class.
-    //              #383 Once all nodes use the Robot class we can change this as well.
-
-    vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
-        [this](geometry_msgs::msg::Twist::SharedPtr msg) {
-          while (cmd_history_.size() >= cmd_history_size_) {
-            cmd_history_.pop_front();
-          }
-
-          cmd_history_.push_back(*msg);
-        }
-    );
+    RCLCPP_DEBUG(get_logger(), "IsStuckCondition::constructor");
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
-        [this](nav_msgs::msg::Odometry::SharedPtr msg) {
-          while (odom_history_.size() >= odom_history_size_) {
-            odom_history_.pop_front();
-          }
+      std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
-          odom_history_.push_back(*msg);
-          new_odom_ = true;
-        }
-    );
+    RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
 
     startWorkerThread();
   }
@@ -88,11 +61,31 @@ public:
 
   ~IsStuckCondition()
   {
+    RCLCPP_DEBUG(this->get_logger(), "PlannerTester::~PlannerTester");
     stopWorkerThread();
+  }
+
+  void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
+  {
+    RCLCPP_INFO_ONCE(get_logger(), "Got odometry");
+
+    while (odom_history_.size() >= odom_history_size_) {
+      odom_history_.pop_front();
+    }
+
+    odom_history_.push_back(*msg);
+
+    // TODO(orduno) #383 Move the state calculation and is stuck to robot class
+    updateStates();
+    is_stuck_ = isStuck();
   }
 
   BT::NodeStatus tick() override
   {
+    // TODO(orduno) #383 Once check for is stuck and state calculations are moved to robot class
+    //              this becomes
+    // if (robot_.isStuck()) {
+
     if (is_stuck_) {
       logStuck("Robot got stuck!");
       return BT::NodeStatus::SUCCESS;  // Successfully detected a stuck condition
@@ -133,21 +126,7 @@ public:
     while (spinning_ok_) {
       // Spin the node to get messages from the subscriptions
       rclcpp::spin_some(this->get_node_base_interface());
-
-      while (!new_odom_ && spinning_ok_) {
-        RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        rclcpp::spin_some(this->get_node_base_interface());
-      }
-
-      RCLCPP_INFO_ONCE(get_logger(), "Got odometry");
-
-      updateStates();
-
-      is_stuck_ = isStuck();
-
-      // TODO(orduno) #383 Move algorithm to the robot class, perhaps with the rest of the thread
-      // is_stuck_ = robot_.isStuck();
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
 
@@ -187,14 +166,6 @@ public:
       double vel_diff = static_cast<double>(
         curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
       current_accel_ = vel_diff / dt;
-
-      if (vel_diff > (odom_error_ / 2.0)) {
-        travel_direction_ = TravelDirection::forward;
-      } else if (vel_diff < (odom_error_ / -2.0)){
-        travel_direction_ = TravelDirection::backward;
-      } else {
-        travel_direction_ = TravelDirection::stopped;
-      }
     }
   }
 
@@ -205,10 +176,8 @@ public:
 private:
   // We handle the detection of the stuck condition on a separate thread
   std::thread * workerThread_;
-
   std::atomic<bool> is_stuck_;
   std::atomic<bool> spinning_ok_;
-  std::atomic<bool> new_odom_;
 
   // Listen to odometry
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -216,19 +185,11 @@ private:
   std::deque<nav_msgs::msg::Odometry> odom_history_;
   std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
 
-  // Listen to the controller publishing velocity commands
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_cmd_sub_;
-  // Store history of velocity commands
-  std::deque<geometry_msgs::msg::Twist> cmd_history_;
-  std::deque<geometry_msgs::msg::Twist>::size_type cmd_history_size_;
-
   // Calculated states
   double current_accel_;
-  TravelDirection travel_direction_;
 
   // Robot specific paramters
   double brake_accel_limit_;
-  double odom_error_;
 };
 
 }  // namespace nav2_tasks
