@@ -17,6 +17,7 @@ find_package(Bullet REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(std_msgs REQUIRED)
 
 include_directories(
   include
@@ -42,6 +43,7 @@ set(dependencies
   rclcpp
   nav_msgs
   yaml_cpp_vendor
+  std_msgs
 )
 
 ament_target_dependencies(${executable_name}

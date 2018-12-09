@@ -15,7 +15,6 @@ find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(navigation2 REQUIRED)
-find_package(launch REQUIRED)
 
 ament_export_dependencies(rosidl_default_runtime)
 

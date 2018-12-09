@@ -16,6 +16,7 @@ find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -40,6 +41,7 @@ set(dependencies
   nav2_tasks
   nav2_msgs
   behaviortree_cpp
+  geometry_msgs
 )
 
 ament_target_dependencies(${executable_name}

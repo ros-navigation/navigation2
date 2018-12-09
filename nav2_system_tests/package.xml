@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>rclcpp</build_depend>
+  <build_depend>rclpy</build_depend>
   <build_depend>nav2_tasks</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_msgs</build_depend>
@@ -18,15 +19,27 @@
   <build_depend>nav2_amcl</build_depend>
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>gazebo_ros_pkgs</build_depend>
+  <build_depend>launch_ros</build_depend>
+  <build_depend>launch_testing</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
   <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclpy</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav2_amcl</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>gazebo_ros_pkgs</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>launch_testing</exec_depend>
 
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
@@ -39,4 +52,3 @@
     <build_type>ament_cmake</build_type>
   </export>
 </package>
-
