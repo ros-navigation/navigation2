@@ -23,9 +23,9 @@
 #include <atomic>
 #include <memory>
 #include <deque>
+#include <iomanip>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/empty.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
 
@@ -33,6 +33,9 @@ using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_tasks
 {
+
+// TODO(orduno) #383 This should be defined on the robot class
+enum class TravelDirection {forward, backward, stopped};
 
 class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
 {
@@ -42,15 +45,14 @@ public:
     Node("IsStuckCondition"),
     workerThread_(nullptr),
     is_stuck_(false),
-    update_stuck_(true),
     spinning_ok_(false),
     new_odom_(false),
-    new_cmd_(false),
     odom_history_size_(10),
     cmd_history_size_(10),
     current_accel_(0.0),
-    minimum_measured_accel_(0.0),
-    brake_accel_limit_(-10.0)
+    travel_direction_(TravelDirection::stopped),
+    brake_accel_limit_(-10.0),
+    odom_error_(0.001)
   {
     RCLCPP_INFO(get_logger(), "IsStuckCondition::constructor");
 
@@ -60,21 +62,16 @@ public:
 
     vel_cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
         [this](geometry_msgs::msg::Twist::SharedPtr msg) {
-          std::lock_guard<std::mutex> lock(msg_mutex_);
-
           while (cmd_history_.size() >= cmd_history_size_) {
             cmd_history_.pop_front();
           }
 
           cmd_history_.push_back(*msg);
-          new_cmd_ = true;
         }
     );
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
         [this](nav_msgs::msg::Odometry::SharedPtr msg) {
-          std::lock_guard<std::mutex> lock(msg_mutex_);
-
           while (odom_history_.size() >= odom_history_size_) {
             odom_history_.pop_front();
           }
@@ -98,7 +95,6 @@ public:
   {
     if (is_stuck_) {
       logStuck("Robot got stuck!");
-      update_stuck_ = true;
       return BT::NodeStatus::SUCCESS;  // Successfully detected a stuck condition
     }
 
@@ -138,7 +134,7 @@ public:
       // Spin the node to get messages from the subscriptions
       rclcpp::spin_some(this->get_node_base_interface());
 
-      while (!new_odom_) {
+      while (!new_odom_ && spinning_ok_) {
         RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         rclcpp::spin_some(this->get_node_base_interface());
@@ -148,24 +144,15 @@ public:
 
       updateStates();
 
-      // Check if the robot got stuck and change state, only if it was already reported
-      if (update_stuck_) {
-        is_stuck_ = isStuck();
+      is_stuck_ = isStuck();
 
-        // TODO(orduno) #383 Move algorithm to the robot class, perhaps with the rest of the thread
-        // is_stuck_ = robot_.isStuck();
-
-        if (is_stuck_) {
-          update_stuck_ = false;
-        }
-      }
+      // TODO(orduno) #383 Move algorithm to the robot class, perhaps with the rest of the thread
+      // is_stuck_ = robot_.isStuck();
     }
   }
 
   bool isStuck()
   {
-    std::unique_lock<std::mutex> lock(msg_mutex_);
-
     // TODO(orduno) #400 The robot getting stuck can result on different types of motion
     // depending on the state prior to getting stuck (sudden change in accel, not moving at all,
     // random oscillations, etc). For now, we only address the case where there is a sudden
@@ -174,8 +161,10 @@ public:
 
     // Detect if robot bumped into something by checking for abnormal deceleration
     if (current_accel_ < brake_accel_limit_) {
-      RCLCPP_INFO_ONCE(get_logger(), "Current acceleration is below brake limit."
+      RCLCPP_DEBUG(get_logger(), "Current acceleration is beyond brake limit."
         " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
+
+        return true;
     }
 
     return false;
@@ -199,11 +188,12 @@ public:
         curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
       current_accel_ = vel_diff / dt;
 
-      if (current_accel_ < minimum_measured_accel_) {
-        minimum_measured_accel_ = current_accel_;
-        RCLCPP_DEBUG(get_logger(),
-          "Minimum accel detected, dt: %.6f s, vel diff: %.6f m/s, accel: %.6f m/s^2",
-          dt, vel_diff, current_accel_);
+      if (vel_diff > (odom_error_ / 2.0)) {
+        travel_direction_ = TravelDirection::forward;
+      } else if (vel_diff < (odom_error_ / -2.0)){
+        travel_direction_ = TravelDirection::backward;
+      } else {
+        travel_direction_ = TravelDirection::stopped;
       }
     }
   }
@@ -217,12 +207,8 @@ private:
   std::thread * workerThread_;
 
   std::atomic<bool> is_stuck_;
-  std::atomic<bool> update_stuck_;
   std::atomic<bool> spinning_ok_;
-
-  std::mutex msg_mutex_;
   std::atomic<bool> new_odom_;
-  std::atomic<bool> new_cmd_;
 
   // Listen to odometry
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -238,10 +224,11 @@ private:
 
   // Calculated states
   double current_accel_;
-  double minimum_measured_accel_;
+  TravelDirection travel_direction_;
 
   // Robot specific paramters
   double brake_accel_limit_;
+  double odom_error_;
 };
 
 }  // namespace nav2_tasks
