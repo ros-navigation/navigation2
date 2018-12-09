@@ -43,8 +43,13 @@
 #include "tf2_ros/transform_listener.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
-tf2_ros::TransformListener * tfl_;
-tf2_ros::Buffer * tf_;
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
 
 class FootprintTestNode : public nav2_costmap_2d::Costmap2DROS
 {
@@ -73,13 +78,40 @@ public:
   }
 };
 
-FootprintTestNode * costmap_;
+class TestNode : public ::testing::Test
+{
+public:
+  TestNode()
+  {
+  auto node = rclcpp::Node::make_shared("footprint_tests");
+
+  tf_ = new tf2_ros::Buffer(node->get_clock());
+  tfl_ = new tf2_ros::TransformListener(*tf_);
+
+  // This empty transform is added to satisfy the constructor of
+  // Costmap2DROS, which waits for the transform from map to base_link
+  // to become available.
+  geometry_msgs::msg::TransformStamped base_rel_map;
+  base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
+  base_rel_map.child_frame_id = "base_link";
+  base_rel_map.header.frame_id = "map";
+  base_rel_map.header.stamp = node->now();
+  tf_->setTransform(base_rel_map, "footprint_tests");
+
+  costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
+  }
+
+protected:
+  FootprintTestNode * costmap_;
+  tf2_ros::TransformListener * tfl_;
+  tf2_ros::Buffer * tf_;
+};
 
 // Start with empty test before updating test footprints
-TEST(FootprintTestNode, footprint_empty)
+TEST_F(TestNode, footprint_empty)
 {
-  FootprintTestNode cm("costmap_footprint_empty", *tf_);
-  std::vector<geometry_msgs::msg::Point> footprint = cm.getRobotFootprint();
+  //FootprintTestNode cm("costmap_footprint_empty", *tf_);
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   // With no specification of footprint or radius,
   // defaults to 0.1 meter radius plus 0.01 meter padding.
   EXPECT_EQ(16, footprint.size());
@@ -89,7 +121,7 @@ TEST(FootprintTestNode, footprint_empty)
   EXPECT_EQ(0.0f, footprint[0].z);
 }
 
-TEST(FootprintTestNode, unpadded_footprint_from_string_param)
+TEST_F(TestNode, unpadded_footprint_from_string_param)
 {
   costmap_->testFootprint(0.0, "[[1, 1], [-1, 1], [-1, -1]]");
 
@@ -109,7 +141,7 @@ TEST(FootprintTestNode, unpadded_footprint_from_string_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-TEST(FootprintTestNode, padded_footprint_from_string_param)
+TEST_F(TestNode, padded_footprint_from_string_param)
 {
   costmap_->testFootprint(0.5, "[[1, 1], [-1, 1], [-1, -1]]");
 
@@ -129,7 +161,7 @@ TEST(FootprintTestNode, padded_footprint_from_string_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-TEST(FootprintTestNode, radius_param)
+TEST_F(TestNode, radius_param)
 {
   costmap_->testFootprint(0, 10.0);
   std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
@@ -147,7 +179,7 @@ TEST(FootprintTestNode, radius_param)
   EXPECT_EQ(0.0f, footprint[4].z);
 }
 
-TEST(FootprintTestNode, footprint_from_same_level_param)
+TEST_F(TestNode, footprint_from_same_level_param)
 {
   costmap_->testFootprint(0.0, "[[1, 2], [3, 4], [5, 6]]");
   std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
@@ -166,7 +198,7 @@ TEST(FootprintTestNode, footprint_from_same_level_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-int main(int argc, char ** argv)
+/* int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("footprint_tests");
@@ -187,4 +219,4 @@ int main(int argc, char ** argv)
   costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
-}
+} */

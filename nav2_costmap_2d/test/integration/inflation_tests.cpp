@@ -33,9 +33,10 @@
  */
 #include <map>
 #include <cmath>
+#include <memory>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
@@ -45,10 +46,41 @@
 
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
-// Create a node acting as a 'Parameter Server' in lieu of Costmap2DROS
-rclcpp::Node::SharedPtr node_;
 
-std::vector<Point> setRadii(
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+/* // Create a node acting as a 'Parameter Server' in lieu of Costmap2DROS
+rclcpp::Node::SharedPtr node_; */
+
+class TestNode : public ::testing::Test
+{
+public:
+  TestNode()
+  {
+    node_ = rclcpp::Node::make_shared("inflation_test_node");
+    // Set cost_scaling_factor parameter to 1.0 for inflation layer
+    node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
+  }
+  std::vector<Point> setRadii(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  double length, double width, double inflation_radius);
+
+  void validatePointInflation(
+    unsigned int mx, unsigned int my,
+    nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::InflationLayer * ilayer,
+    double inflation_radius);
+protected:
+  rclcpp::Node::SharedPtr node_;
+};
+
+std::vector<Point> TestNode::setRadii(
   nav2_costmap_2d::LayeredCostmap & layers,
   double length, double width, double inflation_radius)
 {
@@ -73,7 +105,7 @@ std::vector<Point> setRadii(
 }
 
 // Test that a single point gets inflated properly
-void validatePointInflation(
+void TestNode::validatePointInflation(
   unsigned int mx, unsigned int my,
   nav2_costmap_2d::Costmap2D * costmap,
   nav2_costmap_2d::InflationLayer * ilayer,
@@ -128,7 +160,8 @@ void validatePointInflation(
   delete[] seen;
 }
 
-TEST(costmap, testAdjacentToObstacleCanStillMove) {
+TEST_F(TestNode, testAdjacentToObstacleCanStillMove) 
+{
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -154,7 +187,7 @@ TEST(costmap, testAdjacentToObstacleCanStillMove) {
   EXPECT_EQ(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, costmap->getCost(1, 1));
 }
 
-TEST(costmap, testInflationShouldNotCreateUnknowns) {
+TEST_F(TestNode, testInflationShouldNotCreateUnknowns) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -179,7 +212,7 @@ TEST(costmap, testInflationShouldNotCreateUnknowns) {
 /**
  * Test for the cost function correctness with a larger range and different values
  */
-TEST(costmap, testCostFunctionCorrectness) {
+TEST_F(TestNode, testCostFunctionCorrectness) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(100, 100, 1, 0, 0);
@@ -247,7 +280,7 @@ TEST(costmap, testCostFunctionCorrectness) {
  * the previously used priority queue. This is a more thorough
  * test of the cost function being correctly applied.
  */
-TEST(costmap, testInflationOrderCorrectness) {
+TEST_F(TestNode, testInflationOrderCorrectness) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -275,7 +308,7 @@ TEST(costmap, testInflationOrderCorrectness) {
 /**
  * Test inflation for both static and dynamic obstacles
  */
-TEST(costmap, testInflation) {
+TEST_F(TestNode, testInflation) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
@@ -343,7 +376,7 @@ TEST(costmap, testInflation) {
 /**
  * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
  */
-TEST(costmap, testInflation2) {
+TEST_F(TestNode, testInflation2) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
@@ -371,7 +404,7 @@ TEST(costmap, testInflation2) {
 /**
  * Test inflation behavior, starting with an empty map
  */
-TEST(costmap, testInflation3) {
+TEST_F(TestNode, testInflation3) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -407,7 +440,7 @@ TEST(costmap, testInflation3) {
 }
 
 
-int main(int argc, char ** argv)
+/* int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   node_ = rclcpp::Node::make_shared("inflation_test_node");
@@ -417,4 +450,4 @@ int main(int argc, char ** argv)
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
-}
+} */

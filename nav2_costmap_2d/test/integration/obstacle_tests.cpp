@@ -40,8 +40,25 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
 
-// Create a node acting as a 'Parameter Server' in lieu of Costmap2DROS
-rclcpp::Node::SharedPtr node_;
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+class TestNode : public ::testing::Test
+{
+public:
+  TestNode()
+  {
+    node_ = rclcpp::Node::make_shared("obstacle_test_node");
+  }
+protected:
+  rclcpp::Node::SharedPtr node_;
+};
 
 /*
  * For reference, the static map looks like this:
@@ -72,7 +89,7 @@ rclcpp::Node::SharedPtr node_;
 /**
  * Test for ray tracing free space
  */
-TEST(costmap, testRaytracing) {
+TEST_F(TestNode, testRaytracing) {
   tf2_ros::Buffer tf(node_->get_clock());
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -95,7 +112,7 @@ TEST(costmap, testRaytracing) {
 /**
  * Test for ray tracing free space
  */
-TEST(costmap, testRaytracing2) {
+TEST_F(TestNode, testRaytracing2) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
@@ -150,7 +167,7 @@ TEST(costmap, testRaytracing2) {
 /**
  * Test for wave interference
  */
-TEST(costmap, testWaveInterference) {
+TEST_F(TestNode, testWaveInterference) {
   tf2_ros::Buffer tf(node_->get_clock());
 
   // Start with an empty map, no rolling window, tracking unknown
@@ -179,7 +196,7 @@ TEST(costmap, testWaveInterference) {
 /**
  * Make sure we ignore points outside of our z threshold
  */
-TEST(costmap, testZThreshold) {
+TEST_F(TestNode, testZThreshold) {
   tf2_ros::Buffer tf(node_->get_clock());
   // Start with an empty map
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -200,7 +217,7 @@ TEST(costmap, testZThreshold) {
 /**
  * Verify that dynamic obstacles are added
  */
-TEST(costmap, testDynamicObstacles) {
+TEST_F(TestNode, testDynamicObstacles) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
@@ -225,7 +242,7 @@ TEST(costmap, testDynamicObstacles) {
 /**
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
-TEST(costmap, testMultipleAdditions) {
+TEST_F(TestNode, testMultipleAdditions) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
@@ -239,13 +256,4 @@ TEST(costmap, testMultipleAdditions) {
   // printMap(*costmap);
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
-}
-
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  node_ = rclcpp::Node::make_shared("obstacle_test_node");
-
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
