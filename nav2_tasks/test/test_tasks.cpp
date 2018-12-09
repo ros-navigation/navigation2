@@ -119,8 +119,7 @@ protected:
       std::bind(&MyTestTaskServer::execute, server_, std::placeholders::_1));
 
     // Launch a thread to spin the node
-    spin_thread_ = std::make_shared<std::thread>(std::thread(
-      &TaskClientServerTest::spin, this));
+    spin_thread_ = new std::thread(&TaskClientServerTest::spin, this);
 
     // After creating the nodes, there is a lot of multicast traffic that can
     // cause nodes to miss messages. Let's sleep for a bit to let the nodes settle
@@ -132,6 +131,7 @@ protected:
   void TearDown() override
   {
     spin_thread_->join();
+    delete spin_thread_;
   }
 
   void spin()
@@ -143,7 +143,7 @@ protected:
   void testFailure();
   void testCancel();
 
-  std::shared_ptr<std::thread> spin_thread_;
+  std::thread * spin_thread_;
   rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<TestTaskClient> client_;
