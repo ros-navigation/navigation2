@@ -1,4 +1,3 @@
-  geometry_msgs
 cmake_minimum_required(VERSION 3.5)
 project(nav2_motion_primitives)
 
