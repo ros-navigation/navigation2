@@ -29,43 +29,48 @@
  */
 
 #include <cstdio>
-#include "ros/ros.h"
-#include "ros/console.h"
-#include "nav_msgs/GetMap.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/srv/get_map.hpp"
+#include "nav_msgs/msg/occupancy_grid.h"
 #include "tf2/LinearMath/Matrix3x3.h"
-#include "geometry_msgs/Quaternion.h"
+#include "tf2/LinearMath/Quaternion.h"
 
-using namespace std;
 
 /**
  * @brief Map generation node.
  */
-class MapGenerator
+class MapGenerator : public rclcpp::Node
 {
 
   public:
     MapGenerator(const std::string& mapname, int threshold_occupied, int threshold_free)
-      : mapname_(mapname), saved_map_(false), threshold_occupied_(threshold_occupied), threshold_free_(threshold_free)
+      : Node("map_saver"),
+		mapname_(mapname),
+		saved_map_(false),
+		threshold_occupied_(threshold_occupied),
+		threshold_free_(threshold_free)
     {
-      ros::NodeHandle n;
-      ROS_INFO("Waiting for the map");
-      map_sub_ = n.subscribe("map", 1, &MapGenerator::mapCallback, this);
+      RCLCPP_INFO(get_logger(), "Waiting for the map");
+      map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+    		  "map",
+			  std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
     }
 
-    void mapCallback(const nav_msgs::OccupancyGridConstPtr& map)
+    void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
     {
-      ROS_INFO("Received a %d X %d map @ %.3f m/pix",
+      rclcpp::Logger logger = this->get_logger();
+      RCLCPP_INFO(logger, "Received a %d X %d map @ %.3f m/pix",
                map->info.width,
                map->info.height,
                map->info.resolution);
 
 
       std::string mapdatafile = mapname_ + ".pgm";
-      ROS_INFO("Writing map occupancy data to %s", mapdatafile.c_str());
+      RCLCPP_INFO(logger, "Writing map occupancy data to %s", mapdatafile.c_str());
       FILE* out = fopen(mapdatafile.c_str(), "w");
       if (!out)
       {
-        ROS_ERROR("Couldn't save map file to %s", mapdatafile.c_str());
+        RCLCPP_ERROR(logger, "Couldn't save map file to %s", mapdatafile.c_str());
         return;
       }
 
@@ -88,7 +93,7 @@ class MapGenerator
 
 
       std::string mapmetadatafile = mapname_ + ".yaml";
-      ROS_INFO("Writing map occupancy data to %s", mapmetadatafile.c_str());
+      RCLCPP_INFO(logger, "Writing map occupancy data to %s", mapmetadatafile.c_str());
       FILE* yaml = fopen(mapmetadatafile.c_str(), "w");
 
 
@@ -102,7 +107,7 @@ free_thresh: 0.196
 
        */
 
-      geometry_msgs::Quaternion orientation = map->info.origin.orientation;
+      geometry_msgs::msg::Quaternion orientation = map->info.origin.orientation;
       tf2::Matrix3x3 mat(tf2::Quaternion(
         orientation.x,
         orientation.y,
@@ -117,12 +122,12 @@ free_thresh: 0.196
 
       fclose(yaml);
 
-      ROS_INFO("Done\n");
+      RCLCPP_INFO(logger, "Done\n");
       saved_map_ = true;
     }
 
     std::string mapname_;
-    ros::Subscriber map_sub_;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
     bool saved_map_;
     int threshold_occupied_;
     int threshold_free_;
@@ -133,9 +138,13 @@ free_thresh: 0.196
               "  map_saver -h\n"\
               "  map_saver [--occ <threshold_occupied>] [--free <threshold_free>] [-f <mapname>] [ROS remapping args]"
 
+
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "map_saver");
+
+  rclcpp::init(argc, argv);
+  rclcpp::Logger logger = rclcpp::get_logger("map_saver");
+
   std::string mapname = "map";
   int threshold_occupied = 65;
   int threshold_free = 25;
@@ -161,10 +170,10 @@ int main(int argc, char** argv)
     {
       if (++i < argc)
       {
-        threshold_occupied = std::atoi(argv[i]);
+        threshold_occupied = atoi(argv[i]);
         if (threshold_occupied < 1 || threshold_occupied > 100)
         {
-          ROS_ERROR("threshold_occupied must be between 1 and 100");
+          RCLCPP_ERROR(logger, "Threshold_occupied must be between 1 and 100");
           return 1;
         }
 
@@ -179,10 +188,10 @@ int main(int argc, char** argv)
     {
       if (++i < argc)
       {
-        threshold_free = std::atoi(argv[i]);
+        threshold_free = atoi(argv[i]);
         if (threshold_free < 0 || threshold_free > 100)
         {
-          ROS_ERROR("threshold_free must be between 0 and 100");
+          RCLCPP_ERROR(logger, "Threshold_free must be between 0 and 100");
           return 1;
         }
 
@@ -202,15 +211,17 @@ int main(int argc, char** argv)
 
   if (threshold_occupied <= threshold_free)
   {
-    ROS_ERROR("threshold_free must be smaller than threshold_occupied");
+    RCLCPP_ERROR(logger, "Threshold_free must be smaller than threshold_occupied");
     return 1;
   }
 
-  MapGenerator mg(mapname, threshold_occupied, threshold_free);
+  auto map_gen = std::make_shared<MapGenerator>(mapname, threshold_occupied, threshold_free);
 
-  while(!mg.saved_map_ && ros::ok())
-    ros::spinOnce();
+  while(not map_gen->saved_map_ and rclcpp::ok()) {
+    rclcpp::spin(map_gen);
+  }
 
+  rclcpp::shutdown();
   return 0;
 }
 
