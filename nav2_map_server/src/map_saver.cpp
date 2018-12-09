@@ -29,6 +29,8 @@
  */
 
 #include <cstdio>
+#include <string>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav_msgs/msg/occupancy_grid.h"
@@ -41,19 +43,17 @@
  */
 class MapGenerator : public rclcpp::Node
 {
-
   public:
     MapGenerator(const std::string& mapname, int threshold_occupied, int threshold_free)
       : Node("map_saver"),
-		mapname_(mapname),
-		saved_map_(false),
-		threshold_occupied_(threshold_occupied),
-		threshold_free_(threshold_free)
+                mapname_(mapname),
+                saved_map_(false),
+                threshold_occupied_(threshold_occupied),
+                threshold_free_(threshold_free)
     {
       RCLCPP_INFO(get_logger(), "Waiting for the map");
       map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-    		  "map",
-			  std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
+                 "map", std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
     }
 
     void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
@@ -79,11 +79,11 @@ class MapGenerator : public rclcpp::Node
       for(unsigned int y = 0; y < map->info.height; y++) {
         for(unsigned int x = 0; x < map->info.width; x++) {
           unsigned int i = x + (map->info.height - y - 1) * map->info.width;
-          if (map->data[i] >= 0 && map->data[i] <= threshold_free_) { // [0,free)
+          if (map->data[i] >= 0 && map->data[i] <= threshold_free_) {  // [0,free)
             fputc(254, out);
-          } else if (map->data[i] >= threshold_occupied_) { // (occ,255]
+          } else if (map->data[i] >= threshold_occupied_) {  // (occ,255]
             fputc(000, out);
-          } else { //occ [0.25,0.65]
+          } else {  // occ [0.25,0.65]
             fputc(205, out);
           }
         }
@@ -117,8 +117,10 @@ free_thresh: 0.196
       double yaw, pitch, roll;
       mat.getEulerYPR(yaw, pitch, roll);
 
-      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n",
-              mapdatafile.c_str(), map->info.resolution, map->info.origin.position.x, map->info.origin.position.y, yaw);
+      fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\n",
+              mapdatafile.c_str(), map->info.resolution,
+              map->info.origin.position.x, map->info.origin.position.y, yaw);
+      fprintf(yaml, "negate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n");
 
       fclose(yaml);
 
@@ -131,17 +133,16 @@ free_thresh: 0.196
     bool saved_map_;
     int threshold_occupied_;
     int threshold_free_;
-
 };
 
 #define USAGE "Usage: \n" \
               "  map_saver -h\n"\
-              "  map_saver [--occ <threshold_occupied>] [--free <threshold_free>] [-f <mapname>] [ROS remapping args]"
+              "  map_saver [--occ <threshold_occupied>] [--free <threshold_free>] " \
+              "[-f <mapname>] [ROS remapping args]"
 
 
 int main(int argc, char** argv)
 {
-
   rclcpp::init(argc, argv);
   rclcpp::Logger logger = rclcpp::get_logger("map_saver");
 
@@ -149,15 +150,13 @@ int main(int argc, char** argv)
   int threshold_occupied = 65;
   int threshold_free = 25;
 
-  for(int i=1; i<argc; i++)
+  for(int i = 1; i < argc; i++)
   {
     if(!strcmp(argv[i], "-h"))
     {
       puts(USAGE);
       return 0;
-    }
-    else if(!strcmp(argv[i], "-f"))
-    {
+    } else if(!strcmp(argv[i], "-f")) {
       if(++i < argc)
         mapname = argv[i];
       else
@@ -165,9 +164,7 @@ int main(int argc, char** argv)
         puts(USAGE);
         return 1;
       }
-    }
-    else if (!strcmp(argv[i], "--occ"))
-    {
+    } else if (!strcmp(argv[i], "--occ")) {
       if (++i < argc)
       {
         threshold_occupied = atoi(argv[i]);
@@ -176,16 +173,11 @@ int main(int argc, char** argv)
           RCLCPP_ERROR(logger, "Threshold_occupied must be between 1 and 100");
           return 1;
         }
-
-      }
-      else
-      {
+      } else {
         puts(USAGE);
         return 1;
       }
-    }
-    else if (!strcmp(argv[i], "--free"))
-    {
+    } else if (!strcmp(argv[i], "--free")) {
       if (++i < argc)
       {
         threshold_free = atoi(argv[i]);
@@ -194,16 +186,11 @@ int main(int argc, char** argv)
           RCLCPP_ERROR(logger, "Threshold_free must be between 0 and 100");
           return 1;
         }
-
-      }
-      else
-      {
+      } else {
         puts(USAGE);
         return 1;
       }
-    }
-    else
-    {
+    } else {
       puts(USAGE);
       return 1;
     }
@@ -217,7 +204,7 @@ int main(int argc, char** argv)
 
   auto map_gen = std::make_shared<MapGenerator>(mapname, threshold_occupied, threshold_free);
 
-  while(not map_gen->saved_map_ and rclcpp::ok()) {
+  while(!map_gen->saved_map_ && rclcpp::ok()) {
     rclcpp::spin(map_gen);
   }
 
