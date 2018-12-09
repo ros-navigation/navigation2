@@ -119,7 +119,7 @@ protected:
       std::bind(&MyTestTaskServer::execute, server_, std::placeholders::_1));
 
     // Launch a thread to spin the node
-    spin_thread_ = std::make_shared<std::thread>(new std::thread(
+    spin_thread_ = std::make_shared<std::thread>(std::thread(
       &TaskClientServerTest::spin, this));
 
     // After creating the nodes, there is a lot of multicast traffic that can
