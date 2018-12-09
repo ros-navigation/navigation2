@@ -47,7 +47,7 @@ public:
     odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("odom");
 
     // Subscribing to cmdVelocity topic to make sure Robot class is publishing velocity
-    vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>("cmdVelocity",
+    vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel",
         std::bind(&TestRobotClass::velocityReceived, this, std::placeholders::_1));
 
     velocityCmdReceived_ = false;
