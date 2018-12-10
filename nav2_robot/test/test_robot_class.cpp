@@ -141,11 +141,11 @@ TEST_F(TestRobotClass, getPoseTest)
   EXPECT_EQ(*currentPose, testPose_);
 }
 
-TEST_F(TestRobotClass, getVelocityTest)
+TEST_F(TestRobotClass, getOdometryTest)
 {
   auto currentOdom = std::make_shared<nav_msgs::msg::Odometry>();
   rclcpp::Rate r(10);
-  while (!(robot_->getCurrentVelocity(currentOdom))) {
+  while (!(robot_->getOdometry(currentOdom))) {
     publishOdom();
     rclcpp::spin_some(node_);
     r.sleep();
