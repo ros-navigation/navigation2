@@ -21,8 +21,22 @@ DwbController:
 local_costmap:
   local_costmap:
     ros__parameters:
+      obstacle_layer:
+        enabled: False
       always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
 global_costmap:
   global_costmap:
     ros__parameters:
+      obstacle_layer:
+        enabled: False
       always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
