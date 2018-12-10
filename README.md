@@ -3,6 +3,7 @@
 ROS2 Navigation System
 
 Internal Travis CI: [![Build Status](https://travis-ci.org/ros-planning/navigation2.svg?branch=master)](https://travis-ci.org/ros-planning/navigation2)
+
 ROS Build Farm PR Builder: [![Build Status](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/)
 
 # Overview
