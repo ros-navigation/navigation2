@@ -47,7 +47,7 @@ public:
     odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("odom");
 
     // Subscribing to cmdVelocity topic to make sure Robot class is publishing velocity
-    vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>("cmdVelocity",
+    vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel",
         std::bind(&TestRobotClass::velocityReceived, this, std::placeholders::_1));
 
     velocityCmdReceived_ = false;
@@ -144,18 +144,22 @@ TEST_F(TestRobotClass, getPoseTest)
 TEST_F(TestRobotClass, getVelocityTest)
 {
   auto currentOdom = std::make_shared<nav_msgs::msg::Odometry>();
+  rclcpp::Rate r(10);
   while (!(robot_->getCurrentVelocity(currentOdom))) {
     publishOdom();
     rclcpp::spin_some(node_);
+    r.sleep();
   }
   EXPECT_EQ(*currentOdom, testOdom_);
 }
 
 TEST_F(TestRobotClass, sendVelocityTest)
 {
+  rclcpp::Rate r(10);
   while (!velocityCmdReceived_) {
     robot_->sendVelocity(testTwist_);
     rclcpp::spin_some(node_);
+    r.sleep();
   }
   EXPECT_EQ(testTwist_, velocityReceived_);
 }

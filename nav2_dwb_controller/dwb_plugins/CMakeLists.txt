@@ -17,6 +17,7 @@ find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_util REQUIRED)
 
 set(dependencies
   angles
@@ -24,7 +25,9 @@ set(dependencies
   nav_2d_msgs
   nav_2d_utils
   pluginlib
-  rclcpp)
+  rclcpp
+  nav2_util
+)
 
 include_directories(
   include

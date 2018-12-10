@@ -21,6 +21,7 @@ find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 
 include_directories(
   include
@@ -52,6 +53,7 @@ set(dependencies
   pluginlib
   rclcpp
   sensor_msgs
+  nav2_util
 )
 
 ament_target_dependencies(${PROJECT_NAME}
