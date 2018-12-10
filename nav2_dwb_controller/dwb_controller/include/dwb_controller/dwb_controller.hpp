@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef nav2_dwb_controller__DWB_CONTROLLER_HPP_
-#define nav2_dwb_controller__DWB_CONTROLLER_HPP_
+#ifndef DWB_CONTROLLER__DWB_CONTROLLER_HPP_
+#define DWB_CONTROLLER__DWB_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -29,7 +29,7 @@ namespace nav2_dwb_controller
 class DwbController : public rclcpp::Node
 {
 public:
-  DwbController(rclcpp::executor::Executor & executor);
+  explicit DwbController(rclcpp::executor::Executor & executor);
   ~DwbController();
 
   nav2_tasks::TaskStatus followPath(const nav2_tasks::FollowPathCommand::SharedPtr path);
@@ -51,4 +51,4 @@ protected:
 
 }  // namespace nav2_dwb_controller
 
-#endif  // nav2_dwb_controller__DWB_CONTROLLER_HPP_
+#endif  // DWB_CONTROLLER__DWB_CONTROLLER_HPP_

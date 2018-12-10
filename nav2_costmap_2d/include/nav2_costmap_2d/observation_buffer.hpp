@@ -40,13 +40,13 @@
 #include <vector>
 #include <list>
 #include <string>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "rclcpp/time.hpp"
-#include <nav2_costmap_2d/observation.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
-#include <sensor_msgs/msg/point_cloud2.hpp>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "rclcpp/time.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_sensor_msgs/tf2_sensor_msgs.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "nav2_costmap_2d/observation.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -71,12 +71,14 @@ public:
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
-  ObservationBuffer(rclcpp::Node::SharedPtr nh, std::string topic_name, double observation_keep_time,
-      double expected_update_rate,
-      double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-      double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
-      std::string sensor_frame,
-      double tf_tolerance);
+  ObservationBuffer(
+    rclcpp::Node::SharedPtr nh, std::string topic_name,
+    double observation_keep_time,
+    double expected_update_rate,
+    double min_obstacle_height, double max_obstacle_height, double obstacle_range,
+    double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
+    std::string sensor_frame,
+    double tf_tolerance);
 
   /**
    * @brief  Destructor... cleans up

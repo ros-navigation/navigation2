@@ -17,6 +17,8 @@ find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -33,6 +35,8 @@ set(dependencies
   geometry_msgs
   nav2_msgs
   behaviortree_cpp
+  tf2
+  tf2_geometry_msgs
 )
 
 ament_target_dependencies(${library_name}
@@ -60,5 +64,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
 
 ament_package()

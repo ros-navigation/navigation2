@@ -17,13 +17,13 @@
 
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
-#include "nav2_msgs/msg/path_end_points.hpp"
 #include "nav2_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_tasks
 {
 
-using ComputePathToPoseCommand = nav2_msgs::msg::PathEndPoints;
+using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
 using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
 using ComputePathToPoseTaskClient =

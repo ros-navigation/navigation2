@@ -50,7 +50,7 @@ public:
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "amcl_pose",
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
-      initial_pose_pub_->publish(testPose_);
+    initial_pose_pub_->publish(testPose_);
   }
   bool defaultAmclTest();
 
@@ -81,8 +81,9 @@ bool TestAmclPose::defaultAmclTest()
     initial_pose_pub_->publish(testPose_);
     rclcpp::spin_some(node);
   }
-  if (std::abs(amcl_pose_x-testPose_.pose.pose.position.x) < tol_ && 
-      std::abs(amcl_pose_y-testPose_.pose.pose.position.y) < tol_) {
+  if (std::abs(amcl_pose_x - testPose_.pose.pose.position.x) < tol_ &&
+    std::abs(amcl_pose_y - testPose_.pose.pose.position.y) < tol_)
+  {
     return true;
   } else {
     return false;

@@ -25,14 +25,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rclcpp/rclcpp.hpp"
-#include <sensor_msgs/msg/point_cloud.hpp>
-#include <sensor_msgs/msg/channel_float32.hpp>
-#include <nav2_voxel_grid/voxel_grid.hpp>
-#include <nav2_msgs/msg/voxel_grid.hpp>
-#include <nav2_util/execution_timer.hpp>
+#include <string>
+#include <vector>
 
-static inline void mapToWorld3D(const unsigned int mx,
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/point_cloud.hpp"
+#include "sensor_msgs/msg/channel_float32.hpp"
+#include "nav2_voxel_grid/voxel_grid.hpp"
+#include "nav2_msgs/msg/voxel_grid.hpp"
+#include "nav2_util/execution_timer.hpp"
+
+static inline void mapToWorld3D(
+  const unsigned int mx,
   const unsigned int my, const unsigned int mz,
   const double origin_x, const double origin_y, const double origin_z,
   const double x_resolution, const double y_resolution,

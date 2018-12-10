@@ -4,7 +4,7 @@ ament_add_gtest_executable(test_planner_node
 )
 
 ament_target_dependencies(test_planner_node
- ${dependencies}
+  ${dependencies}
 )
 
 ament_add_test(test_planner_node

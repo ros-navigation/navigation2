@@ -8,8 +8,8 @@
   threshold of 1, whenever the FollowPath returns SUCCESS or FAILURE, the parallel
   node will return this result.
 
-  The path endpoints (input to the global planner) and the resulting path (output of
-  the global planner and input to the local planner) are passed on the blackboard.
+  The goal (input to the global planner) and the resulting path (output of the global
+  planner and input to the local planner) are passed on the blackboard.
 
   The rate at which the ComputePathToPose operation is invoked can be controlled with
   the hz parameter to the RateController node.
@@ -18,12 +18,12 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+      <ComputePathToPose goal="${goal}" path="${path}"/>
       <ParallelNode threshold="1">
         <FollowPath path="${path}"/>
         <Sequence>
-          <RateController hz="2">
-            <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+          <RateController hz="1.0">
+            <ComputePathToPose goal="${goal}" path="${path}"/>
           </RateController>
           <UpdatePath/>
         </Sequence>

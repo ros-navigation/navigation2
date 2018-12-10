@@ -1,10 +1,13 @@
 #include <nav2_costmap_2d/costmap_layer.hpp>
 
+#include <algorithm>
+
 namespace nav2_costmap_2d
 {
 
-void CostmapLayer::touch(double x, double y, double * min_x, double * min_y, double * max_x,
-    double * max_y)
+void CostmapLayer::touch(
+  double x, double y, double * min_x, double * min_y, double * max_x,
+  double * max_y)
 {
   *min_x = std::min(x, *min_x);
   *min_y = std::min(y, *min_y);
@@ -16,7 +19,7 @@ void CostmapLayer::matchSize()
 {
   Costmap2D * master = layered_costmap_->getCostmap();
   resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
-      master->getOriginX(), master->getOriginY());
+    master->getOriginX(), master->getOriginY());
 }
 
 void CostmapLayer::addExtraBounds(double mx0, double my0, double mx1, double my1)
@@ -45,9 +48,10 @@ void CostmapLayer::useExtraBounds(double * min_x, double * min_y, double * max_x
   has_extra_bounds_ = false;
 }
 
-void CostmapLayer::updateWithMax(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
-    int max_i,
-    int max_j)
+void CostmapLayer::updateWithMax(
+  nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+  int max_i,
+  int max_j)
 {
   if (!enabled_) {
     return;
@@ -73,10 +77,11 @@ void CostmapLayer::updateWithMax(nav2_costmap_2d::Costmap2D & master_grid, int m
   }
 }
 
-void CostmapLayer::updateWithTrueOverwrite(nav2_costmap_2d::Costmap2D & master_grid, int min_i,
-    int min_j,
-    int max_i,
-    int max_j)
+void CostmapLayer::updateWithTrueOverwrite(
+  nav2_costmap_2d::Costmap2D & master_grid, int min_i,
+  int min_j,
+  int max_i,
+  int max_j)
 {
   if (!enabled_) {
     return;
@@ -93,9 +98,9 @@ void CostmapLayer::updateWithTrueOverwrite(nav2_costmap_2d::Costmap2D & master_g
   }
 }
 
-void CostmapLayer::updateWithOverwrite(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
-    int max_i,
-    int max_j)
+void CostmapLayer::updateWithOverwrite(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
     return;
@@ -114,9 +119,9 @@ void CostmapLayer::updateWithOverwrite(nav2_costmap_2d::Costmap2D & master_grid,
   }
 }
 
-void CostmapLayer::updateWithAddition(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
-    int max_i,
-    int max_j)
+void CostmapLayer::updateWithAddition(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
     return;

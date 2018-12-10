@@ -8,11 +8,10 @@ Panels:
         - /RobotModel1/Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /LaserScan1/Status1
-        - /Gobal Planner1
-        - /Local Planner1
-      Splitter Ratio: 0.583333313
-    Tree Height: 584
+        - /Global Planner1
+        - /Global Planner1/Global Costmap1
+      Splitter Ratio: 0.5833333134651184
+    Tree Height: 574
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -77,14 +76,10 @@ Visualization Manager:
           Value: true
         base_scan:
           Value: false
-        left_wheel:
-          Value: false
         map:
           Value: true
         odom:
           Value: true
-        right_wheel:
-          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -93,14 +88,8 @@ Visualization Manager:
       Tree:
         map:
           odom:
-            base_link:
-              base_footprint:
-                base_scan:
-                  {}
-              left_wheel:
-                {}
-              right_wheel:
-                {}
+            base_footprint:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -128,7 +117,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /tb3/scan
+      Topic: /scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -169,17 +158,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Map
-      Topic: /occ_grid
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
-    - Alpha: 0.200000003
-      Class: rviz_default_plugins/Map
-      Color Scheme: costmap
-      Draw Behind: false
-      Enabled: true
-      Name: Costmap
-      Topic: /costmap
+      Topic: /map
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -205,14 +184,14 @@ Visualization Manager:
           Class: rviz_default_plugins/Map
           Color Scheme: map
           Draw Behind: true
-          Enabled: true
+          Enabled: false
           Name: Global Costmap
           Topic: /global_costmap/costmap
           Unreliable: false
           Use Timestamp: false
-          Value: true
+          Value: false
         - Class: rviz_default_plugins/Marker
-          Enabled: false
+          Enabled: true
           Name: PathEndPoints
           Namespaces:
             {}
@@ -243,13 +222,21 @@ Visualization Manager:
           Topic: /global_plan
           Unreliable: false
           Value: true
+        - Alpha: 1
+          Class: rviz_default_plugins/Polygon
+          Color: 25; 255; 0
+          Enabled: false
+          Name: Polygon
+          Topic: /global_costmap/footprint
+          Unreliable: false
+          Value: false
       Enabled: true
-      Name: Gobal Planner
+      Name: Global Planner
     - Class: rviz_common/Group
       Displays:
         - Alpha: 0.699999988
           Class: rviz_default_plugins/Map
-          Color Scheme: map
+          Color Scheme: costmap
           Draw Behind: false
           Enabled: true
           Name: Local Costmap
@@ -287,6 +274,14 @@ Visualization Manager:
             {}
           Queue Size: 10
           Topic: /marker
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Class: rviz_default_plugins/Polygon
+          Color: 25; 255; 0
+          Enabled: true
+          Name: Polygon
+          Topic: /local_costmap/footprint
           Unreliable: false
           Value: true
       Enabled: true

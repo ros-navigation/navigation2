@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>navigation2</name>
-  <version>0.1.0</version>
+  <version>0.1.2</version>
   <description>
     ROS2 Navigation Stack
   </description>
@@ -29,9 +29,9 @@
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
-  
+
   <export>
-    <metapackage/>
+    <build_type>ament_cmake</build_type>  
   </export>
 
 </package>

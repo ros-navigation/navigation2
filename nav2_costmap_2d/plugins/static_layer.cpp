@@ -36,11 +36,15 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#include <nav2_costmap_2d/static_layer.hpp>
-#include <nav2_costmap_2d/costmap_math.hpp>
-#include <pluginlib/class_list_macros.hpp>
-#include <tf2/convert.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "nav2_costmap_2d/static_layer.hpp"
+
+#include <algorithm>
+#include <string>
+
+#include "pluginlib/class_list_macros.hpp"
+#include "tf2/convert.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_costmap_2d/costmap_math.hpp"
 
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
@@ -67,10 +71,10 @@ void StaticLayer::onInitialize()
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  node_->set_parameter_if_not_set(name_ + "." + "enabled",true);
+  node_->set_parameter_if_not_set(name_ + "." + "enabled", true);
 
   std::string map_topic;
-  node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("occ_grid"));
+  node_->get_parameter_or<std::string>("map_topic", map_topic, std::string("/map"));
   node_->get_parameter_or<bool>("first_map_only", first_map_only_, false);
   node_->get_parameter_or<bool>("subscribe_to_updates", subscribe_to_updates_, false);
 
@@ -84,10 +88,6 @@ void StaticLayer::onInitialize()
 
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   unknown_cost_value_ = temp_unknown_cost_value;
-
-  // Only resubscribe if topic has changed
-  //TODO(bpwilcox): resolve ROS2 equivalent to check whether topic has changed. Problem calling get_topic before topic created
-  //if (map_sub_.getTopic() != ros::names::resolve(map_topic)) {
 
   // we'll subscribe to the latched topic that the map server uses
   RCLCPP_INFO(node_->get_logger(), "Requesting the map...");
@@ -108,13 +108,13 @@ void StaticLayer::onInitialize()
 
   RCLCPP_INFO(node_->get_logger(),
     "Received a %d X %d map at %f m/pix", getSizeInCellsX(),
-      getSizeInCellsY(), getResolution());
+    getSizeInCellsY(), getResolution());
 
   if (subscribe_to_updates_) {
     RCLCPP_INFO(node_->get_logger(), "Subscribing to updates");
     map_update_sub_ = node_->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
-        map_topic + "_updates",
-        std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), custom_qos_profile);
+      map_topic + "_updates",
+      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), custom_qos_profile);
 
   } else {
     has_updated_data_ = true;
@@ -131,10 +131,9 @@ void StaticLayer::reconfigureCB()
   RCLCPP_DEBUG(node_->get_logger(), "StaticLayer:: Event Callback");
 
   bool enabled = true;
-  node_->get_parameter_or(name_ + "." + "enabled", enabled, true); 
+  dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
 
-  if (enabled != enabled_)
-  {
+  if (enabled != enabled_) {
     enabled_ = enabled;
     has_updated_data_ = true;
     x_ = y_ = 0;
@@ -150,7 +149,7 @@ void StaticLayer::matchSize()
   if (!layered_costmap_->isRolling()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
-        master->getOriginX(), master->getOriginY());
+      master->getOriginX(), master->getOriginY());
   }
 }
 
@@ -167,7 +166,7 @@ unsigned char StaticLayer::interpretValue(unsigned char value)
     return FREE_SPACE;
   }
 
-  double scale = (double) value / lethal_threshold_;
+  double scale = static_cast<double>(value) / lethal_threshold_;
   return scale * LETHAL_OBSTACLE;
 }
 
@@ -177,36 +176,36 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
 
   RCLCPP_DEBUG(node_->get_logger(),
     "Received a %d X %d map at %f m/pix", size_x, size_y,
-      new_map->info.resolution);
+    new_map->info.resolution);
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
   if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
-        master->getSizeInCellsY() != size_y ||
-        master->getResolution() != new_map->info.resolution ||
-        master->getOriginX() != new_map->info.origin.position.x ||
-        master->getOriginY() != new_map->info.origin.position.y ||
-        !layered_costmap_->isSizeLocked()))
+    master->getSizeInCellsY() != size_y ||
+    master->getResolution() != new_map->info.resolution ||
+    master->getOriginX() != new_map->info.origin.position.x ||
+    master->getOriginY() != new_map->info.origin.position.y ||
+    !layered_costmap_->isSizeLocked()))
   {
     // Update the size of the layered costmap (and all layers, including this one)
     RCLCPP_INFO(node_->get_logger(),
       "Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
-        new_map->info.resolution);
+      new_map->info.resolution);
     layered_costmap_->resizeMap(size_x, size_y, new_map->info.resolution,
-        new_map->info.origin.position.x,
-        new_map->info.origin.position.y,
-        true);
+      new_map->info.origin.position.x,
+      new_map->info.origin.position.y,
+      true);
   } else if (size_x_ != size_x || size_y_ != size_y ||
-      resolution_ != new_map->info.resolution ||
-      origin_x_ != new_map->info.origin.position.x ||
-      origin_y_ != new_map->info.origin.position.y)
+    resolution_ != new_map->info.resolution ||
+    origin_x_ != new_map->info.origin.position.x ||
+    origin_y_ != new_map->info.origin.position.y)
   {
     // only update the size of the costmap stored locally in this layer
     RCLCPP_INFO(node_->get_logger(),
       "Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
-        new_map->info.resolution);
+      new_map->info.resolution);
     resizeMap(size_x, size_y, new_map->info.resolution,
-        new_map->info.origin.position.x, new_map->info.origin.position.y);
+      new_map->info.origin.position.x, new_map->info.origin.position.y);
   }
 
   unsigned int index = 0;
@@ -234,7 +233,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
     RCLCPP_INFO(node_->get_logger(),
       "Shutting down the map subscriber. first_map_only flag is on");
     // TODO(bpwilcox): Resolve shutdown of ros2 subscription
-    //map_sub_.shutdown();
+    // map_sub_.shutdown();
   }
 }
 
@@ -263,9 +262,9 @@ void StaticLayer::activate()
 void StaticLayer::deactivate()
 {
   // TODO(bpwilcox): Resolve shutdown of ros2 subscription
-  //map_sub_.shutdown();
+  // map_sub_.shutdown();
   if (subscribe_to_updates_) {
-    //map_update_sub_.shutdown();
+    // map_update_sub_.shutdown();
   }
 }
 
@@ -278,12 +277,12 @@ void StaticLayer::reset()
   }
 }
 
-void StaticLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-    double * min_y,
-    double * max_x,
-    double * max_y)
+void StaticLayer::updateBounds(
+  double robot_x, double robot_y, double robot_yaw, double * min_x,
+  double * min_y,
+  double * max_x,
+  double * max_y)
 {
-
   if (!layered_costmap_->isRolling() ) {
     if (!map_received_ || !(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -305,8 +304,9 @@ void StaticLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
   has_updated_data_ = false;
 }
 
-void StaticLayer::updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
-    int max_j)
+void StaticLayer::updateCosts(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
 {
   if (!map_received_) {
     return;

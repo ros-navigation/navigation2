@@ -49,9 +49,7 @@ namespace nav2_navfn_planner
 NavfnPlanner::NavfnPlanner()
 : Node("NavfnPlanner"),
   global_frame_("map"),
-  allow_unknown_(true),
-  default_tolerance_(1.0),
-  use_astar_(false)
+  allow_unknown_(true)
 {
   RCLCPP_INFO(get_logger(), "Initializing.");
 
@@ -59,6 +57,11 @@ NavfnPlanner::NavfnPlanner()
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
+
+  // If the goal is obstructed, the tolerance specifies how many meters the planner
+  // can relax the constraint in x and y before failing
+  tolerance_ = parameters_client->get_parameter("tolerance", 0.0);
+
   use_astar_ = parameters_client->get_parameter("use_astar", false);
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
@@ -67,6 +70,8 @@ NavfnPlanner::NavfnPlanner()
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
+
+  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
 
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
@@ -84,10 +89,6 @@ NavfnPlanner::~NavfnPlanner()
 TaskStatus
 NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-    "(%.2f, %.2f).", command->start.position.x, command->start.position.y,
-    command->goal.position.x, command->goal.position.y);
-
   nav2_tasks::ComputePathToPoseResult result;
   try {
     // Get an updated costmap
@@ -102,8 +103,20 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
       planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
+    // Get the current pose from the robot
+    auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+
+    if (!robot_->getCurrentPose(start)) {
+      RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+      return TaskStatus::FAILED;
+    }
+
+    RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+      "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
+      command->pose.position.x, command->pose.position.y);
+
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(command->start, command->goal, command->tolerance, result);
+    bool foundPath = makePlan(start->pose.pose, command->pose, tolerance_, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (task_server_->cancelRequested()) {
@@ -114,7 +127,7 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
-        " path to (%.2f, %.2f)", command->goal.position.x, command->goal.position.y);
+        " path to (%.2f, %.2f)", command->pose.position.x, command->pose.position.y);
       return TaskStatus::FAILED;
     }
 
@@ -124,18 +137,18 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "Publishing the valid path.");
     publishPlan(result);
-    publishEndpoints(command);
+    publishEndpoints(start->pose.pose, command->pose);
 
     // TODO(orduno): Enable potential visualization
 
     RCLCPP_INFO(get_logger(),
       "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
-      command->goal.position.x, command->goal.position.y, command->tolerance);
+      command->pose.position.x, command->pose.position.y, tolerance_);
     task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
-      command->goal.position.x, command->goal.position.y, ex.what());
+      command->pose.position.x, command->pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
@@ -275,8 +288,8 @@ NavfnPlanner::smoothApproachToGoal(
   auto last_pose = plan.poses.back();
   if (
     squared_distance(last_pose, second_to_last_pose) >
-    squared_distance(goal, second_to_last_pose)
-  ) {
+    squared_distance(goal, second_to_last_pose))
+  {
     plan.poses.back() = goal;
   } else {
     geometry_msgs::msg::Pose goal_copy = goal;
@@ -390,7 +403,7 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 bool
 NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
 {
-  return validPointPotential(world_point, default_tolerance_);
+  return validPointPotential(world_point, tolerance_);
 }
 
 bool
@@ -500,7 +513,9 @@ NavfnPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 }
 
 void
-NavfnPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints)
+NavfnPlanner::publishEndpoints(
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & goal)
 {
   visualization_msgs::msg::Marker marker;
 
@@ -543,8 +558,8 @@ NavfnPlanner::publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::Share
   marker.frame_locked = false;
 
   marker.points.resize(2);
-  marker.points[0] = endpoints->start.position;
-  marker.points[1] = endpoints->goal.position;
+  marker.points[0] = start.position;
+  marker.points[1] = goal.position;
 
   // Set the color -- be sure to set alpha to something non-zero!
   std_msgs::msg::ColorRGBA start_color;

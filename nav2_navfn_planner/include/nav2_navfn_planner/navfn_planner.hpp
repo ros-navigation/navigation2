@@ -29,6 +29,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
+#include "nav2_robot/robot.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -103,7 +104,9 @@ private:
 
   // Publish a path for visualization purposes
   void publishPlan(const nav2_msgs::msg::Path & path);
-  void publishEndpoints(const nav2_tasks::ComputePathToPoseCommand::SharedPtr & endpoints);
+  void publishEndpoints(
+    const geometry_msgs::msg::Pose & start,
+    const geometry_msgs::msg::Pose & goal);
 
   // Determine if a new planner object should be made
   bool isPlannerOutOfDate();
@@ -129,10 +132,12 @@ private:
   bool allow_unknown_;
 
   // Amount the planner can relax the space constraint
-  double default_tolerance_;
+  double tolerance_;
 
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
+
+  std::unique_ptr<nav2_robot::Robot> robot_;
 };
 
 }  // namespace nav2_navfn_planner

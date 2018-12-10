@@ -35,8 +35,8 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
-#ifndef NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
-#define NAV2_COSTMAP__2D_VOXEL_LAYER_HPP_
+#ifndef NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
+#define NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
@@ -60,18 +60,19 @@ class VoxelLayer : public ObstacleLayer
 {
 public:
   VoxelLayer()
-    : voxel_grid_(0, 0, 0)
+  : voxel_grid_(0, 0, 0)
   {
-    costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D.
+    costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D
   }
 
   virtual ~VoxelLayer();
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-      double * min_y,
-      double * max_x,
-      double * max_y);
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
 
   void updateOrigin(double new_origin_x, double new_origin_y);
   bool isDiscretized()
@@ -89,10 +90,11 @@ protected:
 private:
   void reconfigureCB();
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  virtual void raytraceFreespace(const nav2_costmap_2d::Observation & clearing_observation,
-      double * min_x, double * min_y,
-      double * max_x,
-      double * max_y);
+  virtual void raytraceFreespace(
+    const nav2_costmap_2d::Observation & clearing_observation,
+    double * min_x, double * min_y,
+    double * max_x,
+    double * max_y);
 
   nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
 
@@ -104,8 +106,9 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr clearing_endpoints_pub_;
   sensor_msgs::msg::PointCloud clearing_endpoints_;
 
-  inline bool worldToMap3DFloat(double wx, double wy, double wz, double & mx, double & my,
-      double & mz)
+  inline bool worldToMap3DFloat(
+    double wx, double wy, double wz, double & mx, double & my,
+    double & mz)
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
@@ -120,16 +123,17 @@ private:
     return false;
   }
 
-  inline bool worldToMap3D(double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
-      unsigned int & mz)
+  inline bool worldToMap3D(
+    double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
+    unsigned int & mz)
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
     }
 
-    mx = (int)((wx - origin_x_) / resolution_);
-    my = (int)((wy - origin_y_) / resolution_);
-    mz = (int)((wz - origin_z_) / z_resolution_);
+    mx = static_cast<int>((wx - origin_x_) / resolution_);
+    my = static_cast<int>((wy - origin_y_) / resolution_);
+    mz = static_cast<int>((wz - origin_z_) / z_resolution_);
 
     if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
@@ -138,9 +142,10 @@ private:
     return false;
   }
 
-  inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double & wx,
-      double & wy,
-      double & wz)
+  inline void mapToWorld3D(
+    unsigned int mx, unsigned int my, unsigned int mz, double & wx,
+    double & wy,
+    double & wz)
   {
     // returns the center point of the cell
     wx = origin_x_ + (mx + 0.5) * resolution_;

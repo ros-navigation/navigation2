@@ -66,7 +66,7 @@ public:
         topic, callback);
       event_subscriptions_.push_back(event_sub);
       // TODO(bpwilcox): Fix hanging problem for list parameters service call
-      //get_param_list(node_namespace);
+      // get_param_list(node_namespace);
     }
   }
 
@@ -90,24 +90,36 @@ public:
     if (*full_path.begin() != '/') {
       full_path = '/' + full_path;
     }
-    auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
+
     std::vector<rclcpp::Parameter> params;
-    if (client->wait_for_service(100ms)) {
+
+    if (full_path == join_path(node_->get_namespace(), node_->get_name())) {
       if (param_names.size() < 1) {
-        auto param_list = client->list_parameters({}, 1);
-        params = client->get_parameters(param_list.names);
+        auto param_list = node_->list_parameters({}, 1);
+        params = node_->get_parameters(param_list.names);
       } else {
-        params = client->get_parameters(param_names);
+        params = node_->get_parameters(param_names);
       }
     } else {
-      RCLCPP_WARN(node_->get_logger(),
-        "Node '%s' not available for service, inserting params as NOT SET", full_path.c_str());
-      // Set param_names as PARAMETER_NOT_SET
-      for (const auto & name : param_names) {
-        auto param = rclcpp::Parameter(name, rclcpp::ParameterValue());
-        params.push_back(param);
+      auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
+      if (client->wait_for_service(100ms)) {
+        if (param_names.size() < 1) {
+          auto param_list = client->list_parameters({}, 1);
+          params = client->get_parameters(param_list.names);
+        } else {
+          params = client->get_parameters(param_names);
+        }
+      } else {
+        RCLCPP_WARN(node_->get_logger(),
+          "Node '%s' not available for service, inserting params as NOT SET", full_path.c_str());
+        // Set param_names as PARAMETER_NOT_SET
+        for (const auto & name : param_names) {
+          auto param = rclcpp::Parameter(name, rclcpp::ParameterValue());
+          params.push_back(param);
+        }
       }
     }
+
     std::string node_namespace = split_path(full_path).first;
     add_namespace_event_subscriber(node_namespace);
     for (const auto & param : params) {
@@ -182,7 +194,7 @@ public:
   template<class T>
   bool get_event_param(const std::string & param_name, T & new_value)
   {
-    return get_event_param<T>("", param_name, new_value);
+    return get_event_param<T>(node_->get_namespace(), param_name, new_value);
   }
 
   // retreive parameter or assign default value if not set
@@ -203,7 +215,7 @@ public:
   template<class T>
   bool get_event_param_or(const std::string & param_name, T & new_value, const T & default_value)
   {
-    return get_event_param_or<T>("", param_name, new_value, default_value);
+    return get_event_param_or<T>(node_->get_namespace(), param_name, new_value, default_value);
   }
 
   // A check to filter whether parameter name is part of the lastest event

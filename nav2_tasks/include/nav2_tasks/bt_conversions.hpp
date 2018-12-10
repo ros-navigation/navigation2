@@ -15,45 +15,15 @@
 #ifndef NAV2_TASKS__BT_CONVERSIONS_HPP_
 #define NAV2_TASKS__BT_CONVERSIONS_HPP_
 
-#include <string>
 #include "behaviortree_cpp/behavior_tree.h"
-#include "behaviortree_cpp/blackboard/blackboard.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/path_end_points.hpp"
 
 namespace BT
 {
 
-// The following four conversion functions are required to be defined by the BT library,
-// but are not actually called. TODO(mjeronimo): See if we can avoid these.
-
-template<>
-inline rclcpp::Node::SharedPtr convertFromString(const StringView & /*key*/)
-{
-  return nullptr;
-}
-
-template<>
-inline std::chrono::milliseconds convertFromString(const StringView & /*key*/)
-{
-  return std::chrono::milliseconds(0);
-}
-
-template<>
-inline nav2_msgs::msg::Path::SharedPtr convertFromString(const StringView & /*key*/)
-{
-  return nullptr;
-}
-
-template<>
-inline nav2_msgs::msg::PathEndPoints::SharedPtr convertFromString(const StringView & /*key*/)
-{
-  return nullptr;
-}
-
-// These are needed to be able to set parameters for these types in the BT XML
+// The follow templates are needed to be able to use these types as parameters
+// in the BT XML files
 
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView & key)

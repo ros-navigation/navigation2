@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_costmap_2d</name>
-  <version>0.1.0</version>
+  <version>0.1.2</version>
   <description>
     This package provides an implementation of a 2D costmap that takes in sensor
     data from the world, builds a 2D or 3D occupancy grid of the data (depending
@@ -43,8 +43,6 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>nav2_map_server</test_depend>
-
- 	<member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
 	  <build_type>ament_cmake</build_type>

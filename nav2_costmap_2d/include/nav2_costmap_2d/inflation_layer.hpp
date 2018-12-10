@@ -38,9 +38,12 @@
 #ifndef NAV2_COSTMAP_2D__INFLATION_LAYER_HPP_
 #define NAV2_COSTMAP_2D__INFLATION_LAYER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/layer.hpp>
-#include <nav2_costmap_2d/layered_costmap.hpp>
+#include <map>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
@@ -62,7 +65,7 @@ public:
    * @return
    */
   CellData(double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy)
-    : index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
+  : index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
   {
   }
   unsigned int index_;
@@ -84,19 +87,21 @@ public:
   }
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x,
-      double * min_y,
-      double * max_x,
-      double * max_y);
-  virtual void updateCosts(nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
-      int max_j);
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
+  virtual void updateCosts(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j);
   virtual bool isDiscretized()
   {
     return true;
   }
   virtual void matchSize();
 
-  virtual void reset() {onInitialize(); }
+  virtual void reset() {onInitialize();}
 
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
@@ -168,14 +173,15 @@ private:
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
   }
 
-  inline void enqueue(unsigned int index, unsigned int mx, unsigned int my,
-      unsigned int src_x, unsigned int src_y);
+  inline void enqueue(
+    unsigned int index, unsigned int mx, unsigned int my,
+    unsigned int src_x, unsigned int src_y);
 
   double inflation_radius_, inscribed_radius_, weight_;
   bool inflate_unknown_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;
-  std::map<double, std::vector<CellData> > inflation_cells_;
+  std::map<double, std::vector<CellData>> inflation_cells_;
 
   double resolution_;
 
@@ -187,12 +193,12 @@ private:
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   void reconfigureCB();
-  
+
   nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
- 
-  bool need_reinflation_;  ///< Indicates that the entire costmap should be reinflated next time around.
+  // Indicates that the entire costmap should be reinflated next time around.
+  bool need_reinflation_;
 };
 
 }  // namespace nav2_costmap_2d

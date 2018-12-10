@@ -26,9 +26,9 @@
 
 class angleutils
 {
-  public:
-   static double normalize(double z);
-   static double angle_diff(double a, double b);
+public:
+  static double normalize(double z);
+  static double angle_diff(double a, double b);
 };
 
 inline double

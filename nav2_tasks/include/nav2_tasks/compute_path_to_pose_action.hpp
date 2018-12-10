@@ -38,7 +38,7 @@ public:
   void onInit() override
   {
     command_ =
-      blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints");
+      blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal");
 
     result_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
   }

@@ -1,0 +1,5 @@
+# Provide the path to the xml file with the behavior tree description to use
+
+BtNavigator:
+    ros__parameters:
+        bt_xml_filename: "~/ros2_overlay_ws/src/navigation2/nav2_bt_navigator/behavior_trees/simple_sequential.xml"

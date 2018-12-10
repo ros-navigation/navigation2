@@ -38,11 +38,13 @@
 #ifndef NAV2_COSTMAP_2D__LAYERED_COSTMAP_HPP_
 #define NAV2_COSTMAP_2D__LAYERED_COSTMAP_HPP_
 
-#include <nav2_costmap_2d/cost_values.hpp>
-#include <nav2_costmap_2d/layer.hpp>
-#include <nav2_costmap_2d/costmap_2d.hpp>
-#include <vector>
+#include <memory>
 #include <string>
+#include <vector>
+
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -76,9 +78,10 @@ public:
     return global_frame_;
   }
 
-  void resizeMap(unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
-      double origin_y,
-      bool size_locked = false);
+  void resizeMap(
+    unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
+    double origin_y,
+    bool size_locked = false);
 
   void getUpdatedBounds(double & minx, double & miny, double & maxx, double & maxy)
   {
@@ -105,7 +108,7 @@ public:
     return costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
   }
 
-  std::vector<std::shared_ptr<Layer> > * getPlugins()
+  std::vector<std::shared_ptr<Layer>> * getPlugins()
   {
     return &plugins_;
   }
@@ -139,21 +142,21 @@ public:
   void setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec);
 
   /** @brief Returns the latest footprint stored with setFootprint(). */
-  const std::vector<geometry_msgs::msg::Point> & getFootprint() {return footprint_; }
+  const std::vector<geometry_msgs::msg::Point> & getFootprint() {return footprint_;}
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which just surrounds all points on the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getCircumscribedRadius() {return circumscribed_radius_; }
+  double getCircumscribedRadius() {return circumscribed_radius_;}
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which is just within all points and edges of the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getInscribedRadius() {return inscribed_radius_; }
+  double getInscribedRadius() {return inscribed_radius_;}
 
 private:
   Costmap2D costmap_;
@@ -165,7 +168,7 @@ private:
   double minx_, miny_, maxx_, maxy_;
   unsigned int bx0_, bxn_, by0_, byn_;
 
-  std::vector<std::shared_ptr<Layer> > plugins_;
+  std::vector<std::shared_ptr<Layer>> plugins_;
 
   bool initialized_;
   bool size_locked_;
