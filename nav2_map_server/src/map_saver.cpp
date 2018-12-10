@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_generator.hpp"
 
@@ -95,7 +96,8 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  auto map_gen = std::make_shared<nav2_map_server::MapGenerator>(mapname, threshold_occupied, threshold_free);
+  auto map_gen = std::make_shared<nav2_map_server::MapGenerator>(mapname, threshold_occupied,
+      threshold_free);
 
   while (!map_gen->saved_map_ && rclcpp::ok()) {
     rclcpp::spin_some(map_gen);

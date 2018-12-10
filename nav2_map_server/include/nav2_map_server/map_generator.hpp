@@ -25,7 +25,7 @@ namespace nav2_map_server
 class MapGenerator : public rclcpp::Node
 {
 public:
-  MapGenerator(const std::string& mapname, int threshold_occupied, int threshold_free);
+  MapGenerator(const std::string & mapname, int threshold_occupied, int threshold_free);
 
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map);
 
