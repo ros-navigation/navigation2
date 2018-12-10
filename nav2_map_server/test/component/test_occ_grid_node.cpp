@@ -62,7 +62,7 @@ protected:
 TEST_F(TestNode, ResultReturned)
 {
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  auto client = node_->create_client<nav_msgs::srv::GetMap>("occ_grid");
+  auto client = node_->create_client<nav_msgs::srv::GetMap>("map");
   ASSERT_TRUE(client->wait_for_service());
   auto resp = send_request<nav_msgs::srv::GetMap>(node_, client, req);
   ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);

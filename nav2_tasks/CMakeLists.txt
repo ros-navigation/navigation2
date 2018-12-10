@@ -19,6 +19,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 include_directories(
   include
@@ -37,6 +38,7 @@ set(dependencies
   behaviortree_cpp
   tf2
   tf2_geometry_msgs
+  rosidl_default_generators
 )
 
 ament_target_dependencies(${library_name}

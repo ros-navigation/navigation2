@@ -21,6 +21,8 @@ find_package(pluginlib REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 include_directories(
   include
@@ -37,6 +39,8 @@ set(dependencies
   sensor_msgs
   visualization_msgs
   nav_2d_utils
+  nav_msgs
+  tf2_ros
 )
 
 add_library(dwb_core SHARED

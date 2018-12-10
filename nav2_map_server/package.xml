@@ -18,11 +18,15 @@
   <depend>sdl</depend>
   <depend>sdl-image</depend>
   <depend>yaml_cpp_vendor</depend>
+  <depend>launch_ros</depend>
+  <depend>launch_testing</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_testing</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -13,10 +13,13 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
+find_package(nav_2d_utils REQUIRED)
+find_package(nav_2d_msgs REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(
@@ -43,6 +46,9 @@ set(dependencies
   nav2_robot
   nav2_msgs
   dwb_core
+  nav_2d_utils
+  nav_2d_msgs
+  nav2_util
 )
 
 ament_target_dependencies(${library_name}

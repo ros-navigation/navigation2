@@ -60,9 +60,12 @@ add_library(nav2_costmap_2d_core SHARED
 
 set(dependencies
   rclcpp
+  rosidl_default_generators
   geometry_msgs
   nav_msgs
+  std_msgs
   map_msgs
+  sensor_msgs
   tf2_ros
   tf2
   pluginlib
