@@ -233,6 +233,15 @@ protected:
       user_callback_();
     }
   }
+  // Variant of is_in_event to also check the node path of last event
+  bool is_in_event(const std::string & path, const std::string & name)
+  {
+    auto full_path = path;
+    if (*full_path.begin() != '/') {
+      full_path = '/' + full_path;
+    }
+    return full_path == last_event_->node && is_in_event(name);
+  }
 
 private:
   std::vector<rclcpp::Parameter> get_params_from_node(
