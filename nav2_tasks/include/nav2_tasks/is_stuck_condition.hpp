@@ -48,7 +48,7 @@ public:
     RCLCPP_DEBUG(get_logger(), "Creating an IsStuckCondition BT node");
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
-      std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
+        std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
     RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
 
@@ -141,7 +141,7 @@ public:
       RCLCPP_DEBUG(get_logger(), "Current deceleration is beyond brake limit."
         " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
 
-        return true;
+      return true;
     }
 
     return false;
