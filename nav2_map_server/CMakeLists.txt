@@ -44,6 +44,7 @@ set(library_name ${map_server_executable}_core)
 add_library(${library_name} SHARED
   src/occ_grid_loader.cpp
   src/map_server.cpp
+  src/map_generator.cpp
 )
 
 set(map_server_dependencies
