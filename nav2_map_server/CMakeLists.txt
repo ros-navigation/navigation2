@@ -75,13 +75,6 @@ add_executable(${executable_name}
   src/map_saver.cpp
 )
 
-#set(library_name ${executable_name}_core)
-
-#add_library(${library_name} SHARED
-#  src/occ_grid_loader.cpp
-#  src/map_server.cpp
-#)
-
 set(dependencies
   rclcpp
   nav_msgs
@@ -92,13 +85,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-#ament_target_dependencies(${library_name}
-#  ${dependencies}
-#)
-
-install(TARGETS ${executable_name} #${library_name}
-#  ARCHIVE DESTINATION lib
-#  LIBRARY DESTINATION lib
+install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
