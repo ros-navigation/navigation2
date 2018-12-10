@@ -205,7 +205,7 @@ int main(int argc, char** argv)
   auto map_gen = std::make_shared<MapGenerator>(mapname, threshold_occupied, threshold_free);
 
   while(!map_gen->saved_map_ && rclcpp::ok()) {
-    rclcpp::spin(map_gen);
+    rclcpp::spin_some(map_gen);
   }
 
   rclcpp::shutdown();
