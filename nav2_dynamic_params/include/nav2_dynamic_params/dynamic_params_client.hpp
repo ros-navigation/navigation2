@@ -116,7 +116,6 @@ public:
     std::string node_namespace = split_path(full_path).first;
     add_namespace_event_subscriber(node_namespace);
     for (const auto & param : params) {
-      printf("\n parameter name: %s", (param.get_name()).c_str());
       init_param_in_map(param, full_path);
     }
   }
@@ -151,7 +150,6 @@ public:
     auto full_path = join_path(ns, node);
     add_parameters_on_node(full_path);
   }
-
 
   // Get list of cached dynamic param names
   std::vector<std::string> get_param_names()
