@@ -85,46 +85,47 @@ void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
   setDecelerationAsNeeded(nh, "y");
   setDecelerationAsNeeded(nh, "theta");
 
-  // TODO(crdelsey): Handle dynamic params
-  // the rest of the initial values are loaded through the dynamic reconfigure mechanisms
-  // dsrv_ = std::make_shared<dynamic_reconfigure::Server<KinematicParamsConfig> >(nh);
-  // dynamic_reconfigure::Server<KinematicParamsConfig>::CallbackType cb =
-  //   boost::bind(&KinematicParameters::reconfigureCB, this, _1, _2);
-  reconfigureCB();
+  dsrv_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(nh);
+  dsrv_->add_parameters({
+      "min_vel_x",
+      "min_vel_y",
+      "max_vel_x",
+      "max_vel_y",
+      "max_vel_theta",
+      "min_speed_xy",
+      "max_speed_xy",
+      "min_speed_theta",
+      "acc_lim_x",
+      "acc_lim_y",
+      "acc_lim_theta",
+      "decel_lim_x",
+      "decel_lim_y",
+      "decel_lim_theta"
+    });
+  dsrv_->set_callback([this]() {reconfigureCB();});
 }
 
+#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(#name, name ## _, 0.0)
 void KinematicParameters::reconfigureCB()
 {
-  // TODO(crdelsey): Remove hard coded parameters when dynamic_reconfigure is in
-  min_vel_x_ = -0.26;
-  max_vel_x_ = 0.26;
-  max_vel_theta_ = 1.0;
+  UPDATE_PARAMETER(min_vel_x);
+  UPDATE_PARAMETER(min_vel_y);
+  UPDATE_PARAMETER(max_vel_x);
+  UPDATE_PARAMETER(max_vel_y);
+  UPDATE_PARAMETER(max_vel_theta);
 
-  max_speed_xy_ = max_vel_x_;
-
-  acc_lim_x_ = 2.5;
-  acc_lim_theta_ = 3.2;
-  decel_lim_x_ = -acc_lim_x_;
-  decel_lim_theta_ = -acc_lim_theta_;
-
-  // min_vel_x_ = config.min_vel_x;
-  // min_vel_y_ = config.min_vel_y;
-  // max_vel_x_ = config.max_vel_x;
-  // max_vel_y_ = config.max_vel_y;
-  // max_vel_theta_ = config.max_vel_theta;
-  //
-  // min_speed_xy_ = config.min_speed_xy;
-  // max_speed_xy_ = config.max_speed_xy;
+  UPDATE_PARAMETER(min_speed_xy);
+  UPDATE_PARAMETER(max_speed_xy);
   min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
   max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
-  // min_speed_theta_ = config.min_speed_theta;
-  //
-  // acc_lim_x_ = config.acc_lim_x;
-  // acc_lim_y_ = config.acc_lim_y;
-  // acc_lim_theta_ = config.acc_lim_theta;
-  // decel_lim_x_ = config.decel_lim_x;
-  // decel_lim_y_ = config.decel_lim_y;
-  // decel_lim_theta_ = config.decel_lim_theta;
+  UPDATE_PARAMETER(min_speed_theta);
+
+  UPDATE_PARAMETER(acc_lim_x);
+  UPDATE_PARAMETER(acc_lim_y);
+  UPDATE_PARAMETER(acc_lim_theta);
+  UPDATE_PARAMETER(decel_lim_x);
+  UPDATE_PARAMETER(decel_lim_y);
+  UPDATE_PARAMETER(decel_lim_theta);
 }
 
 bool KinematicParameters::isValidSpeed(double x, double y, double theta)
