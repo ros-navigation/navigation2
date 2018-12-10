@@ -27,35 +27,51 @@ include_directories(
   ${SDL_IMAGE_INCLUDE_DIRS}
 )
 
-set(executable_name map_server)
+set(map_server_executable map_server)
 
-add_executable(${executable_name}
+set(map_saver_executable map_saver)
+
+add_executable(${map_server_executable}
   src/main.cpp
 )
 
-set(library_name ${executable_name}_core)
+add_executable(${map_saver_executable}
+  src/map_saver.cpp
+)
+
+set(library_name ${map_server_executable}_core)
 
 add_library(${library_name} SHARED
   src/occ_grid_loader.cpp
   src/map_server.cpp
 )
 
-set(dependencies
+set(map_server_dependencies
   rclcpp
   nav_msgs
   yaml_cpp_vendor
   std_msgs
 )
 
-ament_target_dependencies(${executable_name}
-  ${dependencies}
+set(map_saver_dependencies
+  rclcpp
+  nav_msgs
+  tf2
+)
+
+ament_target_dependencies(${map_server_executable}
+  ${map_server_dependencies}
+)
+
+ament_target_dependencies(${map_saver_executable}
+  ${map_saver_dependencies}
 )
 
 ament_target_dependencies(${library_name}
-  ${dependencies}
+  ${map_server_dependencies}
 )
 
-target_link_libraries(${executable_name}
+target_link_libraries(${map_server_executable}
   ${library_name}
 )
 
@@ -64,28 +80,10 @@ target_link_libraries(${library_name}
   ${SDL_LIBRARY}
   ${SDL_IMAGE_LIBRARIES}
 )
-install(TARGETS ${executable_name} ${library_name}
+
+install(TARGETS ${map_server_executable} ${library_name} ${map_saver_executable}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-set(executable_name map_saver)
-
-add_executable(${executable_name}
-  src/map_saver.cpp
-)
-
-set(dependencies
-  rclcpp
-  nav_msgs
-  tf2
-)
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
