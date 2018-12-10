@@ -68,14 +68,15 @@ public:
     node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
   }
   std::vector<Point> setRadii(
-  nav2_costmap_2d::LayeredCostmap & layers,
-  double length, double width, double inflation_radius);
+    nav2_costmap_2d::LayeredCostmap & layers,
+    double length, double width, double inflation_radius);
 
   void validatePointInflation(
     unsigned int mx, unsigned int my,
     nav2_costmap_2d::Costmap2D * costmap,
     nav2_costmap_2d::InflationLayer * ilayer,
     double inflation_radius);
+
 protected:
   rclcpp::Node::SharedPtr node_;
 };
@@ -160,7 +161,7 @@ void TestNode::validatePointInflation(
   delete[] seen;
 }
 
-TEST_F(TestNode, testAdjacentToObstacleCanStillMove) 
+TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
 {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -438,16 +439,3 @@ TEST_F(TestNode, testInflation3) {
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), (unsigned int)1);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)4);
 }
-
-
-/* int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  node_ = rclcpp::Node::make_shared("inflation_test_node");
-
-  // Set cost_scaling_factor parameter to 1.0 for inflation layer
-  node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
-
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-} */

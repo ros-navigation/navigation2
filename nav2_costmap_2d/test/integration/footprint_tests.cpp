@@ -83,22 +83,22 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-  auto node = rclcpp::Node::make_shared("footprint_tests");
+    auto node = rclcpp::Node::make_shared("footprint_tests");
 
-  tf_ = new tf2_ros::Buffer(node->get_clock());
-  tfl_ = new tf2_ros::TransformListener(*tf_);
+    tf_ = new tf2_ros::Buffer(node->get_clock());
+    tfl_ = new tf2_ros::TransformListener(*tf_);
 
-  // This empty transform is added to satisfy the constructor of
-  // Costmap2DROS, which waits for the transform from map to base_link
-  // to become available.
-  geometry_msgs::msg::TransformStamped base_rel_map;
-  base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
-  base_rel_map.child_frame_id = "base_link";
-  base_rel_map.header.frame_id = "map";
-  base_rel_map.header.stamp = node->now();
-  tf_->setTransform(base_rel_map, "footprint_tests");
+    // This empty transform is added to satisfy the constructor of
+    // Costmap2DROS, which waits for the transform from map to base_link
+    // to become available.
+    geometry_msgs::msg::TransformStamped base_rel_map;
+    base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
+    base_rel_map.child_frame_id = "base_link";
+    base_rel_map.header.frame_id = "map";
+    base_rel_map.header.stamp = node->now();
+    tf_->setTransform(base_rel_map, "footprint_tests");
 
-  costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
+    costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
   }
 
 protected:
@@ -197,26 +197,3 @@ TEST_F(TestNode, footprint_from_same_level_param)
   EXPECT_EQ(6.0f, footprint[2].y);
   EXPECT_EQ(0.0f, footprint[2].z);
 }
-
-/* int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = rclcpp::Node::make_shared("footprint_tests");
-
-  tf_ = new tf2_ros::Buffer(node->get_clock());
-  tfl_ = new tf2_ros::TransformListener(*tf_);
-
-  // This empty transform is added to satisfy the constructor of
-  // Costmap2DROS, which waits for the transform from map to base_link
-  // to become available.
-  geometry_msgs::msg::TransformStamped base_rel_map;
-  base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
-  base_rel_map.child_frame_id = "base_link";
-  base_rel_map.header.frame_id = "map";
-  base_rel_map.header.stamp = node->now();
-  tf_->setTransform(base_rel_map, "footprint_tests");
-
-  costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-} */

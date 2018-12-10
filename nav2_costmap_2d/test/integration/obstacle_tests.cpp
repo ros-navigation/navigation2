@@ -56,6 +56,7 @@ public:
   {
     node_ = rclcpp::Node::make_shared("obstacle_test_node");
   }
+
 protected:
   rclcpp::Node::SharedPtr node_;
 };
