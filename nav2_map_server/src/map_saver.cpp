@@ -29,6 +29,8 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
@@ -58,7 +60,7 @@ class MapGenerator : public rclcpp::Node
 
     void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
     {
-      rclcpp::Logger logger = this->get_logger();
+      rclcpp::Logger logger = get_logger();
       RCLCPP_INFO(logger, "Received a %d X %d map @ %.3f m/pix",
                map->info.width,
                map->info.height,
@@ -140,6 +142,7 @@ free_thresh: 0.196
               "  map_saver [--occ <threshold_occupied>] [--free <threshold_free>] " \
               "[-f <mapname>] [ROS remapping args]"
 
+using namespace std::chrono_literals;
 
 int main(int argc, char** argv)
 {
@@ -206,6 +209,7 @@ int main(int argc, char** argv)
 
   while(!map_gen->saved_map_ && rclcpp::ok()) {
     rclcpp::spin_some(map_gen);
+    rclcpp::sleep_for(100ms);
   }
 
   rclcpp::shutdown();
