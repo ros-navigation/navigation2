@@ -17,13 +17,11 @@
 
 #include <string>
 #include <chrono>
-#include <ctime>
 #include <cmath>
 #include <thread>
 #include <atomic>
 #include <memory>
 #include <deque>
-#include <iomanip>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
@@ -47,7 +45,7 @@ public:
     current_accel_(0.0),
     brake_accel_limit_(-10.0)
   {
-    RCLCPP_DEBUG(get_logger(), "IsStuckCondition::constructor");
+    RCLCPP_DEBUG(get_logger(), "Creating an IsStuckCondition BT node");
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
       std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
@@ -61,7 +59,7 @@ public:
 
   ~IsStuckCondition()
   {
-    RCLCPP_DEBUG(this->get_logger(), "PlannerTester::~PlannerTester");
+    RCLCPP_DEBUG(this->get_logger(), "Shutting down IsStuckCondition BT node");
     stopWorkerThread();
   }
 
@@ -140,7 +138,7 @@ public:
 
     // Detect if robot bumped into something by checking for abnormal deceleration
     if (current_accel_ < brake_accel_limit_) {
-      RCLCPP_DEBUG(get_logger(), "Current acceleration is beyond brake limit."
+      RCLCPP_DEBUG(get_logger(), "Current deceleration is beyond brake limit."
         " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
 
         return true;
