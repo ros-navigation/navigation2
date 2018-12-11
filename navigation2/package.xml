@@ -13,7 +13,6 @@
 
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
-  <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_world_model</exec_depend>
@@ -26,7 +25,6 @@
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_robot</exec_depend>
   <exec_depend>nav2_simple_navigator</exec_depend>
-  <exec_depend>nav2_system_tests</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
