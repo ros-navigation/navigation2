@@ -21,7 +21,6 @@
   <build_depend>launch_testing</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
-  <build_depend>gazebo_ros_pkgs</build_depend>
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
 
@@ -37,7 +36,6 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>gazebo_ros_pkgs</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
 
