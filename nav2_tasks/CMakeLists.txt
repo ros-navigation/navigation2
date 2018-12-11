@@ -68,6 +68,7 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+#  This package publishes messages from tf2_geometry_msgs
+ament_export_dependencies(tf2_geometry_msgs)
 
 ament_package()
