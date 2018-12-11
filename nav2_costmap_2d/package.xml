@@ -18,8 +18,6 @@
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-	<buildtool_depend>rosidl_default_generators</buildtool_depend>
-
 
   <depend>geometry_msgs</depend>
   <depend>map_msgs</depend>

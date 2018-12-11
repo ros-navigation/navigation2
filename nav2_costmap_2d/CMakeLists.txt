@@ -13,7 +13,6 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rmw REQUIRED)
@@ -60,7 +59,6 @@ add_library(nav2_costmap_2d_core SHARED
 
 set(dependencies
   rclcpp
-  rosidl_default_generators
   geometry_msgs
   nav_msgs
   std_msgs
