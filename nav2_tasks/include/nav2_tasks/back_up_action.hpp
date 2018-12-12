@@ -36,6 +36,8 @@ public:
 
   void onInit() override
   {
+    BtActionNode<BackUpCommand, BackUpResult>::onInit();
+
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::BackUpCommand>();
     result_ = std::make_shared<nav2_tasks::BackUpResult>();
