@@ -5,3 +5,11 @@ ament_target_dependencies(test_dynamic_params_validator ${dependencies})
 target_link_libraries(test_dynamic_params_validator
   nav2_dynamic_params
 )
+
+ament_add_gtest(test_dynamic_params_client test_dynamic_params_client.cpp)
+
+ament_target_dependencies(test_dynamic_params_client ${dependencies})
+
+target_link_libraries(test_dynamic_params_client
+  nav2_dynamic_params
+)
