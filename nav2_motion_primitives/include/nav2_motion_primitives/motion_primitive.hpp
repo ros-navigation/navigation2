@@ -79,9 +79,7 @@ public:
     RCLCPP_INFO(node_->get_logger(), "%s attempting behavior", taskName_.c_str());
 
     ResultMsg result;
-    nav2_tasks::TaskStatus status;
-
-    status = onRun(command);
+    auto status = onRun(command);
 
     if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
       status = cycle(result);
@@ -99,7 +97,7 @@ protected:
     auto start_time = std::chrono::system_clock::now();
     auto current_time = std::chrono::system_clock::now();
 
-    nav2_tasks::TaskStatus status;
+    auto status = nav2_tasks::TaskStatus::FAILED;
 
     while (rclcpp::ok()) {
       if (task_server_->cancelRequested()) {
