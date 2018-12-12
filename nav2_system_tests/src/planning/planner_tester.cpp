@@ -53,7 +53,7 @@ PlannerTester::PlannerTester()
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose");
 
   // For visualization, we'll publish the map and the path endpoints
-  map_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
+  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
 
   // We start with a 10x10 grid with no obstacles
   loadSimpleCostmap(TestCostmap::open_space);
@@ -146,18 +146,13 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
   map_->info.map_load_time = this->now();
 
   // TODO(orduno): #443 replace with a latched topic
-  map_timer_ = create_wall_timer(1s, std::bind(&PlannerTester::mapCallback, this));
+  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(map_)});
 
   map_set_ = true;
   costmap_set_ = false;
   using_fake_costmap_ = false;
 
   setCostmap();
-}
-
-void PlannerTester::mapCallback()
-{
-  map_publisher_->publish(map_);
 }
 
 void PlannerTester::setCostmap()

@@ -59,7 +59,7 @@ TEST_F(PlannerTester, testWithOneFixedEndpoint)
   EXPECT_EQ(true, defaultPlannerTest(result));
 }
 
-TEST_F(PlannerTester, testWithThousandRandomEndPoints)
+TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
   loadMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
