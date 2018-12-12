@@ -79,9 +79,7 @@ public:
     RCLCPP_INFO(node_->get_logger(), "%s attempting behavior", taskName_.c_str());
 
     ResultMsg result;
-    nav2_tasks::TaskStatus status;
-
-    status = onRun(command);
+    nav2_tasks::TaskStatus status = onRun(command);
 
     if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
       status = cycle(result);
