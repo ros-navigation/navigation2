@@ -6,8 +6,8 @@
   <description>
     ROS2 Navigation Stack
   </description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -22,10 +22,10 @@
   <exec_depend>nav2_dynamic_params</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_mission_executor</exec_depend>
+  <exec_depend>nav2_motion_primitives</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_robot</exec_depend>
   <exec_depend>nav2_simple_navigator</exec_depend>
-  <exec_depend>nav2_system_tests</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
@@ -38,7 +38,7 @@
   <test_depend>launch_testing</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>  
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>
