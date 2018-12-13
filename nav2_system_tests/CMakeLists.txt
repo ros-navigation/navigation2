@@ -24,6 +24,7 @@ find_package(std_msgs REQUIRED)
 find_package(gazebo_ros_pkgs REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(navigation2)
 
 set(dependencies
   rclcpp

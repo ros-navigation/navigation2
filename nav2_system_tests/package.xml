@@ -40,6 +40,7 @@
   <exec_depend>gazebo_ros_pkgs</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
+  <exec_depend>navigation2</exec_depend>
 
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
