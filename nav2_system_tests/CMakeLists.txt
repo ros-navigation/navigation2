@@ -37,17 +37,17 @@ set(dependencies
   rclpy
 )
 
-#if(BUILD_TESTING)
-#  find_package(ament_lint_auto REQUIRED)
-#  ament_lint_auto_find_test_dependencies()
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 
-#  find_package(ament_cmake_gtest REQUIRED)
-#  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
 
 #  add_subdirectory(src/planning)
-#  add_subdirectory(src/localization)
-#  add_subdirectory(src/system)
+  add_subdirectory(src/localization)
+  add_subdirectory(src/system)
 
-#endif()
+endif()
 
 ament_package()
