@@ -50,19 +50,8 @@ public:
       auto topic = join_path(node_namespace, "parameter_events");
       RCLCPP_INFO(node_->get_logger(), "Subscribing to topic: %s", topic.c_str());
 
-      // Internal callback for parameter events.
-      std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback =
-        [this](
-        const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
-        {
-          last_event_ = event;
-          if (is_event_in_map(event)) {
-            user_callback_();
-          }
-        };
-
       auto event_sub = node_->create_subscription<rcl_interfaces::msg::ParameterEvent>(
-        topic, callback);
+        topic, std::bind(&DynamicParamsClient::event_callback, this, std::placeholders::_1));
       event_subscriptions_.push_back(event_sub);
     }
   }
@@ -247,6 +236,15 @@ public:
       full_path = '/' + full_path;
     }
     return full_path == last_event_->node && is_in_event(name);
+  }
+
+protected:
+  void event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+  {
+    last_event_ = event;
+    if (is_event_in_map(event)) {
+      user_callback_();
+    }    
   }
 
 private:

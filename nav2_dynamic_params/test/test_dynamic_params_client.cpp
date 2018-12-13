@@ -36,124 +36,113 @@ public:
   ClientTest()
   {
     node_ = rclcpp::Node::make_shared("dynamic_param_client_test");
-    params_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
+    dynamic_params_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
   }
 
 protected:
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> params_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_params_client_;
   rclcpp::Node::SharedPtr node_;
+  bool callback_result_ = false;
 };
 
 TEST_F(ClientTest, testAddParameters)
 {
-  //auto node_A = rclcpp::Node::make_shared("node_A");
-  //auto node_B = rclcpp::Node::make_shared("node_B", "namespace");
-  //std::map<std::string, rclcpp::Parameter> params;
-
-  //params["/node_A/foo"] = rclcpp::Parameter("foo", 1.0);
-  //params["/namespace/node_B/bar"] = rclcpp::Parameter("bar", 1);
-  //params["/namespace/node_B/foobar"] = rclcpp::Parameter("foobar", 1);
-  //node_A->set_parameters({params["/node_A/foo"]});
-  //node_B->set_parameters({params["/namespace/node_B/bar"]});
-
-  //node_B->set_parameters({rclcpp::Parameter("foobar", 1)});
-  
-/*   rclcpp::executors::SingleThreadedExecutor exec;
-  exec.add_node(node_A);
-  exec.add_node(node_B);
-  exec.spin(); */
-  //node_B->set_parameters({rclcpp::Parameter("foobar", 1)});
   node_->set_parameters({rclcpp::Parameter("baz", 1)});
 
-  params_client_->add_parameters({"baz"});
-  //params_client_->add_parameters("node_A", {"foo"});
-  //params_client_->add_parameters("namespace", "node_B", {"bar"});
-  //params_client_->add_parameters_on_node("namespace", "node_B");
-
-  auto dynamic_param_map = params_client_->get_param_map();
-  EXPECT_EQ(1, dynamic_param_map.count("/baz"));
+  dynamic_params_client_->add_parameters();
+  dynamic_params_client_->add_parameters({"foobar"});
+  
+  auto dynamic_param_map = dynamic_params_client_->get_param_map();
+  EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/baz"));
+  EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/foobar"));
 }
 
-/* 
-TEST_F(ClientTest, testGetParameters)
+ 
+TEST_F(ClientTest, testAddParamsOtherNodes)
 {
+  dynamic_params_client_->add_parameters_on_node("test_namespace", "test_node");
+  dynamic_params_client_->add_parameters("test_namespace", "test_node", {"foobar"});
+  dynamic_params_client_->add_parameters("test_node", {"foo"});
 
+  auto dynamic_param_map = dynamic_params_client_->get_param_map();
+  EXPECT_EQ(1, dynamic_param_map.count("/test_node/foo"));
+  EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/bar"));
+  EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/foobar"));  
 }
 
-TEST_F(ClientTest, testDifferentNamespaces)
-{
 
+TEST_F(ClientTest, testGetParams)
+{
+  node_->set_parameters({rclcpp::Parameter("baz", 5)});
+  node_->set_parameters({rclcpp::Parameter("foobaz", 5.0)});
+
+  dynamic_params_client_->add_parameters_on_node("test_namespace", "test_node");
+  dynamic_params_client_->add_parameters("test_namespace", "test_node", {"foobar"});
+  dynamic_params_client_->add_parameters("test_node", {"foo"});
+  dynamic_params_client_->add_parameters();
+  dynamic_params_client_->add_parameters({"foobaz"});
+  dynamic_params_client_->add_parameters("some_node", {"barbaz"});
+
+  double foo, foobaz;
+  int bar, baz, barbaz;
+  std::string foobar;
+
+  dynamic_params_client_->get_event_param("baz", baz);
+  dynamic_params_client_->get_event_param("test_namespace", "test_node", "bar", bar);
+  dynamic_params_client_->get_event_param("test_node", "foo", foo);
+
+  EXPECT_EQ(5, baz);
+  EXPECT_EQ(1.0, foo);
+  EXPECT_EQ(1, bar);
+
+  auto result  = dynamic_params_client_->get_event_param_or<std::string>("test_namespace/test_node", "foobar", foobar, "test");
+  EXPECT_EQ(false, result);
+  result = dynamic_params_client_->get_event_param_or("foobaz", foobaz, 7.0);
+  EXPECT_EQ(true, result);
+  result = dynamic_params_client_->get_event_param("some_node", "barbaz", barbaz);
+  EXPECT_EQ(false, result);
+  EXPECT_EQ("test", foobar);
+  EXPECT_EQ(5.0, foobaz);
+  
 }
 
-TEST_F(ClientTest, testDuplicateParams)
+TEST_F(ClientTest, testEventCallbacks)
 {
+  dynamic_params_client_->add_parameters({"baz"});
+  dynamic_params_client_->add_parameters("test_node", {"foo"});
 
-} */
+  std::function<void()> callback = [this]()-> void
+    {
+      callback_result_ = true;
+    };
 
-// Define a user event callback
-/* void event_callback()
-{
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "\nEvent Callback!");
+  dynamic_params_client_->set_callback(callback, false);
+  
+  node_->set_parameters({rclcpp::Parameter("baz", 2)});
 
-  if (dynamic_params_client->is_in_event("foo")) {
-    RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "'foo' is in this event!");
+  while(!callback_result_)
+  {
+    rclcpp::spin_some(node_);
   }
 
-  double foo;
-  dynamic_params_client->get_event_param("foo", foo);
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "foo: %f", foo);
+  EXPECT_EQ(true, callback_result_);
 
-  int bar_B;
-  dynamic_params_client->get_event_param_or("bar", bar_B, 2);
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "bar_B: %d", bar_B);
+  auto param_client_A = std::make_shared<rclcpp::SyncParametersClient>(node_, "/test_node");
+  auto param_client_B = std::make_shared<rclcpp::SyncParametersClient>(node_, "/test_namespace/test_node");
 
-  int bar_C;
-  dynamic_params_client->get_event_param_or("some_namespace", "bar", bar_C, 3);
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "bar_C: %d", bar_C);
-
-  std::string baz;
-  dynamic_params_client->get_event_param_or("some_namespace/baz", baz, std::string("default"));
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "baz: %s", baz.c_str());
-
-  // Parameter not set on server
-  double foobar;
-  dynamic_params_client->get_event_param_or("foobar", foobar, 5.5);
-  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "foobar: %f", foobar);
-}
-
-
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-
-  auto node = rclcpp::Node::make_shared("example_dynamic_params_client", "some_other_namespace");
-
-  // Add Dynamic Reconfigure Client
-  dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
-  // Add parameters by node. Note that there are different ways to add parameters
-  // The namespace must be provided, if applicable
-  dynamic_params_client->add_parameters("example_node_A", {"foo"});
-  // If node is not available for service, then none of its parameters will be registered
-  dynamic_params_client->add_parameters_on_node("example_node_B");
-  dynamic_params_client->add_parameters("some_namespace", "example_node_C", {"baz", "bar"});
-  // without node path, adding only parameters will grab parameters from member node
-  dynamic_params_client->add_parameters({"foobaz"});
-
-  dynamic_params_client->set_callback(std::bind(event_callback));
-
-  // Check list of parameters
-  auto list = dynamic_params_client->get_param_names();
-  std::stringstream ss;
-  for (auto & param_name : list) {
-    ss << "\n" << param_name;
+  callback_result_ = false;
+  param_client_A->set_parameters({rclcpp::Parameter("foo", 3.0)});
+/*   while(!callback_result_)
+  {
+    rclcpp::spin_some(node_);
+  } */
+  rclcpp::Rate r(10);
+  rclcpp::executors::SingleThreadedExecutor exec;
+  while (!callback_result_ && rclcpp::ok()) {
+    exec.spin_node_once(node_->get_node_base_interface(), std::chrono::milliseconds(100));
+    r.sleep();
   }
 
-  RCLCPP_INFO(node->get_logger(), ss.str().c_str());
+  EXPECT_EQ(true, callback_result_);
 
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-
-  delete dynamic_params_client;
-  return 0;
 }
- */
