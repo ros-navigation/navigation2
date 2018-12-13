@@ -24,7 +24,7 @@ before_install:
   - docker build -t nav2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
 
 script:
-  - docker run --name nav2_bash --rm -d -i -t nav2:latest bash -l
+  - docker run --name nav2_bash --rm -d -i -t --net=host nav2:latest bash -l
   - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
       colcon test --ctest-args " -V" --packages-skip nav2_tasks'
   - docker exec nav2_bash bash -c "colcon test-result --verbose"
