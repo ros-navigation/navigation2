@@ -44,6 +44,7 @@ set(library_name ${map_server_executable}_core)
 add_library(${library_name} SHARED
   src/occ_grid_loader.cpp
   src/map_server.cpp
+  src/map_generator.cpp
 )
 
 set(map_server_dependencies
@@ -51,6 +52,7 @@ set(map_server_dependencies
   nav_msgs
   yaml_cpp_vendor
   std_msgs
+  tf2
 )
 
 set(map_saver_dependencies
@@ -72,6 +74,10 @@ ament_target_dependencies(${library_name}
 )
 
 target_link_libraries(${map_server_executable}
+  ${library_name}
+)
+
+target_link_libraries(${map_saver_executable}
   ${library_name}
 )
 

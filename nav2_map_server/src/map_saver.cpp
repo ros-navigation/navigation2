@@ -34,96 +34,7 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav_msgs/srv/get_map.hpp"
-#include "nav_msgs/msg/occupancy_grid.h"
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2/LinearMath/Quaternion.h"
-
-
-/**
- * @brief Map generation node.
- */
-class MapGenerator : public rclcpp::Node
-{
-public:
-  MapGenerator(const std::string & mapname, int threshold_occupied, int threshold_free)
-  : Node("map_saver"),
-    mapname_(mapname),
-    saved_map_(false),
-    threshold_occupied_(threshold_occupied),
-    threshold_free_(threshold_free)
-  {
-    RCLCPP_INFO(get_logger(), "Waiting for the map");
-    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-      "map", std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
-  }
-
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
-  {
-    rclcpp::Logger logger = get_logger();
-    RCLCPP_INFO(logger, "Received a %d X %d map @ %.3f m/pix",
-      map->info.width,
-      map->info.height,
-      map->info.resolution);
-
-
-    std::string mapdatafile = mapname_ + ".pgm";
-    RCLCPP_INFO(logger, "Writing map occupancy data to %s", mapdatafile.c_str());
-    FILE * out = fopen(mapdatafile.c_str(), "w");
-    if (!out) {
-      RCLCPP_ERROR(logger, "Couldn't save map file to %s", mapdatafile.c_str());
-      return;
-    }
-
-    fprintf(out, "P5\n# CREATOR: map_saver.cpp %.3f m/pix\n%d %d\n255\n",
-      map->info.resolution, map->info.width, map->info.height);
-    for (unsigned int y = 0; y < map->info.height; y++) {
-      for (unsigned int x = 0; x < map->info.width; x++) {
-        unsigned int i = x + (map->info.height - y - 1) * map->info.width;
-        if (map->data[i] >= 0 && map->data[i] <= threshold_free_) {    // [0,free)
-          fputc(254, out);
-        } else if (map->data[i] >= threshold_occupied_) {    // (occ,255]
-          fputc(000, out);
-        } else {    // occ [0.25,0.65]
-          fputc(205, out);
-        }
-      }
-    }
-
-    fclose(out);
-
-
-    std::string mapmetadatafile = mapname_ + ".yaml";
-    RCLCPP_INFO(logger, "Writing map occupancy data to %s", mapmetadatafile.c_str());
-    FILE * yaml = fopen(mapmetadatafile.c_str(), "w");
-
-    geometry_msgs::msg::Quaternion orientation = map->info.origin.orientation;
-    tf2::Matrix3x3 mat(tf2::Quaternion(
-        orientation.x,
-        orientation.y,
-        orientation.z,
-        orientation.w
-    ));
-    double yaw, pitch, roll;
-    mat.getEulerYPR(yaw, pitch, roll);
-
-    fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\n",
-      mapdatafile.c_str(), map->info.resolution,
-      map->info.origin.position.x, map->info.origin.position.y, yaw);
-    fprintf(yaml, "negate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n");
-
-    fclose(yaml);
-
-    RCLCPP_INFO(logger, "Done\n");
-    saved_map_ = true;
-  }
-
-  std::string mapname_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
-  bool saved_map_;
-  int threshold_occupied_;
-  int threshold_free_;
-};
+#include "nav2_map_server/map_generator.hpp"
 
 #define USAGE "Usage: \n" \
   "  map_saver -h\n" \
@@ -185,7 +96,8 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  auto map_gen = std::make_shared<MapGenerator>(mapname, threshold_occupied, threshold_free);
+  auto map_gen = std::make_shared<nav2_map_server::MapGenerator>(mapname, threshold_occupied,
+      threshold_free);
 
   while (!map_gen->saved_map_ && rclcpp::ok()) {
     rclcpp::spin_some(map_gen);
