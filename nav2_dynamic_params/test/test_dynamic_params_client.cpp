@@ -30,20 +30,42 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
+class DynamicParamsClientTest : public nav2_dynamic_params::DynamicParamsClient
+{
+public:
+  DynamicParamsClientTest(rclcpp::Node::SharedPtr node)
+  : DynamicParamsClient(node)
+  {}
+
+  void call_test_event(std::string path, rclcpp::Parameter param, bool is_new = false)
+  {
+    auto event = std::make_shared<rcl_interfaces::msg::ParameterEvent>();
+    if (is_new) {
+      event->new_parameters.push_back(param.to_parameter_msg());
+    } else {
+      event->changed_parameters.push_back(param.to_parameter_msg());
+    }
+    event->node = path;
+    event_callback(event);
+  }
+};
+
 class ClientTest : public ::testing::Test
 {
 public:
   ClientTest()
   {
     node_ = rclcpp::Node::make_shared("dynamic_param_client_test");
-    dynamic_params_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
+    dynamic_params_client_ = std::make_unique<DynamicParamsClientTest>(node_);
   }
 
 protected:
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_params_client_;
+  std::unique_ptr<DynamicParamsClientTest> dynamic_params_client_;
   rclcpp::Node::SharedPtr node_;
   bool callback_result_ = false;
 };
+
+
 
 TEST_F(ClientTest, testAddParameters)
 {
@@ -124,25 +146,30 @@ TEST_F(ClientTest, testEventCallbacks)
   {
     rclcpp::spin_some(node_);
   }
+  // Directly call into event callback
+  //dynamic_params_client_->call_test_event("/dynamic_param_client_test", rclcpp::Parameter("baz", 2), true);
 
   EXPECT_EQ(true, callback_result_);
+  int baz;
+  dynamic_params_client_->get_event_param("baz", baz);
+  EXPECT_EQ(2, baz);
 
   auto param_client_A = std::make_shared<rclcpp::SyncParametersClient>(node_, "/test_node");
   auto param_client_B = std::make_shared<rclcpp::SyncParametersClient>(node_, "/test_namespace/test_node");
 
   callback_result_ = false;
+  
+  // Directly call into event callback
+  //dynamic_params_client_->call_test_event("/test_node", rclcpp::Parameter("foo", 3.0), false);
+
   param_client_A->set_parameters({rclcpp::Parameter("foo", 3.0)});
-/*   while(!callback_result_)
+  while(!callback_result_)
   {
     rclcpp::spin_some(node_);
-  } */
-  rclcpp::Rate r(10);
-  rclcpp::executors::SingleThreadedExecutor exec;
-  while (!callback_result_ && rclcpp::ok()) {
-    exec.spin_node_once(node_->get_node_base_interface(), std::chrono::milliseconds(100));
-    r.sleep();
   }
-
+  
   EXPECT_EQ(true, callback_result_);
-
+  double foo;
+  dynamic_params_client_->get_event_param("test_node", "foo", foo);
+  EXPECT_EQ(3.0, foo);
 }

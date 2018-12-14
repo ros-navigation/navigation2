@@ -76,10 +76,9 @@ public:
     if (*full_path.begin() != '/') {
       full_path = '/' + full_path;
     }
-
+    RCLCPP_INFO(node_->get_logger(), "adding parameters from: %s", full_path.c_str());
     init_as_not_set(full_path, param_names);
     std::vector<rclcpp::Parameter> params;
-
     if (full_path == join_path(node_->get_namespace(), node_->get_name())) {
       if (param_names.size() < 1) {
         auto param_list = node_->list_parameters({}, 1);
@@ -94,6 +93,7 @@ public:
           auto param_list = client->list_parameters({}, 1);
           params = client->get_parameters(param_list.names);
         } else {
+          RCLCPP_INFO(node_->get_logger(), "get parameters...");
           params = client->get_parameters(param_names);
         }
       } else {
