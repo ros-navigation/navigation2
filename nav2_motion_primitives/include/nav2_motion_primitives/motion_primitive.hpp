@@ -103,7 +103,8 @@ protected:
       if (task_server_->cancelRequested()) {
         RCLCPP_INFO(node_->get_logger(), "%s cancelled", taskName_.c_str());
         task_server_->setCanceled();
-        return nav2_tasks::TaskStatus::CANCELED;
+        status = nav2_tasks::TaskStatus::CANCELED;
+        break;
       }
 
       // Log a message every second
