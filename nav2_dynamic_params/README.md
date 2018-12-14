@@ -109,7 +109,7 @@ std::function<void()> callback = [this]() -> void
     dynamic_params_client->get_event_param_or("foobaz", foobaz, 25);
   };
   
-// Pass callback to DynamicParamsClient, to be added to parameter clients for all nodes
+// Set user callback in DynamicParamsClient, to be invoked if a tracked parameter is found in the incoming event
 // By default, the callback will be invoked immediately with an empty event
 dynamic_params_client->set_callback(callback);
 ```
