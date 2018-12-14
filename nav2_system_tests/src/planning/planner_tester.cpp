@@ -115,7 +115,8 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
     // User can set an environment variable to the location of the test src
     char const * path = getenv("TEST_MAP");
     if (path == NULL) {
-      file_path = "../../nav2_system_tests/maps/map.pgm";
+      throw std::runtime_error("PlannerTester::loadMap: path to map image file"
+              " has not been specified in environment variable `TEST_MAP`.");
     } else {
       file_path = std::string(path);
     }
@@ -146,7 +147,7 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
   map_->info.map_load_time = this->now();
 
   // TODO(orduno): #443 replace with a latched topic
-  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(map_)});
+  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(map_);});
 
   map_set_ = true;
   costmap_set_ = false;
@@ -260,14 +261,10 @@ bool PlannerTester::defaultPlannerTest(
     goal->pose.position.y = 390.0;
   }
 
-  bool pathIsCollisionFree = plannerTest(robot_position, goal, path);
-
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
   //               result.
 
-  bool pathIsWithinTolerance = isWithinTolerance(*path, deviation_tolerance);
-
-  return pathIsCollisionFree && pathIsWithinTolerance;
+  return plannerTest(robot_position, goal, path);
 }
 
 bool PlannerTester::defaultPlannerRandomTests(
@@ -327,14 +324,9 @@ bool PlannerTester::defaultPlannerRandomTests(
     goal->pose.position.x = vals.first;
     goal->pose.position.y = vals.second;
 
-    // TODO(orduno): #443 Tweak criteria for defining if a path goes into obstacles.
-    //               Current navfn planner will sometimes produce paths that cut corners
-    //               i.e. some points are around the corner are actually inside the obstacle
-    bool pathIsCollisionFree = plannerTest(robot_position, goal, path);
-
-    if (!pathIsCollisionFree) {
+    if (!plannerTest(robot_position, goal, path)) {
       RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerRandomTests:"
-        " failed or found a collision with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
+        " failed with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
         robot_position.x, robot_position.y, goal->pose.position.x, goal->pose.position.y);
       ++num_fail;
     }
@@ -371,9 +363,9 @@ bool PlannerTester::plannerTest(
   } else if (status == TaskStatus::SUCCEEDED) {
     // TODO(orduno): #443 check why task may report success while planner returns a path of 0 points
     RCLCPP_INFO(this->get_logger(), "PlannerTester::plannerTest:"
-      " got path, checking for collisions");
+      " got path, checking endpoints and possible collisions");
 
-    return isCollisionFree(*path);
+    return isCollisionFree(*path) && isWithinTolerance(robot_position, *goal, *path);
   }
 
   return false;
@@ -416,8 +408,13 @@ TaskStatus PlannerTester::sendRequest(
 bool PlannerTester::isCollisionFree(const nav2_tasks::ComputePathToPoseResult & path)
 {
   // At each point of the path, check if the corresponding cell is free
+
   // TODO(orduno): #443 for now we are assuming the robot is the size of a single cell
   //               costmap/world_model has consider the robot footprint
+
+  // TODO(orduno): #443 Tweak criteria for defining if a path goes into obstacles.
+  //               Current navfn planner will sometimes produce paths that cut corners
+  //               i.e. some points are around the corner are actually inside the obstacle
 
   bool collisionFree = true;
 
@@ -427,23 +424,58 @@ bool PlannerTester::isCollisionFree(const nav2_tasks::ComputePathToPoseResult & 
       static_cast<unsigned int>(std::round(pose.position.y)));
 
     if (!collisionFree) {
-      RCLCPP_WARN(this->get_logger(), "PathTester::isCollisionFree: path has collision at"
+      RCLCPP_WARN(this->get_logger(), "PlannerTester::isCollisionFree: path has collision at"
         "(%.2f, %.2f)", pose.position.x, pose.position.y);
       printPath(path);
       return false;
     }
   }
 
-  RCLCPP_INFO(this->get_logger(), "PathTester::isCollisionFree: path has no collisions :)");
+  RCLCPP_INFO(this->get_logger(), "PlannerTester::isCollisionFree: path has no collisions :)");
   return true;
 }
 
 bool PlannerTester::isWithinTolerance(
-  const nav2_tasks::ComputePathToPoseResult & /*path*/,
-  const double /*deviationTolerance*/)
+  const geometry_msgs::msg::Point & robot_position,
+  const nav2_tasks::ComputePathToPoseCommand & goal,
+  const nav2_tasks::ComputePathToPoseResult & path) const
 {
-  // TODO(orduno) #443
-  return true;
+  return isWithinTolerance(
+    robot_position, goal, path, 0.0, nav2_tasks::ComputePathToPoseResult());
+}
+
+bool PlannerTester::isWithinTolerance(
+  const geometry_msgs::msg::Point & robot_position,
+  const nav2_tasks::ComputePathToPoseCommand & goal,
+  const nav2_tasks::ComputePathToPoseResult & path,
+  const double /*deviationTolerance*/,
+  const nav2_tasks::ComputePathToPoseResult & /*reference_path*/) const
+{
+  // TODO(orduno) #443 Work in progress, for now we only check that the path start matches the
+  //              robot start location and that the path end matches the goal.
+
+  auto path_start = path.poses[0];
+  auto path_end = path.poses.end()[-1];
+
+  if (
+    path_start.position.x == robot_position.x &&
+    path_start.position.y == robot_position.y &&
+    path_end.position.x == goal.pose.position.x &&
+    path_end.position.y == goal.pose.position.y)
+  {
+    RCLCPP_INFO(this->get_logger(), "Path endpoints have correct start and end points");
+
+    return true;
+  }
+  RCLCPP_WARN(this->get_logger(), "Path endpoints deviate from requested start and end points");
+
+  RCLCPP_INFO(this->get_logger(), "Requested path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
+    robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
+
+  RCLCPP_INFO(this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
+    path_start.position.x, path_start.position.y, path_end.position.x, path_end.position.y);
+
+  return false;
 }
 
 bool PlannerTester::sendCancel()

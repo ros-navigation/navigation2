@@ -85,8 +85,16 @@ private:
   bool isCollisionFree(const nav2_tasks::ComputePathToPoseResult & path);
 
   bool isWithinTolerance(
+    const geometry_msgs::msg::Point & robot_position,
+    const nav2_tasks::ComputePathToPoseCommand & goal,
+    const nav2_tasks::ComputePathToPoseResult & path) const;
+
+  bool isWithinTolerance(
+    const geometry_msgs::msg::Point & robot_position,
+    const nav2_tasks::ComputePathToPoseCommand & goal,
     const nav2_tasks::ComputePathToPoseResult & path,
-    const double deviationTolerance);
+    const double deviationTolerance,
+    const nav2_tasks::ComputePathToPoseResult & reference_path) const;
 
   void printPath(const nav2_tasks::ComputePathToPoseResult & path) const;
 
@@ -108,7 +116,7 @@ private:
   void publishRobotPosition(const geometry_msgs::msg::Point & position) const;
 
   // Occupancy grid publisher for visualization
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pubr_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
   rclcpp::WallRate map_publish_rate_;
   void mapCallback();

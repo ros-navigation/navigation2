@@ -44,23 +44,10 @@ set(dependencies
 #  find_package(ament_cmake_gtest REQUIRED)
 #  find_package(ament_cmake_pytest REQUIRED)
 
-# This test is failing, see issue #221  add_subdirectory(src/planning)
+#  add_subdirectory(src/planning)
 #  add_subdirectory(src/localization)
 #  add_subdirectory(src/system)
 
 #endif()
-
-
-if(BUILD_TESTING)
- find_package(ament_lint_auto REQUIRED)
- ament_lint_auto_find_test_dependencies()
-
- find_package(ament_cmake_gtest REQUIRED)
- find_package(ament_cmake_pytest REQUIRED)
-
-# This test is failing, see issue #221 
-add_subdirectory(src/planning)
-
-endif()
 
 ament_package()
