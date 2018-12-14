@@ -252,9 +252,6 @@ uint8_t Costmap::interpretValue(const int8_t value) const
 
 bool Costmap::isFree(const unsigned int x_coordinate, const unsigned int y_coordinate) const
 {
-  // RCLCPP_DEBUG(node_->get_logger(), "Costmap::isFree: checking x: %u, y: %u",
-  //   x_coordinate, y_coordinate);
-
   unsigned int index = y_coordinate * costmap_properties_.size_x + x_coordinate;
 
   return isFree(index);

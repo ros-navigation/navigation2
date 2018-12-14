@@ -27,8 +27,9 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
-namespace nav2_util
+namespace nav2_system_tests
 {
 
 class PlannerTester : public rclcpp::Node, public ::testing::Test
@@ -37,33 +38,36 @@ public:
   PlannerTester();
   ~PlannerTester();
 
-  // Load image representing a map and its corresponding metadata,
+  // Load an image representing a map and its corresponding metadata,
   // and generate a costmap representation
   // if no image file is provided, it will load the default map
   // if no yaml file is provided, it will use default settings
   void loadMap(const std::string image_file_path = "", const std::string yaml_file_name = "");
 
   // Alternatively, use a preloaded 10x10 costmap
-  void loadSimpleCostmap(const TestCostmap & testCostmapType);
+  void loadSimpleCostmap(const nav2_util::TestCostmap & testCostmapType);
 
   // Sends the request to the planner and gets the result.
-  // Uses the user provided map and endpoints.
-  // Sucess criteria is a collision free path.
-  // TODO(orduno): assuming a robot the size of a costmap cell
+  // Uses the user provided robot position and goal.
+  // A map should be loaded before calling this method.
+  // Success criteria is a collision free path.
+  // TODO(orduno): #443 Assuming a robot the size of a costmap cell
   bool plannerTest(
+    const geometry_msgs::msg::Point & robot_position,
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path);
 
   // Sends the request to the planner and gets the result.
   // Uses the default map or preloaded costmaps.
-  // Sucess criteria is a collision free path and a deviation to a
+  // Success criteria is a collision free path and a deviation to a
   // reference path smaller than a tolerance.
   bool defaultPlannerTest(
     nav2_tasks::ComputePathToPoseResult::SharedPtr & path,
     const double deviation_tolerance = 1.0);
 
-  // TODO(orduno): For now only works if a map is provided
-  bool defaultPlannerRandomTests(const unsigned int number_tests = 100);
+  bool defaultPlannerRandomTests(
+    const unsigned int number_tests,
+    const float acceptable_fail_ratio);
 
   // Sends a cancel command to the Planner
   bool sendCancel();
@@ -81,14 +85,24 @@ private:
   bool isCollisionFree(const nav2_tasks::ComputePathToPoseResult & path);
 
   bool isWithinTolerance(
+    const geometry_msgs::msg::Point & robot_position,
+    const nav2_tasks::ComputePathToPoseCommand & goal,
+    const nav2_tasks::ComputePathToPoseResult & path) const;
+
+  bool isWithinTolerance(
+    const geometry_msgs::msg::Point & robot_position,
+    const nav2_tasks::ComputePathToPoseCommand & goal,
     const nav2_tasks::ComputePathToPoseResult & path,
-    const double deviationTolerance);
+    const double deviationTolerance,
+    const nav2_tasks::ComputePathToPoseResult & reference_path) const;
+
+  void printPath(const nav2_tasks::ComputePathToPoseResult & path) const;
 
   // The static map
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
 
   // The costmap representation of the static map
-  std::unique_ptr<Costmap> costmap_;
+  std::unique_ptr<nav2_util::Costmap> costmap_;
 
   // The interface to the global planner
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
@@ -97,8 +111,12 @@ private:
   // Server for providing a costmap
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
 
+  // Publisher of the robot position
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
+  void publishRobotPosition(const geometry_msgs::msg::Point & position) const;
+
   // Occupancy grid publisher for visualization
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
   rclcpp::WallRate map_publish_rate_;
   void mapCallback();
@@ -113,7 +131,7 @@ private:
   bool track_unknown_space_;
   int lethal_threshold_;
   int unknown_cost_value_;
-  TestCostmap testCostmapType_;
+  nav2_util::TestCostmap testCostmapType_;
 
   // A thread for spinning the ROS node
   void spinThread();
@@ -121,6 +139,6 @@ private:
   std::atomic<bool> spinning_ok_;
 };
 
-}  // namespace nav2_util
+}  // namespace nav2_system_tests
 
 #endif  // PLANNING__PLANNER_TESTER_HPP_

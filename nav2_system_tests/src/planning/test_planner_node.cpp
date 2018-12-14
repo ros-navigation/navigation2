@@ -20,7 +20,7 @@
 #include "planner_tester.hpp"
 
 using namespace std::chrono_literals;
-using nav2_util::PlannerTester;
+using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
@@ -32,18 +32,6 @@ public:
 };
 
 RclCppFixture g_rclcppfixture;
-
-void printPath(
-  std::shared_ptr<nav2_tasks::ComputePathToPoseResult> path,
-  std::shared_ptr<rclcpp::Node> node)
-{
-  int index = 0;
-  for (auto pose : path->poses) {
-    RCLCPP_INFO(node->get_logger(), "  point %u x: %0.2f, y: %0.2f",
-      index, pose.position.x, pose.position.y);
-    ++index;
-  }
-}
 
 TEST_F(PlannerTester, testSimpleCostmaps)
 {
@@ -71,11 +59,9 @@ TEST_F(PlannerTester, testWithOneFixedEndpoint)
   EXPECT_EQ(true, defaultPlannerTest(result));
 }
 
-// TODO(orduno): refine a bit more this test
-//               for example, check the output after each point, not only after the whole batch
-TEST_F(PlannerTester, testWithThousandRandomEndPoints)
+TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
   loadMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
-  EXPECT_EQ(true, defaultPlannerRandomTests(1000));
+  EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 }

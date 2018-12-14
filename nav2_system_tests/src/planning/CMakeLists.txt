@@ -16,6 +16,3 @@ ament_add_test(test_planner_node
     TEST_EXECUTABLE=$<TARGET_FILE:test_planner_node>
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )
-
-
-
