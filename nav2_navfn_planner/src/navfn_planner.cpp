@@ -544,12 +544,12 @@ NavfnPlanner::publishEndpoints(
   marker.pose.orientation = pose.orientation;
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 3.0;
-  marker.scale.y = 3.0;
-  marker.scale.z = 3.0;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
 
   builtin_interfaces::msg::Duration duration;
-  duration.sec = 0;
+  duration.sec = 10;
   duration.nanosec = 0;
 
   // 0 indicates the object should last forever
