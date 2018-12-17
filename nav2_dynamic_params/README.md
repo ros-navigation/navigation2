@@ -1,7 +1,6 @@
 # Dynamic Params
 
-The nav2_dynamic_params package implements a class for the validation of dynamic ROS2 parameters as well as a class which wraps
-ROS2 parameter clients for convenient access to dynamic parameters. This package was motivated by the lack of 
+The nav2_dynamic_params package implements a class for the validation of dynamic ROS2 parameters as well as a class which enables tracking and convenient access to dynamic parameters. This package was motivated by the lack of 
 [DynamicReconfigure](https://github.com/ros/dynamic_reconfigure) in ROS2, which while not ported, remains an important tool for the 
 handling of dynamic parameters during run-time. Thus, using current ROS2-supported parameter features, this package aims to fill 
 the gap in functionality. 
@@ -28,8 +27,8 @@ DynamicParamsClient
 - optional to reject all new parameters
 
 ### DynamicParamsClient
-- creates internal parameter clients to remote nodes
-- registers callback to all internal clients
+- adds parameters from any node to be tracked
+- registers internal callback to filter events and pass to user-defined callback
 - keeps cached map of dynamic parameter changes
 - provides interface function calls to access latest parameter change or default value within callback
 
@@ -63,78 +62,61 @@ For clients of parameters that exist on nodes, whether themselves, or remote, th
 auto node = rclcpp::Node::make_shared("example_dynamic_params_client");
 
 // Create DynamicReconfigureClient
-dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node, 
-  {"example_dynamic_params_validator", "other_node"});
+dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
+
+// Add parameters by node. Note that there are different ways to add parameters
+// The namespace must be provided, if applicable
+dynamic_params_client->add_parameters("example_node_A", {"foo"});
+
+// Add all existing parameter on node. If node is not available for service,
+// then none of its parameters will be registered
+dynamic_params_client->add_parameters_on_node("example_node_B");
+
+// If a parameter is specified but not currently set or node is unavailable,
+// it will be registered as PARAMETER_NOT_SET.
+dynamic_params_client->add_parameters("some_namespace", "example_node_C", {"baz", "bar"});
+
+// without node path, adding only parameters will grab parameters from member node
+dynamic_params_client->add_parameters({"foobar", "foobaz"});
 
 // Create a callback for parameter events
-std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback = [node](
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
+std::function<void()> callback = [this]() -> void
   {
+    // Check if a parameter is part of the latest event
+    if (dynamic_params_client->is_in_event("example_node_B", "bar")) {
+      RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params_client"),
+        "'example_node_B/bar' is in this event!");
+    }
+
     double foo;
-    // Grabs the value of "foo" from the event or from cache internal to DynamicParamsClient   
-    dynamic_params_client->get_event_param(event, "foo", foo);
-    
-    int bar;
-    // If parameter "bar" doesn't exist yet or has not been set, a default value may be  used
-    dynamic_params_client->get_event_param(event, "bar", bar, 4);
-    
+    dynamic_params_client->get_event_param("example_node_A", "foo", foo);
+
+    int bar_B;
+    dynamic_params_client->get_event_param_or("example_node_B", "bar", bar_B, 2);
+
+    int bar_C;
+    dynamic_params_client->get_event_param_or("some_namespace/example_node_C", "bar", bar_C, 3);
+
+    std::string baz;
+    dynamic_params_client->get_event_param_or("some_namespace", "example_node_C",
+      "baz", baz, std::string("default"));
+
+    // Parameter not set on node
     double foobar;
-    // Parameter "foobar" exists on "other_node"
-    dynamic_params_client->get_event_param(event, "foobar", foobar, 5.5);
+    dynamic_params_client->get_event_param_or("foobar", foobar, 5.5);
+
+    int foobaz;
+    dynamic_params_client->get_event_param_or("foobaz", foobaz, 25);
   };
-// Pass callback to DynamicParamsClient, to be added to parameter clients for all nodes
+  
+// Set user callback in DynamicParamsClient, to be invoked if a tracked parameter is found in the incoming event
+// By default, the callback will be invoked immediately with an empty event
 dynamic_params_client->set_callback(callback);
 ```
 
-Here, the DynamicParamsClient is created to listen to events for two nodes, "example_dynamic_params_validator" and some
-"other_node". Upon construction, the object *currently* creates a vector of internal parameter clients for each node and adds all
-current parameters on the node to its map cache of parameters. The utility of the cached parameters is to faciliate access within
-callbacks, where even if the parameter of interest is not part of the event, one may receive its current value. The user-defined
-callback is applied to all the parameter clients for each node, however, even if only one node triggers an event, only its 
-respective client will receive the callback and access its values accordingly. 
+Here, the DynamicParamsClient is created to listen for parameter events from several nodes. When parameters are added by namespace and node name, the DynamicParamsClient initializes the current values off the nodes, creates a subscription to that namespace's parameter events topic, and registers an internal callback. If nodes are unavailable or a parameter is not yet set, the parameters are still registered in the cached parameter map as PARAMETER_NOT_SET. The utility of the map of cached parameters is to faciliate access to these dynamic parameters at any time, where even if the parameter of interest is not part of the latest event, one may receive its current value or use a provided default if unavailable. The user-defined callback is applied whenever an incoming parameter event matches a parameter currently stored in the cached map. With parameter event messages now containing a fully qualified path to the host node of the event, duplicate parameters names may be tracked across different nodes regardless of namespace.   
 
-## Future Redesign
-One drawback of the aforementioned design above is that user-defined callbacks for parameter events will be triggered even if the
-the event does not contain a dynamic parameter of interest (for example some other node changes a parameter that is irrelevant to
-your node and callback). In the current model, the callback would be called but none of the parameters of interest would change.
-This may be undesirable behavior, especially if there is some expense to calling the callback. Thus, to prevent this, another
-proposal is to register an internal callback to filter the events, and only pass the event to the user-defined callback if it
-contains a desired dynamic parameter. This chain of callbacks would prevent unnecessary calls to the user-callback.   
-Another drawback is that the current design does not support duplicate parameter names. For example, if two nodes hosted the
-parameter "baz", then we would not be able to resolve the two. A proposed design is to specify by node the parameters of interest,
-internally created a mapping between nodes and dynamic parameters. This mapping can be used to resolve different node parameters
-which may have duplicate parameter names.
-
-### Example Proposed Interface (example proposed by @mjeronimo)
-
-```C++
-// Proposed programming model for DynamicParamsClient:
-
-auto dynamic_params_client = new nav2_dynamic_params::DynamicParamsClient(node);
-
-// This automatically adds (listens to changes for) all parameters for Node "A"
-dynamic_params_client->add_params("A");
-// Register interest in only param4 and param5 from node B
-dynamic_params_client->add_params("B", {"param4", "param5"});
-// Register interest in param4 and param7 from node C. Notice that parameter names
-// don't have to be unique system-wide
-dynamic_params_client->add_params("C", {"param4", "param7"});
-
-// The user's callback will be called with the set of parameters it is interested in:
-// All parameters from A; param4 and param5 from node B; and param4 and param7 from Node C
-// This is a logical group of parameters
-dynamic_params_client->set_callback(user_callback);
-
-// Can potentially add more nodes after setting the callback
-dynamic_params_client->add_params("D", { "param1", "param2" });
-```
 ## Future Plans / TODO
 - Validate parameters set at launch. Currently, launched parameters are set on the node before the validation callback is created
 - Set validation types and bounds at launch time via file (within YAML?)
-- Trigger DynamicParamsClient callback upon initialization. 
 - Provide GUI for dynamic parameters
-
-
-
-
-
