@@ -72,10 +72,7 @@ bool
 Robot::getCurrentPose(
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
-  if (!getGlobalLocalizerPose(robot_pose)) {
-    return false;
-  }
-  return true;
+  return getGlobalLocalizerPose(robot_pose);
 }
 
 bool
