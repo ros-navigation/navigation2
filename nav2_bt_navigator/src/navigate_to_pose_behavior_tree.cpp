@@ -49,6 +49,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerSimpleAction("UpdatePath",
     std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
+  // Register our Simple Action nodes  
+  factory_.registerSimpleAction("globalLocalizationServiceRequest",
+     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
+
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
 }
 
@@ -60,6 +64,18 @@ BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
 
   follow_path_task_client_->sendUpdate(path);
   return BT::NodeStatus::RUNNING;
+}
+
+BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
+{
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  try {
+   auto result = global_localization_.invoke(request, std::chrono::seconds(1));
+   return BT::NodeStatus::SUCCESS;
+  } catch(std::runtime_error& e) {
+    RCLCPP_WARN(node_->get_logger(), e.what());
+    return BT::NodeStatus::FAILURE;
+   }
 }
 
 }  // namespace nav2_bt_navigator

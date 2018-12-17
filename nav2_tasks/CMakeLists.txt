@@ -21,6 +21,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 include_directories(
   include
@@ -41,6 +42,7 @@ set(dependencies
   tf2_geometry_msgs
   rosidl_default_generators
   std_msgs
+  std_srvs
 )
 
 ament_target_dependencies(${library_name}
