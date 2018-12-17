@@ -52,6 +52,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   // Set the shared data (commands/results)
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
+  blackboard->set<bool>("initial_pose", task_server_->hasInitialPoseReceived());
 
   // Get the filename to use from the parameter
   get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_,

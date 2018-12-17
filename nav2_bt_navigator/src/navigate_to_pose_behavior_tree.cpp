@@ -41,6 +41,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
+  
+  // Register our Simple Condition nodes 
+  factory_.registerSimpleCondition("initialPoseReceived",
+    std::bind(&NavigateToPoseBehaviorTree::initialPoseReceived, this, std::placeholders::_1));  
 
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
@@ -49,7 +53,6 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerSimpleAction("UpdatePath",
     std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
-  // Register our Simple Action nodes  
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
      std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
@@ -76,6 +79,16 @@ BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
     RCLCPP_WARN(node_->get_logger(), e.what());
     return BT::NodeStatus::FAILURE;
    }
+}
+
+BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
+{
+  auto initPose = tree_node.blackboard()->template get<bool>("initial_pose");
+  if (initPose)
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_bt_navigator

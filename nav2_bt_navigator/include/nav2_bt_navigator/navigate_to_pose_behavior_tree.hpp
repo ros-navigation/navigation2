@@ -34,6 +34,7 @@ private:
   // Support for a BT SimpleActionNode that updates the FollowPath task
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
   BT::NodeStatus globalLocalizationServiceRequest();
+  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
   nav2_tasks::globalLocalizationServiceClient global_localization_;
 };
