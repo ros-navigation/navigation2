@@ -1,0 +1,36 @@
+<!--
+  This Behavior Tree does the AutoLocalization and simple sequential control. After finding the
+  initial pose it invokes ComputePathToPose to compute a path using the global planner.
+  It then invokes the local planner (FollowPath) with this path. If the AutoLocalization fails, it
+  will return failure. 
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <SequenceStar name="root">
+      <FallbackStar name="AutoLocalization">
+        <initialPoseReceived/>
+        <SequenceStar name="doSelfLocalization">
+          <RetryUntilSuccesful num_attempts="5" name="retry_client_request">
+            <globalLocalizationServiceRequest/>
+         </RetryUntilSuccesful>
+         <RetryUntilSuccesful num_attempts="10" name="retry_localization">
+            <Sequence>
+              <Fallback>
+                <IsLocalized/>
+                <SequenceStar>
+                 <Spin/>
+                <BackUp/>
+                 <Spin/>
+              </SequenceStar>
+             </Fallback>
+             <IsLocalized/>
+            </Sequence> 
+          </RetryUntilSuccesful>
+        </SequenceStar>
+      </FallbackStar>
+      <ComputePathToPose goal="${goal}" path="${path}"/>
+      <FollowPath path="${path}"/>
+    </SequenceStar>
+  </BehaviorTree>
+</root>
