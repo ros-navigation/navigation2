@@ -89,6 +89,7 @@ RUN (source /opt/ros/$ROS2_DISTRO/setup.bash && . /ros2_ws/ros2-linux/setup.bash
 
 # Build navigation2 code
 WORKDIR /ros2_ws/navigation2_ws
+RUN rm /ros2_ws/navigation2_ws/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
 RUN (. /ros2_ws/navstack_dependencies_ws/install/setup.bash && colcon build --symlink-install)
 
