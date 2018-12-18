@@ -44,7 +44,7 @@ public:
     if (!initialized_) {
       // Get the required items from the blackboard
       node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-      
+
       node_loop_timeout_ =
         blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
@@ -62,28 +62,26 @@ public:
   }
 
 
-  bool 
+  bool
   isLocalized()
-  { 
+  {
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_WARN(node_->get_logger(), "Current robot pose is not available.");
-    return false;
+      RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+      return false;
     }
 
     // Naive way to check if the robot has been localized
     // TODO(mhpanah): come up with a method to properly check particles convergence
     if (current_pose->pose.covariance[0] < 0.25 &&
-        current_pose->pose.covariance[7] < 0.25 &&
-        current_pose->pose.covariance[35] < M_PI/4)
-    {   
+      current_pose->pose.covariance[7] < 0.25 &&
+      current_pose->pose.covariance[35] < M_PI / 4)
+    {
       RCLCPP_INFO(node_->get_logger(), "AutoLocalization Passed!");
       blackboard()->set<bool>("initial_pose", true);
       return true;
     }
-
-    RCLCPP_WARN(node_->get_logger(), "AutoLocalization Failed.");
 
     return false;
   }

@@ -16,6 +16,7 @@
 #include <memory>
 #include <fstream>
 #include <streambuf>
+#include <set>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"

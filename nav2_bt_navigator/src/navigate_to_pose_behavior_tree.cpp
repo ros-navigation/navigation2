@@ -43,10 +43,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
   factory_.registerNodeType<nav2_tasks::IsLocalizedCondition>("IsLocalized");
-  
-  // Register our Simple Condition nodes 
+
+  // Register our Simple Condition nodes
   factory_.registerSimpleCondition("initialPoseReceived",
-    std::bind(&NavigateToPoseBehaviorTree::initialPoseReceived, this, std::placeholders::_1));  
+    std::bind(&NavigateToPoseBehaviorTree::initialPoseReceived, this, std::placeholders::_1));
 
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
@@ -56,7 +56,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
     std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
-     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
+    std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
 }
@@ -75,19 +75,18 @@ BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
 {
   auto request = std::make_shared<std_srvs::srv::Empty::Request>();
   try {
-   auto result = global_localization_.invoke(request, std::chrono::seconds(1));
-   return BT::NodeStatus::SUCCESS;
-  } catch(std::runtime_error& e) {
+    auto result = global_localization_.invoke(request, std::chrono::seconds(1));
+    return BT::NodeStatus::SUCCESS;
+  } catch (std::runtime_error & e) {
     RCLCPP_WARN(node_->get_logger(), e.what());
     return BT::NodeStatus::FAILURE;
-   }
+  }
 }
 
 BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
 {
   auto initPose = tree_node.blackboard()->template get<bool>("initial_pose");
-  if (initPose)
-  {
+  if (initPose) {
     return BT::NodeStatus::SUCCESS;
   }
   return BT::NodeStatus::FAILURE;

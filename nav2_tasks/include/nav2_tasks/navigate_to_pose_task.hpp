@@ -39,22 +39,21 @@ public:
     // A subscription to the goal pose from rviz2
     goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>("move_base_simple/goal",
         std::bind(&NavigateToPoseTaskServer::onGoalPoseReceived, this, std::placeholders::_1));
-    
+
     initial_pose_received_ = false;
     initial_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "initialpose",
-    std::bind(&NavigateToPoseTaskServer::onInitialPoseReceived, this, std::placeholders::_1));
+      std::bind(&NavigateToPoseTaskServer::onInitialPoseReceived, this, std::placeholders::_1));
 
     // A client that we'll use to send a command message to our own task server
     self_client_ = std::make_unique<nav2_tasks::NavigateToPoseTaskClient>(node_);
   }
 
   NavigateToPoseTaskServer() = delete;
-  
+
   bool hasInitialPoseReceived()
   {
-    if (initial_pose_received_)
-    {
+    if (initial_pose_received_) {
       return true;
     }
     return false;
