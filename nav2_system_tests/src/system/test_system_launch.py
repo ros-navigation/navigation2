@@ -34,7 +34,7 @@ def generate_launch_description():
     return LaunchDescription([
         # Launch gazebo server for simulation
         launch.actions.ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
             output='screen'),
 
         # Launch navigation2 nodes

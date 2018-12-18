@@ -31,7 +31,7 @@ def main(argv=sys.argv[1:]):
     world = os.getenv('TEST_WORLD')
 
     launch_gazebo = launch.actions.ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
         output='screen')
     link_footprint = launch_ros.actions.Node(
         package='tf2_ros',
