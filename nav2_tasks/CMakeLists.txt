@@ -22,6 +22,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 include_directories(
   include
@@ -43,6 +44,7 @@ set(dependencies
   rosidl_default_generators
   std_msgs
   std_srvs
+  nav2_robot
 )
 
 ament_target_dependencies(${library_name}
