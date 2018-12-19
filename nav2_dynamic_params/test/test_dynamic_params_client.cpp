@@ -145,8 +145,8 @@ TEST_F(ClientTest, testEventCallbacks)
   dynamic_params_client_->set_callback(callback, false);
 
   // Directly call into event callback
-  dynamic_params_client_->call_test_event(
-    "/dynamic_param_client_test", rclcpp::Parameter("baz", 2), true);
+  /* dynamic_params_client_->call_test_event(
+    "/dynamic_param_client_test", rclcpp::Parameter("baz", 2), true); */
   node_->set_parameters({rclcpp::Parameter("baz", 2)});
   while (!callback_result_) {
     rclcpp::spin_some(node_);
@@ -159,7 +159,7 @@ TEST_F(ClientTest, testEventCallbacks)
   callback_result_ = false;
 
   // Directly call into event callback
-  dynamic_params_client_->call_test_event("/test_node", rclcpp::Parameter("foo", 3.0), false);
+  // dynamic_params_client_->call_test_event("/test_node", rclcpp::Parameter("foo", 3.0), false);
   param_client_A->set_parameters({rclcpp::Parameter("foo", 3.0)});
   while (!callback_result_) {
     rclcpp::spin_some(node_);
@@ -185,7 +185,7 @@ TEST_F(ClientTest, testEventCallbacks)
   EXPECT_EQ(5, bar);
   callback_result_ = false;
 
-  // Check that 'bar' is in the last event
+  // Check that parameter is in the last event
   EXPECT_EQ(true, dynamic_params_client_->is_in_event("test_namespace", "test_node", "bar"));
   EXPECT_EQ(false, dynamic_params_client_->is_in_event("foo"));
 
