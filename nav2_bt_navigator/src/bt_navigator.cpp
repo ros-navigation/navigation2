@@ -79,6 +79,8 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   TaskStatus result = bt.run(blackboard, xml_string,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
 
+  task_server_->setInitialPose(blackboard->get<bool>("initial_pose"));
+
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;
 }
