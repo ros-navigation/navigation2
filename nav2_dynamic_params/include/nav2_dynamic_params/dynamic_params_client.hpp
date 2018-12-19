@@ -76,34 +76,10 @@ public:
     if (*full_path.begin() != '/') {
       full_path = '/' + full_path;
     }
-    RCLCPP_INFO(node_->get_logger(), "adding parameters from: %s", full_path.c_str());
-    init_as_not_set(full_path, param_names);
-    std::vector<rclcpp::Parameter> params;
-    if (full_path == join_path(node_->get_namespace(), node_->get_name())) {
-      if (param_names.size() < 1) {
-        auto param_list = node_->list_parameters({}, 1);
-        params = node_->get_parameters(param_list.names);
-      } else {
-        params = node_->get_parameters(param_names);
-      }
-    } else {
-      auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
-      if (client->wait_for_service(100ms)) {
-        if (param_names.size() < 1) {
-          auto param_list = client->list_parameters({}, 1);
-          params = client->get_parameters(param_list.names);
-        } else {
-          RCLCPP_INFO(node_->get_logger(), "get parameters...");
-          params = client->get_parameters(param_names);
-        }
-      } else {
-        RCLCPP_WARN(node_->get_logger(),
-          "Node '%s' not available for service, parameters will be NOT SET", full_path.c_str());
-      }
-    }
 
-    std::string node_namespace = split_path(full_path).first;
-    add_namespace_event_subscriber(node_namespace);
+    init_as_not_set(full_path, param_names);
+    auto params = get_params_from_node(full_path, param_names);
+    add_namespace_event_subscriber(split_path(full_path).first);
     for (const auto & param : params) {
       init_param_in_map(param, full_path);
     }
@@ -219,23 +195,34 @@ public:
     return get_event_param_or<T>(
       node_->get_namespace(), node_->get_name(), param_name, new_value, default_value);
   }
-
   // A check to filter whether parameter name is part of the lastest event
-  bool is_in_event(const std::string & name)
-  {
-    rclcpp::ParameterEventsFilter filter(last_event_, {name},
-      {rclcpp::ParameterEventsFilter::EventType::NEW,
-        rclcpp::ParameterEventsFilter::EventType::CHANGED});
-    return !filter.get_events().empty();
-  }
-  // Variant of is_in_event to also check the node path of last event
-  bool is_in_event(const std::string & path, const std::string & name)
+  bool is_in_event(const std::string & path, const std::string & param_name)
   {
     auto full_path = path;
     if (*full_path.begin() != '/') {
       full_path = '/' + full_path;
     }
-    return full_path == last_event_->node && is_in_event(name);
+
+    rclcpp::ParameterEventsFilter filter(last_event_, {param_name},
+      {rclcpp::ParameterEventsFilter::EventType::NEW,
+        rclcpp::ParameterEventsFilter::EventType::CHANGED});
+
+    return full_path == last_event_->node && !filter.get_events().empty();
+  }
+
+  // Variant of is_in_event to specify namespace and node name
+  bool is_in_event(
+    const std::string & name_space,
+    const std::string & node_name, const std::string & param_name)
+  {
+    auto full_path = join_path(name_space, node_name);
+    return is_in_event(full_path, param_name);
+  }
+
+  // Variant of is_in_event to check under member node
+  bool is_in_event(const std::string & param_name)
+  {
+    return is_in_event(node_->get_namespace(), node_->get_name(), param_name);
   }
 
 protected:
@@ -244,10 +231,70 @@ protected:
     last_event_ = event;
     if (is_event_in_map(event)) {
       user_callback_();
-    }    
+    }
   }
 
 private:
+  std::vector<rclcpp::Parameter> get_params_from_node(
+    const std::string & path,
+    const std::vector<std::string> & param_names, int attempts_max = 5)
+  {
+    std::vector<rclcpp::Parameter> params;
+    if (path == join_path(node_->get_namespace(), node_->get_name())) {
+      if (param_names.size() < 1) {
+        auto param_list = node_->list_parameters({}, 1);
+        params = node_->get_parameters(param_list.names);
+      } else {
+        params = node_->get_parameters(param_names);
+      }
+      return params;
+    } else {
+      bool success = false;
+      int attempts = 0;
+      while (!success && attempts < attempts_max) {
+        auto client = std::make_shared<rclcpp::AsyncParametersClient>(node_, path);
+        if (param_names.size() < 1) {
+          auto param_list_future = client->list_parameters({}, 1);
+          if (rclcpp::spin_until_future_complete(
+              node_,
+              param_list_future,
+              std::chrono::duration<int64_t, std::milli>(100)) !=
+            rclcpp::executor::FutureReturnCode::SUCCESS)
+          {
+            attempts++;
+          } else {
+            auto params_future = client->get_parameters(param_list_future.get().names);
+            if (rclcpp::spin_until_future_complete(
+                node_,
+                params_future,
+                std::chrono::duration<int64_t, std::milli>(100)) !=
+              rclcpp::executor::FutureReturnCode::SUCCESS)
+            {
+              attempts++;
+            } else {
+              success = true;
+              params = params_future.get();
+            }
+          }
+        } else {
+          auto params_future = client->get_parameters(param_names);
+          if (rclcpp::spin_until_future_complete(
+              node_,
+              params_future,
+              std::chrono::duration<int64_t, std::milli>(100)) !=
+            rclcpp::executor::FutureReturnCode::SUCCESS)
+          {
+            attempts++;
+          } else {
+            success = true;
+            params = params_future.get();
+          }
+        }
+      }
+      return params;
+    }
+  }
+
   void init_as_not_set(const std::string & full_path, const std::vector<std::string> & param_names)
   {
     for (const auto & name : param_names) {
