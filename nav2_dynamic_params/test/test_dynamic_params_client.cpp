@@ -65,32 +65,28 @@ protected:
   bool callback_result_ = false;
 };
 
-
-TEST_F(ClientTest, testAddParameters)
+TEST_F(ClientTest, testAddParamsOtherNodes)
 {
   node_->set_parameters({rclcpp::Parameter("baz", 1)});
 
   dynamic_params_client_->add_parameters();
+  dynamic_params_client_->add_parameters_on_node("test_namespace", "test_node");
+  dynamic_params_client_->add_parameters("test_namespace", "test_node", {"foobar"});
+  dynamic_params_client_->add_parameters("test_node", {"foo"});
   dynamic_params_client_->add_parameters({"foobar"});
 
   auto dynamic_param_map = dynamic_params_client_->get_param_map();
   EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/baz"));
   EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/foobar"));
-}
-
-
-TEST_F(ClientTest, testAddParamsOtherNodes)
-{
-  dynamic_params_client_->add_parameters_on_node("test_namespace", "test_node");
-  dynamic_params_client_->add_parameters("test_namespace", "test_node", {"foobar"});
-  dynamic_params_client_->add_parameters("test_node", {"foo"});
-
-  auto dynamic_param_map = dynamic_params_client_->get_param_map();
   EXPECT_EQ(1, dynamic_param_map.count("/test_node/foo"));
   EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/bar"));
   EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/foobar"));
-}
 
+  // Verify that parameters not added to other namespaces/nodes
+  EXPECT_EQ(0, dynamic_param_map.count("/dynamic_param_client_test/bar"));
+  EXPECT_EQ(0, dynamic_param_map.count("/test_namespace/dynamic_param_client_test/baz"));
+  EXPECT_EQ(0, dynamic_param_map.count("/test_node/bar"));
+}
 
 TEST_F(ClientTest, testGetParams)
 {

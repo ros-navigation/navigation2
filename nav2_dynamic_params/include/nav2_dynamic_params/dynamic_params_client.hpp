@@ -78,7 +78,7 @@ public:
     }
 
     init_as_not_set(full_path, param_names);
-    auto params = get_params_from_node(full_path, param_names);
+    auto params = get_params(full_path, param_names);
     add_namespace_event_subscriber(split_path(full_path).first);
     for (const auto & param : params) {
       init_param_in_map(param, full_path);
@@ -195,6 +195,7 @@ public:
     return get_event_param_or<T>(
       node_->get_namespace(), node_->get_name(), param_name, new_value, default_value);
   }
+
   // A check to filter whether parameter name is part of the lastest event
   bool is_in_event(const std::string & path, const std::string & param_name)
   {
@@ -233,77 +234,89 @@ protected:
       user_callback_();
     }
   }
-  // Variant of is_in_event to also check the node path of last event
-  bool is_in_event(const std::string & path, const std::string & name)
-  {
-    auto full_path = path;
-    if (*full_path.begin() != '/') {
-      full_path = '/' + full_path;
-    }
-    return full_path == last_event_->node && is_in_event(name);
-  }
 
 private:
-  std::vector<rclcpp::Parameter> get_params_from_node(
+  // Get current parameters from remote or member node
+  // For remote nodes, will re-try to grab parameters up to a maximum # of attempts
+  std::vector<rclcpp::Parameter> get_params(
     const std::string & path,
     const std::vector<std::string> & param_names, int attempts_max = 5)
   {
     std::vector<rclcpp::Parameter> params;
+    bool success = false;
+    int attempts = 0;
     if (path == join_path(node_->get_namespace(), node_->get_name())) {
-      if (param_names.size() < 1) {
-        auto param_list = node_->list_parameters({}, 1);
-        params = node_->get_parameters(param_list.names);
-      } else {
-        params = node_->get_parameters(param_names);
-      }
-      return params;
+      params_from_this(param_names, params);
     } else {
-      bool success = false;
-      int attempts = 0;
       while (!success && attempts < attempts_max) {
-        auto client = std::make_shared<rclcpp::AsyncParametersClient>(node_, path);
-        if (param_names.size() < 1) {
-          auto param_list_future = client->list_parameters({}, 1);
-          if (rclcpp::spin_until_future_complete(
-              node_,
-              param_list_future,
-              std::chrono::duration<int64_t, std::milli>(100)) !=
-            rclcpp::executor::FutureReturnCode::SUCCESS)
-          {
-            attempts++;
-          } else {
-            auto params_future = client->get_parameters(param_list_future.get().names);
-            if (rclcpp::spin_until_future_complete(
-                node_,
-                params_future,
-                std::chrono::duration<int64_t, std::milli>(100)) !=
-              rclcpp::executor::FutureReturnCode::SUCCESS)
-            {
-              attempts++;
-            } else {
-              success = true;
-              params = params_future.get();
-            }
-          }
-        } else {
-          auto params_future = client->get_parameters(param_names);
-          if (rclcpp::spin_until_future_complete(
-              node_,
-              params_future,
-              std::chrono::duration<int64_t, std::milli>(100)) !=
-            rclcpp::executor::FutureReturnCode::SUCCESS)
-          {
-            attempts++;
-          } else {
-            success = true;
-            params = params_future.get();
-          }
-        }
+        success = params_from_remote(path, param_names, params);
+        attempts++;
       }
-      return params;
+    }
+    return params;
+  }
+
+  // Get current parameters from member node
+  void params_from_this(
+    const std::vector<std::string> & param_names,
+    std::vector<rclcpp::Parameter> & params)
+  {
+    if (param_names.empty()) {
+      auto param_list = node_->list_parameters({}, 1);
+      params = node_->get_parameters(param_list.names);
+    } else {
+      params = node_->get_parameters(param_names);
     }
   }
 
+  // Get current parameters from remote node
+  bool params_from_remote(
+    const std::string & path,
+    const std::vector<std::string> & param_names, std::vector<rclcpp::Parameter> & params)
+  {
+    auto client = std::make_shared<rclcpp::AsyncParametersClient>(node_, path);
+    if (param_names.empty()) {
+      auto param_list_future = client->list_parameters({}, 1);
+      if (rclcpp::spin_until_future_complete(
+          node_,
+          param_list_future,
+          std::chrono::duration<int64_t, std::milli>(100)) !=
+        rclcpp::executor::FutureReturnCode::SUCCESS)
+      {
+        return false;
+      } else {
+        if (!get_params_future(client, param_list_future.get().names, params)) {
+          return false;
+        }
+      }
+    } else {
+      if (!get_params_future(client, param_names, params)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Spin parameter future and return success or failure
+  bool get_params_future(
+    rclcpp::AsyncParametersClient::SharedPtr client,
+    const std::vector<std::string> & param_names, std::vector<rclcpp::Parameter> & params)
+  {
+    auto params_future = client->get_parameters(param_names);
+    if (rclcpp::spin_until_future_complete(
+        node_,
+        params_future,
+        std::chrono::duration<int64_t, std::milli>(100)) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      return false;
+    } else {
+      params = params_future.get();
+      return true;
+    }
+  }
+
+  // Initialize parameters in map as PARAMETER_NOT_SET under full node path
   void init_as_not_set(const std::string & full_path, const std::vector<std::string> & param_names)
   {
     for (const auto & name : param_names) {
@@ -312,6 +325,7 @@ private:
     }
   }
 
+  // Initialize parameter value in map under full node path
   void init_param_in_map(rclcpp::Parameter param, std::string node_path)
   {
     auto param_name = join_path(node_path, param.get_name());
@@ -339,6 +353,7 @@ private:
     return joined_path;
   }
 
+  // Grab parameter from internal map and assign to value
   template<class T>
   bool get_param_from_map(const std::string & name, T & value)
   {
