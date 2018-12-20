@@ -85,8 +85,8 @@ BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
 
 BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
 {
-  auto initPose = tree_node.blackboard()->template get<bool>("initial_pose");
-  if (initPose) {
+  auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
+  if (initPoseReceived) {
     return BT::NodeStatus::SUCCESS;
   }
   return BT::NodeStatus::FAILURE;

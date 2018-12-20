@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__GLOBAL_LOCLIZATION_SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__GLOBAL_LOCLIZATION_SERVICE_CLIENT_HPP_
+#ifndef NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#define NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
 
 #include "nav2_tasks/service_client.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -37,4 +37,4 @@ public:
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__GLOBAL_LOCLIZATION_SERVICE_CLIENT_HPP_
+#endif  // NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_

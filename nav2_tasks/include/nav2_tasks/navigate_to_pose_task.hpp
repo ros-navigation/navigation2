@@ -51,7 +51,7 @@ public:
 
   NavigateToPoseTaskServer() = delete;
 
-  bool hasInitialPoseReceived()
+  bool isInitialPoseReceieved()
   {
     if (initial_pose_received_) {
       return true;

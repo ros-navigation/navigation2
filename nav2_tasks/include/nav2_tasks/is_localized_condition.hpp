@@ -15,6 +15,8 @@
 #ifndef NAV2_TASKS__IS_LOCALIZED_CONDITION_HPP_
 #define NAV2_TASKS__IS_LOCALIZED_CONDITION_HPP_
 
+#include <string>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_robot/robot.hpp"
@@ -37,20 +39,18 @@ public:
   {
   }
 
-  virtual void onInit() {}
-
   BT::NodeStatus tick() override
   {
     if (!initialized_) {
       // Get the required items from the blackboard
       node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
 
-      node_loop_timeout_ =
-        blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+      node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
+      node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
+      node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
 
       robot_ = std::make_unique<nav2_robot::Robot>(node_);
 
-      onInit();
       initialized_ = true;
     }
 
@@ -58,9 +58,7 @@ public:
       return BT::NodeStatus::SUCCESS;
     }
     return BT::NodeStatus::FAILURE;
-
   }
-
 
   bool
   isLocalized()
@@ -74,12 +72,12 @@ public:
 
     // Naive way to check if the robot has been localized
     // TODO(mhpanah): come up with a method to properly check particles convergence
-    if (current_pose->pose.covariance[0] < 0.25 &&
-      current_pose->pose.covariance[7] < 0.25 &&
-      current_pose->pose.covariance[35] < M_PI / 4)
+    if (current_pose->pose.covariance[cov_x_] < x_tol_ &&
+      current_pose->pose.covariance[cov_y_] < y_tol_ &&
+      current_pose->pose.covariance[cov_a_] < rot_tol_)
     {
       RCLCPP_INFO(node_->get_logger(), "AutoLocalization Passed!");
-      blackboard()->set<bool>("initial_pose", true);
+      blackboard()->set<bool>("initial_pose_received", true);  // NOLINT
       return true;
     }
 
@@ -87,11 +85,17 @@ public:
   }
 
 private:
+  static const int cov_x_ = 0;
+  static const int cov_y_ = 7;
+  static const int cov_a_ = 35;
+
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<nav2_robot::Robot> robot_;
-  std::chrono::milliseconds node_loop_timeout_;
-  bool initialized_;
 
+  bool initialized_;
+  double x_tol_;
+  double y_tol_;
+  double rot_tol_;
 };
 
 }  // namespace nav2_tasks

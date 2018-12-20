@@ -16,7 +16,6 @@
 #include <memory>
 #include <fstream>
 #include <streambuf>
-#include <set>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
@@ -53,7 +52,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   // Set the shared data (commands/results)
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
-  blackboard->set<bool>("initial_pose", task_server_->hasInitialPoseReceived());
+  blackboard->set<bool>("initial_pose_received", task_server_->isInitialPoseReceieved());  // NOLINT
 
   // Get the filename to use from the parameter
   get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_,
@@ -79,7 +78,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   TaskStatus result = bt.run(blackboard, xml_string,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
 
-  task_server_->setInitialPose(blackboard->get<bool>("initial_pose"));
+  task_server_->setInitialPose(blackboard->get<bool>("initial_pose_received"));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;
