@@ -213,7 +213,7 @@ void ObstacleLayer::onInitialize()
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
   } */
-  setupDynamicReconfigure(); 
+  setupDynamicReconfigure();
 }
 
 void ObstacleLayer::setupDynamicReconfigure()

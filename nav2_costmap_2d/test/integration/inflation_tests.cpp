@@ -55,9 +55,6 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-/* // Create a node acting as a 'Parameter Server' in lieu of Costmap2DROS
-rclcpp::Node::SharedPtr node_; */
-
 class TestNode : public ::testing::Test
 {
 public:
@@ -67,6 +64,9 @@ public:
     // Set cost_scaling_factor parameter to 1.0 for inflation layer
     node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
   }
+
+  ~TestNode() {}
+
   std::vector<Point> setRadii(
     nav2_costmap_2d::LayeredCostmap & layers,
     double length, double width, double inflation_radius);

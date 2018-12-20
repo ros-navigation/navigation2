@@ -1,13 +1,13 @@
-ament_add_gtest_executable(footprint_tests_exec
-  footprint_tests.cpp
-)
-ament_target_dependencies(footprint_tests_exec
-  ${dependencies}
-)
-target_link_libraries(footprint_tests_exec
-  nav2_costmap_2d_core
-  layers
-)
+# ament_add_gtest_executable(footprint_tests_exec
+#   footprint_tests.cpp
+# )
+# ament_target_dependencies(footprint_tests_exec
+#   ${dependencies}
+# )
+# target_link_libraries(footprint_tests_exec
+#   nav2_costmap_2d_core
+#   layers
+# )
 
 ament_add_gtest_executable(static_tests_exec
   static_tests.cpp
@@ -42,15 +42,15 @@ target_link_libraries(obstacle_tests_exec
   layers
 )
 
-ament_add_test(footprint_tests
-  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  ENV
-    TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
-    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
-    TEST_EXECUTABLE=$<TARGET_FILE:footprint_tests_exec>
-)
+# ament_add_test(footprint_tests
+#   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+#   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+#   ENV
+#     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
+#     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
+#     TEST_EXECUTABLE=$<TARGET_FILE:footprint_tests_exec>
+# )
 
 ament_add_test(static_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO

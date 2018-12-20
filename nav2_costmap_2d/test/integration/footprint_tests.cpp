@@ -58,6 +58,8 @@ public:
   : nav2_costmap_2d::Costmap2DROS(name, buffer)
   {}
 
+  ~FootprintTestNode() {}
+
   void testFootprint(double footprint_padding, std::string footprint)
   {
     footprint_padding_ = footprint_padding;
@@ -100,6 +102,8 @@ public:
 
     costmap_ = new FootprintTestNode("costmap_footprint_tests", *tf_);
   }
+
+  ~TestNode() {}
 
 protected:
   FootprintTestNode * costmap_;
