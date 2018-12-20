@@ -19,6 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/behavior_tree_engine.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
+#include "nav2_tasks/global_localization_service_client.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -32,7 +33,10 @@ public:
 private:
   // Support for a BT SimpleActionNode that updates the FollowPath task
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
+  BT::NodeStatus globalLocalizationServiceRequest();
+  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
+  nav2_tasks::globalLocalizationServiceClient global_localization_;
 };
 
 }  // namespace nav2_bt_navigator

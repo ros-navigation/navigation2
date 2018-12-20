@@ -58,7 +58,7 @@ Robot::getGlobalLocalizerPose(
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_DEBUG(node_->get_logger(),
       "Robot: Can't return current pose: Initial pose not yet received.");
     return false;
   }
@@ -79,7 +79,7 @@ bool
 Robot::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom)
 {
   if (!initial_odom_received_) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_DEBUG(node_->get_logger(),
       "Robot: Can't return current velocity: Initial odometry not yet received.");
     return false;
   }
