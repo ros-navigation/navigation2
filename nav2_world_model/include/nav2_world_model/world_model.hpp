@@ -16,14 +16,11 @@
 #define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 
 #include <string>
-#include <vector>
 #include <memory>
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include <vector>
+
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/costmap.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_msgs/srv/get_costmap.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "nav2_world_model/world_representation.hpp"
 
 namespace nav2_world_model
 {
@@ -31,21 +28,31 @@ namespace nav2_world_model
 class WorldModel : public rclcpp::Node
 {
 public:
-  WorldModel(rclcpp::executor::Executor & executor, const std::string & name);
   explicit WorldModel(rclcpp::executor::Executor & executor);
 
 private:
-  void costmap_callback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
+  // World representations
+  std::unique_ptr<WorldRepresentation> world_representation_;
 
-  // Server for providing a costmap
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  nav2_costmap_2d::Costmap2D * costmap_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+  // The services provided
+  rclcpp::Service<GetCostmap>::SharedPtr get_costmap_service_;
+  rclcpp::Service<ProcessRegion>::SharedPtr confirm_free_space_service_;
+  rclcpp::Service<ProcessRegion>::SharedPtr clear_area_service_;
+
+  void getCostmapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<GetCostmap::Request> request,
+    const std::shared_ptr<GetCostmap::Response> response);
+
+  void confirmFreeSpaceCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<ProcessArea::Request> request,
+    const std::shared_ptr<ProcessArea::Response> response);
+
+  void clearAreaCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<ProcessArea::Request> request,
+    const std::shared_ptr<ProcessArea::Response> response);
 };
 
 }  // namespace nav2_world_model

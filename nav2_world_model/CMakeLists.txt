@@ -25,6 +25,7 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/world_model.cpp
+  src/costmap_representation.cpp
 )
 
 set(dependencies

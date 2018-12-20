@@ -1,0 +1,4 @@
+# The region to process
+geometry_msgs/Polygon area
+---
+std_msgs/Bool was_successful

@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetCostmap.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearEntireCostmap.srv"
+  "srv/ProcessRegion.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
