@@ -94,5 +94,6 @@ RUN rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DIST
 RUN (. /ros2_ws/navstack_dependencies_ws/install/setup.bash && colcon build --symlink-install)
 
 RUN echo "export ROS_DOMAIN_ID=22" >> /root/.bashrc
+COPY tools/ctest_retry.bash /ros2_ws/navigation2_ws/build/nav2_system_tests
 
 CMD ["bash"]
