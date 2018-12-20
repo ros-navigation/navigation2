@@ -85,7 +85,7 @@ void VoxelLayer::onInitialize()
 
 void VoxelLayer::setupDynamicReconfigure()
 {
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
   dynamic_param_client_->add_parameters({
       name_ + "." + "enabled",
       name_ + "." + "footprint_clearing_enabled",

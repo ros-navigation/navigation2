@@ -96,7 +96,7 @@ private:
     double * max_x,
     double * max_y);
 
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 
   bool publish_voxel_;
   rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;

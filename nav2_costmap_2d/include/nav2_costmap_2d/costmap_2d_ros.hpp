@@ -252,8 +252,8 @@ private:
   pluginlib::ClassLoader<Layer> plugin_loader_;
   Costmap2DPublisher * publisher_;
 
-  nav2_dynamic_params::DynamicParamsValidator * param_validator_;
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsValidator> param_validator_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 
   std::recursive_mutex configuration_mutex_;
 

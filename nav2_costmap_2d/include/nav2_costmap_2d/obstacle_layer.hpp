@@ -184,7 +184,7 @@ protected:
 
   int combination_method_;
 
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 
 private:
   void reconfigureCB();
