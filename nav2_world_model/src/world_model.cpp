@@ -54,10 +54,12 @@ void WorldModel::getCostmapCallback(
   const std::shared_ptr<GetCostmap::Request> request,
   std::shared_ptr<GetCostmap::Response> response)
 {
-  RCLCPP_INFO(this->get_logger(), "Received costmap request");
+  RCLCPP_INFO(get_logger(), "Received costmap request");
 
-  auto reply = world_representation_->getCostmap(*request);
-  response = std::make_shared<GetCostmap::Response>(std::move(reply));
+  *response = world_representation_->getCostmap(*request);
+
+  RCLCPP_INFO(get_logger(), "Sending costmap of size %d, %d",
+    response->map.metadata.size_x, response->map.metadata.size_y);
 }
 
 void WorldModel::confirmFreeSpaceCallback(
@@ -65,10 +67,9 @@ void WorldModel::confirmFreeSpaceCallback(
   const std::shared_ptr<ProcessRegion::Request> request,
   std::shared_ptr<ProcessRegion::Response> response)
 {
-  RCLCPP_INFO(this->get_logger(), "Received confirm free space request");
+  RCLCPP_INFO(get_logger(), "Received confirm free space request");
 
-  auto reply = world_representation_->confirmFreeSpace(*request);
-  response = std::make_shared<ProcessRegion::Response>(std::move(reply));
+  *response = world_representation_->confirmFreeSpace(*request);
 }
 
 void WorldModel::clearAreaCallback(
@@ -76,10 +77,9 @@ void WorldModel::clearAreaCallback(
   const std::shared_ptr<ProcessRegion::Request> request,
   std::shared_ptr<ProcessRegion::Response> response)
 {
-  RCLCPP_INFO(this->get_logger(), "Received clear area request");
+  RCLCPP_INFO(get_logger(), "Received clear area request");
 
-  auto reply = world_representation_->clearArea(*request);
-  response = std::make_shared<ProcessRegion::Response>(std::move(reply));
+  *response = world_representation_->clearArea(*request);
 }
 
 }  // namespace nav2_world_model
