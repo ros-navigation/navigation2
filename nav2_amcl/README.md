@@ -9,6 +9,9 @@ AutoLocalization - is implemented by utilizing AMCL's `global_localization` serv
 On startup for navigation task, initial robot pose needs to be send to amcl otherwise amcl initializes its filter state to default values with particle cloud centered around (0,0,0). If the initial pose of the robot is not known and the robot is outside of default particle cloud, particles may not converge when robot moves.
 
 With AutoLocalization branch of BT, first `global_localization` service of amcl is called to randomly disperese all particles through the free space in the map. Once particles are disperesed, robot rotates, backs up, and if necessary rotates again to localize itself. The full implementation is described in AutoLocalization section of [BT Navigator](https://github.com/ros-planning/navigation2/blob/master/nav2_bt_navigator/README.md)
+
+**Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations. 
+
 ## Current Plan
 * Polishing AMCL core code, especially the `laserReceived` callback [Issue 211](https://github.com/ros-planning/navigation2/issues/211)
 * Using generic Particle Filter library [Issue 206](https://github.com/ros-planning/navigation2/issues/206)
