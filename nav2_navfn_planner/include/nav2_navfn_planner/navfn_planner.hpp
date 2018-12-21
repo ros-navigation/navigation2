@@ -23,7 +23,7 @@
 
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_world_model/world_model_client.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -114,8 +114,8 @@ private:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
-  // Service client for getting the costmap
-  nav2_tasks::CostmapServiceClient costmap_client_;
+  // Proxy to the World Model
+  nav2_world_model::WorldModelClient world_model_;
 
   // Publishers for the path and endpoints
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

@@ -12,29 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COSTMAP_SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__COSTMAP_SERVICE_CLIENT_HPP_
+#ifndef NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
+#define NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
 
 #include "nav2_util/service_client.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 
-namespace nav2_tasks
+namespace nav2_world_model
 {
 
-class CostmapServiceClient : public nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>
+using nav2_tasks::ServiceClient;
+using nav2_msgs::srv::GetCostmap;
+
+class CostmapServiceClient : public ServiceClient<GetCostmap>
 {
 public:
   CostmapServiceClient()
-  : nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap")
+  : ServiceClient<GetCostmap>("GetCostmap")
   {
   }
-
-  using CostmapServiceRequest =
-    nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>::RequestType;
-  using CostmapServiceResponse =
-    nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>::ResponseType;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_world_model
 
-#endif  // NAV2_TASKS__COSTMAP_SERVICE_CLIENT_HPP_
+#endif  // NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_

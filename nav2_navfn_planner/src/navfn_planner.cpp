@@ -33,6 +33,7 @@
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_meta_data.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -478,11 +479,12 @@ NavfnPlanner::getCostmap(
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
 
-  auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
-  request->specs.resolution = 1.0;
+  nav2_msgs::msg::CostmapMetaData specs;
+  specs.resolution = 1.0;
+  costmap = world_model_.getCostmap(specs)
 
-  auto result = costmap_client_.invoke(request);
-  costmap = result.get()->map;
+  RCLCPP_INFO(get_logger(), "Received costmap of size %d, %d",
+    costmap.metadata.size_x, costmap.metadata.size_y);
 }
 
 void
