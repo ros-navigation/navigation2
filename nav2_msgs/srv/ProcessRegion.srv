@@ -1,4 +1,10 @@
-# The region to process
-geometry_msgs/Polygon area
+# Process a rectangular region
+
+# Width and height of the rectangle
+float64 width
+float64 height
+
+# Center coordinate
+geometry_msgs/Point center_location
 ---
-std_msgs/Bool was_successful
+bool was_successful

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
-#define NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
+#ifndef NAV2_WORLD_MODEL__COSTMAP_REPRESENTATION_HPP_
+#define NAV2_WORLD_MODEL__COSTMAP_REPRESENTATION_HPP_
 
 #include <string>
 #include <memory>
@@ -22,9 +22,6 @@
 #include "nav2_world_model/world_representation.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
-
-// #include "nav2_util/costmap.hpp"
-// #include "nav2_msgs/msg/costmap.hpp"
 
 namespace nav2_world_model
 {
@@ -35,7 +32,7 @@ public:
   CostmapRepresentation(
     const std::string & name,
     rclcpp::executor::Executor & executor,
-    const rclcpp::Clock::SharedPtr & clock);
+    rclcpp::Clock::SharedPtr & clock);
 
   GetCostmap::Response getCostmap(const GetCostmap::Request & request) override;
 
@@ -60,4 +57,4 @@ private:
 
 }  // namespace nav2_world_model
 
-#endif  // NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
+#endif  // NAV2_WORLD_MODEL__COSTMAP_REPRESENTATION_HPP_

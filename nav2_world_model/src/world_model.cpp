@@ -27,10 +27,12 @@ namespace nav2_world_model
 {
 
 WorldModel::WorldModel(rclcpp::executor::Executor & executor)
+: Node("world_model")
 {
   // Use a Costmap to represent the world
+  auto clock = get_clock();
   world_representation_ = std::make_unique<CostmapRepresentation>(
-    "global_costmap", executor, get_clock());
+    "global_costmap", executor, clock);
 
   // TODO(orduno) there's a pattern with the services and calbacks, define templates
 
@@ -50,34 +52,34 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor)
 void WorldModel::getCostmapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<GetCostmap::Request> request,
-  const std::shared_ptr<GetCostmap::Response> response)
+  std::shared_ptr<GetCostmap::Response> response)
 {
   RCLCPP_INFO(this->get_logger(), "Received costmap request");
 
   auto reply = world_representation_->getCostmap(*request);
-  response = std::make_shared<GetCostmap::Response>(std::move(costmap));
+  response = std::make_shared<GetCostmap::Response>(std::move(reply));
 }
 
 void WorldModel::confirmFreeSpaceCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<ProcessArea::Request> request,
-  const std::shared_ptr<ProcessArea::Response> response)
+  const std::shared_ptr<ProcessRegion::Request> request,
+  std::shared_ptr<ProcessRegion::Response> response)
 {
   RCLCPP_INFO(this->get_logger(), "Received confirm free space request");
 
   auto reply = world_representation_->confirmFreeSpace(*request);
-  response = std::make_shared<ProcessArea::Response>(std::move(reply));
+  response = std::make_shared<ProcessRegion::Response>(std::move(reply));
 }
 
 void WorldModel::clearAreaCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<ProcessArea::Request> request,
-  const std::shared_ptr<ProcessArea::Response> response)
+  const std::shared_ptr<ProcessRegion::Request> request,
+  std::shared_ptr<ProcessRegion::Response> response)
 {
   RCLCPP_INFO(this->get_logger(), "Received clear area request");
 
   auto reply = world_representation_->clearArea(*request);
-  response = std::make_shared<ProcessArea::Response>(std::move(reply));
+  response = std::make_shared<ProcessRegion::Response>(std::move(reply));
 }
 
 }  // namespace nav2_world_model

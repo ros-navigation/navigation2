@@ -31,7 +31,7 @@ public:
   explicit WorldModel(rclcpp::executor::Executor & executor);
 
 private:
-  // World representations
+  // World representation
   std::unique_ptr<WorldRepresentation> world_representation_;
 
   // The services provided
@@ -42,17 +42,17 @@ private:
   void getCostmapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<GetCostmap::Request> request,
-    const std::shared_ptr<GetCostmap::Response> response);
+    std::shared_ptr<GetCostmap::Response> response);
 
   void confirmFreeSpaceCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<ProcessArea::Request> request,
-    const std::shared_ptr<ProcessArea::Response> response);
+    const std::shared_ptr<ProcessRegion::Request> request,
+    std::shared_ptr<ProcessRegion::Response> response);
 
   void clearAreaCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<ProcessArea::Request> request,
-    const std::shared_ptr<ProcessArea::Response> response);
+    const std::shared_ptr<ProcessRegion::Request> request,
+    std::shared_ptr<ProcessRegion::Response> response);
 };
 
 }  // namespace nav2_world_model

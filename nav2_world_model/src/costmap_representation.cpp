@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
-#define NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
-
 #include "nav2_world_model/costmap_representation.hpp"
 
 namespace nav2_world_model
@@ -23,11 +20,11 @@ namespace nav2_world_model
 CostmapRepresentation::CostmapRepresentation(
   const std::string & name,
   rclcpp::executor::Executor & executor,
-  const rclcpp::Clock::SharedPtr & clock)
+  rclcpp::Clock::SharedPtr & clock)
 : name_(name),
   clock_(clock),
-  tfBuffer_(clock),
-  tfListener_(tfBuffer)
+  tfBuffer_(clock_),
+  tfListener_(tfBuffer_)
 {
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, tfBuffer_);
   costmap_ = costmap_ros_->getCostmap();
@@ -42,8 +39,8 @@ CostmapRepresentation::getCostmap(const GetCostmap::Request & /*request*/)
   response.map.metadata.size_y = costmap_->getSizeInCellsY();
   response.map.metadata.resolution = costmap_->getResolution();
   response.map.metadata.layer = "Master";
-  response.map.metadata.map_load_time = now();
-  response.map.metadata.update_time = now();
+  response.map.metadata.map_load_time = costmap_ros_->now();
+  response.map.metadata.update_time = costmap_ros_->now();
 
   tf2::Quaternion quaternion;
   // TODO(bpwilcox): Grab correct orientation information
@@ -53,7 +50,7 @@ CostmapRepresentation::getCostmap(const GetCostmap::Request & /*request*/)
   response.map.metadata.origin.position.z = 0.0;
   response.map.metadata.origin.orientation = tf2::toMsg(quaternion);
 
-  response.map.header.stamp = now();
+  response.map.header.stamp = costmap_ros_->now();
   response.map.header.frame_id = "map";
 
   unsigned char * data = costmap_->getCharMap();
@@ -65,7 +62,7 @@ CostmapRepresentation::getCostmap(const GetCostmap::Request & /*request*/)
 }
 
 ProcessRegion::Response
-CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & request)
+CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & /*request*/)
 {
   // TODO(orduno)
   ProcessRegion::Response response;
@@ -74,7 +71,7 @@ CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & request)
 }
 
 ProcessRegion::Response
-CostmapRepresentation::clearArea(const ProcessRegion::Request & request)
+CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
 {
   // TODO(orduno)
   ProcessRegion::Response response;
@@ -82,8 +79,4 @@ CostmapRepresentation::clearArea(const ProcessRegion::Request & request)
   return response;
 }
 
-};
-
 }  // namespace nav2_world_model
-
-#endif  // NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
