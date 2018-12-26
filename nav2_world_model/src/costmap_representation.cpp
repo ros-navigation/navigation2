@@ -122,6 +122,8 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   MapLocation bottom_right_vertex{static_cast<unsigned int>(center_x + width/2),
     static_cast<unsigned int>(center_y - height/2)};
 
+  // TODO(orduno) rotate vertices
+
   vertices.push_back(bottom_left_vertex);
   vertices.push_back(top_left_vertex);
   vertices.push_back(top_right_vertex);

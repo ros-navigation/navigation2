@@ -43,6 +43,9 @@ protected:
   double command_x_;
 
   nav2_tasks::TaskStatus controlledBackup();
+
+  bool pathIsClear();
+
 };
 
 }  // namespace nav2_motion_primitives

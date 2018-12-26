@@ -27,6 +27,7 @@
 #include "nav2_tasks/task_status.hpp"
 #include "nav2_tasks/task_server.hpp"
 #include "nav2_robot/robot.hpp"
+#include "nav2_world_model/world_model_client.hpp"
 
 namespace nav2_motion_primitives
 {
@@ -156,6 +157,9 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<nav2_robot::Robot> robot_;
+
+  // Proxy to the World Model
+  nav2_world_model::WorldModelClient world_model_;
 
   typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
 
