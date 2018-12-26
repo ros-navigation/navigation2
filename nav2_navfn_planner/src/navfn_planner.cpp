@@ -479,9 +479,9 @@ NavfnPlanner::getCostmap(
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
 
-  nav2_msgs::msg::CostmapMetaData specs;
-  specs.resolution = 1.0;
-  costmap = world_model_.getCostmap(specs)
+  nav2_world_model::CostmapServiceRequest request;
+  request.specs.resolution = 1.0;
+  costmap = world_model_.getCostmap(request);
 
   RCLCPP_INFO(get_logger(), "Received costmap of size %d, %d",
     costmap.metadata.size_x, costmap.metadata.size_y);

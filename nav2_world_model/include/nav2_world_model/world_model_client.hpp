@@ -16,18 +16,14 @@
 #define NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 
 #include "nav2_tasks/service_client.hpp"
-#include "nav2_msgs/srv/get_costmap.hpp"
-#include "nav2_msgs/srv/process_region.hpp"
+#include "nav2_world_model/costmap_service_client.hpp"
+#include "nav2_world_model/clear_area_service_client.hpp"
+#include "nav2_world_model/free_space_service_client.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_msgs/msg/costmap_meta_data.hpp"
-#include "geometry_msgs/msg/point.hpp"
 
 namespace nav2_world_model
 {
 
-using nav2_tasks::ServiceClient;
-using nav2_msgs::srv::GetCostmap;
-using nav2_msgs::srv::ProcessRegion;
 using nav2_msgs::msg::Costmap;
 using nav2_msgs::msg::CostmapMetaData;
 using geometry_msgs::msg::Point;
@@ -37,37 +33,32 @@ class WorldModelClient
 public:
 
   WorldModelClient()
-  : costmap_client_("GetCostmap"),
-    free_space_client_("ConfirmFreeSpace"),
-    clear_area_client_("ClearArea")
   {
   }
 
-  Costmap getCostmap(/*const*/ CostmapMetaData & specs)
+  Costmap getCostmap(const CostmapServiceRequest & specs)
   {
-    // CONTINUE HERE!
-    return costmap_client_.invoke(std::make_shared<GetCostmap::Request>(specs)).get()->map;
+    auto request = std::make_shared<CostmapServiceRequest>(specs);
+    return costmap_client_.invoke(request).get()->map;
   }
 
-  bool confirmFreeSpace(
-    const double /*width*/, const double /*height*/, const Point /*center*/)
+  bool confirmFreeSpace(const FreeSpaceServiceRequest & specs)
   {
-    // TODO(orduno)
-    return false;
+    auto request = std::make_shared<FreeSpaceServiceRequest>(specs);
+    return free_space_client_.invoke(request).get()->was_successful;
   }
 
-  bool clearArea(
-    const double /*width*/, const double /*height*/, const Point /*center*/)
+  bool clearArea(const ClearAreaServiceRequest & specs)
   {
-    // TODO(orduno)
-    return false;
+    auto request = std::make_shared<ClearAreaServiceRequest>(specs);
+    return free_space_client_.invoke(request).get()->was_successful;
   }
 
 private:
   // Service clients
-  ServiceClient<GetCostmap> costmap_client_;
-  ServiceClient<ProcessRegion> free_space_client_;
-  ServiceClient<ProcessRegion> clear_area_client_;
+  CostmapServiceClient costmap_client_;
+  FreeSpaceServiceClient free_space_client_;
+  ClearAreaServiceClient clear_area_client_;
 };
 
 }  // namespace nav2_world_model

@@ -48,11 +48,16 @@ private:
   tf2_ros::TransformListener tfListener_;
 
   // The implementation of the costmap
-  // TODO(orduno) should really be shared unique?
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
-  // TODO(orduno) this should be a shared ptr
   nav2_costmap_2d::Costmap2D * costmap_;
+
+  bool checkIfFree(const ProcessRegion::Request & request) const;
+
+  std::vector<nav2_costmap_2d::MapLocation> generateRectangleVertices(
+    const ProcessRegion::Request & request) const;
+
+  bool isFree(const nav2_costmap_2d::MapLocation & location) const;
 };
 
 }  // namespace nav2_world_model

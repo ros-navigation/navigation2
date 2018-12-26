@@ -1,10 +1,14 @@
 # Process a rectangular region
 
-# Width and height of the rectangle
+# Width and height of the rectangle [m]
 float64 width
 float64 height
 
-# Center coordinate
+# Center coordinate [m]
 geometry_msgs/Point center_location
+
+# Clockwise rotation of the rectangle [rad]
+float64 rotation
+geometry_msgs/Point rotation_point
 ---
 bool was_successful

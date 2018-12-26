@@ -12,31 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
-#define NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
+#ifndef NAV2_WORLD_MODEL__FREE_SPACE_SERVICE_CLIENT_HPP_
+#define NAV2_WORLD_MODEL__FREE_SPACE_SERVICE_CLIENT_HPP_
 
-#include "nav2_util/service_client.hpp"
-#include "nav2_msgs/srv/get_costmap.hpp"
+#include "nav2_tasks/service_client.hpp"
+#include "nav2_msgs/srv/process_region.hpp"
 
 namespace nav2_world_model
 {
 
 using nav2_tasks::ServiceClient;
-using nav2_msgs::srv::GetCostmap;
-using CostmapServiceRequest =
-  ServiceClient<GetCostmap>::RequestType;
-using CostmapServiceResponse =
-  ServiceClient<GetCostmap>::ResponseType;
+using nav2_msgs::srv::ProcessRegion;
+using FreeSpaceServiceRequest =
+  ServiceClient<ProcessRegion>::RequestType;
+using FreeSpaceServiceResponse =
+  ServiceClient<ProcessRegion>::ResponseType;
 
-class CostmapServiceClient : public ServiceClient<GetCostmap>
+class FreeSpaceServiceClient : public ServiceClient<ProcessRegion>
 {
 public:
-  CostmapServiceClient()
-  : ServiceClient<GetCostmap>("GetCostmap")
+  FreeSpaceServiceClient()
+  : ServiceClient<ProcessRegion>("ConfirmFreeSpace")
   {
   }
 };
 
 }  // namespace nav2_world_model
 
-#endif  // NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
+#endif  // NAV2_WORLD_MODEL__FREE_SPACE_SERVICE_CLIENT_HPP_

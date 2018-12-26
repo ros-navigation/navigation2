@@ -13,9 +13,12 @@
 // limitations under the License.
 
 #include "nav2_world_model/costmap_representation.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 namespace nav2_world_model
 {
+
+using nav2_costmap_2d::MapLocation;
 
 CostmapRepresentation::CostmapRepresentation(
   const std::string & name,
@@ -62,11 +65,10 @@ CostmapRepresentation::getCostmap(const GetCostmap::Request & /*request*/)
 }
 
 ProcessRegion::Response
-CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & /*request*/)
+CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & request)
 {
-  // TODO(orduno)
   ProcessRegion::Response response;
-  response.was_successful = false;
+  response.was_successful = checkIfFree(request);
   return response;
 }
 
@@ -77,6 +79,64 @@ CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
   ProcessRegion::Response response;
   response.was_successful = false;
   return response;
+}
+
+bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) const
+{
+  std::vector<MapLocation> polygon_cells;
+
+  // Get all the cell locations inside the region
+  costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
+
+  // Check if there's at least one cell not free
+  for (const auto & cell : polygon_cells) {
+    if (!isFree(cell)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
+  const ProcessRegion::Request & request) const
+{
+  std::vector<MapLocation> vertices;
+
+  double center_x = request.center_location.x;
+  double center_y = request.center_location.y;
+  double width = request.width;
+  double height = request.height;
+
+  if (center_x < width/2 || center_y < height/2) {
+    // Oustide the map
+    return vertices;
+  }
+
+  MapLocation bottom_left_vertex{static_cast<unsigned int>(center_x - width/2),
+    static_cast<unsigned int>(center_y - height/2)};
+  MapLocation top_left_vertex{static_cast<unsigned int>(center_x - width/2),
+    static_cast<unsigned int>(center_y + height/2)};
+  MapLocation top_right_vertex{static_cast<unsigned int>(center_x + width/2),
+    static_cast<unsigned int>(center_y + height/2)};
+  MapLocation bottom_right_vertex{static_cast<unsigned int>(center_x + width/2),
+    static_cast<unsigned int>(center_y - height/2)};
+
+  vertices.push_back(bottom_left_vertex);
+  vertices.push_back(top_left_vertex);
+  vertices.push_back(top_right_vertex);
+  vertices.push_back(bottom_right_vertex);
+
+  return vertices;
+}
+
+bool CostmapRepresentation::isFree(const MapLocation & location) const
+{
+  if (costmap_->getCost(location.x, location.y)
+    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+    return true;
+    }
+  return false;
 }
 
 }  // namespace nav2_world_model
