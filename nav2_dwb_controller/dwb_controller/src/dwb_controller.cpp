@@ -72,6 +72,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
         publishZeroVelocity();
       } else {
+        checkRegion(pose2d);
         if (isGoalReached(pose2d)) {
           break;
         }
@@ -145,6 +146,19 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   }
   pose2d = nav_2d_utils::poseStampedToPose2D(current_pose);
   return true;
+}
+
+bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
+{
+  nav2_world_model::FreeSpaceServiceRequest request;
+  request.width = 1.0;
+  request.height = 1.0;
+  request.center_location.x = pose2d.pose.x;
+  request.center_location.y = pose2d.pose.y;
+  request.rotation = pose2d.pose.theta;
+  request.rotation_point = request.center_location;
+
+  return world_model_.confirmFreeSpace(request);
 }
 
 }  // namespace nav2_dwb_controller

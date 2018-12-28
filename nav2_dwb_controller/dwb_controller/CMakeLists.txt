@@ -8,6 +8,7 @@ find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_robot REQUIRED)
+find_package(nav2_world_model REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(nav_2d_utils REQUIRED)
@@ -36,6 +37,7 @@ set(dependencies
   std_msgs
   nav2_tasks
   nav2_robot
+  nav2_world_model
   nav2_msgs
   dwb_core
   nav_2d_utils
