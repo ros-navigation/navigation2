@@ -15,6 +15,9 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
 #define NAV2_WORLD_MODEL__WORLD_REPRESENTATION_HPP_
 
+#include <string>
+
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_msgs/srv/process_region.hpp"
 
@@ -27,6 +30,13 @@ using nav2_msgs::srv::ProcessRegion;
 class WorldRepresentation
 {
 public:
+  explicit WorldRepresentation(const std::string & name, rclcpp::Node::SharedPtr & node)
+  : name_(name), node_(node)
+  {
+  }
+
+  WorldRepresentation() = delete;
+
   virtual GetCostmap::Response getCostmap(const GetCostmap::Request & request) = 0;
 
   // Verify if a region is unoccupied
@@ -36,6 +46,12 @@ public:
   virtual ProcessRegion::Response clearArea(const ProcessRegion::Request & request) = 0;
 
   virtual ~WorldRepresentation() {}
+
+protected:
+  std::string name_;
+
+  // The ROS node to use to create publishers and subscribers
+  rclcpp::Node::SharedPtr node_;
 };
 
 }  // namespace nav2_world_model

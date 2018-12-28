@@ -21,6 +21,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_world_model/world_representation.hpp"
+#include "nav2_world_model/rectangular_region.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 
 namespace nav2_world_model
 {
@@ -53,6 +55,10 @@ private:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<ProcessRegion::Request> request,
     std::shared_ptr<ProcessRegion::Response> response);
+
+  // Publish a region for visualization purposes
+  // void publishRectangularRegion(const RectangularRegion & region) const;
+  // rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr region_publisher_;
 };
 
 }  // namespace nav2_world_model

@@ -21,10 +21,11 @@ namespace nav2_world_model
 using nav2_costmap_2d::MapLocation;
 
 CostmapRepresentation::CostmapRepresentation(
-  const std::string & name,
+  const std::string name,
+  rclcpp::Node::SharedPtr & node,
   rclcpp::executor::Executor & executor,
   rclcpp::Clock::SharedPtr & clock)
-: name_(name),
+: WorldRepresentation(name, node),
   clock_(clock),
   tfBuffer_(clock_),
   tfListener_(tfBuffer_)
@@ -32,6 +33,9 @@ CostmapRepresentation::CostmapRepresentation(
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, tfBuffer_);
   costmap_ = costmap_ros_->getCostmap();
   executor.add_node(costmap_ros_);
+
+  marker_publisher_ = node_->create_publisher<visualization_msgs::msg::Marker>(
+    "world_model_cell", 1);
 }
 
 GetCostmap::Response
@@ -134,11 +138,66 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
 
 bool CostmapRepresentation::isFree(const MapLocation & location) const
 {
-  if (costmap_->getCost(location.x, location.y)
-    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-    return true;
-    }
-  return false;
+  bool isFree = (costmap_->getCost(location.x, location.y)
+    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+
+  std_msgs::msg::ColorRGBA color;
+  color.r = 0.0;
+  color.g = 0.0;
+  color.b = 0.0;
+  color.a = 1.0;
+
+  isFree ? color.r = 1.0 : color.g = 1.0;
+  publishMarker(location, color);
+
+  return isFree;
+}
+
+void CostmapRepresentation::publishMarker(
+  const MapLocation & location, const std_msgs::msg::ColorRGBA & color) const
+{
+  visualization_msgs::msg::Marker marker;
+  marker.header.frame_id = "map";
+  // marker.header.stamp = node_.now();
+
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  // Any marker sent with the same namespace and id will overwrite the old one
+  marker.ns = "world_model_cell";
+
+  // static int index;
+
+  static int index = 0;
+  marker.id = index++;
+
+  marker.type = visualization_msgs::msg::Marker::SPHERE;
+  marker.action = visualization_msgs::msg::Marker::ADD;
+
+  marker.pose.position.x = static_cast<double>(location.x);
+  marker.pose.position.y = static_cast<double>(location.y);
+  marker.pose.position.z = 0.0;
+
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+
+  // Set the scale of the marker -- 1x1x1 here means 1m on a side
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+
+  marker.color = color;
+
+  // Duration of zero indicates the object should last forever
+  builtin_interfaces::msg::Duration duration;
+  duration.sec = 10;
+  duration.nanosec = 0;
+  marker.lifetime = duration;
+
+  // TODO(orduno) this is necessary?
+  marker.frame_locked = false;
+
+  marker_publisher_->publish(marker);
 }
 
 }  // namespace nav2_world_model

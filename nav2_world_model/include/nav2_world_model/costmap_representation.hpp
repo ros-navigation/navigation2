@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "nav2_world_model/world_representation.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -30,7 +31,8 @@ class CostmapRepresentation : public WorldRepresentation
 {
 public:
   CostmapRepresentation(
-    const std::string & name,
+    const std::string name,
+    rclcpp::Node::SharedPtr & node,
     rclcpp::executor::Executor & executor,
     rclcpp::Clock::SharedPtr & clock);
 
@@ -41,8 +43,6 @@ public:
   ProcessRegion::Response clearArea(const ProcessRegion::Request & request) override;
 
 private:
-  std::string name_;
-
   rclcpp::Clock::SharedPtr & clock_;
   tf2_ros::Buffer tfBuffer_;
   tf2_ros::TransformListener tfListener_;
@@ -58,6 +58,12 @@ private:
     const ProcessRegion::Request & request) const;
 
   bool isFree(const nav2_costmap_2d::MapLocation & location) const;
+
+  // Publish a marker to visualize the state of cell
+  void publishMarker(
+    const nav2_costmap_2d::MapLocation & location, const std_msgs::msg::ColorRGBA & color) const;
+
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
 };
 
 }  // namespace nav2_world_model
