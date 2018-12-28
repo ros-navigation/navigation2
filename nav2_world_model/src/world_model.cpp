@@ -30,11 +30,10 @@ namespace nav2_world_model
 WorldModel::WorldModel(rclcpp::executor::Executor & executor)
 : Node("world_model")
 {
-  // Use a Costmap to represent the world
   auto clock = get_clock();
-
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
+  // Use a Costmap to represent the world
   world_representation_ = std::make_unique<CostmapRepresentation>(
     "global_costmap", temp_node, executor, clock);
 
@@ -51,9 +50,6 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor)
   clear_area_service_ = create_service<ProcessRegion>("ClearArea",
       std::bind(&WorldModel::clearAreaCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-  // region_publisher_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
-  //   "world_region", 1);
 }
 
 void WorldModel::getCostmapCallback(
@@ -88,62 +84,5 @@ void WorldModel::clearAreaCallback(
 
   *response = world_representation_->clearArea(*request);
 }
-
-// RectangularRegion getRectangularRegion(const ProcessRegion::Request & request)
-// {
-//   RectangularRegion region;
-
-//   double center_x = request.center_location.x;
-//   double center_y = request.center_location.y;
-//   double width = request.width;
-//   double height = request.height;
-
-//   if (center_x < width/2 || center_y < height/2) {
-//     // Outside of the map
-//     return region;
-//   }
-
-//   geometry_msgs::msg::Point point;
-
-//   point.x = center_x - width/2;
-//   point.y = center_y - height/2;
-//   point.z = 0.0;
-//   region.bottom_left_vertex_ = point;
-
-//   point.x = center_x - width/2;
-//   point.y = center_y + height/2;
-//   point.z = 0.0;
-//   region.top_left_vertex_ = point;
-
-//   point.x = center_x + width/2;
-//   point.y = center_y + height/2;
-//   point.z = 0.0;
-//   region.top_right_vertex_ = point;
-
-//   point.x = center_x + width/2;
-//   point.y = center_y - height/2;
-//   point.z = 0.0;
-//   region.bottom_right_vertex_ = point;
-
-//   return region;
-// }
-
-// void WorldModel::publishRectangularRegion(const RectangularRegion & region) const
-// {
-//   geometry_msgs::msg::PolygonStamped polygon;
-
-//   builtin_interfaces::msg::Time time;
-//   time.sec = 0;
-//   time.nanosec = 0;
-//   polygon.header.stamp = time;
-//   polygon.header.frame_id = "map";
-
-//   polygon.polygon.points.push_back(region.bottom_left_vertex_);
-//   polygon.polygon.points.push_back(region.top_left_vertex_);
-//   polygon.polygon.points.push_back(region.top_right_vertex_);
-//   polygon.polygon.points.push_back(region.bottom_right_vertex_);
-
-//   region_publisher_->publish(polygon);
-// }
 
 }  // namespace nav2_world_model
