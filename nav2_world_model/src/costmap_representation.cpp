@@ -90,7 +90,10 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
   std::vector<MapLocation> polygon_cells;
 
   // Get all the cell locations inside the region
-  costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
+  // costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
+
+  // TODO(orduno) Alternatively we could only check the outline
+  costmap_->polygonOutlineCells(generateRectangleVertices(request), polygon_cells);
 
   // Check if there's at least one cell not free
   for (const auto & cell : polygon_cells) {
@@ -105,33 +108,36 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
 std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request) const
 {
-  std::vector<MapLocation> vertices;
+  // TODO(orduno) rotate vertices
 
   double center_x = request.center_location.x;
   double center_y = request.center_location.y;
   double width = request.width;
   double height = request.height;
 
-  if (center_x < width/2 || center_y < height/2) {
-    // Oustide the map
-    return vertices;
-  }
+  double top = center_y + height / 2;
+  double down = center_y - height / 2;
+  double right = center_x + width / 2;
+  double left = center_x - width / 2;
 
-  MapLocation bottom_left_vertex{static_cast<unsigned int>(center_x - width/2),
-    static_cast<unsigned int>(center_y - height/2)};
-  MapLocation top_left_vertex{static_cast<unsigned int>(center_x - width/2),
-    static_cast<unsigned int>(center_y + height/2)};
-  MapLocation top_right_vertex{static_cast<unsigned int>(center_x + width/2),
-    static_cast<unsigned int>(center_y + height/2)};
-  MapLocation bottom_right_vertex{static_cast<unsigned int>(center_x + width/2),
-    static_cast<unsigned int>(center_y - height/2)};
+  std::vector<MapLocation> vertices;
+  unsigned int mx, my;
 
-  // TODO(orduno) rotate vertices
+  // add the bottom left vertex
+  costmap_->worldToMap(left, down, mx, my);
+  vertices.push_back(MapLocation{mx, my});
 
-  vertices.push_back(bottom_left_vertex);
-  vertices.push_back(top_left_vertex);
-  vertices.push_back(top_right_vertex);
-  vertices.push_back(bottom_right_vertex);
+  // add the top left vertex
+  costmap_->worldToMap(left, top, mx, my);
+  vertices.push_back(MapLocation{mx, my});
+
+  // add the top right vertex
+  costmap_->worldToMap(right, top, mx, my);
+  vertices.push_back(MapLocation{mx, my});
+
+  // add the bottom right vertex
+  costmap_->worldToMap(right, down, mx, my);
+  vertices.push_back(MapLocation{mx, my});
 
   return vertices;
 }
@@ -145,16 +151,19 @@ bool CostmapRepresentation::isFree(const MapLocation & location) const
   color.r = 0.0;
   color.g = 0.0;
   color.b = 0.0;
-  color.a = 1.0;
+  color.a = 0.5;
 
-  isFree ? color.r = 1.0 : color.g = 1.0;
-  publishMarker(location, color);
+  isFree ? color.g = 1.0 : color.r = 1.0;
+
+  double wx, wy;
+  costmap_->mapToWorld(location.x, location.y, wx, wy);
+  publishMarker(wx, wy, color);
 
   return isFree;
 }
 
 void CostmapRepresentation::publishMarker(
-  const MapLocation & location, const std_msgs::msg::ColorRGBA & color) const
+  const double wx, const double wy, const std_msgs::msg::ColorRGBA & color) const
 {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
@@ -164,16 +173,14 @@ void CostmapRepresentation::publishMarker(
   // Any marker sent with the same namespace and id will overwrite the old one
   marker.ns = "world_model_cell";
 
-  // static int index;
-
   static int index = 0;
   marker.id = index++;
 
-  marker.type = visualization_msgs::msg::Marker::SPHERE;
+  marker.type = visualization_msgs::msg::Marker::CUBE;
   marker.action = visualization_msgs::msg::Marker::ADD;
 
-  marker.pose.position.x = static_cast<double>(location.x);
-  marker.pose.position.y = static_cast<double>(location.y);
+  marker.pose.position.x = wx;
+  marker.pose.position.y = wy;
   marker.pose.position.z = 0.0;
 
   marker.pose.orientation.x = 0.0;
@@ -182,15 +189,15 @@ void CostmapRepresentation::publishMarker(
   marker.pose.orientation.w = 1.0;
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 0.1;
-  marker.scale.y = 0.1;
-  marker.scale.z = 0.1;
+  marker.scale.x = costmap_->getResolution();
+  marker.scale.y = costmap_->getResolution();
+  marker.scale.z = costmap_->getResolution();
 
   marker.color = color;
 
   // Duration of zero indicates the object should last forever
   builtin_interfaces::msg::Duration duration;
-  duration.sec = 10;
+  duration.sec = 1.5;
   duration.nanosec = 0;
   marker.lifetime = duration;
 

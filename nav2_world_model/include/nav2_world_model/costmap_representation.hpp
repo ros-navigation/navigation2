@@ -61,7 +61,7 @@ private:
 
   // Publish a marker to visualize the state of cell
   void publishMarker(
-    const nav2_costmap_2d::MapLocation & location, const std_msgs::msg::ColorRGBA & color) const;
+    const double wx, const double wy, const std_msgs::msg::ColorRGBA & color) const;
 
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
 };
