@@ -14,11 +14,13 @@
 
 #include "nav2_world_model/costmap_representation.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/point.hpp"
 
 namespace nav2_world_model
 {
 
 using nav2_costmap_2d::MapLocation;
+using nav2_util::Point;
 
 CostmapRepresentation::CostmapRepresentation(
   const std::string name,
@@ -108,10 +110,9 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
 std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request) const
 {
-  // TODO(orduno) rotate vertices
-
   double center_x = request.center_location.x;
   double center_y = request.center_location.y;
+
   double width = request.width;
   double height = request.height;
 
@@ -120,23 +121,37 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   double right = center_x + width / 2;
   double left = center_x - width / 2;
 
+  // Define the vertices and rotate them
+  double theta = request.rotation;
+  Point reference{request.rotation_point.x, request.rotation_point.y};
+
+  Point l_d{left, down};
+  l_d.rotateAroundPoint(theta, reference);
+
+  Point l_t{left, top};
+  l_t.rotateAroundPoint(theta, reference);
+
+  Point r_t{right, top};
+  r_t.rotateAroundPoint(theta, reference);
+
+  Point r_d{right, down};
+  r_d.rotateAroundPoint(theta, reference);
+
+  // Convert to map coordinates and store
+
   std::vector<MapLocation> vertices;
   unsigned int mx, my;
 
-  // add the bottom left vertex
-  costmap_->worldToMap(left, down, mx, my);
+  costmap_->worldToMap(l_d.x, l_d.y, mx, my);
   vertices.push_back(MapLocation{mx, my});
 
-  // add the top left vertex
-  costmap_->worldToMap(left, top, mx, my);
+  costmap_->worldToMap(l_t.x, l_t.y, mx, my);
   vertices.push_back(MapLocation{mx, my});
 
-  // add the top right vertex
-  costmap_->worldToMap(right, top, mx, my);
+  costmap_->worldToMap(r_t.x, r_t.y, mx, my);
   vertices.push_back(MapLocation{mx, my});
 
-  // add the bottom right vertex
-  costmap_->worldToMap(right, down, mx, my);
+  costmap_->worldToMap(r_d.x, r_d.y, mx, my);
   vertices.push_back(MapLocation{mx, my});
 
   return vertices;
@@ -197,7 +212,7 @@ void CostmapRepresentation::publishMarker(
 
   // Duration of zero indicates the object should last forever
   builtin_interfaces::msg::Duration duration;
-  duration.sec = 1.5;
+  duration.sec = 1.0;
   duration.nanosec = 0;
   marker.lifetime = duration;
 
