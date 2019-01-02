@@ -114,10 +114,10 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request) const
 {
    // Define the coordinates
-  double top = request.center_location.y + request.height / 2;
-  double down = request.center_location.y - request.height / 2;
-  double right = request.center_location.x + request.width / 2;
-  double left = request.center_location.x - request.width / 2;
+  double top = request.reference.y + request.height / 2 - request.offset.y;
+  double down = request.reference.y - request.height / 2 - request.offset.y;
+  double right = request.reference.x + request.width / 2 - request.offset.x;
+  double left = request.reference.x - request.width / 2 - request.offset.x;
 
   // Add the vertices
   std::vector<Point> points = {
@@ -129,7 +129,7 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   for (auto & point : points) {
     point.rotateAroundPoint(
       request.rotation + rvizToGazeobOffset,
-      Point{request.rotation_point.x, request.rotation_point.y});
+      Point{request.reference.x, request.reference.y});
   }
 
   // Convert to map coordinates

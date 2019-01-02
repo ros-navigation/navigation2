@@ -1,14 +1,16 @@
 # Process a rectangular region
 
+# reference point [m]
+geometry_msgs/Point reference
+
 # Width and height of the rectangle [m]
 float64 width
 float64 height
 
-# Center coordinate [m]
-geometry_msgs/Point center_location
-
 # Clockwise rotation of the rectangle [rad]
 float64 rotation
-geometry_msgs/Point rotation_point
+
+# Offset coupled with rotation
+geometry_msgs/Point offset
 ---
 bool was_successful

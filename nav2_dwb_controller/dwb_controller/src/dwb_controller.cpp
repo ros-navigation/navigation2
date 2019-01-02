@@ -157,10 +157,15 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 
   request.width = robot_width;
   request.height = robot_width * 3;
-  request.center_location.x = pose2d.pose.x;
-  request.center_location.y = pose2d.pose.y;
+
+  request.reference.x = pose2d.pose.x;
+  request.reference.y = pose2d.pose.y;
+
   request.rotation = pose2d.pose.theta;
-  request.rotation_point = request.center_location;
+
+  // request.rotation_point = request.center_location;
+  request.offset.x = 0.0;
+  request.offset.y = robot_width * 2.0;
 
   return world_model_.confirmFreeSpace(request);
 }
