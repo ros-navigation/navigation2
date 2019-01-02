@@ -29,7 +29,8 @@ CostmapRepresentation::CostmapRepresentation(
 : WorldRepresentation(name, node),
   clock_(clock),
   tfBuffer_(clock_),
-  tfListener_(tfBuffer_)
+  tfListener_(tfBuffer_),
+  marker_(visualization_msgs::msg::Marker())
 {
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, tfBuffer_);
   costmap_ = costmap_ros_->getCostmap();
@@ -86,7 +87,7 @@ CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
   return response;
 }
 
-bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) const
+bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) /*const*/
 {
   std::vector<MapLocation> polygon_cells;
 
@@ -97,44 +98,38 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
   // costmap_->polygonOutlineCells(generateRectangleVertices(request), polygon_cells);
 
   // Check if there's at least one cell not free
+  bool allFree = true;
   for (const auto & cell : polygon_cells) {
     if (!isFree(cell)) {
-      return false;
+      allFree = false;
     }
   }
 
-  return true;
+  publishRegion();
+
+  return allFree;
 }
 
 std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request) const
 {
-  double center_x = request.center_location.x;
-  double center_y = request.center_location.y;
+   // Define the coordinates
+  double top = request.center_location.y + request.height / 2;
+  double down = request.center_location.y - request.height / 2;
+  double right = request.center_location.x + request.width / 2;
+  double left = request.center_location.x - request.width / 2;
 
-  double width = request.width;
-  double height = request.height;
+  // Add the vertices
+  std::vector<Point> points = {
+    Point{left, down}, Point{left, top}, Point{right, top}, Point{right, down}};
 
-  double top = center_y + height / 2;
-  double down = center_y - height / 2;
-  double right = center_x + width / 2;
-  double left = center_x - width / 2;
-
-  // Define the vertices
-  std::vector<double> x_coordinates{left, right};
-  std::vector<double> y_coordinates{top, down};
-  std::vector<Point> points;
-
-  for (const auto x : x_coordinates) {
-    for (const auto y: y_coordinates) {
-      points.emplace_back(Point{x,y});
-    }
-  }
+  const double rvizToGazeobOffset = M_PI/2;
 
   // Rotate the vertices
   for (auto & point : points) {
     point.rotateAroundPoint(
-      request.rotation, Point{request.rotation_point.x, request.rotation_point.y});
+      request.rotation + rvizToGazeobOffset,
+      Point{request.rotation_point.x, request.rotation_point.y});
   }
 
   // Convert to map coordinates
@@ -155,69 +150,96 @@ void CostmapRepresentation::addVertex(
   vertices.push_back(MapLocation{mx, my});
 }
 
-bool CostmapRepresentation::isFree(const MapLocation & location) const
+bool CostmapRepresentation::isFree(const MapLocation & location) /*const*/
 {
   bool isFree = (costmap_->getCost(location.x, location.y)
     < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 
+  // Add marker for this location for visualization
   std_msgs::msg::ColorRGBA color;
   color.r = 0.0;
   color.g = 0.0;
   color.b = 0.0;
-  color.a = 0.5;
+  color.a = 0.3;
 
   isFree ? color.g = 1.0 : color.r = 1.0;
 
   double wx, wy;
   costmap_->mapToWorld(location.x, location.y, wx, wy);
-  publishMarker(wx, wy, color);
+
+  addPointToMarker(makePoint(wx, wy, 0.0), color);
 
   return isFree;
 }
 
-void CostmapRepresentation::publishMarker(
-  const double wx, const double wy, const std_msgs::msg::ColorRGBA & color) const
+geometry_msgs::msg::Point CostmapRepresentation::makePoint(
+  const double x, const double y, const double z) const
 {
-  visualization_msgs::msg::Marker marker;
-  marker.header.frame_id = "map";
-  // marker.header.stamp = node_.now();
+  geometry_msgs::msg::Point point;
+  point.x = x;
+  point.y = y;
+  point.z = z;
 
-  // Set the namespace and id for this marker.  This serves to create a unique ID
-  // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "world_model_cell";
+  return point;
+}
 
+void CostmapRepresentation::addPointToMarker(
+  const geometry_msgs::msg::Point & point, const std_msgs::msg::ColorRGBA & color)
+{
+  marker_.points.push_back(point);
+  marker_.colors.push_back(color);
+}
+
+void CostmapRepresentation::clearMarker()
+{
+  marker_.points.clear();
+  marker_.colors.clear();
+}
+
+void CostmapRepresentation::publishRegion() /*const*/
+{
+  if (marker_.points.empty() || marker_.colors.empty()) {
+    return;
+  }
+
+  RCLCPP_INFO(node_->get_logger(), "Publishing %d markers describing a region",
+    marker_.points.size());
+
+  marker_.header.frame_id = "map";
+  // marker_.header.stamp = node_.now();
+  builtin_interfaces::msg::Time time;
+  time.sec = 0;
+  time.nanosec = 0;
+  marker_.header.stamp = time;
+
+  marker_.ns = "world_model_cell";
   static int index = 0;
-  marker.id = index++;
+  marker_.id = index;
 
-  marker.type = visualization_msgs::msg::Marker::CUBE;
-  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker_.type = visualization_msgs::msg::Marker::CUBE_LIST;
+  marker_.action = visualization_msgs::msg::Marker::ADD;
 
-  marker.pose.position.x = wx;
-  marker.pose.position.y = wy;
-  marker.pose.position.z = 0.0;
-
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  marker.pose.orientation.w = 1.0;
+  marker_.pose.orientation.x = 0.0;
+  marker_.pose.orientation.y = 0.0;
+  marker_.pose.orientation.z = 0.0;
+  marker_.pose.orientation.w = 1.0;
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = costmap_->getResolution();
-  marker.scale.y = costmap_->getResolution();
-  marker.scale.z = costmap_->getResolution();
-
-  marker.color = color;
+  marker_.scale.x = costmap_->getResolution();
+  marker_.scale.y = costmap_->getResolution();
+  marker_.scale.z = costmap_->getResolution();
 
   // Duration of zero indicates the object should last forever
   builtin_interfaces::msg::Duration duration;
-  duration.sec = 1.0;
+  duration.sec = 4;
   duration.nanosec = 0;
-  marker.lifetime = duration;
 
-  // TODO(orduno) this is necessary?
-  marker.frame_locked = false;
+  marker_.lifetime = duration;
+  marker_.frame_locked = false;
 
-  marker_publisher_->publish(marker);
+  marker_publisher_->publish(marker_);
+
+  clearMarker();
 }
 
 }  // namespace nav2_world_model

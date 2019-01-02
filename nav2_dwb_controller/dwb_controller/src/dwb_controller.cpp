@@ -151,8 +151,12 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 {
   nav2_world_model::FreeSpaceServiceRequest request;
-  request.width = 0.5;
-  request.height = 0.5;
+
+  // TODO(orduno) read from robot class
+  double robot_width = 0.22;
+
+  request.width = robot_width;
+  request.height = robot_width * 3;
   request.center_location.x = pose2d.pose.x;
   request.center_location.y = pose2d.pose.y;
   request.rotation = pose2d.pose.theta;
