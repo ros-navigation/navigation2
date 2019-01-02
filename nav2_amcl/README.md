@@ -6,7 +6,7 @@ Currently, the AMCL module in ROS 2 Navigation System is a direct port from [ROS
 ## Added Feature
 AutoLocalization - is implemented by utilizing AMCL's `global_localization` service request and Behavior Tree (BT).  This enables initial pose estimation capability on differential type robot.
 
-On startup for navigation task, initial robot pose needs to be send to amcl otherwise amcl initializes its filter state to default values with particle cloud centered around (0,0,0). If the initial pose of the robot is not known and the robot is outside of default particle cloud, particles may not converge when robot moves.
+ On startup of the navigation stack, the initial robot pose needs to be sent to AMCL otherwise AMCL initializes its filter state to default values with a particle cloud centered around (0,0,0). If the initial pose of the robot is not known and the robot is outside of default particle cloud, particles may not converge when robot moves.
 
 With AutoLocalization branch of BT, first `global_localization` service of amcl is called to randomly disperese all particles through the free space in the map. Once particles are disperesed, robot rotates, backs up, and if necessary rotates again to localize itself. The full implementation is described in AutoLocalization section of [BT Navigator](https://github.com/ros-planning/navigation2/blob/master/nav2_bt_navigator/README.md)
 
