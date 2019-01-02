@@ -14,7 +14,6 @@
 
 #include "nav2_world_model/costmap_representation.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_util/point.hpp"
 
 namespace nav2_world_model
 {
@@ -92,10 +91,10 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
   std::vector<MapLocation> polygon_cells;
 
   // Get all the cell locations inside the region
-  // costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
+  costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
 
   // TODO(orduno) Alternatively we could only check the outline
-  costmap_->polygonOutlineCells(generateRectangleVertices(request), polygon_cells);
+  // costmap_->polygonOutlineCells(generateRectangleVertices(request), polygon_cells);
 
   // Check if there's at least one cell not free
   for (const auto & cell : polygon_cells) {
@@ -121,40 +120,39 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   double right = center_x + width / 2;
   double left = center_x - width / 2;
 
-  // Define the vertices and rotate them
-  double theta = request.rotation;
-  Point reference{request.rotation_point.x, request.rotation_point.y};
+  // Define the vertices
+  std::vector<double> x_coordinates{left, right};
+  std::vector<double> y_coordinates{top, down};
+  std::vector<Point> points;
 
-  Point l_d{left, down};
-  l_d.rotateAroundPoint(theta, reference);
+  for (const auto x : x_coordinates) {
+    for (const auto y: y_coordinates) {
+      points.emplace_back(Point{x,y});
+    }
+  }
 
-  Point l_t{left, top};
-  l_t.rotateAroundPoint(theta, reference);
+  // Rotate the vertices
+  for (auto & point : points) {
+    point.rotateAroundPoint(
+      request.rotation, Point{request.rotation_point.x, request.rotation_point.y});
+  }
 
-  Point r_t{right, top};
-  r_t.rotateAroundPoint(theta, reference);
-
-  Point r_d{right, down};
-  r_d.rotateAroundPoint(theta, reference);
-
-  // Convert to map coordinates and store
-
+  // Convert to map coordinates
   std::vector<MapLocation> vertices;
-  unsigned int mx, my;
 
-  costmap_->worldToMap(l_d.x, l_d.y, mx, my);
-  vertices.push_back(MapLocation{mx, my});
-
-  costmap_->worldToMap(l_t.x, l_t.y, mx, my);
-  vertices.push_back(MapLocation{mx, my});
-
-  costmap_->worldToMap(r_t.x, r_t.y, mx, my);
-  vertices.push_back(MapLocation{mx, my});
-
-  costmap_->worldToMap(r_d.x, r_d.y, mx, my);
-  vertices.push_back(MapLocation{mx, my});
+  for (const auto & point : points) {
+    addVertex(vertices, point);
+  }
 
   return vertices;
+}
+
+void CostmapRepresentation::addVertex(
+  std::vector<MapLocation> & vertices, const Point & vertex) const
+{
+  unsigned int mx, my;
+  costmap_->worldToMap(vertex.x, vertex.y, mx, my);
+  vertices.push_back(MapLocation{mx, my});
 }
 
 bool CostmapRepresentation::isFree(const MapLocation & location) const
