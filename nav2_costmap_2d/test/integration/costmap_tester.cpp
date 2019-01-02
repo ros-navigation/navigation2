@@ -34,15 +34,19 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <gtest/gtest.h>
+#include <memory>
 
-#include "ros/ros.h"
+#include "gtest/gtest.h"
+#include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/duration_conversions.hpp"
 
 namespace nav2_costmap_2d
 {
+
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
 class CostmapTester : public testing::Test
 {
@@ -56,17 +60,16 @@ public:
     nav2_costmap_2d::Costmap2D & costmap,
     unsigned int x, unsigned int y, unsigned int nx, unsigned int ny);
   virtual void TestBody() {}
-
-private:
-  nav2_costmap_2d::Costmap2DROS costmap_ros_;
 };
 
 CostmapTester::CostmapTester(tf2_ros::Buffer & tf)
-: costmap_ros_("test_costmap", tf) {}
+{
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap", tf);
+}
 
 void CostmapTester::checkConsistentCosts()
 {
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_.getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
 
   // get a copy of the costmap contained by our ros wrapper
   costmap->saveMap("costmap_test.pgm");
@@ -123,11 +126,13 @@ void CostmapTester::compareCells(
     double furthest_valid_distance = 0;
     unsigned char expected_lowest_cost = 0;
     if (neighbor_cost < expected_lowest_cost) {
-      ROS_ERROR(
-        "Cell cost (%d, %d): %d, neighbor cost (%d, %d): %d, expected lowest cost: %d, cell distance: %.2f, furthest valid distance: %.2f",         //NOLINT
+      RCLCPP_ERROR(rclcpp::get_logger(
+          "costmap_tester"),
+        "Cell cost (%d, %d): %d, neighbor cost (%d, %d): %d, expected lowest cost: %d, cell distance: %.2f, furthest valid distance: %.2f", // NOLINT
         x, y, cell_cost, nx, ny, neighbor_cost, expected_lowest_cost,
         cell_distance, furthest_valid_distance);
-      ROS_ERROR("Cell: (%d, %d), Neighbor: (%d, %d)", x, y, nx, ny);
+      RCLCPP_ERROR(rclcpp::get_logger("costmap_tester"), "Cell: (%d, %d), Neighbor: (%d, %d)",
+        x, y, nx, ny);
       costmap.saveMap("failing_costmap.pgm");
     }
     EXPECT_TRUE(neighbor_cost >= expected_lowest_cost ||
@@ -137,35 +142,31 @@ void CostmapTester::compareCells(
 }   // namespace nav2_costmap_2d
 
 nav2_costmap_2d::CostmapTester * map_tester = NULL;
+tf2_ros::TransformListener * tfl_;
+tf2_ros::Buffer * tf_;
 
 TEST(CostmapTester, checkConsistentCosts) {
   map_tester->checkConsistentCosts();
 }
 
-void testCallback(const ros::TimerEvent & e)
+void testCallback()
 {
   int test_result = RUN_ALL_TESTS();
-  ROS_INFO("gtest return value: %d", test_result);
-  ros::shutdown();
+  RCLCPP_INFO(rclcpp::get_logger("costmap_tester"), "gtest return value: %d", test_result);
 }
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "costmap_tester_node");
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("costmap_tester");
   testing::InitGoogleTest(&argc, argv);
 
-  ros::NodeHandle n;
-  ros::NodeHandle private_nh("~");
-
-  tf2_ros::Buffer tf(ros::Duration(10));
-  tf2_ros::TransformListener tfl(tf);
-  map_tester = new nav2_costmap_2d::CostmapTester(tf);
-
-  double wait_time;
-  private_nh.param("wait_time", wait_time, 30.0);
-  ros::Timer timer = n.createTimer(ros::Duration(wait_time), testCallback);
-
-  ros::spin();
+  tf_ = new tf2_ros::Buffer(node->get_clock());
+  tfl_ = new tf2_ros::TransformListener(*tf_);
+  map_tester = new nav2_costmap_2d::CostmapTester(*tf_);
+  rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(30000ms, testCallback);
+  rclcpp::spin(costmap_ros_);
+  rclcpp::shutdown();
 
   return 0;
 }

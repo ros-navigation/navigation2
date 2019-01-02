@@ -32,13 +32,36 @@
  * Test harness for ObstacleLayer for Costmap2D
  */
 
-#include <gtest/gtest.h>
 #include <set>
 
+#include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
+
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+class TestNode : public ::testing::Test
+{
+public:
+  TestNode()
+  {
+    node_ = rclcpp::Node::make_shared("obstacle_test_node");
+  }
+
+  ~TestNode() {}
+
+protected:
+  rclcpp::Node::SharedPtr node_;
+};
 
 /*
  * For reference, the static map looks like this:
@@ -69,12 +92,12 @@
 /**
  * Test for ray tracing free space
  */
-TEST(costmap, testRaytracing) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testRaytracing) {
+  tf2_ros::Buffer tf(node_->get_clock());
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-  addStaticLayer(layers, tf);  // This adds the static map
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  addStaticLayer(layers, tf, node_);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // Add a point at 0, 0, 0
   addObservation(olayer, 0.0, 0.0, MAX_Z / 2, 0, 0, MAX_Z / 2);
@@ -92,11 +115,11 @@ TEST(costmap, testRaytracing) {
 /**
  * Test for ray tracing free space
  */
-TEST(costmap, testRaytracing2) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testRaytracing2) {
+  tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-  addStaticLayer(layers, tf);
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  addStaticLayer(layers, tf, node_);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // If we print map now, it is 10x10 all value 0
   // printMap(*(layers.getCostmap()));
@@ -147,13 +170,13 @@ TEST(costmap, testRaytracing2) {
 /**
  * Test for wave interference
  */
-TEST(costmap, testWaveInterference) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testWaveInterference) {
+  tf2_ros::Buffer tf(node_->get_clock());
 
   // Start with an empty map, no rolling window, tracking unknown
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // If we print map now, it is 10x10, all cells are 255 (NO_INFORMATION)
   // printMap(*(layers.getCostmap()));
@@ -176,13 +199,13 @@ TEST(costmap, testWaveInterference) {
 /**
  * Make sure we ignore points outside of our z threshold
  */
-TEST(costmap, testZThreshold) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testZThreshold) {
+  tf2_ros::Buffer tf(node_->get_clock());
   // Start with an empty map
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
   addObservation(olayer, 0.0, 5.0, 0.4);
@@ -197,12 +220,12 @@ TEST(costmap, testZThreshold) {
 /**
  * Verify that dynamic obstacles are added
  */
-TEST(costmap, testDynamicObstacles) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testDynamicObstacles) {
+  tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-  addStaticLayer(layers, tf);
+  addStaticLayer(layers, tf, node_);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // Add a point cloud and verify its insertion. There should be only one new one
   addObservation(olayer, 0.0, 0.0);
@@ -222,12 +245,12 @@ TEST(costmap, testDynamicObstacles) {
 /**
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
-TEST(costmap, testMultipleAdditions) {
-  tf2_ros::Buffer tf;
+TEST_F(TestNode, testMultipleAdditions) {
+  tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-  addStaticLayer(layers, tf);
+  addStaticLayer(layers, tf, node_);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf);
+  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
 
   // A point cloud with one point that falls within an existing obstacle
   addObservation(olayer, 9.5, 0.0);
@@ -236,11 +259,4 @@ TEST(costmap, testMultipleAdditions) {
   // printMap(*costmap);
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
-}
-
-int main(int argc, char ** argv)
-{
-  ros::init(argc, argv, "obstacle_tests");
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

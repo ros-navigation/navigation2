@@ -27,10 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "nav2_costmap_2d/array_parser.hpp"
 
 TEST(array_parser, basic_operation)

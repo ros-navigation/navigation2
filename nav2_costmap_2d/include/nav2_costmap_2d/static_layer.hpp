@@ -100,7 +100,7 @@ private:
   unsigned char lethal_threshold_, unknown_cost_value_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 };
 
 }  // namespace nav2_costmap_2d

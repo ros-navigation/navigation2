@@ -163,7 +163,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   stopped_ = false;
 
   // Create Parameter Validator
-  param_validator_ = new nav2_dynamic_params::DynamicParamsValidator(node_);
+  param_validator_ = std::make_unique<nav2_dynamic_params::DynamicParamsValidator>(node_);
 
   // Add parameter with bound limits for validation
   param_validator_->add_param(
@@ -181,7 +181,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   param_validator_->add_param("robot_radius", rclcpp::ParameterType::PARAMETER_DOUBLE, {0, 10});
 
   // Add Parameter Client
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
   dynamic_param_client_->add_parameters(
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
       "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius", "footprint"});
@@ -206,8 +206,6 @@ Costmap2DROS::~Costmap2DROS()
   }
 
   delete layered_costmap_;
-  delete param_validator_;
-  delete dynamic_param_client_;
 }
 
 void Costmap2DROS::reconfigureCB()

@@ -81,9 +81,6 @@ public:
   virtual ~InflationLayer()
   {
     deleteKernels();
-    if (dynamic_param_client_) {
-      delete dynamic_param_client_;
-    }
   }
 
   virtual void onInitialize();
@@ -194,7 +191,7 @@ private:
 
   void reconfigureCB();
 
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
   rclcpp::SyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
   // Indicates that the entire costmap should be reinflated next time around.

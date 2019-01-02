@@ -59,11 +59,7 @@ namespace nav2_costmap_2d
 StaticLayer::StaticLayer() {enabled_ = true;}
 
 StaticLayer::~StaticLayer()
-{
-  if (dynamic_param_client_) {
-    delete dynamic_param_client_;
-  }
-}
+{}
 
 void StaticLayer::onInitialize()
 {
@@ -120,7 +116,7 @@ void StaticLayer::onInitialize()
     has_updated_data_ = true;
   }
 
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
   dynamic_param_client_->add_parameters({name_ + "." + "enabled"});
   dynamic_param_client_->set_callback(std::bind(&StaticLayer::reconfigureCB, this));
   // TODO(bpwilcox): Add new parameters to parameter validation class from plugins

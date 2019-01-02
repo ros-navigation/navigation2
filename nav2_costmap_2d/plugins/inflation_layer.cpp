@@ -95,7 +95,7 @@ void InflationLayer::onInitialize()
   node_->set_parameter_if_not_set(name_ + "." + "cost_scaling_factor", 10.0);
   node_->set_parameter_if_not_set(name_ + "." + "inflate_unknown", false);
 
-  dynamic_param_client_ = new nav2_dynamic_params::DynamicParamsClient(node_);
+  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
   dynamic_param_client_->add_parameters({
       name_ + "." + "enabled",
       name_ + "." + "inflation_radius",
