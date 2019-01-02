@@ -21,8 +21,10 @@ find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(gazebo_ros_pkgs REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(navigation2)
 
 set(dependencies
   rclcpp
@@ -32,22 +34,23 @@ set(dependencies
   nav_msgs
   visualization_msgs
   nav2_amcl
+  gazebo_ros_pkgs
   geometry_msgs
   std_msgs
   rclpy
 )
 
-#if(BUILD_TESTING)
-#  find_package(ament_lint_auto REQUIRED)
-#  ament_lint_auto_find_test_dependencies()
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 
-#  find_package(ament_cmake_gtest REQUIRED)
-#  find_package(ament_cmake_pytest REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
 
 #  add_subdirectory(src/planning)
-#  add_subdirectory(src/localization)
-#  add_subdirectory(src/system)
+  add_subdirectory(src/localization)
+  add_subdirectory(src/system)
 
-#endif()
+endif()
 
 ament_package()

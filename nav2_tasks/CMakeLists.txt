@@ -66,8 +66,8 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
-  ament_add_gtest(test_tasks test/test_tasks.cpp)
-  ament_target_dependencies(test_tasks ${dependencies})
+  # ament_add_gtest(test_tasks test/test_tasks.cpp)
+  # ament_target_dependencies(test_tasks ${dependencies})
 endif()
 
 ament_export_include_directories(include)
