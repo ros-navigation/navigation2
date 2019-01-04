@@ -146,4 +146,10 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   return TaskStatus::RUNNING;
 }
 
+bool Spin::pathIsClear()
+{
+  // TODO(orduno) assuming the robot has a near circular footprint
+  return true;
+}
+
 }  // namespace nav2_motion_primitives

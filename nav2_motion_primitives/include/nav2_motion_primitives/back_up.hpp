@@ -34,6 +34,8 @@ public:
 
   nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::BackUpResult & result) override;
 
+  bool pathIsClear() override;
+
 protected:
   double min_linear_vel_;
   double max_linear_vel_;
@@ -41,11 +43,15 @@ protected:
 
   nav_msgs::msg::Odometry::SharedPtr initial_pose_;
   double command_x_;
+  geometry_msgs::msg::Twist default_vel_;
+  std::chrono::duration<double> default_exec_time_;
+  std::chrono::duration<double> remaining_time_;
+
+  std::chrono::system_clock::time_point start_time_;
+
+  nav2_tasks::TaskStatus timedBackup();
 
   nav2_tasks::TaskStatus controlledBackup();
-
-  bool pathIsClear();
-
 };
 
 }  // namespace nav2_motion_primitives

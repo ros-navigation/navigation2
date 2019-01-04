@@ -15,8 +15,14 @@
 #include <chrono>
 #include <ctime>
 #include <memory>
+#include <cmath>
 
 #include "nav2_motion_primitives/back_up.hpp"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
+#pragma GCC diagnostic pop
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
@@ -31,6 +37,16 @@ BackUp::BackUp(rclcpp::Node::SharedPtr & node)
   max_linear_vel_ = 0.0;
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
+
+  // default_vel_.linear.x = -0.025;
+  default_vel_.linear.x = 0.05;
+  default_vel_.linear.y = 0.0;
+  default_vel_.angular.z = 0.0;
+
+  default_exec_time_ = 5s;
+  remaining_time_ = default_exec_time_;
+
+  start_time_ = std::chrono::system_clock::now();
 }
 
 BackUp::~BackUp()
@@ -90,7 +106,37 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
   robot_->sendVelocity(cmd_vel);
 
-  return TaskStatus::RUNNING;
+bool BackUp::pathIsClear()
+{
+  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+
+  if (!robot_->getCurrentPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return false;
+  }
+
+  double remaining_distance = default_vel_.linear.x * remaining_time_.count();
+
+  nav2_world_model::FreeSpaceServiceRequest request;
+
+  // Define the region size
+  double robot_width = 0.22;  // TODO(orduno) get from robot class
+  request.width = robot_width;
+  request.height = remaining_distance;
+
+  request.reference.x = current_pose->pose.pose.position.x;
+  request.reference.y = current_pose->pose.pose.position.y;
+
+  request.rotation = tf2::getYaw(current_pose->pose.pose.orientation);
+  // request.rotation = tf2::getYaw(current_pose->pose.pose.orientation) + M_PI;
+
+  // set the edge of the region on the front of the robot
+  request.offset.x = 0.0;
+  request.offset.y = robot_width / 2.0 + request.height / 2.0;
+
+  // request.offset.y = -1.0 * (robot_width / 2.0 + request.height / 2.0);
+
+  return world_model_.confirmFreeSpace(request);
 }
 
 }  // namespace nav2_motion_primitives

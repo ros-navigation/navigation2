@@ -36,6 +36,8 @@ public:
 
   nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::SpinResult & result) override;
 
+  bool pathIsClear() override;
+
 protected:
   double min_rotational_vel_;
   double max_rotational_vel_;

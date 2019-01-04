@@ -66,6 +66,12 @@ public:
   virtual nav2_tasks::TaskStatus onRun(
     const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command) = 0;
 
+  // Derived classes that translate the robot should override this method to check if
+  // the path that will be covered by the primitive is free.
+  // The method will be called regularly during execution of the primitive
+  // if method returns false, execution is cancelled.
+  virtual bool pathIsClear() = 0;
+
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
@@ -81,6 +87,12 @@ public:
 
     ResultMsg result;
     auto status = onRun(command);
+
+    if (!pathIsClear()) {
+      RCLCPP_WARN(node_->get_logger(),
+        "%s doesn't have open space for execution", taskName_.c_str());
+      return nav2_tasks::TaskStatus::FAILED;
+    }
 
     if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
       status = cycle(result);
@@ -108,6 +120,13 @@ protected:
         status = nav2_tasks::TaskStatus::CANCELED;
         break;
       }
+
+      // if (!pathIsClear()) {
+      //   RCLCPP_WARN(node_->get_logger(),
+      //     "%s doesn't have open space for execution", taskName_.c_str());
+      //   status = nav2_tasks::TaskStatus::FAILED;
+      //   break;
+      // }
 
       // Log a message every second
       current_time = std::chrono::system_clock::now();

@@ -70,4 +70,9 @@ nav2_tasks::TaskStatus Stop::onCycleUpdate(nav2_tasks::StopResult & /*result*/)
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
+bool Stop::pathIsClear()
+{
+  return true;
+}
+
 }  // namespace nav2_motion_primitives

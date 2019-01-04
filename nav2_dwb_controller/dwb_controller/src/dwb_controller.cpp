@@ -155,7 +155,7 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   // TODO(orduno) get from robot class
   double robot_width = 0.22;
 
-  // Define the size region to check
+  // Define the region size
   request.width = robot_width;
   request.height = robot_width * 3;
 

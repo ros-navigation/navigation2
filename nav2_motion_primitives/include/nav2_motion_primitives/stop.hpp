@@ -35,6 +35,8 @@ public:
 
   nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::StopResult & result) override;
 
+  bool pathIsClear() override;
+
   // For stopping the path following controller from sending commands to the robot
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
 };
