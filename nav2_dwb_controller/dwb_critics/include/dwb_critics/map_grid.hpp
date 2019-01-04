@@ -109,7 +109,6 @@ protected:
 public:
     MapGridQueue(nav2_costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
     : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
-    bool validCellToQueue(const costmap_queue::CellData & cell) override;
 
 protected:
     MapGridCritic & parent_;
