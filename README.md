@@ -2,9 +2,9 @@
 
 ROS2 Navigation System
 
-Travis CI [![Build Status](https://travis-ci.org/ros-planning/navigation2.svg?branch=master)](https://travis-ci.org/ros-planning/navigation2)
+[![Build Status](https://travis-ci.org/ros-planning/navigation2.svg?branch=master)](https://travis-ci.org/ros-planning/navigation2) Travis
 
-ROS Build Farm Builder [![Build Status](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/)
+[![Build Status](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/) ROS Build Farm 
 
 [![Pulls](https://shields.beevelop.com/docker/pulls/stevemacenski/navigation2.svg?style=flat-square)](https://hub.docker.com/r/stevemacenski/navigation2)
 
