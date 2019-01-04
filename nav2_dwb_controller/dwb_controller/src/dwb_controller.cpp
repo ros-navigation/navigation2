@@ -77,7 +77,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
-        RCLCPP_INFO(get_logger(), "Publishing velocity");
+        RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
 
         // Check if this task has been canceled
         if (task_server_->cancelRequested()) {
