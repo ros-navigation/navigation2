@@ -19,12 +19,11 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "geometry_msgs/msg/point.hpp"
 #include "nav2_world_model/world_representation.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/point.hpp"
+#include "nav2_world_model/region_visualizer.hpp"
 
 namespace nav2_world_model
 {
@@ -54,7 +53,9 @@ private:
 
   nav2_costmap_2d::Costmap2D * costmap_;
 
-  bool checkIfFree(const ProcessRegion::Request & request) /*const*/;
+  RegionVisualizer region_visualizer_;
+
+  bool checkIfFree(const ProcessRegion::Request & request);
 
   std::vector<nav2_costmap_2d::MapLocation> generateRectangleVertices(
     const ProcessRegion::Request & request) const;
@@ -62,23 +63,7 @@ private:
   void addVertex(std::vector<nav2_costmap_2d::MapLocation> & vertices,
     const nav2_util::Point & vertex) const;
 
-  bool isFree(const nav2_costmap_2d::MapLocation & location) /*const*/;
-
-  // Publish a marker to visualize the state of cell
-  // TODO(orduno) make a separate class
-  visualization_msgs::msg::Marker marker_;
-
-  void publishRegion() /*const*/;
-    // const double wx, const double wy, const std_msgs::msg::ColorRGBA & color) const;
-
-  void addPointToMarker
-    (const geometry_msgs::msg::Point & point, const std_msgs::msg::ColorRGBA & color );
-
-  void clearMarker();
-
-  geometry_msgs::msg::Point makePoint(const double x, const double y, const double z) const;
-
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
+  bool isFree(const nav2_costmap_2d::MapLocation & location);
 };
 
 }  // namespace nav2_world_model
