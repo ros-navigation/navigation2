@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/common_types.hpp"
 #include "dwb_core/trajectory_critic.hpp"
@@ -92,6 +93,12 @@ public:
 protected:
   void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results);
 
+  void addDeleteMarkers(
+    visualization_msgs::msg::MarkerArray & ma,
+    unsigned startingId,
+    std::string & ns
+  );
+
   // Helper function for publishing other plans
   void publishGenericPlan(
     const nav_2d_msgs::msg::Path2D plan,
@@ -103,7 +110,7 @@ protected:
   bool publish_cost_grid_pc_;
 
   // Previously published marker count for removing markers as needed
-  int prev_marker_count_;
+  unsigned prev_marker_count_;
 
   // Publisher Objects
   std::shared_ptr<rclcpp::Publisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
