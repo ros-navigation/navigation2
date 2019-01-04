@@ -64,7 +64,8 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
 
-    while (true) {
+    rclcpp::Rate loop_rate(10);
+    while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
         RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
@@ -98,7 +99,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
           planner_.setPlan(path);
         }
       }
-      std::this_thread::sleep_for(100ms);
+      loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
