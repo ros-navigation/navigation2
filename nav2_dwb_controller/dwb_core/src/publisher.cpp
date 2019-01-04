@@ -110,8 +110,8 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
   m.scale.x = 0.002;
   m.color.a = 1.0;
 
-  double best_cost = results.twists[results.best_index].total,
-    worst_cost = results.twists[results.worst_index].total;
+  double best_cost = results.twists[results.best_index].total;
+  double worst_cost = results.twists[results.worst_index].total;
 
   unsigned currentValidId = 0;
   unsigned currentInvalidId = 0;
@@ -119,10 +119,12 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
   string invalidNamespace("InvalidTrajectories");
   for (unsigned int i = 0; i < results.twists.size(); i++) {
     const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
+    double displayLevel = (twist.total - best_cost) / (worst_cost - best_cost);
     if (twist.total >= 0) {
-      m.color.r = 1.0 - (twist.total - best_cost) / (worst_cost - best_cost);
-      m.color.g = 1.0 - (twist.total - best_cost) / (worst_cost - best_cost);
+      m.color.r = 0;
+      m.color.g = 0;
       m.color.b = 1.0;
+      m.color.a = 1.0 - displayLevel;
       m.ns = validNamespace;
       m.id = currentValidId;
       ++currentValidId;
@@ -130,6 +132,7 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
       m.color.r = 0;
       m.color.g = 0;
       m.color.b = 0;
+      m.color.a = 1.0;
       m.ns = invalidNamespace;
       m.id = currentInvalidId;
       ++currentInvalidId;
