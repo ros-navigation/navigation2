@@ -94,9 +94,6 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request) 
   // Get all the cell locations inside the region
   costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
 
-  // TODO(orduno) Alternatively we could only check the outline
-  // costmap_->polygonOutlineCells(generateRectangleVertices(request), polygon_cells);
-
   // Check if there's at least one cell not free
   bool allFree = true;
   for (const auto & cell : polygon_cells) {
@@ -123,12 +120,13 @@ std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
   std::vector<Point> points = {
     Point{left, down}, Point{left, top}, Point{right, top}, Point{right, down}};
 
-  const double rvizToGazeobOffset = M_PI/2;
+  // TODO(orduno) X,y axis seem to be flipped between rviz and gazebo
+  const double rvizToGazeboOffset = M_PI/2;
 
   // Rotate the vertices
   for (auto & point : points) {
     point.rotateAroundPoint(
-      request.rotation + rvizToGazeobOffset,
+      request.rotation + rvizToGazeboOffset,
       Point{request.reference.x, request.reference.y});
   }
 

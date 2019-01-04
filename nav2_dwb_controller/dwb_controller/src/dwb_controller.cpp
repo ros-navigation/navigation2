@@ -152,9 +152,10 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 {
   nav2_world_model::FreeSpaceServiceRequest request;
 
-  // TODO(orduno) read from robot class
+  // TODO(orduno) get from robot class
   double robot_width = 0.22;
 
+  // Define the size region to check
   request.width = robot_width;
   request.height = robot_width * 3;
 
@@ -163,9 +164,9 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 
   request.rotation = pose2d.pose.theta;
 
-  // request.rotation_point = request.center_location;
+  // set the edge of the region on the front of the robot
   request.offset.x = 0.0;
-  request.offset.y = robot_width * 2.0;
+  request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
   return world_model_.confirmFreeSpace(request);
 }
