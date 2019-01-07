@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
 #include <sstream>
+#include <memory>
+#include <vector>
 
 #include "nav2_world_model/costmap_representation.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -128,7 +131,7 @@ bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request)
 bool CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request, std::vector<MapLocation> & map_locations) const
 {
-   // Define the vertices in world frame
+  // Define the vertices in world frame
   double top = request.reference.y + request.height / 2 - request.offset.y;
   double down = request.reference.y - request.height / 2 - request.offset.y;
   double right = request.reference.x + request.width / 2 - request.offset.x;
@@ -177,8 +180,7 @@ bool CostmapRepresentation::addToMapLocations(
 
 bool CostmapRepresentation::isFree(const MapLocation & location) const
 {
-  return (costmap_->getCost(location.x, location.y)
-    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  return costmap_->getCost(location.x, location.y) < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 }
 
 }  // namespace nav2_world_model

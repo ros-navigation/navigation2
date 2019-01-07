@@ -31,7 +31,8 @@ struct RectangularRegion
   {
   }
 
-  RectangularRegion(const geometry_msgs::msg::Point & bl, const geometry_msgs::msg::Point & tl,
+  RectangularRegion(
+    const geometry_msgs::msg::Point & bl, const geometry_msgs::msg::Point & tl,
     const geometry_msgs::msg::Point tr, const geometry_msgs::msg::Point br)
   : bottom_left_vertex_(bl),
     top_left_vertex_(tl),

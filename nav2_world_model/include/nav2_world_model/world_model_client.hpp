@@ -15,6 +15,8 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 #define NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 
+#include <memory>
+
 #include "nav2_tasks/service_client.hpp"
 #include "nav2_world_model/costmap_service_client.hpp"
 #include "nav2_world_model/clear_area_service_client.hpp"
@@ -31,7 +33,6 @@ using geometry_msgs::msg::Point;
 class WorldModelClient
 {
 public:
-
   WorldModelClient()
   {
   }

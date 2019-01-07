@@ -44,9 +44,14 @@ public:
   explicit MotionPrimitive(rclcpp::Node::SharedPtr & node)
   : node_(node),
     task_server_(nullptr),
-    taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
+    taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>()),
+    initial_pose_received_(false)
   {
     robot_ = std::make_unique<nav2_robot::Robot>(node);
+
+    initial_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "initialpose",
+      std::bind(&MotionPrimitive::onInitialPoseReceived, this, std::placeholders::_1));
 
     task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(node, false);
 
@@ -68,7 +73,7 @@ public:
 
   // Derived classes that translate the robot should override this method to check if
   // the path that will be covered by the primitive is free.
-  // The method will be called regularly during execution of the primitive
+  // The method will be called at the begining of the execution of the primitive
   // if method returns false, execution is cancelled.
   virtual bool pathIsClear() = 0;
 
@@ -104,6 +109,23 @@ public:
   }
 
 protected:
+  // The node to use for publishers, subscribers and logging
+  rclcpp::Node::SharedPtr node_;
+
+  // Proxy for getting the robot pose
+  std::shared_ptr<nav2_robot::Robot> robot_;
+
+  // Proxy to the World Model
+  nav2_world_model::WorldModelClient world_model_;
+
+  // Motion primitive's server interface
+  typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
+  std::string taskName_;
+
+  // Subscription to the initial pose publisher
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_sub_;
+  bool initial_pose_received_ = false;
+
   nav2_tasks::TaskStatus cycle(ResultMsg & result)
   {
     auto time_since_msg = std::chrono::system_clock::now();
@@ -120,13 +142,6 @@ protected:
         status = nav2_tasks::TaskStatus::CANCELED;
         break;
       }
-
-      // if (!pathIsClear()) {
-      //   RCLCPP_WARN(node_->get_logger(),
-      //     "%s doesn't have enough open space for execution", taskName_.c_str());
-      //   status = nav2_tasks::TaskStatus::FAILED;
-      //   break;
-      // }
 
       // Log a message every second
       current_time = std::chrono::system_clock::now();
@@ -173,16 +188,10 @@ protected:
     return status;
   }
 
-  rclcpp::Node::SharedPtr node_;
-
-  std::shared_ptr<nav2_robot::Robot> robot_;
-
-  // Proxy to the World Model
-  nav2_world_model::WorldModelClient world_model_;
-
-  typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
-
-  std::string taskName_;
+  void onInitialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
+  {
+    initial_pose_received_ = true;
+  }
 };
 
 }  // namespace nav2_motion_primitives
