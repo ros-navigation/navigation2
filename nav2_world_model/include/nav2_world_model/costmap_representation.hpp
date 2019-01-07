@@ -57,13 +57,15 @@ private:
 
   bool checkIfFree(const ProcessRegion::Request & request);
 
-  std::vector<nav2_costmap_2d::MapLocation> generateRectangleVertices(
-    const ProcessRegion::Request & request) const;
+  bool generateRectangleVertices(
+    const ProcessRegion::Request & request,
+    std::vector<nav2_costmap_2d::MapLocation> & map_locations) const;
 
-  void addVertex(std::vector<nav2_costmap_2d::MapLocation> & vertices,
+  bool addToMapLocations(
+    std::vector<nav2_costmap_2d::MapLocation> & vertices,
     const nav2_util::Point & vertex) const;
 
-  bool isFree(const nav2_costmap_2d::MapLocation & location);
+  bool isFree(const nav2_costmap_2d::MapLocation & location) const;
 };
 
 }  // namespace nav2_world_model

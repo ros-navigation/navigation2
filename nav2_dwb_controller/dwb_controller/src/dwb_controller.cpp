@@ -33,7 +33,8 @@ namespace nav2_dwb_controller
 DwbController::DwbController(rclcpp::executor::Executor & executor)
 : Node("DwbController"),
   tfBuffer_(get_clock()),
-  tfListener_(tfBuffer_)
+  tfListener_(tfBuffer_),
+  travel_direction_(TravelDirection::Stopped)
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
@@ -119,11 +120,17 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
+  if (cmd_vel.linear.x > 0) {
+    travel_direction_ = TravelDirection::MovingForward;
+  } else {
+    travel_direction_ = TravelDirection::MovingBackwards;
+  }
   vel_pub_->publish(cmd_vel);
 }
 
 void DwbController::publishZeroVelocity()
 {
+  travel_direction_ = TravelDirection::Stopped;
   nav_2d_msgs::msg::Twist2DStamped velocity;
   velocity.velocity.x = 0;
   velocity.velocity.y = 0;
@@ -161,10 +168,15 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 
   request.reference.x = pose2d.pose.x;
   request.reference.y = pose2d.pose.y;
-
   request.rotation = pose2d.pose.theta;
 
-  // set the edge of the region on the front of the robot
+  if (travel_direction_ == TravelDirection::MovingBackwards) {
+    request.rotation += M_PI;
+  }
+
+  // try 0 deg and 90 deg to understand axis rotation
+
+  // set the edge of the region in front of the robot
   request.offset.x = 0.0;
   request.offset.y = robot_width / 2.0 + request.height / 2.0;
 

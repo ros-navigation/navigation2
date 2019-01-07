@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
+
 #include "nav2_world_model/costmap_representation.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/angleutils.hpp"
 
 namespace nav2_world_model
 {
@@ -86,80 +89,96 @@ CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
 
 bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request)
 {
-  std::vector<MapLocation> polygon_cells;
-
-  // Get all the cell locations inside the region
-  costmap_->convexFillCells(generateRectangleVertices(request), polygon_cells);
-
-  // Check if there's at least one cell not free
-  bool allFree = true;
-  for (const auto & cell : polygon_cells) {
-    if (!isFree(cell)) {
-      allFree = false;
-    }
+  // Define the vertices of a rectangle
+  std::vector<MapLocation> rectangle;
+  if (!generateRectangleVertices(request, rectangle)) {
+    RCLCPP_ERROR(node_->get_logger(),
+      "Could not generate rectangle vertices. Checking if region is free failed");
+    return false;
   }
 
+  // Get all the cell locations inside the region
+  std::vector<MapLocation> polygon_cells;
+  costmap_->convexFillCells(rectangle, polygon_cells);
+
+  if (polygon_cells.empty()) {
+    RCLCPP_ERROR(node_->get_logger(),
+      "Could not generate rectangle cells. Checking if region is free failed");
+    return false;
+  }
+
+  // Check if there is at least one cell not free and send to visualizer for display
+  bool allFree = true;
+  for (const auto & cell : polygon_cells) {
+    double wx, wy;
+    costmap_->mapToWorld(cell.x, cell.y, wx, wy);
+
+    if (isFree(cell)) {
+      region_visualizer_.addFreeCell(wx, wy, 0.0);
+    } else {
+      allFree = false;
+      region_visualizer_.addOccupiedCell(wx, wy, 0.0);
+    }
+  }
   region_visualizer_.publish(costmap_->getResolution());
 
   return allFree;
 }
 
-std::vector<MapLocation> CostmapRepresentation::generateRectangleVertices(
-  const ProcessRegion::Request & request) const
+bool CostmapRepresentation::generateRectangleVertices(
+  const ProcessRegion::Request & request, std::vector<MapLocation> & map_locations) const
 {
-   // Define the coordinates
+   // Define the vertices in world frame
   double top = request.reference.y + request.height / 2 - request.offset.y;
   double down = request.reference.y - request.height / 2 - request.offset.y;
   double right = request.reference.x + request.width / 2 - request.offset.x;
   double left = request.reference.x - request.width / 2 - request.offset.x;
 
-  // Add the vertices
-  std::vector<Point> points = {
+  std::vector<Point> vertices = {
     Point{left, down}, Point{left, top}, Point{right, top}, Point{right, down}};
 
-  // TODO(orduno) X,y axis seem to be flipped between rviz and gazebo
-  const double rvizToGazeboOffset = M_PI/2;
+  // TODO(orduno) X,Y axis seem to be rotated or flipped between rviz and gazebo
+  const double rvizToGazeboOffset = M_PI / 2;
 
   // Rotate the vertices
-  for (auto & point : points) {
+  for (auto & point : vertices) {
     point.rotateAroundPoint(
-      request.rotation + rvizToGazeboOffset,
+      angleutils::normalize(request.rotation + rvizToGazeboOffset),
       Point{request.reference.x, request.reference.y});
   }
 
-  // Convert to map coordinates
-  std::vector<MapLocation> vertices;
-
-  for (const auto & point : points) {
-    addVertex(vertices, point);
+  // Convert the vertices to map coordinates
+  for (const auto & point : vertices) {
+    if (!addToMapLocations(map_locations, point)) {
+      RCLCPP_ERROR(node_->get_logger(), "Point not added. Could not generate rectangle vertices");
+      return false;
+    }
   }
 
-  return vertices;
+  return true;
 }
 
-void CostmapRepresentation::addVertex(
-  std::vector<MapLocation> & vertices, const Point & vertex) const
+bool CostmapRepresentation::addToMapLocations(
+  std::vector<MapLocation> & locations, const Point & point) const
 {
   unsigned int mx, my;
-  costmap_->worldToMap(vertex.x, vertex.y, mx, my);
-  vertices.push_back(MapLocation{mx, my});
-}
 
-bool CostmapRepresentation::isFree(const MapLocation & location)
-{
-  bool isFree = (costmap_->getCost(location.x, location.y)
-    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
-
-  double wx, wy;
-  costmap_->mapToWorld(location.x, location.y, wx, wy);
-
-  if (isFree) {
-    region_visualizer_.addFreeCell(wx, wy, 0.0);
-  }  else {
-    region_visualizer_.addOccupiedCell(wx, wy, 0.0);
+  if (!costmap_->worldToMap(point.x, point.y, mx, my)) {
+    std::ostringstream oss;
+    oss << point;
+    RCLCPP_ERROR(node_->get_logger(),
+      "Conversion from world to map frame failed for " + oss.str());
+    return false;
   }
 
-  return isFree;
+  locations.push_back(MapLocation{mx, my});
+  return true;
+}
+
+bool CostmapRepresentation::isFree(const MapLocation & location) const
+{
+  return (costmap_->getCost(location.x, location.y)
+    < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 }
 
 }  // namespace nav2_world_model

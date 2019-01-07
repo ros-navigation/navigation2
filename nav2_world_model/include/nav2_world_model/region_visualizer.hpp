@@ -50,7 +50,7 @@ public:
 
     std_msgs::msg::ColorRGBA color;
     color.r = 1.0;
-    color.g = 1.0;
+    color.g = 0.0;
     color.b = 0.0;
     color.a = 0.3;
     marker_.colors.push_back(color);
@@ -97,7 +97,7 @@ public:
 
     // Duration of zero indicates the object should last forever
     builtin_interfaces::msg::Duration duration;
-    duration.sec = 4;
+    duration.sec = 5;
     duration.nanosec = 0;
 
     marker_.lifetime = duration;
