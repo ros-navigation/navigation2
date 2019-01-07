@@ -244,7 +244,7 @@ void DWBPublisher::addDeleteMarkers(
 {
   visualization_msgs::msg::Marker m;
   m.action = m.DELETE;
-  m.ns =  ns;
+  m.ns = ns;
   for (unsigned i = startingId; i < prev_marker_count_; i++) {
     m.id = i;
     ma.markers.push_back(m);
