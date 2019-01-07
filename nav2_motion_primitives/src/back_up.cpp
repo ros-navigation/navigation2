@@ -38,8 +38,7 @@ BackUp::BackUp(rclcpp::Node::SharedPtr & node)
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
 
-  // default_vel_.linear.x = -0.025;
-  default_vel_.linear.x = 0.05;
+  default_vel_.linear.x = -0.05;
   default_vel_.linear.y = 0.0;
   default_vel_.angular.z = 0.0;
 
@@ -108,33 +107,38 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
 
 bool BackUp::pathIsClear()
 {
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  auto robot_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  if (!robot_->getCurrentPose(current_pose)) {
+  if (!robot_->getCurrentPose(robot_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  double remaining_distance = default_vel_.linear.x * remaining_time_.count();
-
   nav2_world_model::FreeSpaceServiceRequest request;
 
   // Define the region size
+  // Width is set to match the robot's diameter
+  // Height is set to estimate the distance that will be traveled
   double robot_width = 0.22;  // TODO(orduno) get from robot class
   request.width = robot_width;
-  request.height = remaining_distance;
+  request.height = default_vel_.linear.x * remaining_time_.count();
 
-  request.reference.x = current_pose->pose.pose.position.x;
-  request.reference.y = current_pose->pose.pose.position.y;
+  // Define the reference point as the robot pose
+  request.reference.x = robot_pose->pose.pose.position.x;
+  request.reference.y = robot_pose->pose.pose.position.y;
 
-  request.rotation = tf2::getYaw(current_pose->pose.pose.orientation);
-  // request.rotation = tf2::getYaw(current_pose->pose.pose.orientation) + M_PI;
-
-  // set the edge of the region on the front of the robot
+  // Translate to set the edge of the region in front of the robot
   request.offset.x = 0.0;
   request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
-  // request.offset.y = -1.0 * (robot_width / 2.0 + request.height / 2.0);
+  // Rotate to match the opposite orientation of the robot's heading
+  request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation) + M_PI;
+
+  RCLCPP_INFO(node_->get_logger(),
+    "Checking if path is clear: w: %f, h: %f, rx: %f, ry: %f, rot: %f, ox: %f, oy: %f",
+    request.width, request.height, request.reference.x, request.reference.y,
+    request.rotation, request.offset.x, request.offset.y
+  );
 
   return world_model_.confirmFreeSpace(request);
 }

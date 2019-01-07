@@ -137,7 +137,7 @@ bool CostmapRepresentation::generateRectangleVertices(
   std::vector<Point> vertices = {
     Point{left, down}, Point{left, top}, Point{right, top}, Point{right, down}};
 
-  // TODO(orduno) X,Y axis seem to be rotated or flipped between rviz and gazebo
+  // TODO(orduno) the RVIZ world frame is rotated 90 deg with respect to Gazebo.
   const double rvizToGazeboOffset = M_PI / 2;
 
   // Rotate the vertices

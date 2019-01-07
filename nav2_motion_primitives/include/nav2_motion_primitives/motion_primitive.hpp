@@ -90,7 +90,7 @@ public:
 
     if (!pathIsClear()) {
       RCLCPP_WARN(node_->get_logger(),
-        "%s doesn't have open space for execution", taskName_.c_str());
+        "%s doesn't have enough open space for execution", taskName_.c_str());
       return nav2_tasks::TaskStatus::FAILED;
     }
 
@@ -123,7 +123,7 @@ protected:
 
       // if (!pathIsClear()) {
       //   RCLCPP_WARN(node_->get_logger(),
-      //     "%s doesn't have open space for execution", taskName_.c_str());
+      //     "%s doesn't have enough open space for execution", taskName_.c_str());
       //   status = nav2_tasks::TaskStatus::FAILED;
       //   break;
       // }

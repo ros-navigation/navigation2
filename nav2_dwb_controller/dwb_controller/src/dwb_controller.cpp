@@ -166,19 +166,19 @@ bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   request.width = robot_width;
   request.height = robot_width * 3;
 
+  // Define the reference point
   request.reference.x = pose2d.pose.x;
   request.reference.y = pose2d.pose.y;
-  request.rotation = pose2d.pose.theta;
 
+  // Translate to set the edge of the region in front of the robot
+  request.offset.x = 0.0;
+  request.offset.y = robot_width / 2.0 + request.height / 2.0;
+
+  // Rotate to match the robot travel direction
+  request.rotation = pose2d.pose.theta;
   if (travel_direction_ == TravelDirection::MovingBackwards) {
     request.rotation += M_PI;
   }
-
-  // try 0 deg and 90 deg to understand axis rotation
-
-  // set the edge of the region in front of the robot
-  request.offset.x = 0.0;
-  request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
   return world_model_.confirmFreeSpace(request);
 }
