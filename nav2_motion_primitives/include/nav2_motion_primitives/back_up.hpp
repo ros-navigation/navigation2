@@ -39,9 +39,8 @@ protected:
   double max_linear_vel_;
   double linear_acc_lim_;
 
-  std::chrono::system_clock::time_point start_time_;
-
-  nav2_tasks::TaskStatus timedBackup();
+  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
+  double command_x_;
 
   nav2_tasks::TaskStatus controlledBackup();
 };
