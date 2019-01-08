@@ -16,7 +16,7 @@ notifications:
       - mohammad.haghighipanah@intel.com
       - michael.jeronimo@intel.com
       - carlos.a.orduno@intel.com
-      - brian.wilcox@intel.com
+      - carl.r.delsey@intel.com
       - matthew.k.hansen@intel.com
 
 before_install:
