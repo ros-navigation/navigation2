@@ -24,7 +24,7 @@ namespace nav2_util
 
 struct Point
 {
-   double x, y;
+  double x, y;
 
   Point()
   : x(0), y(0)
@@ -32,11 +32,11 @@ struct Point
   }
 
   Point(const double x, const double y)
-    : x(x), y(y)
+  : x(x), y(y)
   {
   }
 
-  bool operator ==(const Point & obj) const
+  bool operator==(const Point & obj) const
   {
     if (x == obj.x && y == obj.y) {
       return true;
@@ -47,9 +47,9 @@ struct Point
 
   friend std::ostream & operator<<(std::ostream & os, const Point & point)
   {
-    return os
-      << "x: " << point.x
-      << " y: " << point.y;
+    return os <<
+           "x: " << point.x <<
+           " y: " << point.y;
   }
 
   void rotateAroundPoint(const double theta, const Point & reference)
@@ -67,7 +67,6 @@ struct Point
     x = x_tr + reference.x;
     y = y_tr + reference.y;
   }
-
 };
 
 }  // namespace nav2_util
