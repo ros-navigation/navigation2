@@ -1,6 +1,0 @@
-[X] Implement service side for checking if an area is clear
-[ ] Use world_model_client in motion primitves to check for freespace before moving fwd
-[ ] Publish region for visualizing in Rviz
-[ ] Implement rotation of region
-[ ] Change in world_Model std::shared_ptr<ProcessRegion::Response> response); to const ref
-[ ] Planner tester to use world model class
