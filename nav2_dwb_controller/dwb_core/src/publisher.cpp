@@ -35,11 +35,16 @@
 #include "dwb_core/publisher.hpp"
 #include <vector>
 #include <memory>
+#include <string>
+#include <algorithm>
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_2d_utils/conversions.hpp"
 //#include <sensor_msgs/point_cloud_conversion.hpp> // NOLINT cpplint doesn't like commented out header file
+
+using std::max;
+using std::string;
 
 namespace dwb_core
 {
@@ -105,21 +110,32 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
   m.scale.x = 0.002;
   m.color.a = 1.0;
 
-  double best_cost = results.twists[results.best_index].total,
-    worst_cost = results.twists[results.worst_index].total;
+  double best_cost = results.twists[results.best_index].total;
+  double worst_cost = results.twists[results.worst_index].total;
 
+  unsigned currentValidId = 0;
+  unsigned currentInvalidId = 0;
+  string validNamespace("ValidTrajectories");
+  string invalidNamespace("InvalidTrajectories");
   for (unsigned int i = 0; i < results.twists.size(); i++) {
     const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
+    double displayLevel = (twist.total - best_cost) / (worst_cost - best_cost);
     if (twist.total >= 0) {
-      m.color.r = 1 - (twist.total - best_cost) / (worst_cost - best_cost);
-      m.color.g = 1 - (twist.total - best_cost) / (worst_cost - best_cost);
-      m.color.b = 1;
-      m.ns = "ValidTrajectories";
+      m.color.r = 0;
+      m.color.g = 0;
+      m.color.b = 1.0;
+      m.color.a = 1.0 - displayLevel;
+      m.ns = validNamespace;
+      m.id = currentValidId;
+      ++currentValidId;
     } else {
       m.color.r = 0;
       m.color.g = 0;
       m.color.b = 0;
-      m.ns = "InvalidTrajectories";
+      m.color.a = 1.0;
+      m.ns = invalidNamespace;
+      m.id = currentInvalidId;
+      ++currentInvalidId;
     }
     m.points.clear();
     for (unsigned int j = 0; j < twist.traj.poses.size(); ++j) {
@@ -129,15 +145,10 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
       m.points.push_back(pt);
     }
     ma.markers.push_back(m);
-    m.id += 1;
   }
-  int temp = ma.markers.size();
-  for (int i = temp; i < prev_marker_count_; i++) {
-    m.action = m.DELETE;
-    m.id = i;
-    ma.markers.push_back(m);
-  }
-  prev_marker_count_ = temp;
+  addDeleteMarkers(ma, currentValidId, validNamespace);
+  addDeleteMarkers(ma, currentInvalidId, invalidNamespace);
+  prev_marker_count_ = max(currentValidId, currentInvalidId);
   marker_pub_->publish(ma);
 }
 
@@ -223,6 +234,21 @@ void DWBPublisher::publishGenericPlan(
   if (!flag) {return;}
   nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
   pub.publish(path);
+}
+
+void DWBPublisher::addDeleteMarkers(
+  visualization_msgs::msg::MarkerArray & ma,
+  unsigned startingId,
+  string & ns
+)
+{
+  visualization_msgs::msg::Marker m;
+  m.action = m.DELETE;
+  m.ns = ns;
+  for (unsigned i = startingId; i < prev_marker_count_; i++) {
+    m.id = i;
+    ma.markers.push_back(m);
+  }
 }
 
 }  // namespace dwb_core
