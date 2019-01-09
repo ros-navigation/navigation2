@@ -1,6 +1,6 @@
 # BT Navigator
 
-The BT Navigator module implements the [NavigateToPose task interface](../nav2_tasks/include/nav2_tasks/navigate_to_pose_task.hpp). It is a Behavior Tree-based implementation of navigation that is intended to allow for flexibility in the navigation task and provide a way to easily specify complex robot behaviors, including recovery.
+The BT Navigator (Behavior Tree Navigator) module implements the [NavigateToPose task interface](../nav2_tasks/include/nav2_tasks/navigate_to_pose_task.hpp). It is a [Behavior Tree](https://github.com/BehaviorTree/BehaviorTree.CPP/blob/master/docs/BT_basics.md)-based implementation of navigation that is intended to allow for flexibility in the navigation task and provide a way to easily specify complex robot behaviors, including [recovery](#recovery).
 
 ## Overview
 
@@ -18,7 +18,7 @@ BtNavigator:
 
 Using the XML filename as a parameter makes it easy to change or extend the logic used for navigation. Once can simply update the XML description for the BT and the BtNavigator task server will use the new description.
 
-## Example Behavior Trees
+## Navigation Behavior Trees
 
 The BT Navigator package has a few sample XML-based descriptions of BTs. 
 
@@ -72,38 +72,27 @@ The graphical version of this Behavior Tree:
 
 In this case, the BT first calls **ComputePathToPose** to generate an initial path. It then runs **FollowPath** and a rate-controlled **ComputePathToPose** in parallel. The **RateController** node specifies how frequently the **ComputePathToPose** task should be invoked. Each time a new path is computed, it is sent to the local planner/controller using **UpdatePath**.
 
-### Recovery 
+## Recovery Behavior Trees
+
+With [Behavior Trees](https://github.com/BehaviorTree/BehaviorTree.CPP/blob/master/docs/BT_basics.md), a recovery pattern can be implemented using fallback `?` and recovery `R` nodes. For example, branch "A" of the BT shown below contains a retry, fallback and leaf node **SomeTask** in sequence, if , if it returns *Fail*, the fallback node will tick **SomeSequence** which will possibly executing a sequence of corrective actions. If **SomeSequence** also fails, the retry node will tick again the "A" branch. 
+
+<img src="./doc/recovery1.png" title="" width="80%">
+
+now
+
+<img src="./doc/recovery2.png" title="" width="80%">
 
 There are versions of the above BTs, [simple_sequential_w_recovery.xml](behavior_trees/simple_sequential_w_recovery.xml) and [parallel_w_recovery.xml](behavior_trees/parallel_w_recovery.xml) that add recovery sub-trees to the navigation task. 
 
 For example, in the simple_sequential version, there is node, **IsStuck** that checks whether the robot is no longer making progress toward its goal pose. If this condition is detected, a few maneuvers - **Stop**, **BackUp**, and **Spin** - are executed to attempt to free up the robot. 
 
-```XML
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <Sequence name="root">
-      <FallbackStar name="check_motion">
-        <Inverter name="is_not_stuck">
-          <IsStuck/>
-        </Inverter>
-        <SequenceStar name="stuck_recovery">
-          <Stop/>
-          <BackUp/>
-          <Spin/>
-        </SequenceStar>
-      </FallbackStar>
-      <SequenceStar name="navigate">
-        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-        <FollowPath path="${path}"/>
-      </SequenceStar>
-    </Sequence>
-  </BehaviorTree>
-</root>
-```
-### AutoLocalization
+<img src="./doc/recovery3.png" title="" width="80%">
+<img src="./doc/recovery4.png" title="" width="80%">
+
+### AutoLocalization Behavior Tree
 **Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
 
-[auto_localization.xml](behavior_trees/auto_localization.xml) Allows differential type robot to automatically localize its initial position when Nav Goal command is given to the robot without the initial pose. 
+[auto_localization.xml](behavior_trees/auto_localization.xml) Allows differential type robot to automatically localize its initial position when Nav Goal command is given to the robot without the initial pose.
 
 
 Below is the `xml` representation of the tree.
