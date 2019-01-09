@@ -99,6 +99,7 @@ protected:
 
     auto status = nav2_tasks::TaskStatus::FAILED;
 
+    rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
       if (task_server_->cancelRequested()) {
         RCLCPP_INFO(node_->get_logger(), "%s cancelled", taskName_.c_str());
@@ -131,6 +132,7 @@ protected:
           " task cancellation, it will be checked by the base class.", taskName_.c_str());
         break;
       }
+      loop_rate.sleep();
     }
 
     auto end_time = std::chrono::system_clock::now();

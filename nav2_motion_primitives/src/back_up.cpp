@@ -31,8 +31,6 @@ BackUp::BackUp(rclcpp::Node::SharedPtr & node)
   max_linear_vel_ = 0.0;
   min_linear_vel_ = 0.0;
   linear_acc_lim_ = 0.0;
-
-  start_time_ = std::chrono::system_clock::now();
 }
 
 BackUp::~BackUp()
@@ -45,19 +43,18 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-
-  RCLCPP_INFO(node_->get_logger(), "Currently only supported backing up by a fixed distance");
-
-  start_time_ = std::chrono::system_clock::now();
+  command_x_ = command->x;
+  if (!robot_->getOdometry(initial_pose_)) {
+    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
+    return nav2_tasks::TaskStatus::FAILED;
+  }
 
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
 nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 {
-  // Currently only an open-loop controller is implemented
-  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
-  TaskStatus status = timedBackup();
+  TaskStatus status = controlledBackup();
 
   // For now sending an empty task result
   nav2_tasks::BackUpResult empty_result;
@@ -66,46 +63,34 @@ nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
   return status;
 }
 
-nav2_tasks::TaskStatus BackUp::timedBackup()
-{
-  // Output control command
-  geometry_msgs::msg::Twist cmd_vel;
-
-  // TODO(orduno): #423 assuming robot was moving fwd when it got stuck
-  //               fixed speed
-  cmd_vel.linear.x = -0.025;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-  robot_->sendVelocity(cmd_vel);
-
-// TODO(orduno): #423 fixed time
-  auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 3s) {
-    // Stop the robot
-    cmd_vel.linear.x = 0.0;
-    robot_->sendVelocity(cmd_vel);
-
-    return TaskStatus::SUCCEEDED;
-  }
-
-  return TaskStatus::RUNNING;
-}
 
 nav2_tasks::TaskStatus BackUp::controlledBackup()
 {
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
 
-  if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+  if (!robot_->getOdometry(current_odom_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
     return TaskStatus::FAILED;
   }
 
-  // TODO(orduno): #423 Implement controller for moving the robot by a given distance
-  //               starting from the current pose
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = 0.0;
 
-  RCLCPP_ERROR(node_->get_logger(), "Back up controller not implement yet.");
+  double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
+  double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
+  double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
-  return TaskStatus::FAILED;
+  if (distance >= abs(command_x_)) {
+    cmd_vel.linear.x = 0;
+    robot_->sendVelocity(cmd_vel);
+    return TaskStatus::SUCCEEDED;
+  }
+  // TODO(mhpanah): cmd_vel value should be passed as a parameter
+  command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+  robot_->sendVelocity(cmd_vel);
+
+  return TaskStatus::RUNNING;
 }
 
 }  // namespace nav2_motion_primitives
