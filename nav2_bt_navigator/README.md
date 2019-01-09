@@ -39,7 +39,7 @@ The BT Navigator package has a few sample XML-based descriptions of BTs.
 
 The graphical version of this Behavior Tree:
 
-<img src="./doc/simple.png" title="Simple Navigation Behavior Tree">
+<img src="./doc/simple.png" title="Simple Navigation Behavior Tree" align="middle">
 
 **ComputePathToPose** gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where **FollowPath** picks it up.
 
@@ -68,7 +68,7 @@ An alternative approach is to run planning and control in parallel. [Parallel.xm
 
 The graphical version of this Behavior Tree:
 
-<img src="./doc/parallel.png" title="Parallel version of the Navigation Behavior Tree">
+<img src="./doc/parallel.png" title="Parallel version of the Navigation Behavior Tree" align="middle">
 
 In this case, the BT first calls **ComputePathToPose** to generate an initial path. It then runs **FollowPath** and a rate-controlled **ComputePathToPose** in parallel. The **RateController** node specifies how frequently the **ComputePathToPose** task should be invoked. Each time a new path is computed, it is sent to the local planner/controller using **UpdatePath**.
 
@@ -76,26 +76,26 @@ In this case, the BT first calls **ComputePathToPose** to generate an initial pa
 
 With Behavior Trees, a recovery pattern can be implemented using [fallback](https://github.com/BehaviorTree/BehaviorTree.CPP/blob/master/docs/FallbackNode.md) and [recovery](https://github.com/BehaviorTree/BehaviorTree.CPP/blob/master/docs/DecoratorNode.md) nodes. For example, on the diagram below, branch "A" contains a retry node `R` in series with a fallback node `?*`. If the leaf node **SomeTask** returns *Fail*, the fallback node will tick **SomeSequence** which could execute an alternative approach to accomplish the task. If **SomeSequence** also returns *Fail*, the retry node will tick again the "A" branch before returning *Fail* to the parent node. This pattern can be used for any number of tasks, as shown for branches "B" and "C".
 
-<img src="./doc/recovery1.png" title="" width="90%">
+<img src="./doc/recovery1.png" title="" width="95%" align="middle">
 <br/>
 
 The pattern described above can be extended to check for preconditions before attempting **SomeTask**. For example, the BT below will initially tick the node leaf **HasIssues?**. If it returns *Fail*, meaning it failed to detect the issue, the [inverter](https://github.com/BehaviorTree/BehaviorTree.CPP/blob/master/docs/DecoratorNode.md) `!` will report *Success* and **SomeTask** will be ticked (after ticking its parent nodes). However, if it returns *Success*, meaning it did detect an issue, a sequence of nodes **DoA**, **DoB**, **DoC** will be ticked, which possibly execute a sequence of corrective actions. Notice that if any of these report *Fail* it will propagate to the root node possibly halting execution.
 
 <br/>
-<img src="./doc/recovery2.png" title="" width="90%">
+<img src="./doc/recovery2.png" title="" width="95%" align="middle">
 <br/>
 
 There are versions of the navigation BTs, [simple_sequential_w_recovery.xml](behavior_trees/simple_sequential_w_recovery.xml) and [parallel_w_recovery.xml](behavior_trees/parallel_w_recovery.xml) that add recovery sub-trees to the navigation task.
 
 For example, in the `simple_sequential` version, there is node, **IsStuck** that checks whether the robot is no longer making progress toward its goal pose. If this condition is detected, a few maneuvers - **Stop**, **BackUp**, and **Spin** - are executed to attempt to free up the robot.
 
-<img src="./doc/recovery3.png" title="" width="80%">
+<img src="./doc/recovery3.png" title="" width="85%" align="middle">
 <br/>
 
 And in the `parallel` version, only the navigation branch is modified while the recovery branch remains the same. Notice how this allows for independent development.
 
 <br/>
-<img src="./doc/recovery4.png" title="" width="80%">
+<img src="./doc/recovery4.png" title="" width="85%" align="middle">
 <br/>
 
 ### AutoLocalization Behavior Tree
@@ -134,7 +134,7 @@ Below is the `xml` representation of the tree.
 ```
 
 Image below depicts the graphical version of this Behavior Tree:
-<img src="./doc/auto_localization.png" title="AutoLocalization branch of the Navigation Behavior Tree" width="60%">
+<img src="./doc/auto_localization.png" title="AutoLocalization branch of the Navigation Behavior Tree" width="60%" align="middle">
 
 AutoLocalization branch is composed of the following condition and action nodes:
 
@@ -152,7 +152,7 @@ To run AutoLocalization branch, the `bt_navigator_params.yaml` file needs to be 
 
 Image below depicts the graphical version of the complete Navigation Task with AutoLocalization, Recovery, Parallel Planning and Control Behavior Tree:
 
-<img src="./doc/AutoLocalization_w_recovery_parallel.png" title="Navigation Behavior Tree with AutoLocalization, Recovery, and Planning & Control" width="70%">
+<img src="./doc/AutoLocalization_w_recovery_parallel.png" title="Navigation Behavior Tree with AutoLocalization, Recovery, and Planning & Control" width="70%" align="middle">
 
 
 
