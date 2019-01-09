@@ -25,7 +25,7 @@ using nav2_tasks::TaskStatus;
 using dwb_core::DWBLocalPlanner;
 using dwb_core::CostmapROSPtr;
 
-#define NO_OP_DELETER [](auto){}
+#define NO_OP_DELETER [] (auto) {}
 
 namespace nav2_dwb_controller
 {
@@ -59,10 +59,13 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
     auto nh = shared_from_this();
+
     planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
-    while (true) {
+
+    rclcpp::Rate loop_rate(10);
+    while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
         RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
@@ -74,22 +77,39 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
-        RCLCPP_INFO(get_logger(), "Publishing velocity");
+        RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+
+        // Check if this task has been canceled
         if (task_server_->cancelRequested()) {
           RCLCPP_INFO(this->get_logger(), "execute: task has been canceled");
           task_server_->setCanceled();
+          publishZeroVelocity();
           return TaskStatus::CANCELED;
         }
+
+        // Check if there is an update to the path to follow
+        if (task_server_->updateRequested()) {
+          // Get the new, updated path
+          auto path_cmd = std::make_shared<nav2_tasks::FollowPathCommand>();
+          task_server_->getCommandUpdate(path_cmd);
+          task_server_->setUpdated();
+
+          // and pass it to the local planner
+          auto path = nav_2d_utils::pathToPath2D(*path_cmd);
+          planner_.setPlan(path);
+        }
       }
-      std::this_thread::sleep_for(100ms);
+      loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
+    publishZeroVelocity();
     return TaskStatus::FAILED;
   }
 
   nav2_tasks::FollowPathResult result;
   task_server_->setResult(result);
+  publishZeroVelocity();
 
   return TaskStatus::SUCCEEDED;
 }

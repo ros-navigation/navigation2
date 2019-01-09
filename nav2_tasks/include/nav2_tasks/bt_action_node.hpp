@@ -22,8 +22,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/task_client.hpp"
-#include "behavior_tree_core/action_node.h"
-#include "behavior_tree_core/bt_factory.h"
+#include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 namespace nav2_tasks
 {
@@ -52,7 +52,7 @@ public:
   // as getting values from the shared blackboard. A BT node can't get values
   // from the blackboard in the constructor since the BT library doesn't set
   // the blackboard until *after* the tree is build
-  virtual void init() {}
+  virtual void onInit() {}
 
   BT::NodeStatus tick() override
   {
@@ -69,7 +69,7 @@ public:
       task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
 
       // Give the derived class a chance to do some initialization
-      init();
+      onInit();
       initialized_ = true;
     }
 

@@ -14,9 +14,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(nav2_robot REQUIRED)
-find_package(behavior_tree_core REQUIRED)
 
 include_directories(
   include
@@ -39,9 +41,11 @@ set(dependencies
   rclcpp
   std_msgs
   nav2_tasks
+  nav_msgs
   nav2_msgs
+  behaviortree_cpp
+  std_srvs
   nav2_robot
-  behavior_tree_core
 )
 
 ament_target_dependencies(${executable_name}

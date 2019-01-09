@@ -1,10 +1,12 @@
 # Mission Executor
 
-The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities of multiple robots as well as other, non-robot tasks. As such, it would typically reside on a central orchestration computer. The Mission Executor module is implemented using [Behavior Trees](https://en.wikipedia.org/wiki/Behavior_tree). As detailed in [Michele Colledanchils's doctoral thesis](https://www.diva-portal.org/smash/get/diva2:1078940/FULLTEXT01.pdf), Behavior Trees are a Control Architecture (CA) initially used in the video game industry to control non-player characters and now applied to the control of autonomous robots. 
+The Mission Executor module is a task server that coordinates other tasks. It can be used to direct the activities of multiple robots as well as other, non-navigation and non-robot tasks. This module would typically reside on a central orchestration computer and direct the operation of remote robots. 
 
 ## Overview
- 
-The Mission Executor task server receives a **MissionPlan** and returns whether the plan was successfully executed, failed, or was canceled.
+
+The Mission Executor module is implemented using [Behavior Trees](https://en.wikipedia.org/wiki/Behavior_tree). As detailed in [Michele Colledanchils's doctoral thesis](https://www.diva-portal.org/smash/get/diva2:1078940/FULLTEXT01.pdf), Behavior Trees are a Control Architecture (CA) initially used in the video game industry to control non-player characters and now applied to the control of autonomous robots. 
+
+The Mission Executor task server receives a **MissionPlan** and returns whether the plan was successfully executed, failed, or was canceled. The ExecuteMissionTask is defined as follows:
 
 ```C++
 namespace nav2_tasks {
@@ -39,42 +41,58 @@ The mission plan itself is an XML string that defines a Behavior Tree. For examp
     </SequenceStar>
   </BehaviorTree>
 </root>
-
 ```
 
-The mission plan module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) to dynamically create a Behavior Tree from the input XML description. It then generates and executes the tree and returns the status code (SUCESSFUL, FAILED, CANCELED) to the task client.
+## Invoking the MissionExecutor
 
-## Incorporating Recovery Behaviors
-
-The Behavior Tree can incorporate recovery actions by responding to conditions in the tree with other actions; a failure of one action could result in the execution of a recovery action, for example. 
-
-## Creating Behavior Tree Nodes
-
-To create a node that can be included in a Behavior Tree, there must first be an task server/client defined for it. For example, the NavigateToPose task is defined as follows:
+The MissionExecutor is an implementation of the ExecuteMissionTaskServer interface, so the corresponding ExecuteMissionTaskClient is used to communicate with the task server, like this:
 
 ```C++
-namespace nav2_tasks
+// Demonstrate using a task client to invoke the MissionExecutor task
+void invokeMission(rclcpp::Node::SharedPtr node, std::string mission_plan)
 {
+  // Create a task client for this particular kind of task
+  auto task_client_ = std::make_unique<nav2_tasks::ExecuteMissionTaskClient>(node);
 
-using NavigateToPoseCommand = geometry_msgs::msg::PoseStamped;
-using NavigateToPoseResult = std_msgs::msg::Empty;
+  // Create the input and output 
+  auto cmd = std::make_shared<nav2_tasks::ExecuteMissionCommand>();
+  auto result = std::make_shared<nav2_tasks::ExecuteMissionResult>();
 
-using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPoseResult>;
-using NavigateToPoseTaskServer = TaskServer<NavigateToPoseCommand, NavigateToPoseResult>;
+  // Set the mission_plan field to the XML input
+  cmd->mission_plan = mission_plan;
 
-template<>
-inline const char * getTaskName<NavigateToPoseCommand, NavigateToPoseResult>()
-{
-  return "NavigateToPoseTask";
+  // Send this message to the task server
+  task_client_->sendCommand(cmd);
+
+  // Loop until the tasks is complete
+  for (;; ) {
+    // Get the status of the remote task server
+    TaskStatus status = task_client_->waitForResult(result, 100ms);
+
+    switch (status) {
+      case TaskStatus::SUCCEEDED:
+        printf("Task succeeded\n");
+        return;
+
+      case TaskStatus::FAILED:
+        printf("Task failed\n");
+        return;
+
+      case TaskStatus::CANCELED:
+        printf("Task cancelled\n");
+        return;
+
+      case TaskStatus::RUNNING:
+        // Continue waiting for task to complete
+        break;
+
+      default:
+        throw std::logic_error("Invalid status value");
+    }
+  }
 }
-
-}  // namespace nav2_tasks
 ```
-
-Then, one can use the BtAction template to create an action node that can be included in a Behavior Tree. [ TODO: Once the Behavior Tree code is integrated describe the process of creating a Behavior Tree action ]
-
-The Behavior Tree node automatically handles communication with the corresponding task server via a contained task client.
 
 ## Open Issues
 
-* **Schema definition and XML document validation** - Currently, there is no dynamic validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator.
+* **Schema definition and XML document validation** - Currently, there is no dynamic validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator. Instead, we can create a schema for the Mission Planning-level XML and use build-time validation of the XML input to ensure that it is well-formed and valid.

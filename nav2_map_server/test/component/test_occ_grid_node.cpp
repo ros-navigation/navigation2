@@ -16,7 +16,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <memory>
 
-#include "nav2_map_server/map_representations/occ_grid_server.hpp"
+#include "nav2_map_server/occ_grid_loader.hpp"
 #include "test_constants/test_constants.h"
 
 // TODO(bpwilcox): test publisher
@@ -62,7 +62,7 @@ protected:
 TEST_F(TestNode, ResultReturned)
 {
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  auto client = node_->create_client<nav_msgs::srv::GetMap>("occ_grid");
+  auto client = node_->create_client<nav_msgs::srv::GetMap>("map");
   ASSERT_TRUE(client->wait_for_service());
   auto resp = send_request<nav_msgs::srv::GetMap>(node_, client, req);
   ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);

@@ -14,12 +14,13 @@
 
 #include <string>
 #include <memory>
-#include <sstream>
+#include <fstream>
+#include <streambuf>
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
-#include "Blackboard/blackboard_local.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 
 using nav2_tasks::TaskStatus;
 
@@ -27,11 +28,9 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: Node("NavigateToPoseNode")
+: Node("BtNavigator")
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-
-  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
 
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
   task_server_->setExecuteCallback(
@@ -41,50 +40,45 @@ BtNavigator::BtNavigator()
 TaskStatus
 BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {
-  RCLCPP_INFO(get_logger(), "Start navigating to goal (%.2f, %.2f).",
+  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
-
-  // Get the current pose from the robot
-  auto current = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-
-  if (!robot_->getCurrentPose(current)) {
-    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-    return TaskStatus::FAILED;
-  }
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
-  // Put together the PathEndPoints message for the ComputePathToPose
-  auto endpoints = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-  endpoints->start = current->pose.pose;
-  endpoints->goal = command->pose;
-  endpoints->tolerance = 2.0;  // TODO(mjeronimo): this will come in the command message
-
-  // The path returned from ComputePath and sent to FollowPath
+  // Create the path to be returned from ComputePath and sent to the FollowPath task
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   // Set the shared data (commands/results)
-  blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
+  blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
+  blackboard->set<bool>("initial_pose_received", task_server_->isInitialPoseReceieved());  // NOLINT
 
-  std::string xml_text =
-    R"(
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <SequenceStar name="root">
-      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-      <FollowPath path="${path}"/>
-    </SequenceStar>
-  </BehaviorTree>
-</root>)";
+  // Get the filename to use from the parameter
+  get_parameter_or<std::string>("bt_xml_filename", bt_xml_filename_,
+    std::string("bt_navigator.xml"));
 
-  RCLCPP_INFO(get_logger(), "Behavior tree XML: %s", xml_text.c_str());
+  // Read the input BT XML file into a string
+  std::ifstream xml_file(bt_xml_filename_);
+
+  if (!xml_file.good()) {
+    RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename_.c_str());
+    return TaskStatus::FAILED;
+  }
+
+  std::string xml_string((std::istreambuf_iterator<char>(xml_file)),
+    std::istreambuf_iterator<char>());
+
+  RCLCPP_INFO(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename_.c_str());
+  RCLCPP_INFO(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
 
   // Create and run the behavior tree
   NavigateToPoseBehaviorTree bt(shared_from_this());
-  TaskStatus result = bt.run(blackboard, xml_text,
+
+  TaskStatus result = bt.run(blackboard, xml_string,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
+
+  task_server_->setInitialPose(blackboard->get<bool>("initial_pose_received"));
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>nav2_amcl</name>
-  <version>0.1.0</version>
+  <version>0.1.5</version>
   <description>
     <p>
       amcl is a probabilistic localization system for a robot moving in
@@ -15,28 +15,35 @@
       'amcl' Player driver.
     </p>
   </description>
-  <url>http://wiki.ros.org/amcl</url>
-  <author>Brian P. Gerkey</author>
-  <author>contradict@gmail.com</author>
+  <!-- <author>Brian P. Gerkey</author>
+  <author>contradict@gmail.com</author> -->
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
   <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
   <license>LGPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>rclcpp</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_srvs</build_depend>
-  <build_depend>tf2_ros</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>nav2_util</build_depend>
-  <build_depend>nav2_tasks</build_depend>
-  <build_depend>nav2_dynamic_params</build_depend>
+  <depend>rclcpp</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>message_filters</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_tasks</depend>
+  <depend>nav2_dynamic_params</depend>
+  <depend>launch_ros</depend>
+  <depend>launch_testing</depend>
+
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_testing</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -38,14 +38,17 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
-#include <nav2_costmap_2d/layered_costmap.hpp>
-#include <nav2_costmap_2d/layer.hpp>
-#include <nav2_costmap_2d/costmap_2d_publisher.hpp>
-#include <nav2_costmap_2d/footprint.hpp>
-#include <geometry_msgs/msg/polygon.h>
-#include <geometry_msgs/msg/polygon_stamped.h>
-#include <pluginlib/class_loader.hpp>
-#include <tf2/transform_datatypes.h>
+#include <string>
+#include <vector>
+
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
+#include "geometry_msgs/msg/polygon.h"
+#include "geometry_msgs/msg/polygon_stamped.h"
+#include "pluginlib/class_loader.hpp"
+#include "tf2/transform_datatypes.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -228,6 +231,7 @@ protected:
   std::string global_frame_;  ///< @brief The global frame for the costmap
   std::string robot_base_frame_;  ///< @brief The frame_id of the robot base
   double transform_tolerance_;  ///< timeout before transform errors
+  float footprint_padding_;
 
 private:
   /** @brief Set the footprint from the new_config object.
@@ -248,8 +252,8 @@ private:
   pluginlib::ClassLoader<Layer> plugin_loader_;
   Costmap2DPublisher * publisher_;
 
-  nav2_dynamic_params::DynamicParamsValidator * param_validator_;
-  nav2_dynamic_params::DynamicParamsClient * dynamic_param_client_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsValidator> param_validator_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 
   std::recursive_mutex configuration_mutex_;
 
@@ -261,7 +265,6 @@ private:
 
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
-  float footprint_padding_;
 };
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d

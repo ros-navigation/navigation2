@@ -31,8 +31,11 @@ public:
   explicit Robot(rclcpp::Node::SharedPtr & node);
   Robot() = delete;
 
-  bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
-  bool getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity);
+  bool getGlobalLocalizerPose(
+    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
+  bool getCurrentPose(
+    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
+  bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
@@ -52,8 +55,8 @@ protected:
   // The current pose as received from the Pose subscription
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
 
-  // The current velocity as received from the Odometry subscription
-  nav_msgs::msg::Odometry::SharedPtr current_velocity_;
+  // The odometry as received from the Odometry subscription
+  nav_msgs::msg::Odometry::SharedPtr current_odom_;
 
   // Whether the subscriptions have been received
   bool initial_pose_received_;

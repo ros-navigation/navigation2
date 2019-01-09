@@ -16,7 +16,13 @@ find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(behavior_tree_core REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 include_directories(
   include
@@ -32,7 +38,13 @@ set(dependencies
   rclcpp
   geometry_msgs
   nav2_msgs
-  behavior_tree_core
+  behaviortree_cpp
+  tf2
+  tf2_geometry_msgs
+  rosidl_default_generators
+  std_msgs
+  std_srvs
+  nav2_robot
 )
 
 ament_target_dependencies(${library_name}
@@ -54,11 +66,13 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
-  ament_add_gtest(test_tasks test/test_tasks.cpp)
-  ament_target_dependencies(test_tasks ${dependencies})
+  # ament_add_gtest(test_tasks test/test_tasks.cpp)
+  # ament_target_dependencies(test_tasks ${dependencies})
 endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
+#  This package publishes messages from tf2_geometry_msgs
+ament_export_dependencies(tf2_geometry_msgs)
 
 ament_package()

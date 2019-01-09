@@ -17,6 +17,8 @@ find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav2_dynamic_params REQUIRED)
 
 set(dependencies
   angles
@@ -24,7 +26,10 @@ set(dependencies
   nav_2d_msgs
   nav_2d_utils
   pluginlib
-  rclcpp)
+  rclcpp
+  nav2_util
+  nav2_dynamic_params
+)
 
 include_directories(
   include
@@ -51,17 +56,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
-  ament_add_gtest(vtest test/velocity_iterator_test.cpp)
-
-  #find_package(rostest REQUIRED)
-  add_executable(goal_checker test/goal_checker.cpp)
-  target_link_libraries(goal_checker simple_goal_checker stopped_goal_checker ${GTEST_LIBRARIES})
-  #add_rostest(test/goal_checker.launch DEPENDENCIES goal_checker)
-
-  add_executable(twist_gen_test test/twist_gen.cpp)
-  target_link_libraries(twist_gen_test standard_traj_generator ${GTEST_LIBRARIES})
-  #add_rostest(test/twist_gen.launch DEPENDENCIES twist_gen_test)
-
+  add_subdirectory(test)
 endif()
 
 install(TARGETS simple_goal_checker stopped_goal_checker standard_traj_generator

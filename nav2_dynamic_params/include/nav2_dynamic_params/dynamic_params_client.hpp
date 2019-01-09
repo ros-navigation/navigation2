@@ -51,13 +51,12 @@ public:
       RCLCPP_INFO(node_->get_logger(), "Subscribing to topic: %s", topic.c_str());
 
       // Internal callback for parameter events.
-      // Namespace is passed through to resolve duplicate parameters
       std::function<void(const rcl_interfaces::msg::ParameterEvent::SharedPtr)> callback =
-        [this, node_namespace](
+        [this](
         const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
         {
           last_event_ = event;
-          if (is_event_in_map(event, node_namespace)) {
+          if (is_event_in_map(event)) {
             user_callback_();
           }
         };
@@ -65,8 +64,6 @@ public:
       auto event_sub = node_->create_subscription<rcl_interfaces::msg::ParameterEvent>(
         topic, callback);
       event_subscriptions_.push_back(event_sub);
-      // TODO(bpwilcox): Fix hanging problem for list parameters service call
-      //get_param_list(node_namespace);
     }
   }
 
@@ -90,28 +87,36 @@ public:
     if (*full_path.begin() != '/') {
       full_path = '/' + full_path;
     }
-    auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
+
+    init_as_not_set(full_path, param_names);
     std::vector<rclcpp::Parameter> params;
-    if (client->wait_for_service(100ms)) {
+
+    if (full_path == join_path(node_->get_namespace(), node_->get_name())) {
       if (param_names.size() < 1) {
-        auto param_list = client->list_parameters({}, 1);
-        params = client->get_parameters(param_list.names);
+        auto param_list = node_->list_parameters({}, 1);
+        params = node_->get_parameters(param_list.names);
       } else {
-        params = client->get_parameters(param_names);
+        params = node_->get_parameters(param_names);
       }
     } else {
-      RCLCPP_WARN(node_->get_logger(),
-        "Node '%s' not available for service, inserting params as NOT SET", full_path.c_str());
-      // Set param_names as PARAMETER_NOT_SET
-      for (const auto & name : param_names) {
-        auto param = rclcpp::Parameter(name, rclcpp::ParameterValue());
-        params.push_back(param);
+      auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
+      if (client->wait_for_service(100ms)) {
+        if (param_names.size() < 1) {
+          auto param_list = client->list_parameters({}, 1);
+          params = client->get_parameters(param_list.names);
+        } else {
+          params = client->get_parameters(param_names);
+        }
+      } else {
+        RCLCPP_WARN(node_->get_logger(),
+          "Node '%s' not available for service, parameters will be NOT SET", full_path.c_str());
       }
     }
+
     std::string node_namespace = split_path(full_path).first;
     add_namespace_event_subscriber(node_namespace);
     for (const auto & param : params) {
-      init_param_in_map(param, node_namespace);
+      init_param_in_map(param, full_path);
     }
   }
 
@@ -146,7 +151,6 @@ public:
     add_parameters_on_node(full_path);
   }
 
-
   // Get list of cached dynamic param names
   std::vector<std::string> get_param_names()
   {
@@ -163,12 +167,12 @@ public:
     return dynamic_param_map_;
   }
 
-  // retreive parameter from map
+  // retreive parameter from map given full path to node
   template<class T>
   bool get_event_param(
-    const std::string & name_space, const std::string & param_name, T & new_value)
+    const std::string & full_path, const std::string & param_name, T & new_value)
   {
-    auto lookup_name = join_path(name_space, param_name);
+    auto lookup_name = join_path(full_path, param_name);
     if (get_param_from_map<T>(lookup_name, new_value)) {
       return true;
     } else {
@@ -178,20 +182,30 @@ public:
     }
   }
 
-  // Variant of get_event_param for full path to parameter
+  // Variant of get_event_param for specifying namespace and node name
+  template<class T>
+  bool get_event_param(
+    const std::string & name_space, const std::string & node_name,
+    const std::string & param_name, T & new_value)
+  {
+    return get_event_param<T>(join_path(name_space, node_name), param_name, new_value);
+  }
+
+  // Variant of get_event_param for member node parameter
   template<class T>
   bool get_event_param(const std::string & param_name, T & new_value)
   {
-    return get_event_param<T>("", param_name, new_value);
+    return get_event_param<T>(
+      node_->get_namespace(), node_->get_name(), param_name, new_value);
   }
 
-  // retreive parameter or assign default value if not set
+  // retrieve parameter or assign default value if not set given full path to node
   template<class T>
   bool get_event_param_or(
-    const std::string & name_space,
-    const std::string & param_name, T & new_value, const T & default_value)
+    const std::string & full_path, const std::string & param_name,
+    T & new_value, const T & default_value)
   {
-    if (get_event_param<T>(name_space, param_name, new_value)) {
+    if (get_event_param<T>(full_path, param_name, new_value)) {
       return true;
     } else {
       new_value = default_value;
@@ -199,11 +213,22 @@ public:
     }
   }
 
-  // Variant of get_event_param_or for full path to parameter
+  // Variant of get_event_param_or for specifying namespace and node name
+  template<class T>
+  bool get_event_param_or(
+    const std::string & name_space, const std::string & node_name,
+    const std::string & param_name, T & new_value, const T & default_value)
+  {
+    return get_event_param_or<T>(
+      join_path(name_space, node_name), param_name, new_value, default_value);
+  }
+
+  // Variant of get_event_param_or for member node parameter
   template<class T>
   bool get_event_param_or(const std::string & param_name, T & new_value, const T & default_value)
   {
-    return get_event_param_or<T>("", param_name, new_value, default_value);
+    return get_event_param_or<T>(
+      node_->get_namespace(), node_->get_name(), param_name, new_value, default_value);
   }
 
   // A check to filter whether parameter name is part of the lastest event
@@ -214,46 +239,29 @@ public:
         rclcpp::ParameterEventsFilter::EventType::CHANGED});
     return !filter.get_events().empty();
   }
+  // Variant of is_in_event to also check the node path of last event
+  bool is_in_event(const std::string & path, const std::string & name)
+  {
+    auto full_path = path;
+    if (*full_path.begin() != '/') {
+      full_path = '/' + full_path;
+    }
+    return full_path == last_event_->node && is_in_event(name);
+  }
 
 private:
-  void init_param_in_map(rclcpp::Parameter param, std::string node_namespace)
+  void init_as_not_set(const std::string & full_path, const std::vector<std::string> & param_names)
   {
-    auto param_name = join_path(node_namespace, param.get_name());
-    if (!is_duplicate(param_name)) {
-      if (!dynamic_param_map_.count(param_name)) {
-        dynamic_param_map_[param_name] = param;
-      } else {
-        std::string error = "Cannot track duplicate dynamic parameters in same namespace";
-        RCLCPP_ERROR(node_->get_logger(), error + ": %s", param_name.c_str());
-        throw std::runtime_error(error);
-      }
-    } else {
-      std::string error = "Duplicate parameter already exists within namespace, cannote add";
-      RCLCPP_ERROR(node_->get_logger(), error + ": %s", param_name.c_str());
-      throw std::runtime_error(error);
+    for (const auto & name : param_names) {
+      auto param = rclcpp::Parameter(name, rclcpp::ParameterValue());
+      init_param_in_map(param, full_path);
     }
   }
 
-  // Finds all parameters that exist on available nodes in namespace
-  void get_param_list(std::string ns)
+  void init_param_in_map(rclcpp::Parameter param, std::string node_path)
   {
-    auto node_list = node_->get_node_names();
-    auto it = std::unique(node_list.begin(), node_list.end());
-    node_list.resize(std::distance(node_list.begin(), it));
-    for (const auto & node_name : node_list) {
-      if (node_name == "" || *node_name.begin() == '_') {
-        continue;
-      }
-      auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, join_path(ns, node_name));
-      if (client->wait_for_service(10ms)) {
-        auto param_list = client->list_parameters({}, 1);
-        for (auto & param_name : param_list.names) {
-          param_name = join_path(ns, param_name);
-        }
-        all_param_list_.insert(
-          all_param_list_.end(), param_list.names.begin(), param_list.names.end());
-      }
-    }
+    auto param_name = join_path(node_path, param.get_name());
+    dynamic_param_map_[param_name] = param;
   }
 
   std::pair<std::string, std::string> split_path(const std::string & str)
@@ -289,24 +297,15 @@ private:
       return false;
     }
   }
-  // Check if full path of parameter name is duplicate
-  bool is_duplicate(std::string param_name)
-  {
-    if (std::count(all_param_list_.begin(), all_param_list_.end(), param_name) > 1) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   // This function checks that event variables exist in the cached dynamic param map
   // True if at least one parameter exists in the map
-  bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event, std::string ns)
+  bool is_event_in_map(const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
   {
     bool result = false;
 
     for (auto & new_parameter : event->new_parameters) {
-      auto param_name = join_path(ns, new_parameter.name);
+      auto param_name = join_path(event->node, new_parameter.name);
       if (dynamic_param_map_.count(param_name)) {
         auto param = rclcpp::Parameter::from_parameter_msg(new_parameter);
         dynamic_param_map_[param_name] = param;
@@ -315,7 +314,7 @@ private:
     }
 
     for (auto & changed_parameter : event->changed_parameters) {
-      auto param_name = join_path(ns, changed_parameter.name);
+      auto param_name = join_path(event->node, changed_parameter.name);
       if (dynamic_param_map_.count(param_name)) {
         auto param = rclcpp::Parameter::from_parameter_msg(changed_parameter);
         if (param.get_type() == dynamic_param_map_[param_name].get_type()) {
@@ -329,7 +328,7 @@ private:
     }
 
     for (auto & deleted_parameter : event->deleted_parameters) {
-      if (dynamic_param_map_.count(join_path(ns, deleted_parameter.name))) {
+      if (dynamic_param_map_.count(join_path(event->node, deleted_parameter.name))) {
         result = true;
       }
     }
@@ -347,9 +346,6 @@ private:
 
   // Vector of unique namespaces added
   std::vector<std::string> node_namespaces_;
-
-  // List of all known parameters on each namespace
-  std::vector<std::string> all_param_list_;
 
   // vector of event subscriptions for each namespace
   std::vector<rclcpp::Subscription

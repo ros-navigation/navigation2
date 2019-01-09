@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>navigation2</name>
-  <version>0.1.0</version>
+  <version>0.1.5</version>
   <description>
     ROS2 Navigation Stack
   </description>
-  <maintainer email="oregon.robotics.team@intel.com">Oregon Robotics Team</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -22,16 +22,23 @@
   <exec_depend>nav2_dynamic_params</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_mission_executor</exec_depend>
+  <exec_depend>nav2_motion_primitives</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_robot</exec_depend>
   <exec_depend>nav2_simple_navigator</exec_depend>
-  <exec_depend>nav2_system_tests</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
-  
+
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_testing</test_depend>
+
   <export>
-    <metapackage/>
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>

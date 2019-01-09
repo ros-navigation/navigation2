@@ -11,7 +11,7 @@ Test a component's ROS API (Pub/Sub/Service).
 
 - Local Planning
 
-- Localization
+- [Localization](src/localization/README.md)
 
 - World Model
 

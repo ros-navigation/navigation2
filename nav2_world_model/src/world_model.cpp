@@ -25,7 +25,7 @@ namespace nav2_world_model
 {
 
 WorldModel::WorldModel(rclcpp::executor::Executor & executor, const string & name)
-: Node(name + "_Node"),
+: Node(name),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {
@@ -71,7 +71,7 @@ void WorldModel::costmap_callback(
 }
 
 WorldModel::WorldModel(rclcpp::executor::Executor & executor)
-: WorldModel(executor, "WorldModel")
+: WorldModel(executor, "world_model")
 {
 }
 

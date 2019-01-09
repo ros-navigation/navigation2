@@ -1,0 +1,42 @@
+map_server:
+  ros__parameters:
+    yaml_filename: "test_map.yaml"
+DwbController:
+  ros__parameters:
+    debug_trajectory_details: True
+    min_vel_x: -0.26
+    min_vel_y: 0.0
+    max_vel_x: 0.26
+    max_vel_y: 0.0
+    max_vel_theta: 1.0
+    min_speed_xy: 0.0
+    max_speed_xy: 0.26
+    min_speed_theta: 0.0
+    acc_lim_x: 2.5
+    acc_lim_y: 0.0
+    acc_lim_theta: 3.2
+    decel_lim_x: -2.5
+    decel_lim_y: 0.0
+    decel_lim_theta: -3.2
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      obstacle_layer:
+        enabled: False
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      obstacle_layer:
+        enabled: False
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True

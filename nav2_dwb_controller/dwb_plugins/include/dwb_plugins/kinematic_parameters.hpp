@@ -37,6 +37,7 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace dwb_plugins
 {
@@ -104,7 +105,7 @@ protected:
   double min_speed_xy_sq_, max_speed_xy_sq_;
 
   void reconfigureCB();
-  // std::shared_ptr<dynamic_reconfigure::Server<KinematicParamsConfig> > dsrv_;
+  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dsrv_;
 };
 
 }  // namespace dwb_plugins

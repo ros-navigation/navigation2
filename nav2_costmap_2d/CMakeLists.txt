@@ -13,7 +13,6 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rmw REQUIRED)
@@ -45,13 +44,6 @@ include_directories(
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
-# TODO(bpwilcox): Separate msgs generation into separate package
-#rosidl_generate_interfaces(${PROJECT_NAME}
-#  "msg/VoxelGrid.msg"
-#
-#	DEPENDENCIES std_msgs geometry_msgs map_msgs
-#)
-
 add_library(nav2_costmap_2d_core SHARED
   src/array_parser.cpp
   src/costmap_2d.cpp
@@ -69,7 +61,9 @@ set(dependencies
   rclcpp
   geometry_msgs
   nav_msgs
+  std_msgs
   map_msgs
+  sensor_msgs
   tf2_ros
   tf2
   pluginlib
@@ -81,6 +75,7 @@ set(dependencies
   nav2_util
   nav2_voxel_grid
   nav2_msgs
+  visualization_msgs
 )
 
 ament_target_dependencies(nav2_costmap_2d_core
@@ -101,19 +96,15 @@ target_link_libraries(layers
   nav2_costmap_2d_core
 )
 
-# TODO(bpwilcox): port costmap_2d_markers
-#add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
-#ament_target_dependencies(costmap_2d_markers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(costmap_2d_markers
-  #costmap_2d
-#)
+add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
+target_link_libraries(nav2_costmap_2d_markers
+  nav2_costmap_2d_core
+)
 
-# TODO(bpwilcox): port nav2_costmap_2d_cloud
-#add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
-#ament_target_dependencies(nav2_costmap_2d_cloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ament_EXPORTED_TARGETS})
-#target_link_libraries(nav2_costmap_2d_cloud
-  #nav2_costmap_2d_core
-#)
+add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
+target_link_libraries(nav2_costmap_2d_cloud
+  nav2_costmap_2d_core
+)
 
 add_executable(nav2_costmap_2d src/costmap_2d_node.cpp)
 ament_target_dependencies(nav2_costmap_2d
@@ -141,12 +132,14 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  set(ament_cmake_copyright_FOUND TRUE)
+  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  # TODO(bpwilcox): Port/Add unit and component tests
-  #add_subdirectory(test)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

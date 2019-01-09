@@ -47,17 +47,18 @@ Robot::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::Share
 void
 Robot::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-  current_velocity_ = msg;
+  current_odom_ = msg;
   if (!initial_odom_received_) {
     initial_odom_received_ = true;
   }
 }
 
 bool
-Robot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
+Robot::getGlobalLocalizerPose(
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_DEBUG(node_->get_logger(),
       "Robot: Can't return current pose: Initial pose not yet received.");
     return false;
   }
@@ -66,16 +67,24 @@ Robot::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &
   return true;
 }
 
+// TODO(mhpanah): We should get current pose from transforms.
 bool
-Robot::getCurrentVelocity(nav_msgs::msg::Odometry::SharedPtr & robot_velocity)
+Robot::getCurrentPose(
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
+{
+  return getGlobalLocalizerPose(robot_pose);
+}
+
+bool
+Robot::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom)
 {
   if (!initial_odom_received_) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_DEBUG(node_->get_logger(),
       "Robot: Can't return current velocity: Initial odometry not yet received.");
     return false;
   }
 
-  robot_velocity = current_velocity_;
+  robot_odom = current_odom_;
   return true;
 }
 
