@@ -33,8 +33,7 @@ namespace nav2_dwb_controller
 DwbController::DwbController(rclcpp::executor::Executor & executor)
 : Node("DwbController"),
   tfBuffer_(get_clock()),
-  tfListener_(tfBuffer_),
-  travel_direction_(TravelDirection::Stopped)
+  tfListener_(tfBuffer_)
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
@@ -73,7 +72,6 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
         publishZeroVelocity();
       } else {
-        checkRegion(pose2d);
         if (isGoalReached(pose2d)) {
           break;
         }
@@ -120,17 +118,11 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
-  if (cmd_vel.linear.x > 0) {
-    travel_direction_ = TravelDirection::MovingForward;
-  } else {
-    travel_direction_ = TravelDirection::MovingBackwards;
-  }
   vel_pub_->publish(cmd_vel);
 }
 
 void DwbController::publishZeroVelocity()
 {
-  travel_direction_ = TravelDirection::Stopped;
   nav_2d_msgs::msg::Twist2DStamped velocity;
   velocity.velocity.x = 0;
   velocity.velocity.y = 0;
@@ -153,34 +145,6 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   }
   pose2d = nav_2d_utils::poseStampedToPose2D(current_pose);
   return true;
-}
-
-bool DwbController::checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d)
-{
-  nav2_world_model::FreeSpaceServiceRequest request;
-
-  // TODO(orduno) get from robot class
-  double robot_width = 0.22;
-
-  // Define the region size
-  request.width = robot_width;
-  request.height = robot_width * 3;
-
-  // Define the reference point
-  request.reference.x = pose2d.pose.x;
-  request.reference.y = pose2d.pose.y;
-
-  // Translate to set the edge of the region in front of the robot
-  request.offset.x = 0.0;
-  request.offset.y = robot_width / 2.0 + request.height / 2.0;
-
-  // Rotate to match the robot travel direction
-  request.rotation = pose2d.pose.theta;
-  if (travel_direction_ == TravelDirection::MovingBackwards) {
-    request.rotation += M_PI;
-  }
-
-  return world_model_.confirmFreeSpace(request);
 }
 
 }  // namespace nav2_dwb_controller

@@ -27,8 +27,6 @@
 namespace nav2_dwb_controller
 {
 
-enum class TravelDirection {MovingForward, MovingBackwards, Stopped};
-
 class DwbController : public rclcpp::Node
 {
 public:
@@ -51,10 +49,6 @@ protected:
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
   tf2_ros::Buffer tfBuffer_;
   tf2_ros::TransformListener tfListener_;
-
-  // Proxy to the World Model
-  nav2_world_model::WorldModelClient world_model_;
-  TravelDirection travel_direction_;
 };
 
 }  // namespace nav2_dwb_controller
