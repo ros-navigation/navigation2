@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_world_model/world_representation.hpp"
-#include "nav2_world_model/rectangular_region.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 namespace nav2_world_model

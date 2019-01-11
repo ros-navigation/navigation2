@@ -25,7 +25,7 @@ namespace nav2_world_model
 {
 
 using nav2_costmap_2d::MapLocation;
-using nav2_util::Point;
+using nav2_util::Point2D;
 
 CostmapRepresentation::CostmapRepresentation(
   const std::string name,
@@ -137,8 +137,8 @@ bool CostmapRepresentation::generateRectangleVertices(
   double right = request.reference.x + request.width / 2 - request.offset.x;
   double left = request.reference.x - request.width / 2 - request.offset.x;
 
-  std::vector<Point> vertices = {
-    Point{left, down}, Point{left, top}, Point{right, top}, Point{right, down}};
+  std::vector<Point2D> vertices = {
+    Point2D{left, down}, Point2D{left, top}, Point2D{right, top}, Point2D{right, down}};
 
   // TODO(orduno) the RVIZ world frame is rotated 90 deg with respect to Gazebo.
   const double rvizToGazeboOffset = M_PI / 2;
@@ -147,7 +147,7 @@ bool CostmapRepresentation::generateRectangleVertices(
   for (auto & point : vertices) {
     point.rotateAroundPoint(
       angleutils::normalize(request.rotation + rvizToGazeboOffset),
-      Point{request.reference.x, request.reference.y});
+      Point2D{request.reference.x, request.reference.y});
   }
 
   // Convert the vertices to map coordinates
@@ -162,7 +162,7 @@ bool CostmapRepresentation::generateRectangleVertices(
 }
 
 bool CostmapRepresentation::addToMapLocations(
-  std::vector<MapLocation> & locations, const Point & point) const
+  std::vector<MapLocation> & locations, const Point2D & point) const
 {
   unsigned int mx, my;
 

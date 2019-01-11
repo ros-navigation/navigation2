@@ -23,7 +23,7 @@
 #include "nav2_world_model/world_representation.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/point.hpp"
+#include "nav2_util/point2d.hpp"
 #include "nav2_world_model/region_visualizer.hpp"
 
 namespace nav2_world_model
@@ -64,7 +64,7 @@ private:
 
   bool addToMapLocations(
     std::vector<nav2_costmap_2d::MapLocation> & vertices,
-    const nav2_util::Point & vertex) const;
+    const nav2_util::Point2D & vertex) const;
 
   bool isFree(const nav2_costmap_2d::MapLocation & location) const;
 };
