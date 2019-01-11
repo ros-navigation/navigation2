@@ -35,6 +35,12 @@ public:
   : ServiceClient<ProcessRegion>("ClearArea")
   {
   }
+
+  std::shared_ptr<ClearAreaServiceResponse>
+  wasCleared(std::shared_ptr<ClearAreaServiceRequest> & request)
+  {
+    return invoke(request);
+  }
 };
 
 }  // namespace nav2_world_model

@@ -40,19 +40,19 @@ public:
   Costmap getCostmap(const CostmapServiceRequest & specs)
   {
     auto request = std::make_shared<CostmapServiceRequest>(specs);
-    return costmap_client_.invoke(request).get()->map;
+    return costmap_client_.getCostmap(request)->map;
   }
 
   bool confirmFreeSpace(const FreeSpaceServiceRequest & specs)
   {
     auto request = std::make_shared<FreeSpaceServiceRequest>(specs);
-    return free_space_client_.invoke(request).get()->result;
+    return free_space_client_.isFree(request)->result;
   }
 
   bool clearArea(const ClearAreaServiceRequest & specs)
   {
     auto request = std::make_shared<ClearAreaServiceRequest>(specs);
-    return free_space_client_.invoke(request).get()->result;
+    return clear_area_client_.wasCleared(request)->result;
   }
 
 private:

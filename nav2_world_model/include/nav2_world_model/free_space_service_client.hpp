@@ -15,6 +15,8 @@
 #ifndef NAV2_WORLD_MODEL__FREE_SPACE_SERVICE_CLIENT_HPP_
 #define NAV2_WORLD_MODEL__FREE_SPACE_SERVICE_CLIENT_HPP_
 
+#include <memory>
+
 #include "nav2_tasks/service_client.hpp"
 #include "nav2_msgs/srv/process_region.hpp"
 
@@ -34,6 +36,12 @@ public:
   FreeSpaceServiceClient()
   : ServiceClient<ProcessRegion>("ConfirmFreeSpace")
   {
+  }
+
+  std::shared_ptr<FreeSpaceServiceResponse>
+  isFree(std::shared_ptr<FreeSpaceServiceRequest> & request)
+  {
+    return invoke(request);
   }
 };
 

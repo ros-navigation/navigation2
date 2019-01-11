@@ -15,7 +15,9 @@
 #ifndef NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
 #define NAV2_WORLD_MODEL__COSTMAP_SERVICE_CLIENT_HPP_
 
-#include "nav2_util/service_client.hpp"
+#include <memory>
+
+#include "nav2_tasks/service_client.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 
 namespace nav2_world_model
@@ -34,6 +36,12 @@ public:
   CostmapServiceClient()
   : ServiceClient<GetCostmap>("GetCostmap")
   {
+  }
+
+  std::shared_ptr<CostmapServiceResponse>
+  getCostmap(std::shared_ptr<CostmapServiceRequest> & request)
+  {
+    return invoke(request);
   }
 };
 
