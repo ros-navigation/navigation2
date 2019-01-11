@@ -44,14 +44,9 @@ public:
   explicit MotionPrimitive(rclcpp::Node::SharedPtr & node)
   : node_(node),
     task_server_(nullptr),
-    taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>()),
-    initial_pose_received_(false)
+    taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
   {
     robot_ = std::make_unique<nav2_robot::Robot>(node);
-
-    initial_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "initialpose",
-      std::bind(&MotionPrimitive::onInitialPoseReceived, this, std::placeholders::_1));
 
     task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(node, false);
 
@@ -122,10 +117,6 @@ protected:
   typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
   std::string taskName_;
 
-  // Subscription to the initial pose publisher
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_sub_;
-  bool initial_pose_received_ = false;
-
   nav2_tasks::TaskStatus cycle(ResultMsg & result)
   {
     auto time_since_msg = std::chrono::system_clock::now();
@@ -186,11 +177,6 @@ protected:
     robot_->sendVelocity(twist);
 
     return status;
-  }
-
-  void onInitialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
-  {
-    initial_pose_received_ = true;
   }
 };
 

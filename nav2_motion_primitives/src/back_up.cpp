@@ -112,19 +112,9 @@ bool BackUp::pathIsClear()
   // TODO(orduno) Obtain the pose from the tf tree. The robot class is currently obtaining the pose
   //              from amcl, and amcl doesn't update the pose often enough.
   //              The robot pose might not be updated on sequential backup requests.
-
   if (!robot_->getCurrentPose(robot_pose)) {
-    if (!initial_pose_received_) {
-      // TODO(orduno) Auto-localization needs to execute the backup primitive even when robot
-      //              has not localized and initial pose has not been received.
-      //              In this case we might want to directly check laser scanner measurements
-      //              for possible obstacles.
-      RCLCPP_WARN(node_->get_logger(), "Backup primitive is not checking for free space."
-        " Assuming auto-localization is running.");
-    } else {
-      RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-      return false;
-    }
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return false;
   }
 
   nav2_world_model::FreeSpaceServiceRequest request;
