@@ -488,7 +488,7 @@ public:
     // just push the relevant cells back onto the list
     inline void operator()(unsigned int offset)
     {
-      MapLocation loc;
+      MapLocation loc{0, 0};
       costmap_.indexToCells(offset, loc.x, loc.y);
       cells_.push_back(loc);
     }

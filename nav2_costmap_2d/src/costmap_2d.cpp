@@ -327,7 +327,7 @@ bool Costmap2D::setConvexPolygonCost(
   // we need to transform it to map coordinates
   std::vector<MapLocation> map_polygon;
   for (unsigned int i = 0; i < polygon.size(); ++i) {
-    MapLocation loc;
+    MapLocation loc{0, 0};
     if (!worldToMap(polygon[i].x, polygon[i].y, loc.x, loc.y)) {
       // ("Polygon lies outside map bounds, so we can't fill it");
       return false;
@@ -377,7 +377,7 @@ void Costmap2D::convexFillCells(
   polygonOutlineCells(polygon, polygon_cells);
 
   // quick bubble sort to sort points by x
-  MapLocation swap;
+  MapLocation swap{0, 0};
   unsigned int i = 0;
   while (i < polygon_cells.size() - 1) {
     if (polygon_cells[i].x > polygon_cells[i + 1].x) {
@@ -394,8 +394,8 @@ void Costmap2D::convexFillCells(
   }
 
   i = 0;
-  MapLocation min_pt;
-  MapLocation max_pt;
+  MapLocation min_pt{0, 0};
+  MapLocation max_pt{0, 0};
   unsigned int min_x = polygon_cells[0].x;
   unsigned int max_x = polygon_cells[polygon_cells.size() - 1].x;
 
@@ -423,7 +423,7 @@ void Costmap2D::convexFillCells(
       ++i;
     }
 
-    MapLocation pt;
+    MapLocation pt{0, 0};
     // loop though cells in the column
     for (unsigned int y = min_pt.y; y < max_pt.y; ++y) {
       pt.x = x;
