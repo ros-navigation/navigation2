@@ -104,8 +104,8 @@ nav2_tasks::TaskStatus Spin::timedSpin()
 
 nav2_tasks::TaskStatus Spin::controlledSpin()
 {
-  // TODO(orduno) #423 Test and tune controller
-  //              check it doesn't abruptly start and stop
+  // TODO(orduno) #423 Test and tune controller, it's based on ROS1 `rotate_recovery`
+  //              Some things to check: it doesn't abruptly start and stop
   //              or cause massive wheel slippage when accelerating
 
   // Get current robot orientation
@@ -149,6 +149,8 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 bool Spin::pathIsClear()
 {
   // TODO(orduno) assuming the robot has a near circular footprint
+  //              Obtain robot footprint and check for possible collision similar to
+  //              ROS1 `rotate_recovery`
   return true;
 }
 
