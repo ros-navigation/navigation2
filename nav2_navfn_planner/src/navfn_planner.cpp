@@ -480,7 +480,7 @@ NavfnPlanner::getCostmap(
   //               including master (aggregate) layer
 
   nav2_world_model::CostmapServiceRequest request;
-  request.specs.resolution = 1.0;
+  request.specs.resolution = 0.05;
   costmap = world_model_.getCostmap(request);
 
   RCLCPP_INFO(get_logger(), "Received costmap of size %d, %d",
