@@ -30,6 +30,10 @@ using FreeSpaceServiceRequest =
 using FreeSpaceServiceResponse =
   ServiceClient<ProcessRegion>::ResponseType;
 
+/*
+ * A class that creates a ROS service for checking the occupancy of a region
+ */
+
 class FreeSpaceServiceClient : public ServiceClient<ProcessRegion>
 {
 public:

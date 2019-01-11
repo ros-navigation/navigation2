@@ -30,6 +30,10 @@ using CostmapServiceRequest =
 using CostmapServiceResponse =
   ServiceClient<GetCostmap>::ResponseType;
 
+/*
+ * A class that creates a ROS service for obtaining a costmap
+ */
+
 class CostmapServiceClient : public ServiceClient<GetCostmap>
 {
 public:

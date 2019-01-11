@@ -26,15 +26,8 @@ struct Point
 {
   double x, y;
 
-  Point()
-  : x(0), y(0)
-  {
-  }
-
   Point(const double x, const double y)
-  : x(x), y(y)
-  {
-  }
+  : x(x), y(y) { }
 
   bool operator==(const Point & obj) const
   {

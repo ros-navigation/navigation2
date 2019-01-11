@@ -28,6 +28,10 @@ using ClearAreaServiceRequest =
 using ClearAreaServiceResponse =
   ServiceClient<ProcessRegion>::ResponseType;
 
+/*
+ * A class that creates a ROS service for clearing the occupancy information of a region
+ */
+
 class ClearAreaServiceClient : public ServiceClient<ProcessRegion>
 {
 public:
