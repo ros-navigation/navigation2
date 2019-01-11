@@ -46,13 +46,13 @@ public:
   bool confirmFreeSpace(const FreeSpaceServiceRequest & specs)
   {
     auto request = std::make_shared<FreeSpaceServiceRequest>(specs);
-    return free_space_client_.invoke(request).get()->was_successful;
+    return free_space_client_.invoke(request).get()->result;
   }
 
   bool clearArea(const ClearAreaServiceRequest & specs)
   {
     auto request = std::make_shared<ClearAreaServiceRequest>(specs);
-    return free_space_client_.invoke(request).get()->was_successful;
+    return free_space_client_.invoke(request).get()->result;
   }
 
 private:

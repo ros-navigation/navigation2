@@ -16,4 +16,4 @@ geometry_msgs/Point offset
 # For rotating the region around `reference` we define a rotation angle [rad] clockwise positive
 float64 rotation
 ---
-bool was_successful
+bool result

@@ -77,7 +77,7 @@ ProcessRegion::Response
 CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & request)
 {
   ProcessRegion::Response response;
-  response.was_successful = checkIfFree(request);
+  response.result = checkIfFree(request);
   return response;
 }
 
@@ -86,7 +86,7 @@ CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
 {
   // TODO(orduno)
   ProcessRegion::Response response;
-  response.was_successful = false;
+  response.result = false;
   return response;
 }
 
