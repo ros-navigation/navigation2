@@ -55,11 +55,6 @@ namespace nav2_costmap_2d
 // convenient for storing x/y point pairs
 struct MapLocation
 {
-  MapLocation()
-  : x(0), y(0)
-  {
-  }
-
   MapLocation(const unsigned int x, const unsigned int y)
   : x(x), y(y)
   {
