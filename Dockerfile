@@ -20,10 +20,11 @@ RUN if [ "$http_proxy" == "" ]; \
 
 ENV ROS1_DISTRO melodic
 ENV ROS2_DISTRO bouncy
-ENV ROSDISTRO_INDEX_URL 'https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
+ENV ROSDISTRO_INDEX_URL 'https://raw.githubusercontent.com/ros/rosdistro/master/index.yaml'
 
 # update latest package versions
 RUN apt-get update
+RUN rm -rf /etc/ros/rosdep/sources.list.d/20-default.list
 
 # install ROS2 dependencies
 RUN apt install -y \
