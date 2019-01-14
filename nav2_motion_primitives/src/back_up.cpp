@@ -88,9 +88,10 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
-  if (distance >= abs(command_x_)) {
+  if (distance >= std::abs(command_x_)) {
     cmd_vel.linear.x = 0;
     robot_->sendVelocity(cmd_vel);
+    RCLCPP_INFO(node_->get_logger(), "Completed backup, traveled %0.2f", distance);
     return TaskStatus::SUCCEEDED;
   }
 
@@ -125,7 +126,7 @@ bool BackUp::pathIsClear()
   // Height is set to the requested distance to travel
   double robot_width = 0.22;  // TODO(orduno) get from robot class
   request.width = robot_width;
-  request.height = abs(command_x_);
+  request.height = std::abs(command_x_);
 
   // Define the reference point as the robot pose
   request.reference.x = robot_pose->pose.pose.position.x;
