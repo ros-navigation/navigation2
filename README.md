@@ -29,3 +29,11 @@ sudo docker build -t nav2/latest --build-arg http_proxy=http://proxy.my.com:### 
 ```
 Note: You may also need to configure your docker for DNS to work. See article here for details:
 https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/
+
+## Using CI build docker container
+
+We allow for you to pull the latest docker image from the master branch at any time. As new releases and tags are made, docker containers on docker hub will be versioned as well to chose from.
+
+```
+sudo docker pull stevemacenski/navigation2:latest
+```
