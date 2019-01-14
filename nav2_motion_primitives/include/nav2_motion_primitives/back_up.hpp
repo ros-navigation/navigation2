@@ -37,19 +37,11 @@ public:
   bool pathIsClear() override;
 
 protected:
-  double min_linear_vel_;
-  double max_linear_vel_;
-  double linear_acc_lim_;
-
-  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
-  double command_x_;
   geometry_msgs::msg::Twist default_vel_;
-  std::chrono::duration<double> default_exec_time_;
-  std::chrono::duration<double> remaining_time_;
 
-  std::chrono::system_clock::time_point start_time_;
-
-  nav2_tasks::TaskStatus timedBackup();
+  // The requested and initial poses
+  double command_x_;
+  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
 
   nav2_tasks::TaskStatus controlledBackup();
 };

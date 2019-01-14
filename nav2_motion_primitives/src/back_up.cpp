@@ -33,19 +33,10 @@ namespace nav2_motion_primitives
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
-  // TODO(orduno) #378 Pull values from the robot
-  max_linear_vel_ = 0.0;
-  min_linear_vel_ = 0.0;
-  linear_acc_lim_ = 0.0;
-
-  default_vel_.linear.x = -0.05;
+  // TODO(orduno) #378 compare values with robot limits
+  default_vel_.linear.x = 0.025;
   default_vel_.linear.y = 0.0;
   default_vel_.angular.z = 0.0;
-
-  default_exec_time_ = 5s;
-  remaining_time_ = default_exec_time_;
-
-  start_time_ = std::chrono::system_clock::now();
 }
 
 BackUp::~BackUp()
@@ -58,9 +49,11 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
+
   command_x_ = command->x;
+
   if (!robot_->getOdometry(initial_pose_)) {
-    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
+    RCLCPP_ERROR(node_->get_logger(), "Initial robot odom pose is not available.");
     return nav2_tasks::TaskStatus::FAILED;
   }
 
@@ -77,7 +70,6 @@ nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 
   return status;
 }
-
 
 nav2_tasks::TaskStatus BackUp::controlledBackup()
 {
@@ -101,9 +93,18 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
     robot_->sendVelocity(cmd_vel);
     return TaskStatus::SUCCEEDED;
   }
+
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
-  command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+  if (command_x_ < 0) {
+    cmd_vel.linear.x = -1.0 * default_vel_.linear.x;
+  } else {
+    cmd_vel.linear.x = default_vel_.linear.x;
+  }
+
   robot_->sendVelocity(cmd_vel);
+
+  return TaskStatus::RUNNING;
+}
 
 bool BackUp::pathIsClear()
 {
@@ -121,10 +122,10 @@ bool BackUp::pathIsClear()
 
   // Define the region size
   // Width is set to match the robot's diameter
-  // Height is set to estimate the distance that will be traveled
+  // Height is set to the requested distance to travel
   double robot_width = 0.22;  // TODO(orduno) get from robot class
   request.width = robot_width;
-  request.height = default_vel_.linear.x * remaining_time_.count();
+  request.height = abs(command_x_);
 
   // Define the reference point as the robot pose
   request.reference.x = robot_pose->pose.pose.position.x;
@@ -134,10 +135,15 @@ bool BackUp::pathIsClear()
   request.offset.x = 0.0;
   request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
-  // Rotate to match the opposite orientation of the robot's heading
-  request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation) + M_PI;
+  // Rotate to match robot's heading
+  request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
+  if (command_x_ < 0.0) {
+    // Rotate 180 deg if traveling backwards
+    RCLCPP_DEBUG(node_->get_logger(), "Traveling backwards.");
+    request.rotation += M_PI;
+  }
 
-  RCLCPP_INFO(node_->get_logger(),
+  RCLCPP_DEBUG(node_->get_logger(),
     "Checking if path is clear: w: %f, h: %f, rx: %f, ry: %f, rot: %f, ox: %f, oy: %f",
     request.width, request.height, request.reference.x, request.reference.y,
     request.rotation, request.offset.x, request.offset.y

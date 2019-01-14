@@ -97,7 +97,7 @@ public:
 
     // Duration of zero indicates the object should last forever
     builtin_interfaces::msg::Duration duration;
-    duration.sec = 5;
+    duration.sec = 10;
     duration.nanosec = 0;
 
     marker_.lifetime = duration;
