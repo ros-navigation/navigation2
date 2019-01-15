@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -fPIC)
+  add_compile_options(-Wall -Wextra -Wpedantic -fPIC -Wno-sign-compare)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -69,8 +69,7 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  # TODO(bpwilcox): Port/Add unit and component tests
-  #add_subdirectory(test)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
