@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__POINT_HPP_
-#define NAV2_UTIL__POINT_HPP_
+#ifndef NAV2_UTIL__POINT2D_HPP_
+#define NAV2_UTIL__POINT2D_HPP_
 
 #include <ostream>
 #include <cmath>
@@ -27,7 +27,7 @@ struct Point2D
   double x, y;
 
   Point2D(const double x, const double y)
-  : x(x), y(y) { }
+  : x(x), y(y) {}
 
   bool operator==(const Point2D & obj) const
   {
@@ -64,4 +64,4 @@ struct Point2D
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__POINT_HPP_
+#endif  // NAV2_UTIL__POINT2D_HPP_
