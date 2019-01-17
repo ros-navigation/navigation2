@@ -2,99 +2,108 @@
 # It also expects to be contained in the /navigation2 root folder for file copy
 # Example build command:
 # sudo docker build -t nav2:latest --build-arg http_proxy=http://my.proxy.com:### .
-FROM osrf/ros2:bouncy-desktop
-
-SHELL ["/bin/bash", "-c"]
+FROM osrf/ros2:nightly
 
 # setup keys
 # check if proxy is set and get keys, using proxy if it is set
-RUN if [ "$http_proxy" == "" ]; \
+RUN if [ "$http_proxy" != "" ]; \
     then \
-      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
-      --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
-    else \
       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
       --keyserver-options http-proxy=$http_proxy \
       --recv-keys 421C365BD9FF1F717815A3895523BAEEB01FA116; \
     fi
 
-ENV ROS1_DISTRO melodic
-ENV ROS2_DISTRO bouncy
-ENV ROSDISTRO_INDEX_URL 'https://raw.githubusercontent.com/ros/rosdistro/master/index.yaml'
-
-# update latest package versions
-RUN apt-get update
-RUN rm -rf /etc/ros/rosdep/sources.list.d/20-default.list
-
 # install ROS2 dependencies
-RUN apt install -y \
-    build-essential \
-    cmake \
-    git \
-    python3-colcon-common-extensions \
-    python3-pip \
-    python-rosdep \
-    python3-vcstool \
-    wget
-
-# install Fast-RTPS dependencies
-RUN apt install --no-install-recommends -y \
-    libasio-dev \
-    libtinyxml2-dev
+RUN apt-get update && apt-get install -q -y \
+      build-essential \
+      cmake \
+      git \
+      python3-colcon-common-extensions \
+      python3-vcstool \
+      wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # install map_server dependencies
-RUN apt-get install -y \
-    libsdl-image1.2 \
-    libsdl-image1.2-dev \
-    libsdl1.2debian \
-    libsdl1.2-dev
+RUN apt-get update && apt-get install -q -y \
+      libsdl-image1.2 \
+      libsdl-image1.2-dev \
+      libsdl1.2debian \
+      libsdl1.2-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# get the latest nightly ROS2 build -> ros2_ws/ros2_linux
-WORKDIR /ros2_ws
-RUN wget -nv -t 5 https://ci.ros2.org/view/packaging/job/packaging_linux/lastSuccessfulBuild/artifact/ws/ros2-package-linux-x86_64.tar.bz2
-RUN tar -xjf ros2-package-linux-x86_64.tar.bz2
-
-# clone navigation2 repo
-WORKDIR /ros2_ws/navigation2_ws/src
-ARG USER=ros-planning
-RUN git clone https://github.com/$USER/navigation2.git
+# clone ros package repo
+ENV NAV2_WS /opt/nav2_ws
+RUN mkdir -p $NAV2_WS/src
+WORKDIR $NAV2_WS/src
+ARG GIT_REPO_URL=https://github.com/ros-planning/navigation2.git
+RUN git clone $GIT_REPO_URL navigation2
 
 # change to correct branch if $BRANCH is not = master
-WORKDIR /ros2_ws/navigation2_ws/src/navigation2
 ARG PULLREQ=false
 ARG BRANCH=master
 RUN echo "pullreq is $PULLREQ"
-RUN if [ "$PULLREQ" == "false" ] && [ "$BRANCH" == "master" ]; then \ 
+RUN if [ "$PULLREQ" = "false" ] && [ "$BRANCH" = "master" ]; then \
       echo "No pull request number given - defaulting to master branch"; \
     elif [ "$BRANCH" != "master" ]; then \
       cd navigation2; \
       git fetch origin $BRANCH:temp_branch; \
       git checkout temp_branch; \
-      cd -; \
       echo "No pull request number given - defaulting to $BRANCH branch"; \
     else \
+      cd navigation2; \
       git fetch origin pull/$PULLREQ/head:pr_branch; \
       git checkout pr_branch; \
     fi
 
-# Download dependencies
-RUN echo "Downloading the ROS 2 navstack dependencies workspace"
-WORKDIR /ros2_ws/navstack_dependencies_ws/src
-RUN vcs import . < /ros2_ws/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+# clone dependency package repos
+ENV ROS_WS /opt/ros_ws
+RUN mkdir -p $ROS_WS/src
+WORKDIR $ROS_WS
+RUN vcs import src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
 
-# Build ROS 2 dependencies
-WORKDIR /ros2_ws/navstack_dependencies_ws
-RUN rosdep init && rosdep update && rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false --skip-keys "catkin"
-# source
-RUN (source /opt/ros/$ROS2_DISTRO/setup.bash && . /ros2_ws/ros2-linux/setup.bash && colcon build --symlink-install)
+# install dependency package dependencies
+RUN rm -rf /etc/ros/rosdep/sources.list.d/20-default.list && rosdep init
+ENV COLCON_CURRENT_PREFIX /opt/ros/$ROS_DISTRO
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    apt-get update && \
+    rosdep install -q -y -r \
+      --from-paths \
+        src \
+      --ignore-src \
+    && rm -rf /var/lib/apt/lists/*
 
-# Build navigation2 code
-WORKDIR /ros2_ws/navigation2_ws
-RUN rm /ros2_ws/navigation2_ws/src/navigation2/nav2_system_tests/COLCON_IGNORE
-RUN rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --as-root=apt:false --as-root=pip:false
-RUN (. /ros2_ws/navstack_dependencies_ws/install/setup.bash && colcon build --symlink-install)
+# build dependency package source
+ARG CMAKE_BUILD_TYPE=Release
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon build \
+      --symlink-install \
+      --cmake-args \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+
+# install navigation2 package dependencies
+WORKDIR $NAV2_WS
+ENV COLCON_CURRENT_PREFIX $ROS_WS/install
+RUN . $ROS_WS/install/setup.sh && \
+    apt-get update && \
+    rosdep install -q -y -r \
+      --from-paths \
+        $ROS_WS/src \
+        src \
+      --ignore-src \
+    && rm -rf /var/lib/apt/lists/*
+
+# build navigation2 package source
+RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+RUN . $ROS_WS/install/setup.sh && \
+    colcon build \
+      --symlink-install \
+      --cmake-args \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+
+# source navigation2 workspace from entrypoint
+RUN sed --in-place --expression \
+      '$isource "$NAV2_WS/install/setup.bash"' \
+      /ros_entrypoint.sh
 
 RUN echo "export ROS_DOMAIN_ID=22" >> /root/.bashrc
-COPY tools/ctest_retry.bash /ros2_ws/navigation2_ws/build/nav2_system_tests
-
-CMD ["bash"]
+COPY tools/ctest_retry.bash $NAV2_WS/build/nav2_system_tests
