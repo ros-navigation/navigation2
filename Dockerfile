@@ -90,8 +90,8 @@ RUN . $ROS_WS/install/setup.sh && \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
 # source navigation2 workspace from entrypoint
-RUN sed --in-place --expression \
-      '$isource "$NAV2_WS/install/setup.bash"' \
+RUN sed --in-place \
+      's|^source .*|source "$NAV2_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
 
 ENV ROS_DOMAIN_ID 22
