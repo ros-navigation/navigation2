@@ -23,14 +23,6 @@ RUN apt-get update && apt-get install -q -y \
       wget \
     && rm -rf /var/lib/apt/lists/*
 
-# install map_server dependencies
-RUN apt-get update && apt-get install -q -y \
-      libsdl-image1.2 \
-      libsdl-image1.2-dev \
-      libsdl1.2debian \
-      libsdl1.2-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 # clone ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
@@ -62,11 +54,9 @@ WORKDIR $ROS_WS
 RUN vcs import src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
 
 # install dependency package dependencies
-RUN rm -rf /etc/ros/rosdep/sources.list.d/20-default.list && rosdep init
-ENV COLCON_CURRENT_PREFIX /opt/ros/$ROS_DISTRO
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && \
-    rosdep install -q -y -r \
+    rosdep install -q -y \
       --from-paths \
         src \
       --ignore-src \
@@ -82,10 +72,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # install navigation2 package dependencies
 WORKDIR $NAV2_WS
-ENV COLCON_CURRENT_PREFIX $ROS_WS/install
 RUN . $ROS_WS/install/setup.sh && \
     apt-get update && \
-    rosdep install -q -y -r \
+    rosdep install -q -y \
       --from-paths \
         $ROS_WS/src \
         src \
@@ -105,5 +94,5 @@ RUN sed --in-place --expression \
       '$isource "$NAV2_WS/install/setup.bash"' \
       /ros_entrypoint.sh
 
-RUN echo "export ROS_DOMAIN_ID=22" >> /root/.bashrc
+ENV ROS_DOMAIN_ID 22
 COPY tools/ctest_retry.bash $NAV2_WS/build/nav2_system_tests
