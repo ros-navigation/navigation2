@@ -28,7 +28,6 @@ script:
   - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
       colcon test --packages-skip nav2_system_tests'
   - docker exec nav2_bash bash -c "colcon test-result --verbose"
-  - docker exec nav2_bash bash -c ". install/setup.bash && cd build/nav2_system_tests; ./ctest_retry.bash 3"
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
