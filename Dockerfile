@@ -25,29 +25,11 @@ RUN apt-get update && apt-get install -q -y \
       wget \
     && rm -rf /var/lib/apt/lists/*
 
-# clone ros package repo
+# copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
 WORKDIR $NAV2_WS/src
-ARG GIT_REPO_URL=https://github.com/ros-planning/navigation2.git
-RUN git clone $GIT_REPO_URL navigation2
-
-# change to correct branch if $BRANCH is not = master
-ARG PULLREQ=false
-ARG BRANCH=master
-RUN echo "pullreq is $PULLREQ"
-RUN if [ "$PULLREQ" = "false" ] && [ "$BRANCH" = "master" ]; then \
-      echo "No pull request number given - defaulting to master branch"; \
-    elif [ "$BRANCH" != "master" ]; then \
-      cd navigation2; \
-      git fetch origin $BRANCH:temp_branch; \
-      git checkout temp_branch; \
-      echo "No pull request number given - defaulting to $BRANCH branch"; \
-    else \
-      cd navigation2; \
-      git fetch origin pull/$PULLREQ/head:pr_branch; \
-      git checkout pr_branch; \
-    fi
+COPY ./ navigation2/
 
 # clone dependency package repos
 ENV ROS_WS /opt/ros_ws
