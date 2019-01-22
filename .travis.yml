@@ -19,15 +19,25 @@ notifications:
       - carl.r.delsey@intel.com
       - matthew.k.hansen@intel.com
 
+env:
+  - CMAKE_BUILD_TYPE=Release
+
 before_install:
-  - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ]; then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1; fi
-  - docker build -t navigation2:latest --build-arg PULLREQ=$TRAVIS_PULL_REQUEST .
+  - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ];
+      then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1;
+    fi
+  - docker build --tag navigation2:latest
+      --build-arg PULLREQ=$TRAVIS_PULL_REQUEST
+      --build-arg CMAKE_BUILD_TYPE
+      ./
 
 script:
-  - docker run --name nav2_bash --rm -d -i -t --net=host navigation2:latest bash -l
-  - docker exec nav2_bash bash -c '. /ros2_ws/navigation2_ws/install/setup.bash &&
-      colcon test --packages-skip nav2_system_tests'
-  - docker exec nav2_bash bash -c "colcon test-result --verbose"
+  - docker run --rm --detach --name nav2_bash navigation2:latest
+      sleep infinity
+  - docker exec --interactive --tty nav2_bash /ros_entrypoint.sh
+      colcon test --packages-skip nav2_system_tests
+  - docker exec --interactive --tty nav2_bash /ros_entrypoint.sh
+      colcon test-result --verbose
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
