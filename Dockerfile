@@ -1,14 +1,14 @@
 # This dockerfile expects proxies to be set via --build-arg if needed
 # It also expects to be contained in the /navigation2 root folder for file copy
 # Example build command:
-# export HTTP_PROXY=http://my.proxy.com:80
+# export http_proxy=http://my.proxy.com:80
 # export CMAKE_BUILD_TYPE=Debug
-# docker build -t nav2:latest --build-arg HTTP_PROXY --build-arg CMAKE_BUILD_TYPE ./
+# docker build -t nav2:latest --build-arg http_proxy --build-arg CMAKE_BUILD_TYPE ./
 FROM osrf/ros2:nightly
 
 # setup keys
-ARG HTTP_PROXY
-RUN if [ "$HTTP_PROXY" != "" ]; \
+ARG http_proxy
+RUN if [ "$http_proxy" != "" ]; \
     then \
       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
       --keyserver-options http-proxy=$http_proxy \
