@@ -36,8 +36,7 @@ namespace nav2_motion_primitives
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
-  // TODO(orduno) #378 compare values with robot limits
-  default_vel_.linear.x = 0.025;
+  node_->get_parameter_or<double>("backup_velocity", default_vel_.linear.x, 0.025);
   default_vel_.linear.y = 0.0;
   default_vel_.angular.z = 0.0;
 }
@@ -127,7 +126,7 @@ bool BackUp::pathIsClear()
   // Define the region size
   // Width is set to match the robot's diameter
   // Height is set to the requested distance to travel
-  double robot_width = 0.22;  // TODO(orduno) get from robot class
+  bool robot_width = robot_->getWidth();
   request.width = robot_width;
   request.height = std::abs(command_x_);
 

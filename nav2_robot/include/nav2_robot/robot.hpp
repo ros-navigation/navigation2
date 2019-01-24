@@ -38,6 +38,7 @@ public:
   bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
+  double getWidth() { return width_; }
 
 protected:
   // The ROS node to use to create publishers and subscribers
@@ -65,6 +66,9 @@ protected:
   // Information about the robot is contained in the URDF file
   std::string urdf_file_;
   urdf::Model model_;
+
+  // Robot parameters
+  double width_;
 };
 
 }  // namespace nav2_robot
