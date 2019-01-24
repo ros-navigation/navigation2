@@ -40,3 +40,15 @@ global_costmap:
         topic: /scan
         max_obstacle_height: 2.0
         clearing: True
+amcl:
+  ros__parameters:
+    use_sim_time: True
+navfn_planner:
+  ros__parameters:
+    use_sim_time: True
+simple_navigator:
+  ros__parameters:
+    use_sim_time: True
+mission_executor:
+  ros__parameters:
+    use_sim_time: True

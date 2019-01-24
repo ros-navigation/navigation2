@@ -6,6 +6,8 @@ import launch_ros.actions
 def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
+    params_file = launch.substitutions.LaunchConfiguration('params', default=
+        [launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
@@ -23,8 +25,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_amcl',
             node_executable='amcl',
-            node_name='amcl',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[params_file]),
 
     ])
