@@ -126,7 +126,7 @@ bool BackUp::pathIsClear()
   // Define the region size
   // Width is set to match the robot's diameter
   // Height is set to the requested distance to travel
-  bool robot_width = robot_->getWidth();
+  double robot_width = robot_->getWidth();
   request.width = robot_width;
   request.height = std::abs(command_x_);
 
@@ -134,7 +134,9 @@ bool BackUp::pathIsClear()
   request.reference.x = robot_pose->pose.pose.position.x;
   request.reference.y = robot_pose->pose.pose.position.y;
 
-  // Translate to set the edge of the region in front of the robot
+  // Calculate the offset in order to place the region of interest in front of the robot.
+  // Notice that, as specified on the service message, x corresponds to a value on the
+  // horizontal axis, while y is on the vertical.
   request.offset.x = 0.0;
   request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
