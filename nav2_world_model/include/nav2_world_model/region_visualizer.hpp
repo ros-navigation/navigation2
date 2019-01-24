@@ -72,7 +72,7 @@ public:
       marker_.points.size());
 
     marker_.header.frame_id = "map";
-    // marker_.header.stamp = node_.now();
+    marker_.header.stamp = node_->now();
     builtin_interfaces::msg::Time time;
     time.sec = 0;
     time.nanosec = 0;
