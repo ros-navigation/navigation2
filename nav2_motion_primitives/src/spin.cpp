@@ -149,7 +149,7 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 bool Spin::pathIsClear()
 {
   // TODO(orduno) assuming the robot has a near circular footprint
-  //              Obtain robot footprint and check for possible collision similar to
+  //              #533 Obtain robot footprint and check for possible collision similar to
   //              ROS1 `rotate_recovery`
   return true;
 }
