@@ -18,9 +18,12 @@
 #include <cmath>
 
 #include "nav2_motion_primitives/back_up.hpp"
+
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
