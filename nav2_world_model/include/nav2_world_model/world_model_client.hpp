@@ -19,7 +19,6 @@
 
 #include "nav2_tasks/service_client.hpp"
 #include "nav2_world_model/costmap_service_client.hpp"
-#include "nav2_world_model/clear_area_service_client.hpp"
 #include "nav2_world_model/free_space_service_client.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 
@@ -49,17 +48,10 @@ public:
     return free_space_client_.isFree(request)->result;
   }
 
-  bool clearArea(const ClearAreaServiceRequest & specs)
-  {
-    auto request = std::make_shared<ClearAreaServiceRequest>(specs);
-    return clear_area_client_.wasCleared(request)->result;
-  }
-
 private:
   // Service clients
   CostmapServiceClient costmap_client_;
   FreeSpaceServiceClient free_space_client_;
-  ClearAreaServiceClient clear_area_client_;
 };
 
 }  // namespace nav2_world_model

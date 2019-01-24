@@ -46,10 +46,6 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor)
   confirm_free_space_service_ = create_service<ProcessRegion>("ConfirmFreeSpace",
       std::bind(&WorldModel::confirmFreeSpaceCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-  clear_area_service_ = create_service<ProcessRegion>("ClearArea",
-      std::bind(&WorldModel::clearAreaCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void WorldModel::getCostmapCallback(
@@ -73,16 +69,6 @@ void WorldModel::confirmFreeSpaceCallback(
   RCLCPP_INFO(get_logger(), "Received confirm free space request");
 
   *response = world_representation_->confirmFreeSpace(*request);
-}
-
-void WorldModel::clearAreaCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<ProcessRegion::Request> request,
-  std::shared_ptr<ProcessRegion::Response> response)
-{
-  RCLCPP_INFO(get_logger(), "Received clear area request");
-
-  *response = world_representation_->clearArea(*request);
 }
 
 }  // namespace nav2_world_model

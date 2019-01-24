@@ -42,8 +42,6 @@ public:
 
   ProcessRegion::Response confirmFreeSpace(const ProcessRegion::Request & request) override;
 
-  ProcessRegion::Response clearArea(const ProcessRegion::Request & request) override;
-
 private:
   rclcpp::Clock::SharedPtr & clock_;
   tf2_ros::Buffer tfBuffer_;

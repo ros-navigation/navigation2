@@ -42,9 +42,6 @@ public:
   // Verify if a region is unoccupied
   virtual ProcessRegion::Response confirmFreeSpace(const ProcessRegion::Request & request) = 0;
 
-  // Request to set a region as unoccupied
-  virtual ProcessRegion::Response clearArea(const ProcessRegion::Request & request) = 0;
-
   virtual ~WorldRepresentation() {}
 
 protected:

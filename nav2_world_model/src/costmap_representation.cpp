@@ -81,15 +81,6 @@ CostmapRepresentation::confirmFreeSpace(const ProcessRegion::Request & request)
   return response;
 }
 
-ProcessRegion::Response
-CostmapRepresentation::clearArea(const ProcessRegion::Request & /*request*/)
-{
-  // TODO(orduno)
-  ProcessRegion::Response response;
-  response.result = false;
-  return response;
-}
-
 bool CostmapRepresentation::checkIfFree(const ProcessRegion::Request & request)
 {
   // Define the vertices of a rectangle

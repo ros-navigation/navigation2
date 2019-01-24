@@ -38,7 +38,6 @@ private:
   // The services provided
   rclcpp::Service<GetCostmap>::SharedPtr get_costmap_service_;
   rclcpp::Service<ProcessRegion>::SharedPtr confirm_free_space_service_;
-  rclcpp::Service<ProcessRegion>::SharedPtr clear_area_service_;
 
   void getCostmapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -46,11 +45,6 @@ private:
     std::shared_ptr<GetCostmap::Response> response);
 
   void confirmFreeSpaceCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<ProcessRegion::Request> request,
-    std::shared_ptr<ProcessRegion::Response> response);
-
-  void clearAreaCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<ProcessRegion::Request> request,
     std::shared_ptr<ProcessRegion::Response> response);
