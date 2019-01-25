@@ -66,8 +66,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_amcl',
             node_executable='amcl',
-            output='screen',
-            parameters=[params_file]),
+            output='screen'),
 
         launch_ros.actions.Node(
             package='dwb_controller',
@@ -78,14 +77,12 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
             node_executable='navfn_planner',
-            output='screen',
-            parameters=[params_file]),
+            output='screen'),
 
         launch_ros.actions.Node(
             package='nav2_simple_navigator',
             node_executable='simple_navigator',
-            output='screen',
-            parameters=[params_file]),
+            output='screen'),
     ])
 
 
