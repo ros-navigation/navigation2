@@ -1,0 +1,145 @@
+version: 2.1
+references:
+  install_prerequisites: &install_prerequisites
+    run:
+        name: Install Prerequisites
+        command: |
+          mkdir -p $ROS_WS/src
+          vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+          find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+            sort -k 2 | \
+            cut -d" " -f1 | \
+            sha256sum | \
+            awk '{print "source "$1}' >> $ROS_WS/checksum.txt
+          apt-get update
+          dependencies=$(
+            rosdep install -q -y \
+              --from-paths \
+                $ROS_WS/src \
+              --ignore-src \
+              --verbose | \
+            awk '$1 ~ /^resolution\:/' | \
+            awk -F'[][]' '{print $2}' | \
+            tr -d \, | xargs -n1 | sort -u | xargs)
+          dpkg -s $dependencies | \
+            sha256sum | \
+            awk '{print "dependencies "$1}' >> $ROS_WS/checksum.txt
+  restore_prerequisites_cache: &restore_prerequisites_cache
+    restore_cache:
+      name: Restore Prerequisites Cache
+      key: prerequisites-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+  build_prerequisites: &build_prerequisites
+    run:
+      name: Build Prerequisites
+      command: |
+        cd $ROS_WS
+        if [ -d install ]
+        then
+            echo "Skipping Build Prerequisites"
+        else
+            . /opt/ros/$ROS_DISTRO/setup.sh
+            colcon build \
+              --symlink-install
+        fi
+  save_prerequisites_cache: &save_prerequisites_cache
+    save_cache:
+      name: Save Prerequisites Cache
+      key: prerequisites-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      paths:
+        - /opt/ros_ws
+  install_dependencies: &install_dependencies
+    run:
+        name: Install Dependencies
+        command: |
+          cat $ROS_WS/checksum.txt | \
+            sha256sum | \
+            awk '{print "prerequisites "$1}' >> $NAV2_WS/checksum.txt
+          find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+            sort -k 2 | \
+            cut -d" " -f1 | \
+            sha256sum | \
+            awk '{print "source "$1}' >> $NAV2_WS/checksum.txt
+          apt-get update
+          dependencies=$(
+            rosdep install -q -y \
+              --from-paths \
+                $ROS_WS/src \
+                src \
+              --ignore-src \
+              --verbose | \
+            awk '$1 ~ /^resolution\:/' | \
+            awk -F'[][]' '{print $2}' | \
+            tr -d \, | xargs -n1 | sort -u | xargs)
+          dpkg -s $dependencies | \
+            sha256sum | \
+            awk '{print "dependencies "$1}' >> $NAV2_WS/checksum.txt
+  restore_navigation2_cache: &restore_navigation2_cache
+    restore_cache:
+      name: Restore Navigation2 Cache
+      key: navigation2-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+  build_navigation2: &build_navigation2
+    run:
+      name: Build Navigation2
+      command: |
+        if [ -d install ]
+        then
+            echo "Skipping Build Navigation2"
+        else
+            . $ROS_WS/install/setup.sh
+            colcon build \
+              --symlink-install
+        fi
+  save_navigation2_cache: &save_navigation2_cache
+    save_cache:
+      name: Save Navigation2 Cache
+      key: navigation2-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      paths:
+        - /opt/nav2_ws
+
+executors:
+  navigation2_exec:
+    docker:
+      - image: ruffsl/navigation2:master
+    working_directory: /opt/nav2_ws
+    environment:
+      CMAKE_BUILD_TYPE: "Release"
+      MAKEFLAGS: "-j 1 -l 1"
+
+jobs:
+  build:
+    executor: navigation2_exec
+    steps:
+      - run:
+          name: Clean up Environment
+          command: |
+            rm -rf $ROS_WS/*
+            rm -rf $NAV2_WS/*
+      - checkout:
+          path: src/navigation2
+      - *install_prerequisites
+      - *restore_prerequisites_cache
+      - *build_prerequisites
+      - *save_prerequisites_cache
+      - *install_dependencies
+      - *restore_navigation2_cache
+      - *build_navigation2
+      - *save_navigation2_cache
+      - run:
+          name: Save Build Logs
+          when: always
+          command: cp -rH log/latest_build log/build
+      - store_artifacts:
+          path: log/build
+      - run:
+          name: Test Navigation2
+          command: |
+            . install/setup.sh
+            colcon test --packages-skip nav2_system_tests
+            colcon test-result \
+              --verbose
+      - run:
+          name: Save Test Logs
+          when: always
+          command: cp -rH log/latest_test log/test
+      - store_artifacts:
+          path: log/test
