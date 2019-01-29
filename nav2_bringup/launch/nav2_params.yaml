@@ -27,7 +27,7 @@ local_costmap:
   local_costmap:
     ros__parameters:
       obstacle_layer:
-        enabled: False
+        enabled: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
@@ -45,7 +45,7 @@ global_costmap:
       scan:
         topic: /scan
         max_obstacle_height: 2.0
-        clearing: False
+        clearing: True
         marking: True
 robot_centric_costmap:
   robot_centric_costmap:
@@ -53,6 +53,8 @@ robot_centric_costmap:
       plugin_names: ["obstacle_layer", "inflation_layer"]
       plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
       global_frame: "base_link"
+      origin_x: -5.0
+      origin_y: -5.0
       obstacle_layer:
         enabled: True
       always_send_full_costmap: True
