@@ -33,11 +33,15 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor)
   auto clock = get_clock();
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
-  // Use a Costmap to represent the world
-  world_representation_ = std::make_unique<CostmapRepresentation>(
+  // Use Costmaps to represent the world
+  // world_representation_ = std::make_unique<CostmapRepresentation>(
+  //   "global_costmap", temp_node, executor, clock);
+
+  world_representations_["global_costmap"] = std::make_unique<CostmapRepresentation>(
     "global_costmap", temp_node, executor, clock);
 
-  // TODO(orduno) there's a pattern with the services and calbacks, define templates
+  world_representations_["robot_centric_costmap"] = std::make_unique<CostmapRepresentation>(
+    "robot_centric_costmap", temp_node, executor, clock);
 
   get_costmap_service_ = create_service<GetCostmap>("GetCostmap",
       std::bind(&WorldModel::getCostmapCallback, this,
@@ -55,7 +59,7 @@ void WorldModel::getCostmapCallback(
 {
   RCLCPP_INFO(get_logger(), "Received costmap request");
 
-  *response = world_representation_->getCostmap(*request);
+  *response = world_representations_["global_costmap"]->getCostmap(*request);
 
   RCLCPP_INFO(get_logger(), "Sending costmap of size %d, %d",
     response->map.metadata.size_x, response->map.metadata.size_y);
@@ -68,7 +72,8 @@ void WorldModel::confirmFreeSpaceCallback(
 {
   RCLCPP_INFO(get_logger(), "Received confirm free space request");
 
-  *response = world_representation_->confirmFreeSpace(*request);
+  // *response = world_representations_["robot_centric_costmap"]->confirmFreeSpace(*request);
+  *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
 }
 
 }  // namespace nav2_world_model

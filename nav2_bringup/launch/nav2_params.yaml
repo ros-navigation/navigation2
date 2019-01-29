@@ -1,6 +1,6 @@
 map_server:
   ros__parameters:
-    yaml_filename: "test_map.yaml"
+    yaml_filename: "/home/caorduno/map.yaml"
 DwbController:
   ros__parameters:
     debug_trajectory_details: True
@@ -39,11 +39,26 @@ global_costmap:
   global_costmap:
     ros__parameters:
       obstacle_layer:
-        enabled: False
+        enabled: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
         topic: /scan
         max_obstacle_height: 2.0
-        clearing: True
+        clearing: False
+        marking: True
+robot_centric_costmap:
+  robot_centric_costmap:
+    ros__parameters:
+      plugin_names: ["obstacle_layer", "inflation_layer"]
+      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      global_frame: "base_link"
+      obstacle_layer:
+        enabled: True
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: False
         marking: True

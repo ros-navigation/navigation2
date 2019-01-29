@@ -17,7 +17,7 @@
 
 #include <string>
 #include <memory>
-#include <vector>
+#include <map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_world_model/world_representation.hpp"
@@ -33,7 +33,8 @@ public:
 
 private:
   // World representation
-  std::unique_ptr<WorldRepresentation> world_representation_;
+  std::map<std::string, std::unique_ptr<WorldRepresentation>> world_representations_;
+  // std::unique_ptr<WorldRepresentation> world_representation_;
 
   // The services provided
   rclcpp::Service<GetCostmap>::SharedPtr get_costmap_service_;
