@@ -33,15 +33,13 @@ WorldModel::WorldModel(rclcpp::executor::Executor & executor)
   auto clock = get_clock();
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
-  // Use Costmaps to represent the world
-  // world_representation_ = std::make_unique<CostmapRepresentation>(
-  //   "global_costmap", temp_node, executor, clock);
-
+  // Use Costmaps to represent the world, one with static objects from map
   world_representations_["global_costmap"] = std::make_unique<CostmapRepresentation>(
-    "global_costmap", temp_node, executor, clock);
+    "global_costmap", temp_node, executor, clock, "map");
 
+  // And another centered at the robot with only objects detected by sensors
   world_representations_["robot_centric_costmap"] = std::make_unique<CostmapRepresentation>(
-    "robot_centric_costmap", temp_node, executor, clock);
+    "robot_centric_costmap", temp_node, executor, clock, "base_link");
 
   get_costmap_service_ = create_service<GetCostmap>("GetCostmap",
       std::bind(&WorldModel::getCostmapCallback, this,
@@ -72,8 +70,21 @@ void WorldModel::confirmFreeSpaceCallback(
 {
   RCLCPP_INFO(get_logger(), "Received confirm free space request");
 
-  // *response = world_representations_["robot_centric_costmap"]->confirmFreeSpace(*request);
-  *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
+  std::string frame_id = request->frame_id;
+
+  // TODO(orduno) For now always use the costmap centered at the robot
+  if ("base_link" != frame_id) {
+    RCLCPP_WARN(get_logger(), "Frame %s requested, however using 'base_link'", frame_id);
+    frame_id = "base_link";
+  }
+
+  if ("base_link" == frame_id) {
+    *response = world_representations_["robot_centric_costmap"]->confirmFreeSpace(*request);
+  } else if("map" == frame_id) {
+    *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
+  } else {
+    RCLCPP_WARN(get_logger(), "Reference frame %s not supported", request->frame_id);
+  }
 }
 
 }  // namespace nav2_world_model

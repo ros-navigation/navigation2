@@ -31,12 +31,13 @@ CostmapRepresentation::CostmapRepresentation(
   const std::string name,
   rclcpp::Node::SharedPtr & node,
   rclcpp::executor::Executor & executor,
-  rclcpp::Clock::SharedPtr & clock)
+  rclcpp::Clock::SharedPtr & clock,
+  std::string frame_id)
 : WorldRepresentation(name, node),
   clock_(clock),
   tfBuffer_(clock_),
   tfListener_(tfBuffer_),
-  region_visualizer_(node_)
+  region_visualizer_(node_, frame_id)
 {
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, tfBuffer_);
   costmap_ = costmap_ros_->getCostmap();
@@ -144,7 +145,7 @@ bool CostmapRepresentation::generateRectangleVertices(
   // Convert the vertices to map coordinates
   for (const auto & point : vertices) {
     if (!addToMapLocations(map_locations, point)) {
-      RCLCPP_ERROR(node_->get_logger(), "Point not added. Could not generate rectangle vertices");
+      RCLCPP_ERROR(node_->get_logger(), "Point not added.");
       return false;
     }
   }

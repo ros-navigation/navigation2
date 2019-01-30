@@ -15,6 +15,8 @@
 #ifndef NAV2_WORLD_MODEL__REGION_VISUALIZER_HPP_
 #define NAV2_WORLD_MODEL__REGION_VISUALIZER_HPP_
 
+#include <string>
+
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -24,12 +26,13 @@ namespace nav2_world_model
 class RegionVisualizer
 {
 public:
-  explicit RegionVisualizer(rclcpp::Node::SharedPtr & node)
+  RegionVisualizer(rclcpp::Node::SharedPtr & node, const std::string & frame_id)
   : node_(node),
+    frame_id_(frame_id),
     marker_(visualization_msgs::msg::Marker())
   {
     marker_publisher_ = node_->create_publisher<visualization_msgs::msg::Marker>(
-      "world_model_cell", 1);
+      "query_region", 1);
   }
 
   void addFreeCell(const double x, const double y, const double z)
@@ -71,7 +74,7 @@ public:
     RCLCPP_INFO(node_->get_logger(), "Publishing %d markers describing a region",
       marker_.points.size());
 
-    marker_.header.frame_id = "map";
+    marker_.header.frame_id = frame_id_;
     marker_.header.stamp = node_->now();
     builtin_interfaces::msg::Time time;
     time.sec = 0;
@@ -97,7 +100,7 @@ public:
 
     // Duration of zero indicates the object should last forever
     builtin_interfaces::msg::Duration duration;
-    duration.sec = 10;
+    duration.sec = 60;
     duration.nanosec = 0;
 
     marker_.lifetime = duration;
@@ -111,6 +114,9 @@ public:
 private:
   // ROS node used to create the publishers and subscribers
   rclcpp::Node::SharedPtr node_;
+
+  // Reference frame
+  std::string frame_id_;
 
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
 

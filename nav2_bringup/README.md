@@ -54,6 +54,7 @@ Set the World Model and the two costmap nodes to use simulation time
 ```
 ros2 param set /world_model use_sim_time True
 ros2 param set /global_costmap/global_costmap use_sim_time True
+ros2 param set /robot_centric_costmap/robot_centric_costmap use_sim_time True
 ros2 param set /local_costmap/local_costmap use_sim_time True
 ```
 
@@ -113,7 +114,10 @@ ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>
 If running in simulation:
 ```
 ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True
-ros2 param set /world_model use_sim_time True; ros2 param set /global_costmap/global_costmap use_sim_time True; ros2 param set /local_costmap/local_costmap use_sim_time True
+ros2 param set /world_model use_sim_time True
+ros2 param set /global_costmap/global_costmap use_sim_time True
+ros2 param set /robot_centric_costmap/robot_centric_costmap use_sim_time True
+ros2 param set /local_costmap/local_costmap use_sim_time True
 ```
 
 ## Future Work

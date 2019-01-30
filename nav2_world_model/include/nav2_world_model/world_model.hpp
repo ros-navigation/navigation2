@@ -34,7 +34,6 @@ public:
 private:
   // World representation
   std::map<std::string, std::unique_ptr<WorldRepresentation>> world_representations_;
-  // std::unique_ptr<WorldRepresentation> world_representation_;
 
   // The services provided
   rclcpp::Service<GetCostmap>::SharedPtr get_costmap_service_;

@@ -36,7 +36,8 @@ public:
     const std::string name,
     rclcpp::Node::SharedPtr & node,
     rclcpp::executor::Executor & executor,
-    rclcpp::Clock::SharedPtr & clock);
+    rclcpp::Clock::SharedPtr & clock,
+    std::string frame_id);
 
   GetCostmap::Response getCostmap(const GetCostmap::Request & request) override;
 

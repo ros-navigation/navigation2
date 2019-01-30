@@ -1,6 +1,7 @@
 # Process a rectangular region
 
-# reference point [m]
+# reference frame and point [m]
+string frame_id
 geometry_msgs/Point reference
 
 # Width and height of the rectangle [m]

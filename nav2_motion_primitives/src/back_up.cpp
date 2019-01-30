@@ -113,15 +113,28 @@ bool BackUp::pathIsClear()
 {
   auto robot_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
+  nav2_world_model::FreeSpaceServiceRequest request;
+
   // TODO(orduno) Obtain the pose from the tf tree. The robot class is currently obtaining the pose
   //              from amcl, and amcl doesn't update the pose often enough.
   //              The robot pose might not be updated on sequential backup requests.
-  if (!robot_->getCurrentPose(robot_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-    return false;
+  if (robot_->getCurrentPose(robot_pose)) {
+    // Robot is localized. Check for clear path relative to map.
+    request.frame_id = "map";
+    // And the reference point relative to robot
+    request.reference.x = robot_pose->pose.pose.position.x;
+    request.reference.y = robot_pose->pose.pose.position.y;
+    // Rotate to match robot's heading
+    request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
+  } else {
+    // Robot is not localized. Check for clear path relative to robot.
+    request.frame_id = "base_link";
+    request.reference.x = 0.0;
+    request.reference.y = 0.0;
+    request.rotation = 0.0;
+    RCLCPP_WARN(node_->get_logger(),
+      "Current robot pose is not available. Checking for clear path relative to robot.");
   }
-
-  nav2_world_model::FreeSpaceServiceRequest request;
 
   // Define the region size
   // Width is set to match the robot's diameter
@@ -130,18 +143,12 @@ bool BackUp::pathIsClear()
   request.width = robot_width;
   request.height = std::abs(command_x_);
 
-  // Define the reference point as the robot pose
-  request.reference.x = robot_pose->pose.pose.position.x;
-  request.reference.y = robot_pose->pose.pose.position.y;
-
   // Calculate the offset in order to place the region of interest in front of the robot.
   // Notice that, as specified on the service message, x corresponds to a value on the
   // horizontal axis, while y is on the vertical.
   request.offset.x = 0.0;
   request.offset.y = robot_width / 2.0 + request.height / 2.0;
 
-  // Rotate to match robot's heading
-  request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
   if (command_x_ < 0.0) {
     // Rotate 180 deg if traveling backwards
     RCLCPP_DEBUG(node_->get_logger(), "Traveling backwards.");
