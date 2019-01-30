@@ -94,7 +94,7 @@ void ObstacleLayer::onInitialize()
 
   // now we need to split the topics based on whitespace which we can use a stringstream for
   std::stringstream ss(topics_string);
-/*
+
   std::string source;
   while (ss >> source) {
     // get the parameters for the specific topic
@@ -212,7 +212,7 @@ void ObstacleLayer::onInitialize()
       target_frames.push_back(sensor_frame);
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
-  } */
+  }
   setupDynamicReconfigure();
 }
 
