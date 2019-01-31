@@ -56,7 +56,7 @@ namespace nav2_costmap_2d
 struct MapLocation
 {
   MapLocation(const unsigned int x, const unsigned int y)
-  : x(x), y(y) { }
+  : x(x), y(y) {}
 
   unsigned int x;
   unsigned int y;

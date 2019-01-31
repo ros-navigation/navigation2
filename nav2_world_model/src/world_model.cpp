@@ -74,7 +74,7 @@ void WorldModel::confirmFreeSpaceCallback(
 
   if ("base_link" == frame_id) {
     *response = world_representations_["robot_centric_costmap"]->confirmFreeSpace(*request);
-  } else if("map" == frame_id) {
+  } else if ("map" == frame_id) {
     *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
   } else {
     RCLCPP_WARN(get_logger(), "Reference frame %s not supported", frame_id);
