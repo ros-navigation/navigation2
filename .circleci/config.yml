@@ -153,3 +153,19 @@ jobs:
       - *test_navigation2
       - *copy_test_logs
       - *store_test_logs
+
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+  # nightly:
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 0 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - master
+  #   jobs:
+  #     - build
