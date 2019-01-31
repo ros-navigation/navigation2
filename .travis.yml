@@ -25,7 +25,7 @@ env:
 before_install:
   - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ];
       then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1;
-    fi
+      fi
   - docker build --tag navigation2:latest
       --build-arg PULLREQ=$TRAVIS_PULL_REQUEST
       --build-arg CMAKE_BUILD_TYPE
@@ -49,4 +49,4 @@ after_success:
       docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
       docker tag navigation2:latest stevemacenski/navigation2:latest
       docker push stevemacenski/navigation2:latest ;
-    fi
+      fi

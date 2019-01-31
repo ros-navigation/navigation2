@@ -16,6 +16,7 @@
 #define NAV2_TASKS__SERVICE_CLIENT_HPP_
 
 #include <string>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
@@ -27,7 +28,14 @@ class ServiceClient
 public:
   explicit ServiceClient(const std::string & name)
   {
-    node_ = rclcpp::Node::make_shared(name + "_Node");
+    node_ = rclcpp::Node::make_shared(name + "_Node",
+        "",
+        rclcpp::contexts::default_context::get_global_default_context(),
+        std::vector<std::string>(),
+        std::vector<rclcpp::Parameter>(),
+        false,  // ignore global parameters, so this node doesn't get renamed
+        false,
+        false);
     client_ = node_->create_client<ServiceT>(name);
   }
 
