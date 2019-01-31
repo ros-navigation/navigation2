@@ -38,7 +38,7 @@ public:
   bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
-  double getWidth() { return width_; }
+  double getWidth() {return width_;}
 
 protected:
   // The ROS node to use to create publishers and subscribers
