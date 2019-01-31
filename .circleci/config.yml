@@ -1,8 +1,8 @@
 version: 2.1
 references:
-  install_prerequisites: &install_prerequisites
+  install_upstream: &install_upstream
     run:
-        name: Install Prerequisites
+        name: Install Upstream
         command: |
           mkdir -p $ROS_WS/src
           vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
@@ -24,27 +24,27 @@ references:
           dpkg -s $dependencies | \
             sha256sum | \
             awk '{print "dependencies "$1}' >> $ROS_WS/checksum.txt
-  restore_prerequisites_cache: &restore_prerequisites_cache
+  restore_upstream_cache: &restore_upstream_cache
     restore_cache:
-      name: Restore Prerequisites Cache
-      key: prerequisites-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
-  build_prerequisites: &build_prerequisites
+      name: Restore Upstream Cache
+      key: upstream-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+  build_upstream: &build_upstream
     run:
-      name: Build Prerequisites
+      name: Build Upstream
       command: |
         cd $ROS_WS
         if [ -d install ]
         then
-            echo "Skipping Build Prerequisites"
+            echo "Skipping Build Upstream"
         else
             . /opt/ros/$ROS_DISTRO/setup.sh
             colcon build \
               --symlink-install
         fi
-  save_prerequisites_cache: &save_prerequisites_cache
+  save_upstream_cache: &save_upstream_cache
     save_cache:
-      name: Save Prerequisites Cache
-      key: prerequisites-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      name: Save Upstream Cache
+      key: upstream-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /opt/ros_ws
   install_dependencies: &install_dependencies
@@ -53,7 +53,7 @@ references:
         command: |
           cat $ROS_WS/checksum.txt | \
             sha256sum | \
-            awk '{print "prerequisites "$1}' >> $NAV2_WS/checksum.txt
+            awk '{print "upstream "$1}' >> $NAV2_WS/checksum.txt
           find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
@@ -140,10 +140,10 @@ jobs:
             rm -rf $NAV2_WS/*
       - checkout:
           path: src/navigation2
-      - *install_prerequisites
-      - *restore_prerequisites_cache
-      - *build_prerequisites
-      - *save_prerequisites_cache
+      - *install_upstream
+      - *restore_upstream_cache
+      - *build_upstream
+      - *save_upstream_cache
       - *install_dependencies
       - *restore_navigation2_cache
       - *build_navigation2
