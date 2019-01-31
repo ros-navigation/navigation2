@@ -72,18 +72,12 @@ void WorldModel::confirmFreeSpaceCallback(
 
   std::string frame_id = request->frame_id;
 
-  // TODO(orduno) For now always use the costmap centered at the robot
-  if ("base_link" != frame_id) {
-    RCLCPP_WARN(get_logger(), "Frame %s requested, however using 'base_link'", frame_id);
-    frame_id = "base_link";
-  }
-
   if ("base_link" == frame_id) {
     *response = world_representations_["robot_centric_costmap"]->confirmFreeSpace(*request);
   } else if("map" == frame_id) {
     *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
   } else {
-    RCLCPP_WARN(get_logger(), "Reference frame %s not supported", request->frame_id);
+    RCLCPP_WARN(get_logger(), "Reference frame %s not supported", frame_id);
   }
 }
 

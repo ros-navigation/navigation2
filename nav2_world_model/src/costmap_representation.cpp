@@ -33,11 +33,11 @@ CostmapRepresentation::CostmapRepresentation(
   rclcpp::executor::Executor & executor,
   rclcpp::Clock::SharedPtr & clock,
   std::string frame_id)
-: WorldRepresentation(name, node),
+: WorldRepresentation(name, node, frame_id),
   clock_(clock),
   tfBuffer_(clock_),
   tfListener_(tfBuffer_),
-  region_visualizer_(node_, frame_id)
+  region_visualizer_(node_, frame_id_)
 {
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, tfBuffer_);
   costmap_ = costmap_ros_->getCostmap();
@@ -64,7 +64,7 @@ CostmapRepresentation::getCostmap(const GetCostmap::Request & /*request*/)
   response.map.metadata.origin.orientation = tf2::toMsg(quaternion);
 
   response.map.header.stamp = costmap_ros_->now();
-  response.map.header.frame_id = "map";
+  response.map.header.frame_id = frame_id_;
 
   unsigned char * data = costmap_->getCharMap();
   auto data_length = response.map.metadata.size_x * response.map.metadata.size_y;

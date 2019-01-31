@@ -1,6 +1,6 @@
 map_server:
   ros__parameters:
-  yaml_filename: "test_map.yaml"
+    yaml_filename: "test_map.yaml"
 DwbController:
   ros__parameters:
     debug_trajectory_details: True

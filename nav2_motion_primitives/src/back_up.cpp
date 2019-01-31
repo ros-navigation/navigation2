@@ -115,26 +115,22 @@ bool BackUp::pathIsClear()
 
   nav2_world_model::FreeSpaceServiceRequest request;
 
-  // TODO(orduno) Obtain the pose from the tf tree. The robot class is currently obtaining the pose
-  //              from amcl, and amcl doesn't update the pose often enough.
-  //              The robot pose might not be updated on sequential backup requests.
-  if (robot_->getCurrentPose(robot_pose)) {
-    // Robot is localized. Check for clear path relative to map.
-    request.frame_id = "map";
-    // And the reference point relative to robot
-    request.reference.x = robot_pose->pose.pose.position.x;
-    request.reference.y = robot_pose->pose.pose.position.y;
-    // Rotate to match robot's heading
-    request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
-  } else {
-    // Robot is not localized. Check for clear path relative to robot.
-    request.frame_id = "base_link";
-    request.reference.x = 0.0;
-    request.reference.y = 0.0;
-    request.rotation = 0.0;
-    RCLCPP_WARN(node_->get_logger(),
-      "Current robot pose is not available. Checking for clear path relative to robot.");
-  }
+  // Check for clear path relative to robot.
+  request.frame_id = "base_link";
+  request.reference.x = 0.0;
+  request.reference.y = 0.0;
+  request.rotation = 0.0;
+
+  // TODO(orduno) If robot is localized we might want to check relative to the map
+  // if (robot_->getCurrentPose(robot_pose)) {
+  //   // Robot is localized. Check for clear path relative to map.
+  //   request.frame_id = "map";
+  //   // And the reference point relative to robot
+  //   request.reference.x = robot_pose->pose.pose.position.x;
+  //   request.reference.y = robot_pose->pose.pose.position.y;
+  //   // Rotate to match robot's heading
+  //   request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
+  // }
 
   // Define the region size
   // Width is set to match the robot's diameter

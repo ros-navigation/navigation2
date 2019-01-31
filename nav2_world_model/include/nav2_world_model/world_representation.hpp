@@ -30,8 +30,9 @@ using nav2_msgs::srv::ProcessRegion;
 class WorldRepresentation
 {
 public:
-  explicit WorldRepresentation(const std::string & name, rclcpp::Node::SharedPtr & node)
-  : name_(name), node_(node)
+  explicit WorldRepresentation(
+    const std::string & name, rclcpp::Node::SharedPtr & node, const std::string & frame_id)
+  : name_(name), node_(node), frame_id_(frame_id)
   {
   }
 
@@ -49,6 +50,9 @@ protected:
 
   // The ROS node to use to create publishers and subscribers
   rclcpp::Node::SharedPtr node_;
+
+  // The reference frame for this representation
+  std::string frame_id_;
 };
 
 }  // namespace nav2_world_model
