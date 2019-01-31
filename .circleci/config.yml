@@ -95,6 +95,30 @@ references:
       key: navigation2-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
       paths:
         - /opt/nav2_ws
+  copy_build_logs: &copy_build_logs
+    run:
+        name: Copy Build Logs
+        when: always
+        command: cp -rH log/latest_build log/build
+  store_build_logs: &store_build_logs
+    store_artifacts:
+        path: log/build
+  test_navigation2: &test_navigation2
+    run:
+        name: Test Navigation2
+        command: |
+          . install/setup.sh
+          colcon test --packages-skip nav2_system_tests
+          colcon test-result \
+            --verbose
+  copy_test_logs: &copy_test_logs
+    run:
+        name: Copy Test Logs
+        when: always
+        command: cp -rH log/latest_test log/test
+  store_test_logs: &store_test_logs
+    store_artifacts:
+        path: log/test
 
 executors:
   navigation2_exec:
@@ -124,22 +148,8 @@ jobs:
       - *restore_navigation2_cache
       - *build_navigation2
       - *save_navigation2_cache
-      - run:
-          name: Save Build Logs
-          when: always
-          command: cp -rH log/latest_build log/build
-      - store_artifacts:
-          path: log/build
-      - run:
-          name: Test Navigation2
-          command: |
-            . install/setup.sh
-            colcon test --packages-skip nav2_system_tests
-            colcon test-result \
-              --verbose
-      - run:
-          name: Save Test Logs
-          when: always
-          command: cp -rH log/latest_test log/test
-      - store_artifacts:
-          path: log/test
+      - *copy_build_logs
+      - *store_build_logs
+      - *test_navigation2
+      - *copy_test_logs
+      - *store_test_logs
