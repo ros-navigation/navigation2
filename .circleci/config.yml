@@ -6,6 +6,9 @@ references:
         command: |
           mkdir -p $ROS_WS/src
           vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+          tar -cf - /opt/ros/$ROS_DISTRO | \
+            sha256sum | \
+            awk '{print "distro "$1}' >> $ROS_WS/checksum.txt
           find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
