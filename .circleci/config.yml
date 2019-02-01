@@ -145,7 +145,7 @@ commands:
       - *store_test_logs
 
 executors:
-  navigation2_exec:
+  docker_exec:
     docker:
       - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
@@ -155,7 +155,7 @@ executors:
 
 jobs:
   build:
-    executor: navigation2_exec
+    executor: docker_exec
     steps:
       - run:
           name: Clean up Environment
