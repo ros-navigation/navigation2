@@ -4,7 +4,7 @@ references:
     run:
         name: Pre Checkout
         command: |
-          tar -cf - /opt/ros/$ROS_DISTRO | \
+          tar --mtime="1970-01-01" -cf - /opt/ros/$ROS_DISTRO | \
             sha256sum | \
             awk '{print "distro "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
           cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
