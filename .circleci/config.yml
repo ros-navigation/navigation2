@@ -181,7 +181,7 @@ commands:
 executors:
   docker_exec:
     docker:
-      - image: ruffsl/navigation2:master
+      - image: rosplanning/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
       CMAKE_BUILD_TYPE: "Release"
