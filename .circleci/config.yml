@@ -1,19 +1,34 @@
 version: 2.1
 references:
+  pre_checkout: &pre_checkout
+    run:
+        name: Pre Checkout
+        command: |
+          tar -cf - /opt/ros/$ROS_DISTRO | \
+            sha256sum | \
+            awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
+          cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
+          rm -rf $NAV2_WS/*
+  post_checkout: &post_checkout
+    run:
+        name: Post Checkout
+        command: |
+          if ! cmp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/ros2_dependencies.repos >/dev/null 2>&1
+          then
+            rm -rf $ROS_WS/*
+            mkdir -p $ROS_WS/src
+            vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+          fi
   install_upstream: &install_upstream
     run:
         name: Install Upstream
         command: |
-          mkdir -p $ROS_WS/src
-          vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
-          tar -cf - /opt/ros/$ROS_DISTRO | \
-            sha256sum | \
-            awk '{print "distro "$1}' >> $ROS_WS/checksum.txt
+          cat /opt/ros/$ROS_DISTRO/checksum.txt >> $ROS_WS/checksum.txt
           find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
             sha256sum | \
-            awk '{print "source "$1}' >> $ROS_WS/checksum.txt
+            awk '{print "upstream source "$1}' >> $ROS_WS/checksum.txt
           apt-get update
           dependencies=$(
             rosdep install -q -y \
@@ -26,7 +41,7 @@ references:
             tr -d \, | xargs -n1 | sort -u | xargs)
           dpkg -s $dependencies | \
             sha256sum | \
-            awk '{print "dependencies "$1}' >> $ROS_WS/checksum.txt
+            awk '{print "upstream dependencies "$1}' >> $ROS_WS/checksum.txt
   restore_upstream_cache: &restore_upstream_cache
     restore_cache:
       name: Restore Upstream Cache
@@ -54,9 +69,7 @@ references:
     run:
         name: Install Dependencies
         command: |
-          cat $ROS_WS/checksum.txt | \
-            sha256sum | \
-            awk '{print "upstream "$1}' >> $NAV2_WS/checksum.txt
+          cat $ROS_WS/checksum.txt >> $NAV2_WS/checksum.txt
           find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
@@ -124,6 +137,13 @@ references:
         path: log/test
 
 commands:
+  checkout_source:
+    description: "Checkout Source"
+    steps:
+      - *pre_checkout
+      - checkout:
+          path: src/navigation2
+      - *post_checkout
   setup_upstream:
     description: "Setup Upstream"
     steps:
@@ -160,13 +180,7 @@ jobs:
   build:
     executor: docker_exec
     steps:
-      - run:
-          name: Clean up Environment
-          command: |
-            rm -rf $ROS_WS/*
-            rm -rf $NAV2_WS/*
-      - checkout:
-          path: src/navigation2
+      - checkout_source
       - setup_upstream
       - build_source
       - test_source
