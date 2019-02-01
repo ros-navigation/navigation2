@@ -6,7 +6,7 @@ references:
         command: |
           tar -cf - /opt/ros/$ROS_DISTRO | \
             sha256sum | \
-            awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
+            awk '{print "distro "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
           cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
           rm -rf $NAV2_WS/*
   post_checkout: &post_checkout
@@ -24,7 +24,7 @@ references:
     run:
         name: Install Upstream
         command: |
-          cat /opt/ros/$ROS_DISTRO/checksum.txt >> $ROS_WS/checksum.txt
+          cat /opt/ros/$ROS_DISTRO/checksum.txt > $ROS_WS/checksum.txt
           find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
@@ -70,7 +70,7 @@ references:
     run:
         name: Install Dependencies
         command: |
-          cat $ROS_WS/checksum.txt >> $NAV2_WS/checksum.txt
+          cat $ROS_WS/checksum.txt > $NAV2_WS/checksum.txt
           find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
