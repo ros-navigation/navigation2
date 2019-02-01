@@ -13,6 +13,7 @@ references:
     run:
         name: Post Checkout
         command: |
+          rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
           if ! cmp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/ros2_dependencies.repos >/dev/null 2>&1
           then
             echo "Cleaning Upstream"
