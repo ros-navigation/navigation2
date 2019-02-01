@@ -89,26 +89,26 @@ references:
           dpkg -s $dependencies | \
             sha256sum | \
             awk '{print "dependencies "$1}' >> $NAV2_WS/checksum.txt
-  restore_navigation2_cache: &restore_navigation2_cache
+  restore_build_cache: &restore_build_cache
     restore_cache:
-      name: Restore Navigation2 Cache
-      key: navigation2-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
-  build_navigation2: &build_navigation2
+      name: Restore Build Cache
+      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+  source_build: &source_build
     run:
-      name: Build Navigation2
+      name: Source Build
       command: |
         if [ -d install ]
         then
-            echo "Skipping Build Navigation2"
+            echo "Skipping Source Build"
         else
             . $ROS_WS/install/setup.sh
             colcon build \
               --symlink-install
         fi
-  save_navigation2_cache: &save_navigation2_cache
+  save_build_cache: &save_build_cache
     save_cache:
-      name: Save Navigation2 Cache
-      key: navigation2-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      name: Save Build Cache
+      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
       paths:
         - /opt/nav2_ws
   copy_build_logs: &copy_build_logs
@@ -119,9 +119,9 @@ references:
   store_build_logs: &store_build_logs
     store_artifacts:
         path: log/build
-  test_navigation2: &test_navigation2
+  test_build: &test_build
     run:
-        name: Test Navigation2
+        name: Test Build
         command: |
           . install/setup.sh
           colcon test --packages-skip nav2_system_tests
@@ -155,15 +155,15 @@ commands:
     description: "Build Source"
     steps:
       - *install_dependencies
-      - *restore_navigation2_cache
-      - *build_navigation2
-      - *save_navigation2_cache
+      - *restore_build_cache
+      - *source_build
+      - *save_build_cache
       - *copy_build_logs
       - *store_build_logs
   test_source:
     description: "Test Source"
     steps:
-      - *test_navigation2
+      - *test_build
       - *copy_test_logs
       - *store_test_logs
 
