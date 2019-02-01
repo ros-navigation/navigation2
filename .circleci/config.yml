@@ -120,6 +120,30 @@ references:
     store_artifacts:
         path: log/test
 
+commands:
+  setup_upstream:
+    description: "Setup Upstream"
+    steps:
+      - *install_upstream
+      - *restore_upstream_cache
+      - *build_upstream
+      - *save_upstream_cache
+  build_source:
+    description: "Build Source"
+    steps:
+      - *install_dependencies
+      - *restore_navigation2_cache
+      - *build_navigation2
+      - *save_navigation2_cache
+      - *copy_build_logs
+      - *store_build_logs
+  test_source:
+    description: "Test Source"
+    steps:
+      - *test_navigation2
+      - *copy_test_logs
+      - *store_test_logs
+
 executors:
   navigation2_exec:
     docker:
@@ -140,19 +164,9 @@ jobs:
             rm -rf $NAV2_WS/*
       - checkout:
           path: src/navigation2
-      - *install_upstream
-      - *restore_upstream_cache
-      - *build_upstream
-      - *save_upstream_cache
-      - *install_dependencies
-      - *restore_navigation2_cache
-      - *build_navigation2
-      - *save_navigation2_cache
-      - *copy_build_logs
-      - *store_build_logs
-      - *test_navigation2
-      - *copy_test_logs
-      - *store_test_logs
+      - setup_upstream
+      - build_source
+      - test_source
 
 workflows:
   version: 2
