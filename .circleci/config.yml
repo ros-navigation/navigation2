@@ -15,6 +15,7 @@ references:
         command: |
           if ! cmp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/ros2_dependencies.repos >/dev/null 2>&1
           then
+            echo "Cleaning Upstream"
             rm -rf $ROS_WS/*
             mkdir -p $ROS_WS/src
             vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
