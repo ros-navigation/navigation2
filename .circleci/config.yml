@@ -30,7 +30,7 @@ references:
   restore_upstream_cache: &restore_upstream_cache
     restore_cache:
       name: Restore Upstream Cache
-      key: upstream-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
   build_upstream: &build_upstream
     run:
       name: Build Upstream
@@ -47,7 +47,7 @@ references:
   save_upstream_cache: &save_upstream_cache
     save_cache:
       name: Save Upstream Cache
-      key: upstream-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /opt/ros_ws
   install_dependencies: &install_dependencies
