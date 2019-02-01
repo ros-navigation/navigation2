@@ -90,6 +90,9 @@ references:
           dpkg -s $dependencies | \
             sha256sum | \
             awk '{print "dependencies "$1}' >> $NAV2_WS/checksum.txt
+  store_build_checksum: &store_build_checksum
+    store_artifacts:
+        path: checksum.txt
   restore_build_cache: &restore_build_cache
     restore_cache:
       name: Restore Build Cache
@@ -156,6 +159,7 @@ commands:
     description: "Build Source"
     steps:
       - *install_dependencies
+      - *store_build_checksum
       - *restore_build_cache
       - *source_build
       - *save_build_cache
