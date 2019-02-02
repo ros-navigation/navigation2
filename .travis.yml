@@ -19,13 +19,25 @@ notifications:
       - carl.r.delsey@intel.com
       - matthew.k.hansen@intel.com
 
-env:
-  - CMAKE_BUILD_TYPE=Release
-
 before_install:
   - if [ "${TRAVIS_REPO_SLUG}" != "ros-planning/navigation2" ];
       then echo "Travis CI is supported only in ros-planning/navigation2" && exit 1;
       fi
+
+matrix:
+  include:
+    - env: CMAKE_BUILD_TYPE=Release
+      after_success:
+        - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+            echo "Successfully built! Deploying container..."
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
+            docker tag navigation2:latest stevemacenski/navigation2:latest
+            docker push stevemacenski/navigation2:latest ;
+            fi
+
+    - env: CMAKE_BUILD_TYPE=Debug COVERAGE_ARGS='--build-arg -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_EXE_LINKER_FLAGS=--coverage -DCMAKE_SHARED_LINKER_FLAGS=--coverage'
+      after_success:
+        - src/navigation2/tools/code_coverage_report.bash codecovio
 
 script:
   - docker build --tag navigation2:latest
@@ -35,12 +47,4 @@ script:
   - docker run --rm --detach --name nav2_bash navigation2:latest
       sleep infinity
   - docker exec --interactive --tty nav2_bash /ros_entrypoint.sh
-      src/navigation2/tools/runtestsuite.bash
-
-after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      echo "Successfully built! Deploying container..."
-      docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
-      docker tag navigation2:latest stevemacenski/navigation2:latest
-      docker push stevemacenski/navigation2:latest ;
-      fi
+      src/navigation2/tools/run_test_suite.bash
