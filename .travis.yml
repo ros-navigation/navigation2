@@ -37,7 +37,8 @@ matrix:
 
     - env: CMAKE_BUILD_TYPE=Debug COVERAGE_ARGS='--build-arg -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_EXE_LINKER_FLAGS=--coverage -DCMAKE_SHARED_LINKER_FLAGS=--coverage'
       after_success:
-        - src/navigation2/tools/code_coverage_report.bash codecovio
+        - docker exec --interactive --tty -e CODECOV_TOKEN nav2_bash /ros_entrypoint.sh
+            src/navigation2/tools/code_coverage_report.bash codecovio
 
 script:
   - docker build --tag navigation2:latest
