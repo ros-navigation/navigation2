@@ -49,9 +49,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # build dependency package source
 ARG CMAKE_BUILD_TYPE=Release
 ARG COVERAGE_ENABLED=False
-if [ "$COVERAGE_ENABLED" = "True" ]; \
+RUN if [ "$COVERAGE_ENABLED" = "True" ]; \
   then \
-    ENV COVERAGE_ARGS='-DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_EXE_LINKER_FLAGS=--coverage -DCMAKE_SHARED_LINKER_FLAGS=--coverage' ; \
+    export COVERAGE_ARGS='-DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage -DCMAKE_EXE_LINKER_FLAGS=--coverage -DCMAKE_SHARED_LINKER_FLAGS=--coverage' ; \
   fi
 
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
