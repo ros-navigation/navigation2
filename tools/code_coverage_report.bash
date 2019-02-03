@@ -33,7 +33,8 @@ mkdir -p $LCOVDIR
 lcov -c  --initial --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/initialcoverage.info
 lcov -c --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/testcoverage.info
 lcov -a ${LCOVDIR}/initialcoverage.info -a ${LCOVDIR}/testcoverage.info --rc lcov_branch_coverage=1 --o ${LCOVDIR}/fullcoverage.info
-lcov -e ${LCOVDIR}/fullcoverage.info "${PWD}/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/projectcoverage.info
+lcov -e ${LCOVDIR}/fullcoverage.info "${PWD}/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/workspacecoverage.info
+lcov -r ${LCOVDIR}/workspacecoverage.info "${PWD}/build/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/projectcoverage.info
 if [ $COVERAGE_REPORT = codecovio ]; then
   bash <(curl -s https://codecov.io/bash) -f ${LCOVDIR}/projectcoverage.info
 else
