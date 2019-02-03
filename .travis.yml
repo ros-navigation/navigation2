@@ -46,6 +46,7 @@ script:
   - docker build --tag navigation2:latest
       --build-arg PULLREQ=$TRAVIS_PULL_REQUEST
       --build-arg CMAKE_BUILD_TYPE
+      $COVERAGE_ARGS
       ./
   - docker run --rm --detach --name nav2_bash navigation2:latest
       sleep infinity
