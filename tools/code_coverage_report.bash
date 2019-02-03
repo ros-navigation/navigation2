@@ -15,7 +15,7 @@ set -e
 LCOVDIR=lcov
 PWD=`pwd`
 
-REPORT_COMMAND="genhtml ${LCOVDIR}/projectcoverage.info --output-directory ${LCOVDIR}/html --branch-coverage -p ${PWD}"
+COVERAGE_REPORT=genhtml
 
 for opt in "$@" ; do
   case "$opt" in
@@ -24,14 +24,18 @@ for opt in "$@" ; do
       exit 0
       ;;
     codecovio)
-      REPORT_COMMAND="bash <(curl -s https://codecov.io/bash) -f ${LCOVDIR}/projectcoverage.info"
+      COVERAGE_REPORT=codecovio
       ;;
   esac
 done
 
-mkdir $LCOVDIR
+mkdir -p $LCOVDIR
 lcov -c  --initial --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/initialcoverage.info
 lcov -c --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/testcoverage.info
 lcov -a ${LCOVDIR}/initialcoverage.info -a ${LCOVDIR}/testcoverage.info --rc lcov_branch_coverage=1 --o ${LCOVDIR}/fullcoverage.info
 lcov -e ${LCOVDIR}/fullcoverage.info "${PWD}/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/projectcoverage.info
-$REPORT_COMMAND
+if [ $COVERAGE_REPORT = codecovio ]; then
+  bash <(curl -s https://codecov.io/bash) -f ${LCOVDIR}/projectcoverage.info
+else
+  genhtml ${LCOVDIR}/projectcoverage.info --output-directory ${LCOVDIR}/html --branch-coverage -p ${PWD}
+fi
