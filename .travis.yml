@@ -37,8 +37,6 @@ matrix:
 
     - env: CMAKE_BUILD_TYPE=Debug COVERAGE_ENABLED=True
       after_success:
-        - docker exec --interactive --tty -e CODECOV_TOKEN nav2_bash bash -c
-            "apt-get update ; apt-get -y install lcov"
         - ci_env=`bash <(curl -s https://codecov.io/env)`
         - docker exec --interactive --tty $ci_env nav2_bash /ros_entrypoint.sh
             src/navigation2/tools/code_coverage_report.bash codecovio
