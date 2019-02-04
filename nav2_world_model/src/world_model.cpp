@@ -77,7 +77,7 @@ void WorldModel::confirmFreeSpaceCallback(
   } else if ("map" == frame_id) {
     *response = world_representations_["global_costmap"]->confirmFreeSpace(*request);
   } else {
-    RCLCPP_WARN(get_logger(), "Reference frame %s not supported", frame_id_.c_str());
+    RCLCPP_WARN(get_logger(), "Reference frame %s not supported", frame_id.c_str());
   }
 }
 
