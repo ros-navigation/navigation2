@@ -76,16 +76,16 @@ TEST_F(ClientTest, testAddParamsOtherNodes)
   dynamic_params_client_->add_parameters({"foobar"});
 
   auto dynamic_param_map = dynamic_params_client_->get_param_map();
-  EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/baz"));
-  EXPECT_EQ(1, dynamic_param_map.count("/dynamic_param_client_test/foobar"));
-  EXPECT_EQ(1, dynamic_param_map.count("/test_node/foo"));
-  EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/bar"));
-  EXPECT_EQ(1, dynamic_param_map.count("/test_namespace/test_node/foobar"));
+  EXPECT_EQ(1u, dynamic_param_map.count("/dynamic_param_client_test/baz"));
+  EXPECT_EQ(1u, dynamic_param_map.count("/dynamic_param_client_test/foobar"));
+  EXPECT_EQ(1u, dynamic_param_map.count("/test_node/foo"));
+  EXPECT_EQ(1u, dynamic_param_map.count("/test_namespace/test_node/bar"));
+  EXPECT_EQ(1u, dynamic_param_map.count("/test_namespace/test_node/foobar"));
 
   // Verify that parameters not added to other namespaces/nodes
-  EXPECT_EQ(0, dynamic_param_map.count("/dynamic_param_client_test/bar"));
-  EXPECT_EQ(0, dynamic_param_map.count("/test_namespace/dynamic_param_client_test/baz"));
-  EXPECT_EQ(0, dynamic_param_map.count("/test_node/bar"));
+  EXPECT_EQ(0u, dynamic_param_map.count("/dynamic_param_client_test/bar"));
+  EXPECT_EQ(0u, dynamic_param_map.count("/test_namespace/dynamic_param_client_test/baz"));
+  EXPECT_EQ(0u, dynamic_param_map.count("/test_node/bar"));
 }
 
 TEST_F(ClientTest, testGetParams)

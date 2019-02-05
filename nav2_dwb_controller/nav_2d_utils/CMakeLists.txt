@@ -1,16 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav_2d_utils)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic) # TODO(crdelsey): add -Werror once tf2/utils.h is fixed
-endif()
-
 find_package(ament_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -18,6 +10,8 @@ find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+
+nav2_package()
 
 set(dependencies
   geometry_msgs

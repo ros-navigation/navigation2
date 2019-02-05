@@ -1,16 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(dwb_critics)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
-
 find_package(ament_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(costmap_queue REQUIRED)
@@ -22,6 +14,8 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+
+nav2_package()
 
 include_directories(
   include

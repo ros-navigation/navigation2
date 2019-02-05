@@ -1,16 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_util)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror -fPIC)
-endif()
-
 find_package(ament_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
@@ -19,6 +11,8 @@ find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+
+nav2_package()
 
 include_directories(include)
 

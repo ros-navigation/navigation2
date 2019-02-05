@@ -1,17 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_costmap_2d)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  #add_compile_options(-Wall -Wextra -Wpedantic)
-  add_compile_options(-fPIC)
-endif()
-
 find_package(ament_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -34,6 +25,9 @@ find_package(nav2_msgs REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
+
+nav2_package()
+add_compile_options(-Wno-sign-compare -Wno-reorder -Wno-strict-aliasing -Wno-unused-parameter -Wno-unused-variable)
 
 include_directories(
   include
