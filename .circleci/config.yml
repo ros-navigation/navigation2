@@ -129,7 +129,7 @@ references:
         name: Test Build
         command: |
           . install/setup.sh
-          src/navigation2/tools/runtestsuite.bash
+          src/navigation2/tools/run_test_suite.bash
 
   copy_test_logs: &copy_test_logs
     run:
