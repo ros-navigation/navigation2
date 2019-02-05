@@ -69,22 +69,12 @@ RUN . $ROS_WS/install/setup.sh && \
 # build navigation2 package source
 RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 ARG COVERAGE_ENABLED=False
-RUN if [ "$COVERAGE_ENABLED" = "True" ]; \
-  then \
-  . $ROS_WS/install/setup.sh && \
+RUN . $ROS_WS/install/setup.sh && \
      colcon build \
        --symlink-install \
        --cmake-args \
-         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_CXX_FLAGS=--coverage \
-         -DCMAKE_C_FLAGS=--coverage -DCMAKE_EXE_LINKER_FLAGS=--coverage \
-         -DCMAKE_SHARED_LINKER_FLAGS=--coverage ; \
-  else \
-    . $ROS_WS/install/setup.sh && \
-       colcon build \
-         --symlink-install \
-         --cmake-args \
-           -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE ; \
-  fi
+         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
 
 # source navigation2 workspace from entrypoint
 RUN sed --in-place \
