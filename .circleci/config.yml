@@ -1,0 +1,214 @@
+version: 2.1
+references:
+  pre_checkout: &pre_checkout
+    run:
+        name: Pre Checkout
+        command: |
+          stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
+            sha256sum | \
+            awk '{print "distro "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
+          cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
+          rm -rf $NAV2_WS/*
+  post_checkout: &post_checkout
+    run:
+        name: Post Checkout
+        command: |
+          rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+          if ! cmp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/ros2_dependencies.repos >/dev/null 2>&1
+          then
+            echo "Cleaning Upstream"
+            rm -rf $ROS_WS/*
+            mkdir -p $ROS_WS/src
+            vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+          fi
+  install_upstream: &install_upstream
+    run:
+        name: Install Upstream
+        command: |
+          cat /opt/ros/$ROS_DISTRO/checksum.txt > $ROS_WS/checksum.txt
+          find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+            sort -k 2 | \
+            cut -d" " -f1 | \
+            sha256sum | \
+            awk '{print "upstream source "$1}' >> $ROS_WS/checksum.txt
+          apt-get update
+          dependencies=$(
+            rosdep install -q -y \
+              --from-paths \
+                $ROS_WS/src \
+              --ignore-src \
+              --verbose | \
+            awk '$1 ~ /^resolution\:/' | \
+            awk -F'[][]' '{print $2}' | \
+            tr -d \, | xargs -n1 | sort -u | xargs)
+          dpkg -s $dependencies | \
+            sha256sum | \
+            awk '{print "upstream dependencies "$1}' >> $ROS_WS/checksum.txt
+  restore_upstream_cache: &restore_upstream_cache
+    restore_cache:
+      name: Restore Upstream Cache
+      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+  build_upstream: &build_upstream
+    run:
+      name: Build Upstream
+      command: |
+        cd $ROS_WS
+        if [ -d install ]
+        then
+            echo "Skipping Build Upstream"
+        else
+            . /opt/ros/$ROS_DISTRO/setup.sh
+            colcon build \
+              --symlink-install
+        fi
+  save_upstream_cache: &save_upstream_cache
+    save_cache:
+      name: Save Upstream Cache
+      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      paths:
+        - /opt/ros_ws
+  install_dependencies: &install_dependencies
+    run:
+        name: Install Dependencies
+        command: |
+          cat $ROS_WS/checksum.txt > $NAV2_WS/checksum.txt
+          find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+            sort -k 2 | \
+            cut -d" " -f1 | \
+            sha256sum | \
+            awk '{print "source "$1}' >> $NAV2_WS/checksum.txt
+          apt-get update
+          dependencies=$(
+            rosdep install -q -y \
+              --from-paths \
+                $ROS_WS/src \
+                src \
+              --ignore-src \
+              --verbose | \
+            awk '$1 ~ /^resolution\:/' | \
+            awk -F'[][]' '{print $2}' | \
+            tr -d \, | xargs -n1 | sort -u | xargs)
+          dpkg -s $dependencies | \
+            sha256sum | \
+            awk '{print "dependencies "$1}' >> $NAV2_WS/checksum.txt
+  store_build_checksum: &store_build_checksum
+    store_artifacts:
+        path: checksum.txt
+  restore_build_cache: &restore_build_cache
+    restore_cache:
+      name: Restore Build Cache
+      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+  source_build: &source_build
+    run:
+      name: Source Build
+      command: |
+        if [ -d install ]
+        then
+            echo "Skipping Source Build"
+        else
+            . $ROS_WS/install/setup.sh
+            colcon build \
+              --symlink-install
+        fi
+  save_build_cache: &save_build_cache
+    save_cache:
+      name: Save Build Cache
+      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      paths:
+        - /opt/nav2_ws
+  copy_build_logs: &copy_build_logs
+    run:
+        name: Copy Build Logs
+        when: always
+        command: cp -rH log/latest_build log/build
+  store_build_logs: &store_build_logs
+    store_artifacts:
+        path: log/build
+  test_build: &test_build
+    run:
+        name: Test Build
+        command: |
+          . install/setup.sh
+          colcon test \
+            --packages-skip \
+              nav2_system_tests
+          colcon test-result \
+            --verbose
+          cp src/navigation2/tools/ctest_retry.bash build/nav2_system_tests
+          cd build/nav2_system_tests
+          ./ctest_retry.bash 3
+
+  copy_test_logs: &copy_test_logs
+    run:
+        name: Copy Test Logs
+        when: always
+        command: cp -rH log/latest_test log/test
+  store_test_logs: &store_test_logs
+    store_artifacts:
+        path: log/test
+
+commands:
+  checkout_source:
+    description: "Checkout Source"
+    steps:
+      - *pre_checkout
+      - checkout:
+          path: src/navigation2
+      - *post_checkout
+  setup_upstream:
+    description: "Setup Upstream"
+    steps:
+      - *install_upstream
+      - *restore_upstream_cache
+      - *build_upstream
+      - *save_upstream_cache
+  build_source:
+    description: "Build Source"
+    steps:
+      - *install_dependencies
+      - *store_build_checksum
+      - *restore_build_cache
+      - *source_build
+      - *save_build_cache
+      - *copy_build_logs
+      - *store_build_logs
+  test_source:
+    description: "Test Source"
+    steps:
+      - *test_build
+      - *copy_test_logs
+      - *store_test_logs
+
+executors:
+  docker_exec:
+    docker:
+      - image: rosplanning/navigation2:master
+    working_directory: /opt/nav2_ws
+    environment:
+      CMAKE_BUILD_TYPE: "Release"
+      MAKEFLAGS: "-j 1 -l 1"
+
+jobs:
+  build:
+    executor: docker_exec
+    steps:
+      - checkout_source
+      - setup_upstream
+      - build_source
+      - test_source
+
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+  # nightly:
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 0 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - master
+  #   jobs:
+  #     - build
