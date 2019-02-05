@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_amcl)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)

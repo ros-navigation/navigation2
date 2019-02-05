@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_map_server)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(Bullet REQUIRED)

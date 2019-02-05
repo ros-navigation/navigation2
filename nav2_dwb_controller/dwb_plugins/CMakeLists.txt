@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(dwb_plugins)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(nav_2d_msgs REQUIRED)

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(costmap_queue)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)

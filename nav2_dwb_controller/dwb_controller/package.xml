@@ -8,7 +8,7 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>nav2_cmake</build_depend>
+  <build_depend>nav2_common</build_depend>
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>

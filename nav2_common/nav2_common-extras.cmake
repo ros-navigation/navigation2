@@ -14,4 +14,4 @@
 
 set(AMENT_BUILD_CONFIGURATION_KEYWORD_SEPARATOR ":")
 
-include("${nav2_cmake_DIR}/nav2_cmake_package.cmake")
+include("${nav2_common_DIR}/nav2_package.cmake")

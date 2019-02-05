@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_world_model)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_util)
 find_package(nav2_msgs)
