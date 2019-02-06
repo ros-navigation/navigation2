@@ -41,9 +41,10 @@ references:
             awk '$1 ~ /^resolution\:/' | \
             awk -F'[][]' '{print $2}' | \
             tr -d \, | xargs -n1 | sort -u | xargs)
-          dpkg -s $dependencies | \
+          if [ -n "$dependencies" ]; then dpkg -s $dependencies | \
             sha256sum | \
-            awk '{print "upstream dependencies "$1}' >> $ROS_WS/checksum.txt
+            awk '{print "upstream dependencies "$1}' >> $ROS_WS/checksum.txt ; \
+          fi
   restore_upstream_cache: &restore_upstream_cache
     restore_cache:
       name: Restore Upstream Cache
