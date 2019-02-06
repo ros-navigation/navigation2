@@ -56,6 +56,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # install navigation2 package dependencies
 WORKDIR $NAV2_WS
+RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . $ROS_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
@@ -66,7 +67,6 @@ RUN . $ROS_WS/install/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build navigation2 package source
-RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . $ROS_WS/install/setup.sh && \
     colcon build \
       --symlink-install \
