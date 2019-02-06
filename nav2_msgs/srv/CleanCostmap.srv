@@ -1,5 +1,5 @@
 # Clean the costmap
 
 std_msgs/Empty request
-___
+---
 std_msgs/Empty response

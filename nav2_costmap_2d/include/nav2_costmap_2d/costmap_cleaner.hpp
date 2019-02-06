@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP
-#define NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP
+#ifndef NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -64,4 +65,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP
+#endif  // NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_

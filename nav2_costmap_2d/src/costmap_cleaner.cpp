@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <memory>
 
 namespace nav2_costmap_2d
 {
@@ -34,15 +35,14 @@ CostmapCleaner::CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * co
   node_->get_parameter_or_set("cleanable_layers", cleanable_layers_, {"obstacle_layer"});
 
   server_ = node_->create_service<nav2_msgs::srv::CleanCostmap>("Clean" + costmap->getName(),
-    std::bind(&CostmapCleaner::clean_callback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholder::_3));
+      std::bind(&CostmapCleaner::clean_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholder::_3));
 }
 
 void CostmapCleaner::cleanCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
-  const shared_ptr<nav2_msgs::srv::CleanCostmap::Request> /*request*/,
-  const shared_ptr<nav2_msgs::srv::CleanCostmap::Response> /*response*/)
-)
+  const shared_ptr<nav2_msgs::srv::CleanCostmap::Request>/*request*/,
+  const shared_ptr<nav2_msgs::srv::CleanCostmap::Response>/*response*/)
 {
   RCLCPP_INFO(node_->get_logger(), "Received request to clean " + costmap->getName().c_str());
 
@@ -60,7 +60,7 @@ void CostmapCleaner::clean()
 {
   double x, y;
 
-  if (!getPose(x,y)) {
+  if (!getPose(x, y)) {
     RCLCPP_ERROR("Cannot clean map because robot pose cannot be retrieved.");
     return;
   }
@@ -70,7 +70,7 @@ void CostmapCleaner::clean()
   for (auto & layer : layers) {
     auto name = getLayerName(*layer);
 
-    if (any_of(begin(cleanable_layers_), end(cleanable_layers_), [](auto l){return l == name; })) {
+    if (any_of(begin(cleanable_layers_), end(cleanable_layers_), [](auto l) {return l == name;})) {
       auto costmap_layer = std::static_pointer_cast<costmap_2d::CostmapLayer>(layer);
       cleanLayer(costmap_layer, x, y);
     }
@@ -93,10 +93,10 @@ void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double x, do
   unsigned char * grid = costmap->getCharMap();
 
   for (int x = 0; x < static_cast<int>(costmap->getSizeInCellsX(); x++)) {
-    bool isOutXrange = x < start_x && x > end_x;
+    bool isOutXrange = x<start_x && x> end_x;
 
     for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY(); y++)) {
-      bool isOutYrange = y < start_y && y > end_y;
+      bool isOutYrange = y<start_y && y> end_y;
 
       if (isOutXrange && isOutYrange) {
         int index = costmap_layer->getIndex(x, y);
@@ -111,8 +111,6 @@ void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double x, do
   double ox = costmap->getOriginX(), oy = costmap->getOriginY();
   double width = costmap->getSizeInMetersX(), height = costmap->getSizeInMetersY();
   costmap->addExtraBounds(ox, oy, ox + width, oy + height);
-
-  return;
 }
 
 bool CostmapCleaner::getPose(double & x, double & y) const
