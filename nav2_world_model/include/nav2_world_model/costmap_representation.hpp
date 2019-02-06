@@ -46,7 +46,7 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
   std::shared_ptr<tf2_ros::TransformListener> tfListener_;
 
-  // The ROS node to use for tf -- Workaround to known issues #538 and #532
+  // The ROS node to use for transforms -- a workaround to known issues #538 and #532
   rclcpp::Node::SharedPtr tf_node_;
 
   // The implementation of the costmap
