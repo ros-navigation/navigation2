@@ -30,16 +30,15 @@ namespace nav2_world_model
 WorldModel::WorldModel(rclcpp::executor::Executor & executor)
 : Node("world_model")
 {
-  auto clock = get_clock();
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   // Use Costmaps to represent the world, one with static objects from map
   world_representations_["global_costmap"] = std::make_unique<CostmapRepresentation>(
-    "global_costmap", temp_node, executor, clock, "map");
+    "global_costmap", temp_node, executor, "map");
 
   // And another centered at the robot with only objects detected by sensors
   world_representations_["robot_centric_costmap"] = std::make_unique<CostmapRepresentation>(
-    "robot_centric_costmap", temp_node, executor, clock, "base_link");
+    "robot_centric_costmap", temp_node, executor, "base_link");
 
   get_costmap_service_ = create_service<GetCostmap>("GetCostmap",
       std::bind(&WorldModel::getCostmapCallback, this,

@@ -36,7 +36,6 @@ public:
     const std::string name,
     rclcpp::Node::SharedPtr & node,
     rclcpp::executor::Executor & executor,
-    rclcpp::Clock::SharedPtr & clock,
     std::string frame_id);
 
   GetCostmap::Response getCostmap(const GetCostmap::Request & request) override;
@@ -44,9 +43,11 @@ public:
   ProcessRegion::Response confirmFreeSpace(const ProcessRegion::Request & request) override;
 
 private:
-  rclcpp::Clock::SharedPtr & clock_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+  std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tfListener_;
+
+  // The ROS node to use for tf -- Workaround to known issues #538 and #532
+  rclcpp::Node::SharedPtr tf_node_;
 
   // The implementation of the costmap
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
