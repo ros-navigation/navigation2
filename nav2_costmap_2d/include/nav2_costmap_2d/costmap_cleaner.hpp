@@ -20,12 +20,13 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_msgs/srv/clean_costmap.hpp"
-#include "costmap_2d/costmap_layer.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_costmap_2d
 {
+
+class Costmap2DROS;
 
 // Clears the region outside of a user-specified area
 // Currently reverting to the static map
@@ -56,11 +57,11 @@ private:
     const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Response> response);
 
-  void cleanLayer(std::shared_ptr<CostmapLayer> & costmap, double x, double y);
+  void cleanLayer(std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y);
 
   bool getPose(double & x, double & y) const;
 
-  std::string getLayerName(const Layer & layer) const
+  std::string getLayerName(const Layer & layer) const;
 };
 
 }  // namespace nav2_costmap_2d

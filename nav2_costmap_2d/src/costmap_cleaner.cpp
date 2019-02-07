@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_costmap_2d/costmap_cleaner.hpp"
-
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <memory>
+
+#include "nav2_costmap_2d/costmap_cleaner.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -35,8 +36,8 @@ CostmapCleaner::CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * co
   node_->get_parameter_or_set("cleanable_layers", cleanable_layers_, {"obstacle_layer"});
 
   server_ = node_->create_service<nav2_msgs::srv::CleanCostmap>("Clean" + costmap->getName(),
-      std::bind(&CostmapCleaner::clean_callback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholder::_3));
+      std::bind(&CostmapCleaner::cleanCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void CostmapCleaner::cleanCallback(
@@ -44,10 +45,10 @@ void CostmapCleaner::cleanCallback(
   const shared_ptr<nav2_msgs::srv::CleanCostmap::Request>/*request*/,
   const shared_ptr<nav2_msgs::srv::CleanCostmap::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clean " + costmap->getName().c_str());
+  RCLCPP_INFO(node_->get_logger(), "Received request to clean " + costmap_->getName());
 
   if (costmap_ == nullptr) {
-    RCLCPP_ERROR("Costmap is undefined. Doing nothing.");
+    RCLCPP_ERROR(node_->get_logger(), "Costmap is undefined. Doing nothing.");
     return;
   }
 
@@ -61,25 +62,27 @@ void CostmapCleaner::clean()
   double x, y;
 
   if (!getPose(x, y)) {
-    RCLCPP_ERROR("Cannot clean map because robot pose cannot be retrieved.");
+    RCLCPP_ERROR(node_->get_logger(), "Cannot clean map because robot pose cannot be retrieved.");
     return;
   }
 
   auto layers = costmap_->getLayeredCostmap()->getPlugins();
 
-  for (auto & layer : layers) {
+  for (auto & layer : *layers) {
     auto name = getLayerName(*layer);
 
-    if (any_of(begin(cleanable_layers_), end(cleanable_layers_), [](auto l) {return l == name;})) {
-      auto costmap_layer = std::static_pointer_cast<costmap_2d::CostmapLayer>(layer);
+    if (any_of(
+        begin(cleanable_layers_), end(cleanable_layers_), [&name](auto l) {return l == name;}))
+    {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       cleanLayer(costmap_layer, x, y);
     }
   }
 }
 
-void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double x, double y)
+void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y)
 {
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap.getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   double start_point_x = pose_x - reset_distance_ / 2;
   double start_point_y = pose_y - reset_distance_ / 2;
@@ -92,14 +95,14 @@ void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double x, do
 
   unsigned char * grid = costmap->getCharMap();
 
-  for (int x = 0; x < static_cast<int>(costmap->getSizeInCellsX(); x++)) {
+  for (int x = 0; x < static_cast<int>(costmap->getSizeInCellsX()); x++) {
     bool isOutXrange = x<start_x && x> end_x;
 
-    for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY(); y++)) {
+    for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY()); y++) {
       bool isOutYrange = y<start_y && y> end_y;
 
       if (isOutXrange && isOutYrange) {
-        int index = costmap_layer->getIndex(x, y);
+        int index = costmap->getIndex(x, y);
 
         if (grid[index] != NO_INFORMATION) {
           grid[index] = NO_INFORMATION;
