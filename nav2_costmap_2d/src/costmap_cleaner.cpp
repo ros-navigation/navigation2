@@ -96,10 +96,10 @@ void CostmapCleaner::cleanLayer(
   unsigned char * grid = costmap->getCharMap();
 
   for (int x = 0; x < static_cast<int>(costmap->getSizeInCellsX()); x++) {
-    bool isOutXrange = x<start_x && x> end_x;
+    bool isOutXrange = x<start_x || x> end_x;
 
     for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY()); y++) {
-      bool isOutYrange = y<start_y && y> end_y;
+      bool isOutYrange = y<start_y || y> end_y;
 
       if (isOutXrange || isOutYrange) {
         int index = costmap->getIndex(x, y);
