@@ -37,7 +37,7 @@ public:
 
   CostmapCleaner() = delete;
 
-  void clean();
+  void clean(double reset_distance = 3.0);
 
 private:
   // The ROS node to use for getting parameters, creating the service and logging
@@ -57,7 +57,8 @@ private:
     const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Response> response);
 
-  void cleanLayer(std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y);
+  void cleanLayer(
+    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
 
   bool getPose(double & x, double & y) const;
 

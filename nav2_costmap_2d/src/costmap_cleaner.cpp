@@ -27,23 +27,22 @@ using std::vector;
 using std::string;
 using std::shared_ptr;
 using std::any_of;
+using CleanCostmap = nav2_msgs::srv::CleanCostmap;
 
 CostmapCleaner::CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap)
 : node_(node), costmap_(costmap)
 {
-  node_->get_parameter_or<double>("reset_distance", reset_distance_, 3.0);
-
   node_->get_parameter_or_set("cleanable_layers", cleanable_layers_, {"obstacle_layer"});
 
-  server_ = node_->create_service<nav2_msgs::srv::CleanCostmap>("Clean" + costmap->getName(),
+  server_ = node_->create_service<CleanCostmap>("clean_" + costmap->getName(),
       std::bind(&CostmapCleaner::cleanCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void CostmapCleaner::cleanCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
-  const shared_ptr<nav2_msgs::srv::CleanCostmap::Request>/*request*/,
-  const shared_ptr<nav2_msgs::srv::CleanCostmap::Response>/*response*/)
+  const shared_ptr<CleanCostmap::Request> request,
+  const shared_ptr<CleanCostmap::Response>/*response*/)
 {
   RCLCPP_INFO(node_->get_logger(), "Received request to clean " + costmap_->getName());
 
@@ -54,10 +53,10 @@ void CostmapCleaner::cleanCallback(
 
   RCLCPP_INFO(node_->get_logger(), "Will proceed with cleaning the costmap");
 
-  clean();
+  clean(request->reset_distance);
 }
 
-void CostmapCleaner::clean()
+void CostmapCleaner::clean(const double reset_distance)
 {
   double x, y;
 
@@ -75,19 +74,20 @@ void CostmapCleaner::clean()
         begin(cleanable_layers_), end(cleanable_layers_), [&name](auto l) {return l == name;}))
     {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      cleanLayer(costmap_layer, x, y);
+      cleanLayer(costmap_layer, x, y, reset_distance);
     }
   }
 }
 
-void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y)
+void CostmapCleaner::cleanLayer(
+  shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
-  double start_point_x = pose_x - reset_distance_ / 2;
-  double start_point_y = pose_y - reset_distance_ / 2;
-  double end_point_x = start_point_x + reset_distance_;
-  double end_point_y = start_point_y + reset_distance_;
+  double start_point_x = pose_x - reset_distance / 2;
+  double start_point_y = pose_y - reset_distance / 2;
+  double end_point_x = start_point_x + reset_distance;
+  double end_point_y = start_point_y + reset_distance;
 
   int start_x, start_y, end_x, end_y;
   costmap->worldToMapNoBounds(start_point_x, start_point_y, start_x, start_y);
@@ -101,7 +101,7 @@ void CostmapCleaner::cleanLayer(shared_ptr<CostmapLayer> & costmap, double pose_
     for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY()); y++) {
       bool isOutYrange = y<start_y && y> end_y;
 
-      if (isOutXrange && isOutYrange) {
+      if (isOutXrange || isOutYrange) {
         int index = costmap->getIndex(x, y);
 
         if (grid[index] != NO_INFORMATION) {

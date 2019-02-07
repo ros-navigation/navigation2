@@ -1,5 +1,5 @@
 # Clean the costmap
 
-std_msgs/Empty request
+float32 reset_distance
 ---
 std_msgs/Empty response
