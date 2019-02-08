@@ -147,9 +147,14 @@ references:
     run:
         name: Report Code Coverage
         command: |
-          export ci_env=`bash <(curl -s https://codecov.io/env)`
-          . install/setup.sh
-          src/navigation2/tools/code_coverage_report.bash codecovio
+          if [ "$COVERAGE_ENABLED" = "True" ]
+          then
+            export ci_env=`bash <(curl -s https://codecov.io/env)`
+            . install/setup.sh
+            src/navigation2/tools/code_coverage_report.bash codecovio
+          else
+            echo "Skipping Code Coverage Report"
+          fi
 
 commands:
   checkout_source:
