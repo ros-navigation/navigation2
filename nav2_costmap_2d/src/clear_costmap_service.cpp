@@ -95,23 +95,18 @@ void ClearCostmapService::clearLayerExceptRegion(
   costmap->worldToMapNoBounds(start_point_x, start_point_y, start_x, start_y);
   costmap->worldToMapNoBounds(end_point_x, end_point_y, end_x, end_y);
 
-  unsigned char * grid = costmap->getCharMap();
+  unsigned int size_x = costmap->getSizeInCellsX();
+  unsigned int size_y = costmap->getSizeInCellsY();
 
-  for (int x = 0; x < static_cast<int>(costmap->getSizeInCellsX()); x++) {
-    bool isOutXrange = x<start_x || x> end_x;
-
-    for (int y = 0; y < static_cast<int>(costmap->getSizeInCellsY()); y++) {
-      bool isOutYrange = y<start_y || y> end_y;
-
-      if (isOutXrange || isOutYrange) {
-        int index = costmap->getIndex(x, y);
-
-        if (grid[index] != NO_INFORMATION) {
-          grid[index] = NO_INFORMATION;
-        }
-      }
-    }
-  }
+  // Clearing the four rectangular regions around the one we want to keep
+  // top region
+  costmap->resetMapToValue(0, 0, size_x, start_y, NO_INFORMATION);
+  // left region
+  costmap->resetMapToValue(0, start_y, start_x, end_y, NO_INFORMATION);
+  // right region
+  costmap->resetMapToValue(end_x, start_y, size_x, end_y, NO_INFORMATION);
+  // bottom region
+  costmap->resetMapToValue(0, end_y, size_x, size_y, NO_INFORMATION);
 
   double ox = costmap->getOriginX(), oy = costmap->getOriginY();
   double width = costmap->getSizeInMetersX(), height = costmap->getSizeInMetersY();

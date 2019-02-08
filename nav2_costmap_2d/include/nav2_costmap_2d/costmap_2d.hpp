@@ -300,6 +300,9 @@ public:
 
   void resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn);
 
+  void resetMapToValue(
+    unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn, unsigned char value);
+
   /**
    * @brief  Given distance in the world... convert it to cells
    * @param  world_dist The world distance
