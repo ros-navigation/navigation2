@@ -1,5 +1,0 @@
-# Clear the costmap
-
-float32 reset_distance
----
-std_msgs/Empty response

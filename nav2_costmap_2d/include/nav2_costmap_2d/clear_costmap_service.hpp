@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_
-#define NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_
+#ifndef NAV2_COSTMAP_2D__CLEAR_COSTMAP_SERVICE_HPP_
+#define NAV2_COSTMAP_2D__CLEAR_COSTMAP_SERVICE_HPP_
 
 #include <vector>
 #include <string>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_msgs/srv/clear_costmap.hpp"
+#include "nav2_msgs/srv/clear_costmap_except_region.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_costmap_2d
@@ -28,15 +28,15 @@ namespace nav2_costmap_2d
 
 class Costmap2DROS;
 
-class CostmapCleaner
+class ClearCostmapService
 {
 public:
-  CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap);
+  ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap);
 
-  CostmapCleaner() = delete;
+  ClearCostmapService() = delete;
 
-// Clears the region outside of a user-specified area reverting to the static map
-  void clear(double reset_distance = 3.0);
+  // Clears the region outside of a user-specified area reverting to the static map
+  void clearExceptRegion(double reset_distance = 3.0);
 
 private:
   // The ROS node to use for getting parameters, creating the service and logging
@@ -50,13 +50,13 @@ private:
   std::vector<std::string> clearable_layers_;
 
   // Server for clearing the costmap
-  rclcpp::Service<nav2_msgs::srv::ClearCostmap>::SharedPtr server_;
-  void clearCallback(
+  rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr server_;
+  void clearExceptRegionCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::ClearCostmap::Request> request,
-    const std::shared_ptr<nav2_msgs::srv::ClearCostmap::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
 
-  void clearLayer(
+  void clearLayerExceptRegion(
     std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
 
   bool isClearable(const std::string & layer_name) const;
@@ -68,4 +68,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_CLEANER_HPP_
+#endif  // NAV2_COSTMAP_2D__CLEAR_COSTMAP_SERVICE_HPP_

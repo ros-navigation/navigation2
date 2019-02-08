@@ -188,7 +188,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
 
   // Add cleaning service
-  cleaner_ = std::make_shared<CostmapCleaner>(node_, this);
+  clear_costmap_service_ = std::make_shared<ClearCostmapService>(node_, this);
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(

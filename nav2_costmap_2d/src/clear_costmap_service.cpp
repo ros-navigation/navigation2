@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_costmap_2d/costmap_cleaner.hpp"
+#include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_costmap_2d
@@ -27,22 +27,22 @@ using std::vector;
 using std::string;
 using std::shared_ptr;
 using std::any_of;
-using ClearCostmap = nav2_msgs::srv::ClearCostmap;
+using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
 
-CostmapCleaner::CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap)
+ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap)
 : node_(node), costmap_(costmap)
 {
   node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
 
-  server_ = node_->create_service<ClearCostmap>("clear_" + costmap->getName(),
-      std::bind(&CostmapCleaner::clearCallback, this,
+  server_ = node_->create_service<ClearExceptRegion>("clear_except_" + costmap->getName(),
+      std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void CostmapCleaner::clearCallback(
+void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
-  const shared_ptr<ClearCostmap::Request> request,
-  const shared_ptr<ClearCostmap::Response>/*response*/)
+  const shared_ptr<ClearExceptRegion::Request> request,
+  const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(node_->get_logger(), "Received request to clear " + costmap_->getName());
 
@@ -53,10 +53,10 @@ void CostmapCleaner::clearCallback(
 
   RCLCPP_INFO(node_->get_logger(), "Will proceed with clearing the costmap");
 
-  clear(request->reset_distance);
+  clearExceptRegion(request->reset_distance);
 }
 
-void CostmapCleaner::clear(const double reset_distance)
+void ClearCostmapService::clearExceptRegion(const double reset_distance)
 {
   double x, y;
 
@@ -68,22 +68,20 @@ void CostmapCleaner::clear(const double reset_distance)
   auto layers = costmap_->getLayeredCostmap()->getPlugins();
 
   for (auto & layer : *layers) {
-    auto name = getLayerName(*layer);
-
-    if (isClearable(name)) {
+    if (isClearable(getLayerName(*layer))) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clearLayer(costmap_layer, x, y, reset_distance);
+      clearLayerExceptRegion(costmap_layer, x, y, reset_distance);
     }
   }
 }
 
-bool CostmapCleaner::isClearable(const string & layer_name) const
+bool ClearCostmapService::isClearable(const string & layer_name) const
 {
   return any_of(begin(clearable_layers_), end(clearable_layers_),
            [&layer_name](auto l) {return l == layer_name;});
 }
 
-void CostmapCleaner::clearLayer(
+void ClearCostmapService::clearLayerExceptRegion(
   shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
@@ -120,7 +118,7 @@ void CostmapCleaner::clearLayer(
   costmap->addExtraBounds(ox, oy, ox + width, oy + height);
 }
 
-bool CostmapCleaner::getPose(double & x, double & y) const
+bool ClearCostmapService::getPose(double & x, double & y) const
 {
   geometry_msgs::msg::PoseStamped pose;
   if (!costmap_->getRobotPose(pose)) {
@@ -133,7 +131,7 @@ bool CostmapCleaner::getPose(double & x, double & y) const
   return true;
 }
 
-string CostmapCleaner::getLayerName(const Layer & layer) const
+string ClearCostmapService::getLayerName(const Layer & layer) const
 {
   string name = layer.getName();
 
