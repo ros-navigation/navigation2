@@ -70,13 +70,17 @@ void CostmapCleaner::clear(const double reset_distance)
   for (auto & layer : *layers) {
     auto name = getLayerName(*layer);
 
-    if (any_of(
-        begin(clearable_layers_), end(clearable_layers_), [&name](auto l) {return l == name;}))
-    {
+    if (isClearable(name)) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clearLayer(costmap_layer, x, y, reset_distance);
     }
   }
+}
+
+bool CostmapCleaner::isClearable(const string & layer_name) const
+{
+  return any_of(begin(clearable_layers_), end(clearable_layers_),
+           [&layer_name](auto l) {return l == layer_name;});
 }
 
 void CostmapCleaner::clearLayer(

@@ -59,6 +59,8 @@ private:
   void clearLayer(
     std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
 
+  bool isClearable(const std::string & layer_name) const;
+
   bool getPose(double & x, double & y) const;
 
   std::string getLayerName(const Layer & layer) const;
