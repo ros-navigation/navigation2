@@ -20,7 +20,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_msgs/srv/clean_costmap.hpp"
+#include "nav2_msgs/srv/clear_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_costmap_2d
@@ -28,8 +28,6 @@ namespace nav2_costmap_2d
 
 class Costmap2DROS;
 
-// Clears the region outside of a user-specified area
-// Currently reverting to the static map
 class CostmapCleaner
 {
 public:
@@ -37,7 +35,8 @@ public:
 
   CostmapCleaner() = delete;
 
-  void clean(double reset_distance = 3.0);
+// Clears the region outside of a user-specified area reverting to the static map
+  void clear(double reset_distance = 3.0);
 
 private:
   // The ROS node to use for getting parameters, creating the service and logging
@@ -46,18 +45,18 @@ private:
   // The costmap to clear
   Costmap2DROS * costmap_;
 
-  // Cleaning parameters
+  // Clearing parameters
   double reset_distance_;
-  std::vector<std::string> cleanable_layers_;
+  std::vector<std::string> clearable_layers_;
 
-  // Server for cleaning the costmap
-  rclcpp::Service<nav2_msgs::srv::CleanCostmap>::SharedPtr server_;
-  void cleanCallback(
+  // Server for clearing the costmap
+  rclcpp::Service<nav2_msgs::srv::ClearCostmap>::SharedPtr server_;
+  void clearCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Request> request,
-    const std::shared_ptr<nav2_msgs::srv::CleanCostmap::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmap::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmap::Response> response);
 
-  void cleanLayer(
+  void clearLayer(
     std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
 
   bool getPose(double & x, double & y) const;

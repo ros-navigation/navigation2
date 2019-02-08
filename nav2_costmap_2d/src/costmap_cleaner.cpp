@@ -27,41 +27,41 @@ using std::vector;
 using std::string;
 using std::shared_ptr;
 using std::any_of;
-using CleanCostmap = nav2_msgs::srv::CleanCostmap;
+using ClearCostmap = nav2_msgs::srv::ClearCostmap;
 
 CostmapCleaner::CostmapCleaner(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap)
 : node_(node), costmap_(costmap)
 {
-  node_->get_parameter_or_set("cleanable_layers", cleanable_layers_, {"obstacle_layer"});
+  node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
 
-  server_ = node_->create_service<CleanCostmap>("clean_" + costmap->getName(),
-      std::bind(&CostmapCleaner::cleanCallback, this,
+  server_ = node_->create_service<ClearCostmap>("clear_" + costmap->getName(),
+      std::bind(&CostmapCleaner::clearCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void CostmapCleaner::cleanCallback(
+void CostmapCleaner::clearCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
-  const shared_ptr<CleanCostmap::Request> request,
-  const shared_ptr<CleanCostmap::Response>/*response*/)
+  const shared_ptr<ClearCostmap::Request> request,
+  const shared_ptr<ClearCostmap::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clean " + costmap_->getName());
+  RCLCPP_INFO(node_->get_logger(), "Received request to clear " + costmap_->getName());
 
   if (costmap_ == nullptr) {
     RCLCPP_ERROR(node_->get_logger(), "Costmap is undefined. Doing nothing.");
     return;
   }
 
-  RCLCPP_INFO(node_->get_logger(), "Will proceed with cleaning the costmap");
+  RCLCPP_INFO(node_->get_logger(), "Will proceed with clearing the costmap");
 
-  clean(request->reset_distance);
+  clear(request->reset_distance);
 }
 
-void CostmapCleaner::clean(const double reset_distance)
+void CostmapCleaner::clear(const double reset_distance)
 {
   double x, y;
 
   if (!getPose(x, y)) {
-    RCLCPP_ERROR(node_->get_logger(), "Cannot clean map because robot pose cannot be retrieved.");
+    RCLCPP_ERROR(node_->get_logger(), "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }
 
@@ -71,15 +71,15 @@ void CostmapCleaner::clean(const double reset_distance)
     auto name = getLayerName(*layer);
 
     if (any_of(
-        begin(cleanable_layers_), end(cleanable_layers_), [&name](auto l) {return l == name;}))
+        begin(clearable_layers_), end(clearable_layers_), [&name](auto l) {return l == name;}))
     {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      cleanLayer(costmap_layer, x, y, reset_distance);
+      clearLayer(costmap_layer, x, y, reset_distance);
     }
   }
 }
 
-void CostmapCleaner::cleanLayer(
+void CostmapCleaner::clearLayer(
   shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));

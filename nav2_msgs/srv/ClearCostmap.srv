@@ -1,4 +1,4 @@
-# Clean the costmap
+# Clear the costmap
 
 float32 reset_distance
 ---
