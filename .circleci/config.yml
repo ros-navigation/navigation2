@@ -210,6 +210,7 @@ jobs:
       - setup_upstream
       - build_source
       - test_source
+      - report_coverage
   release_build:
     executor: docker_exec
     environment:
