@@ -149,7 +149,6 @@ references:
         command: |
           if [ "$COVERAGE_ENABLED" = "True" ]
           then
-            export ci_env=`bash <(curl -s https://codecov.io/env)`
             . install/setup.sh
             src/navigation2/tools/code_coverage_report.bash codecovio
           else
