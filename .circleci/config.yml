@@ -197,13 +197,24 @@ executors:
       - image: rosplanning/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
-      CMAKE_BUILD_TYPE: "Release"
-      COVERAGE_ENABLED: "True"
       MAKEFLAGS: "-j 1 -l 1"
 
 jobs:
-  build:
+  debug_build:
     executor: docker_exec
+    environment:
+      CMAKE_BUILD_TYPE: "Debug"
+      COVERAGE_ENABLED: "True"
+    steps:
+      - checkout_source
+      - setup_upstream
+      - build_source
+      - test_source
+  release_build:
+    executor: docker_exec
+    environment:
+      CMAKE_BUILD_TYPE: "Release"
+      COVERAGE_ENABLED: "False"
     steps:
       - checkout_source
       - setup_upstream
@@ -214,7 +225,8 @@ workflows:
   version: 2
   build-test:
     jobs:
-      - build
+      - debug_build
+      - release_build
   # nightly:
   #   triggers:
   #     - schedule:
