@@ -60,7 +60,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
 {
   double x, y;
 
-  if (!getPose(x, y)) {
+  if (!getPosition(x, y)) {
     RCLCPP_ERROR(node_->get_logger(), "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }
@@ -113,7 +113,7 @@ void ClearCostmapService::clearLayerExceptRegion(
   costmap->addExtraBounds(ox, oy, ox + width, oy + height);
 }
 
-bool ClearCostmapService::getPose(double & x, double & y) const
+bool ClearCostmapService::getPosition(double & x, double & y) const
 {
   geometry_msgs::msg::PoseStamped pose;
   if (!costmap_->getRobotPose(pose)) {
