@@ -35,11 +35,11 @@ matrix:
             docker push stevemacenski/navigation2:latest ;
             fi
 
-    - env: CMAKE_BUILD_TYPE=Debug COVERAGE_ENABLED=True
-      after_success:
-        - ci_env=`bash <(curl -s https://codecov.io/env)`
-        - docker exec --interactive --tty $ci_env nav2_bash /ros_entrypoint.sh
-            src/navigation2/tools/code_coverage_report.bash codecovio
+    # - env: CMAKE_BUILD_TYPE=Debug COVERAGE_ENABLED=True
+    #   after_success:
+    #     - ci_env=`bash <(curl -s https://codecov.io/env)`
+    #     - docker exec --interactive --tty $ci_env nav2_bash /ros_entrypoint.sh
+    #         src/navigation2/tools/code_coverage_report.bash codecovio
 
 script:
   - docker build --tag navigation2:latest
