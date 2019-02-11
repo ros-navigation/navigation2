@@ -9,5 +9,13 @@ repositories:
     version: ros2
   gazebo_ros_pkgs:
     type: git
-    url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-    version: 3.0.0
+    url: https://github.com/crdelsey/gazebo_ros_pkgs.git
+    version: nodeoptions
+  image_common:
+    type: git
+    url: https://github.com/crdelsey/image_common.git
+    version: nodeoptions
+  vision_opencv:
+    type: git
+    url: https://github.com/ros-perception/vision_opencv.git
+    version: ros2
