@@ -22,6 +22,8 @@ RUN mkdir -p $NAV2_WS/src
 WORKDIR $NAV2_WS/src
 COPY ./ navigation2/
 
+RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+
 # install navigation2 package dependencies
 WORKDIR $NAV2_WS
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -35,7 +37,6 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 ARG CMAKE_BUILD_TYPE=Release
 
 # build navigation2 package source
-RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
