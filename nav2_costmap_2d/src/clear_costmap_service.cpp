@@ -29,12 +29,14 @@ using std::shared_ptr;
 using std::any_of;
 using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
 
-ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap)
+ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap)
 : node_(node), costmap_(costmap)
 {
+  reset_value_ = costmap_.getCostmap()->getDefaultValue();
+
   node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
 
-  server_ = node_->create_service<ClearExceptRegion>("clear_except_" + costmap->getName(),
+  server_ = node_->create_service<ClearExceptRegion>("clear_except_" + costmap_.getName(),
       std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
@@ -44,14 +46,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clear " + costmap_->getName());
-
-  if (costmap_ == nullptr) {
-    RCLCPP_ERROR(node_->get_logger(), "Costmap is undefined. Doing nothing.");
-    return;
-  }
-
-  RCLCPP_INFO(node_->get_logger(), "Will proceed with clearing the costmap");
+  RCLCPP_INFO(node_->get_logger(), "Received request to clear " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
 }
@@ -65,7 +60,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
     return;
   }
 
-  auto layers = costmap_->getLayeredCostmap()->getPlugins();
+  auto layers = costmap_.getLayeredCostmap()->getPlugins();
 
   for (auto & layer : *layers) {
     if (isClearable(getLayerName(*layer))) {
@@ -77,8 +72,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
 
 bool ClearCostmapService::isClearable(const string & layer_name) const
 {
-  return any_of(begin(clearable_layers_), end(clearable_layers_),
-           [&layer_name](auto l) {return l == layer_name;});
+  return count(begin(clearable_layers_), end(clearable_layers_), layer_name) != 0;
 }
 
 void ClearCostmapService::clearLayerExceptRegion(
@@ -100,13 +94,13 @@ void ClearCostmapService::clearLayerExceptRegion(
 
   // Clearing the four rectangular regions around the one we want to keep
   // top region
-  costmap->resetMapToValue(0, 0, size_x, start_y, NO_INFORMATION);
+  costmap->resetMapToValue(0, 0, size_x, start_y, reset_value_);
   // left region
-  costmap->resetMapToValue(0, start_y, start_x, end_y, NO_INFORMATION);
+  costmap->resetMapToValue(0, start_y, start_x, end_y, reset_value_);
   // right region
-  costmap->resetMapToValue(end_x, start_y, size_x, end_y, NO_INFORMATION);
+  costmap->resetMapToValue(end_x, start_y, size_x, end_y, reset_value_);
   // bottom region
-  costmap->resetMapToValue(0, end_y, size_x, size_y, NO_INFORMATION);
+  costmap->resetMapToValue(0, end_y, size_x, size_y, reset_value_);
 
   double ox = costmap->getOriginX(), oy = costmap->getOriginY();
   double width = costmap->getSizeInMetersX(), height = costmap->getSizeInMetersY();
@@ -116,7 +110,7 @@ void ClearCostmapService::clearLayerExceptRegion(
 bool ClearCostmapService::getPosition(double & x, double & y) const
 {
   geometry_msgs::msg::PoseStamped pose;
-  if (!costmap_->getRobotPose(pose)) {
+  if (!costmap_.getRobotPose(pose)) {
     return false;
   }
 

@@ -31,7 +31,7 @@ class Costmap2DROS;
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS * costmap);
+  ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap);
 
   ClearCostmapService() = delete;
 
@@ -43,9 +43,10 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   // The costmap to clear
-  Costmap2DROS * costmap_;
+  Costmap2DROS & costmap_;
 
   // Clearing parameters
+  unsigned char reset_value_;
   double reset_distance_;
   std::vector<std::string> clearable_layers_;
 
@@ -61,7 +62,7 @@ private:
 
   bool isClearable(const std::string & layer_name) const;
 
-  bool getPose(double & x, double & y) const;
+  bool getPosition(double & x, double & y) const;
 
   std::string getLayerName(const Layer & layer) const;
 };
