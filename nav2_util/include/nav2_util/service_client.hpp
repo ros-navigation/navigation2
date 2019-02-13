@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_TASKS__SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav2_tasks
+namespace nav2_util
 {
 
 template<class ServiceT>
@@ -65,4 +65,4 @@ protected:
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__SERVICE_CLIENT_HPP_

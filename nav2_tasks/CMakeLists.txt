@@ -15,6 +15,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_robot REQUIRED)
+find_package(nav2_util REQUIRED)
 
 nav2_package()
 
@@ -39,6 +40,7 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_robot
+  nav2_util
 )
 
 ament_target_dependencies(${library_name}
@@ -67,6 +69,6 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 #  This package publishes messages from tf2_geometry_msgs
-ament_export_dependencies(tf2_geometry_msgs)
+ament_export_dependencies(tf2_geometry_msgs nav2_util)
 
 ament_package()
