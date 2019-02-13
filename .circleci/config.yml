@@ -59,7 +59,9 @@ references:
         else
             . /opt/ros/$ROS_DISTRO/setup.sh
             colcon build \
-              --symlink-install
+              --symlink-install \
+              --cmake-args \
+                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
         fi
   save_upstream_cache: &save_upstream_cache
     save_cache:
@@ -108,7 +110,10 @@ references:
         else
             . $ROS_WS/install/setup.sh
             colcon build \
-              --symlink-install
+              --symlink-install \
+              --cmake-args \
+                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
         fi
   save_build_cache: &save_build_cache
     save_cache:
@@ -129,15 +134,7 @@ references:
         name: Test Build
         command: |
           . install/setup.sh
-          colcon test \
-            --packages-skip \
-              nav2_system_tests
-          colcon test-result \
-            --verbose
-          cp src/navigation2/tools/ctest_retry.bash build/nav2_system_tests
-          cd build/nav2_system_tests
-          ./ctest_retry.bash 3
-
+          src/navigation2/tools/run_test_suite.bash
   copy_test_logs: &copy_test_logs
     run:
         name: Copy Test Logs
@@ -146,6 +143,17 @@ references:
   store_test_logs: &store_test_logs
     store_artifacts:
         path: log/test
+  report_code_coverage: &report_code_coverage
+    run:
+        name: Report Code Coverage
+        command: |
+          if [ "$COVERAGE_ENABLED" = "True" ]
+          then
+            . install/setup.sh
+            src/navigation2/tools/code_coverage_report.bash codecovio
+          else
+            echo "Skipping Code Coverage Report"
+          fi
 
 commands:
   checkout_source:
@@ -178,6 +186,10 @@ commands:
       - *test_build
       - *copy_test_logs
       - *store_test_logs
+  report_coverage:
+    description: "Report Coverage"
+    steps:
+      - *report_code_coverage
 
 executors:
   docker_exec:
@@ -185,12 +197,25 @@ executors:
       - image: rosplanning/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
-      CMAKE_BUILD_TYPE: "Release"
       MAKEFLAGS: "-j 1 -l 1"
 
 jobs:
-  build:
+  debug_build:
     executor: docker_exec
+    environment:
+      CMAKE_BUILD_TYPE: "Debug"
+      COVERAGE_ENABLED: "True"
+    steps:
+      - checkout_source
+      - setup_upstream
+      - build_source
+      - test_source
+      - report_coverage
+  release_build:
+    executor: docker_exec
+    environment:
+      CMAKE_BUILD_TYPE: "Release"
+      COVERAGE_ENABLED: "False"
     steps:
       - checkout_source
       - setup_upstream
@@ -201,7 +226,8 @@ workflows:
   version: 2
   build-test:
     jobs:
-      - build
+      - debug_build
+      - release_build
   # nightly:
   #   triggers:
   #     - schedule:

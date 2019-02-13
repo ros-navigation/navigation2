@@ -48,6 +48,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # build dependency package source
 ARG CMAKE_BUILD_TYPE=Release
+
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
@@ -67,11 +68,13 @@ RUN . $ROS_WS/install/setup.sh && \
 
 # build navigation2 package source
 RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+ARG COVERAGE_ENABLED=False
 RUN . $ROS_WS/install/setup.sh && \
-    colcon build \
-      --symlink-install \
-      --cmake-args \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+     colcon build \
+       --symlink-install \
+       --cmake-args \
+         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
 
 # source navigation2 workspace from entrypoint
 RUN sed --in-place \

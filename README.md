@@ -10,6 +10,8 @@ ROS2 Navigation System
 
 [![Pulls](https://shields.beevelop.com/docker/pulls/stevemacenski/navigation2.svg?style=flat-square)](https://hub.docker.com/r/stevemacenski/navigation2)
 
+[![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
+
 # Overview
 The ROS 2 Navigation System is the control system that enables a robot to autonomously reach a goal state, such as a specific position and orientation relative to a specific map. Given a current pose, a map, and a goal, such as a destination pose, the navigation system generates a plan to reach the goal, and outputs commands to autonomously drive the robot, respecting any safety constraints and avoiding obstacles encountered along the way.
 
