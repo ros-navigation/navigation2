@@ -186,6 +186,9 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     {"transform_tolerance", "update_frequency", "publish_frequency", "width", "height",
       "resolution", "origin_x", "origin_y", "footprint_padding", "robot_radius", "footprint"});
   dynamic_param_client_->set_callback(std::bind(&Costmap2DROS::reconfigureCB, this));
+
+  // Add cleaning service
+  clear_costmap_service_ = std::make_shared<ClearCostmapService>(node_, *this);
 }
 
 void Costmap2DROS::setUnpaddedRobotFootprintPolygon(

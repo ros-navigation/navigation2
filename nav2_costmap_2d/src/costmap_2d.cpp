@@ -96,10 +96,16 @@ void Costmap2D::resetMaps()
 
 void Costmap2D::resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn)
 {
+  resetMapToValue(x0, y0, xn, yn, default_value_);
+}
+
+void Costmap2D::resetMapToValue(
+  unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn, unsigned char value)
+{
   std::unique_lock<mutex_t> lock(*(access_));
   unsigned int len = xn - x0;
   for (unsigned int y = y0 * size_x_ + x0; y < yn * size_x_ + x0; y += size_x_) {
-    memset(costmap_ + y, default_value_, len * sizeof(unsigned char));
+    memset(costmap_ + y, value, len * sizeof(unsigned char));
   }
 }
 

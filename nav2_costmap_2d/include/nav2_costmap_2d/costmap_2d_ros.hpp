@@ -45,6 +45,7 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "geometry_msgs/msg/polygon.h"
 #include "geometry_msgs/msg/polygon_stamped.h"
 #include "pluginlib/class_loader.hpp"
@@ -265,6 +266,8 @@ private:
 
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
+
+  std::shared_ptr<ClearCostmapService> clear_costmap_service_;
 };
 // class Costmap2DROS
 }  // namespace nav2_costmap_2d
