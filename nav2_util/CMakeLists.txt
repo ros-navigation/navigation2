@@ -22,6 +22,7 @@ add_library(${library_name} SHARED
   src/costmap.cpp
   src/node_utils.cpp
   src/lifecycle_service_client.cpp
+  src/string_utils.cpp
 )
 
 ament_target_dependencies(${library_name}
