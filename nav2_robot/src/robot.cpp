@@ -25,7 +25,7 @@ Robot::Robot(rclcpp::Node::SharedPtr & node)
 : node_(node),
   initial_pose_received_(false),
   initial_odom_received_(false),
-  width_(0.0)
+  radius_(0.0)
 {
   // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -37,7 +37,7 @@ Robot::Robot(rclcpp::Node::SharedPtr & node)
   vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Set the robot parameters
-  node_->get_parameter_or<double>("robot_width", width_, 0.22);
+  node_->get_parameter_or<double>("robot_radius", radius_, 0.22);
 }
 
 void

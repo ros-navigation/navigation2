@@ -22,7 +22,6 @@
 #include "dwb_core/common_types.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
-#include "nav2_world_model/world_model_client.hpp"
 
 namespace nav2_dwb_controller
 {
@@ -40,7 +39,6 @@ protected:
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
-  bool checkRegion(nav_2d_msgs::msg::Pose2DStamped & pose2d);
 
   std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
   dwb_core::CostmapROSPtr cm_;

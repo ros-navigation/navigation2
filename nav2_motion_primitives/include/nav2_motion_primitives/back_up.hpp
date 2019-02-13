@@ -39,9 +39,8 @@ public:
 protected:
   geometry_msgs::msg::Twist default_vel_;
 
-  // The requested and initial poses
-  double command_x_;
   nav_msgs::msg::Odometry::SharedPtr initial_pose_;
+  double command_x_;
 
   nav2_tasks::TaskStatus controlledBackup();
 };

@@ -121,21 +121,10 @@ bool BackUp::pathIsClear()
   request.reference.y = 0.0;
   request.rotation = 0.0;
 
-  // TODO(orduno) If robot is localized we might want to check relative to the map
-  // if (robot_->getCurrentPose(robot_pose)) {
-  //   // Robot is localized. Check for clear path relative to map.
-  //   request.frame_id = "map";
-  //   // And the reference point relative to robot
-  //   request.reference.x = robot_pose->pose.pose.position.x;
-  //   request.reference.y = robot_pose->pose.pose.position.y;
-  //   // Rotate to match robot's heading
-  //   request.rotation = tf2::getYaw(robot_pose->pose.pose.orientation);
-  // }
-
   // Define the region size
   // Width is set to match the robot's diameter
   // Height is set to the requested distance to travel
-  double robot_width = robot_->getWidth();
+  double robot_width = robot_->getRadius();
   request.width = robot_width;
   request.height = std::abs(command_x_);
 
