@@ -29,7 +29,7 @@ ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.worl
 
 Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
 
-`ros2 launch turtlebot3_bringup turtlebot3_robot.launch.py`
+`ros2 launch turtlebot3_bringup burger_state_publisher.launch.py`
 
 ### Terminal 3: Launch map_server and AMCL
 
