@@ -45,5 +45,4 @@ Tokens split(const string & tokenstring, char delimiter)
   return tokens;
 }
 
-
 }  // namespace nav2_util
