@@ -26,9 +26,15 @@ template<class ServiceT>
 class ServiceClient
 {
 public:
-  explicit ServiceClient(const std::string & name)
+  explicit ServiceClient(
+    const std::string & name,
+    const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
   {
-    node_ = generateInternalNode(name + "_Node");
+    if (provided_node) {
+      node_ = provided_node;
+    } else {
+      node_ = generateInternalNode(name + "_Node");
+    }
     client_ = node_->create_client<ServiceT>(name);
   }
 
