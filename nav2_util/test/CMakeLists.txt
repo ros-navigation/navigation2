@@ -8,3 +8,6 @@ find_package(std_srvs)
 ament_add_gtest(test_service_client test_service_client.cpp)
 ament_target_dependencies(test_service_client std_srvs)
 target_link_libraries(test_service_client ${library_name})
+
+ament_add_gtest(test_string_utils test_string_utils.cpp)
+target_link_libraries(test_string_utils ${library_name})
