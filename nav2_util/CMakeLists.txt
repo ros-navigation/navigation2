@@ -83,6 +83,11 @@ target_link_libraries(map_loader
     ${SDL_IMAGE_LIBRARIES}
 )
 
+add_executable(lifecycle_bringup
+  src/lifecycle_bringup_commandline.cpp
+)
+target_link_libraries(lifecycle_bringup ${library_name})
+
 install(TARGETS
   ${library_name}
   map_lib
@@ -90,8 +95,11 @@ install(TARGETS
   sensors_lib
   motions_lib
   map_loader
+  lifecycle_bringup
   ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib)
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY include/
   DESTINATION include/
