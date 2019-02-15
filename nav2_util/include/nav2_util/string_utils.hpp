@@ -12,26 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__STRUTILS_HPP_
-#define NAV2_UTIL__STRUTILS_HPP_
+#ifndef NAV2_UTIL__STRING_UTILS_HPP_
+#define NAV2_UTIL__STRING_UTILS_HPP_
 
 #include <string>
 
-class strutils
+namespace nav2_util
 {
-public:
-  static std::string stripLeadingSlash(const std::string & in);
-};
 
-std::string strutils::stripLeadingSlash(const std::string & in)
-{
-  std::string out = in;
+std::string stripLeadingSlash(const std::string & in);
 
-  if ((!in.empty()) && (in[0] == '/')) {
-    out.erase(0, 1);
-  }
+}  // namespace nav2_util
 
-  return out;
-}
-
-#endif  // NAV2_UTIL__STRUTILS_HPP_
+#endif  // NAV2_UTIL__STRING_UTILS_HPP_
