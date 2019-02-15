@@ -13,37 +13,17 @@
 // limitations under the License.
 
 #include "nav2_util/string_utils.hpp"
-#include <string>
+#include "gtest/gtest.h"
 
-using std::string;
+using nav2_util::split;
+using nav2_util::Tokens;
 
-namespace nav2_util
+TEST(Split, SplitFunction)
 {
-
-std::string stripLeadingSlash(const string & in)
-{
-  string out = in;
-
-  if ((!in.empty()) && (in[0] == '/')) {
-    out.erase(0, 1);
-  }
-
-  return out;
+  ASSERT_EQ(split("", ':'), Tokens({""}));
+  ASSERT_EQ(split("foo", ':'), Tokens{"foo"});
+  ASSERT_EQ(split("foo:bar", ':'), Tokens({"foo", "bar"}));
+  ASSERT_EQ(split("foo:bar:", ':'), Tokens({"foo", "bar", ""}));
+  ASSERT_EQ(split(":", ':'), Tokens({"", ""}));
+  ASSERT_EQ(split("foo::bar", ':'), Tokens({"foo", "", "bar"}));
 }
-
-Tokens split(const string & tokenstring, char delimiter)
-{
-  Tokens tokens;
-
-  size_t current_pos = 0;
-  size_t pos = 0;
-  while ((pos = tokenstring.find(delimiter, current_pos)) != string::npos) {
-    tokens.push_back(tokenstring.substr(current_pos, pos - current_pos));
-    current_pos = pos + 1;
-  }
-  tokens.push_back(tokenstring.substr(current_pos));
-  return tokens;
-}
-
-
-}  // namespace nav2_util

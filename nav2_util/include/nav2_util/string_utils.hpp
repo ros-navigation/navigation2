@@ -16,11 +16,17 @@
 #define NAV2_UTIL__STRING_UTILS_HPP_
 
 #include <string>
+#include <vector>
 
 namespace nav2_util
 {
 
+typedef std::vector<std::string> Tokens;
+
 std::string stripLeadingSlash(const std::string & in);
+
+/// Split a string at the delimiters
+Tokens split(const std::string & tokenstring, char delimiter);
 
 }  // namespace nav2_util
 
