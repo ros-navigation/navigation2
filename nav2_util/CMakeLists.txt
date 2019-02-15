@@ -11,6 +11,7 @@ find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 
 nav2_package()
 
@@ -20,6 +21,7 @@ set(library_name ${PROJECT_NAME}_core)
 add_library(${library_name} SHARED
   src/costmap.cpp
   src/node_utils.cpp
+  src/lifecycle_service_client.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -29,6 +31,7 @@ ament_target_dependencies(${library_name}
   tf2_ros
   nav_msgs
   geometry_msgs
+  lifecycle_msgs
 )
 
 add_library(map_lib SHARED
