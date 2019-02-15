@@ -15,22 +15,22 @@
 #ifndef NAV2_TASKS__MAP_SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__MAP_SERVICE_CLIENT_HPP_
 
-#include "nav2_tasks/service_client.hpp"
+#include "nav2_util/service_client.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 
 namespace nav2_tasks
 {
 
-class MapServiceClient : public ServiceClient<nav_msgs::srv::GetMap>
+class MapServiceClient : public nav2_util::ServiceClient<nav_msgs::srv::GetMap>
 {
 public:
   MapServiceClient()
-  : ServiceClient<nav_msgs::srv::GetMap>("map")
+  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map")
   {
   }
 
-  using MapServiceRequest = ServiceClient<nav_msgs::srv::GetMap>::RequestType;
-  using MapServiceResponse = ServiceClient<nav_msgs::srv::GetMap>::ResponseType;
+  using MapServiceRequest = nav2_util::ServiceClient<nav_msgs::srv::GetMap>::RequestType;
+  using MapServiceResponse = nav2_util::ServiceClient<nav_msgs::srv::GetMap>::ResponseType;
 };
 
 }  // namespace nav2_tasks
