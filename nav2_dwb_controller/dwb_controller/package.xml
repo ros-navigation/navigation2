@@ -19,7 +19,6 @@
   <depend>dwb_core</depend>
   <depend>nav_2d_utils</depend>
   <depend>nav_2d_msgs</depend>
-  <depend>boost</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

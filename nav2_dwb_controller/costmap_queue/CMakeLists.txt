@@ -5,13 +5,11 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system thread)
 
 nav2_package()
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
@@ -41,7 +39,7 @@ if(BUILD_TESTING)
 
   ament_add_gtest(utest test/utest.cpp)
   ament_target_dependencies(utest ${dependencies})
-  target_link_libraries(utest ${PROJECT_NAME} ${Boost_LIBRARIES})
+  target_link_libraries(utest ${PROJECT_NAME})
 endif()
 
 install(TARGETS ${PROJECT_NAME}
