@@ -20,11 +20,16 @@
 #include "gtest/gtest.h"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_utils.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
+  RclCppFixture()
+  {
+    rclcpp::init(0, nullptr);
+    nav2_util::bringupLifecycleNodes("/test_node:/test_namespace/test_node");
+  }
   ~RclCppFixture() {rclcpp::shutdown();}
 };
 
