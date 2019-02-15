@@ -17,6 +17,7 @@
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -27,7 +28,7 @@ class ServiceClient
 public:
   explicit ServiceClient(const std::string & name)
   {
-    node_ = rclcpp::Node::make_shared(name + "_Node");
+    node_ = generateInternalNode(name + "_Node");
     client_ = node_->create_client<ServiceT>(name);
   }
 
