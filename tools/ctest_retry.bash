@@ -48,7 +48,7 @@ for ((i=1;i<=total;i++))
   do
     ctest -V $SPECIFIC_TEST
     result=$?
-    if [ "$result" == "0" ]
+    if [ "$result" == "0" ]  # if ctest succeeded, then exit the retry loop
     then
       echo "Test succeeded on try " $i
       exit 0
