@@ -10,6 +10,7 @@ ament_add_test(test_simple_navigator
     TEST_PARAMS=${PROJECT_SOURCE_DIR}/params/nav2_params.yaml
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     NAVIGATOR=simple
+    ASTAR=False
 )
 
 ament_add_test(test_bt_navigator
@@ -25,4 +26,5 @@ ament_add_test(test_bt_navigator
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     NAVIGATOR=bt
     BT_NAVIGATOR_XML=simple_sequential.xml
+    ASTAR=True
 )
