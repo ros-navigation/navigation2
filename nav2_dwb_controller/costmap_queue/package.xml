@@ -12,7 +12,6 @@
   <build_depend>nav2_common</build_depend>
   <depend>nav2_costmap_2d</depend>
   <depend>rclcpp</depend>
-  <depend>boost</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

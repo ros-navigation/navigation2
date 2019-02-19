@@ -12,13 +12,11 @@ find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system thread)
 
 nav2_package()
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
 )
 
 set(executable_name dwb_controller)
@@ -48,12 +46,11 @@ set(dependencies
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
-target_link_libraries(${library_name} ${Boost_LIBRARIES})
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
-target_link_libraries(${executable_name} ${library_name} ${Boost_LIBRARIES})
+target_link_libraries(${executable_name} ${library_name})
 
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
