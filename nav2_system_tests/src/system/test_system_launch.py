@@ -31,7 +31,7 @@ def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
     params_file = os.getenv('TEST_PARAMS')
-    astar = os.getenv('ASTAR') in ['True', 'TRUE', 'true']
+    astar = (os.getenv('ASTAR').lower() == 'true')
     navigator = os.getenv('NAVIGATOR')
     if (navigator == 'simple'):
         navigator_action = launch_ros.actions.Node(
