@@ -35,18 +35,7 @@ CostmapRepresentation::CostmapRepresentation(
 : WorldRepresentation(name, node, frame_id),
   region_visualizer_(node_, frame_id_)
 {
-  // TODO(orduno) Creating a node specifically for the transform listener as a temporal
-  //              workaround to issues #538 and #532. Once this is solved, we should be able
-  //              to use the node passed to the constructor.
-  tf_node_ = rclcpp::Node::make_shared(name + "_tf_Node",
-      "",
-      rclcpp::contexts::default_context::get_global_default_context(),
-      std::vector<std::string>(),
-      std::vector<rclcpp::Parameter>(),
-      false,  // ignore global parameters, so this node doesn't get renamed
-      false,
-      false);
-
+  tf_node_ = rclcpp::Node::make_shared(name + "_tf_Node");
   tfBuffer_ = std::make_shared<tf2_ros::Buffer>(tf_node_->get_clock()),
   tfListener_ = std::make_shared<tf2_ros::TransformListener>(*tfBuffer_, tf_node_, true),
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(name_, *tfBuffer_);
