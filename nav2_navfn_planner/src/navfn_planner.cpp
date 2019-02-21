@@ -483,7 +483,7 @@ NavfnPlanner::getCostmap(
   request.specs.resolution = 0.05;
   costmap = world_model_.getCostmap(request);
 
-  RCLCPP_INFO(get_logger(), "Received costmap of size %d, %d",
+  RCLCPP_DEBUG(get_logger(), "Received costmap of size %d, %d",
     costmap.metadata.size_x, costmap.metadata.size_y);
 }
 
