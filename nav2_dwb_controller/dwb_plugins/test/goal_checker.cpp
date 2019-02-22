@@ -83,10 +83,49 @@ void trueFalse(
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
+class TestLifecycleNode: public nav2_lifecycle::LifecycleNode
+{
+public:
+  TestLifecycleNode(const std::string & name)
+  : nav2_lifecycle::LifecycleNode(name)
+  {
+  }
+
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+};
 
 TEST(VelocityIterator, two_checks)
 {
-  auto x = rclcpp::Node::make_shared("goal_checker");
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
   gc.initialize(x);

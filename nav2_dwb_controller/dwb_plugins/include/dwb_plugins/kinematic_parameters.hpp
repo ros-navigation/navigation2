@@ -36,8 +36,10 @@
 #define DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
 
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -50,7 +52,7 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh);
+  void initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh);
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}

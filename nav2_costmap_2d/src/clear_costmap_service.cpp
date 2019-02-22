@@ -30,7 +30,7 @@ using std::any_of;
 using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
-ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap)
+ClearCostmapService::ClearCostmapService(nav2_lifecycle::LifecycleNode::SharedPtr node, Costmap2DROS & costmap)
 : node_(node), costmap_(costmap)
 {
   reset_value_ = costmap_.getCostmap()->getDefaultValue();

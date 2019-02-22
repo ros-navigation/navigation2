@@ -61,6 +61,7 @@ add_library(sensors_lib SHARED
 )
 
 add_library(motions_lib SHARED
+  src/motion_model/motion_model.cpp
   src/motion_model/omni_motion_model.cpp
   src/motion_model/differential_motion_model.cpp
 )

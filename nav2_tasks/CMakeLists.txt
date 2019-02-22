@@ -4,6 +4,7 @@ project(nav2_tasks)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -31,6 +32,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
   rclcpp
+  nav2_lifecycle
   geometry_msgs
   nav2_msgs
   behaviortree_cpp

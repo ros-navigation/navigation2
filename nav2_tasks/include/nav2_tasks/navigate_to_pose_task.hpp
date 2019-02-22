@@ -18,6 +18,7 @@
 #include <memory>
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_server.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "std_msgs/msg/empty.hpp"
@@ -33,7 +34,7 @@ using NavigateToPoseTaskClient = TaskClient<NavigateToPoseCommand, NavigateToPos
 class NavigateToPoseTaskServer : public TaskServer<NavigateToPoseCommand, NavigateToPoseResult>
 {
 public:
-  explicit NavigateToPoseTaskServer(rclcpp::Node::SharedPtr & node)
+  explicit NavigateToPoseTaskServer(nav2_lifecycle::LifecycleNode::SharedPtr node)
   : TaskServer<NavigateToPoseCommand, NavigateToPoseResult>(node)
   {
     // A subscription to the goal pose from rviz2
@@ -50,6 +51,30 @@ public:
   }
 
   NavigateToPoseTaskServer() = delete;
+
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override
+  {
+    self_client_->onConfigure(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onConfigure(state);
+  }
+
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override
+  {
+    self_client_->onActivate(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onActivate(state);
+  }
+
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override
+  {
+    self_client_->onDeactivate(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onDeactivate(state);
+  }
+
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override
+  {
+    self_client_->onCleanup(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onCleanup(state);
+  }
 
   bool isInitialPoseReceieved()
   {
@@ -71,7 +96,9 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_sub_;
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskClient> self_client_;
+
   bool initial_pose_received_;
+
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
   {
     self_client_->sendCommand(pose);

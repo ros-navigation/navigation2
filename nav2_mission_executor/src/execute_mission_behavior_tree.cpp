@@ -20,7 +20,8 @@ using namespace std::chrono_literals;
 namespace nav2_mission_executor
 {
 
-ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node)
+ExecuteMissionBehaviorTree::ExecuteMissionBehaviorTree(
+  nav2_lifecycle::LifecycleNode::SharedPtr node)
 : BehaviorTreeEngine(node)
 {
   // Register our custom action nodes so that they can be included in XML description

@@ -48,7 +48,7 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+void StandardTrajectoryGenerator::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
@@ -77,13 +77,13 @@ void StandardTrajectoryGenerator::initialize(const std::shared_ptr<rclcpp::Node>
   }
 }
 
-void StandardTrajectoryGenerator::initializeIterator(const std::shared_ptr<rclcpp::Node> & nh)
+void StandardTrajectoryGenerator::initializeIterator(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
 }
 
-void StandardTrajectoryGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
+void StandardTrajectoryGenerator::checkUseDwaParam(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   bool use_dwa;
   nh->get_parameter_or("use_dwa", use_dwa, false);

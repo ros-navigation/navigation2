@@ -17,10 +17,12 @@
 
 #include <string>
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "behaviortree_cpp/condition_node.h"
-#include "nav2_robot/robot.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_robot/robot.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {
@@ -43,7 +45,7 @@ public:
   {
     if (!initialized_) {
       // Get the required items from the blackboard
-      node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+      node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
 
       node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
       node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
@@ -54,14 +56,11 @@ public:
       initialized_ = true;
     }
 
-    if (isLocalized()) {
-      return BT::NodeStatus::SUCCESS;
-    }
-    return BT::NodeStatus::FAILURE;
+    return isLocalized()? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
   }
 
-  bool
-  isLocalized()
+protected:
+  bool isLocalized()
   {
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
@@ -84,12 +83,11 @@ public:
     return false;
   }
 
-private:
   static const int cov_x_ = 0;
   static const int cov_y_ = 7;
   static const int cov_a_ = 35;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
   std::unique_ptr<nav2_robot::Robot> robot_;
 
   bool initialized_;

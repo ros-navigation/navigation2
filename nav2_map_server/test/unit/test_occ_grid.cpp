@@ -36,7 +36,9 @@
 #include <vector>
 #include <memory>
 
+#include "yaml-cpp/yaml.h"
 #include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -56,7 +58,7 @@ RclCppFixture g_rclcppfixture;
 class TestMapLoader : public nav2_map_server::OccGridLoader
 {
 public:
-  explicit TestMapLoader(rclcpp::Node * node, YAML::Node & doc)
+  explicit TestMapLoader(nav2_lifecycle::LifecycleNode * node, YAML::Node & doc)
   : OccGridLoader(node, doc)
   {
   }
@@ -81,7 +83,7 @@ public:
     doc_["occupied_thresh"] = "0.65";
     doc_["free_thresh"] = "0.196";
 
-    node_ = std::make_shared<rclcpp::Node>("map_server");
+    node_ = std::make_shared<nav2_lifecycle::LifecycleNode>("map_server");
     map_loader_ = new TestMapLoader(node_.get(), doc_);
   }
 

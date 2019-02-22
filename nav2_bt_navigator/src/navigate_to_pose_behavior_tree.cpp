@@ -30,7 +30,7 @@ using namespace std::chrono_literals;
 namespace nav2_bt_navigator
 {
 
-NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node)
+NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::LifecycleNode::SharedPtr node)
 : BehaviorTreeEngine(node)
 {
   // Register our custom action nodes so that they can be included in XML description

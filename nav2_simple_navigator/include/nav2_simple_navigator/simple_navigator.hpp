@@ -15,28 +15,37 @@
 #ifndef NAV2_SIMPLE_NAVIGATOR__SIMPLE_NAVIGATOR_HPP_
 #define NAV2_SIMPLE_NAVIGATOR__SIMPLE_NAVIGATOR_HPP_
 
-#include <string>
 #include <memory>
-#include "nav2_tasks/task_status.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include <string>
+
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
+#include "nav2_tasks/navigate_to_pose_task.hpp"
 
 namespace nav2_simple_navigator
 {
 
-class SimpleNavigator : public rclcpp::Node
+class SimpleNavigator : public nav2_lifecycle::LifecycleNode
 {
 public:
   SimpleNavigator();
   ~SimpleNavigator();
 
-  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+protected:
+  // The lifecycle interface
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
 
-private:
+  // The task server receives the NavigateToPose commands, invoking navigateToPose()
+  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
+
+  // The SimpleNavigator uses the planner and controller to carry out the task
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
 };
 
 }  // namespace nav2_simple_navigator

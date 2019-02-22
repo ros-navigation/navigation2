@@ -114,8 +114,6 @@ public:
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
-  virtual void setupDynamicReconfigure();
-
   /**
    * @brief  Get the observations used to mark space
    * @param marking_observations A reference to a vector that will be populated with the observations
@@ -185,9 +183,6 @@ protected:
   int combination_method_;
 
   std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
-
-private:
-  void reconfigureCB();
 };
 
 }  // namespace nav2_costmap_2d

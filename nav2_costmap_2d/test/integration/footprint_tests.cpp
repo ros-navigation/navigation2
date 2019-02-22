@@ -85,7 +85,7 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    auto node = rclcpp::Node::make_shared("footprint_tests");
+    auto node = nav2_lifecycle::LifecycleNode::make_shared("footprint_tests");
 
     tf_ = new tf2_ros::Buffer(node->get_clock());
     tfl_ = new tf2_ros::TransformListener(*tf_);

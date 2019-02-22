@@ -8,7 +8,6 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>nav2_common</build_depend>
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
@@ -16,9 +15,11 @@
   <depend>nav2_util</depend>
   <depend>nav2_robot</depend>
   <depend>nav2_msgs</depend>
+  <depend>nav2_lifecycle</depend>
   <depend>dwb_core</depend>
   <depend>nav_2d_utils</depend>
   <depend>nav_2d_msgs</depend>
+  <depend>boost</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

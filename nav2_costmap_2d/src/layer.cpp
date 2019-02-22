@@ -36,25 +36,28 @@ namespace nav2_costmap_2d
 {
 
 Layer::Layer()
-: layered_costmap_(NULL),
+: layered_costmap_(nullptr),
   current_(false),
   enabled_(false),
   name_(),
-  tf_(NULL)
+  tf_(nullptr)
 {}
 
-void Layer::initialize(
-  LayeredCostmap * parent,
-  std::string name, tf2_ros::Buffer * tf, rclcpp::Node::SharedPtr node)
+void
+Layer::initialize(LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf, 
+  nav2_lifecycle::LifecycleNode::SharedPtr node, rclcpp::Node::SharedPtr client_node)
 {
   layered_costmap_ = parent;
   name_ = name;
-  node_ = node;
   tf_ = tf;
+  node_ = node;
+  client_node_ = client_node;
+
   onInitialize();
 }
 
-const std::vector<geometry_msgs::msg::Point> & Layer::getFootprint() const
+const std::vector<geometry_msgs::msg::Point> &
+Layer::getFootprint() const
 {
   return layered_costmap_->getFootprint();
 }

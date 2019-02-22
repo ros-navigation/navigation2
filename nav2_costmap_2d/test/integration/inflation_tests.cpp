@@ -60,7 +60,7 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared("inflation_test_node");
+    node_ = nav2_lifecycle::LifecycleNode::make_shared("inflation_test_node");
     // Set cost_scaling_factor parameter to 1.0 for inflation layer
     node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
   }
@@ -78,7 +78,7 @@ public:
     double inflation_radius);
 
 protected:
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 };
 
 std::vector<Point> TestNode::setRadii(

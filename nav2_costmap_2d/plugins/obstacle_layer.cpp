@@ -61,18 +61,22 @@ using nav2_costmap_2d::Observation;
 namespace nav2_costmap_2d
 {
 
+ObstacleLayer::~ObstacleLayer()
+{
+}
+
 void ObstacleLayer::onInitialize()
 {
-  node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
-  node_->get_parameter_or_set(
-    name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
-  node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
-  node_->get_parameter_or_set(name_ + "." + "combination_method", combination_method_, 1);
+  bool track_unknown_space;
+
+  node_->get_parameter_or(name_ + "." + "enabled", enabled_, true);
+  node_->get_parameter_or(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
+  node_->get_parameter_or(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
+  node_->get_parameter_or(name_ + "." + "combination_method", combination_method_, 1);
+  node_->get_parameter_or("track_unknown_space", track_unknown_space, layered_costmap_->isTrackingUnknown());
 
   rolling_window_ = layered_costmap_->isRolling();
-  bool track_unknown_space;
-  node_->get_parameter_or(
-    "track_unknown_space", track_unknown_space, layered_costmap_->isTrackingUnknown());
+
   if (track_unknown_space) {
     default_value_ = NO_INFORMATION;
   } else {
@@ -83,6 +87,8 @@ void ObstacleLayer::onInitialize()
   current_ = true;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
+
+#if 0
   double transform_tolerance;
   node_->get_parameter_or("transform_tolerance", transform_tolerance, 0.2);
 
@@ -94,7 +100,9 @@ void ObstacleLayer::onInitialize()
 
   // now we need to split the topics based on whitespace which we can use a stringstream for
   std::stringstream ss(topics_string);
+#endif
 
+/*
   std::string source;
   while (ss >> source) {
     // get the parameters for the specific topic
@@ -212,41 +220,11 @@ void ObstacleLayer::onInitialize()
       target_frames.push_back(sensor_frame);
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
-  }
-  setupDynamicReconfigure();
+  } */
 }
 
-void ObstacleLayer::setupDynamicReconfigure()
-{
-  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
-  dynamic_param_client_->add_parameters({
-      name_ + "." + "enabled",
-      name_ + "." + "footprint_clearing_enabled",
-      name_ + "." + "max_obstacle_height",
-      name_ + "." + "combination_method"
-    });
-  dynamic_param_client_->set_callback(std::bind(&ObstacleLayer::reconfigureCB, this), false);
-}
-
-ObstacleLayer::~ObstacleLayer()
-{
-}
-
-void ObstacleLayer::reconfigureCB()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "ObstacleLayer:: Event Callback");
-
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "enabled", enabled_);
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "combination_method", combination_method_);
-}
-
-void ObstacleLayer::laserScanCallback(
+void
+ObstacleLayer::laserScanCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr message,
   const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
 {
@@ -271,7 +249,8 @@ void ObstacleLayer::laserScanCallback(
   buffer->unlock();
 }
 
-void ObstacleLayer::laserScanValidInfCallback(
+void
+ObstacleLayer::laserScanValidInfCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr raw_message,
   const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
 {
@@ -305,7 +284,8 @@ void ObstacleLayer::laserScanValidInfCallback(
   buffer->unlock();
 }
 
-void ObstacleLayer::pointCloud2Callback(
+void
+ObstacleLayer::pointCloud2Callback(
   sensor_msgs::msg::PointCloud2::ConstSharedPtr message,
   const std::shared_ptr<ObservationBuffer> & buffer)
 {
@@ -315,7 +295,8 @@ void ObstacleLayer::pointCloud2Callback(
   buffer->unlock();
 }
 
-void ObstacleLayer::updateBounds(
+void
+ObstacleLayer::updateBounds(
   double robot_x, double robot_y, double robot_yaw, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
@@ -395,7 +376,8 @@ void ObstacleLayer::updateBounds(
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void ObstacleLayer::updateFootprint(
+void
+ObstacleLayer::updateFootprint(
   double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y,
   double * max_x,
@@ -409,7 +391,8 @@ void ObstacleLayer::updateFootprint(
   }
 }
 
-void ObstacleLayer::updateCosts(
+void
+ObstacleLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
   int max_i,
   int max_j)
@@ -434,7 +417,8 @@ void ObstacleLayer::updateCosts(
   }
 }
 
-void ObstacleLayer::addStaticObservation(
+void
+ObstacleLayer::addStaticObservation(
   nav2_costmap_2d::Observation & obs,
   bool marking, bool clearing)
 {
@@ -446,7 +430,8 @@ void ObstacleLayer::addStaticObservation(
   }
 }
 
-void ObstacleLayer::clearStaticObservations(bool marking, bool clearing)
+void
+ObstacleLayer::clearStaticObservations(bool marking, bool clearing)
 {
   if (marking) {
     static_marking_observations_.clear();
@@ -456,7 +441,8 @@ void ObstacleLayer::clearStaticObservations(bool marking, bool clearing)
   }
 }
 
-bool ObstacleLayer::getMarkingObservations(std::vector<Observation> & marking_observations) const
+bool
+ObstacleLayer::getMarkingObservations(std::vector<Observation> & marking_observations) const
 {
   bool current = true;
   // get the marking observations
@@ -471,7 +457,8 @@ bool ObstacleLayer::getMarkingObservations(std::vector<Observation> & marking_ob
   return current;
 }
 
-bool ObstacleLayer::getClearingObservations(std::vector<Observation> & clearing_observations) const
+bool
+ObstacleLayer::getClearingObservations(std::vector<Observation> & clearing_observations) const
 {
   bool current = true;
   // get the clearing observations
@@ -486,7 +473,8 @@ bool ObstacleLayer::getClearingObservations(std::vector<Observation> & clearing_
   return current;
 }
 
-void ObstacleLayer::raytraceFreespace(
+void
+ObstacleLayer::raytraceFreespace(
   const Observation & clearing_observation, double * min_x,
   double * min_y,
   double * max_x,
@@ -569,7 +557,8 @@ void ObstacleLayer::raytraceFreespace(
   }
 }
 
-void ObstacleLayer::activate()
+void
+ObstacleLayer::activate()
 {
   // if we're stopped we need to re-subscribe to topics
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
@@ -584,7 +573,8 @@ void ObstacleLayer::activate()
     }
   }
 }
-void ObstacleLayer::deactivate()
+void
+ObstacleLayer::deactivate()
 {
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
@@ -593,7 +583,8 @@ void ObstacleLayer::deactivate()
   }
 }
 
-void ObstacleLayer::updateRaytraceBounds(
+void
+ObstacleLayer::updateRaytraceBounds(
   double ox, double oy, double wx, double wy, double range,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
@@ -604,7 +595,8 @@ void ObstacleLayer::updateRaytraceBounds(
   touch(ex, ey, min_x, min_y, max_x, max_y);
 }
 
-void ObstacleLayer::reset()
+void
+ObstacleLayer::reset()
 {
   deactivate();
   resetMaps();

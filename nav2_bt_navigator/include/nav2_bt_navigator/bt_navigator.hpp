@@ -15,24 +15,31 @@
 #ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 #define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
+
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 
 namespace nav2_bt_navigator
 {
 
-class BtNavigator : public rclcpp::Node
+class BtNavigator : public nav2_lifecycle::LifecycleNode
 {
 public:
   BtNavigator();
+  ~BtNavigator();
 
-  nav2_tasks::TaskStatus navigateToPose(
-    const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+protected:
+  // Implement the lifecycle interface
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
 
-private:
+  // The BtNavigator implements the NavigateToPose interface
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
-  std::string bt_xml_filename_;
+  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 };
 
 }  // namespace nav2_bt_navigator

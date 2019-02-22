@@ -22,6 +22,7 @@
 #include "behaviortree_cpp/xml_parsing.h"
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/task_status.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_tasks
 {
@@ -29,7 +30,7 @@ namespace nav2_tasks
 class BehaviorTreeEngine
 {
 public:
-  explicit BehaviorTreeEngine(rclcpp::Node::SharedPtr node);
+  explicit BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node);
   BehaviorTreeEngine() = delete;
 
   TaskStatus run(
@@ -40,7 +41,7 @@ public:
 
 protected:
   // The ROS node to use for any task clients
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
   // A factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;

@@ -40,7 +40,6 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
 
-
 class RclCppFixture
 {
 public:
@@ -49,18 +48,57 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+class TestLifecycleNode: public nav2_lifecycle::LifecycleNode
+{
+public:
+  TestLifecycleNode(const std::string & name)
+  : nav2_lifecycle::LifecycleNode(name)
+  {
+  }
+
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+};
+
 class TestNode : public ::testing::Test
 {
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared("obstacle_test_node");
+    node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
   }
 
   ~TestNode() {}
 
 protected:
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<TestLifecycleNode> node_;
 };
 
 /*

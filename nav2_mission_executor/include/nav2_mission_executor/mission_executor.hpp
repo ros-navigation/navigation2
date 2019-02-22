@@ -16,21 +16,28 @@
 #define NAV2_MISSION_EXECUTOR__MISSION_EXECUTOR_HPP_
 
 #include <memory>
+
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_tasks/execute_mission_task.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_mission_executor
 {
 
-class MissionExecutor : public rclcpp::Node
+class MissionExecutor : public nav2_lifecycle::LifecycleNode
 {
 public:
   MissionExecutor();
+  ~MissionExecutor();
 
-  nav2_tasks::TaskStatus executeMission(
-    const nav2_tasks::ExecuteMissionCommand::SharedPtr command);
+protected:
+  // Implement the lifecycle interface
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
 
-private:
+  // The task server receives the ExecuteMission commands, invoking executeMission()
+  nav2_tasks::TaskStatus executeMission(const nav2_tasks::ExecuteMissionCommand::SharedPtr command);
   std::unique_ptr<nav2_tasks::ExecuteMissionTaskServer> task_server_;
 };
 

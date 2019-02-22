@@ -19,7 +19,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_dynamic_params
 {
@@ -27,7 +29,7 @@ namespace nav2_dynamic_params
 class DynamicParamsValidator
 {
 public:
-  explicit DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params = false);
+  explicit DynamicParamsValidator(nav2_lifecycle::LifecycleNode::SharedPtr node, bool reject_new_params = false);
 
   ~DynamicParamsValidator() {}
 
@@ -74,7 +76,8 @@ private:
     }
   }
 
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+
   bool reject_new_params_;
   std::map<std::string, rclcpp::ParameterType> param_map_;
   std::map<std::string, std::pair<double, double>> param_bound_map_;

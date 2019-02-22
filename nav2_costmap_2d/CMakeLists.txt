@@ -20,8 +20,10 @@ find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_dynamic_params)
 find_package(nav2_util)
+find_package(nav2_tasks)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -68,8 +70,10 @@ set(dependencies
   nav2_dynamic_params
   laser_geometry
   nav2_util
+  nav2_tasks
   nav2_voxel_grid
   nav2_msgs
+  nav2_lifecycle
   visualization_msgs
 )
 

@@ -18,12 +18,13 @@
 
 int main(int argc, char ** argv)
 {
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
   rclcpp::init(argc, argv);
-  rclcpp::executors::SingleThreadedExecutor exec;
-  auto controller_node = std::make_shared<nav2_dwb_controller::DwbController>(exec);
-  exec.add_node(controller_node);
-  exec.spin();
+  auto node = std::make_shared<nav2_dwb_controller::DwbController>();
+  rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
+  RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
   return 0;
 }

@@ -15,37 +15,40 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 #define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 
-#include <string>
-#include <vector>
 #include <memory>
+#include <thread>
+
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_util/costmap.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
-#include "tf2_ros/transform_listener.h"
 
 namespace nav2_world_model
 {
 
-class WorldModel : public rclcpp::Node
+class WorldModel : public nav2_lifecycle::LifecycleNode
 {
 public:
-  WorldModel(rclcpp::executor::Executor & executor, const std::string & name);
-  explicit WorldModel(rclcpp::executor::Executor & executor);
+  WorldModel();
+  ~WorldModel();
 
-private:
-  void costmap_callback(
+protected:
+  // Implement the lifecycle interface
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
+
+  // The WorldModel provides the GetCostmap service
+  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
+  void costmap_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
-  // Server for providing a costmap
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
+  // The implementation of the WorldModel uses a Costmap2DROS node, spinning on its own thread
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  nav2_costmap_2d::Costmap2D * costmap_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+  std::unique_ptr<std::thread> costmap_thread_;
 };
 
 }  // namespace nav2_world_model

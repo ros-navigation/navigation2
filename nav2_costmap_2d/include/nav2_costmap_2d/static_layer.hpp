@@ -47,6 +47,7 @@
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_tasks/map_service_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -56,6 +57,7 @@ class StaticLayer : public CostmapLayer
 public:
   StaticLayer();
   virtual ~StaticLayer();
+
   virtual void onInitialize();
   virtual void activate();
   virtual void deactivate();
@@ -63,9 +65,8 @@ public:
 
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
-    double * min_y,
-    double * max_x,
-    double * max_y);
+    double * min_y, double * max_x, double * max_y);
+
   virtual void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j);
@@ -73,34 +74,27 @@ public:
   virtual void matchSize();
 
 private:
-  /**
-   * @brief  Callback to update the costmap's map from the map_server
-   * @param new_map The map to put into the costmap. The origin of the new
-   * map along with its size will determine what parts of the costmap's
-   * static map are overwritten.
-   */
-  void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
-  void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
-  void reconfigureCB();
-
+  void getParameters();
+  void getMap();
+  void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
   unsigned char interpretValue(unsigned char value);
 
-  std::string global_frame_;  ///< @brief The global frame for the costmap
-  std::string map_frame_;  /// @brief frame that map is located in
-  bool subscribe_to_updates_;
-  bool map_received_;
-  bool has_updated_data_;
-  unsigned int x_, y_, width_, height_;
+  std::string global_frame_;
+  std::string map_frame_;
+
+  bool has_updated_data_{false};
+
+  unsigned int x_{0};
+  unsigned int y_{0};
+  unsigned int width_{0};
+  unsigned int height_{0};
+
+  // Parameters
   bool track_unknown_space_;
   bool use_maximum_;
-  bool first_map_only_;      ///< @brief Store the first static map and reuse it on reinitializing
+  unsigned char lethal_threshold_;
+  unsigned char unknown_cost_value_;
   bool trinary_costmap_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-  rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
-  unsigned char lethal_threshold_, unknown_cost_value_;
-  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 };
 
 }  // namespace nav2_costmap_2d

@@ -11,6 +11,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_robot REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -40,6 +41,7 @@ set(dependencies
   behaviortree_cpp
   std_srvs
   nav2_robot
+  nav2_lifecycle
 )
 
 ament_target_dependencies(${executable_name}

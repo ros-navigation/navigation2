@@ -49,7 +49,7 @@ namespace dwb_plugins
  * @param nh NodeHandle
  * @param dimension String representing the dimension, used in constructing parameter names
  */
-void setDecelerationAsNeeded(const std::shared_ptr<rclcpp::Node> & nh, const std::string dimension)
+void setDecelerationAsNeeded(const nav2_lifecycle::LifecycleNode::SharedPtr & nh, const std::string dimension)
 {
   std::string decel_param = "decel_lim_" + dimension;
   double temp;
@@ -71,7 +71,7 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+void KinematicParameters::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");

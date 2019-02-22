@@ -14,11 +14,11 @@
 
 #include "nav2_map_server/map_server.hpp"
 
-#include <libgen.h>
-#include <string>
-#include <memory>
 #include <fstream>
+#include <memory>
 #include <stdexcept>
+#include <string>
+
 #include "nav2_map_server/occ_grid_loader.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -27,66 +27,99 @@ using namespace std::chrono_literals;
 namespace nav2_map_server
 {
 
-MapServer::MapServer(const std::string & node_name)
-: Node(node_name)
-{
-  // Get the MAP YAML file, which includes the image filename and the map type
-  getParameters();
-
-  // Create the proper map loader for the specified map type
-  if (map_type_ == "occupancy") {
-    map_loader_ = std::make_unique<OccGridLoader>(this, doc_);
-  } else {
-    std::string msg = "Cannot load unknown map type: '" + map_type_ + "'";
-    throw std::runtime_error(msg);
-  }
-
-  // Load the map and provide access via topic and service interfaces
-  map_loader_->loadMapFromFile(map_filename_);
-  map_loader_->startServices();
-}
-
 MapServer::MapServer()
-: MapServer("map_server")
+: nav2_lifecycle::LifecycleNode("map_server")
 {
+  RCLCPP_INFO(get_logger(), "Creating");
 }
 
-void MapServer::getParameters()
+MapServer::~MapServer()
 {
-  get_parameter_or_set("yaml_filename", yaml_filename_, std::string("map.yaml"));
+  RCLCPP_INFO(get_logger(), "Destroying");
+}
+
+nav2_lifecycle::CallbackReturn
+MapServer::onConfigure(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onConfigure");
+
+  // Get the name of the YAML file to use
+  std::string yaml_filename;
+  get_parameter_or("yaml_filename", yaml_filename, std::string("map.yaml"));
 
   // Make sure that there's a valid file there and open it up
-  std::ifstream fin(yaml_filename_.c_str());
+  std::ifstream fin(yaml_filename.c_str());
   if (fin.fail()) {
-    throw std::runtime_error("Could not open '" + yaml_filename_ + "': file not found");
+    throw std::runtime_error("Could not open '" + yaml_filename + "': file not found");
   }
 
-  doc_ = YAML::LoadFile(yaml_filename_);
+  // The YAML document from which to get the conversion parameters
+  YAML::Node doc = YAML::LoadFile(yaml_filename);
 
-  // Get the name of the map file
+  // Get the map type so that we can create the correct map loader
+  std::string map_type;
   try {
-    map_filename_ = doc_["image"].as<std::string>();
-    if (map_filename_.size() == 0) {
-      throw std::runtime_error("The image tag cannot be an empty string");
-    }
-    if (map_filename_[0] != '/') {
-      // dirname can modify what you pass it
-      char * fname_copy = strdup(yaml_filename_.c_str());
-      map_filename_ = std::string(dirname(fname_copy)) + '/' + map_filename_;
-      free(fname_copy);
-    }
+    map_type = doc["map_type"].as<std::string>();
   } catch (YAML::Exception) {
-    std::string msg = "'" + yaml_filename_ + "' does not contain an image tag or it is invalid";
+    // Default to occupancy grid if not specified in the YAML file
+    map_type = "occupancy";
+  }
+
+  // Create the correct map loader for the specified map type
+  if (map_type == "occupancy") {
+    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename);
+  } else {
+    std::string msg = "Cannot load unknown map type: '" + map_type + "'";
     throw std::runtime_error(msg);
   }
 
-  // Get the map type so that we can create the correct map loader
-  try {
-    map_type_ = doc_["map_type"].as<std::string>();
-  } catch (YAML::Exception) {
-    // Default to occupancy grid if not specified in the YAML file
-    map_type_ = "occupancy";
+  nav2_lifecycle::CallbackReturn rc;
+  if ((rc = map_loader_->onConfigure(state)) != CallbackReturn::SUCCESS) {
+    return rc;
   }
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+MapServer::onActivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onActivate");
+
+  nav2_lifecycle::CallbackReturn rc;
+  if ((rc = map_loader_->onActivate(state)) != CallbackReturn::SUCCESS) {
+    return rc;
+  }
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+MapServer::onDeactivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onDeactivate");
+
+  nav2_lifecycle::CallbackReturn rc;
+  if ((rc = map_loader_->onDeactivate(state)) != CallbackReturn::SUCCESS) {
+    return rc;
+  }
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+MapServer::onCleanup(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onCleanup");
+
+  nav2_lifecycle::CallbackReturn rc;
+  if ((rc = map_loader_->onCleanup(state)) != CallbackReturn::SUCCESS) {
+    return rc;
+  }
+
+  map_loader_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 }  // namespace nav2_map_server

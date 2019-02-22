@@ -33,15 +33,16 @@
  */
 
 #include "dwb_core/publisher.hpp"
-#include <vector>
+
+#include <algorithm>
 #include <memory>
 #include <string>
-#include <algorithm>
-#include "visualization_msgs/msg/marker.hpp"
-#include "visualization_msgs/msg/marker_array.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
+#include <vector>
+
 #include "nav_2d_utils/conversions.hpp"
-//#include <sensor_msgs/point_cloud_conversion.hpp> // NOLINT cpplint doesn't like commented out header file
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 
 using std::max;
 using std::string;
@@ -49,52 +50,87 @@ using std::string;
 namespace dwb_core
 {
 
-void DWBPublisher::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
+: node_(node)
 {
-  nh_ = nh;
-  // Load Publishers
-  nh_->get_parameter_or("publish_evaluation", publish_evaluation_, true);
-  if (publish_evaluation_) {
-    eval_pub_ = nh_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
-  }
-
-  nh_->get_parameter_or("publish_global_plan", publish_global_plan_, true);
-  if (publish_global_plan_) {
-    global_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("global_plan", 1);
-  }
-
-  nh_->get_parameter_or("publish_transformed_plan", publish_transformed_, true);
-  if (publish_transformed_) {
-    transformed_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
-  }
-
-  nh_->get_parameter_or("publish_local_plan", publish_local_plan_, true);
-  if (publish_local_plan_) {
-    local_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-  }
-
-  nh_->get_parameter_or("publish_trajectories", publish_trajectories_, true);
-  if (publish_trajectories_) {
-    marker_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
-  }
-  prev_marker_count_ = 0;
-
-  nh_->get_parameter_or("publish_cost_grid_pc", publish_cost_grid_pc_, false);
-  if (publish_cost_grid_pc_) {
-    cost_grid_pc_pub_ = nh_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
-  }
 }
 
-void DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
+nav2_lifecycle::CallbackReturn
+DWBPublisher::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+{
+  // TODO: get rid of these parameters
+  node_->get_parameter_or("publish_evaluation", publish_evaluation_, true);
+  node_->get_parameter_or("publish_global_plan", publish_global_plan_, true);
+  node_->get_parameter_or("publish_transformed_plan", publish_transformed_, true);
+  node_->get_parameter_or("publish_local_plan", publish_local_plan_, true);
+  node_->get_parameter_or("publish_trajectories", publish_trajectories_, true);
+  node_->get_parameter_or("publish_cost_grid_pc", publish_cost_grid_pc_, false);
+
+  eval_pub_ = node_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
+  global_pub_ = node_->create_publisher<nav_msgs::msg::Path>("global_plan", 1);
+  transformed_pub_ = node_->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+  local_pub_ = node_->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+  marker_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
+  cost_grid_pc_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
+
+  prev_marker_count_ = 0;
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DWBPublisher::onActivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  eval_pub_->on_activate();
+  global_pub_->on_activate();
+  transformed_pub_->on_activate();
+  local_pub_->on_activate();
+  marker_pub_->on_activate();
+  cost_grid_pc_pub_->on_activate();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DWBPublisher::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  eval_pub_->on_deactivate();
+  global_pub_->on_deactivate();
+  transformed_pub_->on_deactivate();
+  local_pub_->on_deactivate();
+  marker_pub_->on_deactivate();
+  cost_grid_pc_pub_->on_deactivate();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DWBPublisher::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+{
+  eval_pub_.reset();
+  global_pub_.reset();
+  transformed_pub_.reset();
+  local_pub_.reset();
+  marker_pub_.reset();
+  cost_grid_pc_pub_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+void
+DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
   if (results == nullptr) {return;}
+
   if (publish_evaluation_) {
     eval_pub_->publish(*results);
   }
+
   publishTrajectories(*results);
 }
 
-void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
+void
+DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
   if (!publish_trajectories_) {return;}
   visualization_msgs::msg::MarkerArray ma;
@@ -148,11 +184,11 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
   }
   addDeleteMarkers(ma, currentValidId, validNamespace);
   addDeleteMarkers(ma, currentInvalidId, invalidNamespace);
-  prev_marker_count_ = max(currentValidId, currentInvalidId);
   marker_pub_->publish(ma);
 }
 
-void DWBPublisher::publishLocalPlan(
+void
+DWBPublisher::publishLocalPlan(
   const std_msgs::msg::Header & header,
   const dwb_msgs::msg::Trajectory2D & traj)
 {
@@ -163,7 +199,8 @@ void DWBPublisher::publishLocalPlan(
   local_pub_->publish(path);
 }
 
-void DWBPublisher::publishCostGrid(
+void
+DWBPublisher::publishCostGrid(
   const CostmapROSPtr costmap_ros,
   const std::vector<TrajectoryCritic::Ptr> critics)
 {
@@ -171,7 +208,7 @@ void DWBPublisher::publishCostGrid(
 
   sensor_msgs::msg::PointCloud cost_grid_pc;
   cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
-  cost_grid_pc.header.stamp = nh_->now();
+  cost_grid_pc.header.stamp = node_->now();
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
@@ -212,22 +249,26 @@ void DWBPublisher::publishCostGrid(
   cost_grid_pc_pub_->publish(cost_grid_pc);
 }
 
-void DWBPublisher::publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan)
+void
+DWBPublisher::publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan)
 {
   publishGenericPlan(plan, *global_pub_, publish_global_plan_);
 }
 
-void DWBPublisher::publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan)
+void
+DWBPublisher::publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan)
 {
   publishGenericPlan(plan, *transformed_pub_, publish_transformed_);
 }
 
-void DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
+void
+DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
 {
   publishGenericPlan(plan, *local_pub_, publish_local_plan_);
 }
 
-void DWBPublisher::publishGenericPlan(
+void
+DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
   rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
@@ -236,7 +277,8 @@ void DWBPublisher::publishGenericPlan(
   pub.publish(path);
 }
 
-void DWBPublisher::addDeleteMarkers(
+void
+DWBPublisher::addDeleteMarkers(
   visualization_msgs::msg::MarkerArray & ma,
   unsigned startingId,
   string & ns
@@ -250,5 +292,6 @@ void DWBPublisher::addDeleteMarkers(
     ma.markers.push_back(m);
   }
 }
+
 
 }  // namespace dwb_core

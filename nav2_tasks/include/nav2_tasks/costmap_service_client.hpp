@@ -24,8 +24,13 @@ namespace nav2_tasks
 class CostmapServiceClient : public nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
-  CostmapServiceClient()
-  : nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap")
+  CostmapServiceClient(const std::string & parent_node_name)
+  : nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>(parent_node_name, "GetCostmap")
+  {
+  }
+
+  CostmapServiceClient(rclcpp::Node::SharedPtr node)
+  : ServiceClient<nav2_msgs::srv::GetCostmap>(node, "GetCostmap")
   {
   }
 

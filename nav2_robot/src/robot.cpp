@@ -21,17 +21,68 @@
 namespace nav2_robot
 {
 
-Robot::Robot(rclcpp::Node::SharedPtr & node)
-: node_(node), initial_pose_received_(false), initial_odom_received_(false)
+Robot::Robot(nav2_lifecycle::LifecycleNode::SharedPtr node)
+: node_(node)
 {
-  // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
+  RCLCPP_INFO(node_->get_logger(), "Robot: Creating");
+}
+
+Robot::~Robot()
+{
+  RCLCPP_INFO(node_->get_logger(), "Robot: Destroying");
+}
+
+nav2_lifecycle::CallbackReturn
+Robot::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "Robot: onConfigure");
+
+  // This class may be used from a module that comes up after AMCL has output
+  // its initial pose, so that pose message uses durability TRANSIENT_LOCAL 
+  rmw_qos_profile_t pose_qos_profile = rmw_qos_profile_default;
+  pose_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
+    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1), pose_qos_profile);
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
+    "odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1), rmw_qos_profile_sensor_data);
 
   vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+Robot::onActivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "Robot: onActivate");
+
+  vel_pub_->on_activate();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+Robot::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "Robot: onDeactivate");
+
+  vel_pub_->on_deactivate();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+Robot::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "Robot: onCleanup");
+
+  pose_sub_.reset();
+  odom_sub_.reset();
+  vel_pub_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 void

@@ -7,6 +7,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(urdf REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -23,6 +24,7 @@ ament_target_dependencies(nav2_robot
   urdf
   geometry_msgs
   nav_msgs
+  nav2_lifecycle
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -40,7 +42,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-  add_subdirectory(test)
+  #add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

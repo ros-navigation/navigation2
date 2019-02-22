@@ -32,89 +32,91 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <utility>
-#include "dwb_core/dwb_core.hpp"
+#include <vector>
+
+#include "dwb_core/dwb_local_planner.hpp"
+#include "dwb_core/exceptions.hpp"
 #include "dwb_core/illegal_trajectory_tracker.hpp"
+#include "dwb_msgs/msg/critic_score.hpp"
+#include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "dwb_msgs/msg/critic_score.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "dwb_core/exceptions.hpp"
 
 namespace dwb_core
 {
 
-void loadBackwardsCompatibleParameters(const std::shared_ptr<rclcpp::Node> & nh)
-{
-  std::vector<std::string> critic_names;
-  RCLCPP_INFO(nh->get_logger(),
-    "DWBLocalPlanner", "No critics configured! Using the default set.");
-  critic_names.push_back("RotateToGoal");       // discards trajectories that move forward when
-                                                //   already at goal
-  critic_names.push_back("Oscillation");        // discards oscillating motions (assisgns cost -1)
-  critic_names.push_back("ObstacleFootprint");  // discards trajectories that move into obstacles
-  critic_names.push_back("GoalAlign");          // prefers trajectories that make the
-                                                //   nose go towards (local) nose goal
-  critic_names.push_back("PathAlign");          // prefers trajectories that keep the
-                                                //   robot nose on nose path
-  critic_names.push_back("PathDist");           // prefers trajectories on global path
-  critic_names.push_back("GoalDist");           // prefers trajectories that go towards
-                                                //   (local) goal, based on wave propagation
-  nh->set_parameters({rclcpp::Parameter("critics", critic_names)});
-  /* *INDENT-OFF* */
-  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathAlign.scale", 32.0, false);
-  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalAlign.scale", 24.0, false);
-  nav_2d_utils::moveParameter(nh, "path_distance_bias", "PathDist.scale", 32.0);
-  nav_2d_utils::moveParameter(nh, "goal_distance_bias", "GoalDist.scale", 24.0);
-  nav_2d_utils::moveParameter(nh, "occdist_scale",      "ObstacleFootprint.scale", 0.01);
-
-  nav_2d_utils::moveParameter(nh, "max_scaling_factor", "ObstacleFootprint.max_scaling_factor", 0.2);  // NOLINT
-  nav_2d_utils::moveParameter(nh, "scaling_speed",      "ObstacleFootprint.scaling_speed", 0.25);
-  /* *INDENT-ON* */
-}
-
-DWBLocalPlanner::DWBLocalPlanner()
-: traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
+DWBLocalPlanner::DWBLocalPlanner(nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros)
+: node_(node),
+  tf_(tf),
+  costmap_ros_(costmap_ros),
+  traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
   goal_checker_loader_("dwb_core", "dwb_core::GoalChecker"),
   critic_loader_("dwb_core", "dwb_core::TrajectoryCritic")
 {
 }
 
-void DWBLocalPlanner::initialize(
-  std::shared_ptr<rclcpp::Node> & private_nh, TFBufferPtr tf,
-  CostmapROSPtr costmap_ros)
+nav2_lifecycle::CallbackReturn
+DWBLocalPlanner::onConfigure(const rclcpp_lifecycle::State & state)
 {
-  nh_ = private_nh;
-  tf_ = tf;
-  costmap_ros_ = costmap_ros;
-  nh_->get_parameter_or("prune_plan", prune_plan_, true);
-  nh_->get_parameter_or("prune_distance", prune_distance_, 1.0);
-  nh_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
-  pub_.initialize(nh_);
-
-  // Plugins
   std::string traj_generator_name;
-  nh_->get_parameter_or("trajectory_generator_name", traj_generator_name,
-    std::string("dwb_plugins::StandardTrajectoryGenerator"));
-  traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
-  traj_generator_->initialize(nh_);
-
   std::string goal_checker_name;
-  nh_->get_parameter_or("goal_checker_name", goal_checker_name,
-    std::string("dwb_plugins::SimpleGoalChecker"));
+
+  node_->get_parameter_or("prune_plan", prune_plan_, true);
+  node_->get_parameter_or("prune_distance", prune_distance_, 1.0);
+  node_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
+  node_->get_parameter_or("trajectory_generator_name", traj_generator_name, std::string("dwb_plugins::StandardTrajectoryGenerator"));
+  node_->get_parameter_or("goal_checker_name", goal_checker_name, std::string("dwb_plugins::SimpleGoalChecker"));
+
+  pub_ = std::make_unique<DWBPublisher>(node_);
+  pub_->onConfigure(state);
+
+  traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
   goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
-  goal_checker_->initialize(nh_);
+
+  traj_generator_->initialize(node_);
+  goal_checker_->initialize(node_);
 
   loadCritics();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
-std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
+nav2_lifecycle::CallbackReturn
+DWBLocalPlanner::onActivate(const rclcpp_lifecycle::State & state)
+{
+  pub_->onActivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DWBLocalPlanner::onDeactivate(const rclcpp_lifecycle::State & state)
+{
+  pub_->onDeactivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DWBLocalPlanner::onCleanup(const rclcpp_lifecycle::State & state)
+{
+  pub_->onCleanup(state);
+
+  traj_generator_.reset();
+  goal_checker_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+std::string
+DWBLocalPlanner::resolveCriticClassName(std::string base_name)
 {
   if (base_name.find("Critic") == std::string::npos) {
     base_name = base_name + "Critic";
@@ -131,34 +133,65 @@ std::string DWBLocalPlanner::resolveCriticClassName(std::string base_name)
   return base_name;
 }
 
-void DWBLocalPlanner::loadCritics()
+void
+DWBLocalPlanner::loadCritics()
 {
-  nh_->get_parameter("default_critic_namespaces", default_critic_namespaces_);
+  node_->get_parameter("default_critic_namespaces", default_critic_namespaces_);
   if (default_critic_namespaces_.size() == 0) {
     default_critic_namespaces_.push_back("dwb_critics");
   }
 
   std::vector<std::string> critic_names;
-  if (!nh_->get_parameter("critics", critic_names)) {
-    loadBackwardsCompatibleParameters(nh_);
+  if (!node_->get_parameter("critics", critic_names)) {
+    loadBackwardsCompatibleParameters();
   }
 
-  nh_->get_parameter("critics", critic_names);
+  node_->get_parameter("critics", critic_names);
   for (unsigned int i = 0; i < critic_names.size(); i++) {
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
-    nh_->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
+    node_->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
     plugin_class = resolveCriticClassName(plugin_class);
 
     TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
-    RCLCPP_INFO(nh_->get_logger(),
+    RCLCPP_INFO(node_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
-    plugin->initialize(nh_, plugin_name, costmap_ros_);
+    plugin->initialize(node_, plugin_name, costmap_ros_);
   }
 }
 
-bool DWBLocalPlanner::isGoalReached(
+void
+DWBLocalPlanner::loadBackwardsCompatibleParameters()
+{
+  std::vector<std::string> critic_names;
+  RCLCPP_INFO(node_->get_logger(),
+    "DWBLocalPlanner", "No critics configured! Using the default set.");
+  critic_names.push_back("RotateToGoal");       // discards trajectories that move forward when
+                                                //   already at goal
+  critic_names.push_back("Oscillation");        // discards oscillating motions (assisgns cost -1)
+  critic_names.push_back("ObstacleFootprint");  // discards trajectories that move into obstacles
+  critic_names.push_back("GoalAlign");          // prefers trajectories that make the
+                                                //   nose go towards (local) nose goal
+  critic_names.push_back("PathAlign");          // prefers trajectories that keep the
+                                                //   robot nose on nose path
+  critic_names.push_back("PathDist");           // prefers trajectories on global path
+  critic_names.push_back("GoalDist");           // prefers trajectories that go towards
+                                                //   (local) goal, based on wave propagation
+  node_->set_parameters({rclcpp::Parameter("critics", critic_names)});
+  /* *INDENT-OFF* */
+  nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathAlign.scale", 32.0, false);
+  nav_2d_utils::moveParameter(node_, "goal_distance_bias", "GoalAlign.scale", 24.0, false);
+  nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathDist.scale", 32.0);
+  nav_2d_utils::moveParameter(node_, "goal_distance_bias", "GoalDist.scale", 24.0);
+  nav_2d_utils::moveParameter(node_, "occdist_scale",      "ObstacleFootprint.scale", 0.01);
+  nav_2d_utils::moveParameter(node_, "max_scaling_factor", "ObstacleFootprint.max_scaling_factor", 0.2);  // NOLINT
+  nav_2d_utils::moveParameter(node_, "scaling_speed",      "ObstacleFootprint.scaling_speed", 0.25);
+  /* *INDENT-ON* */
+}
+
+bool
+DWBLocalPlanner::isGoalReached(
   const nav_2d_msgs::msg::Pose2DStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity)
 {
@@ -177,42 +210,45 @@ bool DWBLocalPlanner::isGoalReached(
   return goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
 }
 
-void DWBLocalPlanner::setPlan(const nav_2d_msgs::msg::Path2D & path)
+void
+DWBLocalPlanner::setPlan(const nav_2d_msgs::msg::Path2D & path)
 {
   for (TrajectoryCritic::Ptr critic : critics_) {
     critic->reset();
   }
 
-  pub_.publishGlobalPlan(path);
+  pub_->publishGlobalPlan(path);
   global_plan_ = path;
 }
 
-nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
+nav_2d_msgs::msg::Twist2DStamped
+DWBLocalPlanner::computeVelocityCommands(
   const nav_2d_msgs::msg::Pose2DStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
-  if (pub_.shouldRecordEvaluation()) {
+  if (pub_->shouldRecordEvaluation()) {
     results = std::make_shared<dwb_msgs::msg::LocalPlanEvaluation>();
   }
 
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel = computeVelocityCommands(pose, velocity, results);
-    pub_.publishEvaluation(results);
+    pub_->publishEvaluation(results);
     return cmd_vel;
   } catch (const nav_core2::PlannerException & e) {
-    pub_.publishEvaluation(results);
+    pub_->publishEvaluation(results);
     throw;
   }
 }
 
-void DWBLocalPlanner::prepareGlobalPlan(
+void
+DWBLocalPlanner::prepareGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose, nav_2d_msgs::msg::Path2D & transformed_plan,
   nav_2d_msgs::msg::Pose2DStamped & goal_pose, bool publish_plan)
 {
   transformed_plan = transformGlobalPlan(pose);
   if (publish_plan) {
-    pub_.publishTransformedPlan(transformed_plan);
+    pub_->publishTransformedPlan(transformed_plan);
   }
 
   goal_pose.header.frame_id = global_plan_.header.frame_id;
@@ -220,14 +256,15 @@ void DWBLocalPlanner::prepareGlobalPlan(
   nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose, goal_pose);
 }
 
-nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
+nav_2d_msgs::msg::Twist2DStamped
+DWBLocalPlanner::computeVelocityCommands(
   const nav_2d_msgs::msg::Pose2DStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results)
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
-    results->header.stamp = nh_->now();
+    results->header.stamp = node_->now();
   }
 
   nav_2d_msgs::msg::Path2D transformed_plan = transformGlobalPlan(pose);
@@ -246,7 +283,7 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
 
     // Return Value
     nav_2d_msgs::msg::Twist2DStamped cmd_vel;
-    cmd_vel.header.stamp = nh_->now();
+    cmd_vel.header.stamp = node_->now();
     cmd_vel.velocity = best.traj.velocity;
 
     // debrief stateful scoring functions
@@ -254,8 +291,8 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
       critic->debrief(cmd_vel.velocity);
     }
 
-    pub_.publishLocalPlan(pose.header, best.traj);
-    pub_.publishCostGrid(costmap_ros_, critics_);
+    pub_->publishLocalPlan(pose.header, best.traj);
+    pub_->publishCostGrid(costmap_ros_, critics_);
 
     return cmd_vel;
   } catch (const nav_core2::NoLegalTrajectoriesException & e) {
@@ -265,14 +302,15 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
     for (TrajectoryCritic::Ptr critic : critics_) {
       critic->debrief(empty_cmd);
     }
-    pub_.publishLocalPlan(pose.header, empty_traj);
-    pub_.publishCostGrid(costmap_ros_, critics_);
+    pub_->publishLocalPlan(pose.header, empty_traj);
+    pub_->publishCostGrid(costmap_ros_, critics_);
 
     throw;
   }
 }
 
-dwb_msgs::msg::TrajectoryScore DWBLocalPlanner::coreScoringAlgorithm(
+dwb_msgs::msg::TrajectoryScore
+DWBLocalPlanner::coreScoringAlgorithm(
   const geometry_msgs::msg::Pose2D & pose,
   const nav_2d_msgs::msg::Twist2D velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results)
@@ -338,7 +376,8 @@ dwb_msgs::msg::TrajectoryScore DWBLocalPlanner::coreScoringAlgorithm(
   return best;
 }
 
-dwb_msgs::msg::TrajectoryScore DWBLocalPlanner::scoreTrajectory(
+dwb_msgs::msg::TrajectoryScore
+DWBLocalPlanner::scoreTrajectory(
   const dwb_msgs::msg::Trajectory2D & traj,
   double best_score)
 {
@@ -368,16 +407,19 @@ dwb_msgs::msg::TrajectoryScore DWBLocalPlanner::scoreTrajectory(
   return score;
 }
 
-double getSquareDistance(
+double
+getSquareDistance(
   const geometry_msgs::msg::Pose2D & pose_a,
   const geometry_msgs::msg::Pose2D & pose_b)
 {
   double x_diff = pose_a.x - pose_b.x;
   double y_diff = pose_a.y - pose_b.y;
+
   return x_diff * x_diff + y_diff * y_diff;
 }
 
-nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
+nav_2d_msgs::msg::Path2D
+DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
   nav_2d_msgs::msg::Path2D transformed_plan;
@@ -449,7 +491,7 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
       it = transformed_plan.poses.erase(it);
       global_it = global_plan_.poses.erase(global_it);
     }
-    pub_.publishGlobalPlan(global_plan_);
+    pub_->publishGlobalPlan(global_plan_);
   }
 
   if (transformed_plan.poses.size() == 0) {
@@ -460,6 +502,5 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
 
 }  // namespace dwb_core
 
-
-//  register this planner as a LocalPlanner plugin
+// Register this planner as a LocalPlanner plugin
 // PLUGINLIB_EXPORT_CLASS(dwb_core::DWBLocalPlanner, nav_core2::LocalPlanner)

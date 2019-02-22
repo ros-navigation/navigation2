@@ -1,0 +1,161 @@
+#!/usr/bin/python3
+
+# Copyright 2018 Open Source Robotics Foundation, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import sys
+import time
+import functools
+import signal
+import rclpy
+
+#from OpenGL import GL
+
+#import threading
+#import launch
+#import launch.actions
+#import launch.events
+#import launch_ros.actions
+#import launch_ros.events
+#import launch_ros.events.lifecycle
+#import lifecycle_msgs.msg
+
+#from launch_ros import get_default_launch_description
+
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtProperty, QUrl, QTimer, QDateTime, QRunnable
+from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtQml import QQmlApplicationEngine
+
+from PyQt5.QtWidgets import (QApplication)
+from PyQt5.QtCore import (QThread, QThreadPool)
+
+from std_srvs.srv import Empty
+
+#sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))  # noqa
+#sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'launch'))  # noqa
+
+class Foo(QObject):
+    textChanged = pyqtSignal()
+    def __init__(self, parent=None):
+        QObject.__init__(self, parent)
+        self._text = ""
+
+    @pyqtProperty(str, notify=textChanged)
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        if self._text == value:
+            return
+        self._text = value
+        self.textChanged.emit()
+
+def update_value(obj):
+    #obj.text = "values from PyQt5: {}".format(QDateTime.currentDateTime().toString())
+    obj.text = QDateTime.currentDateTime().toString()
+
+running = False
+paused = False;
+
+def on_qml_mouse_clicked():
+    global mynode
+    global running
+
+    #print("on_qml_mouse_clicked", flush=True);
+
+    if running == True:
+        service_name = 'shutdown'
+    else:
+        service_name = 'startup'
+
+    running = not running
+
+    #print("Creating service client", flush=True);
+    cli = mynode.create_client(Empty, service_name)
+    req = Empty.Request()
+
+    #print("Calling service", flush=True);
+    future = cli.call_async(req)
+
+    #print("Spinning for result", flush=True);
+    rclpy.spin_until_future_complete(mynode, future)
+
+    if future.result() is None:
+        print("Service call failed", flush=True);
+    #else:
+        #print("Service call succeeded", flush=True);
+
+def on_qml_mouse_clicked2():
+    global mynode
+    global paused
+
+    #print("on_qml_mouse_clicked2", flush=True);
+
+    if paused == True:
+        service_name = 'resume'
+    else:
+        service_name = 'pause'
+
+    paused = not paused
+    cli = mynode.create_client(Empty, service_name)
+    req = Empty.Request()
+
+    future = cli.call_async(req)
+    rclpy.spin_until_future_complete(mynode, future)
+
+    if future.result() is None:
+        print("Service call failed", flush=True);
+
+rclpy.init(args=sys.argv)
+mynode = rclpy.create_node('t_py_service_client')
+
+def exit_app(a, b):
+    global mynode
+    mynode.destroy_node()
+    rclpy.shutdown()
+    sys.exit(0)
+
+def main(args=None):
+    app = QGuiApplication(sys.argv)
+    obj = Foo()
+
+    signal.signal(signal.SIGINT, exit_app)
+
+    timer = QTimer()
+    timerCallback = functools.partial(update_value, obj=obj)
+    timer.timeout.connect(timerCallback)
+    timer.start(100)
+
+    engine = QQmlApplicationEngine()
+    engine.rootContext().setContextProperty("obj", obj)
+    engine.load(QUrl("main.qml"))
+
+    win = engine.rootObjects()[0]
+
+    qml_rectangle = win.findChild(QObject, "qml_rectangle")
+    qml_rectangle.clicked.connect(on_qml_mouse_clicked)
+
+    qml_rectangle2 = win.findChild(QObject, "qml_rectangle2")
+    qml_rectangle2.clicked.connect(on_qml_mouse_clicked2)
+
+    app.exec_()
+
+    mynode.destroy_node()
+    rclpy.shutdown()
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

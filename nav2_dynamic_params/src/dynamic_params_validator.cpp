@@ -22,7 +22,7 @@
 namespace nav2_dynamic_params
 {
 
-DynamicParamsValidator::DynamicParamsValidator(rclcpp::Node::SharedPtr node, bool reject_new_params)
+DynamicParamsValidator::DynamicParamsValidator(nav2_lifecycle::LifecycleNode::SharedPtr node, bool reject_new_params)
 : node_(node),
   reject_new_params_(reject_new_params)
 {

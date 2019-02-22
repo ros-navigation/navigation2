@@ -16,20 +16,22 @@
 #define NAV2_ROBOT__ROBOT_HPP_
 
 #include <string>
-#include "nav2_robot/robot.hpp"
+
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "urdf/model.h"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav_msgs/msg/odometry.hpp"
 
 namespace nav2_robot
 {
 
-class Robot
+class Robot: public nav2_lifecycle::ILifecycle
 {
 public:
-  explicit Robot(rclcpp::Node::SharedPtr & node);
+  explicit Robot(nav2_lifecycle::LifecycleNode::SharedPtr node);
   Robot() = delete;
+  ~Robot();
 
   bool getGlobalLocalizerPose(
     geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
@@ -39,14 +41,19 @@ public:
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
-protected:
   // The ROS node to use to create publishers and subscribers
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
+
+protected:
   // Publishers and subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
 
   // Subscription callbacks
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
@@ -59,8 +66,8 @@ protected:
   nav_msgs::msg::Odometry::SharedPtr current_odom_;
 
   // Whether the subscriptions have been received
-  bool initial_pose_received_;
-  bool initial_odom_received_;
+  bool initial_pose_received_{false};
+  bool initial_odom_received_{false};
 
   // Information about the robot is contained in the URDF file
   std::string urdf_file_;

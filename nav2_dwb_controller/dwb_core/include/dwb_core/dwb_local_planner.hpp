@@ -32,19 +32,22 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__DWB_CORE_HPP_
-#define DWB_CORE__DWB_CORE_HPP_
+#ifndef DWB_CORE__DWB_LOCAL_PLANNER_HPP_
+#define DWB_CORE__DWB_LOCAL_PLANNER_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include "pluginlib/class_loader.hpp"
-#include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
-#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "dwb_core/trajectory_generator.hpp"
+
 #include "dwb_core/goal_checker.hpp"
-#include "dwb_core/trajectory_critic.hpp"
 #include "dwb_core/publisher.hpp"
+#include "dwb_core/trajectory_critic.hpp"
+#include "dwb_core/trajectory_generator.hpp"
+#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
+#include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
+#include "nav2_lifecycle/lifecycle.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "pluginlib/class_loader.hpp"
 
 namespace dwb_core
 {
@@ -53,14 +56,13 @@ namespace dwb_core
  * @class DWBLocalPlanner
  * @brief Plugin-based flexible local_planner
  */
-class DWBLocalPlanner
+class DWBLocalPlanner : public nav2_lifecycle::ILifecycle
 {
 public:
   /**
    * @brief Constructor that brings up pluginlib loaders
    */
-  DWBLocalPlanner();
-
+  DWBLocalPlanner(nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
   virtual ~DWBLocalPlanner() {}
 
   /**
@@ -70,8 +72,13 @@ public:
    * @param costmap_ros Costmap pointer
    */
   void initialize(
-    std::shared_ptr<rclcpp::Node> & private_nh, TFBufferPtr tf,
+    nav2_lifecycle::LifecycleNode::SharedPtr private_nh, TFBufferPtr tf,
     CostmapROSPtr costmap_ros);
+
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief nav_core2 setPlan - Sets the global plan
@@ -123,6 +130,7 @@ public:
   dwb_msgs::msg::TrajectoryScore scoreTrajectory(
     const dwb_msgs::msg::Trajectory2D & traj,
     double best_score = -1);
+
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
    *
@@ -176,14 +184,6 @@ protected:
   double prune_distance_;
   bool debug_trajectory_details_;
 
-  // Plugin handling
-  pluginlib::ClassLoader<TrajectoryGenerator> traj_gen_loader_;
-  TrajectoryGenerator::Ptr traj_generator_;
-  pluginlib::ClassLoader<GoalChecker> goal_checker_loader_;
-  GoalChecker::Ptr goal_checker_;
-  pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
-  std::vector<TrajectoryCritic::Ptr> critics_;
-
   /**
    * @brief try to resolve a possibly shortened critic name with the default namespaces and the suffix "Critic"
    *
@@ -198,14 +198,26 @@ protected:
    */
   void loadCritics();
 
+  void loadBackwardsCompatibleParameters();
+
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  TFBufferPtr tf_;
+  CostmapROSPtr costmap_ros_;
+
+  std::unique_ptr<DWBPublisher> pub_;
   std::vector<std::string> default_critic_namespaces_;
 
-  CostmapROSPtr costmap_ros_;
-  TFBufferPtr tf_;
-  DWBPublisher pub_;
-  std::shared_ptr<rclcpp::Node> nh_;
+  // Plugin handling
+  pluginlib::ClassLoader<TrajectoryGenerator> traj_gen_loader_;
+  TrajectoryGenerator::Ptr traj_generator_;
+
+  pluginlib::ClassLoader<GoalChecker> goal_checker_loader_;
+  GoalChecker::Ptr goal_checker_;
+
+  pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
+  std::vector<TrajectoryCritic::Ptr> critics_;
 };
 
 }  // namespace dwb_core
 
-#endif  // DWB_CORE__DWB_CORE_HPP_
+#endif  // DWB_CORE__DWB_LOCAL_PLANNER_HPP_

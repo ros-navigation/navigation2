@@ -15,21 +15,25 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_server.hpp"
 
 int main(int argc, char ** argv)
 {
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
   std::string node_name("map_server");
 
   try {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<nav2_map_server::MapServer>(node_name));
+    auto node = std::make_shared<nav2_map_server::MapServer>();
+    rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
+    RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
+	return 0;
   } catch (std::exception & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), "Exiting");
+	return -1;
   }
-
-  return 0;
 }

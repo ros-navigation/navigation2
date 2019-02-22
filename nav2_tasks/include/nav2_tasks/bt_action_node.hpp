@@ -107,7 +107,7 @@ protected:
   typename std::unique_ptr<nav2_tasks::TaskClient<CommandMsg, ResultMsg>> task_client_;
 
   // The node that will be used for any ROS operations
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server

@@ -13,32 +13,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 // Navigation Strategy based on:
 // Brock, O. and Oussama K. (1999). High-Speed Navigation Using
 // the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
+#include "nav2_navfn_planner/navfn_planner.hpp"
+
+#include <chrono>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <chrono>
-#include <limits>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <exception>
-#include <cmath>
-#include "nav2_navfn_planner/navfn_planner.hpp"
-#include "nav2_navfn_planner/navfn.hpp"
-#include "nav2_util/costmap.hpp"
+
+#include "builtin_interfaces/msg/duration.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "builtin_interfaces/msg/duration.hpp"
+#include "nav2_navfn_planner/navfn.hpp"
+#include "nav2_util/costmap.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -47,43 +46,95 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: Node("NavfnPlanner"),
-  global_frame_("map"),
-  allow_unknown_(true)
+: nav2_lifecycle::LifecycleNode("navfn_planner")
 {
-  RCLCPP_INFO(get_logger(), "Initializing.");
-
-  // Grab params off the param server
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
-  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(temp_node);
-
-  // If the goal is obstructed, the tolerance specifies how many meters the planner
-  // can relax the constraint in x and y before failing
-  tolerance_ = parameters_client->get_parameter("tolerance", 0.0);
-
-  use_astar_ = parameters_client->get_parameter("use_astar", false);
-
-  // TODO(orduno): Enable parameter server and get costmap service name from there
-
-  // Create publishers for visualization of the path and endpoints
-  plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
-  plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
-    "endpoints", 1);
-
-  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
-  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
-  task_server_->setExecuteCallback(
-    std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
-
-  // Start listening for incoming ComputePathToPose task requests
-  task_server_->start();
+  RCLCPP_INFO(get_logger(), "Creating");
 }
 
 NavfnPlanner::~NavfnPlanner()
 {
-  RCLCPP_INFO(get_logger(), "Shutting down.");
+  RCLCPP_INFO(get_logger(), "Destroying");
+}
+
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::onConfigure(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onConfigure");
+
+  // Initialize parameters
+  get_parameter_or("tolerance", tolerance_, 0.0);
+  get_parameter_or("use_astar", use_astar_, false);
+
+  getCostmap(costmap_);
+  RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
+    costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+  // Create a planner based on the new costmap size
+  if (isPlannerOutOfDate()) {
+    current_costmap_size_[0] = costmap_.metadata.size_x;
+    current_costmap_size_[1] = costmap_.metadata.size_y;
+    planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
+  }
+
+  // Initialize pubs & subs
+  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+  plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
+    "endpoints", 1);
+
+  // Initialize supporting objects
+  robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
+  robot_->onConfigure(state);
+
+  // Initialize action servers and action clients
+  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(shared_from_this()),
+  task_server_->onConfigure(state);
+  task_server_->setExecuteCallback(
+    std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::onActivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onActivate");
+
+  plan_publisher_->on_activate();
+  plan_marker_publisher_->on_activate();
+  robot_->onActivate(state);
+  task_server_->onActivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::onDeactivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onDeactivate");
+
+  plan_publisher_->on_deactivate();
+  plan_marker_publisher_->on_deactivate();
+  robot_->onDeactivate(state);
+  task_server_->onDeactivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::onCleanup(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "onCleanup");
+
+  robot_->onCleanup(state);
+  task_server_->onCleanup(state);
+
+  plan_publisher_.reset();
+  plan_marker_publisher_.reset();
+  robot_.reset();
+  task_server_.reset();
+  planner_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 TaskStatus
@@ -91,18 +142,6 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 {
   nav2_tasks::ComputePathToPoseResult result;
   try {
-    // Get an updated costmap
-    getCostmap(costmap_);
-    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
-      costmap_.metadata.size_x, costmap_.metadata.size_y);
-
-    // Create a planner based on the new costmap size
-    if (isPlannerOutOfDate()) {
-      current_costmap_size_[0] = costmap_.metadata.size_x;
-      current_costmap_size_[1] = costmap_.metadata.size_y;
-      planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
-    }
-
     // Get the current pose from the robot
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
@@ -120,7 +159,7 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Cancelled global planning task.");
+      RCLCPP_INFO(get_logger(), "Cancelled global planning task");
       task_server_->setCanceled();
       return TaskStatus::CANCELED;
     }
@@ -131,18 +170,17 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
       return TaskStatus::FAILED;
     }
 
-    RCLCPP_INFO(get_logger(),
-      "Found valid path of size %u", result.poses.size());
+    RCLCPP_INFO(get_logger(), "Found valid path of size %u", result.poses.size());
 
     // Publish the plan for visualization purposes
-    RCLCPP_INFO(get_logger(), "Publishing the valid path.");
+    RCLCPP_INFO(get_logger(), "Publishing the valid path");
     publishPlan(result);
     publishEndpoints(start->pose.pose, command->pose);
 
     // TODO(orduno): Enable potential visualization
 
     RCLCPP_INFO(get_logger(),
-      "Successfully navigated to (%.2f, %.2f) with tolerance %.2f",
+      "Successfully computed a path to (%.2f, %.2f) with tolerance %.2f",
       command->pose.position.x, command->pose.position.y, tolerance_);
     task_server_->setResult(result);
     return TaskStatus::SUCCEEDED;

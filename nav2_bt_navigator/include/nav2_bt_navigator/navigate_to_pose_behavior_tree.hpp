@@ -16,10 +16,12 @@
 #define NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BEHAVIOR_TREE_HPP_
 
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/behavior_tree_engine.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
 #include "nav2_tasks/global_localization_service_client.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -27,7 +29,7 @@ namespace nav2_bt_navigator
 class NavigateToPoseBehaviorTree : public nav2_tasks::BehaviorTreeEngine
 {
 public:
-  explicit NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr node);
+  explicit NavigateToPoseBehaviorTree(nav2_lifecycle::LifecycleNode::SharedPtr node);
   NavigateToPoseBehaviorTree() = delete;
 
 private:
@@ -35,8 +37,9 @@ private:
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
+
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
-  nav2_tasks::GlobalLocalizationServiceClient global_localization_;
+  nav2_tasks::GlobalLocalizationServiceClient global_localization_{"bt_navigator"};
 };
 
 }  // namespace nav2_bt_navigator

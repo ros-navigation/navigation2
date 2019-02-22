@@ -15,38 +15,27 @@
 #ifndef NAV2_MAP_SERVER__MAP_SERVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SERVER_HPP_
 
-#include <string>
 #include <memory>
-#include <vector>
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_loader.hpp"
-#include "yaml-cpp/yaml.h"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_map_server
 {
 
-class MapServer : public rclcpp::Node
+class MapServer : public nav2_lifecycle::LifecycleNode
 {
 public:
-  explicit MapServer(const std::string & node_name);
   MapServer();
+  ~MapServer();
 
-private:
-  void getParameters();
+protected:
+  // Implement the lifecycle interface
+  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
 
-  // The map server has one node parameter, the YAML filename
-  std::string yaml_filename_;
-
-  // The YAML document from which to get the conversion parameters
-  YAML::Node doc_;
-
-  // The map type ("occupancy") from the YAML document which specifies
-  // the kind of loader to create
-  std::string map_type_;
-  std::unique_ptr<MapLoader> map_loader_;
-
-  // The map filename ("image") from the YAML document to pass to the map loader
-  std::string map_filename_;
+  // The map loader that will actually do the work
+  std::unique_ptr<ILifecycle> map_loader_;
 };
 
 }  // namespace nav2_map_server
