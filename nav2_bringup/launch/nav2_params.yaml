@@ -10,7 +10,7 @@ DwbController:
     max_vel_y: 0.0
     max_vel_theta: 1.0
     min_speed_xy: 0.0
-    max_speed_xy: 0.26
+    max_speed_xy: 100.0
     min_speed_theta: 0.0
     acc_lim_x: 2.5
     acc_lim_y: 0.0
