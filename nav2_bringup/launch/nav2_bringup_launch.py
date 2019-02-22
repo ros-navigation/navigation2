@@ -1,5 +1,4 @@
 import os
-from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
@@ -9,9 +8,6 @@ def generate_launch_description():
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
     params_file = launch.substitutions.LaunchConfiguration('params', default=
         [launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
-    bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
-    bt_navigator_xml = os.path.join(bt_navigator_install_path,
-                                    'behavior_trees/simple_sequential.xml')
 
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
@@ -50,14 +46,14 @@ def generate_launch_description():
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[params_file]),
+            parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
-            package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
+            package='nav2_simple_navigator',
+            node_executable='simple_navigator',
+            node_name='simple_navigator',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}]),
+            parameters=[{ 'use_sim_time': use_sim_time}]),
 
         launch_ros.actions.Node(
             package='nav2_mission_executor',

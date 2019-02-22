@@ -42,6 +42,3 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
-navfn_planner:
-  ros__parameters:
-    use_astar: True
