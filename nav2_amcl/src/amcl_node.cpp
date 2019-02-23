@@ -888,15 +888,10 @@ AmclNode::initServices()
 void
 AmclNode::initOdometry()
 {
-#if 0
-  init_pose_[0] = 0.0;
-  init_pose_[1] = 0.0;
-  init_pose_[2] = 0.0;
-#else
+  // When pausing and resuming, remember the last robot pose so we don't start at 0:0 again
   init_pose_[0] = last_published_pose_.pose.pose.position.x;
   init_pose_[1] = last_published_pose_.pose.pose.position.y;
   init_pose_[2] = last_published_pose_.pose.pose.position.z;
-#endif
 
   init_cov_[0] = 0.5 * 0.5;
   init_cov_[1] = 0.5 * 0.5;
@@ -905,7 +900,6 @@ AmclNode::initOdometry()
   motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
   memset(&latest_odom_pose_, 0, sizeof(latest_odom_pose_));
-  //memset(&last_published_pose_, 0, sizeof(last_published_pose_));
 }
 
 void
@@ -944,4 +938,3 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
-
