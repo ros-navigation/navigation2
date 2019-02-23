@@ -22,10 +22,6 @@
 #include "nav2_tasks/follow_path_action.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
 
-//#ifdef ZMQ_FOUND
-#include "behaviortree_cpp/loggers/bt_zmq_publisher.h"
-//#endif
-
 using namespace std::chrono_literals;
 
 namespace nav2_tasks
@@ -49,10 +45,6 @@ TaskStatus BehaviorTreeEngine::run(
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes
   // out of scope, all the nodes are destroyed
   BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
-
-//#ifdef ZMQ_FOUND
-  BT::PublisherZMQ publisher_zmq(tree.root_node);
-//#endif
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;

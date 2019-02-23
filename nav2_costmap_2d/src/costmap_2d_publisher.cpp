@@ -127,13 +127,6 @@ void Costmap2DPublisher::prepareGrid()
 
 void Costmap2DPublisher::publishCostmap()
 {
-#if 0
-  if (node_->count_subscribers(topic_name_) == 0) {
-    // No subscribers, so why do any work?
-    return;
-  }
-#endif
-
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||

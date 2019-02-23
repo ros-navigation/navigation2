@@ -52,7 +52,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
             'params_file',
-            description='The ROS2 parameters file to use')
+            description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
     gz = launch.substitutions.LaunchConfiguration('gz', default=['gzserver'])
