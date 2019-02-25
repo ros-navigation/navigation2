@@ -269,7 +269,8 @@ void StaticLayer::reset()
   if (first_map_only_) {
     has_updated_data_ = true;
   } else {
-    onInitialize();
+    // TODO(orduno) Issue #580, calling onInitialize() when the node is already spinning results on an error.
+    // onInitialize();
   }
 }
 
