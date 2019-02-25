@@ -51,7 +51,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clear " + costmap_.getName());
+  RCLCPP_INFO(node_->get_logger(), "Received request to clear expect region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
 }
@@ -61,7 +61,7 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Request>/*request*/,
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clear entirely " + costmap_.getName());
+  RCLCPP_INFO(node_->get_logger(), "Received request to clear entirely the " + costmap_.getName());
 
   clearEntirely();
 }
@@ -87,8 +87,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
 
 void ClearCostmapService::clearEntirely()
 {
-  // std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getLayeredCostmap()->getCostmap()->getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
   costmap_.resetLayers();
 }
 

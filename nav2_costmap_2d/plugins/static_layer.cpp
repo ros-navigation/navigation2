@@ -224,7 +224,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   map_received_ = true;
   has_updated_data_ = true;
 
-  // shutdown the map subscrber if firt_map_only_ flag is on
+  // shutdown the map subscrber if first_map_only_ flag is on
   if (first_map_only_) {
     RCLCPP_INFO(node_->get_logger(),
       "Shutting down the map subscriber. first_map_only flag is on");
