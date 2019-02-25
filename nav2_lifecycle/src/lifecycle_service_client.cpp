@@ -60,6 +60,13 @@ LifecycleServiceClient::LifecycleServiceClient(
 bool
 LifecycleServiceClient::changeState(std::uint8_t transition, std::chrono::seconds /*time_out*/)
 {
+  while (!client_change_state_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
+    }
+    RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+  }
+
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
 

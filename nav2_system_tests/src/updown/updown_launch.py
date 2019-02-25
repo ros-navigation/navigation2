@@ -33,10 +33,6 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params',
             default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
-    declare_use_gui_cmd = launch.actions.DeclareLaunchArgument(
-            'use_gui', condition=IfCondition('True'),
-            default_value='False', description='Whether to bring up the GUI interface')
-
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
             'use_simulation', condition=IfCondition('True'),
             default_value='True', description='Whether to run in simulation')
@@ -132,28 +128,24 @@ def generate_launch_description():
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
-    start_gui_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_gui),
-        cmd=[os.path.join(get_package_prefix('nav2_controller'), 'bin/gui/nav2_gui')],
-        cwd=[os.path.join(get_package_prefix('nav2_controller'), 'bin/gui')],
-        output='screen')
-
-    gui_exit_event_handler = launch.actions.RegisterEventHandler(
-        condition=IfCondition(use_gui),
-        event_handler=launch.event_handlers.OnProcessExit(
-            target_action=start_gui_cmd,
-            on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
-
     startup_cmd = launch.actions.ExecuteProcess(
-        condition=UnlessCondition(use_gui),
-        cmd=['ros2', 'service', 'call', 'startup', 'std_srvs/Empty'],
+        cmd=[
+            #os.path.join(
+            #    get_package_prefix('nav2_system_tests'),
+            #    'src/updown/updown'),
+            #['__params:=', params_file]],
+			'/home/mjeronimo/navigation2/build/nav2_system_tests/src/updown/updown'],
         cwd=[launch_dir], output='screen')
+
+    startup_exit_event_handler = launch.actions.RegisterEventHandler(
+        event_handler=launch.event_handlers.OnProcessExit(
+            target_action=startup_cmd,
+            on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
 
     # Compose the launch description
 
     ld = launch.LaunchDescription()
 
-    ld.add_action(declare_use_gui_cmd)
     ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
@@ -166,8 +158,7 @@ def generate_launch_description():
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
     ld.add_action(start_controller_cmd)
-    ld.add_action(start_gui_cmd)
-    ld.add_action(gui_exit_event_handler)
     ld.add_action(startup_cmd)
+    ld.add_action(startup_exit_event_handler)
 
     return ld

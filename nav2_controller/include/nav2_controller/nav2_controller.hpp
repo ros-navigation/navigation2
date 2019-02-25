@@ -41,6 +41,8 @@ public:
   void pause();
   void resume();
 
+  void setAutostart(std::chrono::seconds waitfor = std::chrono::seconds(10));
+
 protected:
   rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
 

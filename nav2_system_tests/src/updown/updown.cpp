@@ -23,22 +23,9 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   nav2_controller::Nav2ControllerClient client;
 
-#if 0
-  if (!strcmp(argv[1], "startup")) {
-    client.startup();
-  } else if (!strcmp(argv[1], "shutdown")) {
-    client.shutdown();
-  } else if (!strcmp(argv[1], "pause")) {
-    client.pause();
-  } else if (!strcmp(argv[1], "resume")) {
-    client.resume();
-  }
-#else
-  std::this_thread::sleep_for(10s);
   client.startup();
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(2s);
   client.shutdown();
-#endif
 
   rclcpp::shutdown();
   return 0;

@@ -54,20 +54,8 @@ ament_target_dependencies(nav2_controller
   ${dependencies}
 )
 
-add_executable(nav2_cli
-  src/cli/nav2_cli.cpp
-)
-
-target_link_libraries(nav2_cli
-  ${library_name}
-)
-
-ament_target_dependencies(nav2_cli
-  ${dependencies}
-)
-
 install(TARGETS
-  nav2_controller nav2_cli
+  nav2_controller
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
