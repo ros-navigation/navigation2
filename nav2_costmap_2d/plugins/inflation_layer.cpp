@@ -63,7 +63,6 @@ InflationLayer::InflationLayer()
   inflate_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
-  seen_(NULL),
   cached_costs_(NULL),
   cached_distances_(NULL),
   last_min_x_(-std::numeric_limits<float>::max()),
@@ -81,11 +80,7 @@ void InflationLayer::onInitialize()
     std::unique_lock<std::recursive_mutex> lock(*inflation_access_);
 
     current_ = true;
-    if (seen_) {
-      delete[] seen_;
-    }
-    seen_ = NULL;
-    seen_size_ = 0;
+    seen_.clear();
     need_reinflation_ = false;
   }
   matchSize();
@@ -140,13 +135,7 @@ void InflationLayer::matchSize()
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
-
-  unsigned int size_x = costmap->getSizeInCellsX(), size_y = costmap->getSizeInCellsY();
-  if (seen_) {
-    delete[] seen_;
-  }
-  seen_size_ = size_x * size_y;
-  seen_ = new bool[seen_size_];
+  seen_ = std::vector<bool>(costmap->getSizeInCellsX() * costmap->getSizeInCellsY(), false);
 }
 
 void InflationLayer::updateBounds(
@@ -212,19 +201,17 @@ void InflationLayer::updateCosts(
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
 
-  if (seen_ == NULL) {
+  if (seen_.empty()) {
     RCLCPP_WARN(rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array is NULL");
-    seen_size_ = size_x * size_y;
-    seen_ = new bool[seen_size_];
-  } else if (seen_size_ != size_x * size_y) {
+        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector is empty");
+    seen_ = std::vector<bool>(size_x * size_y, false);
+  } else if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ array size is wrong");
-    delete[] seen_;
-    seen_size_ = size_x * size_y;
-    seen_ = new bool[seen_size_];
+        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
+    seen_ = std::vector<bool>(size_x * size_y, false);
   }
-  memset(seen_, false, size_x * size_y * sizeof(bool));
+
+  std::fill(begin(seen_), end(seen_), false);
 
   // We need to include in the inflation cells outside the bounding
   // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
