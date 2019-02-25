@@ -33,12 +33,12 @@ class BtActionNode : public BT::ActionNode
 {
 public:
   explicit BtActionNode(const std::string & action_name)
-  : BT::ActionNode(action_name), task_client_(nullptr), initialized_(false)
+  : BT::ActionNode(action_name), task_client_(nullptr)
   {
   }
 
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
-  : BT::ActionNode(action_name, params), task_client_(nullptr), initialized_(false)
+  : BT::ActionNode(action_name, params), task_client_(nullptr)
   {
   }
 
@@ -48,31 +48,19 @@ public:
   {
   }
 
-  // Derived classes can override this method to perform some initialization such
-  // as getting values from the shared blackboard. A BT node can't get values
-  // from the blackboard in the constructor since the BT library doesn't set
-  // the blackboard until *after* the tree is build
-  virtual void onInit() {}
+  void onInit() override
+  {
+    // Get the required items from the blackboard
+    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_loop_timeout_ =
+      blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+
+    // Now that we have the ROS node to use, create the task client for this action
+    task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
+  }
 
   BT::NodeStatus tick() override
   {
-    // The first time we're ticked, there's some setup to do. This is because
-    // The blackboard isn't set yet in the BT node constructor; the tree gets
-    // created and *then* the blackboard is set.
-    if (!initialized_) {
-      // Get the required items from the blackboard
-      node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-      node_loop_timeout_ =
-        blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
-
-      // Now that we have the ROS node to use, create the task client for this action
-      task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
-
-      // Give the derived class a chance to do some initialization
-      onInit();
-      initialized_ = true;
-    }
-
     task_client_->sendCommand(command_);
 
     // Loop until the task has completed
@@ -130,8 +118,6 @@ protected:
   // Allow for signaling receipt of the cancel message
   std::mutex cancel_mutex_;
   std::condition_variable cv_cancel_;
-
-  bool initialized_;
 };
 
 }  // namespace nav2_tasks

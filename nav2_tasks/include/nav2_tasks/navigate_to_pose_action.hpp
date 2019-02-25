@@ -32,6 +32,12 @@ public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
   : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name, params)
   {
+  }
+
+  void onInit() override
+  {
+    BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>::onInit();
+
     // Use the position and orientation fields from the XML attributes
     geometry_msgs::msg::Point position;
     bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
