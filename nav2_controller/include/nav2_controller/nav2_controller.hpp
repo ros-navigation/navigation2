@@ -44,6 +44,8 @@ public:
   void setAutostart(std::chrono::seconds waitfor = std::chrono::seconds(10));
 
 protected:
+  rclcpp::Node::SharedPtr client_;
+
   rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startup_srv_;

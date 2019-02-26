@@ -29,69 +29,39 @@ using Transition = lifecycle_msgs::msg::Transition;
 namespace nav2_lifecycle
 {
 
-template<typename FutureT, typename WaitTimeT>
-std::future_status
-wait_for_result(FutureT & future, WaitTimeT time_to_wait)
-{
-  auto end = std::chrono::steady_clock::now() + time_to_wait;
-  std::chrono::milliseconds wait_period(100);
-  std::future_status status = std::future_status::timeout;
-
-  do {
-    auto now = std::chrono::steady_clock::now();
-    auto time_left = end - now;
-    if (time_left <= std::chrono::seconds(0)) {break;}
-    status = future.wait_for((time_left < wait_period) ? time_left : wait_period);
-  } while (rclcpp::ok() && status != std::future_status::ready);
-
-  return status;
-}
-
 LifecycleServiceClient::LifecycleServiceClient(
   rclcpp::Node::SharedPtr node,
   const std::string & target_node_name)
 : node_(node), target_node_name_(target_node_name)
 {
   std::string change_state_topic(std::string("/") + target_node_name_ + "/change_state");
-  client_change_state_ = node_->create_client<lifecycle_msgs::srv::ChangeState>(
+  client_ = node_->create_client<lifecycle_msgs::srv::ChangeState>(
     change_state_topic);
 }
 
 bool
 LifecycleServiceClient::changeState(std::uint8_t transition, std::chrono::seconds /*time_out*/)
 {
-  while (!client_change_state_->wait_for_service(std::chrono::seconds(1))) {
+  while (!client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
     }
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+	rclcpp::spin_some(node_);
   }
 
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
 
   RCLCPP_DEBUG(node_->get_logger(), "change_state: async_send_request");
-  auto future_result = client_change_state_->async_send_request(request);
+  auto future_result = client_->async_send_request(request);
 
-  RCLCPP_DEBUG(node_->get_logger(), "change_state: wait_for_result");
-  auto future_status = wait_for_result(future_result, 1000s); // time_out);
+  rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
+  do {
+    status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
+  } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
 
-  if (future_status != std::future_status::ready) {
-    RCLCPP_ERROR(node_->get_logger(),
-      "%s: Server time out while trying to change state", target_node_name_.c_str());
-    return false;
-  }
-
-  if (future_result.get()->success) {
-    RCLCPP_DEBUG(node_->get_logger(), "Successfully transitioned '%s' to %s",
-      target_node_name_.c_str(), transition_to_str(transition));
-    return true;
-  } else {
-    RCLCPP_ERROR(
-      node_->get_logger(), "Failed to transition '%s' to %s", target_node_name_.c_str(),
-      transition_to_str(transition));
-    return false;
-  }
+  return true;
 }
 
 const char *

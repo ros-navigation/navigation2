@@ -56,26 +56,31 @@ Nav2Controller::Nav2Controller()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
+  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+
   pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Nav2Controller::onPoseReceived, this, std::placeholders::_1));
-
+    "amcl_pose", std::bind(&Nav2Controller::onPoseReceived, this, std::placeholders::_1), custom_qos_profile);
+ 
   cb_grp_ = create_callback_group(rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
-
+ 
   startup_srv_ = create_service<std_srvs::srv::Empty>("startup",
-      std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3),
-      rmw_qos_profile_services_default, cb_grp_);
-
+    std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default, cb_grp_);
+ 
   shutdown_srv_ = create_service<std_srvs::srv::Empty>("shutdown",
-      std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3),
-      rmw_qos_profile_services_default, cb_grp_);
-
+    std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default, cb_grp_);
+ 
   pause_srv_ = create_service<std_srvs::srv::Empty>("pause",
-      std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3),
-      rmw_qos_profile_services_default, cb_grp_);
-
+    std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default, cb_grp_);
+ 
   resume_srv_ = create_service<std_srvs::srv::Empty>("resume",
-      std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3),
-      rmw_qos_profile_services_default, cb_grp_);
+    std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default, cb_grp_);
+
+  client_ = std::make_shared<rclcpp::Node>("nav2_controller_lifecycle_client_node");
 }
 
 Nav2Controller::~Nav2Controller()
@@ -137,14 +142,13 @@ void
 Nav2Controller::createLifecycleServiceClients()
 {
   message("Creating and initializing lifecycle service clients");
-  rclcpp::Node::SharedPtr node = shared_from_this();
 
-  node_map["amcl"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "amcl");
-  node_map["map_server"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "map_server");
-  node_map["dwb_controller"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "dwb_controller");
-  node_map["navfn_planner"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "navfn_planner");
-  node_map["simple_navigator"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "simple_navigator");
-  node_map["world_model"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node, "world_model");
+  node_map["amcl"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "amcl");
+  node_map["map_server"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "map_server");
+  node_map["dwb_controller"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "dwb_controller");
+  node_map["navfn_planner"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "navfn_planner");
+  node_map["simple_navigator"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "simple_navigator");
+  node_map["world_model"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "world_model");
 }
 
 void
@@ -220,10 +224,12 @@ Nav2Controller::activateLocalPlanner()
 void
 Nav2Controller::activateRemainingNodes()
 {
-  message("Configuring and activating the remaining nodes");
+  message("Configuring and activating the global planner");
 
   node_map["navfn_planner"]->changeState(Transition::TRANSITION_CONFIGURE);
   node_map["navfn_planner"]->changeState(Transition::TRANSITION_ACTIVATE);
+
+  message("Configuring and activating the navigator");
 
   node_map["simple_navigator"]->changeState(Transition::TRANSITION_CONFIGURE);
   node_map["simple_navigator"]->changeState(Transition::TRANSITION_ACTIVATE);

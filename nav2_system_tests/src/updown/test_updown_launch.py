@@ -134,6 +134,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     ld.add_action(declare_world_cmd)
+    ld.add_action(start_controller_cmd)
     ld.add_action(start_gazebo_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_map_server_cmd)
@@ -142,7 +143,6 @@ def generate_launch_description():
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
-    ld.add_action(start_controller_cmd)
     ld.add_action(startup_cmd)
     ld.add_action(startup_exit_event_handler)
 

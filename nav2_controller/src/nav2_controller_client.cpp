@@ -64,6 +64,7 @@ Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client,
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
       return;
     }
+	rclcpp::spin_some(node_);
     RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
   }
 
@@ -72,7 +73,7 @@ Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client,
 
   rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
   do {
-    RCLCPP_INFO(node_->get_logger(), "calling spin until future complete");
+    //RCLCPP_INFO(node_->get_logger(), "calling spin until future complete");
     status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
   } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
 }

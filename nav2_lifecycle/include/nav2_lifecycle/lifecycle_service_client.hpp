@@ -42,7 +42,7 @@ protected:
   std::string target_node_name_;
 
   // The rclcpp service client we'll use to make the service calls
-  std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_change_state_;
+  std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_;
 
   // A support function, for logging, to convert a transition code to a string
   const char * transition_to_str(uint8_t transition);

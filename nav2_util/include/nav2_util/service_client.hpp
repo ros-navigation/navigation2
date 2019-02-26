@@ -80,6 +80,7 @@ public:
         throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
       }
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+	  rclcpp::spin_some(node_);
     }
 
     RCLCPP_INFO(node_->get_logger(), "send async request");
