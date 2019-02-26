@@ -26,7 +26,9 @@ WorldModel::WorldModel()
   RCLCPP_INFO(get_logger(), "Creating");
 
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("world_model_global_costmap");
-  costmap_thread_ = std::make_unique<std::thread>([](rclcpp_lifecycle::LifecycleNode::SharedPtr node) {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
+  costmap_thread_ = std::make_unique<std::thread>(
+    [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
 }
 
 WorldModel::~WorldModel()
@@ -93,7 +95,6 @@ WorldModel::costmap_service_callback(
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, 0.0);
 
-  // TODO: 
   nav2_costmap_2d::Costmap2D * costmap_ = costmap_ros_->getCostmap();
 
   auto size_x = costmap_->getSizeInCellsX();
