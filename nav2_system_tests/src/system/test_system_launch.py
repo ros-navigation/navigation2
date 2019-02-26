@@ -31,6 +31,7 @@ def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
     params_file = os.getenv('TEST_PARAMS')
+    astar = (os.getenv('ASTAR').lower() == 'true')
     navigator = os.getenv('NAVIGATOR')
     if (navigator == 'simple'):
         navigator_action = launch_ros.actions.Node(
@@ -103,7 +104,7 @@ def generate_launch_description():
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}]),
+            parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 
         navigator_action,
     ])

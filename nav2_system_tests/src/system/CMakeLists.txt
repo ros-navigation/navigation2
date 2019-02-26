@@ -1,3 +1,5 @@
+# this test represents the current default configuration used in the docs and
+# nav2_bringup package.
 ament_add_test(test_simple_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
@@ -10,8 +12,11 @@ ament_add_test(test_simple_navigator
     TEST_PARAMS=${PROJECT_SOURCE_DIR}/params/nav2_params.yaml
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     NAVIGATOR=simple
+    ASTAR=False
 )
 
+# this tests the other navigator and planner option not used by default
+# in the nav2_bringup package.
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
@@ -25,4 +30,5 @@ ament_add_test(test_bt_navigator
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     NAVIGATOR=bt
     BT_NAVIGATOR_XML=simple_sequential.xml
+    ASTAR=True
 )
