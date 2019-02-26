@@ -24,20 +24,46 @@ using std::string;
 namespace nav2_util
 {
 
-void bringupLifecycleNode(const std::string & node_name)
-{
-  LifecycleServiceClient sc(node_name);
-  sc.ChangeState(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
-  sc.ChangeState(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
-  while (sc.GetState() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
+#define RETRY(fn, retries) \
+{ \
+  int count = 0; \
+  while ( true ) { \
+    try { \
+      fn; \
+      break; \
+    } catch (std::runtime_error & e) { \
+      ++count; \
+      if (count > (retries)) \
+        throw e; \
+    } \
+  } \
 }
 
-void bringupLifecycleNodes(const std::vector<std::string> & node_names)
+static void bringupLifecycleNode(
+  const std::string & node_name,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
+{
+  LifecycleServiceClient sc(node_name);
+
+  // Despite waiting for the service to be available and using reliable transport
+  // service calls still frequently hang. To get reliable bringup it's necessary
+  // to timeout the service call and retry it when that happens.
+  RETRY(sc.ChangeState(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE,
+                       service_call_timeout),
+        retries);
+  RETRY(sc.ChangeState(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE,
+                       service_call_timeout),
+        retries);
+}
+
+void bringupLifecycleNodes(
+  const std::vector<std::string> & node_names,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
 {
   for (const auto & node_name : node_names) {
-    bringupLifecycleNode(node_name);
+    bringupLifecycleNode(node_name, service_call_timeout, retries);
   }
 }
 

@@ -16,10 +16,12 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include <chrono>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_utils.hpp"
 
 using std::cerr;
+using namespace std::chrono_literals;
 
 void usage()
 {
@@ -38,6 +40,8 @@ int main(int argc, char * argv[])
     usage();
   }
   rclcpp::init(0, nullptr);
-  nav2_util::bringupLifecycleNodes(std::vector<std::string>(argv + 1, argv + argc));
+  nav2_util::bringupLifecycleNodes(
+    std::vector<std::string>(argv + 1, argv + argc),
+    10s);
   rclcpp::shutdown();
 }
