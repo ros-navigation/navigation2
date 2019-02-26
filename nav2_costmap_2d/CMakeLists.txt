@@ -18,7 +18,6 @@ find_package(tf2_sensor_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
-find_package(nav2_dynamic_params)
 find_package(nav2_util)
 find_package(nav2_tasks)
 find_package(nav2_voxel_grid REQUIRED)
@@ -67,7 +66,6 @@ set(dependencies
   tf2_geometry_msgs
   tf2_sensor_msgs
   message_filters
-  nav2_dynamic_params
   laser_geometry
   nav2_util
   nav2_tasks

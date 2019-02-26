@@ -49,7 +49,9 @@ using namespace std::chrono_literals;
 namespace nav2_map_server
 {
 
-OccGridLoader::OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename)
+OccGridLoader::OccGridLoader(
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  std::string & yaml_filename)
 : node_(node), yaml_filename_(yaml_filename)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Creating");

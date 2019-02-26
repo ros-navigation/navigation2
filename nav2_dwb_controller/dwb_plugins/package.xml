@@ -20,7 +20,6 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>nav2_util</depend>
-  <depend>nav2_dynamic_params</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

@@ -34,7 +34,6 @@
   <depend>tf2</depend>
   <depend>nav2_util</depend>
   <depend>nav2_tasks</depend>
-  <depend>nav2_dynamic_params</depend>
   <depend>nav2_lifecycle</depend>
   <depend>launch_ros</depend>
   <depend>launch_testing</depend>

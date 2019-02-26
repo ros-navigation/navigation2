@@ -30,10 +30,10 @@ int main(int argc, char ** argv)
     rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
     RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
-	return 0;
+    return 0;
   } catch (std::exception & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), "Exiting");
-	return -1;
+    return -1;
   }
 }

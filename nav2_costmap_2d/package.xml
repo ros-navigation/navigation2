@@ -32,7 +32,6 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_sensor_msgs</depend>
   <depend>pluginlib</depend>
-  <depend>nav2_dynamic_params</depend>
   <depend>nav2_util</depend>
   <depend>nav2_tasks</depend>
   <depend>nav2_voxel_grid</depend>
