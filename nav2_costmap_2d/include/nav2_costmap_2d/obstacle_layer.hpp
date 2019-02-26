@@ -50,7 +50,6 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
@@ -179,10 +178,7 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
-
   int combination_method_;
-
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 };
 
 }  // namespace nav2_costmap_2d

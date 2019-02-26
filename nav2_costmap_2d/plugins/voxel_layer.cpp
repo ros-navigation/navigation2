@@ -35,10 +35,11 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
+
 #include "nav2_costmap_2d/voxel_layer.hpp"
 
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -58,17 +59,17 @@ void VoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
 
-  node_->set_parameter_if_not_set(name_ + "." + "enabled", true);
-  node_->set_parameter_if_not_set(name_ + "." + "footprint_clearing_enabled", true);
-  node_->set_parameter_if_not_set(name_ + "." + "max_obstacle_height", 2.0);
-  node_->set_parameter_if_not_set(name_ + "." + "z_voxels", 10);
-  node_->set_parameter_if_not_set(name_ + "." + "origin_z", 0.0);
-  node_->set_parameter_if_not_set(name_ + "." + "z_resolution", 0.2);
-  node_->set_parameter_if_not_set(name_ + "." + "unknown_threshold", 15);
-  node_->set_parameter_if_not_set(name_ + "." + "mark_threshold", 0);
-  node_->set_parameter_if_not_set(name_ + "." + "combination_method", 1);
+  node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
+  node_->get_parameter_or_set(name_ + "." + "z_voxels", size_z_, 10);
+  node_->get_parameter_or_set(name_ + "." + "origin_z", origin_z_, 0.0);
+  node_->get_parameter_or_set(name_ + "." + "z_resolution", z_resolution_, 0.2);
+  node_->get_parameter_or_set(name_ + "." + "unknown_threshold", unknown_threshold_, 15);
+  node_->get_parameter_or_set(name_ + "." + "mark_threshold", mark_threshold_, 0);
+  node_->get_parameter_or_set(name_ + "." + "combination_method", combination_method_, 1);
+  node_->get_parameter_or_set(name_ + "." + "publish_voxel_map", publish_voxel_, false);
 
-  node_->get_parameter_or<bool>("publish_voxel_map", publish_voxel_, false);
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;
   custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
@@ -81,46 +82,13 @@ void VoxelLayer::onInitialize()
 
   clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
     "clearing_endpoints", custom_qos_profile);
-}
 
-void VoxelLayer::setupDynamicReconfigure()
-{
-  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
-  dynamic_param_client_->add_parameters({
-      name_ + "." + "enabled",
-      name_ + "." + "footprint_clearing_enabled",
-      name_ + "." + "max_obstacle_height",
-      name_ + "." + "z_voxels",
-      name_ + "." + "origin_z",
-      name_ + "." + "z_resolution",
-      name_ + "." + "unknown_threshold",
-      name_ + "." + "mark_threshold",
-      name_ + "." + "combination_method"
-    });
-
-  dynamic_param_client_->set_callback(std::bind(&VoxelLayer::reconfigureCB, this));
+  unknown_threshold_ += (VOXEL_BITS - size_z_);
+  matchSize();
 }
 
 VoxelLayer::~VoxelLayer()
 {
-}
-
-void VoxelLayer::reconfigureCB()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "VoxelLayer:: Event Callback");
-
-  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_);
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  dynamic_param_client_->get_event_param(name_ + "." + "z_voxels", size_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "origin_z", origin_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "z_resolution", z_resolution_);
-  dynamic_param_client_->get_event_param(name_ + "." + "unknown_threshold", unknown_threshold_);
-  unknown_threshold_ += (VOXEL_BITS - size_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "mark_threshold", mark_threshold_);
-  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_);
-  matchSize();
 }
 
 void VoxelLayer::matchSize()

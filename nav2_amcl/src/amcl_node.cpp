@@ -861,15 +861,14 @@ AmclNode::initMessageFilters()
 void
 AmclNode::initPubSub()
 {
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  //custom_qos_profile.depth = 2;
-
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>("particlecloud",
-      custom_qos_profile);
+      rmw_qos_profile_sensor_data);
 
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+  rmw_qos_profile_t amcl_qos_profile = rmw_qos_profile_default;
+  amcl_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-      custom_qos_profile);
+      amcl_qos_profile);
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));

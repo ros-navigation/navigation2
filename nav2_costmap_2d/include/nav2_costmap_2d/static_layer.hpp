@@ -44,7 +44,6 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "message_filters/subscriber.h"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_tasks/map_service_client.hpp"
