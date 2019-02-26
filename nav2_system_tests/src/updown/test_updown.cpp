@@ -23,8 +23,9 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   nav2_controller::Nav2ControllerClient client;
 
+  std::this_thread::sleep_for(10s);
   client.startup();
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(5s);
   client.shutdown();
 
   rclcpp::shutdown();

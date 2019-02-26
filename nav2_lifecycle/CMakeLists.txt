@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(nav2_common REQUIRED)
 
 nav2_package()
 
@@ -24,6 +25,7 @@ set(dependencies
   rclcpp
   rclcpp_lifecycle
   lifecycle_msgs
+  nav2_common
 )
 
 ament_target_dependencies(${library_name}

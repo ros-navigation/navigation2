@@ -58,27 +58,23 @@ Nav2ControllerClient::resume()
 void
 Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client, const char * service_name)
 {
-//  if (!service_client->service_is_ready()) {
-    RCLCPP_INFO(node_->get_logger(), "Waiting for the nav2_controller's %s service...", service_name);
-    while (!service_client->wait_for_service(std::chrono::seconds(1))) {
-      if (!rclcpp::ok()) {
-        RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
+  RCLCPP_INFO(node_->get_logger(), "Waiting for the nav2_controller's %s service...", service_name);
+  while (!service_client->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
       return;
-     }
-
-      RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
     }
-//  }
+    RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
+  }
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the nav2_controller", service_name);
-  auto result_future = service_client->async_send_request(request_);
+  auto future_result = service_client->async_send_request(request_);
 
-  if (rclcpp::spin_until_future_complete(node_, result_future) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "Service call failed");
-    return;
-  }
+  rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
+  do {
+    RCLCPP_INFO(node_->get_logger(), "calling spin until future complete");
+    status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
+  } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
 }
 
 }  // namespace nav2_controller

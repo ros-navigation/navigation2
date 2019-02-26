@@ -1,0 +1,2 @@
+#!/bin/bash
+ros2 launch ./test_updown_launch.py

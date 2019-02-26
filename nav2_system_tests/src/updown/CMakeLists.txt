@@ -1,8 +1,8 @@
-ament_add_gtest_executable(updown
-  updown.cpp
+ament_add_gtest_executable(test_updown
+  test_updown.cpp
 )
 
-ament_target_dependencies(updown
+ament_target_dependencies(test_updown
   ${dependencies}
 )
 

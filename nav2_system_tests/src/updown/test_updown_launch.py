@@ -26,20 +26,9 @@ def generate_launch_description():
 
     # Configuration parameters for the launch
 
-    use_gui = launch.substitutions.LaunchConfiguration('use_gui')
-    use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
-    simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
     params_file = launch.substitutions.LaunchConfiguration('params',
             default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
-
-    declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-            'use_simulation', condition=IfCondition('True'),
-            default_value='True', description='Whether to run in simulation')
-
-    declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
-            'simulator', 
-            default_value='gzserver', description='The simulator to use (gazebo or gzserver)')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
             'world',
@@ -56,12 +45,10 @@ def generate_launch_description():
     # Specify the actions
 
     start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world, ['__params:=', params_file]],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world, ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
         cmd=[
             os.path.join(
                 get_package_prefix('robot_state_publisher'),
@@ -134,7 +121,7 @@ def generate_launch_description():
             #    get_package_prefix('nav2_system_tests'),
             #    'src/updown/updown'),
             #['__params:=', params_file]],
-			'/home/mjeronimo/navigation2/build/nav2_system_tests/src/updown/updown'],
+			'/home/mjeronimo/src/navigation2/build/nav2_system_tests/src/updown/test_updown'],
         cwd=[launch_dir], output='screen')
 
     startup_exit_event_handler = launch.actions.RegisterEventHandler(
@@ -146,8 +133,6 @@ def generate_launch_description():
 
     ld = launch.LaunchDescription()
 
-    ld.add_action(declare_use_simulation_cmd)
-    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(start_gazebo_cmd)
     ld.add_action(start_robot_state_publisher_cmd)

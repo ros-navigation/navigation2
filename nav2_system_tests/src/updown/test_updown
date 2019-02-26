@@ -1,0 +1,9 @@
+#!/bin/bash
+for i in `seq 1 100`;
+do
+    echo "---------------------- $i"
+    timeout 90 ./start_nav2
+    sleep 10
+    pkill gzserver &> /dev/null
+    echo "========================"
+done  
