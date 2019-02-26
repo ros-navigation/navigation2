@@ -20,7 +20,7 @@ using std::string;
 namespace nav2_util
 {
 
-std::string stripLeadingSlash(const string & in)
+std::string strip_leading_slash(const string & in)
 {
   string out = in;
 

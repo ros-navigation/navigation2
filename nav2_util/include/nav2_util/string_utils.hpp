@@ -23,7 +23,7 @@ namespace nav2_util
 
 typedef std::vector<std::string> Tokens;
 
-std::string stripLeadingSlash(const std::string & in);
+std::string strip_leading_slash(const std::string & in);
 
 /// Split a string at the delimiters
 Tokens split(const std::string & tokenstring, char delimiter);
