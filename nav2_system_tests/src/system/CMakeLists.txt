@@ -1,3 +1,5 @@
+# this test represents the current default configuration used in the docs and
+# nav2_bringup package.
 ament_add_test(test_simple_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
@@ -13,6 +15,8 @@ ament_add_test(test_simple_navigator
     ASTAR=False
 )
 
+# this tests the other navigator and planner option not used by default
+# in the nav2_bringup package.
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
