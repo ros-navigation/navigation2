@@ -47,7 +47,6 @@ LifecycleServiceClient::changeState(std::uint8_t transition, std::chrono::second
       throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
     }
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
-	rclcpp::spin_some(node_);
   }
 
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();

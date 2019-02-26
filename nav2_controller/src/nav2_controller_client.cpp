@@ -64,7 +64,6 @@ Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client,
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
       return;
     }
-	rclcpp::spin_some(node_);
     RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
   }
 
