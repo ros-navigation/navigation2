@@ -27,7 +27,7 @@ using std::isalnum;
 namespace nav2_util
 {
 
-string sanitizeNodeName(const string & potential_node_name)
+string sanitize_node_name(const string & potential_node_name)
 {
   string node_name(potential_node_name);
   // read this as `replace` characters in `node_name` `if` not alphanumeric.
@@ -38,7 +38,7 @@ string sanitizeNodeName(const string & potential_node_name)
   return node_name;
 }
 
-std::string timeToString(size_t len)
+std::string time_to_string(size_t len)
 {
   string output(len, '0');  // prefill the string with zeros
   auto timepoint = high_resolution_clock::now();
@@ -58,18 +58,18 @@ std::string timeToString(size_t len)
   return output;
 }
 
-std::string generateInternalNodeName(const std::string & prefix)
+std::string generate_internal_node_name(const std::string & prefix)
 {
-  return sanitizeNodeName(prefix) + "_" + timeToString(8);
+  return sanitize_node_name(prefix) + "_" + time_to_string(8);
 }
 
-rclcpp::Node::SharedPtr generateInternalNode(const std::string & prefix)
+rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
 {
   rclcpp::NodeOptions options;
   options.use_global_arguments(false);
   options.start_parameter_services(false);
   options.start_parameter_event_publisher(false);
-  return rclcpp::Node::make_shared(generateInternalNodeName(prefix));
+  return rclcpp::Node::make_shared(generate_internal_node_name(prefix));
 }
 
 }  // namespace nav2_util

@@ -40,7 +40,7 @@ int main(int argc, char * argv[])
     usage();
   }
   rclcpp::init(0, nullptr);
-  nav2_util::bringupLifecycleNodes(
+  nav2_util::bringup_lifecycle_nodes(
     std::vector<std::string>(argv + 1, argv + argc),
     10s);
   rclcpp::shutdown();

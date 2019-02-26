@@ -170,7 +170,7 @@ void PlannerTester::setCostmap()
   costmap_ = std::make_unique<Costmap>(
     this, trinary_costmap_, track_unknown_space_, lethal_threshold_, unknown_cost_value_);
 
-  costmap_->setStaticMap(*map_);
+  costmap_->set_static_map(*map_);
 
   costmap_set_ = true;
   using_fake_costmap_ = false;
@@ -188,7 +188,7 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 
   costmap_ = std::make_unique<Costmap>(this);
 
-  costmap_->setTestCostmap(testCostmapType);
+  costmap_->set_test_costmap(testCostmapType);
 
   costmap_set_ = true;
   using_fake_costmap_ = true;
@@ -236,7 +236,7 @@ bool PlannerTester::defaultPlannerTest(
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
   auto goal = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-  auto costmap_properties = costmap_->getProperties();
+  auto costmap_properties = costmap_->get_properties();
 
   if (using_fake_costmap_) {
     RCLCPP_INFO(this->get_logger(), "PlannerTester::defaultPlannerTest:"
@@ -288,8 +288,8 @@ bool PlannerTester::defaultPlannerRandomTests(
   // Initialize random number generator
   std::random_device random_device;
   std::mt19937 generator(random_device());
-  std::uniform_int_distribution<> distribution_x(0, costmap_->getProperties().size_x);
-  std::uniform_int_distribution<> distribution_y(0, costmap_->getProperties().size_y);
+  std::uniform_int_distribution<> distribution_x(0, costmap_->get_properties().size_x);
+  std::uniform_int_distribution<> distribution_y(0, costmap_->get_properties().size_y);
 
   auto generate_random = [&]() mutable -> std::pair<int, int> {
       bool point_is_free = false;

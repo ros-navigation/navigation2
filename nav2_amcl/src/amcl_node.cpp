@@ -309,7 +309,7 @@ AmclNode::requestMap()
   std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
   nav2_tasks::MapServiceClient map_client;
-  map_client.waitForService(std::chrono::seconds(2));
+  map_client.wait_for_service(std::chrono::seconds(2));
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
 

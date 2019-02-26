@@ -19,7 +19,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "gtest/gtest.h"
 
-using nav2_util::bringupLifecycleNodes;
+using nav2_util::bringup_lifecycle_nodes;
 
 class RclCppFixture
 {
@@ -50,7 +50,7 @@ TEST(Lifecycle, interface)
 
   std::atomic<bool> done(false);
   std::thread node_thread(SpinNodesUntilActivated, nodes, &done);
-  bringupLifecycleNodes("/foo:/bar");
+  bringup_lifecycle_nodes("/foo:/bar");
   done = true;
   node_thread.join();
   SUCCEED();

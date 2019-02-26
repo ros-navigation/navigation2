@@ -33,7 +33,7 @@ public:
     if (provided_node) {
       node_ = provided_node;
     } else {
-      node_ = generateInternalNode(name + "_Node");
+      node_ = generate_internal_node(name + "_Node");
     }
     client_ = node_->create_client<ServiceT>(name);
   }
@@ -56,7 +56,7 @@ public:
     return result_future.get();
   }
 
-  void waitForService(const std::chrono::seconds timeout = std::chrono::seconds::max())
+  void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {

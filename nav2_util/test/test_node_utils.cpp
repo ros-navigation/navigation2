@@ -15,35 +15,35 @@
 #include "nav2_util/node_utils.hpp"
 #include "gtest/gtest.h"
 
-using nav2_util::sanitizeNodeName;
-using nav2_util::generateInternalNodeName;
-using nav2_util::generateInternalNode;
-using nav2_util::timeToString;
+using nav2_util::sanitize_node_name;
+using nav2_util::generate_internal_node_name;
+using nav2_util::generate_internal_node;
+using nav2_util::time_to_string;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
 {
-  ASSERT_EQ(sanitizeNodeName("bar"), "bar");
-  ASSERT_EQ(sanitizeNodeName("/foo/bar"), "_foo_bar");
+  ASSERT_EQ(sanitize_node_name("bar"), "bar");
+  ASSERT_EQ(sanitize_node_name("/foo/bar"), "_foo_bar");
 }
 
 TEST(TimeToString, IsLengthCorrect)
 {
-  ASSERT_EQ(timeToString(0).length(), 0u);
-  ASSERT_EQ(timeToString(1).length(), 1u);
-  ASSERT_EQ(timeToString(10).length(), 10u);
-  ASSERT_EQ(timeToString(20)[0], '0');
+  ASSERT_EQ(time_to_string(0).length(), 0u);
+  ASSERT_EQ(time_to_string(1).length(), 1u);
+  ASSERT_EQ(time_to_string(10).length(), 10u);
+  ASSERT_EQ(time_to_string(20)[0], '0');
 }
 
 TEST(TimeToString, TimeToStringDifferent)
 {
-  auto time1 = timeToString(8);
-  auto time2 = timeToString(8);
+  auto time1 = time_to_string(8);
+  auto time2 = time_to_string(8);
   ASSERT_NE(time1, time2);
 }
 
 TEST(GenerateInternalNodeName, GenerateNodeName)
 {
-  auto defaultName = generateInternalNodeName();
+  auto defaultName = generate_internal_node_name();
   ASSERT_EQ(defaultName[0], '_');
   ASSERT_EQ(defaultName.length(), 9u);
 }

@@ -21,10 +21,10 @@
 namespace nav2_tasks
 {
 
-class globalLocalizationServiceClient : public nav2_util::ServiceClient<std_srvs::srv::Empty>
+class GlobalLocalizationServiceClient : public nav2_util::ServiceClient<std_srvs::srv::Empty>
 {
 public:
-  globalLocalizationServiceClient()
+  GlobalLocalizationServiceClient()
   : nav2_util::ServiceClient<std_srvs::srv::Empty>("global_localization")
   {
   }

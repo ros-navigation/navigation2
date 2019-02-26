@@ -22,7 +22,7 @@ namespace nav2_util
 
 // TODO(crdelsey): This functionality should be part of the RCLCPP Duration
 // interface. Once that gets integrated, this function can be removed.
-inline rclcpp::Duration durationFromSeconds(double seconds)
+inline rclcpp::Duration duration_from_seconds(double seconds)
 {
   return rclcpp::Duration(static_cast<int64_t>(seconds * 1e9));    // convert to ns
 }

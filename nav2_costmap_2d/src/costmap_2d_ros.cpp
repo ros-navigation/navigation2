@@ -105,7 +105,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     !tf_.canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
   {
-    if (last_error + nav2_util::durationFromSeconds(5.0) < now()) {
+    if (last_error + nav2_util::duration_from_seconds(5.0) < now()) {
       RCLCPP_WARN(
         get_logger(),
         "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s", //NOLINT
@@ -230,7 +230,7 @@ void Costmap2DROS::reconfigureCB()
   dynamic_param_client_->get_event_param("publish_frequency", map_publish_frequency);
 
   if (map_publish_frequency > 0) {
-    publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency);
+    publish_cycle_ = nav2_util::duration_from_seconds(1 / map_publish_frequency);
   } else {
     publish_cycle_ = rclcpp::Duration(-1);
   }
@@ -461,7 +461,7 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
 
   // TODO(bpwilcox): use toSec() function in more recent rclcpp branch
   if (current_time - global_pose.header.stamp >
-    nav2_util::durationFromSeconds(transform_tolerance_))
+    nav2_util::duration_from_seconds(transform_tolerance_))
   {
     RCLCPP_WARN(
       get_logger(),

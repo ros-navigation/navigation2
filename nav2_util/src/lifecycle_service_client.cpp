@@ -19,7 +19,7 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 
-using nav2_util::generateInternalNode;
+using nav2_util::generate_internal_node;
 using std::string;
 using std::chrono::seconds;
 using std::make_shared;
@@ -28,26 +28,26 @@ namespace nav2_util
 {
 
 LifecycleServiceClient::LifecycleServiceClient(const string & node_name)
-: node_(generateInternalNode(node_name + "_lifecycle_client")),
+: node_(generate_internal_node(node_name + "_lifecycle_client")),
   change_state_(node_name + "/change_state", node_),
   get_state_(node_name + "/get_state", node_)
 {
 }
 
-void LifecycleServiceClient::ChangeState(
+void LifecycleServiceClient::change_state(
   const uint8_t newState,
   const seconds timeout)
 {
-  change_state_.waitForService(timeout);
+  change_state_.wait_for_service(timeout);
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = newState;
   change_state_.invoke(request, timeout);
 }
 
-uint8_t LifecycleServiceClient::GetState(
+uint8_t LifecycleServiceClient::get_state(
   const seconds timeout)
 {
-  get_state_.waitForService(timeout);
+  get_state_.wait_for_service(timeout);
   auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
   auto result = get_state_.invoke(request, timeout);
   return result->current_state.id;
