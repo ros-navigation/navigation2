@@ -28,7 +28,7 @@ using std::string;
 using std::shared_ptr;
 using std::any_of;
 using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
-using ClearEntirely =nav2_msgs::srv::ClearEntireCostmap;
+using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap)
 : node_(node), costmap_(costmap)
@@ -37,13 +37,15 @@ ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap
 
   node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
 
-  except_region_server_ = node_->create_service<ClearExceptRegion>("clear_except_" + costmap_.getName(),
-      std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  except_region_server_ = node_->create_service<ClearExceptRegion>(
+    "clear_except_" + costmap_.getName(),
+    std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  entire_clearing_server_ = node_->create_service<ClearEntirely>("clear_entirely_" + costmap_.getName(),
-      std::bind(&ClearCostmapService::clearEntireCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  entire_clearing_server_ = node_->create_service<ClearEntirely>(
+    "clear_entirely_" + costmap_.getName(),
+    std::bind(&ClearCostmapService::clearEntireCallback, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void ClearCostmapService::clearExceptRegionCallback(
@@ -51,7 +53,8 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Received request to clear expect region the " + costmap_.getName());
+  RCLCPP_INFO(node_->get_logger(),
+    "Received request to clear expect region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
 }
