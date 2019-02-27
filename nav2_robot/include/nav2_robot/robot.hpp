@@ -26,7 +26,7 @@
 namespace nav2_robot
 {
 
-class Robot: public nav2_lifecycle::ILifecycle
+class Robot : public nav2_lifecycle::ILifecycle
 {
 public:
   explicit Robot(nav2_lifecycle::LifecycleNode::SharedPtr node);
