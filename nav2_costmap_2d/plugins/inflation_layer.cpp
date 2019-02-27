@@ -201,11 +201,7 @@ void InflationLayer::updateCosts(
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
 
-  if (seen_.empty()) {
-    RCLCPP_WARN(rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector is empty");
-    seen_ = std::vector<bool>(size_x * size_y, false);
-  } else if (seen_.size() != size_x * size_y) {
+  if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(rclcpp::get_logger(
         "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
