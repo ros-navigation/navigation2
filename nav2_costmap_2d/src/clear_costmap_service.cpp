@@ -37,12 +37,12 @@ ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap
 
   node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
 
-  except_region_server_ = node_->create_service<ClearExceptRegion>(
+  clear_except_service_ = node_->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
     std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  entire_clearing_server_ = node_->create_service<ClearEntirely>(
+  clear_entire_service_ = node_->create_service<ClearEntirely>(
     "clear_entirely_" + costmap_.getName(),
     std::bind(&ClearCostmapService::clearEntireCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -54,7 +54,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(node_->get_logger(),
-    "Received request to clear expect region the " + costmap_.getName());
+    "Received request to clear except a region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
 }

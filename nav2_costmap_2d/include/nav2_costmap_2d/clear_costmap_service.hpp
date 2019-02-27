@@ -55,13 +55,13 @@ private:
   std::vector<std::string> clearable_layers_;
 
   // Server for clearing the costmap
-  rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr except_region_server_;
+  rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr clear_except_service_;
   void clearExceptRegionCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
 
-  rclcpp::Service<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr entire_clearing_server_;
+  rclcpp::Service<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clear_entire_service_;
   void clearEntireCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Request> request,
