@@ -18,9 +18,18 @@ DwbController:
     decel_lim_x: -2.5
     decel_lim_y: 0.0
     decel_lim_theta: -3.2
+    ObstacleFootprint.scale: 1.0
+    ObstacleFootprint.max_scaling_factor: 0.2
+    ObstacleFootprint.scaling_speed: 0.25
+    PathAlign.scale: 32.0
+    GoalAlign.scale: 24.0
+    PathDist.scale: 32.0
+    GoalDist.scale: 24.0
+    RotateToGoal.scale: 32.0
 local_costmap:
   local_costmap:
     ros__parameters:
+      robot_radius: 0.092
       always_send_full_costmap: True
 global_costmap:
   global_costmap:
