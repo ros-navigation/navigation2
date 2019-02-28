@@ -49,6 +49,7 @@ namespace dwb_critics
 
 
 OscillationCritic::CommandTrend::CommandTrend()
+: enabled_(true)
 {
   reset();
 }
@@ -62,6 +63,10 @@ void OscillationCritic::CommandTrend::reset()
 
 bool OscillationCritic::CommandTrend::update(double velocity)
 {
+  if (!enabled_) {
+    return false;
+  }
+
   bool flag_set = false;
   if (velocity < 0.0) {
     if (sign_ == Sign::POSITIVE) {
@@ -81,11 +86,19 @@ bool OscillationCritic::CommandTrend::update(double velocity)
 
 bool OscillationCritic::CommandTrend::isOscillating(double velocity)
 {
+  if (!enabled_) {
+    return false;
+  }
+
   return (positive_only_ && velocity < 0.0) || (negative_only_ && velocity > 0.0);
 }
 
 bool OscillationCritic::CommandTrend::hasSignFlipped()
 {
+  if (!enabled_) {
+    return false;
+  }
+
   return positive_only_ || negative_only_;
 }
 
@@ -126,6 +139,13 @@ void OscillationCritic::onInit()
   // {
   //   x_only_threshold_ = 0.05;
   // }
+
+  // Disable y oscillation detection if the robot can't move in the Y axis
+  double max_vel_y;
+  nh_->get_parameter_or("max_vel_y", max_vel_y, 0.0);
+  if (max_vel_y == 0.0) {
+    y_trend_.disable();
+  }
 
   reset();
 }
