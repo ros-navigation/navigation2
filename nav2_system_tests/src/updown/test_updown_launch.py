@@ -121,7 +121,7 @@ def generate_launch_description():
             #    get_package_prefix('nav2_system_tests'),
             #    'src/updown/updown'),
             #['__params:=', params_file]],
-			'/home/mjeronimo/src/navigation2/build/nav2_system_tests/src/updown/test_updown'],
+			'/home/mdjeroni/src/navigation2/build/nav2_system_tests/src/updown/test_updown'],
         cwd=[launch_dir], output='screen')
 
     startup_exit_event_handler = launch.actions.RegisterEventHandler(
@@ -135,8 +135,8 @@ def generate_launch_description():
 
     ld.add_action(declare_world_cmd)
     ld.add_action(start_controller_cmd)
-    #ld.add_action(start_gazebo_cmd)
-    #ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(start_gazebo_cmd)
+    ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
     ld.add_action(start_world_model_cmd)

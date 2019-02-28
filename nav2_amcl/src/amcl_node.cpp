@@ -94,8 +94,8 @@ AmclNode::waitForTransforms()
     tf2::durationFromSec(0.1), &tf_error))
   {
     if (last_error + nav2_util::durationFromSeconds(1.0) < rclcpp_node_->now()) {
-      RCLCPP_INFO(get_logger(),
-        "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s", //NOLINT
+      RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
+        " to become available, tf error: %s",
         odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
       last_error = rclcpp_node_->now();
     }

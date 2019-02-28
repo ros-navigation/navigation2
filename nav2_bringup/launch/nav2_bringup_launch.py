@@ -146,8 +146,23 @@ def generate_launch_description():
 
     startup_cmd = launch.actions.ExecuteProcess(
         condition=UnlessCondition(use_gui),
-        cmd=['ros2', 'service', 'call', 'startup', 'std_srvs/Empty'],
+		shell=True,
+        cmd=['sleep 3' ';', 'ros2', 'service', 'call', 'startup', 'std_srvs/Empty'],
         cwd=[launch_dir], output='screen')
+
+    # TODO(mjeronimo): 
+    #
+    # Would like to register an OnShutdown handler to invoke the shutdown service
+    # and properly shut down all of the nodes. However, the launch system doesn't
+    # wait for the dispatched process to exit. It simply launches the executable and
+    # then immediately continues with the shutdown, which kills the nodes before
+    # they can be walked through their Deactivate and Cleanup states.
+    #
+    #exit_handler = launch.actions.RegisterEventHandler(launch.event_handlers.OnShutdown(
+    #    on_shutdown=[launch.actions.ExecuteProcess(
+    #        condition=UnlessCondition(use_gui),
+    #        cmd=['ros2', 'service', 'call', 'shutdown', 'std_srvs/Empty'],
+    #        cwd=[launch_dir], output='screen')],))
 
     # Compose the launch description
 
@@ -169,5 +184,6 @@ def generate_launch_description():
     ld.add_action(start_gui_cmd)
     ld.add_action(gui_exit_event_handler)
     ld.add_action(startup_cmd)
+    #ld.add_action(exit_handler)
 
     return ld

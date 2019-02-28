@@ -133,14 +133,14 @@ Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
   rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
-  RCLCPP_DEBUG(get_logger(), "onActivate: checking transform");
+  RCLCPP_INFO(get_logger(), "onActivate: checking transform");
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
   {
     if (last_error + nav2_util::durationFromSeconds(5.0) < rclcpp_node_->now()) {
-      RCLCPP_INFO(get_logger(),
-        "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s", //NOLINT
+      RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
+        " to become available, tf error: %s",
         robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
       last_error = rclcpp_node_->now();
     }
@@ -151,9 +151,6 @@ Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
 
     // Let the transforms populate, then retry
     std::this_thread::sleep_for(10ms);
-
-    // TODO: fail after a certain amount of time or # of retries
-    // return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
 
   // Create a thread to handle updating the map
