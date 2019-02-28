@@ -21,7 +21,7 @@ namespace nav2_controller
 
 Nav2ControllerClient::Nav2ControllerClient()
 {
-  node_ = std::make_shared<rclcpp::Node>("nav2_controller_client");
+  node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client");
 
   request_ = std::make_shared<Srv::Request>();
 
@@ -69,12 +69,7 @@ Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client,
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the nav2_controller", service_name);
   auto future_result = service_client->async_send_request(request_);
-
-  rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
-  do {
-    //RCLCPP_INFO(node_->get_logger(), "calling spin until future complete");
-    status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
-  } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
+  rclcpp::spin_until_future_complete(node_, future_result);
 }
 
 }  // namespace nav2_controller

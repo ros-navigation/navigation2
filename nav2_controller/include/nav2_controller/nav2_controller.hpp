@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "nav2_lifecycle/lifecycle_service_client.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -45,8 +44,6 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr client_;
-
-  rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startup_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr shutdown_srv_;
@@ -80,7 +77,6 @@ protected:
   void activateWorldModel();
   void activateLocalPlanner();
   void activateRemainingNodes();
-  void waitForInitialPose();
 
   // Support functions for shutdown
   void shutdownAllNodes();
@@ -89,17 +85,8 @@ protected:
   // For each node in the map, transition to the new target state
   void changeStateForAllNodes(std::uint8_t transition);
 
-  // A subscriber to listen for the first AMCL pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
-  void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
-
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_lifecycle::LifecycleServiceClient>> node_map;
-
-  // Coordinate the receipt of the first AMCL pose
-  bool pose_received_;
-  std::mutex pose_mutex_;
-  std::condition_variable cv_pose_;
 };
 
 }  // namespace nav2_controller

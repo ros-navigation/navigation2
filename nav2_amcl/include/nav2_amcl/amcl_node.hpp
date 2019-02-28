@@ -84,6 +84,7 @@ protected:
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
+  void waitForTransforms();
 
   // Message filters
   void initMessageFilters();
@@ -125,6 +126,7 @@ protected:
     geometry_msgs::msg::PoseStamped & pose,
     double & x, double & y, double & yaw,
     const rclcpp::Time & t, const std::string & f);
+  std::atomic<bool> first_pose_sent_;
 
   // Particle filter
   void initParticleFilter();

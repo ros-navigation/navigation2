@@ -22,7 +22,6 @@
 #include <string>
 #include <thread>
 
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
@@ -56,29 +55,17 @@ Nav2Controller::Nav2Controller()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-
-  pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Nav2Controller::onPoseReceived, this, std::placeholders::_1), custom_qos_profile);
- 
-  cb_grp_ = create_callback_group(rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
- 
   startup_srv_ = create_service<std_srvs::srv::Empty>("startup",
-    std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default, cb_grp_);
+    std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3));
  
   shutdown_srv_ = create_service<std_srvs::srv::Empty>("shutdown",
-    std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default, cb_grp_);
+    std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3));
  
   pause_srv_ = create_service<std_srvs::srv::Empty>("pause",
-    std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default, cb_grp_);
+    std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3));
  
   resume_srv_ = create_service<std_srvs::srv::Empty>("resume",
-    std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default, cb_grp_);
+    std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3));
 
   client_ = std::make_shared<rclcpp::Node>("nav2_controller_lifecycle_client_node");
 }
@@ -126,16 +113,6 @@ Nav2Controller::resumeCallback(
 {
   RCLCPP_INFO(get_logger(), "resumeCallback");
   resume();
-}
-
-void
-Nav2Controller::onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
-{
-  std::unique_lock<std::mutex> lock(pose_mutex_);
-  if (!pose_received_) {
-    RCLCPP_INFO(get_logger(), "Received the initial pose");
-  }
-  pose_received_ = true;
 }
 
 void
@@ -188,22 +165,6 @@ Nav2Controller::activateLocalizer()
 }
 
 void
-Nav2Controller::waitForInitialPose()
-{
-  message("Waiting for first AMCL pose");
-  do {
-    std::unique_lock<std::mutex> lock(pose_mutex_);
-    if (cv_pose_.wait_for(lock, std::chrono::milliseconds(10),
-      [&] {return pose_received_ == true;}))
-    {
-      message("Received initial pose from AMCL");
-      pose_received_ = false;
-      return;
-    }
-  } while (true);
-}
-
-void
 Nav2Controller::activateWorldModel()
 {
   message("Configuring and activating the world model");
@@ -239,9 +200,19 @@ void
 Nav2Controller::shutdownAllNodes()
 {
   message("Deactivate, cleanup, and shutdown nodes");
+#if 1
   changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE);
   changeStateForAllNodes(Transition::TRANSITION_CLEANUP);
   changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+#else
+  node_map["amcl"]->changeState(Transition::TRANSITION_DEACTIVATE);
+  node_map["amcl"]->changeState(Transition::TRANSITION_CLEANUP);
+  node_map["amcl"]->changeState(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+
+  node_map["map_server"]->changeState(Transition::TRANSITION_DEACTIVATE);
+  node_map["map_server"]->changeState(Transition::TRANSITION_CLEANUP);
+  node_map["map_server"]->changeState(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+#endif
 }
 
 void
@@ -251,10 +222,11 @@ Nav2Controller::startup()
   createLifecycleServiceClients();
   activateMapServer();
   activateLocalizer();
-  waitForInitialPose();
+#if 1
   activateWorldModel();
   activateLocalPlanner();
   activateRemainingNodes();
+#endif
   message("The system is active");
 }
 
@@ -291,7 +263,6 @@ Nav2Controller::resume()
   message("Resuming the system...");
   activateMapServer();
   activateLocalizer();
-  waitForInitialPose();
   activateWorldModel();
   activateLocalPlanner();
   activateRemainingNodes();

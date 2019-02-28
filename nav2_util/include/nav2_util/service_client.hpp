@@ -80,7 +80,6 @@ public:
         throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
       }
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
-	  rclcpp::spin_some(node_);
     }
 
     RCLCPP_INFO(node_->get_logger(), "send async request");
@@ -109,16 +108,14 @@ public:
     RCLCPP_INFO(node_->get_logger(), "send async request");
     auto future_result = client_->async_send_request(request);
 
-    rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
-    do {
-      RCLCPP_INFO(node_->get_logger(), "calling spin until future complete");
-      status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
-    } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
+    if (rclcpp::spin_until_future_complete(node_, future_result) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+	  return false;
+    }
 
-    RCLCPP_INFO(node_->get_logger(), "service call succeeded");
     response = future_result.get();
-
-    return true;
+	return true;
   }
 
   void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())

@@ -29,6 +29,7 @@
 #include "message_filters/subscriber.h"
 #include "nav2_tasks/map_service_client.hpp"
 #include "nav2_util/angleutils.hpp"
+#include "nav2_util/duration_conversions.hpp"
 #include "nav2_util/pf/pf.hpp"
 #include "nav2_util/strutils.hpp"
 #include "tf2/convert.h"
@@ -45,6 +46,7 @@
 #pragma GCC diagnostic pop
 
 using namespace std::placeholders;
+using namespace std::chrono_literals;
 
 namespace nav2_amcl
 {
@@ -75,7 +77,36 @@ AmclNode::onConfigure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
+  RCLCPP_INFO(get_logger(), "return from onConfigure");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+void
+AmclNode::waitForTransforms()
+{
+  rclcpp::Time last_error = rclcpp_node_->now();
+  std::string tf_error;
+
+  RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
+
+  while (rclcpp::ok() &&
+    !tf_buffer_->canTransform(global_frame_id_, odom_frame_id_, tf2::TimePointZero,
+    tf2::durationFromSec(0.1), &tf_error))
+  {
+    if (last_error + nav2_util::durationFromSeconds(1.0) < rclcpp_node_->now()) {
+      RCLCPP_INFO(get_logger(),
+        "Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s", //NOLINT
+        odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
+      last_error = rclcpp_node_->now();
+    }
+
+    // The error string will accumulate and errors will typically be the same, so the last
+    // will do for the warning above. Reset the string here to avoid accumulation.
+    tf_error.clear();
+
+    // Let the transforms populate, then retry
+    std::this_thread::sleep_for(10ms);
+  }
 }
 
 nav2_lifecycle::CallbackReturn
@@ -87,10 +118,22 @@ AmclNode::onActivate(const rclcpp_lifecycle::State & /*state*/)
   pose_pub_->on_activate();
   particlecloud_pub_->on_activate();
 
+  first_pose_sent_ = false;
+
   // Keep track of whether we're in the active state. We won't
   // process incoming callbacks until we are
   active = true;
 
+  // Wait until the transform listener thread has had a chance to spin up and get the
+  // transforms that it needs
+  waitForTransforms();
+
+  // Make sure we've output the first pose before continuing
+  while (!first_pose_sent_) {
+    std::this_thread::sleep_for(100ms);
+  }
+
+  RCLCPP_INFO(get_logger(), "return from onActivate");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -624,6 +667,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
 
       RCLCPP_INFO(get_logger(), "Publishing pose");
+      first_pose_sent_ = true;
       pose_pub_->publish(p);
       last_published_pose_ = p;
 
@@ -834,6 +878,8 @@ AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 void
 AmclNode::initTransforms()
 {
+  RCLCPP_INFO(get_logger(), "initTransforms");
+
   // Initialize transform listener and broadcaster
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);
@@ -861,6 +907,8 @@ AmclNode::initMessageFilters()
 void
 AmclNode::initPubSub()
 {
+  RCLCPP_INFO(get_logger(), "initPubSub");
+
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>("particlecloud",
       rmw_qos_profile_sensor_data);
 

@@ -150,7 +150,7 @@ Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
     tf_error.clear();
 
     // Let the transforms populate, then retry
-	  std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(10ms);
 
     // TODO: fail after a certain amount of time or # of retries
     // return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;

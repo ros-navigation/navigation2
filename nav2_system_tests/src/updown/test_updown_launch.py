@@ -135,8 +135,8 @@ def generate_launch_description():
 
     ld.add_action(declare_world_cmd)
     ld.add_action(start_controller_cmd)
-    ld.add_action(start_gazebo_cmd)
-    ld.add_action(start_robot_state_publisher_cmd)
+    #ld.add_action(start_gazebo_cmd)
+    #ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
     ld.add_action(start_world_model_cmd)

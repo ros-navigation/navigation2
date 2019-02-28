@@ -21,10 +21,8 @@ int main(int argc, char ** argv)
   setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
   rclcpp::init(argc, argv);
-  rclcpp::executors::MultiThreadedExecutor executor;
   auto node = std::make_shared<nav2_controller::Nav2Controller>();
-  executor.add_node(node);
-  executor.spin();
+  rclcpp::spin(node->get_node_base_interface()); 
   rclcpp::shutdown();
 
   RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
