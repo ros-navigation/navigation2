@@ -14,6 +14,9 @@
 
 import os
 import sys
+import rclpy
+import time
+import asyncio
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
@@ -22,49 +25,66 @@ from launch.conditions import UnlessCondition
 
 import launch.actions
 import subprocess
-import tty
 import termios
 import threading
+import tty
+
+from std_srvs.srv import Empty
 
 
 class KeyboardController():
+    def __init__(self, context):
+        self.node = rclpy.create_node('keyboard_controller_client')
+        self.fd = sys.stdin.fileno()
+        self.old_settings = termios.tcgetattr(self.fd)
+        self.context = context
+        tty.setcbreak(self.fd)
+
+    def __del__(self):
+        self.node.destroy_node()
+        termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
+
+    def call_service(self, service_name):
+        print("Calling controller service")
+        cli = self.node.create_client(Empty, service_name)
+        req = Empty.Request()
+        while not cli.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().info('service not available, waiting again...')
+        future = cli.call_async(req)
+        # rclpy.spin_until_future_complete(self.node, future)
+
     def monitor_input(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-
         while True:
-            tty.setcbreak(fd)
-            try:
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
-            if (ch == "q"):
-                process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-                process.wait()
-                return
+            ch = sys.stdin.read(1)
+            if (ch == "u"):
+                self.call_service('startup')
             elif (ch == "p"):
-                process = subprocess.Popen("ros2 service call pause std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-                process.wait()
+                self.call_service('pause')
             elif (ch == "r"):
-                process = subprocess.Popen("ros2 service call resume std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-                process.wait()
+                self.call_service('resume')
+            elif (ch == "d"):
+                self.call_service('shutdown')
+                time.sleep(1)
+                loop = asyncio.new_event_loop()
+                task = loop.create_task(self.context.emit_event(launch.events.Shutdown(reason="Done")))
+                loop.run_until_complete(task)
+                return
+
+
+class StartKeyboardController(launch.Action):
+    def execute(self, context: launch.LaunchContext):
+        kb = KeyboardController(context)
+        thread = threading.Thread(target=kb.monitor_input)
+        thread.start()
 
 
 def generate_launch_description():
-
-    # TODO: create a custom StartKeyboardController action to launch this thread (conditional for command-line case)
-    # TODO: create an AutoLaunch action to capture the stdout (conditional for command-line case)
-
-    kb = KeyboardController()
-    thread = threading.Thread(target=kb.monitor_input)
-    thread.start()
-
     use_gui = launch.substitutions.LaunchConfiguration('use_gui')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
-    params_file = launch.substitutions.LaunchConfiguration('params', default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
+    params_file = launch.substitutions.LaunchConfiguration(
+        'params', default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
     declare_use_gui_cmd = launch.actions.DeclareLaunchArgument(
         'use_gui', condition=IfCondition('True'),
@@ -80,7 +100,8 @@ def generate_launch_description():
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3.world'),
+        default_value=os.path.join(
+            get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3.world'),
         description='Full path to world file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
@@ -166,22 +187,22 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     start_gui_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_gui),
         cmd=[os.path.join(get_package_prefix('nav2_controller'), 'bin/gui/nav2_gui')],
         cwd=[os.path.join(get_package_prefix('nav2_controller'), 'bin/gui')],
         output='screen')
 
     gui_exit_event_handler = launch.actions.RegisterEventHandler(
-        condition=IfCondition(use_gui),
         event_handler=launch.event_handlers.OnProcessExit(
             target_action=start_gui_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
 
-    startup_cmd = launch.actions.ExecuteProcess(
+    gui_group = launch.actions.GroupAction(
+        condition=IfCondition(use_gui),
+        actions=[start_gui_cmd, gui_exit_event_handler])
+
+    cmdline_group = launch.actions.GroupAction(
         condition=UnlessCondition(use_gui),
-        shell=True,
-        cmd=['sleep 3;ros2 service call startup std_srvs/Empty'],
-        cwd=[launch_dir], output='screen')
+        actions=[StartKeyboardController()])
 
     # Compose the launch description
 
@@ -200,8 +221,8 @@ def generate_launch_description():
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
     ld.add_action(start_controller_cmd)
-    ld.add_action(start_gui_cmd)
-    ld.add_action(gui_exit_event_handler)
-    ld.add_action(startup_cmd)
+
+    ld.add_action(gui_group)
+    ld.add_action(cmdline_group)
 
     return ld
