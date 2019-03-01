@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
@@ -21,80 +22,70 @@ from launch.conditions import UnlessCondition
 
 import launch.actions
 import subprocess
-import sys
-import select
 import tty
+import termios
 import threading
 
-#from threading import Thread
 
-class ShutdownNav2(launch.action.Action):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+class KeyboardController():
+    def monitor_input(self):
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
 
-    def execute(self, context: launch.LaunchContext):
-        print("ShutdownNav2")
-        process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-        print("after Popen")
-        #for line in process.stdout:
-        #    print(line)
-        process.wait()
-        print("rc: ", process.returncode)
+        while True:
+            tty.setcbreak(fd)
+            try:
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-class keyboard():
-	def monitorInput(self):
-		while True:
-			input = select.select([sys.stdin], [], [], 1)[0]
-			if input:
-				value = sys.stdin.read(1) # .rstrip()
-				if (value == "b"):
-					print("Bringing up the system...")
-					process = subprocess.Popen("ros2 service call startup std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-					process.wait()
-				elif (value == "q"):
-					print("Shutting down the system...")
-					process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
-					process.wait()
-					return
-				else:
-					print("Unknown input: ", value)
+            if (ch == "q"):
+                process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+                process.wait()
+                return
+            elif (ch == "p"):
+                process = subprocess.Popen("ros2 service call pause std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+                process.wait()
+            elif (ch == "r"):
+                process = subprocess.Popen("ros2 service call resume std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+                process.wait()
+
 
 def generate_launch_description():
 
-    tty.setcbreak(sys.stdin.fileno())
+    # TODO: create a custom StartKeyboardController action to launch this thread (conditional for command-line case)
+    # TODO: create an AutoLaunch action to capture the stdout (conditional for command-line case)
 
-    # TODO: create a custom action to launch this thread
-    k = keyboard()
-    t = threading.Thread(target=k.monitorInput)
-    t.start()
- 
+    kb = KeyboardController()
+    thread = threading.Thread(target=kb.monitor_input)
+    thread.start()
+
     use_gui = launch.substitutions.LaunchConfiguration('use_gui')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
-    params_file = launch.substitutions.LaunchConfiguration('params',
-            default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
+    params_file = launch.substitutions.LaunchConfiguration('params', default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
     declare_use_gui_cmd = launch.actions.DeclareLaunchArgument(
-            'use_gui', condition=IfCondition('True'),
-            default_value='False', description='Whether to bring up the GUI interface')
+        'use_gui', condition=IfCondition('True'),
+        default_value='False', description='Whether to bring up the GUI interface')
 
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-            'use_simulation', condition=IfCondition('True'),
-            default_value='True', description='Whether to run in simulation')
+        'use_simulation', condition=IfCondition('True'),
+        default_value='True', description='Whether to run in simulation')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
-            'simulator', 
-            default_value='gzserver', description='The simulator to use (gazebo or gzserver)')
+        'simulator',
+        default_value='gzserver', description='The simulator to use (gazebo or gzserver)')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
-            'world',
-            default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3.world'),
-            description='Full path to world file to load')
+        'world',
+        default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3.world'),
+        description='Full path to world file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-            'params_file',
-            description='Full path to the ROS2 parameters file to use for all launched nodes')
+        'params_file',
+        description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
     gz = launch.substitutions.LaunchConfiguration('gz', default=['gzserver'])
@@ -189,25 +180,8 @@ def generate_launch_description():
     startup_cmd = launch.actions.ExecuteProcess(
         condition=UnlessCondition(use_gui),
         shell=True,
-        cmd=['sleep 3' ';', 'ros2', 'service', 'call', 'startup', 'std_srvs/Empty'],
+        cmd=['sleep 3;ros2 service call startup std_srvs/Empty'],
         cwd=[launch_dir], output='screen')
-
-    # TODO(mjeronimo): 
-    #
-    # Would like to register an OnShutdown handler to invoke the shutdown service
-    # and properly shut down all of the nodes. However, the launch system doesn't
-    # wait for the dispatched process to exit. It simply launches the executable and
-    # then immediately continues with the shutdown, which kills the nodes before
-    # they can be walked through their Deactivate and Cleanup states.
-    #
-    #exit_handler = launch.actions.RegisterEventHandler(launch.event_handlers.OnShutdown(
-    #    on_shutdown=[launch.actions.ExecuteProcess(
-    #        condition=UnlessCondition(use_gui),
-    #        cmd=['ros2', 'service', 'call', 'shutdown', 'std_srvs/Empty'],
-    #        cwd=[launch_dir], output='screen')],))
-
-    #exit_handler = launch.actions.RegisterEventHandler(launch.event_handlers.OnShutdown(
-    #    on_shutdown=[ShutdownNav2()]))
 
     # Compose the launch description
 
@@ -229,6 +203,5 @@ def generate_launch_description():
     ld.add_action(start_gui_cmd)
     ld.add_action(gui_exit_event_handler)
     ld.add_action(startup_cmd)
-    #ld.add_action(exit_handler)
 
     return ld
