@@ -70,7 +70,11 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_motion_primitives test/test_motion_primitives.cpp)
+  ament_target_dependencies(test_motion_primitives ${dependencies})
 endif()
 
 ament_export_include_directories(include)
