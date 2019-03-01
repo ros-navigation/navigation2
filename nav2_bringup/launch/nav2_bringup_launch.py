@@ -34,7 +34,7 @@ from std_srvs.srv import Empty
 
 class KeyboardController():
     def __init__(self, context):
-        self.node = rclpy.create_node('keyboard_controller_client')
+        self.node = rclpy.create_node('kbd_controller_client')
         self.fd = sys.stdin.fileno()
         self.old_settings = termios.tcgetattr(self.fd)
         self.context = context
@@ -45,7 +45,6 @@ class KeyboardController():
         termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
 
     def call_service(self, service_name):
-        print("Calling controller service")
         cli = self.node.create_client(Empty, service_name)
         req = Empty.Request()
         while not cli.wait_for_service(timeout_sec=1.0):
@@ -196,24 +195,30 @@ def generate_launch_description():
             target_action=start_gui_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
 
+    # Create a group for the GUI-related actions, conditioned on the 'use_gui' launch option
     gui_group = launch.actions.GroupAction(
         condition=IfCondition(use_gui),
         actions=[start_gui_cmd, gui_exit_event_handler])
 
+    # Create a group for the CLI-related actions, used when !use_gui
     cmdline_group = launch.actions.GroupAction(
         condition=UnlessCondition(use_gui),
         actions=[StartKeyboardController()])
 
-    # Compose the launch description
-
+    # Create the launch description and populate
     ld = launch.LaunchDescription()
 
+    # First, declare the launch options
     ld.add_action(declare_use_gui_cmd)
     ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
+
+    # Then, add the actions to launch the simulator-related nodes (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
+
+    # Next, add the actions to launch all of the navigation nodes
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
     ld.add_action(start_world_model_cmd)
@@ -222,6 +227,7 @@ def generate_launch_description():
     ld.add_action(start_navigator_cmd)
     ld.add_action(start_controller_cmd)
 
+    # Finally, launch an interface to the controller node, either a GUI or CLI
     ld.add_action(gui_group)
     ld.add_action(cmdline_group)
 
