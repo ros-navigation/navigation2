@@ -20,12 +20,54 @@ from launch.conditions import IfCondition
 from launch.conditions import UnlessCondition
 
 import launch.actions
+import subprocess
+import sys
+import select
+import tty
+import threading
 
+#from threading import Thread
+
+class ShutdownNav2(launch.action.Action):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+    def execute(self, context: launch.LaunchContext):
+        print("ShutdownNav2")
+        process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+        print("after Popen")
+        #for line in process.stdout:
+        #    print(line)
+        process.wait()
+        print("rc: ", process.returncode)
+
+class keyboard():
+	def monitorInput(self):
+		while True:
+			input = select.select([sys.stdin], [], [], 1)[0]
+			if input:
+				value = sys.stdin.read(1) # .rstrip()
+				if (value == "b"):
+					print("Bringing up the system...")
+					process = subprocess.Popen("ros2 service call startup std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+					process.wait()
+				elif (value == "q"):
+					print("Shutting down the system...")
+					process = subprocess.Popen("ros2 service call shutdown std_srvs/Empty", shell=True, stdout=subprocess.PIPE)
+					process.wait()
+					return
+				else:
+					print("Unknown input: ", value)
 
 def generate_launch_description():
 
-    # Configuration parameters for the launch
+    tty.setcbreak(sys.stdin.fileno())
 
+    # TODO: create a custom action to launch this thread
+    k = keyboard()
+    t = threading.Thread(target=k.monitorInput)
+    t.start()
+ 
     use_gui = launch.substitutions.LaunchConfiguration('use_gui')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
@@ -146,7 +188,7 @@ def generate_launch_description():
 
     startup_cmd = launch.actions.ExecuteProcess(
         condition=UnlessCondition(use_gui),
-		shell=True,
+        shell=True,
         cmd=['sleep 3' ';', 'ros2', 'service', 'call', 'startup', 'std_srvs/Empty'],
         cwd=[launch_dir], output='screen')
 
@@ -163,6 +205,9 @@ def generate_launch_description():
     #        condition=UnlessCondition(use_gui),
     #        cmd=['ros2', 'service', 'call', 'shutdown', 'std_srvs/Empty'],
     #        cwd=[launch_dir], output='screen')],))
+
+    #exit_handler = launch.actions.RegisterEventHandler(launch.event_handlers.OnShutdown(
+    #    on_shutdown=[ShutdownNav2()]))
 
     # Compose the launch description
 
