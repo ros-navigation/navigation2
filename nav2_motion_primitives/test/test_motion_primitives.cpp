@@ -107,6 +107,20 @@ private:
   std::chrono::system_clock::time_point start_time_;
 };
 
+// The following getTaskName function is required and currently has to be
+// in the nav2_tasks namespace
+
+namespace nav2_tasks
+{
+
+template<>
+inline const char * getTaskName<DummyPrimitiveCommand, DummyPrimitiveResult>()
+{
+  return "TestMotionPrimitivesTask";
+}
+
+}
+
 // Define a test class to hold the context for the tests
 
 class MotionPrimitivesTest : public ::testing::Test
