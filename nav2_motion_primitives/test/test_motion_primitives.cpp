@@ -15,6 +15,8 @@
 #include <string>
 #include <memory>
 #include <chrono>
+#include <atomic>
+#include <iostream>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -26,17 +28,6 @@
 using nav2_tasks::TaskStatus;
 using nav2_motion_primitives::MotionPrimitive;
 using namespace std::chrono_literals;
-
-// A global object to initialize and shutdown ROS
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-
-RclCppFixture g_rclcppfixture;
 
 // Let's create a motion primitive for testing the base class
 
@@ -65,9 +56,10 @@ public:
     // The output is defined by the tester class on the command string.
 
     if (command_->data == "Testing failure on init") {
-      // A real primitive we would return failed if initialization failed or command is invalid
+      // A real primitive would return failed if initialization failed or command is invalid
       return TaskStatus::FAILED;
-    } else if (command_->data == "Testing success") {
+      // return TaskStatus::SUCCEEDED;
+    } else if (command_->data == "Testing success" || command->data == "Testing failure on run") {
       initialized_ = true;
       return TaskStatus::SUCCEEDED;
     } else {
@@ -126,6 +118,11 @@ inline const char * getTaskName<DummyPrimitiveCommand, DummyPrimitiveResult>()
 class MotionPrimitivesTest : public ::testing::Test
 {
 protected:
+  MotionPrimitivesTest()
+  : spinning_ok_(false) {}
+
+  ~MotionPrimitivesTest() {}
+
   void SetUp() override
   {
     node_ = std::make_shared<rclcpp::Node>("MotionPrimitivesTestNode");
@@ -135,18 +132,25 @@ protected:
     client_ = std::make_unique<DummyPrimitiveClient>(node_);
 
     // Launch a thread to spin the node
+    spinning_ok_ = true;
     spin_thread_ = new std::thread(&MotionPrimitivesTest::spin, this);
   }
 
   void TearDown() override
   {
+    spinning_ok_ = false;
     spin_thread_->join();
     delete spin_thread_;
   }
 
   void spin()
   {
-    rclcpp::spin(node_);
+    while (spinning_ok_) {
+      // Spin the node to get messages from the subscriptions
+      rclcpp::spin_some(node_->get_node_base_interface());
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    std::cout << "Exiting node spinning function" << std::endl;
   }
 
   void sendStringCommand(const std::string & string_command)
@@ -170,27 +174,39 @@ protected:
     }
   }
 
-
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<DummyPrimitive> primitive_;
   std::unique_ptr<DummyPrimitiveClient> client_;
   std::thread * spin_thread_;
+  std::atomic<bool> spinning_ok_;
 };
 
 // Define the tests
 
-TEST_F(MotionPrimitivesTest, testingCorrectSuccess)
+TEST_F(MotionPrimitivesTest, testingSuccess)
 {
-  sendStringCommand("Test success");
+  sendStringCommand("Testing success");
   EXPECT_EQ(waitForPrimitive(), TaskStatus::SUCCEEDED);
 }
 
-TEST_F(MotionPrimitivesTest, testingCorrecFailure)
+TEST_F(MotionPrimitivesTest, testingFailureOnRun)
+{
+  sendStringCommand("Testing failure on run");
+  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+}
+
+TEST_F(MotionPrimitivesTest, testingFailureOnInit)
+{
+  sendStringCommand("Testing failure on init");
+  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+}
+
+TEST_F(MotionPrimitivesTest, testingSequentialFailures)
 {
   sendStringCommand("Testing failure on init");
   EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
 
-  sendStringCommand("Testing failure");
+  sendStringCommand("Testing failure on run");
   EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
 }
 
@@ -199,4 +215,19 @@ TEST_F(MotionPrimitivesTest, testCancel)
   sendStringCommand("Testing success");
   client_->cancel();
   EXPECT_EQ(waitForPrimitive(), TaskStatus::CANCELED);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  // initialize ROS
+  rclcpp::init(0, nullptr);
+
+  bool all_successful = RUN_ALL_TESTS();
+
+  // shutdown ROS
+  rclcpp::shutdown();
+
+  return all_successful;
 }

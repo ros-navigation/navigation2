@@ -57,7 +57,10 @@ public:
     RCLCPP_INFO(node_->get_logger(), "Initialized the %s server", taskName_.c_str());
   }
 
-  virtual ~MotionPrimitive() {}
+  virtual ~MotionPrimitive()
+  {
+    task_server_->exit();
+  }
 
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
@@ -78,13 +81,14 @@ public:
   {
     RCLCPP_INFO(node_->get_logger(), "%s attempting behavior", taskName_.c_str());
 
-    ResultMsg result;
     auto status = onRun(command);
 
-    if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
-      status = cycle(result);
+    if (status != nav2_tasks::TaskStatus::SUCCEEDED) {
+      return nav2_tasks::TaskStatus::FAILED;
     }
 
+    ResultMsg result;
+    status = cycle(result);
     task_server_->setResult(result);
 
     return status;
