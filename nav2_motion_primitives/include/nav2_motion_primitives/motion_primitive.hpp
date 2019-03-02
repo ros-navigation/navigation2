@@ -52,14 +52,14 @@ public:
     task_server_->setExecuteCallback(std::bind(&MotionPrimitive::run, this, std::placeholders::_1));
 
     // Start listening for incoming Spin task requests
-    task_server_->startWorkerThread();
+    task_server_->start();
 
     RCLCPP_INFO(node_->get_logger(), "Initialized the %s server", taskName_.c_str());
   }
 
   virtual ~MotionPrimitive()
   {
-    task_server_->exit();
+    task_server_->stop();
   }
 
   // Derived classes can override this method to catch the command and perform some checks

@@ -63,15 +63,13 @@ public:
       };
 
     if (autoStart) {
-      startWorkerThread();
+      start();
     }
   }
 
   virtual ~TaskServer()
   {
-    if (workerThread_) {
-      stopWorkerThread();
-    }
+    stop();
   }
 
   typedef std::function<TaskStatus(const typename CommandMsg::SharedPtr command)> ExecuteCallback;
@@ -111,15 +109,14 @@ public:
     resultMsg_ = result;
   }
 
-  void startWorkerThread()
+  void start()
   {
     if (!workerThread_) {
-      stop_thread_ = false;
-      workerThread_ = new std::thread(&TaskServer::workerThread, this);
+      startWorkerThread();
     }
   }
 
-  void exit()
+  void stop()
   {
     if (workerThread_) {
       stopWorkerThread();
@@ -142,6 +139,12 @@ protected:
   // The pointer to our private worker thread
   std::thread * workerThread_;
   std::atomic<bool> stop_thread_;
+
+  void startWorkerThread()
+  {
+    stop_thread_ = false;
+    workerThread_ = new std::thread(&TaskServer::workerThread, this);
+  }
 
   // This class has the worker thread body which calls the user's execute() callback
   void workerThread()
