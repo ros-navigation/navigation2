@@ -55,12 +55,11 @@ public:
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
 
     odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
-      std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
+        std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
     RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
 
     RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
-
   }
 
   void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
@@ -110,14 +109,14 @@ public:
     // TODO(orduno) #400 Smooth out velocity history for better accel approx.
     if (odom_history_.size() > 2) {
       auto curr_odom = odom_history_.end()[-1];
-      double t2 = static_cast<double>(curr_odom.header.stamp.sec);
-      t2 += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
+      double curr_time = static_cast<double>(curr_odom.header.stamp.sec);
+      curr_time += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
 
       auto prev_odom = odom_history_.end()[-2];
-      double t1 = static_cast<double>(prev_odom.header.stamp.sec);
-      t1 += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
+      double prev_time = static_cast<double>(prev_odom.header.stamp.sec);
+      prev_time += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
 
-      double dt = t2 - t1;
+      double dt = curr_time - prev_time;
       double vel_diff = static_cast<double>(
         curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
       current_accel_ = vel_diff / dt;
