@@ -117,34 +117,19 @@ bool BackUp::pathIsClear()
 
   // Check for clear path relative to robot.
   request.frame_id = "base_link";
-  request.reference.x = 0.0;
-  request.reference.y = 0.0;
-  request.rotation = 0.0;
 
-  // Define the region size
-  // Width is set to match the robot's diameter
-  // Height is set to the requested distance to travel
   double robot_width = robot_->getRadius();
-  request.width = robot_width;
-  request.height = std::abs(command_x_);
+  double direction = (command_x_ < 0.0) ? -1.0 : 1.0;
 
-  // Calculate the offset in order to place the region of interest in front of the robot.
-  // Notice that, as specified on the service message, x corresponds to a value on the
-  // horizontal axis, while y is on the vertical.
-  request.offset.x = 0.0;
-  request.offset.y = robot_width / 2.0 + request.height / 2.0;
+  // Corner closest to robot
+  request.region.corner.x = -1.0 * robot_width / 2.0;
+  request.region.corner.y = direction * robot_width / 2.0;
+  request.region.corner.z = 0.0;
 
-  if (command_x_ < 0.0) {
-    // Rotate 180 deg if traveling backwards
-    RCLCPP_DEBUG(node_->get_logger(), "Traveling backwards.");
-    request.rotation += M_PI;
-  }
-
-  RCLCPP_DEBUG(node_->get_logger(),
-    "Checking if path is clear: w: %f, h: %f, rx: %f, ry: %f, rot: %f, ox: %f, oy: %f",
-    request.width, request.height, request.reference.x, request.reference.y,
-    request.rotation, request.offset.x, request.offset.y
-  );
+  // Corner furthest from robot
+  request.region.opposite_corner.x = robot_width / 2.0;
+  request.region.opposite_corner.y = direction * robot_width / 2.0 + command_x_;
+  request.region.opposite_corner.z = 0.0;
 
   return world_model_.confirmFreeSpace(request);
 }

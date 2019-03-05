@@ -1,0 +1,2 @@
+geometry_msgs/Point corner
+geometry_msgs/Point opposite_corner

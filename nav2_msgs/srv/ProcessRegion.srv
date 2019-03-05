@@ -1,21 +1,5 @@
-# Process a rectangular region
-
-# reference frame and point [m]
+# The reference frame
 string frame_id
-geometry_msgs/Point reference
-
-# Width and height of the rectangle [m]
-float64 width
-float64 height
-
-# Translation and rotation are specified with the variables below
-# During the transformation, first the translation is applied, then the rotation.
-
-# For translating the region we specify an offset
-# X is the horizontal axis, Y, the vertical
-geometry_msgs/Point offset
-
-# For rotating the region around `reference` we define a rotation angle [rad] clockwise positive
-float64 rotation
+nav2_msgs/RectangularRegion region
 ---
 bool result

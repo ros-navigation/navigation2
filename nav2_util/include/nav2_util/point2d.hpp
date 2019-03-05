@@ -44,21 +44,6 @@ struct Point2D
            "x: " << point.x <<
            " y: " << point.y;
   }
-
-  void rotateAroundPoint(const double theta, const Point2D & reference)
-  {
-    // translate point such that the reference is now the origin
-    double x_t = x - reference.x;
-    double y_t = y - reference.y;
-
-    // rotate
-    double x_tr = x_t * cos(theta) - y_t * sin(theta);
-    double y_tr = x_t * sin(theta) + y_t * cos(theta);
-
-    // undo the translation
-    x = x_tr + reference.x;
-    y = y_tr + reference.y;
-  }
 };
 
 }  // namespace nav2_util

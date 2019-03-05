@@ -16,6 +16,7 @@
 #include <sstream>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #include "nav2_world_model/costmap_representation.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -123,23 +124,21 @@ bool CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request, std::vector<MapLocation> & map_locations) const
 {
   // Define the vertices in world frame
-  double top = request.reference.y + request.height / 2 - request.offset.y;
-  double down = request.reference.y - request.height / 2 - request.offset.y;
-  double right = request.reference.x + request.width / 2 - request.offset.x;
-  double left = request.reference.x - request.width / 2 - request.offset.x;
+  double left = std::min(request.region.corner.x, request.region.opposite_corner.x);
+  double right = std::max(request.region.corner.x, request.region.opposite_corner.x);
+  double down = std::min(request.region.corner.y, request.region.opposite_corner.y);
+  double up = std::max(request.region.corner.y, request.region.opposite_corner.y);
+
+  // TODO(orduno) Remove section below once axis rotation between gazebo and rviz is fixed
+  double t_down = down;
+  down = right;
+  right = up;
+  up = left;
+  left = t_down;
+  // End of remove
 
   std::vector<Point2D> vertices = {
-    Point2D{left, down}, Point2D{left, top}, Point2D{right, top}, Point2D{right, down}};
-
-  // TODO(orduno) the RVIZ world frame is rotated 90 deg with respect to Gazebo.
-  const double rvizToGazeboOffset = M_PI / 2;
-
-  // Rotate the vertices
-  for (auto & point : vertices) {
-    point.rotateAroundPoint(
-      angleutils::normalize(request.rotation + rvizToGazeboOffset),
-      Point2D{request.reference.x, request.reference.y});
-  }
+    Point2D{left, down}, Point2D{left, up}, Point2D{right, up}, Point2D{right, down}};
 
   // Convert the vertices to map coordinates
   for (const auto & point : vertices) {
