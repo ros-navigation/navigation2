@@ -52,9 +52,8 @@ struct Point2D
     double y_t = y - reference.y;
 
     // rotate
-    double angle = angleutils::normalize(theta);
-    double x_tr = x_t * cos(angle) - y_t * sin(angle);
-    double y_tr = x_t * sin(angle) + y_t * cos(angle);
+    double x_tr = x_t * cos(theta) - y_t * sin(theta);
+    double y_tr = x_t * sin(theta) + y_t * cos(theta);
 
     // undo the translation
     x = x_tr + reference.x;

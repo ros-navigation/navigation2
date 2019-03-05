@@ -441,6 +441,12 @@ bool Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) c
   robot_pose.header.stamp = rclcpp::Time();
 
   rclcpp::Time current_time = node_->now();  // save time for checking tf delay later
+
+  if (robot_base_frame_ == global_frame_) {
+    // Robot is at the origin
+    return true;
+  }
+
   // get the global pose of the robot
   try {
     tf_.transform(robot_pose, global_pose, global_frame_);
