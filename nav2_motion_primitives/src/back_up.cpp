@@ -121,14 +121,19 @@ bool BackUp::pathIsClear()
   double robot_width = robot_->getRadius();
   double direction = (command_x_ < 0.0) ? -1.0 : 1.0;
 
+  // Define the two opposite corners of the region to check.
+  // As coordinates are provided on robot's frame (base_link),
+  // the X axis is positive in the direction the robot if facing
+  // and Y axis is positive to the left.
+
   // Corner closest to robot
-  request.region.corner.x = -1.0 * robot_width / 2.0;
-  request.region.corner.y = direction * robot_width / 2.0;
+  request.region.corner.x = direction * robot_width / 2.0;
+  request.region.corner.y = robot_width / 2.0;
   request.region.corner.z = 0.0;
 
   // Corner furthest from robot
-  request.region.opposite_corner.x = robot_width / 2.0;
-  request.region.opposite_corner.y = direction * robot_width / 2.0 + command_x_;
+  request.region.opposite_corner.x = direction * robot_width / 2.0 + command_x_;
+  request.region.opposite_corner.y = -1.0 * robot_width / 2.0;
   request.region.opposite_corner.z = 0.0;
 
   return world_model_.confirmFreeSpace(request);
