@@ -19,20 +19,22 @@
 
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  auto node_A = rclcpp::Node::make_shared("test_node");
-  auto node_B = rclcpp::Node::make_shared("test_node", "test_namespace");
+  auto node_A = rclcpp_lifecycle::LifecycleNode::make_shared("test_node");
+  auto node_B = rclcpp_lifecycle::LifecycleNode::make_shared(
+    "test_node", "test_namespace", rclcpp::NodeOptions());
 
   node_A->set_parameters({rclcpp::Parameter("foo", 1.0)});
   node_B->set_parameters({rclcpp::Parameter("bar", 1)});
 
   rclcpp::executors::SingleThreadedExecutor exec;
-  exec.add_node(node_A);
-  exec.add_node(node_B);
+  exec.add_node(node_A->get_node_base_interface());
+  exec.add_node(node_B->get_node_base_interface());
   exec.spin();
 
   rclcpp::shutdown();

@@ -46,7 +46,7 @@ Costmap::~Costmap()
 {
 }
 
-void Costmap::setStaticMap(const nav_msgs::msg::OccupancyGrid & occupancy_grid)
+void Costmap::set_static_map(const nav_msgs::msg::OccupancyGrid & occupancy_grid)
 {
   RCLCPP_INFO(node_->get_logger(), "Costmap: Setting static costmap");
 
@@ -73,7 +73,7 @@ void Costmap::setStaticMap(const nav_msgs::msg::OccupancyGrid & occupancy_grid)
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
       unsigned char value = static_map_cell_values[index];
-      costs_[index] = interpretValue(value);
+      costs_[index] = interpret_value(value);
       ++index;
     }
   }
@@ -81,7 +81,7 @@ void Costmap::setStaticMap(const nav_msgs::msg::OccupancyGrid & occupancy_grid)
   map_provided_ = true;
 }
 
-void Costmap::setTestCostmap(const TestCostmap & testCostmapType)
+void Costmap::set_test_costmap(const TestCostmap & testCostmapType)
 {
   costmap_properties_.map_load_time = node_->now();
   costmap_properties_.update_time = node_->now();
@@ -103,12 +103,12 @@ void Costmap::setTestCostmap(const TestCostmap & testCostmapType)
   costmap_properties_.origin.orientation.z = quaternion.z();
   costmap_properties_.origin.orientation.w = quaternion.w();
 
-  costs_ = getTestData(testCostmapType);
+  costs_ = get_test_data(testCostmapType);
 
   using_test_map_ = true;
 }
 
-nav2_msgs::msg::Costmap Costmap::getCostmap(
+nav2_msgs::msg::Costmap Costmap::get_costmap(
   const nav2_msgs::msg::CostmapMetaData & /*specifications*/)
 {
   if (!map_provided_ && !using_test_map_) {
@@ -128,7 +128,7 @@ nav2_msgs::msg::Costmap Costmap::getCostmap(
   return costmap;
 }
 
-vector<uint8_t> Costmap::getTestData(const TestCostmap testCostmapType)
+vector<uint8_t> Costmap::get_test_data(const TestCostmap testCostmapType)
 {
   // TODO(orduno): alternatively use a mathematical function
 
@@ -234,7 +234,7 @@ vector<uint8_t> Costmap::getTestData(const TestCostmap testCostmapType)
   }
 }
 
-uint8_t Costmap::interpretValue(const int8_t value) const
+uint8_t Costmap::interpret_value(const int8_t value) const
 {
   if (track_unknown_space_ && value == unknown_cost_value_) {
     return no_information;
@@ -250,14 +250,14 @@ uint8_t Costmap::interpretValue(const int8_t value) const
   return static_cast<uint8_t>(scale * lethal_obstacle);
 }
 
-bool Costmap::isFree(const unsigned int x_coordinate, const unsigned int y_coordinate) const
+bool Costmap::is_free(const unsigned int x_coordinate, const unsigned int y_coordinate) const
 {
   unsigned int index = y_coordinate * costmap_properties_.size_x + x_coordinate;
 
-  return isFree(index);
+  return is_free(index);
 }
 
-bool Costmap::isFree(const unsigned int index) const
+bool Costmap::is_free(const unsigned int index) const
 {
   if (costs_[index] < Costmap::inscribed_inflated_obstacle) {
     return true;

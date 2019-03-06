@@ -15,24 +15,24 @@
 #ifndef NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
 
-#include "nav2_tasks/service_client.hpp"
+#include "nav2_util/service_client.hpp"
 #include "std_srvs/srv/empty.hpp"
 
 namespace nav2_tasks
 {
 
-class globalLocalizationServiceClient : public ServiceClient<std_srvs::srv::Empty>
+class GlobalLocalizationServiceClient : public nav2_util::ServiceClient<std_srvs::srv::Empty>
 {
 public:
-  globalLocalizationServiceClient()
-  : ServiceClient<std_srvs::srv::Empty>("global_localization")
+  GlobalLocalizationServiceClient()
+  : nav2_util::ServiceClient<std_srvs::srv::Empty>("global_localization")
   {
   }
 
   using globalLocalizationServiceRequest =
-    ServiceClient<std_srvs::srv::Empty>::RequestType;
+    nav2_util::ServiceClient<std_srvs::srv::Empty>::RequestType;
   using globalLocalizationServiceResponse =
-    ServiceClient<std_srvs::srv::Empty>::ResponseType;
+    nav2_util::ServiceClient<std_srvs::srv::Empty>::ResponseType;
 };
 
 }  // namespace nav2_tasks

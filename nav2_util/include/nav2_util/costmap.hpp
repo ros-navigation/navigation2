@@ -49,16 +49,16 @@ public:
   Costmap() = delete;
   ~Costmap();
 
-  void setStaticMap(const nav_msgs::msg::OccupancyGrid & occupancy_grid);
+  void set_static_map(const nav_msgs::msg::OccupancyGrid & occupancy_grid);
 
-  void setTestCostmap(const TestCostmap & testCostmapType);
+  void set_test_costmap(const TestCostmap & testCostmapType);
 
-  nav2_msgs::msg::Costmap getCostmap(const nav2_msgs::msg::CostmapMetaData & specifications);
+  nav2_msgs::msg::Costmap get_costmap(const nav2_msgs::msg::CostmapMetaData & specifications);
 
-  nav2_msgs::msg::CostmapMetaData getProperties() {return costmap_properties_;}
+  nav2_msgs::msg::CostmapMetaData get_properties() {return costmap_properties_;}
 
-  bool isFree(const unsigned int x_coordinate, const unsigned int y_coordinate) const;
-  bool isFree(const unsigned int index) const;
+  bool is_free(const unsigned int x_coordinate, const unsigned int y_coordinate) const;
+  bool is_free(const unsigned int index) const;
 
   // Mapping for often used cost values
   static const CostValue no_information;
@@ -68,9 +68,9 @@ public:
   static const CostValue free_space;
 
 private:
-  std::vector<uint8_t> getTestData(const TestCostmap configuration);
+  std::vector<uint8_t> get_test_data(const TestCostmap configuration);
 
-  uint8_t interpretValue(const int8_t value) const;
+  uint8_t interpret_value(const int8_t value) const;
 
   // Costmap isn't itself a node
   rclcpp::Node * node_;

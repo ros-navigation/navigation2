@@ -84,7 +84,7 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = nav2_util::durationFromSeconds(sim_time_);
+  traj.duration = nav2_util::duration_from_seconds(sim_time_);
   geometry_msgs::msg::Pose2D pose = start_pose;
 
   std::vector<double> steps = getTimeSteps(cmd_vel);

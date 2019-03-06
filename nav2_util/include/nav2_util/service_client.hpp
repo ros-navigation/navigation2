@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_TASKS__SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/node_utils.hpp"
 
-namespace nav2_tasks
+namespace nav2_util
 {
 
 template<class ServiceT>
 class ServiceClient
 {
 public:
-  explicit ServiceClient(const std::string & name)
+  explicit ServiceClient(
+    const std::string & name,
+    const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
   {
-    node_ = rclcpp::Node::make_shared(name + "_Node");
+    if (provided_node) {
+      node_ = provided_node;
+    } else {
+      node_ = generate_internal_node(name + "_Node");
+    }
     client_ = node_->create_client<ServiceT>(name);
   }
 
@@ -49,7 +56,7 @@ public:
     return result_future.get();
   }
 
-  void waitForService(const std::chrono::seconds timeout = std::chrono::seconds::max())
+  void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
@@ -65,4 +72,4 @@ protected:
 
 }  // namespace nav2_tasks
 
-#endif  // NAV2_TASKS__SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__SERVICE_CLIENT_HPP_

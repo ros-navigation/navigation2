@@ -27,7 +27,7 @@
 #include <vector>
 #include "nav2_amcl/amcl_node.hpp"
 #include "nav2_util/pf/pf.hpp"  // pf_vector_t
-#include "nav2_util/strutils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "nav2_tasks/map_service_client.hpp"
 
 // For transform support
@@ -309,7 +309,7 @@ AmclNode::requestMap()
   std::lock_guard<std::recursive_mutex> ml(configuration_mutex_);
 
   nav2_tasks::MapServiceClient map_client;
-  map_client.waitForService(std::chrono::seconds(2));
+  map_client.wait_for_service(std::chrono::seconds(2));
 
   auto request = std::make_shared<nav2_tasks::MapServiceClient::MapServiceRequest>();
 
@@ -463,7 +463,7 @@ AmclNode::getOdomPose(
 {
   // Get the robot's pose
   geometry_msgs::msg::PoseStamped ident;
-  ident.header.frame_id = strutils::stripLeadingSlash(f);
+  ident.header.frame_id = nav2_util::strip_leading_slash(f);
   ident.header.stamp = t;
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
 
@@ -569,7 +569,7 @@ AmclNode::setMapCallback(
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
-  std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
+  std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = now();
   if (map_ == NULL) {
     return;
@@ -694,7 +694,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     q.setRPY(0.0, 0.0, laser_scan->angle_min);
     geometry_msgs::msg::QuaternionStamped min_q, inc_q;
     min_q.header.stamp = laser_scan->header.stamp;
-    min_q.header.frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
+    min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
     tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
 
     q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
@@ -943,11 +943,11 @@ AmclNode::handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceS
     RCLCPP_WARN(
       get_logger(),
       "Received initial pose with empty frame_id. You should always supply a frame_id.");
-  } else if (strutils::stripLeadingSlash(msg.header.frame_id) != global_frame_id_) {
+  } else if (nav2_util::strip_leading_slash(msg.header.frame_id) != global_frame_id_) {
     RCLCPP_WARN(
       get_logger(), "Ignoring initial pose in frame \"%s\"; initial poses must be in the global"
       " frame, \"%s\"",
-      strutils::stripLeadingSlash(msg.header.frame_id).c_str(),
+      nav2_util::strip_leading_slash(msg.header.frame_id).c_str(),
       global_frame_id_.c_str());
     return;
   }
@@ -1107,9 +1107,9 @@ AmclNode::initAmclParams()
   get_parameter_or_set("recovery_alpha_slow", alpha_slow_, 0.0);
   get_parameter_or_set("recovery_alpha_fast", alpha_fast_, 0.0);
   get_parameter_or_set("tf_broadcast", tf_broadcast_, true);
-  odom_frame_id_ = strutils::stripLeadingSlash(odom_frame_id_);
-  base_frame_id_ = strutils::stripLeadingSlash(base_frame_id_);
-  global_frame_id_ = strutils::stripLeadingSlash(global_frame_id_);
+  odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
+  base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
+  global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
 }
 
 void

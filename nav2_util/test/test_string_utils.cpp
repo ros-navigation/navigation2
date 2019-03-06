@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__DURATION_CONVERSIONS_HPP_
-#define NAV2_UTIL__DURATION_CONVERSIONS_HPP_
+#include "nav2_util/string_utils.hpp"
+#include "gtest/gtest.h"
 
-#include "rclcpp/rclcpp.hpp"
+using nav2_util::split;
+using nav2_util::Tokens;
 
-namespace nav2_util
+TEST(Split, SplitFunction)
 {
-
-// TODO(crdelsey): This functionality should be part of the RCLCPP Duration
-// interface. Once that gets integrated, this function can be removed.
-inline rclcpp::Duration duration_from_seconds(double seconds)
-{
-  return rclcpp::Duration(static_cast<int64_t>(seconds * 1e9));    // convert to ns
+  ASSERT_EQ(split("", ':'), Tokens({""}));
+  ASSERT_EQ(split("foo", ':'), Tokens{"foo"});
+  ASSERT_EQ(split("foo:bar", ':'), Tokens({"foo", "bar"}));
+  ASSERT_EQ(split("foo:bar:", ':'), Tokens({"foo", "bar", ""}));
+  ASSERT_EQ(split(":", ':'), Tokens({"", ""}));
+  ASSERT_EQ(split("foo::bar", ':'), Tokens({"foo", "", "bar"}));
 }
-
-}  // namespace nav2_util
-
-#endif  // NAV2_UTIL__DURATION_CONVERSIONS_HPP_

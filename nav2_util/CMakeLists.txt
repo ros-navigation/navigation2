@@ -11,22 +11,29 @@ find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 
 nav2_package()
 
 include_directories(include)
 
-add_library(costmap_lib SHARED
+set(library_name ${PROJECT_NAME}_core)
+add_library(${library_name} SHARED
   src/costmap.cpp
+  src/node_utils.cpp
+  src/lifecycle_service_client.cpp
+  src/string_utils.cpp
+  src/lifecycle_utils.cpp
 )
 
-ament_target_dependencies(costmap_lib
+ament_target_dependencies(${library_name}
   rclcpp
   nav2_msgs
   tf2
   tf2_ros
   nav_msgs
   geometry_msgs
+  lifecycle_msgs
 )
 
 add_library(map_lib SHARED
@@ -76,15 +83,23 @@ target_link_libraries(map_loader
     ${SDL_IMAGE_LIBRARIES}
 )
 
+add_executable(lifecycle_bringup
+  src/lifecycle_bringup_commandline.cpp
+)
+target_link_libraries(lifecycle_bringup ${library_name})
+
 install(TARGETS
-  costmap_lib
+  ${library_name}
   map_lib
   pf_lib
   sensors_lib
   motions_lib
   map_loader
+  lifecycle_bringup
   ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib)
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY include/
   DESTINATION include/
@@ -102,6 +117,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(costmap_lib pf_lib sensors_lib motions_lib map_lib map_loader)
+ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib map_loader)
 
 ament_package()

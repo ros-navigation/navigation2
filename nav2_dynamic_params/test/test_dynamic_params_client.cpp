@@ -16,15 +16,23 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "gtest/gtest.h"
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_utils.hpp"
+
+using namespace std::chrono_literals;
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
+  RclCppFixture()
+  {
+    rclcpp::init(0, nullptr);
+    nav2_util::bringup_lifecycle_nodes("/test_node:/test_namespace/test_node", 5s);
+  }
   ~RclCppFixture() {rclcpp::shutdown();}
 };
 

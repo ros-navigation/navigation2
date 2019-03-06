@@ -94,7 +94,7 @@ void OscillationCritic::onInit()
   oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_angle", 0.2);
-  oscillation_reset_time_ = nav2_util::durationFromSeconds(
+  oscillation_reset_time_ = nav2_util::duration_from_seconds(
     nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0));
 
   /**
@@ -172,7 +172,7 @@ bool OscillationCritic::resetAvailable()
       return true;
     }
   }
-  if (oscillation_reset_time_ >= nav2_util::durationFromSeconds(0.0)) {
+  if (oscillation_reset_time_ >= nav2_util::duration_from_seconds(0.0)) {
     auto t_diff = (nh_->now() - prev_reset_time_);
     if (t_diff > oscillation_reset_time_) {
       return true;

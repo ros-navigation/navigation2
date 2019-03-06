@@ -19,6 +19,7 @@
   <build_depend>tf2_ros</build_depend>
   <build_depend>sdl</build_depend>
   <build_depend>sdl-image</build_depend>
+  <build_depend>lifecycle_msgs</build_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>rclcpp</exec_depend>
@@ -28,6 +29,7 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>sdl</exec_depend>
   <exec_depend>sdl-image</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -35,6 +37,8 @@
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>launch</test_depend>
   <test_depend>launch_testing</test_depend>
+  <test_depend>std_srvs</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

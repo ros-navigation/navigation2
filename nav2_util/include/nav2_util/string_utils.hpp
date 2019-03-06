@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__STRUTILS_HPP_
-#define NAV2_UTIL__STRUTILS_HPP_
+#ifndef NAV2_UTIL__STRING_UTILS_HPP_
+#define NAV2_UTIL__STRING_UTILS_HPP_
 
 #include <string>
+#include <vector>
 
-class strutils
+namespace nav2_util
 {
-public:
-  static std::string stripLeadingSlash(const std::string & in);
-};
 
-std::string strutils::stripLeadingSlash(const std::string & in)
-{
-  std::string out = in;
+typedef std::vector<std::string> Tokens;
 
-  if ((!in.empty()) && (in[0] == '/')) {
-    out.erase(0, 1);
-  }
+std::string strip_leading_slash(const std::string & in);
 
-  return out;
-}
+/// Split a string at the delimiters
+Tokens split(const std::string & tokenstring, char delimiter);
 
-#endif  // NAV2_UTIL__STRUTILS_HPP_
+}  // namespace nav2_util
+
+#endif  // NAV2_UTIL__STRING_UTILS_HPP_

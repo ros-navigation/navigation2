@@ -36,7 +36,7 @@ private:
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
-  nav2_tasks::globalLocalizationServiceClient global_localization_;
+  nav2_tasks::GlobalLocalizationServiceClient global_localization_;
 };
 
 }  // namespace nav2_bt_navigator
