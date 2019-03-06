@@ -54,14 +54,14 @@ TEST_F(PlannerTester, testSimpleCostmaps)
 
 TEST_F(PlannerTester, testWithOneFixedEndpoint)
 {
-  loadMap();
+  loadDefaultMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   EXPECT_EQ(true, defaultPlannerTest(result));
 }
 
 TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
-  loadMap();
+  loadDefaultMap();
   auto result = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
   EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 }

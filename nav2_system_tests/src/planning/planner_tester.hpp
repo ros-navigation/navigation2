@@ -38,8 +38,7 @@ public:
   PlannerTester();
   ~PlannerTester();
 
-  // Loads a default map and its corresponding metadata,
-  // and generate a costmap representation
+  // Loads the provided map and and generates a costmap from it.
   void loadDefaultMap();
 
   // Alternatively, use a preloaded 10x10 costmap
