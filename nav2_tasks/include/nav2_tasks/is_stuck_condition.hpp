@@ -18,7 +18,6 @@
 #include <string>
 #include <chrono>
 #include <cmath>
-#include <thread>
 #include <atomic>
 #include <memory>
 #include <deque>
@@ -32,40 +31,40 @@ using namespace std::chrono_literals; // NOLINT
 namespace nav2_tasks
 {
 
-class IsStuckCondition : public BT::ConditionNode, public rclcpp::Node
+class IsStuckCondition : public BT::ConditionNode
 {
 public:
   explicit IsStuckCondition(const std::string & condition_name)
   : BT::ConditionNode(condition_name),
-    Node("IsStuckCondition"),
-    workerThread_(nullptr),
     is_stuck_(false),
-    spinning_ok_(false),
     odom_history_size_(10),
     current_accel_(0.0),
     brake_accel_limit_(-10.0)
   {
-    RCLCPP_DEBUG(get_logger(), "Creating an IsStuckCondition BT node");
-
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odom",
-        std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
-
-    RCLCPP_INFO_ONCE(get_logger(), "Waiting on odometry");
-
-    startWorkerThread();
   }
 
   IsStuckCondition() = delete;
 
   ~IsStuckCondition()
   {
-    RCLCPP_DEBUG(this->get_logger(), "Shutting down IsStuckCondition BT node");
-    stopWorkerThread();
+    RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
+  }
+
+  void onInit() override
+  {
+    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+
+    odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
+        std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
+
+    RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
+
+    RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
   }
 
   void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
   {
-    RCLCPP_INFO_ONCE(get_logger(), "Got odometry");
+    RCLCPP_INFO_ONCE(node_->get_logger(), "Got odometry");
 
     while (odom_history_.size() >= odom_history_size_) {
       odom_history_.pop_front();
@@ -75,7 +74,6 @@ public:
 
     // TODO(orduno) #383 Move the state calculation and is stuck to robot class
     updateStates();
-    is_stuck_ = isStuck();
   }
 
   BT::NodeStatus tick() override
@@ -101,31 +99,30 @@ public:
       return;
     }
 
-    RCLCPP_INFO(get_logger(), msg);
+    RCLCPP_INFO(node_->get_logger(), msg);
     prev_msg = msg;
   }
 
-  void startWorkerThread()
+  void updateStates()
   {
-    spinning_ok_ = true;
-    workerThread_ = new std::thread(&IsStuckCondition::workerThread, this);
-  }
+    // Approximate acceleration
+    // TODO(orduno) #400 Smooth out velocity history for better accel approx.
+    if (odom_history_.size() > 2) {
+      auto curr_odom = odom_history_.end()[-1];
+      double curr_time = static_cast<double>(curr_odom.header.stamp.sec);
+      curr_time += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
 
-  void stopWorkerThread()
-  {
-    spinning_ok_ = false;
-    workerThread_->join();
-    delete workerThread_;
-    workerThread_ = nullptr;
-  }
+      auto prev_odom = odom_history_.end()[-2];
+      double prev_time = static_cast<double>(prev_odom.header.stamp.sec);
+      prev_time += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
 
-  void workerThread()
-  {
-    while (spinning_ok_) {
-      // Spin the node to get messages from the subscriptions
-      rclcpp::spin_some(this->get_node_base_interface());
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      double dt = curr_time - prev_time;
+      double vel_diff = static_cast<double>(
+        curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
+      current_accel_ = vel_diff / dt;
     }
+
+    is_stuck_ = isStuck();
   }
 
   bool isStuck()
@@ -138,7 +135,7 @@ public:
 
     // Detect if robot bumped into something by checking for abnormal deceleration
     if (current_accel_ < brake_accel_limit_) {
-      RCLCPP_DEBUG(get_logger(), "Current deceleration is beyond brake limit."
+      RCLCPP_DEBUG(node_->get_logger(), "Current deceleration is beyond brake limit."
         " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
 
       return true;
@@ -147,35 +144,15 @@ public:
     return false;
   }
 
-  void updateStates()
-  {
-    // Approximate acceleration
-    // TODO(orduno) #400 Smooth out velocity history for better accel approx.
-    if (odom_history_.size() > 2) {
-      auto curr_odom = odom_history_.end()[-1];
-      double t2 = static_cast<double>(curr_odom.header.stamp.sec);
-      t2 += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
-
-      auto prev_odom = odom_history_.end()[-2];
-      double t1 = static_cast<double>(prev_odom.header.stamp.sec);
-      t1 += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
-
-      double dt = t2 - t1;
-      double vel_diff = static_cast<double>(
-        curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
-      current_accel_ = vel_diff / dt;
-    }
-  }
-
   void halt() override
   {
   }
 
 private:
-  // We handle the detection of the stuck condition on a separate thread
-  std::thread * workerThread_;
+  // The node that will be used for any ROS operations
+  rclcpp::Node::SharedPtr node_;
+
   std::atomic<bool> is_stuck_;
-  std::atomic<bool> spinning_ok_;
 
   // Listen to odometry
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
