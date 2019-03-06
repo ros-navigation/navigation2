@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
   "srv/ClearCostmapExceptRegion.srv"
+  "srv/ClearEntireCostmap.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 

@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
+#include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_costmap_2d
@@ -38,6 +39,9 @@ public:
   // Clears the region outside of a user-specified area reverting to the static map
   void clearExceptRegion(double reset_distance = 3.0);
 
+  // Clears all layers
+  void clearEntirely();
+
 private:
   // The ROS node to use for getting parameters, creating the service and logging
   rclcpp::Node::SharedPtr node_;
@@ -51,11 +55,17 @@ private:
   std::vector<std::string> clearable_layers_;
 
   // Server for clearing the costmap
-  rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr server_;
+  rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr clear_except_service_;
   void clearExceptRegionCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
+
+  rclcpp::Service<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clear_entire_service_;
+  void clearEntireCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response);
 
   void clearLayerExceptRegion(
     std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
