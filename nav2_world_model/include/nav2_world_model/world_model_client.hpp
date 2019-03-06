@@ -15,19 +15,20 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 #define NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 
-#include <memory>
-
-#include "nav2_tasks/service_client.hpp"
-#include "nav2_world_model/costmap_service_client.hpp"
-#include "nav2_world_model/free_space_service_client.hpp"
+#include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_tasks/free_space_service_client.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 
 namespace nav2_world_model
 {
 
 using nav2_msgs::msg::Costmap;
-using nav2_msgs::msg::CostmapMetaData;
-using geometry_msgs::msg::Point;
+using nav2_tasks::CostmapServiceClient;
+using CostmapServiceRequest = CostmapServiceClient::CostmapServiceRequest;
+using CostmapServiceResponse = CostmapServiceClient::CostmapServiceResponse;
+using nav2_tasks::FreeSpaceServiceClient;
+using FreeSpaceServiceRequest = FreeSpaceServiceClient::FreeSpaceServiceRequest;
+using FreeSpaceServiceResponse = FreeSpaceServiceClient::FreeSpaceServiceResponse;
 
 class WorldModelClient
 {
@@ -39,13 +40,13 @@ public:
   Costmap getCostmap(const CostmapServiceRequest & specs)
   {
     auto request = std::make_shared<CostmapServiceRequest>(specs);
-    return costmap_client_.getCostmap(request)->map;
+    return costmap_client_.invoke(request)->map;
   }
 
   bool confirmFreeSpace(const FreeSpaceServiceRequest & specs)
   {
     auto request = std::make_shared<FreeSpaceServiceRequest>(specs);
-    return free_space_client_.isFree(request)->result;
+    return free_space_client_.invoke(request)->result;
   }
 
 private:
