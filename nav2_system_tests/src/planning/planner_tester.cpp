@@ -79,10 +79,9 @@ void PlannerTester::spinThread()
   }
 }
 
-void PlannerTester::loadMap(const std::string image_file_path, const std::string yaml_file_name)
+void PlannerTester::loadDefaultMap()
 {
   // Specs for the default map
-  // double resolution = 0.05;
   double resolution = 1.0;
   bool negate = false;
   double occupancy_threshold = 0.65;
@@ -100,27 +99,15 @@ void PlannerTester::loadMap(const std::string image_file_path, const std::string
   MapMode mode = TRINARY;
 
   std::string file_path = "";
-
-  if (!image_file_path.empty()) {
-    file_path = image_file_path;
+  char const * path = getenv("TEST_MAP");
+  if (path == NULL) {
+    throw std::runtime_error("Path to map image file"
+            " has not been specified in environment variable `TEST_MAP`.");
   } else {
-    // User can set an environment variable to the location of the test src
-    char const * path = getenv("TEST_MAP");
-    if (path == NULL) {
-      throw std::runtime_error("Path to map image file"
-              " has not been specified in environment variable `TEST_MAP`.");
-    } else {
-      file_path = std::string(path);
-    }
+    file_path = std::string(path);
   }
 
   RCLCPP_INFO(this->get_logger(), "Loading map with file_path: %s", file_path.c_str());
-
-  if (!yaml_file_name.empty()) {
-    // TODO(orduno): #443 parse yaml file
-    RCLCPP_WARN(this->get_logger(),
-      "Yaml file parser not implemented yet, will use default values instead");
-  }
 
   try {
     map_ =
