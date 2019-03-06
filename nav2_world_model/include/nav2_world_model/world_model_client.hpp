@@ -15,6 +15,7 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 #define NAV2_WORLD_MODEL__WORLD_MODEL_CLIENT_HPP_
 
+#include <memory>
 #include "nav2_tasks/costmap_service_client.hpp"
 #include "nav2_tasks/free_space_service_client.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
