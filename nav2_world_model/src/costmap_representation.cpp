@@ -124,10 +124,10 @@ bool CostmapRepresentation::generateRectangleVertices(
   const ProcessRegion::Request & request, std::vector<MapLocation> & map_locations) const
 {
   // Define the vertices in world frame
-  double left = std::max(request.region.corner.y, request.region.opposite_corner.y);
-  double right = std::min(request.region.corner.y, request.region.opposite_corner.y);
-  double up = std::max(request.region.corner.x, request.region.opposite_corner.x);
-  double down = std::min(request.region.corner.x, request.region.opposite_corner.x);
+  double left = std::min(request.region.corner.x, request.region.opposite_corner.x);
+  double right = std::max(request.region.corner.x, request.region.opposite_corner.x);
+  double up = std::max(request.region.corner.y, request.region.opposite_corner.y);
+  double down = std::min(request.region.corner.y, request.region.opposite_corner.y);
 
   std::vector<Point2D> vertices = {
     Point2D{left, down}, Point2D{left, up}, Point2D{right, up}, Point2D{right, down}};

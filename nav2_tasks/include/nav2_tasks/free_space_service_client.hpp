@@ -15,13 +15,13 @@
 #ifndef NAV2_TASKS__FREE_SPACE_SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__FREE_SPACE_SERVICE_CLIENT_HPP_
 
-#include "nav2_tasks/service_client.hpp"
+#include "nav2_util/service_client.hpp"
 #include "nav2_msgs/srv/process_region.hpp"
 
 namespace nav2_tasks
 {
 
-class FreeSpaceServiceClient : public ServiceClient<nav2_msgs::srv::ProcessRegion>
+class FreeSpaceServiceClient : public nav2_util::ServiceClient<nav2_msgs::srv::ProcessRegion>
 {
 public:
   FreeSpaceServiceClient()

@@ -15,13 +15,13 @@
 #ifndef NAV2_TASKS__COSTMAP_SERVICE_CLIENT_HPP_
 #define NAV2_TASKS__COSTMAP_SERVICE_CLIENT_HPP_
 
-#include "nav2_tasks/service_client.hpp"
+#include "nav2_util/service_client.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 
 namespace nav2_tasks
 {
 
-class CostmapServiceClient : public ServiceClient<nav2_msgs::srv::GetCostmap>
+class CostmapServiceClient : public nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
   CostmapServiceClient()
