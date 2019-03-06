@@ -67,7 +67,7 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  # add_subdirectory(test)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
