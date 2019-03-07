@@ -27,6 +27,8 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 using nav2_tasks::TaskStatus;
+using nav2_tasks::SpinCommand;
+using nav2_tasks::SpinResult;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives
@@ -36,9 +38,10 @@ Spin::Spin(rclcpp::Node::SharedPtr & node)
 : MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
 {
   // TODO(orduno) #378 Pull values from the robot
-  max_rotational_vel_ = 1.0;
-  min_rotational_vel_ = 0.4;
+  max_rotational_vel_ = 0.5;
+  min_rotational_vel_ = 0.1;
   rotational_acc_lim_ = 3.2;
+  spin_command_ = 0.0;
   goal_tolerance_angle_ = 0.10;
   start_yaw_ = 0.0;
 }
@@ -47,29 +50,31 @@ Spin::~Spin()
 {
 }
 
-nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
+TaskStatus Spin::onRun(const SpinCommand::SharedPtr command)
 {
-  double yaw, pitch, roll;
-  tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
+  // Get the amount to spin
+  double pitch, roll;
+  tf2::getEulerYPR(command->quaternion, spin_command_, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
       "will only spin in Z.");
   }
 
-  RCLCPP_INFO(node_->get_logger(), "Currently only supported spinning by a fixed amount");
+  // Get the current starting yaw
+  if (!getYaw(start_yaw_)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot yaw is not available.");
+    return TaskStatus::FAILED;
+  }
 
-  start_time_ = std::chrono::system_clock::now();
+  time_since_msg = std::chrono::system_clock::now();
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return TaskStatus::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
+TaskStatus Spin::onCycleUpdate(SpinResult & result)
 {
-  // Currently only an open-loop controller is implemented
-  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
-  //              controlledSpin() has not been fully tested
-  TaskStatus status = timedSpin();
+  TaskStatus status = controlledSpin();
 
   // For now sending an empty task result
   nav2_tasks::SpinResult empty_result;
@@ -78,48 +83,18 @@ nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
   return status;
 }
 
-nav2_tasks::TaskStatus Spin::timedSpin()
+TaskStatus Spin::controlledSpin()
 {
-  // Output control command
-  geometry_msgs::msg::Twist cmd_vel;
-
-  // TODO(orduno) #423 fixed speed
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.5;
-  robot_->sendVelocity(cmd_vel);
-
-  // TODO(orduno) #423 fixed time
-  auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 4s) {
-    // Stop the robot
-    cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);
-
-    return TaskStatus::SUCCEEDED;
-  }
-
-  return TaskStatus::RUNNING;
-}
-
-nav2_tasks::TaskStatus Spin::controlledSpin()
-{
-  // TODO(orduno) #423 Test and tune controller
-  //              check it doesn't abruptly start and stop
-  //              or cause massive wheel slippage when accelerating
-
   // Get current robot orientation
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-  if (!robot_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+  double current_yaw;
+
+  if (!getYaw(current_yaw)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot yaw is not available.");
     return TaskStatus::FAILED;
   }
 
-  double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
-
   double current_angle = current_yaw - start_yaw_;
-
-  double dist_left = M_PI - current_angle;
+  double dist_left = spin_command_ - current_angle;
 
   // TODO(orduno) #379 forward simulation to check if future position is feasible
 
@@ -138,12 +113,31 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 
   robot_->sendVelocity(cmd_vel);
 
+  // Log a message every second
+  auto current_time = std::chrono::system_clock::now();
+  if (current_time - time_since_msg >= 1s) {
+    RCLCPP_INFO(node_->get_logger(),
+      "Spin::ControlledSpin, got more %.2f degrees to move", dist_left * 180.0 / M_PI);
+    time_since_msg = std::chrono::system_clock::now();
+  }
+
   // check if we are done
   if (dist_left >= (0.0 - goal_tolerance_angle_)) {
     return TaskStatus::SUCCEEDED;
   }
 
   return TaskStatus::RUNNING;
+}
+
+bool Spin::getYaw(double & yaw) const
+{
+  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  if (!robot_->getCurrentPose(current_pose)) {
+    return false;
+  }
+
+  yaw = tf2::getYaw(current_pose->pose.pose.orientation);
+  return true;
 }
 
 }  // namespace nav2_motion_primitives
