@@ -5,7 +5,6 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(Bullet REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -16,7 +15,6 @@ nav2_package()
 
 include_directories(
   include
-  ${BULLET_INCLUDE_DIRS}
   ${SDL_INCLUDE_DIR}
   ${SDL_IMAGE_INCLUDE_DIRS}
 )
@@ -76,7 +74,6 @@ target_link_libraries(${map_saver_executable}
 )
 
 target_link_libraries(${library_name}
-  ${BULLET_LIBRARIES}
   ${SDL_LIBRARY}
   ${SDL_IMAGE_LIBRARIES}
 )
