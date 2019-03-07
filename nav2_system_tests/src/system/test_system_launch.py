@@ -118,7 +118,6 @@ def main(argv=sys.argv[1:]):
         name='test_system_node',
         output='screen')
 
-    ld.add_action(test1_action)
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)

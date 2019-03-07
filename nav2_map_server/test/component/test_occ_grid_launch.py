@@ -35,7 +35,6 @@ def main(argv=sys.argv[1:]):
         cmd=[testExecutable],
         name='test_occ_grid_node',
     )
-    ld.add_action(test1_action)
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
