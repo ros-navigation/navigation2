@@ -39,7 +39,7 @@
 #include <memory>
 #include <stdexcept>
 
-#include "LinearMath/btQuaternion.h"
+#include "tf2/LinearMath/Quaternion.h"
 #include "SDL/SDL_image.h"
 
 using namespace std::chrono_literals;
@@ -136,9 +136,8 @@ void OccGridLoader::loadMapFromFile(const std::string & map_name)
   msg_.info.origin.position.x = origin_[0];
   msg_.info.origin.position.y = origin_[1];
   msg_.info.origin.position.z = 0.0;
-  btQuaternion q;
-  // setEulerZYX(yaw, pitch, roll)
-  q.setEulerZYX(origin_[2], 0, 0);
+  tf2::Quaternion q;
+  q.setRPY(0, 0, origin_[2]);
   msg_.info.origin.orientation.x = q.x();
   msg_.info.origin.orientation.y = q.y();
   msg_.info.origin.orientation.z = q.z();
