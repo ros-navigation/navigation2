@@ -29,16 +29,16 @@ namespace nav2_tasks
 {
 
 template<class CommandMsg, class ResultMsg>
-class BtActionNode : public BT::ActionNode
+class BtActionNode : public BT::CoroActionNode
 {
 public:
   explicit BtActionNode(const std::string & action_name)
-  : BT::ActionNode(action_name), task_client_(nullptr)
+  : BT::CoroActionNode(action_name), task_client_(nullptr)
   {
   }
 
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
-  : BT::ActionNode(action_name, params), task_client_(nullptr)
+  : BT::CoroActionNode(action_name, params), task_client_(nullptr)
   {
   }
 
@@ -64,7 +64,7 @@ public:
     task_client_->sendCommand(command_);
 
     // Loop until the task has completed
-    while (!isHalted()) {
+    for (;; ) {
       nav2_tasks::TaskStatus status = task_client_->waitForResult(result_, node_loop_timeout_);
 
       switch (status) {
@@ -76,9 +76,10 @@ public:
 
         case nav2_tasks::TaskStatus::CANCELED:
           cv_cancel_.notify_one();
-          return BT::NodeStatus::IDLE;
+          return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::RUNNING:
+          setStatusRunningAndYield();
           break;
 
         default:
@@ -86,7 +87,8 @@ public:
       }
     }
 
-    return BT::NodeStatus::IDLE;
+    // Should never get here. Return statement added to avoid compiler warning.
+    return BT::NodeStatus::SUCCESS;
   }
 
   void halt() override
@@ -97,6 +99,8 @@ public:
     // Then wait for the response before continuing
     std::unique_lock<std::mutex> lock(cancel_mutex_);
     cv_cancel_.wait(lock);
+
+    CoroActionNode::halt();
   }
 
 protected:
