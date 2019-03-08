@@ -14,3 +14,8 @@ ament_add_test(test_updown
   ENV
     TEST_LAUNCH_DIR=${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+install(TARGETS test_updown
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+

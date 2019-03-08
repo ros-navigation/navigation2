@@ -117,11 +117,9 @@ def generate_launch_description():
 
     startup_cmd = launch.actions.ExecuteProcess(
         cmd=[
-            #os.path.join(
-            #    get_package_prefix('nav2_system_tests'),
-            #    'src/updown/updown'),
-            #['__params:=', params_file]],
-			'/home/mdjeroni/src/navigation2/build/nav2_system_tests/src/updown/test_updown'],
+            os.path.join(
+                get_package_prefix('nav2_system_tests'),
+                'lib/nav2_system_tests/test_updown')],
         cwd=[launch_dir], output='screen')
 
     startup_exit_event_handler = launch.actions.RegisterEventHandler(
