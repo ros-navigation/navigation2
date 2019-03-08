@@ -205,9 +205,6 @@ protected:
     } while (rclcpp::ok() && !stop_thread_);
   }
 
-  // TODO(mjeronimo): Make explicit start and stop calls to control
-  // the worker thread
-
   void stopWorkerThread()
   {
     stop_thread_ = true;
