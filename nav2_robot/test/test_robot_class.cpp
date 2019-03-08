@@ -43,31 +43,31 @@ public:
   }
 
   nav2_lifecycle::CallbackReturn
-  onConfigure(const rclcpp_lifecycle::State & state) override
+  on_configure(const rclcpp_lifecycle::State & state) override
   {
     robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
-    robot_->onConfigure(state);
+    robot_->on_configure(state);
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
 
   nav2_lifecycle::CallbackReturn
-  onActivate(const rclcpp_lifecycle::State & state) override
+  on_activate(const rclcpp_lifecycle::State & state) override
   {
-    robot_->onActivate(state);
+    robot_->on_activate(state);
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
 
   nav2_lifecycle::CallbackReturn
-  onDeactivate(const rclcpp_lifecycle::State & state) override
+  on_deactivate(const rclcpp_lifecycle::State & state) override
   {
-    robot_->onDeactivate(state);
+    robot_->on_deactivate(state);
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
 
   nav2_lifecycle::CallbackReturn
-  onCleanup(const rclcpp_lifecycle::State & state) override
+  on_cleanup(const rclcpp_lifecycle::State & state) override
   {
-    robot_->onCleanup(state);
+    robot_->on_cleanup(state);
     robot_.reset();
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }

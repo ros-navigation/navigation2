@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,14 +55,12 @@ LifecycleServiceClient::changeState(std::uint8_t transition, std::chrono::second
   RCLCPP_DEBUG(node_->get_logger(), "change_state: async_send_request");
   auto future_result = client_->async_send_request(request);
 
-#if 0
   rclcpp::executor::FutureReturnCode status = rclcpp::executor::FutureReturnCode::TIMEOUT;
   do {
-    status = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(500));
+    status = rclcpp::spin_until_future_complete(node_, future_result,
+        std::chrono::milliseconds(500));
   } while (rclcpp::ok() && status != rclcpp::executor::FutureReturnCode::SUCCESS);
-#else
-  rclcpp::spin_until_future_complete(node_, future_result);
-#endif
+
   return true;
 }
 

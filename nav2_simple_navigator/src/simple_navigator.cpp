@@ -36,9 +36,9 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::onConfigure(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
   auto node = shared_from_this();
 
@@ -46,9 +46,9 @@ SimpleNavigator::onConfigure(const rclcpp_lifecycle::State & state)
   controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(node);
 
-  task_server_->onConfigure(state);
-  planner_client_->onConfigure(state);
-  controller_client_->onConfigure(state);
+  task_server_->on_configure(state);
+  planner_client_->on_configure(state);
+  controller_client_->on_configure(state);
 
   task_server_->setExecuteCallback(
     std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
@@ -57,37 +57,37 @@ SimpleNavigator::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::onActivate(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
-  task_server_->onActivate(state);
-  planner_client_->onActivate(state);
-  controller_client_->onActivate(state);
+  task_server_->on_activate(state);
+  planner_client_->on_activate(state);
+  controller_client_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::onDeactivate(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
-  task_server_->onDeactivate(state);
-  planner_client_->onDeactivate(state);
-  controller_client_->onDeactivate(state);
+  task_server_->on_deactivate(state);
+  planner_client_->on_deactivate(state);
+  controller_client_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::onCleanup(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
-  task_server_->onCleanup(state);
-  planner_client_->onCleanup(state);
-  controller_client_->onCleanup(state);
+  task_server_->on_cleanup(state);
+  planner_client_->on_cleanup(state);
+  controller_client_->on_cleanup(state);
 
   task_server_.reset();
   planner_client_.reset();

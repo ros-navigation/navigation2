@@ -33,9 +33,9 @@ Robot::~Robot()
 }
 
 nav2_lifecycle::CallbackReturn
-Robot::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+Robot::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: onConfigure");
+  RCLCPP_INFO(node_->get_logger(), "Robot: on_configure");
 
   // This class may be used from a module that comes up after AMCL has output
   // its initial pose, so that pose message uses durability TRANSIENT_LOCAL
@@ -55,9 +55,9 @@ Robot::onConfigure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Robot::onActivate(const rclcpp_lifecycle::State & /*state*/)
+Robot::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: onActivate");
+  RCLCPP_INFO(node_->get_logger(), "Robot: on_activate");
 
   vel_pub_->on_activate();
 
@@ -65,9 +65,9 @@ Robot::onActivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Robot::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+Robot::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: onDeactivate");
+  RCLCPP_INFO(node_->get_logger(), "Robot: on_deactivate");
 
   vel_pub_->on_deactivate();
 
@@ -75,9 +75,9 @@ Robot::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Robot::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+Robot::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: onCleanup");
+  RCLCPP_INFO(node_->get_logger(), "Robot: on_cleanup");
 
   pose_sub_.reset();
   odom_sub_.reset();

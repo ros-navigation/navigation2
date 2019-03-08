@@ -27,17 +27,17 @@
 namespace nav2_map_server
 {
 
-class OccGridLoader : public nav2_lifecycle::ILifecycle
+class OccGridLoader : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);
   OccGridLoader() = delete;
   ~OccGridLoader();
 
-  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
   // The ROS node to use for ROS-related operations such as creating a service

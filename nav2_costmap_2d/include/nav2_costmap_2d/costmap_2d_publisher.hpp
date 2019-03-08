@@ -72,16 +72,16 @@ public:
    */
   ~Costmap2DPublisher();
 
-  void onConfigure() {}
-  void onActivate() {
+  void on_configure() {}
+  void on_activate() {
     costmap_pub_->on_activate();;
     costmap_update_pub_->on_activate();;
   }
-  void onDectivate() {
+  void on_deactivate() {
     costmap_pub_->on_deactivate();;
     costmap_update_pub_->on_deactivate();;
   }
-  void onCleanup() {}
+  void on_cleanup() {}
 
   /** @brief Include the given bounds in the changed-rectangle. */
   void updateBounds(unsigned int x0, unsigned int xn, unsigned int y0, unsigned int yn)

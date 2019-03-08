@@ -63,9 +63,9 @@ AmclNode::~AmclNode()
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
   initParameters();
   initMap();
@@ -77,7 +77,7 @@ AmclNode::onConfigure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
-  RCLCPP_INFO(get_logger(), "return from onConfigure");
+  RCLCPP_INFO(get_logger(), "return from on_configure");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -110,9 +110,9 @@ AmclNode::waitForTransforms()
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::onActivate(const rclcpp_lifecycle::State & /*state*/)
+AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
@@ -133,14 +133,14 @@ AmclNode::onActivate(const rclcpp_lifecycle::State & /*state*/)
     std::this_thread::sleep_for(100ms);
   }
 
-  RCLCPP_INFO(get_logger(), "return from onActivate");
+  RCLCPP_INFO(get_logger(), "return from on_activate");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
   active = false;
 
@@ -152,9 +152,9 @@ AmclNode::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages

@@ -39,9 +39,9 @@ MapServer::~MapServer()
 }
 
 nav2_lifecycle::CallbackReturn
-MapServer::onConfigure(const rclcpp_lifecycle::State & state)
+MapServer::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
   // Get the name of the YAML file to use
   std::string yaml_filename;
@@ -74,7 +74,7 @@ MapServer::onConfigure(const rclcpp_lifecycle::State & state)
   }
 
   nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->onConfigure(state)) != CallbackReturn::SUCCESS) {
+  if ((rc = map_loader_->on_configure(state)) != CallbackReturn::SUCCESS) {
     return rc;
   }
 
@@ -82,12 +82,12 @@ MapServer::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-MapServer::onActivate(const rclcpp_lifecycle::State & state)
+MapServer::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
   nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->onActivate(state)) != CallbackReturn::SUCCESS) {
+  if ((rc = map_loader_->on_activate(state)) != CallbackReturn::SUCCESS) {
     return rc;
   }
 
@@ -95,12 +95,12 @@ MapServer::onActivate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-MapServer::onDeactivate(const rclcpp_lifecycle::State & state)
+MapServer::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
   nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->onDeactivate(state)) != CallbackReturn::SUCCESS) {
+  if ((rc = map_loader_->on_deactivate(state)) != CallbackReturn::SUCCESS) {
     return rc;
   }
 
@@ -108,12 +108,12 @@ MapServer::onDeactivate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-MapServer::onCleanup(const rclcpp_lifecycle::State & state)
+MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
   nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->onCleanup(state)) != CallbackReturn::SUCCESS) {
+  if ((rc = map_loader_->on_cleanup(state)) != CallbackReturn::SUCCESS) {
     return rc;
   }
 

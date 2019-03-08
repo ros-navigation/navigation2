@@ -25,7 +25,6 @@
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_tasks/task_status.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_lifecycle/lifecycle.hpp"
 
 namespace nav2_tasks
 {
@@ -36,7 +35,7 @@ template<typename CommandMsg, typename ResultMsg>
 const char * getTaskName();
 
 template<typename CommandMsg, typename ResultMsg>
-class TaskClient: public nav2_lifecycle::ILifecycle
+class TaskClient: public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   explicit TaskClient(nav2_lifecycle::LifecycleNode::SharedPtr node)
@@ -54,7 +53,7 @@ public:
   {
   }
 
-  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
   {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
 
@@ -72,7 +71,7 @@ public:
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
     commandPub_->on_activate();
     updatePub_ ->on_activate();
@@ -81,7 +80,7 @@ public:
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
     commandPub_->on_deactivate();
     updatePub_ ->on_deactivate();
@@ -90,7 +89,7 @@ public:
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
   {
     commandPub_.reset();
     updatePub_ .reset();

@@ -42,7 +42,7 @@
 #include "dwb_core/common_types.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
-#include "nav2_lifecycle/lifecycle.hpp"
+#include "nav2_lifecycle/lifecycle_helper_interface.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -64,15 +64,15 @@ namespace dwb_core
  *   5) Markers representing the different trajectories evaluated
  *   6) The CostGrid (in the form of a complex PointCloud2)
  */
-class DWBPublisher : public nav2_lifecycle::ILifecycle
+class DWBPublisher : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node);
 
-  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved

@@ -65,9 +65,9 @@ Costmap2DROS::~Costmap2DROS()
 }
 
 nav2_lifecycle::CallbackReturn
-Costmap2DROS::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
   getParameters();
 
   // Create the costmap itself
@@ -120,11 +120,11 @@ Costmap2DROS::onConfigure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
+Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
-  costmap_publisher_->onActivate();
+  costmap_publisher_->on_activate();
   footprint_pub_->on_activate();
 
   // First, make sure that the transform between the robot base frame
@@ -133,7 +133,7 @@ Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
   rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
-  RCLCPP_INFO(get_logger(), "onActivate: checking transform");
+  RCLCPP_INFO(get_logger(), "on_activate: checking transform");
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
@@ -166,11 +166,11 @@ Costmap2DROS::onActivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Costmap2DROS::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
-  costmap_publisher_->onDectivate();
+  costmap_publisher_->on_deactivate();
   footprint_pub_->on_deactivate();
 
   stop();
@@ -186,9 +186,9 @@ Costmap2DROS::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-Costmap2DROS::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
   tf_buffer_.reset();
   tf_listener_.reset();

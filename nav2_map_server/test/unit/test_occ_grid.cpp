@@ -81,19 +81,19 @@ public:
   FakeMapServer()
   : nav2_lifecycle::LifecycleNode("FakeMapServer") {}
 
-  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
   {
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State &) override
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
   {
     return nav2_lifecycle::CallbackReturn::SUCCESS;
   }

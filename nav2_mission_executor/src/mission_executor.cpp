@@ -34,12 +34,12 @@ MissionExecutor::~MissionExecutor()
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::onConfigure(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
   task_server_ = std::make_unique<nav2_tasks::ExecuteMissionTaskServer>(shared_from_this());
-  task_server_->onConfigure(state);
+  task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&MissionExecutor::executeMission, this, std::placeholders::_1));
 
@@ -47,31 +47,31 @@ MissionExecutor::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::onActivate(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "onActivate");
 
-  task_server_->onActivate(state);
+  task_server_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::onDeactivate(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "onDeactivate");
 
-  task_server_->onDeactivate(state);
+  task_server_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::onCleanup(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "onCleanup");
 
-  task_server_->onCleanup(state);
+  task_server_->on_cleanup(state);
   task_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

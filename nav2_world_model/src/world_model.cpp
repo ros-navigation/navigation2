@@ -38,11 +38,11 @@ WorldModel::~WorldModel()
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::onConfigure(const rclcpp_lifecycle::State & state)
+WorldModel::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
-  costmap_ros_->onConfigure(state);
+  costmap_ros_->on_configure(state);
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
@@ -53,31 +53,31 @@ WorldModel::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::onActivate(const rclcpp_lifecycle::State & state)
+WorldModel::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
-  costmap_ros_->onActivate(state);
+  costmap_ros_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::onDeactivate(const rclcpp_lifecycle::State & state)
+WorldModel::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
-  costmap_ros_->onDeactivate(state);
+  costmap_ros_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::onCleanup(const rclcpp_lifecycle::State & state)
+WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
-  costmap_ros_->onCleanup(state);
+  costmap_ros_->on_cleanup(state);
   costmap_service_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

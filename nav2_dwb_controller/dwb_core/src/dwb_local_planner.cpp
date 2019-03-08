@@ -63,7 +63,7 @@ DWBLocalPlanner::DWBLocalPlanner(nav2_lifecycle::LifecycleNode::SharedPtr node, 
 }
 
 nav2_lifecycle::CallbackReturn
-DWBLocalPlanner::onConfigure(const rclcpp_lifecycle::State & state)
+DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
   std::string traj_generator_name;
   std::string goal_checker_name;
@@ -75,7 +75,7 @@ DWBLocalPlanner::onConfigure(const rclcpp_lifecycle::State & state)
   node_->get_parameter_or("goal_checker_name", goal_checker_name, std::string("dwb_plugins::SimpleGoalChecker"));
 
   pub_ = std::make_unique<DWBPublisher>(node_);
-  pub_->onConfigure(state);
+  pub_->on_configure(state);
 
   traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
   goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
@@ -89,25 +89,25 @@ DWBLocalPlanner::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-DWBLocalPlanner::onActivate(const rclcpp_lifecycle::State & state)
+DWBLocalPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
-  pub_->onActivate(state);
+  pub_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-DWBLocalPlanner::onDeactivate(const rclcpp_lifecycle::State & state)
+DWBLocalPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  pub_->onDeactivate(state);
+  pub_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-DWBLocalPlanner::onCleanup(const rclcpp_lifecycle::State & state)
+DWBLocalPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  pub_->onCleanup(state);
+  pub_->on_cleanup(state);
 
   traj_generator_.reset();
   goal_checker_.reset();

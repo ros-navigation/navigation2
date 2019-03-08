@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,53 +51,17 @@ LifecycleNode::~LifecycleNode()
 }
 
 CallbackReturn
-LifecycleNode::onShutdown(const rclcpp_lifecycle::State &)
+LifecycleNode::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "onShutdown");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-LifecycleNode::onError(const rclcpp_lifecycle::State &)
+LifecycleNode::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "onError");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
-}
-
-CallbackReturn
-LifecycleNode::on_configure(const rclcpp_lifecycle::State & cur_state)
-{
-  return onConfigure(cur_state);
-}
-
-CallbackReturn
-LifecycleNode::on_activate(const rclcpp_lifecycle::State & cur_state)
-{
-  return onActivate(cur_state);
-}
-
-CallbackReturn
-LifecycleNode::on_deactivate(const rclcpp_lifecycle::State & cur_state)
-{
-  return onDeactivate(cur_state);
-}
-
-CallbackReturn
-LifecycleNode::on_cleanup(const rclcpp_lifecycle::State & cur_state)
-{
-  return onCleanup(cur_state);
-}
-
-CallbackReturn
-LifecycleNode::on_shutdown(const rclcpp_lifecycle::State & cur_state)
-{
-  return onShutdown(cur_state);
-}
-
-CallbackReturn
-LifecycleNode::on_error(const rclcpp_lifecycle::State & cur_state)
-{
-  return onError(cur_state);
 }
 
 }  // namespace nav2_lifecycle

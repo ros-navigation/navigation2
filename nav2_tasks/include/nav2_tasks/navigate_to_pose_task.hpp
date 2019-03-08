@@ -52,28 +52,28 @@ public:
 
   NavigateToPoseTaskServer() = delete;
 
-  nav2_lifecycle::CallbackReturn onConfigure(const rclcpp_lifecycle::State & state) override
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override
   {
-    self_client_->onConfigure(state);
-    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onConfigure(state);
+    self_client_->on_configure(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::on_configure(state);
   }
 
-  nav2_lifecycle::CallbackReturn onActivate(const rclcpp_lifecycle::State & state) override
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override
   {
-    self_client_->onActivate(state);
-    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onActivate(state);
+    self_client_->on_activate(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::on_activate(state);
   }
 
-  nav2_lifecycle::CallbackReturn onDeactivate(const rclcpp_lifecycle::State & state) override
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override
   {
-    self_client_->onDeactivate(state);
-    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onDeactivate(state);
+    self_client_->on_deactivate(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::on_deactivate(state);
   }
 
-  nav2_lifecycle::CallbackReturn onCleanup(const rclcpp_lifecycle::State & state) override
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override
   {
-    self_client_->onCleanup(state);
-    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::onCleanup(state);
+    self_client_->on_cleanup(state);
+    return TaskServer<NavigateToPoseCommand, NavigateToPoseResult>::on_cleanup(state);
   }
 
   bool isInitialPoseReceieved()

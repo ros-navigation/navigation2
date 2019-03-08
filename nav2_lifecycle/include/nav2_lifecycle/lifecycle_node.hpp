@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@
 #include <string>
 #include <thread>
 
-#include "nav2_lifecycle/lifecycle.hpp"
+#include "nav2_lifecycle/lifecycle_helper_interface.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_lifecycle
 {
 
-class LifecycleNode : public rclcpp_lifecycle::LifecycleNode, public ILifecycle
+class LifecycleNode : public rclcpp_lifecycle::LifecycleNode, public LifecycleHelperInterface
 {
 public:
   LifecycleNode(
@@ -39,19 +39,8 @@ public:
 protected:
   // These two are recommended to be implemented by derived classes but have empty,
   // default implementations
-  virtual CallbackReturn onShutdown(const rclcpp_lifecycle::State & state);
-  virtual CallbackReturn onError(const rclcpp_lifecycle::State & state);
-
-  // Overrides, for the standard rclcpp::LifecycleNode change_state service callbacks.
-  // These simply redirect to our own versions (OnConfigure, etc.) so that we can
-  // maintain a consistent naming convention. This also provides a degree of
-  // between the two, which could be useful.
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & cur_state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & cur_state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & cur_state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & cur_state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & cur_state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & cur_state) override;
+  virtual CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state);
+  virtual CallbackReturn on_error(const rclcpp_lifecycle::State & state);
 
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes

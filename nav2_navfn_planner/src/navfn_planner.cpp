@@ -57,9 +57,9 @@ NavfnPlanner::~NavfnPlanner()
 }
 
 nav2_lifecycle::CallbackReturn
-NavfnPlanner::onConfigure(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
   // Initialize parameters
   get_parameter_or("tolerance", tolerance_, 0.0);
@@ -83,11 +83,11 @@ NavfnPlanner::onConfigure(const rclcpp_lifecycle::State & state)
 
   // Initialize supporting objects
   robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
-  robot_->onConfigure(state);
+  robot_->on_configure(state);
 
   // Initialize action servers and action clients
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(shared_from_this()),
-  task_server_->onConfigure(state);
+  task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
@@ -95,38 +95,38 @@ NavfnPlanner::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-NavfnPlanner::onActivate(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
-  robot_->onActivate(state);
-  task_server_->onActivate(state);
+  robot_->on_activate(state);
+  task_server_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-NavfnPlanner::onDeactivate(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
-  robot_->onDeactivate(state);
-  task_server_->onDeactivate(state);
+  robot_->on_deactivate(state);
+  task_server_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-NavfnPlanner::onCleanup(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
-  robot_->onCleanup(state);
-  task_server_->onCleanup(state);
+  robot_->on_cleanup(state);
+  task_server_->on_cleanup(state);
 
   plan_publisher_.reset();
   plan_marker_publisher_.reset();

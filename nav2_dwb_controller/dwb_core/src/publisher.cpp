@@ -56,7 +56,7 @@ DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
 }
 
 nav2_lifecycle::CallbackReturn
-DWBPublisher::onConfigure(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   // TODO: get rid of these parameters
   node_->get_parameter_or("publish_evaluation", publish_evaluation_, true);
@@ -79,7 +79,7 @@ DWBPublisher::onConfigure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-DWBPublisher::onActivate(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_->on_activate();
   global_pub_->on_activate();
@@ -92,7 +92,7 @@ DWBPublisher::onActivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-DWBPublisher::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_->on_deactivate();
   global_pub_->on_deactivate();
@@ -105,7 +105,7 @@ DWBPublisher::onDeactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-DWBPublisher::onCleanup(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_.reset();
   global_pub_.reset();

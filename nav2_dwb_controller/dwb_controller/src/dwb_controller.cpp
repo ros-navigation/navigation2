@@ -43,20 +43,20 @@ DwbController::~DwbController()
 }
 
 nav2_lifecycle::CallbackReturn
-DwbController::onConfigure(const rclcpp_lifecycle::State & state)
+DwbController::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onConfigure");
+  RCLCPP_INFO(get_logger(), "on_configure");
 
-  costmap_ros_->onConfigure(state);
+  costmap_ros_->on_configure(state);
 
   planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(shared_from_this(), costmap_ros_->getTfBuffer(), costmap_ros_);
-  planner_->onConfigure(state);
+  planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(shared_from_this());
-  task_server_->onConfigure(state);
+  task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));
 
@@ -64,40 +64,40 @@ DwbController::onConfigure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-DwbController::onActivate(const rclcpp_lifecycle::State & state)
+DwbController::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onActivate");
+  RCLCPP_INFO(get_logger(), "on_activate");
 
-  planner_->onActivate(state);
-  costmap_ros_->onActivate(state);
+  planner_->on_activate(state);
+  costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
-  task_server_->onActivate(state);
+  task_server_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-DwbController::onDeactivate(const rclcpp_lifecycle::State & state)
+DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onDeactivate");
+  RCLCPP_INFO(get_logger(), "on_deactivate");
 
-  planner_->onDeactivate(state);
-  costmap_ros_->onDeactivate(state);
+  planner_->on_deactivate(state);
+  costmap_ros_->on_deactivate(state);
   vel_pub_->on_deactivate();
-  task_server_->onDeactivate(state);
+  task_server_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-DwbController::onCleanup(const rclcpp_lifecycle::State & state)
+DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "onCleanup");
+  RCLCPP_INFO(get_logger(), "on_cleanup");
 
   // Cleanup the helper classes
-  planner_->onCleanup(state);
-  costmap_ros_->onCleanup(state);
-  task_server_->onCleanup(state);
+  planner_->on_cleanup(state);
+  costmap_ros_->on_cleanup(state);
+  task_server_->on_cleanup(state);
 
   // Release any allocated resources
   planner_.reset();
