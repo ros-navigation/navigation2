@@ -151,8 +151,8 @@ TaskStatus Spin::controlledSpin()
   // check if we are done
   if (
     ((spin_command_ > 0) && (traveled_angle >= angleutils::normalize(spin_command_))) ||
-    ((spin_command_ < 0) && (traveled_angle <= angleutils::normalize(spin_command_)))
-    ){
+    ((spin_command_ < 0) && (traveled_angle <= angleutils::normalize(spin_command_))))
+  {
     RCLCPP_INFO(node_->get_logger(),
       "Robot spinned %.2f", traveled_angle * 180.0 / M_PI);
     return TaskStatus::SUCCEEDED;
