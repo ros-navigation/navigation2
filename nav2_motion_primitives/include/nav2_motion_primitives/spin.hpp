@@ -41,12 +41,15 @@ protected:
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double spin_command_;
-  double goal_tolerance_angle_;
   double start_yaw_;
+  double prev_yaw_;
+  int origin_cross_count_;
 
   std::chrono::system_clock::time_point time_since_msg;
 
   nav2_tasks::TaskStatus controlledSpin();
+
+  void updateOriginCrossing(double current_yaw);
 
   bool getYaw(double & yaw) const;
 };
