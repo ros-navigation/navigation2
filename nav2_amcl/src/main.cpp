@@ -16,11 +16,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_amcl/amcl_node.hpp"
 
-int
-main(int argc, char ** argv)
+int main(int argc, char ** argv)
 {
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2_amcl::AmclNode>();
   rclcpp::spin(node->get_node_base_interface());

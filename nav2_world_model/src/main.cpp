@@ -18,8 +18,6 @@
 
 int main(int argc, char ** argv)
 {
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2_world_model::WorldModel>();
   rclcpp::spin(node->get_node_base_interface());

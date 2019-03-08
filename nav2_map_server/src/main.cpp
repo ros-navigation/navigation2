@@ -21,7 +21,6 @@
 
 int main(int argc, char ** argv)
 {
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
   std::string node_name("map_server");
 
   try {
