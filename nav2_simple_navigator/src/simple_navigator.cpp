@@ -96,6 +96,20 @@ SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_error");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_shutdown");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
 TaskStatus
 SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command)
 {

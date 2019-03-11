@@ -26,7 +26,7 @@
 namespace nav2_lifecycle
 {
 
-class LifecycleNode : public rclcpp_lifecycle::LifecycleNode, public LifecycleHelperInterface
+class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   LifecycleNode(
@@ -37,11 +37,6 @@ public:
   virtual ~LifecycleNode();
 
 protected:
-  // These two are recommended to be implemented by derived classes but have empty,
-  // default implementations
-  virtual CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state);
-  virtual CallbackReturn on_error(const rclcpp_lifecycle::State & state);
-
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
   bool use_rclcpp_node_;

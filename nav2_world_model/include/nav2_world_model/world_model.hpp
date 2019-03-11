@@ -38,6 +38,8 @@ protected:
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The WorldModel provides the GetCostmap service
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;

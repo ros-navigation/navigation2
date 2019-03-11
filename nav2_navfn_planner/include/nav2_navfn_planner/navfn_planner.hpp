@@ -47,6 +47,8 @@ protected:
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The task server receives the ComputePathToPose command, invoking computePathToPose()
   nav2_tasks::TaskStatus computePathToPose(

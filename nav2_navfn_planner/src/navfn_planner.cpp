@@ -137,6 +137,20 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_error");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_shutdown");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
 TaskStatus
 NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {

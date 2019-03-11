@@ -194,6 +194,20 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
+nav2_lifecycle::CallbackReturn
+AmclNode::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_error");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+AmclNode::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "on_shutdown");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
 void
 AmclNode::checkLaserReceived()
 {

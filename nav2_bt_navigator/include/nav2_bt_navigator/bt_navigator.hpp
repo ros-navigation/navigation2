@@ -36,6 +36,8 @@ protected:
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The BtNavigator implements the NavigateToPose interface
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;

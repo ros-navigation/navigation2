@@ -50,18 +50,4 @@ LifecycleNode::~LifecycleNode()
   }
 }
 
-CallbackReturn
-LifecycleNode::on_shutdown(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_INFO(get_logger(), "onShutdown");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
-}
-
-nav2_lifecycle::CallbackReturn
-LifecycleNode::on_error(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_INFO(get_logger(), "onError");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
-}
-
 }  // namespace nav2_lifecycle
