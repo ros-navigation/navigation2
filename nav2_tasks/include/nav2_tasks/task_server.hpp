@@ -37,6 +37,7 @@ public:
   explicit TaskServer(rclcpp::Node::SharedPtr & node, bool autoStart = true)
   : node_(node),
     workerThread_(nullptr),
+    stop_thread_(false),
     commandReceived_(false),
     updateReceived_(false),
     cancelReceived_(false),
@@ -62,13 +63,13 @@ public:
       };
 
     if (autoStart) {
-      startWorkerThread();
+      start();
     }
   }
 
   virtual ~TaskServer()
   {
-    stopWorkerThread();
+    stop();
   }
 
   typedef std::function<TaskStatus(const typename CommandMsg::SharedPtr command)> ExecuteCallback;
@@ -108,9 +109,18 @@ public:
     resultMsg_ = result;
   }
 
-  void startWorkerThread()
+  void start()
   {
-    workerThread_ = new std::thread(&TaskServer::workerThread, this);
+    if (!workerThread_) {
+      startWorkerThread();
+    }
+  }
+
+  void stop()
+  {
+    if (workerThread_) {
+      stopWorkerThread();
+    }
   }
 
 protected:
@@ -128,6 +138,13 @@ protected:
 
   // The pointer to our private worker thread
   std::thread * workerThread_;
+  std::atomic<bool> stop_thread_;
+
+  void startWorkerThread()
+  {
+    stop_thread_ = false;
+    workerThread_ = new std::thread(&TaskServer::workerThread, this);
+  }
 
   // This class has the worker thread body which calls the user's execute() callback
   void workerThread()
@@ -185,14 +202,12 @@ protected:
           throw std::logic_error("Unexpected status return from task");
         }
       }
-    } while (rclcpp::ok());
+    } while (rclcpp::ok() && !stop_thread_);
   }
-
-  // TODO(mjeronimo): Make explicit start and stop calls to control
-  // the worker thread
 
   void stopWorkerThread()
   {
+    stop_thread_ = true;
     workerThread_->join();
     delete workerThread_;
     workerThread_ = nullptr;

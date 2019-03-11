@@ -78,7 +78,7 @@ NavfnPlanner::NavfnPlanner()
     std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
-  task_server_->startWorkerThread();
+  task_server_->start();
 }
 
 NavfnPlanner::~NavfnPlanner()
