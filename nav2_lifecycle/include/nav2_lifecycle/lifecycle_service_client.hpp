@@ -35,7 +35,7 @@ public:
     std::uint8_t transition, std::chrono::seconds time_out = std::chrono::seconds::max());
 
 protected:
-  // The node for this service client to use  (can't already be on an executor)
+  // The node for this service client to use (can't already be on an executor)
   rclcpp::Node::SharedPtr node_;
 
   // The name of the target node that this service client will be controlling
@@ -43,9 +43,6 @@ protected:
 
   // The rclcpp service client we'll use to make the service calls
   std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_;
-
-  // A support function, for logging, to convert a transition code to a string
-  const char * transition_to_str(uint8_t transition);
 };
 
 }  // namespace nav2_lifecycle

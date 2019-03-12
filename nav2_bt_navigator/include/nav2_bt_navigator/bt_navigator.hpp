@@ -18,7 +18,9 @@
 #include <memory>
 #include <string>
 
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 
 namespace nav2_bt_navigator
@@ -42,6 +44,15 @@ protected:
   // The BtNavigator implements the NavigateToPose interface
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
   nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+
+private:
+  // The blackboard shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard_;
+
+  // Create the path to be returned from ComputePath and sent to the FollowPath task
+  std::shared_ptr<nav2_tasks::ComputePathToPoseResult> path_;
+
+  std::string xml_string_;
 };
 
 }  // namespace nav2_bt_navigator

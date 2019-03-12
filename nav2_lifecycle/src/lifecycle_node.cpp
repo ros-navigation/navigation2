@@ -20,6 +20,22 @@
 namespace nav2_lifecycle
 {
 
+// The nav2_lifecycle::LifecycleNode class is temporary until we get the
+// required support for lifecycle nodes in MessageFilter, TransformListener,
+// and TransforBroadcaster. We have submitted issues for these and will
+// be submitting PRs to add the fixes:
+//
+//     https://github.com/ros2/geometry2/issues/95
+//     https://github.com/ros2/geometry2/issues/94
+//     https://github.com/ros2/geometry2/issues/70
+//
+// Until then, this class can provide a normal ROS node that has a thread
+// that processes the node's messages. If a derived class needs to interface
+// to one of these classes - MessageFilter, etc. - that don't yet support
+// lifecycle nodes, it can simply set the use_rclcpp_node flag in the constructor
+// and then provide the rclcpp_node_ to the helper classes, like MessageFilter.
+//
+
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
   const std::string & namespace_,

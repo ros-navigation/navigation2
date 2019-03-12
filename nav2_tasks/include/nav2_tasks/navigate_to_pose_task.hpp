@@ -84,11 +84,6 @@ public:
     return false;
   }
 
-  void setInitialPose(bool initial_pose)
-  {
-    initial_pose_received_ = initial_pose;
-  }
-
 protected:
   // For backwards compatibility, the NavigateToPoseTaskServer will respond to the goal_pose
   // message sent from rviz. We'll receive the incoming message and invoke our own
@@ -103,6 +98,7 @@ protected:
   {
     self_client_->sendCommand(pose);
   }
+
   void onInitialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
   {
     initial_pose_received_ = true;

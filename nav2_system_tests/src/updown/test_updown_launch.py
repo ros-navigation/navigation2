@@ -102,8 +102,8 @@ def generate_launch_description():
     start_navigator_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_simple_navigator'),
-                'lib/nav2_simple_navigator/simple_navigator'),
+                get_package_prefix('nav2_bt_navigator'),
+                'lib/nav2_bt_navigator/bt_navigator'),
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 

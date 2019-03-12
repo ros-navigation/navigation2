@@ -46,10 +46,10 @@ amcl_map_client:
   ros__parameters:
     use_sim_time: True
 
-bt_navigatgor:
+bt_navigator:
   ros__parameters:
     use_sim_time: True
-    bt_xml_filename: "bt_navigator.xml"
+    bt_xml_filename: "src/updown/bt_navigator.xml"
 
 dwb_controller:
   ros__parameters:

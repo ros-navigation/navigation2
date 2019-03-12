@@ -124,7 +124,7 @@ Nav2Controller::createLifecycleServiceClients()
   node_map["map_server"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "map_server");
   node_map["dwb_controller"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "dwb_controller");
   node_map["navfn_planner"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "navfn_planner");
-  node_map["simple_navigator"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "simple_navigator");
+  node_map["bt_navigator"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "bt_navigator");
   node_map["world_model"] = std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "world_model");
 }
 
@@ -192,8 +192,8 @@ Nav2Controller::activateRemainingNodes()
 
   message("Configuring and activating the navigator");
 
-  node_map["simple_navigator"]->changeState(Transition::TRANSITION_CONFIGURE);
-  node_map["simple_navigator"]->changeState(Transition::TRANSITION_ACTIVATE);
+  node_map["bt_navigator"]->changeState(Transition::TRANSITION_CONFIGURE);
+  node_map["bt_navigator"]->changeState(Transition::TRANSITION_ACTIVATE);
 }
 
 void

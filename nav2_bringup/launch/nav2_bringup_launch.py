@@ -172,8 +172,8 @@ def generate_launch_description():
     start_navigator_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_simple_navigator'),
-                'lib/nav2_simple_navigator/simple_navigator'),
+                get_package_prefix('nav2_bt_navigator'),
+                'lib/nav2_bt_navigator/bt_navigator'),
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
@@ -224,7 +224,7 @@ def generate_launch_description():
     ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
-    ld.add_action(start_navigator_cmd)
+    #ld.add_action(start_navigator_cmd)
     ld.add_action(start_controller_cmd)
 
     # Finally, launch an interface to the controller node, either a GUI or CLI

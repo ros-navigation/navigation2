@@ -64,30 +64,4 @@ LifecycleServiceClient::changeState(std::uint8_t transition, std::chrono::second
   return true;
 }
 
-const char *
-LifecycleServiceClient::transition_to_str(uint8_t transition)
-{
-  switch (transition) {
-    case Transition::TRANSITION_CREATE:
-      return "CREATE";
-    case Transition::TRANSITION_CONFIGURE:
-      return "CONFIGURE";
-    case Transition::TRANSITION_CLEANUP:
-      return "CLEANUP";
-    case Transition::TRANSITION_ACTIVATE:
-      return "ACTIVATE";
-    case Transition::TRANSITION_DEACTIVATE:
-      return "DEACTIVATE";
-    case Transition::TRANSITION_UNCONFIGURED_SHUTDOWN:
-      return "UNCONFIGURED_SHUTDOWN";
-    case Transition::TRANSITION_INACTIVE_SHUTDOWN:
-      return "INACTIVE_SHUTDOWN";
-    case Transition::TRANSITION_DESTROY:
-      return "DESTROY";
-    default:
-      return "Unknown state transition";
-  }
-}
-
-
 }  // namespace nav2_lifecycle

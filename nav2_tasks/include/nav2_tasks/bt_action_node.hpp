@@ -20,10 +20,11 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_tasks/task_client.hpp"
 #include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/bt_factory.h"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_tasks/task_client.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {
@@ -46,6 +47,13 @@ public:
 
   virtual ~BtActionNode()
   {
+    // Automatically walk the task client through its states since the BT node isn't
+    // lifecycle enabled
+	rclcpp_lifecycle::State state0(lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "active");
+    task_client_->on_deactivate(state0);
+
+	rclcpp_lifecycle::State state1(lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+    task_client_->on_cleanup(state1);
   }
 
   void onInit() override
@@ -61,6 +69,32 @@ public:
 
   BT::NodeStatus tick() override
   {
+    // The first time we're ticked, there's some setup to do. This is because
+    // The blackboard isn't set yet in the BT node constructor; the tree gets
+    // created and *then* the blackboard is set.
+    if (!initialized_) {
+      // Get the required items from the blackboard
+      node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
+      node_loop_timeout_ =
+        blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+
+      // Now that we have the ROS node to use, create the task client for this action
+      task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
+
+      // Automatically walk the task client through its states since the BT node isn't
+      // lifecycle enabled
+
+	  rclcpp_lifecycle::State state0(lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED, "unconfigured");
+      task_client_->on_configure(state0);
+
+	  rclcpp_lifecycle::State state1(lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+      task_client_->on_activate(state1);
+
+      // Give the derived class a chance to do some initialization
+      onInit();
+      initialized_ = true;
+    }
+
     task_client_->sendCommand(command_);
 
     // Loop until the task has completed
