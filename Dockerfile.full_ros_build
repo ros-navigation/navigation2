@@ -6,8 +6,12 @@
 # export BUILD_SYSTEM_TESTS=False
 # export ROS2_BRANCH=master
 # docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
-#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.fullbuild ./
+#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.full_ros_build ./
 
+# We're only building on top of a ROS docker image to get the basics
+# prerequisites installed such as the apt source, rosdep, etc. We don't want to
+# actually use any of the ros crystal packages. Instead we are going to build
+# everything from source in one big workspace.
 FROM ros:crystal-ros-core
 
 # install ROS2 dependencies
