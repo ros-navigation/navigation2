@@ -43,6 +43,9 @@ DwbController::DwbController(rclcpp::executor::Executor & executor)
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
+  auto nh = shared_from_this();
+  planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
+
   task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));
@@ -58,9 +61,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   RCLCPP_INFO(get_logger(), "Starting controller");
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
-    auto nh = shared_from_this();
 
-    planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
 
