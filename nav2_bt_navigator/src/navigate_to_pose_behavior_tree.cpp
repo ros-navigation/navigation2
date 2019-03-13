@@ -87,11 +87,9 @@ BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tr
 {
   auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
   if (initPoseReceived) {
-    printf("NavigateToPoseBehaviorTree::initialPoseRecevied: SUCCESS\n");
     return BT::NodeStatus::SUCCESS;
   }
 
-  printf("NavigateToPoseBehaviorTree::initialPoseRecevied: FAILURE\n");
   return BT::NodeStatus::FAILURE;
 }
 
