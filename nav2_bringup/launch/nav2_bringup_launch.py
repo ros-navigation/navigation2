@@ -224,7 +224,7 @@ def generate_launch_description():
     ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
-    #ld.add_action(start_navigator_cmd)
+    ld.add_action(start_navigator_cmd)
     ld.add_action(start_controller_cmd)
 
     # Finally, launch an interface to the controller node, either a GUI or CLI

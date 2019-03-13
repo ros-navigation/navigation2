@@ -76,6 +76,7 @@ public:
 
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
+
     commandReceived_ = false;
     updateReceived_ = false;
     cancelReceived_ = false;

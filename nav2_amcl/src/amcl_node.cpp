@@ -354,10 +354,11 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
   try {
     rclcpp::Time rclcpp_time = rclcpp_node_->now();
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
+
+	printf("rclcpp time: %ld\n", rclcpp_time.nanoseconds());
     
-    // wait a little for the latest tf to become available
+    // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg->header.stamp),
-        //base_frame_id_, tf2::TimePoint(), odom_frame_id_);
         base_frame_id_, tf2_time, odom_frame_id_);
   } catch (tf2::TransformException e) {
     // If we've never sent a transform, then this is normal, because the
@@ -381,7 +382,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
   // Transform into the global frame
 
   RCLCPP_INFO(get_logger(), "Setting pose (%.6f): %.3f %.3f %.3f",
-    this->now().nanoseconds() * 1e-9,
+    rclcpp_node_->now().nanoseconds() * 1e-9,
     pose_new.getOrigin().x(),
     pose_new.getOrigin().y(),
     tf2::getYaw(pose_new.getRotation()));
@@ -422,7 +423,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (!active) {return;}
 
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-  last_laser_received_ts_ = now();
+  last_laser_received_ts_ = rclcpp_node_->now();
   int laser_index = -1;
 
   // Do we have the base->base_laser Tx yet?
@@ -607,7 +608,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     // TODO(?): set maximum rate for publishing
     if (!force_update_) {
       geometry_msgs::msg::PoseArray cloud_msg;
-      cloud_msg.header.stamp = this->now();
+      cloud_msg.header.stamp = rclcpp_node_->now();
       cloud_msg.header.frame_id = global_frame_id_;
       cloud_msg.poses.resize(set->sample_count);
       for (int i = 0; i < set->sample_count; i++) {

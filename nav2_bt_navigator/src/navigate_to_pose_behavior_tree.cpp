@@ -44,14 +44,14 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::Lifecycle
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
   factory_.registerNodeType<nav2_tasks::IsLocalizedCondition>("IsLocalized");
 
-  // Register our Simple Condition nodes
+  // Register our simple condition nodes
   factory_.registerSimpleCondition("initialPoseReceived",
     std::bind(&NavigateToPoseBehaviorTree::initialPoseReceived, this, std::placeholders::_1));
 
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
 
-  // Register our Simple Action nodes
+  // Register our simple action nodes
   factory_.registerSimpleAction("UpdatePath",
     std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
 
@@ -87,8 +87,11 @@ BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tr
 {
   auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
   if (initPoseReceived) {
+    printf("NavigateToPoseBehaviorTree::initialPoseRecevied: SUCCESS\n");
     return BT::NodeStatus::SUCCESS;
   }
+
+  printf("NavigateToPoseBehaviorTree::initialPoseRecevied: FAILURE\n");
   return BT::NodeStatus::FAILURE;
 }
 

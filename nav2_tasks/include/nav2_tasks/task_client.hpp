@@ -131,32 +131,6 @@ public:
     cancelPub_->publish(msg);
   }
 
-#if 0
-  bool waitForServer(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
-  {
-    // TODO: check that we're in the operational state
-    std::string taskName = getTaskName<CommandMsg, ResultMsg>();
-    taskName += "_command";
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-
-    // TODO(mjeronimo): Replace this with a legit way to wait for the server
-    while (node_->count_subscribers(taskName) < 1) {
-      rclcpp::spin_some(node_->get_node_base_interface());
-
-      auto t1 = std::chrono::high_resolution_clock::now();
-      auto elapsedTime = t1 - t0;
-
-      if (elapsedTime > timeout) {
-        return false;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    return true;
-  }
-#endif
-
   // The client can wait for a result with a timeout
   TaskStatus waitForResult(
     typename ResultMsg::SharedPtr & result,

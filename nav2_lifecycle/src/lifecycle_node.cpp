@@ -45,14 +45,7 @@ LifecycleNode::LifecycleNode(
   use_rclcpp_node_(use_rclcpp_node)
 {
   if (use_rclcpp_node_) {
-    // Avoid the extra services we don't need for this node
-    rclcpp::NodeOptions local_node_options;
-    local_node_options.start_parameter_services(false);
-    local_node_options.start_parameter_event_publisher(false);
-
-    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_,
-        local_node_options);
-
+    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_);
     rclcpp_thread_ = std::make_unique<std::thread>(
       [](rclcpp::Node::SharedPtr node) {rclcpp::spin(node);}, rclcpp_node_
     );
