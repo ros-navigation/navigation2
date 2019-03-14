@@ -571,12 +571,11 @@ AmclNode::setMapCallback(
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
+  std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = now();
   if (map_ == NULL) {
     return;
   }
-
-  std::string laser_scan_frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
 
   std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
@@ -604,6 +603,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   pf_vector_t delta = pf_vector_zero();
   bool force_publication = false;
   if (!pf_init_) {
+    // Pose at last filter update
     pf_odom_pose_ = pose;
     pf_init_ = true;
 
@@ -698,7 +698,7 @@ bool AmclNode::addNewScanner(
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
   try {
-    this->tf_->transform(ident, laser_pose, base_frame_id_, TRANSFORM_TIMEOUT);
+    this->tf_->transform(ident, laser_pose, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
       "even though the message notifier is in use",
@@ -748,15 +748,15 @@ bool AmclNode::updateFilter(
   q.setRPY(0.0, 0.0, laser_scan->angle_min);
   geometry_msgs::msg::QuaternionStamped min_q, inc_q;
   min_q.header.stamp = laser_scan->header.stamp;
-  min_q.header.frame_id = strutils::stripLeadingSlash(laser_scan->header.frame_id);
+  min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
 
   q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
   inc_q.header = min_q.header;
   tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
   try {
-    tf_->transform(min_q, min_q, base_frame_id_, TRANSFORM_TIMEOUT);
-    tf_->transform(inc_q, inc_q, base_frame_id_, TRANSFORM_TIMEOUT);
+    tf_->transform(min_q, min_q, base_frame_id_);
+    tf_->transform(inc_q, inc_q, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
       e.what());
@@ -917,7 +917,7 @@ AmclNode::calculateMaptoOdomTransform(
     tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
-    this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_, TRANSFORM_TIMEOUT);
+    this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
   } catch (tf2::TransformException) {
     RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
     return;
