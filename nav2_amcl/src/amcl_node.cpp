@@ -845,18 +845,20 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       // p.covariance[6*5+5] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
       p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
 
-      /*
-         printf("cov:\n");
-         for(int i=0; i<6; i++)
-         {
-         for(int j=0; j<6; j++)
-         printf("%6.3f ", p.covariance[6*i+j]);
-         puts("");
-         }
-       */
+      float temp = 0.0;
+      for (int i = 0; i < static_cast<int>(p.pose.covariance.size()); i++) {
+        temp += p.pose.covariance[i];
+      }
+      if (!std::isnan(temp) &&
+        !std::isnan(p.pose.pose.position.x) &&
+        !std::isnan(p.pose.pose.position.y))
+      {
+        RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
+        pose_pub_->publish(p);
+      } else {
+        RCLCPP_WARN(get_logger(), "ignoring NAN pose");
+      }
 
-      RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
-      pose_pub_->publish(p);
       last_published_pose = p;
 
       RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
