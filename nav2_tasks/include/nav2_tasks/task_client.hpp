@@ -17,14 +17,15 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <string>
 #include <thread>
-#include <memory>
 
+#include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_tasks/task_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
-#include "nav2_tasks/task_status.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_tasks
 {
@@ -35,22 +36,45 @@ template<typename CommandMsg, typename ResultMsg>
 const char * getTaskName();
 
 template<typename CommandMsg, typename ResultMsg>
-class TaskClient: public nav2_lifecycle::LifecycleHelperInterface
+class TaskClient : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
-  explicit TaskClient(nav2_lifecycle::LifecycleNode::SharedPtr node)
-  : node_(node)
+  explicit TaskClient(nav2_lifecycle::LifecycleNode::SharedPtr node, bool autoinit = false)
+  : node_(node), autoinit_(autoinit)
   {
     resultReceived_ = false;
     statusReceived_ = false;
 
     statusMsg_ = std::make_shared<StatusMsg>();
+
+    // There are some cases where the TaskClient is used from a context that doesn't have
+    // a lifecycle-style inteface (such as BehaviorTrees). For those situations, the
+    // TaskClient class can be automatically configured and activated
+
+    if (autoinit_) {
+      rclcpp_lifecycle::State state0(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "unconfigured");
+      on_configure(state0);
+
+      rclcpp_lifecycle::State state1(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+      on_activate(state1);
+    }
   }
 
   TaskClient() = delete;
 
   ~TaskClient()
   {
+    if (autoinit_) {
+      rclcpp_lifecycle::State state0(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "active");
+      on_deactivate(state0);
+
+      rclcpp_lifecycle::State state1(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+      on_cleanup(state1);
+    }
   }
 
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
@@ -74,7 +98,7 @@ public:
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
     commandPub_->on_activate();
-    updatePub_ ->on_activate();
+    updatePub_->on_activate();
     cancelPub_->on_activate();
 
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -83,7 +107,7 @@ public:
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
     commandPub_->on_deactivate();
-    updatePub_ ->on_deactivate();
+    updatePub_->on_deactivate();
     cancelPub_->on_deactivate();
 
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -92,7 +116,7 @@ public:
   nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
   {
     commandPub_.reset();
-    updatePub_ .reset();
+    updatePub_.reset();
     cancelPub_.reset();
 
     resultSub_.reset();
@@ -104,8 +128,6 @@ public:
   // The client can tell the TaskServer to execute its operation
   void sendCommand(const typename CommandMsg::SharedPtr msg)
   {
-    // TODO: check that we're in the operational state
-
     resultReceived_ = false;
     statusReceived_ = false;
 
@@ -114,8 +136,6 @@ public:
 
   void sendUpdate(const typename CommandMsg::SharedPtr msg)
   {
-    // TODO: check that we're in the operational state
-
     resultReceived_ = false;
     statusReceived_ = false;
 
@@ -125,8 +145,6 @@ public:
   // An in-flight operation can be canceled
   void cancel()
   {
-    // TODO: check that we're in the operational state
-
     CancelMsg msg;
     cancelPub_->publish(msg);
   }
@@ -136,8 +154,6 @@ public:
     typename ResultMsg::SharedPtr & result,
     std::chrono::milliseconds duration)
   {
-    // TODO: check that we're in the operational state
-
     // Wait for a status message to come in
     std::unique_lock<std::mutex> lock(statusMutex_);
     if (!cvStatus_.wait_for(lock, std::chrono::milliseconds(duration),
@@ -239,6 +255,9 @@ protected:
   // The client's subscriptions: result, feedback, and status
   typename rclcpp::Subscription<ResultMsg>::SharedPtr resultSub_;
   rclcpp::Subscription<StatusMsg>::SharedPtr statusSub_;
+
+  // Whether to automatically walk the pubs through the lifecycle states
+  bool autoinit_;
 };
 
 }  // namespace nav2_tasks

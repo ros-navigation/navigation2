@@ -33,7 +33,7 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
     BtActionNode<StopCommand, StopResult>::onInit();
 

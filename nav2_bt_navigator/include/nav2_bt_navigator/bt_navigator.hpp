@@ -33,7 +33,7 @@ public:
   ~BtNavigator();
 
 protected:
-  // Implement the lifecycle interface
+  // The lifecycle node interface
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
@@ -41,7 +41,7 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The BtNavigator implements the NavigateToPose interface
+  // The NavigateToPose interface (a task server that implements the NavigateToPose command)
   std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
   nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
 
@@ -49,9 +49,10 @@ private:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
-  // Create the path to be returned from ComputePath and sent to the FollowPath task
+  // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
   std::shared_ptr<nav2_tasks::ComputePathToPoseResult> path_;
 
+  // The XML string that defines the Behavior Tree to create
   std::string xml_string_;
 };
 

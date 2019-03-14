@@ -24,7 +24,6 @@
 #include "nav2_tasks/spin_action.hpp"
 #include "nav2_tasks/is_localized_condition.hpp"
 
-
 using namespace std::chrono_literals;
 
 namespace nav2_bt_navigator
@@ -58,10 +57,12 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::Lifecycle
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
-  follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
+  follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node, true);
+  global_localization_client_ = std::make_unique<nav2_tasks::globalLocalizationServiceClient>("bt_navigator");
 }
 
-BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
+BT::NodeStatus
+NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
 {
   // Get the updated path from the blackboard and send to the FollowPath task server
   auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>(
@@ -71,11 +72,12 @@ BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
   return BT::NodeStatus::RUNNING;
 }
 
-BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
+BT::NodeStatus
+NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
 {
   auto request = std::make_shared<std_srvs::srv::Empty::Request>();
   try {
-    auto result = global_localization_.invoke(request, std::chrono::seconds(1));
+    auto result = global_localization_client_->invoke(request, std::chrono::seconds(1));
     return BT::NodeStatus::SUCCESS;
   } catch (std::runtime_error & e) {
     RCLCPP_WARN(node_->get_logger(), e.what());
@@ -83,7 +85,8 @@ BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
   }
 }
 
-BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
+BT::NodeStatus
+NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
 {
   auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
   if (initPoseReceived) {

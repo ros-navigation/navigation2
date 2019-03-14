@@ -49,7 +49,7 @@ amcl_map_client:
 bt_navigator:
   ros__parameters:
     use_sim_time: True
-    bt_xml_filename: "/home/mjeronimo/src/navigation2/nav2_bt_navigator/behavior_trees/simple_sequential.xml"
+    bt_xml_filename: "/home/mjeronimo/src/navigation2/nav2_bt_navigator/behavior_trees/parallel.xml"
 
 dwb_controller:
   ros__parameters:

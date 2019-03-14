@@ -37,7 +37,7 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
     BtActionNode<SpinCommand, SpinResult>::onInit();
 

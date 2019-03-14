@@ -47,58 +47,38 @@ public:
 
   virtual ~BtActionNode()
   {
-    // Automatically walk the task client through its states since the BT node isn't
-    // lifecycle enabled
-    rclcpp_lifecycle::State state0(lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "active");
-    task_client_->on_deactivate(state0);
-
-    rclcpp_lifecycle::State state1(lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
-    task_client_->on_cleanup(state1);
   }
 
-  void onInit() override
+  // This is a callback from the BT library invoked after the node is created and after the
+  // blackboard has been set for the node. It is the first opportunity for the node to access
+  // the blackboard. The derived class does not override this method, but overrides onConfigure
+  void onInit() final
   {
     // Get the required items from the blackboard
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
     node_loop_timeout_ =
       blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
     // Now that we have the ROS node to use, create the task client for this action
-    task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
+    //
+    //   TODO(mjeronimo): There is not currently a way for Behavior Trees to track with the
+    //   lifecycle states. So, instance the task client here, having it automatically configure
+    //   and activate.
+    //
+    task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_, true);
+
+    // Give the derived class a chance to do some initialization
+    onConfigure();
+  }
+
+  // Derived classes can override this method to perform some local initialization such
+  // as getting values from the blackboard.
+  virtual void onConfigure()
+  {
   }
 
   BT::NodeStatus tick() override
   {
-    // The first time we're ticked, there's some setup to do. This is because
-    // The blackboard isn't set yet in the BT node constructor; the tree gets
-    // created and *then* the blackboard is set.
-    if (!initialized_) {
-
-      // Get the required items from the blackboard
-      node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
-      node_loop_timeout_ =
-        blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
-
-      // Now that we have the ROS node to use, create the task client for this action
-      task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_);
-
-      // Automatically walk the task client through its states since the BT node isn't
-      // lifecycle enabled
-
-      rclcpp_lifecycle::State state0(lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED, "unconfigured");
-      task_client_->on_configure(state0);
-
-      rclcpp_lifecycle::State state1(lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
-      task_client_->on_activate(state1);
-
-      // Give the derived class a chance to do some initialization
-      onInit();
-      initialized_ = true;
-
-      // TODO(mjeronimo): need to fix a race condition here
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
     task_client_->sendCommand(command_);
 
     // Loop until the task has completed

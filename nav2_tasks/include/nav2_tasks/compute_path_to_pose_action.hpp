@@ -35,7 +35,7 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
     BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>::onInit();
 

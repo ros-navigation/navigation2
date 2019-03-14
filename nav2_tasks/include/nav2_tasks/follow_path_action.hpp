@@ -34,7 +34,7 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
     BtActionNode<FollowPathCommand, FollowPathResult>::onInit();
 
