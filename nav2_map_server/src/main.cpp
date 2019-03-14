@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_server.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {

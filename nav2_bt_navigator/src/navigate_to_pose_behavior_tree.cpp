@@ -13,16 +13,17 @@
 // limitations under the License.
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
+#include "nav2_tasks/back_up_action.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
-#include "nav2_tasks/rate_controller_node.hpp"
-#include "nav2_tasks/is_stuck_condition.hpp"
-#include "nav2_tasks/stop_action.hpp"
-#include "nav2_tasks/back_up_action.hpp"
-#include "nav2_tasks/spin_action.hpp"
 #include "nav2_tasks/is_localized_condition.hpp"
+#include "nav2_tasks/is_stuck_condition.hpp"
+#include "nav2_tasks/rate_controller_node.hpp"
+#include "nav2_tasks/spin_action.hpp"
+#include "nav2_tasks/stop_action.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
 

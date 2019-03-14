@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_simple_navigator/simple_navigator.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
