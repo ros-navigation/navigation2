@@ -849,10 +849,8 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       for (int i = 0; i < static_cast<int>(p.pose.covariance.size()); i++) {
         temp += p.pose.covariance[i];
       }
-      if (!std::isnan(temp) &&
-        !std::isnan(p.pose.pose.position.x) &&
-        !std::isnan(p.pose.pose.position.y))
-      {
+      temp += p.pose.pose.position.x + p.pose.pose.position.y;
+      if (!std::isnan(temp)) {
         RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
         pose_pub_->publish(p);
       } else {
