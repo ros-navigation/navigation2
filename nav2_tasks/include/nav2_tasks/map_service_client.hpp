@@ -28,12 +28,12 @@ class MapServiceClient : public nav2_util::ServiceClient<nav_msgs::srv::GetMap>
 {
 public:
   MapServiceClient(const std::string & parent_node_name)
-  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>(parent_node_name, "map")
+  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map", parent_node_name)
   {
   }
 
   MapServiceClient(rclcpp::Node::SharedPtr node)
-  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>(node, "map")
+  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map", node)
   {
   }
 

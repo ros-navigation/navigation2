@@ -26,6 +26,11 @@
 namespace nav2_lifecycle
 {
 
+// The following is a temporary wrapper for rclcpp_lifecycle::LifecycleNode. This class
+// adds the optional creation of an rclcpp::Node that can be used by derived classes
+// to interface to classes, such as MessageFilter and TransformListener, that don't yet
+// support lifecycle nodes. Once we get the fixes into ROS2, this class will be removed.
+
 class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:

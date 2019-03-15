@@ -45,26 +45,20 @@ class ServiceClient
 {
 public:
   explicit ServiceClient(
-    const std::string & name,
+    const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
   {
     if (provided_node) {
       node_ = provided_node;
     } else {
-      node_ = generate_internal_node(name + "_Node");
+      node_ = generate_internal_node(service_name + "_Node");
     }
-    client_ = node_->create_client<ServiceT>(name);
-  }
-
-  ServiceClient(const std::string & parent_name, const std::string & service_name)
-  {
-    node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client");
     client_ = node_->create_client<ServiceT>(service_name);
   }
 
-  ServiceClient(rclcpp::Node::SharedPtr node, const std::string & service_name)
-  : node_(node)
+  ServiceClient(const std::string & service_name, const std::string & parent_name)
   {
+    node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client");
     client_ = node_->create_client<ServiceT>(service_name);
   }
 

@@ -27,7 +27,7 @@ class GlobalLocalizationServiceClient : public nav2_util::ServiceClient<std_srvs
 {
 public:
   GlobalLocalizationServiceClient(const std::string & parent_node_name)
-  : ServiceClient<std_srvs::srv::Empty>(parent_node_name, "global_localization")
+  : ServiceClient<std_srvs::srv::Empty>("global_localization", parent_node_name)
   {
   }
 
