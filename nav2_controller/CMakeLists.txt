@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_controller)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_common REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(lifecycle_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(nav2_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(nav2_lifecycle REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 nav2_package()
 
@@ -28,16 +28,16 @@ add_library(${library_name} SHARED
 )
 
 set(dependencies
-  std_msgs
-  lifecycle_msgs
-  rclcpp_lifecycle
-  rclcpp
   diagnostic_msgs
   geometry_msgs
-  std_srvs
-  nav2_msgs
+  lifecycle_msgs
   nav2_lifecycle
+  nav2_msgs
   nav2_tasks
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+  std_srvs
 )
 
 ament_target_dependencies(${library_name}

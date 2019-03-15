@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_lifecycle)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_common REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp REQUIRED)
 
 nav2_package()
 
@@ -21,11 +21,11 @@ add_library(${library_name} SHARED
 )
 
 set(dependencies
-  rclcpp
-  rclcpp_lifecycle
   lifecycle_msgs
   nav2_common
   nav2_util
+  rclcpp
+  rclcpp_lifecycle
 )
 
 ament_target_dependencies(${library_name}
