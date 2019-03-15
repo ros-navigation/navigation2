@@ -78,7 +78,7 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
     }
 
-    RCLCPP_INFO(node_->get_logger(), "send async request");
+    RCLCPP_DEBUG(node_->get_logger(), "send async request");
     auto future_result = client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
@@ -102,7 +102,7 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
     }
 
-    RCLCPP_INFO(node_->get_logger(), "send async request");
+    RCLCPP_DEBUG(node_->get_logger(), "send async request");
     auto future_result = client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_, future_result) !=
