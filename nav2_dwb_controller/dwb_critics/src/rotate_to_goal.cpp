@@ -64,6 +64,9 @@ bool RotateToGoalCritic::prepare(
   if (dxy_sq > xy_goal_tolerance_sq_) {
     in_window_ = false;
   }
+  else {
+    in_window_ = true;
+  }
   goal_yaw_ = goal.theta;
   return true;
 }
