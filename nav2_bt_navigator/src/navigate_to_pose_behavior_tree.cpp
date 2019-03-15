@@ -59,7 +59,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::Lifecycle
     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node, true);
-  global_localization_client_ = std::make_unique<nav2_tasks::globalLocalizationServiceClient>("bt_navigator");
+  global_localization_client_ = std::make_unique<nav2_tasks::GlobalLocalizationServiceClient>("bt_navigator");
 }
 
 BT::NodeStatus

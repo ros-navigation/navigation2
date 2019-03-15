@@ -31,7 +31,7 @@
 #include "nav2_util/angleutils.hpp"
 #include "nav2_util/duration_conversions.hpp"
 #include "nav2_util/pf/pf.hpp"
-#include "nav2_util/strutils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/LinearMath/Transform.h"
@@ -93,7 +93,7 @@ AmclNode::waitForTransforms()
     !tf_buffer_->canTransform(global_frame_id_, odom_frame_id_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
   {
-    if (last_error + nav2_util::durationFromSeconds(1.0) < rclcpp_node_->now()) {
+    if (last_error + nav2_util::duration_from_seconds(1.0) < rclcpp_node_->now()) {
       RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
         " to become available, tf error: %s",
         odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
@@ -340,10 +340,10 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
     // This should be removed at some point
     RCLCPP_WARN(get_logger(),
       "Received initial pose with empty frame_id. You should always supply a frame_id.");
-  } else if (nav2_util::strutils::stripLeadingSlash(msg->header.frame_id) != global_frame_id_) {
+  } else if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
     RCLCPP_WARN(get_logger(),
       "Ignoring initial pose in frame \"%s\"; initial poses must be in the global frame, \"%s\"",
-      nav2_util::strutils::stripLeadingSlash(msg->header.frame_id).c_str(),
+      nav2_util::strip_leading_slash(msg->header.frame_id).c_str(),
       global_frame_id_.c_str());
     return;
   }

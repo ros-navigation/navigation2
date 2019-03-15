@@ -27,11 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This file contains helper functions for loading images as maps.
- *
- * Author: Brian Gerkey
- */
+// This file contains helper functions for loading images as maps.
+// Author: Brian Gerkey
+
 #include "nav2_map_server/occ_grid_loader.hpp"
 
 #include <libgen.h>
@@ -233,8 +231,8 @@ OccGridLoader::loadMapFromFile(const std::string & map_name, LoadParameters * lo
   msg_->info.origin.position.x = loadParameters->origin[0];
   msg_->info.origin.position.y = loadParameters->origin[1];
   msg_->info.origin.position.z = 0.0;
-  btQuaternion q;
-  q.setRPY(0, 0, loadParameters->origin_[2]);
+  tf2::Quaternion q;
+  q.setRPY(0, 0, loadParameters->origin[2]);
   msg_->info.origin.orientation.x = q.x();
   msg_->info.origin.orientation.y = q.y();
   msg_->info.origin.orientation.z = q.z();

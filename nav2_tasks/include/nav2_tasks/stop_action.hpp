@@ -35,8 +35,6 @@ public:
 
   void onConfigure() override
   {
-    BtActionNode<StopCommand, StopResult>::onInit();
-
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::StopCommand>();
     result_ = std::make_shared<nav2_tasks::StopResult>();

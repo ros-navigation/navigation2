@@ -128,6 +128,12 @@ public:
    */
   bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
 
+  /** @brief Returns costmap name */
+  std::string getName() const
+  {
+    return name_;
+  }
+
   /** @brief Returns the delay in transform (tf) data that is tolerable in seconds */
   double getTransformTolerance() const
   {
@@ -244,6 +250,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   LayeredCostmap * layered_costmap_{nullptr};
+  std::string name_;
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_{false};
   bool stop_updates_{false};

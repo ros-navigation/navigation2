@@ -40,7 +40,7 @@ private:
 
   // Service clients
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
-  std::unique_ptr<nav2_tasks::globalLocalizationServiceClient> global_localization_client_;
+  std::unique_ptr<nav2_tasks::GlobalLocalizationServiceClient> global_localization_client_;
 };
 
 }  // namespace nav2_bt_navigator

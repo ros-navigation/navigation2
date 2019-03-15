@@ -53,7 +53,7 @@ namespace nav2_costmap_2d
 {
 
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: nav2_lifecycle::LifecycleNode(name, "", true)
+: nav2_lifecycle::LifecycleNode(name, "", true), name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
   client_node_ = std::make_shared<rclcpp::Node>(name + "_client");
@@ -138,7 +138,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
   {
-    if (last_error + nav2_util::durationFromSeconds(5.0) < rclcpp_node_->now()) {
+    if (last_error + nav2_util::duration_from_seconds(5.0) < rclcpp_node_->now()) {
       RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
         " to become available, tf error: %s",
         robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
@@ -195,25 +195,6 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   footprint_sub_.reset();
   footprint_pub_.reset();
-
-  map_update_thread_shutdown_ = true;
-
-  if (map_update_thread_ != NULL) {
-    map_update_thread_->join();
-    delete map_update_thread_;
-  }
-  map_update_thread_shutdown_ = false;
-  double map_update_frequency = 1.0;
-  dynamic_param_client_->get_event_param("update_frequency", map_update_frequency);
-
-  double map_publish_frequency = 5.0;
-  dynamic_param_client_->get_event_param("publish_frequency", map_publish_frequency);
-
-  if (map_publish_frequency > 0) {
-    publish_cycle_ = nav2_util::duration_from_seconds(1 / map_publish_frequency);
-  } else {
-    publish_cycle_ = rclcpp::Duration(-1);
-  }
 
   if (costmap_publisher_ != nullptr) {
     delete costmap_publisher_;
@@ -278,7 +259,7 @@ Costmap2DROS::getParameters()
 
   // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
   if (map_publish_frequency_ > 0) {
-    publish_cycle_ = nav2_util::durationFromSeconds(1 / map_publish_frequency_);
+    publish_cycle_ = nav2_util::duration_from_seconds(1 / map_publish_frequency_);
   } else {
     publish_cycle_ = rclcpp::Duration(-1);
   }

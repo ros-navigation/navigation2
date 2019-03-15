@@ -65,7 +65,6 @@ InflationLayer::InflationLayer()
   cached_cell_inflation_radius_(0),
   cached_costs_(nullptr),
   cached_distances_(nullptr),
-  seen_(nullptr),
   last_min_x_(-std::numeric_limits<float>::max()),
   last_min_y_(-std::numeric_limits<float>::max()),
   last_max_x_(std::numeric_limits<float>::max()),
@@ -83,7 +82,6 @@ InflationLayer::onInitialize()
 
   current_ = true;
   seen_.clear();
-  seen_size_ = 0;
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
