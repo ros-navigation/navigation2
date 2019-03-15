@@ -62,6 +62,8 @@ public:
 
 protected:
   double forward_point_distance_;
+  double xy_goal_align_tolerance_sq_;
+  bool in_window_;
 };
 
 }  // namespace dwb_critics

@@ -47,6 +47,8 @@ void GoalAlignCritic::onInit()
   GoalDistCritic::onInit();
   stop_on_failure_ = false;
   forward_point_distance_ = nav_2d_utils::searchAndGetParam(nh_, "forward_point_distance", 0.325);
+  double xy_goal_align_tolerance = nav_2d_utils::searchAndGetParam(nh_, "xy_goal_align_tolerance", 1.0);
+  xy_goal_align_tolerance_sq_ = xy_goal_align_tolerance * xy_goal_align_tolerance;
 }
 
 bool GoalAlignCritic::prepare(
@@ -65,12 +67,27 @@ bool GoalAlignCritic::prepare(
   target_poses.poses.back().x += forward_point_distance_ * cos(angle_to_goal);
   target_poses.poses.back().y += forward_point_distance_ * sin(angle_to_goal);
 
+  double dx = pose.x - goal.x,
+    dy = pose.y - goal.y;
+  double dxy_sq = dx * dx + dy * dy;
+  if (dxy_sq > xy_goal_align_tolerance_sq_) {
+    in_window_ = false;
+  }
+  else {
+    in_window_ = true;
+  }
+
   return GoalDistCritic::prepare(pose, vel, goal, target_poses);
 }
 
 double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 {
-  return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
+  // If we're not sufficiently close to the goal, we don't care what the alignment is
+  if (!in_window_) {
+    return 0.0;
+  }
+
+return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }
 
 }  // namespace dwb_critics
