@@ -103,7 +103,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
       loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
-    RCLCPP_INFO(this->get_logger(), e.what());
+    RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
     return TaskStatus::FAILED;
   }
