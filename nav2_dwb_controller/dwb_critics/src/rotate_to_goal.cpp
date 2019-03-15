@@ -100,7 +100,7 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   }
 
   double end_yaw = traj.poses.back().theta;
-  return angles::shortest_angular_distance(end_yaw, goal_yaw_);
+  return fabs(angles::shortest_angular_distance(end_yaw, goal_yaw_));
 }
 
 }  // namespace dwb_critics
