@@ -18,7 +18,7 @@
 
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/occ_grid_loader.hpp"
-#include "nav2_lifecycle/lifecycle_service_client.hpp"
+#include "nav2_util/lifecycle_service_client.hpp"
 
 using lifecycle_msgs::msg::Transition;
 
@@ -38,16 +38,16 @@ public:
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
     lifecycle_client_ =
-      std::make_shared<nav2_lifecycle::LifecycleServiceClient>(node_, "map_server");
+      std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
 
-    lifecycle_client_->changeState(Transition::TRANSITION_CONFIGURE);
-    lifecycle_client_->changeState(Transition::TRANSITION_ACTIVATE);
+    lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE);
+    lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE);
   }
 
   ~TestNode()
   {
-    lifecycle_client_->changeState(Transition::TRANSITION_DEACTIVATE);
-    lifecycle_client_->changeState(Transition::TRANSITION_CLEANUP);
+    lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
+    lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
   }
 
   template<class T>
@@ -71,7 +71,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<nav2_lifecycle::LifecycleServiceClient> lifecycle_client_;
+  std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
 
 TEST_F(TestNode, ResultReturned)

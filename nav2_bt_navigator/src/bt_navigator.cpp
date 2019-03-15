@@ -46,7 +46,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   // Create the NavigateToPose task server for this node
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(shared_from_this());
   task_server_->on_configure(state);
-  task_server_->setExecuteCallback(std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
+  task_server_->setExecuteCallback(
+    std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the path to be returned from ComputePath and sent to the FollowPath task
   path_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
@@ -72,7 +73,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   xml_string_ = std::string(std::istreambuf_iterator<char>(xml_file),
-    std::istreambuf_iterator<char>());
+      std::istreambuf_iterator<char>());
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
@@ -135,11 +136,13 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
 
-  blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command);
+  blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command); // NOLINT
+
+  // TODO(mjeronimo): Move creation of BT to on_configure state (#611)
 
   // Create and run the behavior tree
   std::unique_ptr<NavigateToPoseBehaviorTree> bt_ =
-      std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
+    std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
 
   TaskStatus result = bt_->run(blackboard_, xml_string_,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));

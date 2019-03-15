@@ -58,7 +58,7 @@ DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
 nav2_lifecycle::CallbackReturn
 DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  // TODO: get rid of these parameters
+  // TODO(mjeronimo): get rid of these parameters
   node_->get_parameter_or("publish_evaluation", publish_evaluation_, true);
   node_->get_parameter_or("publish_global_plan", publish_global_plan_, true);
   node_->get_parameter_or("publish_transformed_plan", publish_transformed_, true);

@@ -21,13 +21,16 @@ namespace nav2_controller
 
 Nav2ControllerClient::Nav2ControllerClient()
 {
+  // Create the node to use for all of the service clients
   node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client");
 
+  // All of the services use the same (Empty) request
   request_ = std::make_shared<Srv::Request>();
 
-  startup_client_  = node_->create_client<Srv>("startup");
-  pause_client_    = node_->create_client<Srv>("pause");
-  resume_client_   = node_->create_client<Srv>("resume");
+  // Create the service clients
+  startup_client_ = node_->create_client<Srv>("startup");
+  pause_client_ = node_->create_client<Srv>("pause");
+  resume_client_ = node_->create_client<Srv>("resume");
   shutdown_client_ = node_->create_client<Srv>("shutdown");
 }
 
@@ -56,7 +59,9 @@ Nav2ControllerClient::resume()
 }
 
 void
-Nav2ControllerClient::callService(rclcpp::Client<Srv>::SharedPtr service_client, const char * service_name)
+Nav2ControllerClient::callService(
+  rclcpp::Client<Srv>::SharedPtr service_client,
+  const char * service_name)
 {
   RCLCPP_INFO(node_->get_logger(), "Waiting for the nav2_controller's %s service...", service_name);
   while (!service_client->wait_for_service(std::chrono::seconds(1))) {

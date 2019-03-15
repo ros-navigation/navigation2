@@ -40,10 +40,11 @@
 #include "nav2_costmap_2d/static_layer.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
-#include "nav2_tasks/map_service_client.hpp"
+#include "nav2_util/map_service_client.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -99,7 +100,8 @@ StaticLayer::getParameters()
   node_->get_parameter_or("track_unknown_space", track_unknown_space_, true);
   node_->get_parameter_or("use_maximum", use_maximum_, false);
   node_->get_parameter_or("lethal_cost_threshold", temp_lethal_threshold, 100);
-  node_->get_parameter_or("unknown_cost_value", unknown_cost_value_, static_cast<unsigned char>(0xff));
+  node_->get_parameter_or("unknown_cost_value", unknown_cost_value_,
+    static_cast<unsigned char>(0xff));
   node_->get_parameter_or("trinary_costmap", trinary_costmap_, true);
 
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
@@ -109,7 +111,7 @@ void
 StaticLayer::getMap()
 {
   RCLCPP_INFO(node_->get_logger(), "StaticLayer: Requesting map from the map service");
-  auto map_client = std::make_unique<nav2_tasks::MapServiceClient>(client_node_);
+  auto map_client = std::make_unique<nav2_util::MapServiceClient>(client_node_);
 
   nav_msgs::msg::OccupancyGrid map;
   if (!map_client->getMap(map)) {

@@ -17,8 +17,8 @@
 #include <memory>
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav2_lifecycle/lifecycle_service_client.hpp"
 #include "nav2_robot/robot.hpp"
+#include "nav2_util/lifecycle_service_client.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -117,10 +117,10 @@ public:
     client_ = std::make_shared<rclcpp::Node>("test_robot_client_node");
 
     lifecycle_client_ =
-      std::make_shared<nav2_lifecycle::LifecycleServiceClient>(client_, "TestLifecycleNode");
+      std::make_shared<nav2_util::LifecycleServiceClient>("TestLifecycleNode", client_);
 
-    lifecycle_client_->changeState(Transition::TRANSITION_CONFIGURE);
-    lifecycle_client_->changeState(Transition::TRANSITION_ACTIVATE);
+    lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE);
+    lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE);
 
     // Initializing Pose and Twist messages
     initTestPose();
@@ -143,8 +143,8 @@ public:
 
   ~TestRobotClass()
   {
-    lifecycle_client_->changeState(Transition::TRANSITION_DEACTIVATE);
-    lifecycle_client_->changeState(Transition::TRANSITION_CLEANUP);
+    lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
+    lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
 
     shut_down_threads_ = true;
     lifecycle_thread_->join();
@@ -158,7 +158,7 @@ protected:
   std::shared_ptr<TestLifecycleNode> lifecycle_node_;
   std::unique_ptr<std::thread> lifecycle_thread_;
 
-  std::shared_ptr<nav2_lifecycle::LifecycleServiceClient> lifecycle_client_;
+  std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 
   geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   geometry_msgs::msg::Twist testTwist_;

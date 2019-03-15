@@ -11,6 +11,7 @@ find_package(yaml_cpp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_lifecycle REQUIRED)
+find_package(nav2_tasks REQUIRED)
 
 nav2_package()
 

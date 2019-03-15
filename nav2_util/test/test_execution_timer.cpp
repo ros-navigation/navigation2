@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_util/execution_timer.hpp"
 #include <chrono>
 #include <thread>
+
+#include "nav2_util/execution_timer.hpp"
 #include "gtest/gtest.h"
 
 using nav2_util::ExecutionTimer;

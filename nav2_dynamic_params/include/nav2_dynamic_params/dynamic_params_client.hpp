@@ -98,11 +98,10 @@ public:
         params = node_->get_parameters(param_names);
       }
     } else {
+      // TODO(mjeronimo):
+      auto temp_node = std::make_shared<rclcpp::Node>("_temp_params_client_node");
 
-//TODO:
-auto temp_node = std::make_shared<rclcpp::Node>("_temp_params_client_node");
-
-      //auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
+      // auto client = std::make_shared<rclcpp::SyncParametersClient>(node_, full_path);
       auto client = std::make_shared<rclcpp::SyncParametersClient>(temp_node, full_path);
 
       if (client->wait_for_service(100ms)) {

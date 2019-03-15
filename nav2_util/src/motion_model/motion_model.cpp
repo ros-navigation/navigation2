@@ -14,11 +14,15 @@
 
 #include "nav2_util/motion_model/motion_model.hpp"
 
+#include <string>
+
 namespace nav2_util
 {
 
 MotionModel *
-MotionModel::createMotionModel(std::string & type, double alpha1, double alpha2, double alpha3, double alpha4, double alpha5)
+MotionModel::createMotionModel(
+  std::string & type, double alpha1, double alpha2,
+  double alpha3, double alpha4, double alpha5)
 {
   if (type == "differential") {
     return new DifferentialMotionModel(alpha1, alpha2, alpha3, alpha4);

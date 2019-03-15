@@ -61,7 +61,9 @@ public:
   /**
    * @brief Constructor that brings up pluginlib loaders
    */
-  DWBLocalPlanner(nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
+  DWBLocalPlanner(
+    nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
+
   virtual ~DWBLocalPlanner() {}
 
   /**

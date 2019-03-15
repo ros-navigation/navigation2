@@ -12,6 +12,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_lifecycle REQUIRED)
+find_package(nav2_tasks REQUIRED)
 
 nav2_package()
 
@@ -36,6 +37,7 @@ set(dependencies
   std_srvs
   nav2_msgs
   nav2_lifecycle
+  nav2_tasks
 )
 
 ament_target_dependencies(${library_name}

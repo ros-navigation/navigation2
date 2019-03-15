@@ -16,13 +16,14 @@
 #define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/task_status.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {

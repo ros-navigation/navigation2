@@ -530,7 +530,7 @@ NavfnPlanner::getCostmap(
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
 
-  auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
+  auto request = std::make_shared<nav2_util::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
   auto result = costmap_client_.invoke(request);

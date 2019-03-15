@@ -33,7 +33,9 @@ DwbController::DwbController()
   RCLCPP_INFO(get_logger(), "Creating");
 
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("dwb_controller_local_costmap");
-  costmap_thread_ = std::make_unique<std::thread>([](rclcpp_lifecycle::LifecycleNode::SharedPtr node) {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
+  costmap_thread_ = std::make_unique<std::thread>(
+    [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
 }
 
 DwbController::~DwbController()
@@ -49,7 +51,8 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(shared_from_this(), costmap_ros_->getTfBuffer(), costmap_ros_);
+  planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
+    shared_from_this(), costmap_ros_->getTfBuffer(), costmap_ros_);
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
@@ -170,7 +173,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
           planner_->setPlan(path);
         }
       }
-	  loop_rate.sleep();
+      loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());

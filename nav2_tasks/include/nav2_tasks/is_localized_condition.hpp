@@ -56,7 +56,7 @@ public:
       initialized_ = true;
     }
 
-    return isLocalized()? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
+    return isLocalized() ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
   }
 
 protected:

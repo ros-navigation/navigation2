@@ -65,7 +65,8 @@ class KeyboardController():
                 self.call_service('shutdown')
                 time.sleep(1)
                 loop = asyncio.new_event_loop()
-                task = loop.create_task(self.context.emit_event(launch.events.Shutdown(reason="Done")))
+                task = loop.create_task(
+                    self.context.emit_event(launch.events.Shutdown(reason="Done")))
                 loop.run_until_complete(task)
                 return
 

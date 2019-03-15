@@ -49,6 +49,8 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
 
+using rclcpp_lifecycle::LifecyclePublisher;
+
 namespace dwb_core
 {
 
@@ -67,7 +69,7 @@ namespace dwb_core
 class DWBPublisher : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
-  DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node);
+  explicit DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node);
 
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
@@ -120,12 +122,12 @@ protected:
   unsigned int prev_marker_count_;
 
   // Publisher Objects
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
+  std::shared_ptr<LifecyclePublisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
+  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
+  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
+  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
+  std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
+  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
 
   nav2_lifecycle::LifecycleNode::SharedPtr node_;
 };

@@ -6,7 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
-find_package(nav2_common REQUIRED)
+find_package(nav2_util REQUIRED)
 
 nav2_package()
 
@@ -18,7 +18,6 @@ set(library_name ${PROJECT_NAME}_core)
 
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
-  src/lifecycle_service_client.cpp
 )
 
 set(dependencies
@@ -26,6 +25,7 @@ set(dependencies
   rclcpp_lifecycle
   lifecycle_msgs
   nav2_common
+  nav2_util
 )
 
 ament_target_dependencies(${library_name}

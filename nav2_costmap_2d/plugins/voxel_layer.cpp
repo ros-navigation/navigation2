@@ -39,7 +39,7 @@
 #include "nav2_costmap_2d/voxel_layer.hpp"
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -60,7 +60,8 @@ void VoxelLayer::onInitialize()
   ObstacleLayer::onInitialize();
 
   node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
-  node_->get_parameter_or_set(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "footprint_clearing_enabled",
+    footprint_clearing_enabled_, true);
   node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
   node_->get_parameter_or_set(name_ + "." + "z_voxels", size_z_, 10);
   node_->get_parameter_or_set(name_ + "." + "origin_z", origin_z_, 0.0);

@@ -52,7 +52,9 @@
 namespace dwb_core
 {
 
-DWBLocalPlanner::DWBLocalPlanner(nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros)
+DWBLocalPlanner::DWBLocalPlanner(
+  nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf,
+  CostmapROSPtr costmap_ros)
 : node_(node),
   tf_(tf),
   costmap_ros_(costmap_ros),
@@ -71,8 +73,10 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   node_->get_parameter_or("prune_plan", prune_plan_, true);
   node_->get_parameter_or("prune_distance", prune_distance_, 1.0);
   node_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
-  node_->get_parameter_or("trajectory_generator_name", traj_generator_name, std::string("dwb_plugins::StandardTrajectoryGenerator"));
-  node_->get_parameter_or("goal_checker_name", goal_checker_name, std::string("dwb_plugins::SimpleGoalChecker"));
+  node_->get_parameter_or("trajectory_generator_name", traj_generator_name,
+    std::string("dwb_plugins::StandardTrajectoryGenerator"));
+  node_->get_parameter_or("goal_checker_name", goal_checker_name,
+    std::string("dwb_plugins::SimpleGoalChecker"));
 
   pub_ = std::make_unique<DWBPublisher>(node_);
   pub_->on_configure(state);

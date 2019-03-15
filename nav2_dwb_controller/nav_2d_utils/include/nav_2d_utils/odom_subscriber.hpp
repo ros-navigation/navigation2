@@ -67,7 +67,6 @@ public:
     odom_sub_ =
       nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
         std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
-		//[&](const nav_msgs::msg::Odometry::SharedPtr msg) {odomCallback(msg);}, 1);
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}

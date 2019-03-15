@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_lifecycle/lifecycle_service_client.hpp"
+#include "nav2_util/lifecycle_service_client.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -29,7 +29,7 @@
 namespace nav2_controller
 {
 
-class Nav2Controller: public rclcpp::Node
+class Nav2Controller : public rclcpp::Node
 {
 public:
   Nav2Controller();
@@ -86,7 +86,7 @@ protected:
   void changeStateForAllNodes(std::uint8_t transition);
 
   // A map of all nodes to be controlled
-  std::map<std::string, std::shared_ptr<nav2_lifecycle::LifecycleServiceClient>> node_map;
+  std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map;
 };
 
 }  // namespace nav2_controller

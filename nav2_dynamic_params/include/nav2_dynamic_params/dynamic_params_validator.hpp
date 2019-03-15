@@ -29,7 +29,8 @@ namespace nav2_dynamic_params
 class DynamicParamsValidator
 {
 public:
-  explicit DynamicParamsValidator(nav2_lifecycle::LifecycleNode::SharedPtr node, bool reject_new_params = false);
+  explicit DynamicParamsValidator(
+    nav2_lifecycle::LifecycleNode::SharedPtr node, bool reject_new_params = false);
 
   ~DynamicParamsValidator() {}
 

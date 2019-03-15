@@ -19,7 +19,6 @@ find_package(laser_geometry REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_util)
-find_package(nav2_tasks)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_lifecycle REQUIRED)
@@ -68,7 +67,6 @@ set(dependencies
   message_filters
   laser_geometry
   nav2_util
-  nav2_tasks
   nav2_voxel_grid
   nav2_msgs
   nav2_lifecycle

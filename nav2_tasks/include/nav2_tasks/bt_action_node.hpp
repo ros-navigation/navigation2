@@ -61,9 +61,9 @@ public:
 
     // Now that we have the ROS node to use, create the task client for this action
     //
-    //   TODO(mjeronimo): There is not currently a way for Behavior Trees to track with the
-    //   lifecycle states. So, instance the task client here, having it automatically configure
-    //   and activate.
+    // TODO(mjeronimo): There is not currently a way for Behavior Trees to track with the
+    // lifecycle states. So, instance the task client here, having it automatically configure
+    // and activate.
     //
     task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_, true);
 

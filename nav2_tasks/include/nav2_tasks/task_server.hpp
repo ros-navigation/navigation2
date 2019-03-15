@@ -33,7 +33,7 @@ template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
 
 template<class CommandMsg, class ResultMsg>
-class TaskServer: public nav2_lifecycle::LifecycleHelperInterface
+class TaskServer : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   explicit TaskServer(nav2_lifecycle::LifecycleNode::SharedPtr node)
@@ -76,7 +76,6 @@ public:
 
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
-
     commandReceived_ = false;
     updateReceived_ = false;
     cancelReceived_ = false;
@@ -108,7 +107,7 @@ public:
     updateSub_.reset();
     cancelSub_.reset();
     resultPub_.reset();
-    statusPub_ .reset();
+    statusPub_.reset();
 
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
@@ -166,9 +165,7 @@ protected:
 
   void clearExecuteCallback()
   {
-    execute_callback_ = nullptr; //[this](const typename CommandMsg::SharedPtr) {
-      //return TaskStatus::FAILED;
-    //};
+    execute_callback_ = nullptr;
   }
 
   // The pointer to our private worker thread

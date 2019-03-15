@@ -30,7 +30,8 @@ using namespace std::chrono_literals;
 namespace nav2_bt_navigator
 {
 
-NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::LifecycleNode::SharedPtr node)
+NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(
+  nav2_lifecycle::LifecycleNode::SharedPtr node)
 : BehaviorTreeEngine(node)
 {
   // Register our custom action nodes so that they can be included in XML description
@@ -59,7 +60,9 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(nav2_lifecycle::Lifecycle
     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node, true);
-  global_localization_client_ = std::make_unique<nav2_tasks::GlobalLocalizationServiceClient>("bt_navigator");
+
+  global_localization_client_ =
+    std::make_unique<nav2_util::GlobalLocalizationServiceClient>("bt_navigator");
 }
 
 BT::NodeStatus
@@ -90,11 +93,7 @@ BT::NodeStatus
 NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tree_node)
 {
   auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
-  if (initPoseReceived) {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  return BT::NodeStatus::FAILURE;
+  return initPoseReceived ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_bt_navigator

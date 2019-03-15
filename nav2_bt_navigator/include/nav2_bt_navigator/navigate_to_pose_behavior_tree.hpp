@@ -20,7 +20,7 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_tasks/behavior_tree_engine.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_tasks/global_localization_service_client.hpp"
+#include "nav2_util/global_localization_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_bt_navigator
@@ -40,7 +40,7 @@ private:
 
   // Service clients
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
-  std::unique_ptr<nav2_tasks::GlobalLocalizationServiceClient> global_localization_client_;
+  std::unique_ptr<nav2_util::GlobalLocalizationServiceClient> global_localization_client_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -77,13 +77,15 @@ void StandardTrajectoryGenerator::initialize(const nav2_lifecycle::LifecycleNode
   }
 }
 
-void StandardTrajectoryGenerator::initializeIterator(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
+void StandardTrajectoryGenerator::initializeIterator(
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
 }
 
-void StandardTrajectoryGenerator::checkUseDwaParam(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
+void StandardTrajectoryGenerator::checkUseDwaParam(
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   bool use_dwa;
   nh->get_parameter_or("use_dwa", use_dwa, false);

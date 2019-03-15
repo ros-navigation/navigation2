@@ -31,6 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <memory>
+#include <string>
+
 #include "gtest/gtest.h"
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "dwb_plugins/stopped_goal_checker.hpp"
@@ -83,10 +87,10 @@ void trueFalse(
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
-class TestLifecycleNode: public nav2_lifecycle::LifecycleNode
+class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
 {
 public:
-  TestLifecycleNode(const std::string & name)
+  explicit TestLifecycleNode(const std::string & name)
   : nav2_lifecycle::LifecycleNode(name)
   {
   }

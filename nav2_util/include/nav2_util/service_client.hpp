@@ -16,8 +16,9 @@
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_util/node_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
@@ -71,7 +72,8 @@ public:
   {
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
-        throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
+        throw std::runtime_error(
+                "ServiceClient: service call interrupted while waiting for service");
       }
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
     }
@@ -94,7 +96,8 @@ public:
   {
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
-        throw std::runtime_error("ServiceClient: service call interrupted while waiting for service");
+        throw std::runtime_error(
+                "ServiceClient: service call interrupted while waiting for service");
       }
       RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
     }
@@ -105,18 +108,19 @@ public:
     if (rclcpp::spin_until_future_complete(node_, future_result) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
-	  return false;
+      return false;
     }
 
     response = future_result.get();
-	return true;
+    return true;
   }
 
   void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
-        throw std::runtime_error("waitForServer: interrupted while waiting for service to appear");
+        throw std::runtime_error(
+                "waitForServer: interrupted while waiting for service to appear");
       }
     }
   }
@@ -126,6 +130,6 @@ protected:
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__SERVICE_CLIENT_HPP_

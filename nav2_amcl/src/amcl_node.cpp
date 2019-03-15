@@ -22,14 +22,16 @@
 
 #include "nav2_amcl/amcl_node.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "message_filters/subscriber.h"
-#include "nav2_tasks/map_service_client.hpp"
 #include "nav2_util/angleutils.hpp"
 #include "nav2_util/duration_conversions.hpp"
+#include "nav2_util/map_service_client.hpp"
 #include "nav2_util/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "tf2/convert.h"
@@ -355,8 +357,6 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
     rclcpp::Time rclcpp_time = rclcpp_node_->now();
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
 
-	printf("rclcpp time: %ld\n", rclcpp_time.nanoseconds());
-    
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg->header.stamp),
         base_frame_id_, tf2_time, odom_frame_id_);
@@ -410,9 +410,9 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 // Pose hypothesis
 typedef struct
 {
-  double weight;            // Total weight (weights sum to 1)
-  pf_vector_t pf_pose_mean; // Mean of pose esimate
-  pf_matrix_t pf_pose_cov;  // Covariance of pose estimate
+  double weight;             // Total weight (weights sum to 1)
+  pf_vector_t pf_pose_mean;  // Mean of pose esimate
+  pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
 } amcl_hyp_t;
 
 void
@@ -515,7 +515,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     force_publication = true;
     resample_count_ = 0;
-  } else if (pf_init_ && lasers_update_[laser_index]) { 
+  } else if (pf_init_ && lasers_update_[laser_index]) {
     // If the robot has moved update the filter
     motion_model_->odometryUpdate(pf_, pose, delta);
   }
@@ -754,15 +754,15 @@ AmclNode::createLaserObject()
 
   if (sensor_model_type_ == "beam") {
     return new nav2_util::BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
-        0.0, max_beams_, map_);
+             0.0, max_beams_, map_);
   } else if (sensor_model_type_ == "likelihood_field_prob") {
-    return new nav2_util::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_,
-        do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
-        beam_skip_error_threshold_, max_beams_, map_);
+    return new nav2_util::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_,
+             laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
+             beam_skip_error_threshold_, max_beams_, map_);
   }
-  
-  return new nav2_util::LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_, laser_likelihood_max_dist_,
-        max_beams_, map_);
+
+  return new nav2_util::LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_,
+           laser_likelihood_max_dist_, max_beams_, map_);
 }
 
 void
@@ -810,9 +810,9 @@ AmclNode::initParameters()
 
   save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-  
-  odom_frame_id_   = nav2_util::strip_leading_slash(odom_frame_id_);
-  base_frame_id_   = nav2_util::strip_leading_slash(base_frame_id_);
+
+  odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
+  base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
   global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
 
   // Semantic checks
@@ -841,7 +841,7 @@ AmclNode::initMap()
   // Perform a check on the map's frame_id
   if (msg.header.frame_id != global_frame_id_) {
     RCLCPP_WARN(get_logger(), "Frame_id of map received:'%s' doesn't match global_frame_id:'%s'."
-    " This could cause issues with reading published topics",
+      " This could cause issues with reading published topics",
       msg.header.frame_id.c_str(), global_frame_id_.c_str());
   }
 
@@ -916,7 +916,7 @@ AmclNode::initMessageFilters()
     *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(std::bind(&AmclNode::laserReceived,
-    this, std::placeholders::_1));
+      this, std::placeholders::_1));
 }
 
 void
@@ -941,7 +941,7 @@ void
 AmclNode::initServices()
 {
   global_loc_srv_ = create_service<std_srvs::srv::Empty>("global_localization",
-    std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+      std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>("request_nomotion_update",
       std::bind(&AmclNode::nomotionUpdateCallback, this, _1, _2, _3));
@@ -959,7 +959,8 @@ AmclNode::initOdometry()
   init_cov_[1] = 0.5 * 0.5;
   init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
 
-  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+        robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
   memset(&latest_odom_pose_, 0, sizeof(latest_odom_pose_));
 }

@@ -28,7 +28,7 @@
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_robot/robot.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_util/costmap_service_client.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -126,14 +126,14 @@ protected:
   std::unique_ptr<NavFn> planner_;
 
   // Service client for getting the costmap
-  nav2_tasks::CostmapServiceClient costmap_client_{"navfn_planner"};
+  nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
 
   // Publishers for the path and endpoints
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
     plan_marker_publisher_;
 
-  // The costmap to use
+  // The costmap to use and its size
   nav2_msgs::msg::Costmap costmap_;
   uint current_costmap_size_[2];
 

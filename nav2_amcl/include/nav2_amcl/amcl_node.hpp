@@ -30,7 +30,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_tasks/map_service_client.hpp"
+#include "nav2_util/map_service_client.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav_msgs/srv/set_map.hpp"
@@ -71,7 +71,7 @@ protected:
 
   // Map-related
   void initMap();
-  nav2_tasks::MapServiceClient map_client_{"amcl"};
+  nav2_util::MapServiceClient map_client_{"amcl"};
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
 #if NEW_UNIFORM_SAMPLING
