@@ -88,11 +88,11 @@ dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
   geometry_msgs::msg::Pose2D pose = start_pose;
 
   std::vector<double> steps = getTimeSteps(cmd_vel);
+  traj.poses.push_back(start_pose);
   for (double dt : steps) {
-    traj.poses.push_back(pose);
-
     //  update the position using the constant cmd_vel
     pose = computeNewPosition(pose, cmd_vel, dt);
+    traj.poses.push_back(pose);
   }
 
   return traj;
