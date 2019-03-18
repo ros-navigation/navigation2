@@ -38,11 +38,8 @@ public:
   PlannerTester();
   ~PlannerTester();
 
-  // Load an image representing a map and its corresponding metadata,
-  // and generate a costmap representation
-  // if no image file is provided, it will load the default map
-  // if no yaml file is provided, it will use default settings
-  void loadMap(const std::string image_file_path = "", const std::string yaml_file_name = "");
+  // Loads the provided map and and generates a costmap from it.
+  void loadDefaultMap();
 
   // Alternatively, use a preloaded 10x10 costmap
   void loadSimpleCostmap(const nav2_util::TestCostmap & testCostmapType);
