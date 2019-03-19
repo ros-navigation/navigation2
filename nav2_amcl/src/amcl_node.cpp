@@ -846,15 +846,16 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
 
       float temp = 0.0;
-      for (int i = 0; i < static_cast<int>(p.pose.covariance.size()); i++) {
-        temp += p.pose.covariance[i];
+      for (auto covariance_value : p.pose.covariance) {
+        temp += covariance_value;
       }
       temp += p.pose.pose.position.x + p.pose.pose.position.y;
       if (!std::isnan(temp)) {
-        RCLCPP_INFO(get_logger(), "AmclNode publishing pose");
+        RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
         pose_pub_->publish(p);
       } else {
-        RCLCPP_WARN(get_logger(), "ignoring NAN pose");
+        RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
+          "configuration or faulty sensor measurements! Pose is not available!");
       }
 
       last_published_pose = p;
