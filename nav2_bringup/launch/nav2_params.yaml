@@ -29,7 +29,7 @@ DwbController:
     sim_time: 1.7
     forward_point_distance: 0.325
     xy_goal_tolerance: 0.25
-    ObstacleFootprint.scale: 0.02
+    ObstacleFootprint.scale: 0.1
     ObstacleFootprint.max_scaling_factor: 0.2
     ObstacleFootprint.scaling_speed: 0.25
     PathAlign.scale: 32.0
