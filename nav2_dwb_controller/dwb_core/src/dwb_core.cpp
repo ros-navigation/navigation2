@@ -230,7 +230,7 @@ nav_2d_msgs::msg::Twist2DStamped DWBLocalPlanner::computeVelocityCommands(
     results->header.stamp = nh_->now();
   }
 
-  nav_2d_msgs::msg::Path2D transformed_plan = transformGlobalPlan(pose);
+  nav_2d_msgs::msg::Path2D transformed_plan;
   nav_2d_msgs::msg::Pose2DStamped goal_pose;
 
   prepareGlobalPlan(pose, transformed_plan, goal_pose);
@@ -380,7 +380,6 @@ double getSquareDistance(
 nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
-  nav_2d_msgs::msg::Path2D transformed_plan;
   if (global_plan_.poses.size() == 0) {
     throw nav_core2::PlannerException("Received plan with zero length");
   }
@@ -391,64 +390,48 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
     throw nav_core2::PlannerTFException("Unable to transform robot pose into global plan's frame");
   }
 
-  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  transformed_plan.header.stamp = pose.header.stamp;
-
   // we'll discard points on the plan that are outside the local costmap
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
   double sq_dist_threshold = dist_threshold * dist_threshold;
-  nav_2d_msgs::msg::Pose2DStamped stamped_pose;
-  stamped_pose.header.frame_id = global_plan_.header.frame_id;
 
-  for (unsigned int i = 0; i < global_plan_.poses.size(); i++) {
-    bool should_break = false;
-    if (getSquareDistance(robot_pose.pose, global_plan_.poses[i]) > sq_dist_threshold) {
-      if (transformed_plan.poses.size() == 0) {
-        // we need to skip to a point on the plan that is within a certain distance of the robot
-        continue;
-      } else {
-        // we're done transforming points
-        should_break = true;
-      }
-    }
+  double sq_prune_dist = prune_distance_ * prune_distance_;
 
-    // now we'll transform until points are outside of our distance threshold
-    stamped_pose.pose = global_plan_.poses[i];
-
-    nav_2d_msgs::msg::Pose2DStamped newer_pose;
-    nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), stamped_pose, newer_pose);
-    transformed_plan.poses.push_back(newer_pose.pose);
-    if (should_break) {break;}
+  double sq_transform_start_threshold;
+  if (prune_plan_) {
+    sq_transform_start_threshold = std::min(sq_dist_threshold, sq_prune_dist);
+  } else {
+    sq_transform_start_threshold = sq_dist_threshold;
   }
 
-  // Prune both plans based on robot position
-  // Note that this part of the algorithm assumes that the global plan starts
-  // near the robot (at one point) Otherwise it may take a few iterations to
-  // converge to the proper behavior
+  bool shorten_transformed_plan = true;
+  double sq_transform_end_threshold;
+  if (shorten_transformed_plan) {
+    sq_transform_end_threshold = std::min(sq_dist_threshold, sq_prune_dist);
+  } else {
+    sq_transform_end_threshold = sq_dist_threshold;
+  }
+
+  auto transformation_begin = std::find_if(begin(global_plan_.poses), end(global_plan_.poses),
+    [&](const auto & pose){return getSquareDistance(robot_pose.pose, pose) < sq_transform_start_threshold;});
+
+  auto transformation_end = std::find_if(transformation_begin, end(global_plan_.poses),
+    [&](const auto & pose){return getSquareDistance(robot_pose.pose, pose) > sq_transform_end_threshold;});
+
+  nav_2d_msgs::msg::Path2D transformed_plan;
+  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
+  transformed_plan.header.stamp = pose.header.stamp;
+  std::transform(transformation_begin, transformation_end, std::back_inserter(transformed_plan.poses),
+    [&](const auto & pose){
+      nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
+      stamped_pose.header.frame_id = global_plan_.header.frame_id;
+      stamped_pose.pose = pose;
+      nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id, stamped_pose, transformed_pose);
+      return transformed_pose.pose;});
+
   if (prune_plan_) {
-    assert(global_plan_.poses.size() >= transformed_plan.poses.size());
-    std::vector<geometry_msgs::msg::Pose2D>::iterator it = transformed_plan.poses.begin();
-    std::vector<geometry_msgs::msg::Pose2D>::iterator global_it = global_plan_.poses.begin();
-    double sq_prune_dist = prune_distance_ * prune_distance_;
-    while (it != transformed_plan.poses.end()) {
-      const geometry_msgs::msg::Pose2D & w = *it;
-      // Fixed error bound of 1 meter for now. Can reduce to a portion of the
-      // map size or based on the resolution
-      if (getSquareDistance(robot_pose.pose, w) < sq_prune_dist) {
-        RCLCPP_DEBUG(
-          rclcpp::get_logger("DWBLocalPlanner"),
-          "Nearest waypoint to <%f, %f> is <%f, %f>\n",
-          robot_pose.pose.x,
-          robot_pose.pose.y,
-          w.x,
-          w.y);
-        break;
-      }
-      it = transformed_plan.poses.erase(it);
-      global_it = global_plan_.poses.erase(global_it);
-    }
+    global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
     pub_.publishGlobalPlan(global_plan_);
   }
 
