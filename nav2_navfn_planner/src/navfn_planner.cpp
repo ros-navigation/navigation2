@@ -66,6 +66,14 @@ NavfnPlanner::NavfnPlanner()
 
   // TODO(orduno): Enable parameter server and get costmap service name from there
 
+  // Get the costmap and create a planner based on the new costmap size
+  getCostmap(costmap_);
+  RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
+    costmap_.metadata.size_x, costmap_.metadata.size_y);
+  current_costmap_size_[0] = costmap_.metadata.size_x;
+  current_costmap_size_[1] = costmap_.metadata.size_y;
+  planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
+
   // Create publishers for visualization of the path and endpoints
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("plan", 1);
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
@@ -91,18 +99,6 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 {
   nav2_tasks::ComputePathToPoseResult result;
   try {
-    // Get an updated costmap
-    getCostmap(costmap_);
-    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
-      costmap_.metadata.size_x, costmap_.metadata.size_y);
-
-    // Create a planner based on the new costmap size
-    if (isPlannerOutOfDate()) {
-      current_costmap_size_[0] = costmap_.metadata.size_x;
-      current_costmap_size_[1] = costmap_.metadata.size_y;
-      planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
-    }
-
     // Get the current pose from the robot
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
@@ -481,6 +477,7 @@ NavfnPlanner::getCostmap(
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
+  costmap_client_.wait_for_service();
   auto result = costmap_client_.invoke(request);
   costmap = result.get()->map;
 }
