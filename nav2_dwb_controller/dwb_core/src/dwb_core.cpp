@@ -396,8 +396,13 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
     costmap->getResolution() / 2.0;
   double sq_dist_threshold = dist_threshold * dist_threshold;
 
+  // If prune_plan is enabled (it is by default) then we want to restrict the
+  // plan to distances within that range as well.
   double sq_prune_dist = prune_distance_ * prune_distance_;
 
+  // Set the maximum distance we'll include points before getting to the part
+  // of the path where the robot is located (the start of the plan). Basically,
+  // these are the points the robot has already passed.
   double sq_transform_start_threshold;
   if (prune_plan_) {
     sq_transform_start_threshold = std::min(sq_dist_threshold, sq_prune_dist);
@@ -405,7 +410,16 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
     sq_transform_start_threshold = sq_dist_threshold;
   }
 
+  // Determines whether we will pass the full plan all the way to the nav goal on
+  // to the critics or just a subset of the plan near the robot. True means pass
+  // just a subset. This gives DWB less discretion to decide how it gets to the
+  // nav goal. Instead it is encouraged to try to get on to the path generated
+  // by the global planner.
   bool shorten_transformed_plan = true;
+
+  // Set the maximum distance we'll include points after the part of the part of
+  // the plan near the robot (the end of the plan). This determines the amount
+  // of the plan passed on to the critics
   double sq_transform_end_threshold;
   if (shorten_transformed_plan) {
     sq_transform_end_threshold = std::min(sq_dist_threshold, sq_prune_dist);
@@ -413,23 +427,33 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
     sq_transform_end_threshold = sq_dist_threshold;
   }
 
-  auto transformation_begin = std::find_if(begin(global_plan_.poses), end(global_plan_.poses),
-    [&](const auto & pose){return getSquareDistance(robot_pose.pose, pose) < sq_transform_start_threshold;});
+  // Find the first pose in the plan that's less than sq_transform_start_threshold
+  // from the robot.
+  auto transformation_begin = std::find_if(
+    begin(global_plan_.poses), end(global_plan_.poses),
+    [&](const auto & global_plan_pose){
+      return getSquareDistance(robot_pose.pose, global_plan_pose) < sq_transform_start_threshold;});
 
+  // Find the first pose in the end of the plan that's further than sq_transform_end_threshold
+  // from the robot
   auto transformation_end = std::find_if(transformation_begin, end(global_plan_.poses),
-    [&](const auto & pose){return getSquareDistance(robot_pose.pose, pose) > sq_transform_end_threshold;});
+    [&](const auto & global_plan_pose){
+      return getSquareDistance(robot_pose.pose, global_plan_pose) > sq_transform_end_threshold;});
 
+  // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = pose.header.stamp;
   std::transform(transformation_begin, transformation_end, std::back_inserter(transformed_plan.poses),
-    [&](const auto & pose){
-      nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = global_plan_.header.frame_id;
-      stamped_pose.pose = pose;
-      nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id, stamped_pose, transformed_pose);
-      return transformed_pose.pose;});
+    [&](const auto & global_plan_pose){
+        nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
+        stamped_pose.header.frame_id = global_plan_.header.frame_id;
+        stamped_pose.pose = global_plan_pose;
+        nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id, stamped_pose, transformed_pose);
+        return transformed_pose.pose;});
 
+  // Remove the portion of the global plan that we've already passed so we don't
+  // process it on the next iteration.
   if (prune_plan_) {
     global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
     pub_.publishGlobalPlan(global_plan_);
