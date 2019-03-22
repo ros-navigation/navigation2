@@ -38,7 +38,7 @@ SimpleNavigator::~SimpleNavigator()
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   auto node = shared_from_this();
 
@@ -59,7 +59,7 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   task_server_->on_activate(state);
   planner_client_->on_activate(state);
@@ -71,7 +71,7 @@ SimpleNavigator::on_activate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   task_server_->on_deactivate(state);
   planner_client_->on_deactivate(state);
@@ -83,7 +83,7 @@ SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   task_server_->on_cleanup(state);
   planner_client_->on_cleanup(state);
@@ -99,14 +99,14 @@ SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -120,13 +120,13 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner for goal pose:");
-  RCLCPP_DEBUG(get_logger(), "  position.x: %f", command->pose.position.x);
-  RCLCPP_DEBUG(get_logger(), "  position.y: %f", command->pose.position.y);
-  RCLCPP_DEBUG(get_logger(), "  position.z: %f", command->pose.position.z);
-  RCLCPP_DEBUG(get_logger(), "  orientation.x: %f", command->pose.orientation.x);
-  RCLCPP_DEBUG(get_logger(), "  orientation.y: %f", command->pose.orientation.y);
-  RCLCPP_DEBUG(get_logger(), "  orientation.z: %f", command->pose.orientation.z);
-  RCLCPP_DEBUG(get_logger(), "  orientation.w: %f", command->pose.orientation.w);
+  RCLCPP_DEBUG(get_logger(), "position.x: %f", command->pose.position.x);
+  RCLCPP_DEBUG(get_logger(), "position.y: %f", command->pose.position.y);
+  RCLCPP_DEBUG(get_logger(), "position.z: %f", command->pose.position.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.x: %f", command->pose.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "orientation.y: %f", command->pose.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "orientation.z: %f", command->pose.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.w: %f", command->pose.orientation.w);
 
   planner_client_->sendCommand(command);
 
