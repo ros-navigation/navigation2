@@ -24,12 +24,12 @@
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_tasks/costmap_service_client.hpp"
+#include "nav2_tasks/get_robot_pose_client.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
-#include "nav2_robot/robot.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -96,8 +96,11 @@ private:
 
   // Request costmap from world model
   void getCostmap(
-    nav2_msgs::msg::Costmap & costmap, const std::string layer = "master",
-    const std::chrono::nanoseconds waitTime = std::chrono::milliseconds(100));
+    nav2_msgs::msg::Costmap & costmap,
+    const std::string layer = "master");
+
+  // get latest robot pose from the world model
+  geometry_msgs::msg::Pose getRobotPose();
 
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
@@ -116,6 +119,7 @@ private:
 
   // Service client for getting the costmap
   nav2_tasks::CostmapServiceClient costmap_client_;
+  nav2_tasks::GetRobotPoseClient get_robot_pose_client_;
 
   // Publishers for the path and endpoints
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
@@ -136,8 +140,6 @@ private:
 
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
-
-  std::unique_ptr<nav2_robot::Robot> robot_;
 };
 
 }  // namespace nav2_navfn_planner

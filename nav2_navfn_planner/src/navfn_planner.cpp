@@ -72,8 +72,6 @@ NavfnPlanner::NavfnPlanner()
   plan_marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
-  robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
   task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
     std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
@@ -92,10 +90,12 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
 {
   nav2_tasks::ComputePathToPoseResult result;
   try {
-    // Get an updated costmap
-    getCostmap(costmap_);
+    // Get an updated costmap and pose
+    getCostmap(costmap_, "master");
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+    auto start = getRobotPose();
 
     // Create a planner based on the new costmap size
     if (isPlannerOutOfDate()) {
@@ -104,20 +104,12 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
       planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
-    // Get the current pose from the robot
-    auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-
-    if (!robot_->getCurrentPose(start)) {
-      RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-      return TaskStatus::FAILED;
-    }
-
     RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
+      "(%.2f, %.2f).", start.position.x, start.position.y,
       command->pose.position.x, command->pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start->pose.pose, command->pose, tolerance_, result);
+    bool foundPath = makePlan(start, command->pose, tolerance_, result);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (task_server_->cancelRequested()) {
@@ -138,7 +130,7 @@ NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "Publishing the valid path.");
     publishPlan(result);
-    publishEndpoints(start->pose.pose, command->pose);
+    publishEndpoints(start, command->pose);
 
     // TODO(orduno): Enable potential visualization
 
@@ -473,8 +465,8 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 
 void
 NavfnPlanner::getCostmap(
-  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
-  const std::chrono::nanoseconds /*waitTime*/)
+  nav2_msgs::msg::Costmap & costmap,
+  const std::string /*layer*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
@@ -482,7 +474,7 @@ NavfnPlanner::getCostmap(
   auto request = std::make_shared<nav2_tasks::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
-  auto result = costmap_client_.invoke(request);
+  auto result = costmap_client_.invoke(request, 5s);
   costmap = result.get()->map;
 }
 
@@ -598,6 +590,18 @@ NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
   }
 
   plan_publisher_->publish(rviz_path);
+}
+
+geometry_msgs::msg::Pose
+NavfnPlanner::getRobotPose()
+{
+  std::shared_ptr<nav2_tasks::GetRobotPoseClient::GetRobotPoseRequest> request;
+
+  auto result = get_robot_pose_client_.invoke(request, 5s);
+  if (!result.get()->is_pose_valid) {
+    throw std::runtime_error("Current robot pose is not available.");
+  }
+  return result.get()->pose.pose;
 }
 
 }  // namespace nav2_navfn_planner

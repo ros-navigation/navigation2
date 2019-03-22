@@ -16,7 +16,6 @@
   <build_depend>nav2_tasks</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_msgs</build_depend>
-  <build_depend>nav2_robot</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>builtin_interfaces</build_depend>
@@ -25,7 +24,6 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>nav2_robot</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
