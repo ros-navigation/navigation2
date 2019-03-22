@@ -27,7 +27,6 @@ DwbController:
     vy_samples: 5
     vtheta_samples: 20
     sim_time: 1.7
-    forward_point_distance: 0.325
     xy_goal_tolerance: 0.25
     ObstacleFootprint.scale: 0.1
     ObstacleFootprint.max_scaling_factor: 0.2
