@@ -46,8 +46,10 @@ void GoalAlignCritic::onInit()
 {
   GoalDistCritic::onInit();
   stop_on_failure_ = false;
-  forward_point_distance_ = nav_2d_utils::searchAndGetParam(nh_, "forward_point_distance", 0.325);
-  double xy_goal_align_tolerance = nav_2d_utils::searchAndGetParam(nh_, "xy_goal_align_tolerance", 1.0);
+  forward_point_distance_ =
+    nav_2d_utils::searchAndGetParam(nh_, "forward_point_distance", 0.325);
+  double xy_goal_align_tolerance =
+    nav_2d_utils::searchAndGetParam(nh_, "xy_goal_align_tolerance", 1.0);
   xy_goal_align_tolerance_sq_ = xy_goal_align_tolerance * xy_goal_align_tolerance;
 }
 
@@ -72,8 +74,7 @@ bool GoalAlignCritic::prepare(
   double dxy_sq = dx * dx + dy * dy;
   if (dxy_sq > xy_goal_align_tolerance_sq_) {
     in_window_ = false;
-  }
-  else {
+  } else {
     in_window_ = true;
   }
 
@@ -87,7 +88,7 @@ double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
     return 0.0;
   }
 
-return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
+  return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }
 
 }  // namespace dwb_critics
