@@ -155,6 +155,7 @@ protected:
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
+  bool obstacle_enabled_flag;
   bool local_costmap_flag_;
   void updateFootprint(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
@@ -187,6 +188,7 @@ protected:
   int combination_method_;
 
   std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
+  std::unique_ptr<nav2_util::IsLocalized> localized;
 
 private:
   void reconfigureCB();

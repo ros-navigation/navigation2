@@ -20,9 +20,9 @@
 namespace nav2_util
 {
 
-IsLocalized::IsLocalized()
+IsLocalized::IsLocalized(const rclcpp::Node::SharedPtr & node)
+: node_(node)
 {
-  node_ = rclcpp::Node::make_shared("is_localized_class");
   robot_ = std::make_unique<nav2_robot::Robot>(node_);
 
   node_->get_parameter_or<double>("is_localized.x_tol", x_tol_, 0.25);

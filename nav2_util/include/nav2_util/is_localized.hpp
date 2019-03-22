@@ -26,7 +26,7 @@ class IsLocalized
 {
 
 public:
-  IsLocalized();
+  IsLocalized(const rclcpp::Node::SharedPtr & node);
   bool isLocalized();
 
 private:

@@ -63,8 +63,10 @@ namespace nav2_costmap_2d
 
 void ObstacleLayer::onInitialize()
 {
+  obstacle_enabled_flag = false;
+  localized = std::make_unique<nav2_util::IsLocalized>(node_);
   node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
-  node_->get_parameter_or_set(name_ + "." + "enable_always", local_costmap_flag_, true);
+  node_->get_parameter_or_set(name_ + "." + "local_costmap_flag", local_costmap_flag_, true);
   node_->get_parameter_or_set(
     name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
   node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
@@ -240,7 +242,7 @@ void ObstacleLayer::reconfigureCB()
   dynamic_param_client_->get_event_param(
     name_ + "." + "enabled", enabled_);
   dynamic_param_client_->get_event_param(
-    name_ + "." + "enable_always", local_costmap_flag_);
+    name_ + "." + "local_costmap_flag", local_costmap_flag_);
   dynamic_param_client_->get_event_param(
     name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   dynamic_param_client_->get_event_param(
@@ -325,7 +327,9 @@ void ObstacleLayer::updateBounds(
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
-  if (!enabled_) {
+  obstacle_enabled_flag = false;
+  enableObstacleLayer();
+  if (!obstacle_enabled_flag) {
     return;
   }
   useExtraBounds(min_x, min_y, max_x, max_y);
@@ -417,8 +421,9 @@ void ObstacleLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  obstacle_enabled_flag = false;
   enableObstacleLayer();
-  if (!enabled_) {
+  if (!obstacle_enabled_flag) {
     return;
   }
 
@@ -618,15 +623,13 @@ void ObstacleLayer::reset()
 
 void ObstacleLayer::enableObstacleLayer()
 {
-  nav2_util::IsLocalized localized;
-
-  if (local_costmap_flag_) {
-    enabled_ = true;
+  if (local_costmap_flag_ && enabled_) {
+    obstacle_enabled_flag = true;
     return;
-  } else if (!local_costmap_flag_ && localized.isLocalized()) {
-    enabled_ = true;
+  } else if (!local_costmap_flag_ && localized->isLocalized() && enabled_) {
+    obstacle_enabled_flag = true;
   } else {
-    enabled_ = false;
+    obstacle_enabled_flag = false;
   }
 }
 
