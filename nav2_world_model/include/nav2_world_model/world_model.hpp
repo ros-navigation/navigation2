@@ -23,6 +23,7 @@
 #include "nav2_util/costmap.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
+#include "nav2_msgs/srv/get_robot_pose.hpp"
 #include "tf2_ros/transform_listener.h"
 
 namespace nav2_world_model
@@ -39,9 +40,13 @@ private:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
+  void get_robot_pose_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response);
 
-  // Server for providing a costmap
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
+  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   tf2_ros::Buffer tfBuffer_;
