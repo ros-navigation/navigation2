@@ -12,6 +12,7 @@ find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 nav2_package()
 
@@ -24,6 +25,7 @@ add_library(${library_name} SHARED
   src/lifecycle_service_client.cpp
   src/string_utils.cpp
   src/lifecycle_utils.cpp
+  src/is_localized.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -34,6 +36,7 @@ ament_target_dependencies(${library_name}
   nav_msgs
   geometry_msgs
   lifecycle_msgs
+  nav2_robot
 )
 
 add_library(map_lib SHARED
@@ -76,6 +79,7 @@ ament_target_dependencies(map_loader
   nav_msgs
   SDL
   SDL_image
+  nav2_robot
 )
 
 target_link_libraries(map_loader

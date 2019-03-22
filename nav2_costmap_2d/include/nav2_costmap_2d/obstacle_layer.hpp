@@ -55,6 +55,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_util/is_localized.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -154,6 +155,7 @@ protected:
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
+  bool local_costmap_flag_;
   void updateFootprint(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
@@ -188,6 +190,7 @@ protected:
 
 private:
   void reconfigureCB();
+  void enableObstacleLayer();
 };
 
 }  // namespace nav2_costmap_2d

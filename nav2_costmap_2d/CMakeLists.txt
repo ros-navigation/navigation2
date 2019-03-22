@@ -22,6 +22,7 @@ find_package(nav2_dynamic_params)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav2_robot REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -71,6 +72,7 @@ set(dependencies
   nav2_voxel_grid
   nav2_msgs
   visualization_msgs
+  nav2_robot
 )
 
 ament_target_dependencies(nav2_costmap_2d_core

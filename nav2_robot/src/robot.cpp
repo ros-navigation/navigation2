@@ -26,10 +26,10 @@ Robot::Robot(rclcpp::Node::SharedPtr & node)
 {
   // TODO(mhpanah): Topic names for pose and odom should should be configured with parameters
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
+    "/amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
+    "/odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
 
   vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 }

@@ -36,7 +36,8 @@ local_costmap:
     ros__parameters:
       robot_radius: 0.092
       obstacle_layer:
-        enabled: False
+        enabled: True
+        local_costmap_flag: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
@@ -48,7 +49,8 @@ global_costmap:
   global_costmap:
     ros__parameters:
       obstacle_layer:
-        enabled: False
+        enabled: True
+        local_costmap_flag: False
       always_send_full_costmap: True
       observation_sources: scan
       scan:

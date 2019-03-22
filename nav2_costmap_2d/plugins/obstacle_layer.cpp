@@ -64,6 +64,7 @@ namespace nav2_costmap_2d
 void ObstacleLayer::onInitialize()
 {
   node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
+  node_->get_parameter_or_set(name_ + "." + "enable_always", local_costmap_flag_, true);
   node_->get_parameter_or_set(
     name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_, true);
   node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
@@ -238,6 +239,8 @@ void ObstacleLayer::reconfigureCB()
 
   dynamic_param_client_->get_event_param(
     name_ + "." + "enabled", enabled_);
+  dynamic_param_client_->get_event_param(
+    name_ + "." + "enable_always", local_costmap_flag_);
   dynamic_param_client_->get_event_param(
     name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   dynamic_param_client_->get_event_param(
@@ -414,6 +417,7 @@ void ObstacleLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  enableObstacleLayer();
   if (!enabled_) {
     return;
   }
@@ -610,6 +614,20 @@ void ObstacleLayer::reset()
   resetMaps();
   current_ = true;
   activate();
+}
+
+void ObstacleLayer::enableObstacleLayer()
+{
+  nav2_util::IsLocalized localized;
+
+  if (local_costmap_flag_) {
+    enabled_ = true;
+    return;
+  } else if (!local_costmap_flag_ && localized.isLocalized()) {
+    enabled_ = true;
+  } else {
+    enabled_ = false;
+  }
 }
 
 }  // namespace nav2_costmap_2d
