@@ -97,7 +97,7 @@ private:
   // Request costmap from world model
   void getCostmap(
     nav2_msgs::msg::Costmap & costmap, const std::string layer = "master",
-    const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
+    const std::chrono::nanoseconds waitTime = std::chrono::milliseconds(100));
 
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
