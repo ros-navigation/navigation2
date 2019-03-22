@@ -60,7 +60,7 @@ NavfnPlanner::~NavfnPlanner()
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -86,10 +86,6 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  // Initialize supporting objects
-  robot_ = std::make_unique<nav2_robot::Robot>(node);
-  robot_->on_configure(state);
-
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
       std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
@@ -98,39 +94,34 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
-  robot_->on_activate(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
-  robot_->on_deactivate(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
+NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  robot_->on_cleanup(state);
-
   plan_publisher_.reset();
   plan_marker_publisher_.reset();
-  robot_.reset();
 
   action_server_.reset();
   planner_.reset();
@@ -167,6 +158,8 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
+    auto start = getRobotPose();
+
     // Update planner based on the new costmap size
     if (isPlannerOutOfDate()) {
       current_costmap_size_[0] = costmap_.metadata.size_x;
@@ -174,21 +167,12 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
-    // Get the current pose from the robot
-    auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-
-    if (!robot_->getCurrentPose(start)) {
-      RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-      goal_handle->abort(result);
-      return;
-    }
-
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
+      "(%.2f, %.2f).", start.position.x, start.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start->pose.pose, goal->pose.pose, tolerance_, result->path);
+    bool foundPath = makePlan(start, goal->pose.pose, tolerance_, result->path);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (goal_handle->is_canceling()) {
@@ -209,7 +193,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
-    publishEndpoints(start->pose.pose, goal->pose.pose);
+    publishEndpoints(start, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 
@@ -546,8 +530,8 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 
 void
 NavfnPlanner::getCostmap(
-  nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
-  const std::chrono::nanoseconds /*waitTime*/)
+  nav2_msgs::msg::Costmap & costmap,
+  const std::string /*layer*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
@@ -555,7 +539,7 @@ NavfnPlanner::getCostmap(
   auto request = std::make_shared<nav2_util::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
-  auto result = costmap_client_.invoke(request);
+  auto result = costmap_client_.invoke(request, 5s);
   costmap = result.get()->map;
 }
 
@@ -671,6 +655,18 @@ NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
   }
 
   plan_publisher_->publish(rviz_path);
+}
+
+geometry_msgs::msg::Pose
+NavfnPlanner::getRobotPose()
+{
+  auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
+
+  auto result = get_robot_pose_client_.invoke(request, 5s);
+  if (!result.get()->is_pose_valid) {
+    throw std::runtime_error("Current robot pose is not available.");
+  }
+  return result.get()->pose.pose;
 }
 
 }  // namespace nav2_navfn_planner
