@@ -431,26 +431,38 @@ nav_2d_msgs::msg::Path2D DWBLocalPlanner::transformGlobalPlan(
   // from the robot.
   auto transformation_begin = std::find_if(
     begin(global_plan_.poses), end(global_plan_.poses),
-    [&](const auto & global_plan_pose){
-      return getSquareDistance(robot_pose.pose, global_plan_pose) < sq_transform_start_threshold;});
+    [&](const auto & global_plan_pose) {
+      return getSquareDistance(robot_pose.pose, global_plan_pose) < sq_transform_start_threshold;
+    });
 
   // Find the first pose in the end of the plan that's further than sq_transform_end_threshold
   // from the robot
-  auto transformation_end = std::find_if(transformation_begin, end(global_plan_.poses),
-    [&](const auto & global_plan_pose){
-      return getSquareDistance(robot_pose.pose, global_plan_pose) > sq_transform_end_threshold;});
+  auto transformation_end = std::find_if(
+    transformation_begin, end(global_plan_.poses),
+    [&](const auto & global_plan_pose) {
+      return getSquareDistance(robot_pose.pose, global_plan_pose) > sq_transform_end_threshold;
+    });
 
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = pose.header.stamp;
-  std::transform(transformation_begin, transformation_end, std::back_inserter(transformed_plan.poses),
-    [&](const auto & global_plan_pose){
-        nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
-        stamped_pose.header.frame_id = global_plan_.header.frame_id;
-        stamped_pose.pose = global_plan_pose;
-        nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id, stamped_pose, transformed_pose);
-        return transformed_pose.pose;});
+
+  // Helper function for the transform below. Converts a pose2D from global
+  // frame to local
+  auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
+      nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
+      stamped_pose.header.frame_id = global_plan_.header.frame_id;
+      stamped_pose.pose = global_plan_pose;
+      nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id,
+        stamped_pose, transformed_pose);
+      return transformed_pose.pose;
+    };
+
+  std::transform(
+    transformation_begin, transformation_end,
+    std::back_inserter(transformed_plan.poses),
+    transformGlobalPoseToLocal);
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration.
