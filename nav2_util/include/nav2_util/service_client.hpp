@@ -55,7 +55,7 @@ public:
 
   typename ResponseType::SharedPtr invoke(
     typename RequestType::SharedPtr & request,
-    const std::chrono::seconds timeout = std::chrono::seconds::max())
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
@@ -108,7 +108,7 @@ public:
     return response.get();
   }
 
-  void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
+  void wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {

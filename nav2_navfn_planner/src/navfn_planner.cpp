@@ -547,7 +547,7 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 void
 NavfnPlanner::getCostmap(
   nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
-  const std::chrono::milliseconds /*waitTime*/)
+  const std::chrono::nanoseconds /*waitTime*/)
 {
   // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
   //               including master (aggregate) layer
