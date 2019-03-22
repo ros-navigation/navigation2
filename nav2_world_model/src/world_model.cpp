@@ -16,6 +16,8 @@
 
 #include <memory>
 
+using namespace std::placeholders;
+
 namespace nav2_world_model
 {
 
@@ -56,10 +58,11 @@ WorldModel::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  // Create a service that will use the callback function to handle requests
+  // Create a service that will use the callback function to handle requests.
   costmap_service_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
-      std::bind(&WorldModel::costmap_service_callback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+      std::bind(&WorldModel::costmap_service_callback, this, _1, _2, _3));
+  get_robot_pose_service_ = create_service<nav2_msgs::srv::GetRobotPose>("GetRobotPose",
+      std::bind(&WorldModel::get_robot_pose_callback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -143,6 +146,14 @@ WorldModel::costmap_service_callback(
   response->map.metadata.origin.orientation = tf2::toMsg(quaternion);
   response->map.data.resize(data_length);
   response->map.data.assign(data, data + data_length);
+}
+
+void WorldModel::get_robot_pose_callback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
+  const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response)
+{
+  response->is_pose_valid = costmap_ros_->getRobotPose(response->pose);
 }
 
 }  // namespace nav2_world_model

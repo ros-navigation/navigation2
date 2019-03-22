@@ -22,6 +22,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
+#include "nav2_msgs/srv/get_robot_pose.hpp"
 
 namespace nav2_world_model
 {
@@ -41,14 +42,18 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The WorldModel provides the GetCostmap service
+  // The WorldModel provides these services
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
+  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
 
-  // The callback for the GetCostmap service
   void costmap_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
+  void get_robot_pose_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response);
 
   // The implementation of the WorldModel uses a Costmap2DROS node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
