@@ -87,11 +87,8 @@ void StaticLayer::onInitialize()
 
   // we'll subscribe to the latched topic that the map server uses
   RCLCPP_INFO(node_->get_logger(), "Requesting the map...");
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(map_topic,
-      std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1), custom_qos_profile);
+      std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
   map_received_ = false;
   has_updated_data_ = false;
 
@@ -110,7 +107,7 @@ void StaticLayer::onInitialize()
     RCLCPP_INFO(node_->get_logger(), "Subscribing to updates");
     map_update_sub_ = node_->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
       map_topic + "_updates",
-      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), custom_qos_profile);
+      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
 
   } else {
     has_updated_data_ = true;
