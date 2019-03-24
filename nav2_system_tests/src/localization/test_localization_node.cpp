@@ -77,8 +77,8 @@ private:
 
 bool TestAmclPose::defaultAmclTest()
 {
+  initial_pose_pub_->publish(testPose_);
   while (!pose_callback_) {
-    initial_pose_pub_->publish(testPose_);
     rclcpp::spin_some(node);
   }
   if (std::abs(amcl_pose_x - testPose_.pose.pose.position.x) < tol_ &&
