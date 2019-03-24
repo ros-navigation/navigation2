@@ -23,7 +23,12 @@ DwbController:
     decel_lim_x: -2.5
     decel_lim_y: 0.0
     decel_lim_theta: -3.2
-    ObstacleFootprint.scale: 1.0
+    vx_samples: 20
+    vy_samples: 5
+    vtheta_samples: 20
+    sim_time: 1.7
+    xy_goal_tolerance: 0.25
+    ObstacleFootprint.scale: 0.1
     ObstacleFootprint.max_scaling_factor: 0.2
     ObstacleFootprint.scaling_speed: 0.25
     PathAlign.scale: 32.0
