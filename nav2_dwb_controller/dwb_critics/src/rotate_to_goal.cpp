@@ -51,13 +51,6 @@ void RotateToGoalCritic::onInit()
 {
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(nh_, "xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-  double max_vel_y;
-  nh_->get_parameter_or("max_vel_y", max_vel_y, 0.0);
-  if (max_vel_y == 0.0) {
-    ignore_y_velocity_ = true;
-  } else {
-    ignore_y_velocity_ = false;
-  }
 }
 
 bool RotateToGoalCritic::prepare(
@@ -85,13 +78,8 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   }
 
   // If we're sufficiently close to the goal, any transforming velocity is invalid
-  if (fabs(traj.velocity.x) > EPSILON) {
+  if (fabs(traj.velocity.x) > EPSILON || fabs(traj.velocity.y) > EPSILON) {
     throw nav_core2::IllegalTrajectoryException(name_, "Nonrotation command near goal.");
-  }
-  if (!ignore_y_velocity_) {
-    if (fabs(traj.velocity.y) > EPSILON) {
-      throw nav_core2::IllegalTrajectoryException(name_, "Nonrotation command near goal.");
-    }
   }
 
   if (traj.poses.empty()) {
