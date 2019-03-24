@@ -121,10 +121,10 @@ void DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation 
     const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
     double displayLevel = (twist.total - best_cost) / (worst_cost - best_cost);
     if (twist.total >= 0) {
-      m.color.r = 0;
-      m.color.g = 0;
-      m.color.b = 1.0;
-      m.color.a = 1.0 - displayLevel;
+      m.color.r = displayLevel;
+      m.color.g = 1.0 - displayLevel;
+      m.color.b = 0;
+      m.color.a = 1.0;
       m.ns = validNamespace;
       m.id = currentValidId;
       ++currentValidId;
