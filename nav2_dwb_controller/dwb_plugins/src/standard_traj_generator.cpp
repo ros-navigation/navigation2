@@ -148,13 +148,15 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   geometry_msgs::msg::Pose2D pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
   std::vector<double> steps = getTimeSteps(cmd_vel);
+  traj.poses.push_back(start_pose);
   for (double dt : steps) {
-    traj.poses.push_back(pose);
     //  calculate velocities
     vel = computeNewVelocity(cmd_vel, vel, dt);
 
     //  update the position of the robot using the velocities passed in
     pose = computeNewPosition(pose, vel, dt);
+
+    traj.poses.push_back(pose);
   }  //  end for simulation steps
 
   return traj;
