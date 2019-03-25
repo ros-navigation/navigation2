@@ -135,10 +135,10 @@ def test_RobotMovesToGoal(test_robot):
 
 def test_all(test_robot):
     # set transforms to use_sim_time
-    test_robot.setSimTime()
     result = True
     if (result):
         result = test_InitialPose(test_robot, 10)
+        test_robot.setSimTime()
     if (result):
         result = test_RobotMovesToGoal(test_robot)
     if (not result):
