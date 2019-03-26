@@ -63,6 +63,8 @@ bool RotateToGoalCritic::prepare(
   double dxy_sq = dx * dx + dy * dy;
   if (dxy_sq > xy_goal_tolerance_sq_) {
     in_window_ = false;
+  } else {
+    in_window_ = true;
   }
   goal_yaw_ = goal.theta;
   return true;
@@ -85,7 +87,7 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   }
 
   double end_yaw = traj.poses.back().theta;
-  return angles::shortest_angular_distance(end_yaw, goal_yaw_);
+  return fabs(angles::shortest_angular_distance(end_yaw, goal_yaw_));
 }
 
 }  // namespace dwb_critics
