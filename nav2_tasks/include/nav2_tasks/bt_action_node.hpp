@@ -69,13 +69,16 @@ public:
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
           cv_cancel_.notify_one();
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::RUNNING:
@@ -93,12 +96,14 @@ public:
 
   void halt() override
   {
-    // Send a cancel message to the task server
-    task_client_->cancel();
-
-    // Then wait for the response before continuing
-    std::unique_lock<std::mutex> lock(cancel_mutex_);
-    cv_cancel_.wait(lock);
+    // Shut the node down if it is currently running
+    if (status() == BT::NodeStatus::RUNNING) {
+      task_client_->cancel();
+      nav2_tasks::TaskStatus result;
+      do {
+        result = task_client_->waitForResult(result_, node_loop_timeout_);
+      } while (result != nav2_tasks::TaskStatus::CANCELED);
+    }
 
     CoroActionNode::halt();
   }
