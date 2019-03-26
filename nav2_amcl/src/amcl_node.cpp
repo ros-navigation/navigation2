@@ -536,12 +536,6 @@ AmclNode::globalLocalizationCallback(
   if (map_ == NULL) {
     return;
   }
-  init_pose_[0] = 0.0;
-  init_pose_[1] = 0.0;
-  init_pose_[2] = 0.0;
-  init_cov_[0] = 0.5 * 0.5;
-  init_cov_[1] = 0.5 * 0.5;
-  init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
 
   std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
