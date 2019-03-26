@@ -543,7 +543,7 @@ AmclNode::globalLocalizationCallback(
   pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
     reinterpret_cast<void *>(map_));
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
-
+  initial_pose_received = true;
   pf_init_ = false;
 }
 
