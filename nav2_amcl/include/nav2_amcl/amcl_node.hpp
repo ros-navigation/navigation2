@@ -242,6 +242,7 @@ private:
 
   bool tf_broadcast_;
   int scan_error_count_ = 0;
+  bool initial_pose_received;
 };
 
 #endif  // NAV2_AMCL__AMCL_NODE_HPP_

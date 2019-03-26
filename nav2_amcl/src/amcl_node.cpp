@@ -92,7 +92,8 @@ AmclNode::AmclNode()
 
   createMotionModel();
 
-  updatePoseFromServer();
+  // updatePoseFromServer();
+  initial_pose_received = false;
 
   tfb_.reset(new tf2_ros::TransformBroadcaster(node_));
   tf_.reset(new tf2_ros::Buffer(get_clock()));
@@ -279,6 +280,7 @@ void AmclNode::updatePoseFromServer()
   } else {
     RCLCPP_WARN(get_logger(), "ignoring NAN in initial covariance AA");
   }
+  initial_pose_received = true;
 */
 }
 
@@ -574,7 +576,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (map_ == NULL) {
     return;
   }
-
+  if (!initial_pose_received) {
+    return;
+  }
   std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
 
@@ -932,6 +936,7 @@ void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
   handleInitialPoseMessage(*msg);
+  initial_pose_received = true;
 }
 
 void
