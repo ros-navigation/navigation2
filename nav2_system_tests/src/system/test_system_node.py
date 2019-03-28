@@ -14,14 +14,22 @@
 # limitations under the License.
 
 import math
+import os
+import random
 import sys
 import time
 
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
+
+import pandas
+
 import rclpy
 from rclpy.node import Node
+
+random_test_flag = False
+num_run = 1
 
 
 class NavTester(Node):
@@ -50,6 +58,9 @@ class NavTester(Node):
 
     def setGoalPose(self, pose):
         self.goal_pose = pose
+        global random_test_flag
+        if random_test_flag:
+            self.genRandomGoalPose()
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose = pose
@@ -86,11 +97,22 @@ class NavTester(Node):
         self.get_logger().info('Setting transforms to use sim time from gazebo')
         from subprocess import call
         # loop through the problematic nodes
-        for nav2_node in ('/static_transform_publisher', '/map_server',
+        for nav2_node in ('/world_model',
                           '/global_costmap/global_costmap', '/local_costmap/local_costmap'):
             while (call(['ros2', 'param', 'set', nav2_node, 'use_sim_time', 'True'])):
                 self.get_logger().error("Error couldn't set use_sim_time param on: " +
                                         nav2_node + ' retrying...')
+
+    def genRandomGoalPose(self):
+        validPoseFile = os.getenv('VALID_POSE')
+        print(validPoseFile)
+        df = pandas.read_csv(validPoseFile, header=0, names=['x', 'y'])
+        nrows = df['x'].count()
+        rand_index = random.randint(1, nrows)
+        pose_x = df['x'][rand_index-1]
+        pose_y = df['y'][rand_index-1]
+        self.goal_pose.position.x = pose_x
+        self.goal_pose.position.y = pose_y
 
 
 def test_InitialPose(test_robot, timeout):
@@ -140,7 +162,13 @@ def test_all(test_robot):
         result = test_InitialPose(test_robot, 10)
         test_robot.setSimTime()
     if (result):
-        result = test_RobotMovesToGoal(test_robot)
+        global num_run
+        retry_count = 0
+        while retry_count < int(num_run):
+            retry_count += 1
+            result = test_RobotMovesToGoal(test_robot)
+            if (not result):
+                break
     if (not result):
         # retry the test one more time
         test_robot.get_logger().info('Test failed, retrying...')
@@ -152,7 +180,11 @@ def test_all(test_robot):
 
 def main(argv=sys.argv[1:]):
     rclpy.init()
-
+    global random_test_flag
+    global num_run
+    if (os.getenv('RANDOM_FLAG')):
+        random_test_flag = True
+        num_run = os.getenv('NUM_IT')
     test_robot = NavTester()
     test_robot.get_logger().info('Starting test_system_node')
 

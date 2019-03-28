@@ -22,6 +22,8 @@ from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
 from launch import LaunchService
 import launch.actions
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing import LaunchTestService
 
@@ -53,25 +55,17 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
     else:
         raise EnvironmentError('NAVIGATOR environment variable not set correctly.')
-
+    turtlebot3_bringup_path = get_package_prefix('turtlebot3_bringup')
     return LaunchDescription([
         # Launch gazebo server for simulation
         launch.actions.ExecuteProcess(
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
             output='screen'),
-
-        # Launch navigation2 nodes
-        launch_ros.actions.Node(
-            package='tf2_ros',
-            node_executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
-
-        launch_ros.actions.Node(
-            package='tf2_ros',
-            node_executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
+        # Launch turtlebot_3 bringup
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(turtlebot3_bringup_path +
+                                          '/share/turtlebot3_bringup/' +
+                                          'launch/turtlebot3_robot.launch.py')),
 
         launch_ros.actions.Node(
             package='nav2_map_server',
