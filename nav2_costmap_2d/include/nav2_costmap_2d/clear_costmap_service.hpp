@@ -66,7 +66,7 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
 
   rclcpp::Service<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr clear_around_service_;
-  void clearAroundCallback(
+  void clearAroundRobotCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Response> response);

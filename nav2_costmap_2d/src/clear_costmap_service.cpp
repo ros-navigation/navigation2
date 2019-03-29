@@ -45,7 +45,7 @@ ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap
 
   clear_around_service_ = node_->create_service<ClearAroundRobot>(
     "clear_around_" + costmap.getName(),
-    std::bind(&ClearCostmapService::clearAroundCallback, this,
+    std::bind(&ClearCostmapService::clearAroundRobotCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   clear_entire_service_ = node_->create_service<ClearEntirely>(
@@ -65,13 +65,18 @@ void ClearCostmapService::clearExceptRegionCallback(
   clearExceptRegion(request->reset_distance);
 }
 
-void ClearCostmapService::clearAroundCallback(
+void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
   const shared_ptr<ClearAroundRobot::Request> request,
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
   RCLCPP_INFO(node_->get_logger(),
     "Received request to clear around robot the " + costmap_.getName());
+
+  if ((request->window_size_x == 0) || (request->window_size_y == 0)) {
+    clearEntirely();
+    return;
+  }
 
   clearAroundRobot(request->window_size_x, request->window_size_y);
 }
