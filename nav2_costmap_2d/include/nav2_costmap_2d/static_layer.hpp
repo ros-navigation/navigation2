@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 #define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
+#include <atomic>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
@@ -89,7 +90,7 @@ private:
   std::string map_frame_;  /// @brief frame that map is located in
   bool subscribe_to_updates_;
   bool map_received_;
-  bool has_updated_data_;
+  std::atomic<bool> has_updated_data_;
   unsigned int x_, y_, width_, height_;
   bool track_unknown_space_;
   bool use_maximum_;
