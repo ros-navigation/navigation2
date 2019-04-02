@@ -127,6 +127,7 @@ void StaticLayer::reconfigureCB()
   dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
 
   if (enabled != enabled_) {
+    std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
     enabled_ = enabled;
     has_updated_data_ = true;
     x_ = y_ = 0;
@@ -215,6 +216,7 @@ void StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_
   map_frame_ = new_map->header.frame_id;
 
   // we have a new map, update full size of map
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   x_ = y_ = 0;
   width_ = size_x_;
   height_ = size_y_;
@@ -240,6 +242,7 @@ void StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstShared
       costmap_[index] = interpretValue(update->data[di++]);
     }
   }
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   x_ = update->x;
   y_ = update->y;
   width_ = update->width;
@@ -264,6 +267,7 @@ void StaticLayer::deactivate()
 void StaticLayer::reset()
 {
   if (first_map_only_) {
+    std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
     has_updated_data_ = true;
   } else {
     // TODO(orduno) Issue #580, calling onInitialize() when the node is already spinning results on an error.
@@ -286,7 +290,8 @@ void StaticLayer::updateBounds(
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   double wx, wy;
-
+  
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   mapToWorld(x_, y_, wx, wy);
   *min_x = std::min(wx, *min_x);
   *min_y = std::min(wy, *min_y);
