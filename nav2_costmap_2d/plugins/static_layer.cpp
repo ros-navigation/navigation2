@@ -126,8 +126,8 @@ void StaticLayer::reconfigureCB()
   bool enabled = true;
   dynamic_param_client_->get_event_param_or(name_ + "." + "enabled", enabled, true);
 
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (enabled != enabled_) {
-    std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
     enabled_ = enabled;
     has_updated_data_ = true;
     x_ = y_ = 0;
@@ -281,6 +281,7 @@ void StaticLayer::updateBounds(
   double * max_x,
   double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!layered_costmap_->isRolling() ) {
     if (!map_received_ || !(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -290,8 +291,7 @@ void StaticLayer::updateBounds(
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   double wx, wy;
-  
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
   mapToWorld(x_, y_, wx, wy);
   *min_x = std::min(wx, *min_x);
   *min_y = std::min(wy, *min_y);
@@ -307,6 +307,7 @@ void StaticLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!map_received_) {
     return;
   }
