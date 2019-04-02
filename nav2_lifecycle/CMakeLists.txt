@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_simple_navigator)
+project(nav2_lifecycle)
 
 find_package(ament_cmake REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -15,37 +14,26 @@ include_directories(
   include
 )
 
-set(executable_name simple_navigator)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
-
-set(library_name ${executable_name}_core)
+set(library_name ${PROJECT_NAME}_core)
 
 add_library(${library_name} SHARED
-  src/simple_navigator.cpp
+  src/lifecycle_node.cpp
 )
 
 set(dependencies
+  lifecycle_msgs
+  nav2_common
+  nav2_util
   rclcpp
-  std_msgs
-  nav2_tasks
-  nav2_msgs
-  nav2_lifecycle
+  rclcpp_lifecycle
 )
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS
+  ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -61,5 +49,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
 
 ament_package()

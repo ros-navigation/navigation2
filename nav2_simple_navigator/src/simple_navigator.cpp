@@ -14,10 +14,9 @@
 
 #include "nav2_simple_navigator/simple_navigator.hpp"
 
-#include <string>
-#include <memory>
-#include <exception>
 #include <chrono>
+#include <memory>
+#include <stdexcept>
 
 using namespace std::chrono_literals;
 using nav2_tasks::TaskStatus;
@@ -26,26 +25,89 @@ namespace nav2_simple_navigator
 {
 
 SimpleNavigator::SimpleNavigator()
-: Node("SimpleNavigator")
+: nav2_lifecycle::LifecycleNode("simple_navigator")
 {
-  RCLCPP_INFO(get_logger(), "Initializing");
-
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
-  planner_client_ =
-    std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
-
-  controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(temp_node);
-
-  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(temp_node);
-
-  task_server_->setExecuteCallback(
-    std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
+  RCLCPP_INFO(get_logger(), "Creating");
 }
 
 SimpleNavigator::~SimpleNavigator()
 {
+  RCLCPP_INFO(get_logger(), "Destroying");
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Configuring");
+
+  auto node = shared_from_this();
+
+  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(node);
+  controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(node);
+
+  task_server_->on_configure(state);
+  planner_client_->on_configure(state);
+  controller_client_->on_configure(state);
+
+  task_server_->setExecuteCallback(
+    std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_activate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+
+  task_server_->on_activate(state);
+  planner_client_->on_activate(state);
+  controller_client_->on_activate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+
+  task_server_->on_deactivate(state);
+  planner_client_->on_deactivate(state);
+  controller_client_->on_deactivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  task_server_->on_cleanup(state);
+  planner_client_->on_cleanup(state);
+  controller_client_->on_cleanup(state);
+
+  task_server_.reset();
+  planner_client_.reset();
+  controller_client_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_ERROR(get_logger(), "Handling error state");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
+{
   RCLCPP_INFO(get_logger(), "Shutting down");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 TaskStatus
@@ -57,14 +119,14 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
   // Create the path to be returned from ComputePath and sent to the FollowPath task
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
-  RCLCPP_DEBUG(get_logger(), "Getting the path from the planner");
-  RCLCPP_DEBUG(get_logger(), "goal->pose.position.x: %f", command->pose.position.x);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.position.y: %f", command->pose.position.y);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.position.z: %f", command->pose.position.z);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.x: %f", command->pose.orientation.x);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.y: %f", command->pose.orientation.y);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.z: %f", command->pose.orientation.z);
-  RCLCPP_DEBUG(get_logger(), "goal->pose.orientation.w: %f", command->pose.orientation.w);
+  RCLCPP_DEBUG(get_logger(), "Getting the path from the planner for goal pose:");
+  RCLCPP_DEBUG(get_logger(), "position.x: %f", command->pose.position.x);
+  RCLCPP_DEBUG(get_logger(), "position.y: %f", command->pose.position.y);
+  RCLCPP_DEBUG(get_logger(), "position.z: %f", command->pose.position.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.x: %f", command->pose.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "orientation.y: %f", command->pose.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "orientation.z: %f", command->pose.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.w: %f", command->pose.orientation.w);
 
   planner_client_->sendCommand(command);
 
@@ -73,7 +135,7 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
+      RCLCPP_INFO(get_logger(), "Navigation task has been canceled");
       planner_client_->cancel();
       task_server_->setCanceled();
       return TaskStatus::CANCELED;
@@ -84,12 +146,12 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
 
     switch (status) {
       case TaskStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "Achieved navigation goal of (%.2f, %.2f)",
+        RCLCPP_INFO(get_logger(), "Calculated global plan to reach (%.2f, %.2f)",
           command->pose.position.x, command->pose.position.y);
         goto planning_succeeded;
 
       case TaskStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "Planning task failed.");
+        RCLCPP_ERROR(get_logger(), "Planning task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::CANCELED:
@@ -97,11 +159,10 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
         break;
 
       case TaskStatus::RUNNING:
-        RCLCPP_DEBUG(get_logger(), "Planning task still running.");
+        RCLCPP_DEBUG(get_logger(), "Planning task still running");
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "Invalid status value.");
         throw std::logic_error("Invalid status value");
     }
   }
@@ -112,12 +173,12 @@ planning_succeeded:
 
   int index = 0;
   for (auto pose : path->poses) {
-    RCLCPP_DEBUG(get_logger(), "point %u x: %0.2f, y: %0.2f",
+    RCLCPP_DEBUG(get_logger(), "Point %u x: %0.2f, y: %0.2f",
       index, pose.position.x, pose.position.y);
     index++;
   }
 
-  RCLCPP_INFO(get_logger(), "Sending path to the controller to execute.");
+  RCLCPP_INFO(get_logger(), "Sending path to the controller to execute");
 
   controller_client_->sendCommand(path);
 
@@ -126,7 +187,7 @@ planning_succeeded:
     // Check to see if this task (navigation) has been canceled. If so, cancel any child
     // tasks and then cancel this task
     if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Navigation task has been canceled.");
+      RCLCPP_INFO(get_logger(), "Navigation task has been canceled");
       controller_client_->cancel();
       task_server_->setCanceled();
       return TaskStatus::CANCELED;
@@ -139,7 +200,7 @@ planning_succeeded:
     switch (status) {
       case TaskStatus::SUCCEEDED:
         {
-          RCLCPP_INFO(get_logger(), "Control task completed.");
+          RCLCPP_INFO(get_logger(), "Control task completed");
 
           // This is an empty message, so there are no fields to set
           nav2_tasks::NavigateToPoseResult navigationResult;
@@ -149,7 +210,7 @@ planning_succeeded:
         }
 
       case TaskStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "Control task failed.");
+        RCLCPP_ERROR(get_logger(), "Control task failed");
         return TaskStatus::FAILED;
 
       case TaskStatus::CANCELED:
@@ -161,7 +222,6 @@ planning_succeeded:
         break;
 
       default:
-        RCLCPP_ERROR(get_logger(), "Invalid status value.");
         throw std::logic_error("Invalid status value");
     }
   }
