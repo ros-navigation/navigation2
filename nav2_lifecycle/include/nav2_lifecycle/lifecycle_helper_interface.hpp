@@ -30,6 +30,8 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 class LifecycleHelperInterface
 {
 public:
+  virtual ~LifecycleHelperInterface() {}
+
   virtual CallbackReturn on_configure(const rclcpp_lifecycle::State & state) = 0;
   virtual CallbackReturn on_activate(const rclcpp_lifecycle::State & state) = 0;
   virtual CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) = 0;
