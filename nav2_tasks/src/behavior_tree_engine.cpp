@@ -14,32 +14,35 @@
 
 #include "nav2_tasks/behavior_tree_engine.hpp"
 
+#include <memory>
 #include <string>
-#include "geometry_msgs/msg/pose2_d.hpp"
+
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
-#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_tasks/navigate_to_pose_action.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_tasks
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(rclcpp::Node::SharedPtr node)
+BehaviorTreeEngine::BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node)
 : node_(node)
 {
 }
 
-TaskStatus BehaviorTreeEngine::run(
+TaskStatus
+BehaviorTreeEngine::run(
   BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
   // Set a couple values that all of the action nodes expect/require
-  blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+  blackboard->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node_);
   blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
 
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes
@@ -55,7 +58,6 @@ TaskStatus BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      tree.root_node->halt();
       return TaskStatus::CANCELED;
     }
 
@@ -65,5 +67,37 @@ TaskStatus BehaviorTreeEngine::run(
   return (result == BT::NodeStatus::SUCCESS) ?
          TaskStatus::SUCCEEDED : TaskStatus::FAILED;
 }
+
+TaskStatus
+BehaviorTreeEngine::run(
+  std::unique_ptr<BT::Tree> & tree,
+  std::function<bool()> cancelRequested,
+  std::chrono::milliseconds loopTimeout)
+{
+  rclcpp::WallRate loopRate(loopTimeout);
+  BT::NodeStatus result = BT::NodeStatus::RUNNING;
+
+  // Loop until something happens with ROS or the node completes w/ success or failure
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    result = tree->root_node->executeTick();
+
+    // Check if we've received a cancel message
+    if (cancelRequested()) {
+      return TaskStatus::CANCELED;
+    }
+
+    loopRate.sleep();
+  }
+
+  return (result == BT::NodeStatus::SUCCESS) ?
+         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+}
+
+BT::Tree
+BehaviorTreeEngine::buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard)
+{
+  return BT::buildTreeFromText(factory_, xml_string, blackboard);
+}
+
 
 }  // namespace nav2_tasks

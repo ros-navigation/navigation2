@@ -10,32 +10,57 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License. Reserved.
+// limitations under the License.
 
 #ifndef NAV2_UTIL__SERVICE_CLIENT_HPP_
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_util/node_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
+
+template<typename FutureT, typename WaitTimeT>
+std::future_status
+wait_for_result(
+  FutureT & future,
+  WaitTimeT time_to_wait)
+{
+  auto end = std::chrono::steady_clock::now() + time_to_wait;
+  std::chrono::milliseconds wait_period(100);
+  std::future_status status = std::future_status::timeout;
+  do {
+    auto now = std::chrono::steady_clock::now();
+    auto time_left = end - now;
+    if (time_left <= std::chrono::seconds(0)) {break;}
+    status = future.wait_for((time_left < wait_period) ? time_left : wait_period);
+  } while (rclcpp::ok() && status != std::future_status::ready);
+  return status;
+}
 
 template<class ServiceT>
 class ServiceClient
 {
 public:
   explicit ServiceClient(
-    const std::string & name,
+    const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
   {
     if (provided_node) {
       node_ = provided_node;
     } else {
-      node_ = generate_internal_node(name + "_Node");
+      node_ = generate_internal_node(service_name + "_Node");
     }
-    client_ = node_->create_client<ServiceT>(name);
+    client_ = node_->create_client<ServiceT>(service_name);
+  }
+
+  ServiceClient(const std::string & service_name, const std::string & parent_name)
+  {
+    node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client");
+    client_ = node_->create_client<ServiceT>(service_name);
   }
 
   using RequestType = typename ServiceT::Request;
@@ -45,22 +70,57 @@ public:
     typename RequestType::SharedPtr & request,
     const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
-    auto result_future = client_->async_send_request(request);
+    while (!client_->wait_for_service(std::chrono::seconds(1))) {
+      if (!rclcpp::ok()) {
+        throw std::runtime_error(
+                "ServiceClient: service call interrupted while waiting for service");
+      }
+      RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+    }
 
-    if (rclcpp::spin_until_future_complete(node_, result_future, timeout) !=
+    RCLCPP_DEBUG(node_->get_logger(), "send async request");
+    auto future_result = client_->async_send_request(request);
+
+    if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
       throw std::runtime_error("ServiceClient::async_send_request: service call failed");
     }
 
-    return result_future.get();
+    return future_result.get();
+  }
+
+  bool invoke(
+    typename RequestType::SharedPtr & request,
+    typename ResponseType::SharedPtr & response)
+  {
+    while (!client_->wait_for_service(std::chrono::seconds(1))) {
+      if (!rclcpp::ok()) {
+        throw std::runtime_error(
+                "ServiceClient: service call interrupted while waiting for service");
+      }
+      RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+    }
+
+    RCLCPP_DEBUG(node_->get_logger(), "send async request");
+    auto future_result = client_->async_send_request(request);
+
+    if (rclcpp::spin_until_future_complete(node_, future_result) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      return false;
+    }
+
+    response = future_result.get();
+    return true;
   }
 
   void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
-        throw std::runtime_error("waitForServer: interrupted while waiting for service to appear");
+        throw std::runtime_error(
+                "waitForServer: interrupted while waiting for service to appear");
       }
     }
   }
@@ -70,6 +130,6 @@ protected:
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__SERVICE_CLIENT_HPP_

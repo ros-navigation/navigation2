@@ -34,10 +34,8 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
-    BtActionNode<FollowPathCommand, FollowPathResult>::onInit();
-
     // Set up the input and output messages
     command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
     result_ = std::make_shared<nav2_tasks::FollowPathResult>();

@@ -34,10 +34,8 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
-    BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>::onInit();
-
     // Use the position and orientation fields from the XML attributes
     geometry_msgs::msg::Point position;
     bool have_position = getParam<geometry_msgs::msg::Point>("position", position);

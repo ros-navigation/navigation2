@@ -12,22 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
-#include <thread>
+#include "nav2_util/motion_model/motion_model.hpp"
 
-#include "nav2_util/execution_timer.hpp"
-#include "gtest/gtest.h"
+#include <string>
 
-using nav2_util::ExecutionTimer;
-using std::this_thread::sleep_for;
-using namespace std::chrono_literals;
-
-TEST(ExecutionTimer, BasicDelay)
+namespace nav2_util
 {
-  ExecutionTimer t;
-  t.start();
-  sleep_for(10ns);
-  t.end();
-  ASSERT_GE(t.elapsed_time(), 10ns);
-  ASSERT_GE(t.elapsed_time_in_seconds(), 1e-8);
+
+MotionModel *
+MotionModel::createMotionModel(
+  std::string & type, double alpha1, double alpha2,
+  double alpha3, double alpha4, double alpha5)
+{
+  if (type == "differential") {
+    return new DifferentialMotionModel(alpha1, alpha2, alpha3, alpha4);
+  } else if (type == "omnidirectional") {
+    return new OmniMotionModel(alpha1, alpha2, alpha3, alpha4, alpha5);
+  }
+
+  return nullptr;
 }
+
+}  // namespace nav2_util

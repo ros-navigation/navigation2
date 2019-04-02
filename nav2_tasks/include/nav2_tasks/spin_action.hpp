@@ -37,10 +37,8 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
-    BtActionNode<SpinCommand, SpinResult>::onInit();
-
     // Create the input and output messages
     command_ = std::make_shared<nav2_tasks::SpinCommand>();
     result_ = std::make_shared<nav2_tasks::SpinResult>();

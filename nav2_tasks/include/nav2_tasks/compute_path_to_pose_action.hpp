@@ -35,10 +35,8 @@ public:
   {
   }
 
-  void onInit() override
+  void onConfigure() override
   {
-    BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>::onInit();
-
     command_ =
       blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal");
 

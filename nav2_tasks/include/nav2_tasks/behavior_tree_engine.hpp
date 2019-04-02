@@ -15,13 +15,16 @@
 #ifndef NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 #define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 
+#include <memory>
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_tasks/task_status.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {
@@ -29,8 +32,9 @@ namespace nav2_tasks
 class BehaviorTreeEngine
 {
 public:
-  explicit BehaviorTreeEngine(rclcpp::Node::SharedPtr node);
+  explicit BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node);
   BehaviorTreeEngine() = delete;
+  virtual ~BehaviorTreeEngine() {}
 
   TaskStatus run(
     BT::Blackboard::Ptr & blackboard,
@@ -38,9 +42,35 @@ public:
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
+  TaskStatus run(
+    std::unique_ptr<BT::Tree> & tree,
+    std::function<bool()> cancelRequested,
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
+
+  BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
+
+  void cancelAllActions(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
+          action->halt();
+        }
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
+  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+  void resetTree(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        node->setStatus(BT::NodeStatus::IDLE);
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
 protected:
   // The ROS node to use for any task clients
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
   // A factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;

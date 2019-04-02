@@ -17,34 +17,68 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <string>
 #include <thread>
-#include <memory>
 
+#include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_tasks/task_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
-#include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
 {
 
 constexpr std::chrono::milliseconds defaultServerTimeout = std::chrono::milliseconds(5000);
 
-template<class CommandMsg, class ResultMsg>
+template<typename CommandMsg, typename ResultMsg>
 const char * getTaskName();
 
-template<class CommandMsg, class ResultMsg>
-class TaskClient
+template<typename CommandMsg, typename ResultMsg>
+class TaskClient : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
-  explicit TaskClient(rclcpp::Node::SharedPtr & node)
-  : node_(node)
+  explicit TaskClient(nav2_lifecycle::LifecycleNode::SharedPtr node, bool autoinit = false)
+  : node_(node), autoinit_(autoinit)
   {
     resultReceived_ = false;
     statusReceived_ = false;
 
     statusMsg_ = std::make_shared<StatusMsg>();
 
+    // There are some cases where the TaskClient is used from a context that doesn't have
+    // a lifecycle-style inteface (such as BehaviorTrees). For those situations, the
+    // TaskClient class can be automatically configured and activated
+
+    if (autoinit_) {
+      rclcpp_lifecycle::State state0(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "unconfigured");
+      on_configure(state0);
+
+      rclcpp_lifecycle::State state1(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+      on_activate(state1);
+    }
+  }
+
+  TaskClient() = delete;
+
+  ~TaskClient()
+  {
+    if (autoinit_) {
+      rclcpp_lifecycle::State state0(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "active");
+      on_deactivate(state0);
+
+      rclcpp_lifecycle::State state1(
+        lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE, "inactive");
+      on_cleanup(state1);
+    }
+  }
+
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
+  {
     std::string taskName = getTaskName<CommandMsg, ResultMsg>();
 
     // Create the publishers
@@ -57,12 +91,38 @@ public:
         std::bind(&TaskClient::onResultReceived, this, std::placeholders::_1));
     statusSub_ = node_->create_subscription<StatusMsg>(taskName + "_status",
         std::bind(&TaskClient::onStatusReceived, this, std::placeholders::_1));
+
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
-  TaskClient() = delete;
-
-  ~TaskClient()
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
+    commandPub_->on_activate();
+    updatePub_->on_activate();
+    cancelPub_->on_activate();
+
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+  {
+    commandPub_->on_deactivate();
+    updatePub_->on_deactivate();
+    cancelPub_->on_deactivate();
+
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
+  {
+    commandPub_.reset();
+    updatePub_.reset();
+    cancelPub_.reset();
+
+    resultSub_.reset();
+    statusSub_.reset();
+
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
   // The client can tell the TaskServer to execute its operation
@@ -70,6 +130,7 @@ public:
   {
     resultReceived_ = false;
     statusReceived_ = false;
+
     commandPub_->publish(msg);
   }
 
@@ -77,6 +138,7 @@ public:
   {
     resultReceived_ = false;
     statusReceived_ = false;
+
     updatePub_->publish(msg);
   }
 
@@ -94,16 +156,14 @@ public:
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    // TODO(mjeronimo): Replace this with a legit way to wait for the server
     while (node_->count_subscribers(taskName) < 1) {
-      rclcpp::spin_some(node_);
-
       auto t1 = std::chrono::high_resolution_clock::now();
       auto elapsedTime = t1 - t0;
 
       if (elapsedTime > timeout) {
         return false;
       }
+
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
@@ -206,16 +266,19 @@ protected:
   }
 
   // The TaskClient isn't itself a node, so needs to know which one to use
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
   // The client's publishers: the command and cancel messages
-  typename rclcpp::Publisher<CommandMsg>::SharedPtr commandPub_;
-  typename rclcpp::Publisher<CommandMsg>::SharedPtr updatePub_;
-  rclcpp::Publisher<CancelMsg>::SharedPtr cancelPub_;
+  typename rclcpp_lifecycle::LifecyclePublisher<CommandMsg>::SharedPtr commandPub_;
+  typename rclcpp_lifecycle::LifecyclePublisher<CommandMsg>::SharedPtr updatePub_;
+  rclcpp_lifecycle::LifecyclePublisher<CancelMsg>::SharedPtr cancelPub_;
 
   // The client's subscriptions: result, feedback, and status
   typename rclcpp::Subscription<ResultMsg>::SharedPtr resultSub_;
   rclcpp::Subscription<StatusMsg>::SharedPtr statusSub_;
+
+  // Whether to automatically walk the pubs through the lifecycle states
+  bool autoinit_;
 };
 
 }  // namespace nav2_tasks
