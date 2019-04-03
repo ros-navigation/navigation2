@@ -51,14 +51,13 @@ public:
   }
 
   ActionStatus invoke(
-    //const typename ActionT::GoalRequestService::Request & goal,
     const typename ActionT::Goal & goal,
     typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result,
     typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr)
   {
     // Send the goal
 
-    auto future_goal_handle = action_client_->async_send_goal(goal, callback /*ignore_result*/);
+    auto future_goal_handle = action_client_->async_send_goal(goal, callback);
 
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
@@ -101,10 +100,9 @@ public:
 
   void send_goal(
     const typename ActionT::Goal & goal,
-    typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr
-    /*ignore_result*/)
+    typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr)
   {
-    auto future_goal_handle = action_client_->async_send_goal(goal, callback /*ignore_result*/);
+    auto future_goal_handle = action_client_->async_send_goal(goal, callback);
 
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)

@@ -1,0 +1,7 @@
+#goal definition
+geometry_msgs/QuaternionStamped goal
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
