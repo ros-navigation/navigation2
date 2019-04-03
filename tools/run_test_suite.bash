@@ -4,16 +4,14 @@ set -ex
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  # gets the directory of this script
 
-# Skip nav2_system_tests because the system tests are flaky and need to be retried
-# a few times.
-#
-# Skip the nav2_dynamic_params tests because they fail when run concurrently with
-# other tests. We could run all the tests sequentially to fix this, however, by
-# just deferring this one package and running it later, we don't have to slow everything down.
-colcon test --packages-skip nav2_system_tests nav2_dynamic_params
+# Skip flaky tests. Nav2 system tests will be run later.
+colcon test --packages-skip nav2_system_tests nav2_dynamic_params nav2_motion_primitives
 
 # run the stable tests in nav2_dynamic_params
 colcon test --packages-select nav2_dynamic_params --ctest-args --exclude-regex "test_dynamic_params_client"
+
+# run the stable tests in nav2_motion_primitives
+colcon test --packages-select nav2_motion_primitives --ctest-args --exclude-regex "test_motion_primitives"
 
 # run the linters in nav2_system_tests. They only need to be run once.
 colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "test_.*"  # run the linters
@@ -24,7 +22,6 @@ colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "te
 # that happened in any of the `colcon test` lines above.
 colcon test-result --verbose
 
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_dynamic_params -t test_dynamic_params_client
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_simple_navigator
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator
