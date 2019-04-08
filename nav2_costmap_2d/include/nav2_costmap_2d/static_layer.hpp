@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 #define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
+#include <mutex>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
