@@ -13,14 +13,17 @@
 // limitations under the License.
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_bt_navigator/bt_navigator.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_bt_navigator::BtNavigator>());
+  auto node = std::make_shared<nav2_bt_navigator::BtNavigator>();
+  rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
+  RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
   return 0;
 }
