@@ -35,8 +35,6 @@ WorldModel::~WorldModel()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
   costmap_thread_->join();
-
-  printf("WORLD_MODEL::~WORLD_MODEL: costmap use count: %ld\n", costmap_ros_.use_count());
 }
 
 nav2_lifecycle::CallbackReturn

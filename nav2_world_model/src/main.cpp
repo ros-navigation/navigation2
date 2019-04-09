@@ -24,8 +24,6 @@ int main(int argc, char ** argv)
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
-  printf("WORLD_MODEL: use_count: %ld\n", node.use_count());
-
   RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
   return 0;
 }
