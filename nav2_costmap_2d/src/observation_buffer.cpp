@@ -248,7 +248,7 @@ bool ObservationBuffer::isCurrent() const
         "nav2_costmap_2d"),
       "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.", //NOLINT
       topic_name_.c_str(),
-      (nh_->now() - last_updated_), expected_update_rate_);
+      (nh_->now() - last_updated_).seconds(), expected_update_rate_.seconds());
   }
   return current;
 }
