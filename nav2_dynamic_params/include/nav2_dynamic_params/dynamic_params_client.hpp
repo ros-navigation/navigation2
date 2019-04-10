@@ -358,7 +358,7 @@ private:
   bool get_param_from_map(const std::string & name, T & value)
   {
     if (dynamic_param_map_.count(name) > 0 &&
-      !dynamic_param_map_[name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET)
+      !(dynamic_param_map_[name].get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET))
     {
       value = dynamic_param_map_[name].get_value<T>();
       return true;
