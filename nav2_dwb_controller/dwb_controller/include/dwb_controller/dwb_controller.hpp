@@ -19,12 +19,12 @@
 #include <string>
 #include <thread>
 
-#include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
-#include "dwb_core/dwb_local_planner.hpp"
 #include "dwb_core/common_types.hpp"
+#include "dwb_core/dwb_local_planner.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_dwb_controller
 {
