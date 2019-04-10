@@ -57,7 +57,7 @@ public:
     resultPub_ = node_->create_publisher<ResultMsg>(taskName + "_result");
     statusPub_ = node_->create_publisher<StatusMsg>(taskName + "_status");
 
-    execute_callback_ = [this](const typename CommandMsg::SharedPtr) {
+    execute_callback_ = [](const typename CommandMsg::SharedPtr) {
         printf("Execute callback not set!\n");
         return TaskStatus::FAILED;
       };
