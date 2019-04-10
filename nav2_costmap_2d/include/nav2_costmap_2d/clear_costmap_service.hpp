@@ -55,7 +55,6 @@ private:
 
   // Clearing parameters
   unsigned char reset_value_;
-  double reset_distance_;
   std::vector<std::string> clearable_layers_;
 
   // Server for clearing the costmap
