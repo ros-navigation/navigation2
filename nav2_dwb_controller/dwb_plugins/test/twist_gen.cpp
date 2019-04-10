@@ -74,9 +74,12 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
 
 rclcpp::Node::SharedPtr makeTestNode(const std::string & name)
 {
-  rclcpp::NodeOptions node_options;
-  node_options.initial_parameters(getDefaultKinematicParameters());
-  return rclcpp::Node::make_shared(name, node_options);
+  return rclcpp::Node::make_shared(
+    name,
+    "",  // namespace
+    rclcpp::contexts::default_context::get_global_default_context(),
+    std::vector<std::string>(),  // arguments
+    getDefaultKinematicParameters());
 }
 
 void checkLimits(
