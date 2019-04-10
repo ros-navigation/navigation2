@@ -65,6 +65,7 @@ add_library(motions_lib SHARED
   src/motion_model/omni_motion_model.cpp
   src/motion_model/differential_motion_model.cpp
 )
+target_link_libraries(motions_lib pf_lib)
 
 add_library(map_loader SHARED
   src/map_loader/map_loader.cpp
