@@ -32,14 +32,15 @@
  * Test harness for ObstacleLayer for Costmap2D
  */
 
+#include <memory>
 #include <set>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
-
 
 class RclCppFixture
 {
@@ -49,18 +50,57 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
+{
+public:
+  explicit TestLifecycleNode(const std::string & name)
+  : nav2_lifecycle::LifecycleNode(name)
+  {
+  }
+
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+
+  nav2_lifecycle::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  {
+    return nav2_lifecycle::CallbackReturn::SUCCESS;
+  }
+};
+
 class TestNode : public ::testing::Test
 {
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared("obstacle_test_node");
+    node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
   }
 
   ~TestNode() {}
 
 protected:
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<TestLifecycleNode> node_;
 };
 
 /*

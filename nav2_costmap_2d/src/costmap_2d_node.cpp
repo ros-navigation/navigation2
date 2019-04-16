@@ -45,7 +45,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-
+#if 0
   // This node is created and spun in order to pass clock to buffer for Costmap2DROS node
   auto time_node = rclcpp::Node::make_shared("time_node");
 
@@ -57,8 +57,9 @@ int main(int argc, char ** argv)
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(time_node);
-  exec.add_node(costmap_node);
+  exec.add_node(costmap_node->get_node_base_interface());
   exec.spin();
+#endif
   rclcpp::shutdown();
   return 0;
 }

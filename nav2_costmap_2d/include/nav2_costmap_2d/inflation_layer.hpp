@@ -44,7 +44,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -119,16 +118,8 @@ public:
     return cost;
   }
 
-  /**
-   * @brief Change the values of the inflation radius parameters
-   * @param inflation_radius The new inflation radius
-   * @param cost_scaling_factor The new weight
-   */
-  void setInflationParameters(double inflation_radius, double cost_scaling_factor);
-
 protected:
   virtual void onFootprintChanged();
-  std::recursive_mutex * inflation_access_;
 
 private:
   /**
@@ -188,11 +179,6 @@ private:
   double ** cached_distances_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
-  void reconfigureCB();
-
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
-  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
   // Indicates that the entire costmap should be reinflated next time around.
   bool need_reinflation_;
 };
