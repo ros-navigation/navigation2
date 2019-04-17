@@ -890,8 +890,20 @@ AmclNode::publishAmclPose(
     }
   }
   p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
-  pose_pub_->publish(p);
-  last_published_pose = p;
+      float temp = 0.0;
+      for (auto covariance_value : p.pose.covariance) {
+        temp += covariance_value;
+      }
+      temp += p.pose.pose.position.x + p.pose.pose.position.y;
+      if (!std::isnan(temp)) {
+        RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
+        pose_pub_->publish(p);
+        last_published_pose = p;
+      } else {
+        RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
+          "configuration or faulty sensor measurements! Pose is not available!");
+      }
+
   RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
     hyps[max_weight_hyp].pf_pose_mean.v[0],
     hyps[max_weight_hyp].pf_pose_mean.v[1],
@@ -936,137 +948,6 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tmp_tf_stamped.child_frame_id = odom_frame_id_;
   tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
   this->tfb_->sendTransform(tmp_tf_stamped);
-}
-
-void
-AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
-{
-  std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-  last_laser_received_ts_ = now();
-  if (map_ == NULL) {
-    return;
-  }
-  if (!initial_pose_received) {
-    return;
-  }
-  std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
-  int laser_index = -1;
-  geometry_msgs::msg::PoseStamped laser_pose;
-
-  // Do we have the base->base_laser Tx yet?
-  if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
-    if (!addNewScanner(laser_index, laser_scan, laser_scan_frame_id, laser_pose))
-     {
-      return; //could not find transform
-     }
-  } else {
-    // we have the laser pose, retrieve laser index
-    laser_index = frame_to_laser_[laser_scan->header.frame_id];
-  }
-
-  // Where was the robot when this scan was taken?
-  pf_vector_t pose;
-  if (!getOdomPose(latest_odom_pose_, pose.v[0], pose.v[1], pose.v[2],
-    laser_scan->header.stamp, base_frame_id_))
-  {
-    RCLCPP_DEBUG(get_logger(), "Couldn't determine robot's pose associated with laser scan");
-    return;
-  }
-
-  pf_vector_t delta = pf_vector_zero();
-  bool force_publication = false;
-  if (!pf_init_) {
-    pf_odom_pose_ = pose;
-    pf_init_ = true;
-
-    for (unsigned int i = 0; i < lasers_update_.size(); i++) {
-      lasers_update_[i] = true;
-    }
-
-    force_publication = true;
-    resample_count_ = 0;
-  } else {  // if (pf_init)
-  
-    // Set the laser update flags
-    if (shouldUpdateFilter(pose, delta))
-    {
-      for (unsigned int i = 0; i < lasers_update_.size(); i++)
-      {
-        lasers_update_[i] = true;
-      }
-    }
-    if (lasers_update_[laser_index])
-    {
-      OdomData odata;
-      odata.pose = pose;
-      odata.delta = delta;
-
-      //motionModel_->odometryUpdate(pf_, pose, delta);
-      odom_->UpdateAction(pf_, reinterpret_cast<SensorData *>(&odata));
-    }
-    m_force_update = false;
-  }
-   
-  bool resampled = false;
-  // If the robot has moved, update the filter
-  if (lasers_update_[laser_index]) {
-    updateFilter(laser_index, laser_scan, pose);
-
-    // Resample the particles
-    if (!(++resample_count_ % resample_interval_)) {
-      pf_update_resample(pf_);
-      resampled = true;
-    }
-
-    pf_sample_set_t * set = pf_->sets + pf_->current_set;
-    RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
-
-    if (!m_force_update)
-    {
-      publishParticleCloud(set);
-    }
-
-  }
-  if (resampled || force_publication) {
-    
-    amcl_hyp_t max_weight_hyps;
-    std::vector<amcl_hyp_t> hyps;
-    int max_weight_hyp = -1;
-    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) //this is not good we need to know > 0 from here
-    {
-      publishAmclPose(laser_scan, hyps, max_weight_hyp);
-      calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
-
-      if (tf_broadcast_ == true) {
-        // We want to send a transform that is good up until a
-        // tolerance time so that odom can be used
-        auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
-        tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
-        sendMapToOdomTransform(transform_expiration);
-        sent_first_transform_ = true;
-      }
-    } else {
-      RCLCPP_ERROR(get_logger(), "No pose!");
-    }
-  } else if (latest_tf_valid_) {
-      if (tf_broadcast_ == true)
-      {
-      // Nothing changed, so we'll just republish the last transform, to keep
-      // everybody happy.
-      tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-                                            transform_tolerance_;
-      sendMapToOdomTransform(transform_expiration);
-      }
-    
-    // Is it time to save our last pose to the param server
-    tf2::TimePoint now = tf2_ros::fromMsg(this->now());
-    if ((tf2::durationToSec(save_pose_period) > 0.0) &&
-      (now - save_pose_last_time) >= save_pose_period)
-    {
-      this->savePoseToServer();
-      save_pose_last_time = now;
-    }
-  }
 }
 
 void
