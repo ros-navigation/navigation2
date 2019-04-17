@@ -581,43 +581,13 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   }
   std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
+  geometry_msgs::msg::PoseStamped laser_pose;
 
   // Do we have the base->base_laser Tx yet?
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
-    RCLCPP_DEBUG(get_logger(), "Setting up laser %d (frame_id=%s)\n",
-      (int)frame_to_laser_.size(), laser_scan_frame_id.c_str());
-    lasers_.push_back(createLaserObject());
-    lasers_update_.push_back(true);
-    laser_index = frame_to_laser_.size();
-
-    geometry_msgs::msg::PoseStamped ident;
-    ident.header.frame_id = laser_scan_frame_id;
-    ident.header.stamp = rclcpp::Time();
-    tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
-
-    geometry_msgs::msg::PoseStamped laser_pose;
-    try {
-      this->tf_->transform(ident, laser_pose, base_frame_id_);
-    } catch (tf2::TransformException & e) {
-      RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
-        "even though the message notifier is in use",
-        laser_scan->header.frame_id.c_str(),
-        base_frame_id_.c_str());
-      return;
+    if (!addNewScanner(laser_index, laser_scan, laser_scan_frame_id, laser_pose)) {
+      return;  // could not find transform
     }
-
-    pf_vector_t laser_pose_v;
-    laser_pose_v.v[0] = laser_pose.pose.position.x;
-    laser_pose_v.v[1] = laser_pose.pose.position.y;
-    // laser mounting angle gets computed later -> set to 0 here!
-    laser_pose_v.v[2] = 0;
-    lasers_[laser_index]->SetLaserPose(laser_pose_v);
-    RCLCPP_DEBUG(get_logger(), "Received laser's pose wrt robot: %.3f %.3f %.3f",
-      laser_pose_v.v[0],
-      laser_pose_v.v[1],
-      laser_pose_v.v[2]);
-
-    frame_to_laser_[laser_scan->header.frame_id] = laser_index;
   } else {
     // we have the laser pose, retrieve laser index
     laser_index = frame_to_laser_[laser_scan->header.frame_id];
@@ -628,134 +598,40 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (!getOdomPose(latest_odom_pose_, pose.v[0], pose.v[1], pose.v[2],
     laser_scan->header.stamp, base_frame_id_))
   {
-    RCLCPP_DEBUG(get_logger(), "Couldn't determine robot's pose associated with laser scan");
+    RCLCPP_ERROR(get_logger(), "Couldn't determine robot's pose associated with laser scan");
     return;
   }
 
-
   pf_vector_t delta = pf_vector_zero();
-
-  if (pf_init_) {
-    // Compute change in pose
-    // delta = pf_vector_coord_sub(pose, pf_odom_pose_);
-    delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
-    delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-    delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
-
-    // See if we should update the filter
-    bool update = fabs(delta.v[0]) > d_thresh_ ||
-      fabs(delta.v[1]) > d_thresh_ ||
-      fabs(delta.v[2]) > a_thresh_;
-    update = update || m_force_update;
-    m_force_update = false;
-
-    // Set the laser update flags
-    if (update) {
-      for (unsigned int i = 0; i < lasers_update_.size(); i++) {
-        lasers_update_[i] = true;
-      }
-    }
-  }
-
   bool force_publication = false;
   if (!pf_init_) {
     // Pose at last filter update
     pf_odom_pose_ = pose;
-
-    // Filter is now initialized
     pf_init_ = true;
 
-    // Should update sensor data
     for (unsigned int i = 0; i < lasers_update_.size(); i++) {
       lasers_update_[i] = true;
     }
 
     force_publication = true;
-
     resample_count_ = 0;
-  } else if (pf_init_ && lasers_update_[laser_index]) {  // If the robot has moved update the filter
-    // printf("pose\n");
-    // pf_vector_fprintf(pose, stdout, "%.3f");
-
-    motionModel_->odometryUpdate(pf_, pose, delta);
-
-    // Pose at last filter update
-    // this->pf_odom_pose = pose;
+  } else {
+    // Set the laser update flags
+    if (shouldUpdateFilter(pose, delta)) {
+      for (unsigned int i = 0; i < lasers_update_.size(); i++) {
+        lasers_update_[i] = true;
+      }
+    }
+    if (lasers_update_[laser_index]) {
+      motionModel_->odometryUpdate(pf_, pose, delta);
+    }
+    m_force_update = false;
   }
 
   bool resampled = false;
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
-    LaserData ldata;
-    ldata.laser = lasers_[laser_index];
-    ldata.range_count = laser_scan->ranges.size();
-
-    // To account for lasers that are mounted upside-down, we determine the
-    // min, max, and increment angles of the laser in the base frame.
-    //
-    // Construct min and max angles of laser, in the base_link frame.
-    tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, laser_scan->angle_min);
-    geometry_msgs::msg::QuaternionStamped min_q, inc_q;
-    min_q.header.stamp = laser_scan->header.stamp;
-    min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-    tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
-
-    q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
-    inc_q.header = min_q.header;
-    tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
-    try {
-      tf_->transform(min_q, min_q, base_frame_id_);
-      tf_->transform(inc_q, inc_q, base_frame_id_);
-    } catch (tf2::TransformException & e) {
-      RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
-        e.what());
-      return;
-    }
-
-    double angle_min = tf2::getYaw(min_q.quaternion);
-    double angle_increment = tf2::getYaw(inc_q.quaternion) - angle_min;
-
-    // wrapping angle to [-pi .. pi]
-    angle_increment = fmod(angle_increment + 5 * M_PI, 2 * M_PI) - M_PI;
-
-    RCLCPP_DEBUG(
-      get_logger(), "Laser %d angles in base frame: min: %.3f inc: %.3f", laser_index, angle_min,
-      angle_increment);
-
-    // Apply range min/max thresholds, if the user supplied them
-    if (laser_max_range_ > 0.0) {
-      ldata.range_max = std::min(laser_scan->range_max, static_cast<float>(laser_max_range_));
-    } else {
-      ldata.range_max = laser_scan->range_max;
-    }
-    double range_min;
-    if (laser_min_range_ > 0.0) {
-      range_min = std::max(laser_scan->range_min, static_cast<float>(laser_min_range_));
-    } else {
-      range_min = laser_scan->range_min;
-    }
-    // The LaserData destructor will free this memory
-    ldata.ranges = new double[ldata.range_count][2];
-    assert(ldata.ranges);
-    for (int i = 0; i < ldata.range_count; i++) {
-      // amcl doesn't (yet) have a concept of min range.  So we'll map short
-      // readings to max range.
-      if (laser_scan->ranges[i] <= range_min) {
-        ldata.ranges[i][0] = ldata.range_max;
-      } else {
-        ldata.ranges[i][0] = laser_scan->ranges[i];
-      }
-      // Compute bearing
-      ldata.ranges[i][1] = angle_min +
-        (i * angle_increment);
-    }
-
-    lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
-
-    lasers_update_[laser_index] = false;
-
-    pf_odom_pose_ = pose;
+    updateFilter(laser_index, laser_scan, pose);
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
@@ -766,143 +642,24 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     pf_sample_set_t * set = pf_->sets + pf_->current_set;
     RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
 
-    // Publish the resulting cloud
-    // TODO(?): set maximum rate for publishing
     if (!m_force_update) {
-      geometry_msgs::msg::PoseArray cloud_msg;
-      cloud_msg.header.stamp = this->now();
-      cloud_msg.header.frame_id = global_frame_id_;
-      cloud_msg.poses.resize(set->sample_count);
-      for (int i = 0; i < set->sample_count; i++) {
-        cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
-        cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
-        cloud_msg.poses[i].position.z = 0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, set->samples[i].pose.v[2]);
-        tf2::impl::Converter<false, true>::convert(q, cloud_msg.poses[i].orientation);
-      }
-      particlecloud_pub_->publish(cloud_msg);
+      publishParticleCloud(set);
     }
   }
-
   if (resampled || force_publication) {
-    // Read out the current hypotheses
-    double max_weight = 0.0;
-    int max_weight_hyp = -1;
+    amcl_hyp_t max_weight_hyps;
     std::vector<amcl_hyp_t> hyps;
-    hyps.resize(pf_->sets[pf_->current_set].cluster_count);
-    for (int hyp_count = 0;
-      hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
-    {
-      double weight;
-      pf_vector_t pose_mean;
-      pf_matrix_t pose_cov;
-      if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov)) {
-        RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", hyp_count);
-        break;
-      }
-
-      hyps[hyp_count].weight = weight;
-      hyps[hyp_count].pf_pose_mean = pose_mean;
-      hyps[hyp_count].pf_pose_cov = pose_cov;
-
-      if (hyps[hyp_count].weight > max_weight) {
-        max_weight = hyps[hyp_count].weight;
-        max_weight_hyp = hyp_count;
-      }
-    }
-
-    if (max_weight > 0.0) {
-      RCLCPP_DEBUG(get_logger(), "Max weight pose: %.3f %.3f %.3f",
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
-        hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-      /*
-         puts("");
-         pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
-         puts("");
-       */
-
-      geometry_msgs::msg::PoseWithCovarianceStamped p;
-      // Fill in the header
-      p.header.frame_id = global_frame_id_;
-      p.header.stamp = laser_scan->header.stamp;
-      // Copy in the pose
-      p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-      p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-      tf2::Quaternion q;
-      q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
-      tf2::impl::Converter<false, true>::convert(q, p.pose.pose.orientation);
-      // Copy in the covariance, converting from 3-D to 6-D
-      pf_sample_set_t * set = pf_->sets + pf_->current_set;
-      for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 2; j++) {
-          // Report the overall filter covariance, rather than the
-          // covariance for the highest-weight cluster
-          // p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
-          p.pose.covariance[6 * i + j] = set->cov.m[i][j];
-        }
-      }
-      // Report the overall filter covariance, rather than the
-      // covariance for the highest-weight cluster
-      // p.covariance[6*5+5] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
-      p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
-
-      float temp = 0.0;
-      for (auto covariance_value : p.pose.covariance) {
-        temp += covariance_value;
-      }
-      temp += p.pose.pose.position.x + p.pose.pose.position.y;
-      if (!std::isnan(temp)) {
-        RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
-        pose_pub_->publish(p);
-      } else {
-        RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
-          "configuration or faulty sensor measurements! Pose is not available!");
-      }
-
-      last_published_pose = p;
-
-      RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
-        hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-      // subtracting base to odom from map to base and send map to odom instead
-      geometry_msgs::msg::PoseStamped odom_to_map;
-      try {
-        tf2::Quaternion q;
-        q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
-        tf2::Transform tmp_tf(q, tf2::Vector3(hyps[max_weight_hyp].pf_pose_mean.v[0],
-          hyps[max_weight_hyp].pf_pose_mean.v[1],
-          0.0));
-
-        geometry_msgs::msg::PoseStamped tmp_tf_stamped;
-        tmp_tf_stamped.header.frame_id = base_frame_id_;
-        tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
-        tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
-
-        this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
-      } catch (tf2::TransformException) {
-        RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
-        return;
-      }
-
-      tf2::impl::Converter<true, false>::convert(odom_to_map.pose, latest_tf_);
-      latest_tf_valid_ = true;
+    int max_weight_hyp = -1;
+    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
+      publishAmclPose(laser_scan, hyps, max_weight_hyp);
+      calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
 
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
         tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
-        geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-        tmp_tf_stamped.header.frame_id = global_frame_id_;
-        tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-        tmp_tf_stamped.child_frame_id = odom_frame_id_;
-        tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-        this->tfb_->sendTransform(tmp_tf_stamped);
+        sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
     } else {
@@ -914,13 +671,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
         transform_tolerance_;
-      geometry_msgs::msg::TransformStamped tmp_tf_stamped;
-      tmp_tf_stamped.header.frame_id = global_frame_id_;
-      tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
-      tmp_tf_stamped.child_frame_id = odom_frame_id_;
-      tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-      this->tfb_->sendTransform(tmp_tf_stamped);
+      sendMapToOdomTransform(transform_expiration);
     }
+
     // Is it time to save our last pose to the param server
     tf2::TimePoint now = tf2_ros::fromMsg(this->now());
     if ((tf2::durationToSec(save_pose_period) > 0.0) &&
@@ -930,6 +683,273 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       save_pose_last_time = now;
     }
   }
+}
+
+bool AmclNode::addNewScanner(
+  int & laser_index,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+  const std::string & laser_scan_frame_id,
+  geometry_msgs::msg::PoseStamped & laser_pose)
+{
+  lasers_.push_back(createLaserObject());
+  lasers_update_.push_back(true);
+  laser_index = frame_to_laser_.size();
+
+  geometry_msgs::msg::PoseStamped ident;
+  ident.header.frame_id = laser_scan_frame_id;
+  ident.header.stamp = rclcpp::Time();
+  tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
+  try {
+    this->tf_->transform(ident, laser_pose, base_frame_id_);
+  } catch (tf2::TransformException & e) {
+    RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
+      "even though the message notifier is in use",
+      laser_scan->header.frame_id.c_str(),
+      base_frame_id_.c_str());
+    return false;
+  }
+
+  pf_vector_t laser_pose_v;
+  laser_pose_v.v[0] = laser_pose.pose.position.x;
+  laser_pose_v.v[1] = laser_pose.pose.position.y;
+  // laser mounting angle gets computed later -> set to 0 here!
+  laser_pose_v.v[2] = 0;
+  lasers_[laser_index]->SetLaserPose(laser_pose_v);
+  frame_to_laser_[laser_scan->header.frame_id] = laser_index;
+  return true;
+}
+
+bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
+{
+  delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
+  delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
+  delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+
+  // See if we should update the filter
+  bool update = fabs(delta.v[0]) > d_thresh_ ||
+    fabs(delta.v[1]) > d_thresh_ ||
+    fabs(delta.v[2]) > a_thresh_;
+  update = update || m_force_update;
+  return update;
+}
+
+bool AmclNode::updateFilter(
+  const int & laser_index,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+  const pf_vector_t & pose)
+{
+  LaserData ldata;
+  ldata.laser = lasers_[laser_index];
+  ldata.range_count = laser_scan->ranges.size();
+  // To account for lasers that are mounted upside-down, we determine the
+  // min, max, and increment angles of the laser in the base frame.
+  //
+  // Construct min and max angles of laser, in the base_link frame.
+  // Here we set the roll pich yaw of the lasers.  We assume roll and pich are zero.
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, laser_scan->angle_min);
+  geometry_msgs::msg::QuaternionStamped min_q, inc_q;
+  min_q.header.stamp = laser_scan->header.stamp;
+  min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
+  tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
+
+  q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
+  inc_q.header = min_q.header;
+  tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
+  try {
+    tf_->transform(min_q, min_q, base_frame_id_);
+    tf_->transform(inc_q, inc_q, base_frame_id_);
+  } catch (tf2::TransformException & e) {
+    RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
+      e.what());
+    return false;
+  }
+  double angle_min = tf2::getYaw(min_q.quaternion);
+  double angle_increment = tf2::getYaw(inc_q.quaternion) - angle_min;
+
+  // wrapping angle to [-pi .. pi]
+  angle_increment = fmod(angle_increment + 5 * M_PI, 2 * M_PI) - M_PI;
+
+  RCLCPP_DEBUG(
+    get_logger(), "Laser %d angles in base frame: min: %.3f inc: %.3f", laser_index, angle_min,
+    angle_increment);
+
+  // Apply range min/max thresholds, if the user supplied them
+  if (laser_max_range_ > 0.0) {
+    ldata.range_max = std::min(laser_scan->range_max, static_cast<float>(laser_max_range_));
+  } else {
+    ldata.range_max = laser_scan->range_max;
+  }
+  double range_min;
+  if (laser_min_range_ > 0.0) {
+    range_min = std::max(laser_scan->range_min, static_cast<float>(laser_min_range_));
+  } else {
+    range_min = laser_scan->range_min;
+  }
+
+  // The LaserData destructor will free this memory
+  ldata.ranges = new double[ldata.range_count][2];
+  for (int i = 0; i < ldata.range_count; i++) {
+    // amcl doesn't (yet) have a concept of min range.  So we'll map short
+    // readings to max range.
+    if (laser_scan->ranges[i] <= range_min) {
+      ldata.ranges[i][0] = ldata.range_max;
+    } else {
+      ldata.ranges[i][0] = laser_scan->ranges[i];
+    }
+    // Compute bearing
+    ldata.ranges[i][1] = angle_min +
+      (i * angle_increment);
+  }
+  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
+  lasers_update_[laser_index] = false;
+  pf_odom_pose_ = pose;
+  return true;
+}
+
+void
+AmclNode::publishParticleCloud(const pf_sample_set_t * set)
+{
+  geometry_msgs::msg::PoseArray cloud_msg;
+  cloud_msg.header.stamp = this->now();
+  cloud_msg.header.frame_id = global_frame_id_;
+  cloud_msg.poses.resize(set->sample_count);
+  for (int i = 0; i < set->sample_count; i++) {
+    cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
+    cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
+    cloud_msg.poses[i].position.z = 0;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, set->samples[i].pose.v[2]);
+    tf2::impl::Converter<false, true>::convert(q, cloud_msg.poses[i].orientation);
+  }
+  particlecloud_pub_->publish(cloud_msg);
+}
+
+bool
+AmclNode::getMaxWeightHyp(
+  std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
+  int & max_weight_hyp)
+{
+  // Read out the current hypotheses
+  double max_weight = 0.0;
+  hyps.resize(pf_->sets[pf_->current_set].cluster_count);
+  for (int hyp_count = 0;
+    hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
+  {
+    double weight;
+    pf_vector_t pose_mean;
+    pf_matrix_t pose_cov;
+    if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov)) {
+      RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", hyp_count);
+      return false;
+    }
+
+    hyps[hyp_count].weight = weight;
+    hyps[hyp_count].pf_pose_mean = pose_mean;
+    hyps[hyp_count].pf_pose_cov = pose_cov;
+
+    if (hyps[hyp_count].weight > max_weight) {
+      max_weight = hyps[hyp_count].weight;
+      max_weight_hyp = hyp_count;
+    }
+  }
+
+  if (max_weight > 0.0) {
+    RCLCPP_DEBUG(get_logger(), "Max weight pose: %.3f %.3f %.3f",
+      hyps[max_weight_hyp].pf_pose_mean.v[0],
+      hyps[max_weight_hyp].pf_pose_mean.v[1],
+      hyps[max_weight_hyp].pf_pose_mean.v[2]);
+
+    max_weight_hyps = hyps[max_weight_hyp];
+    return true;
+  }
+  return false;
+}
+
+void
+AmclNode::publishAmclPose(
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+{
+  geometry_msgs::msg::PoseWithCovarianceStamped p;
+  // Fill in the header
+  p.header.frame_id = global_frame_id_;
+  p.header.stamp = laser_scan->header.stamp;
+  // Copy in the pose
+  p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
+  p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
+  tf2::Quaternion q;
+  q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
+  tf2::impl::Converter<false, true>::convert(q, p.pose.pose.orientation);
+  // Copy in the covariance, converting from 3-D to 6-D
+  pf_sample_set_t * set = pf_->sets + pf_->current_set;
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 2; j++) {
+      // Report the overall filter covariance, rather than the
+      // covariance for the highest-weight cluster
+      // p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+      p.pose.covariance[6 * i + j] = set->cov.m[i][j];
+    }
+  }
+  p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
+  float temp = 0.0;
+  for (auto covariance_value : p.pose.covariance) {
+    temp += covariance_value;
+  }
+  temp += p.pose.pose.position.x + p.pose.pose.position.y;
+  if (!std::isnan(temp)) {
+    RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
+    pose_pub_->publish(p);
+    last_published_pose = p;
+  } else {
+    RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
+      "configuration or faulty sensor measurements! Pose is not available!");
+  }
+
+  RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
+    hyps[max_weight_hyp].pf_pose_mean.v[0],
+    hyps[max_weight_hyp].pf_pose_mean.v[1],
+    hyps[max_weight_hyp].pf_pose_mean.v[2]);
+}
+
+void
+AmclNode::calculateMaptoOdomTransform(
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+{
+  // subtracting base to odom from map to base and send map to odom instead
+  geometry_msgs::msg::PoseStamped odom_to_map;
+  try {
+    tf2::Quaternion q;
+    q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    tf2::Transform tmp_tf(q, tf2::Vector3(hyps[max_weight_hyp].pf_pose_mean.v[0],
+      hyps[max_weight_hyp].pf_pose_mean.v[1],
+      0.0));
+
+    geometry_msgs::msg::PoseStamped tmp_tf_stamped;
+    tmp_tf_stamped.header.frame_id = base_frame_id_;
+    tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
+    tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
+
+    this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
+  } catch (tf2::TransformException) {
+    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
+    return;
+  }
+
+  tf2::impl::Converter<true, false>::convert(odom_to_map.pose, latest_tf_);
+  latest_tf_valid_ = true;
+}
+
+void
+AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
+{
+  geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+  tmp_tf_stamped.header.frame_id = global_frame_id_;
+  tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
+  tmp_tf_stamped.child_frame_id = odom_frame_id_;
+  tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
+  this->tfb_->sendTransform(tmp_tf_stamped);
 }
 
 void

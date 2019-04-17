@@ -90,6 +90,30 @@ private:
     std::shared_ptr<nav_msgs::srv::SetMap::Response> res);
 
   void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+  // Helper functions for laserReceived CB
+  bool addNewScanner(
+    int & laser_index,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::string & laser_scan_frame_id,
+    geometry_msgs::msg::PoseStamped & laser_pose);
+  bool shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta);
+  bool updateFilter(
+    const int & laser_index,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const pf_vector_t & pose);
+  void publishParticleCloud(const pf_sample_set_t * set);
+  bool getMaxWeightHyp(
+    std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
+    int & max_weight_hyp);
+  void publishAmclPose(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp);
+  void calculateMaptoOdomTransform(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::vector<amcl_hyp_t> & hyps,
+    const int & max_weight_hyp);
+  void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
+
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void handleInitialPoseMessage(const geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
