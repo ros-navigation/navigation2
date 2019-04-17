@@ -576,7 +576,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (map_ == NULL) {
     return;
   }
-
+  if (!initial_pose_received) {
+    return;
+  }
   std::lock_guard<std::recursive_mutex> lr(configuration_mutex_);
   int laser_index = -1;
   geometry_msgs::msg::PoseStamped laser_pose;
@@ -890,19 +892,19 @@ AmclNode::publishAmclPose(
     }
   }
   p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
-      float temp = 0.0;
-      for (auto covariance_value : p.pose.covariance) {
-        temp += covariance_value;
-      }
-      temp += p.pose.pose.position.x + p.pose.pose.position.y;
-      if (!std::isnan(temp)) {
-        RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
-        pose_pub_->publish(p);
-        last_published_pose = p;
-      } else {
-        RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
-          "configuration or faulty sensor measurements! Pose is not available!");
-      }
+  float temp = 0.0;
+  for (auto covariance_value : p.pose.covariance) {
+    temp += covariance_value;
+  }
+  temp += p.pose.pose.position.x + p.pose.pose.position.y;
+  if (!std::isnan(temp)) {
+    RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
+    pose_pub_->publish(p);
+    last_published_pose = p;
+  } else {
+    RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
+      "configuration or faulty sensor measurements! Pose is not available!");
+  }
 
   RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
     hyps[max_weight_hyp].pf_pose_mean.v[0],
