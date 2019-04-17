@@ -141,7 +141,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
   // subscribe to the footprint topic
   std::string topic_param, topic;
   get_parameter_or<std::string>("footprint_topic", topic_param, std::string("footprint_topic"));
-  get_parameter_or<std::string>(topic_param, topic, std::string("footprint"));
+  get_parameter_or<std::string>(topic_param, topic, std::string("dynamic_footprint"));
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(topic,
       std::bind(&Costmap2DROS::setUnpaddedRobotFootprintPolygon, this, std::placeholders::_1));
   get_parameter_or<std::string>(
