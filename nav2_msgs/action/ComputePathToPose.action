@@ -2,6 +2,6 @@
 geometry_msgs/PoseStamped pose
 ---
 #result definition
-std_msgs/Empty result
+nav2_msgs/Path path
 ---
 #feedback
