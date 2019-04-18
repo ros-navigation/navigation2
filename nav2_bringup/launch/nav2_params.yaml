@@ -27,10 +27,10 @@ DwbController:
     vy_samples: 5
     vtheta_samples: 20
     sim_time: 1.7
+    linear_granularity: 0.05
     xy_goal_tolerance: 0.25
-    ObstacleFootprint.scale: 0.1
-    ObstacleFootprint.max_scaling_factor: 0.2
-    ObstacleFootprint.scaling_speed: 0.25
+    critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    BaseObstacle.scale: 0.02
     PathAlign.scale: 32.0
     GoalAlign.scale: 24.0
     PathDist.scale: 32.0
@@ -39,7 +39,8 @@ DwbController:
 local_costmap:
   local_costmap:
     ros__parameters:
-      robot_radius: 0.092
+      robot_radius: 0.17
+      inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
         enabled: True
       always_send_full_costmap: True
@@ -52,6 +53,7 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
+      robot_radius: 0.17
       obstacle_layer:
         enabled: True
       always_send_full_costmap: True
