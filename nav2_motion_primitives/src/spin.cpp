@@ -91,7 +91,7 @@ nav2_tasks::TaskStatus Spin::timedSpin()
 
   // TODO(orduno) #423 fixed time
   auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 4s) {
+  if (current_time - start_time_ >= 6s) {  // almost 180 degrees
     // Stop the robot
     cmd_vel.angular.z = 0.0;
     robot_->sendVelocity(cmd_vel);
