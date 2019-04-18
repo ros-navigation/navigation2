@@ -1,0 +1,21 @@
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+ 		<RetryUntilSuccesful name="retry_navigate" num_attempts="7"> 
+            <FallbackStar>
+                <SequenceStar name="navigate">
+          	        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+	        		<FollowPath path="${path}"/>                    
+                </SequenceStar>
+                <ForceFailure>
+                  <SequenceStar name="recovery">
+                    <BackUp/>
+	        		<Spin/>                
+	        	  </SequenceStar>
+	        	</ForceFailure>
+            </FallbackStar> 
+         </RetryUntilSuccesful>
+    </BehaviorTree>
+    <TreeNodesModel/>
+</root>
+
