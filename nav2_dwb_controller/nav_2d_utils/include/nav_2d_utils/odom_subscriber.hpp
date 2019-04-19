@@ -39,6 +39,7 @@
 #include <mutex>
 #include <string>
 #include <cctype>
+#include <algorithm>
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
@@ -46,7 +47,8 @@
 namespace nav_2d_utils
 {
 
-enum RobotType {
+enum RobotType
+{
   DIFFERENTIAL,
   HOLONOMIC
 };
@@ -98,12 +100,13 @@ protected:
   RobotType convertStringToRobotType(std::string robot_type)
   {
     std::transform(begin(robot_type), end(robot_type), begin(robot_type), ::tolower);
-    if (robot_type ==  "differential") {
+    if (robot_type == "differential") {
       return DIFFERENTIAL;
     } else if (robot_type == "holonomic") {
       return HOLONOMIC;
     } else {
-      throw std::runtime_error("robot_type parameter is invalid. Must be 'holonomic' or 'differential'");
+      throw std::runtime_error(
+              "robot_type parameter is invalid. Must be 'holonomic' or 'differential'");
     }
   }
 
