@@ -4,7 +4,7 @@ map_server:
 DwbController:
   ros__parameters:
     debug_trajectory_details: True
-    min_vel_x: -0.26
+    min_vel_x: 0.0
     min_vel_y: 0.0
     max_vel_x: 0.26
     max_vel_y: 0.0
