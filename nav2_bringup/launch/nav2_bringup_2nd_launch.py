@@ -43,7 +43,7 @@ def generate_launch_description():
             node_name='motion_primitives',
             output='screen',
             parameters=[{ 'use_sim_time': use_sim_time}]),
-        
+
         launch_ros.actions.Node(
             package='nav2_bt_navigator',
             node_executable='bt_navigator',
