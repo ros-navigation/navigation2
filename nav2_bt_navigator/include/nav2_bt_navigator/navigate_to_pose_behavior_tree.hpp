@@ -20,6 +20,8 @@
 #include "nav2_tasks/behavior_tree_engine.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
 #include "nav2_tasks/global_localization_service_client.hpp"
+#include "nav2_tasks/clear_entirely_costmap_service_client.hpp"
+#include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -35,6 +37,7 @@ private:
   BT::NodeStatus updatePath(BT::TreeNode & tree_node);
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
+  BT::NodeStatus clearEntirelyCostmapServiceRequest(BT::TreeNode & tree_node);
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> follow_path_task_client_;
   nav2_tasks::GlobalLocalizationServiceClient global_localization_;
 };

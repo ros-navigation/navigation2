@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
@@ -58,6 +59,10 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
+  factory_.registerSimpleAction("clearEntirelyCostmapServiceRequest",
+    std::bind(&NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest, this,
+    std::placeholders::_1));
+
   follow_path_task_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
 }
 
@@ -90,6 +95,24 @@ BT::NodeStatus NavigateToPoseBehaviorTree::initialPoseReceived(BT::TreeNode & tr
     return BT::NodeStatus::SUCCESS;
   }
   return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest(
+  BT::TreeNode & tree_node)
+{
+  std::string service_name = "/local_costmap/clear_entirely_local_costmap";
+  tree_node.getParam<std::string>("service_name", service_name);
+
+  nav2_tasks::ClearEntirelyCostmapServiceClient clear_entirely_costmap(service_name);
+  auto request = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
+  try {
+    clear_entirely_costmap.wait_for_service(std::chrono::seconds(3));
+    auto result = clear_entirely_costmap.invoke(request, std::chrono::seconds(3));
+    return BT::NodeStatus::SUCCESS;
+  } catch (std::runtime_error & e) {
+    RCLCPP_WARN(node_->get_logger(), e.what());
+    return BT::NodeStatus::FAILURE;
+  }
 }
 
 }  // namespace nav2_bt_navigator
