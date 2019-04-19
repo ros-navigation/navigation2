@@ -38,12 +38,18 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <cctype>
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 
 namespace nav_2d_utils
 {
+
+enum RobotType {
+  DIFFERENTIAL,
+  HOLONOMIC
+};
 
 /**
  * @class OdomSubscriber
@@ -61,7 +67,10 @@ public:
   explicit OdomSubscriber(rclcpp::Node & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
+    std::string robot_type;
     nh.get_parameter_or("odom_topic", odom_topic, default_topic);
+    nh.get_parameter_or<std::string>("robot_type", robot_type, "differential");
+    robot_type_ = convertStringToRobotType(robot_type);
     odom_sub_ =
       nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
         [&](const nav_msgs::msg::Odometry::SharedPtr msg) {odomCallback(msg);},
@@ -78,13 +87,30 @@ protected:
     std::lock_guard<std::mutex> lock(odom_mutex_);
     odom_vel_.header = msg->header;
     odom_vel_.velocity.x = msg->twist.twist.linear.x;
-    odom_vel_.velocity.y = msg->twist.twist.linear.y;
+    if (robot_type_ == HOLONOMIC) {
+      odom_vel_.velocity.y = msg->twist.twist.linear.y;
+    } else {
+      odom_vel_.velocity.y = 0;
+    }
     odom_vel_.velocity.theta = msg->twist.twist.angular.z;
+  }
+
+  RobotType convertStringToRobotType(std::string robot_type)
+  {
+    std::transform(begin(robot_type), end(robot_type), begin(robot_type), ::tolower);
+    if (robot_type ==  "differential") {
+      return DIFFERENTIAL;
+    } else if (robot_type == "holonomic") {
+      return HOLONOMIC;
+    } else {
+      throw std::runtime_error("robot_type parameter is invalid. Must be 'holonomic' or 'differential'");
+    }
   }
 
   std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry>> odom_sub_;
   nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   std::mutex odom_mutex_;
+  RobotType robot_type_;
 };
 
 }  // namespace nav_2d_utils
