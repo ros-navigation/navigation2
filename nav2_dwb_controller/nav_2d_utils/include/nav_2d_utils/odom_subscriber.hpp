@@ -69,10 +69,10 @@ public:
   explicit OdomSubscriber(rclcpp::Node & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
-    std::string robot_type;
+    bool robot_type;
     nh.get_parameter_or("odom_topic", odom_topic, default_topic);
-    nh.get_parameter_or<std::string>("robot_type", robot_type, "differential");
-    robot_type_ = convertStringToRobotType(robot_type);
+    nh.get_parameter_or("holonomic_robot", robot_type, true);
+    robot_type_ = robot_type ? HOLONOMIC : DIFFERENTIAL;
     odom_sub_ =
       nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
         [&](const nav_msgs::msg::Odometry::SharedPtr msg) {odomCallback(msg);},
