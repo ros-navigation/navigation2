@@ -29,6 +29,6 @@ ament_add_test(test_bt_navigator
     TEST_PARAMS=${PROJECT_SOURCE_DIR}/params/nav2_params.yaml
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     NAVIGATOR=bt
-    BT_NAVIGATOR_XML=simple_sequential.xml
+    BT_NAVIGATOR_XML=navigate_w_recovery_retry.xml
     ASTAR=True
 )
