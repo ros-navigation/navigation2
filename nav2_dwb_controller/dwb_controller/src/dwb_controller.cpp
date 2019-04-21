@@ -18,6 +18,7 @@
 #include <memory>
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "dwb_controller/progress_checker.hpp"
 
 using namespace std::chrono_literals;
 using std::shared_ptr;
@@ -27,7 +28,7 @@ using dwb_core::CostmapROSPtr;
 
 #define NO_OP_DELETER [] (auto) {}
 
-namespace nav2_dwb_controller
+namespace dwb_controller
 {
 
 DwbController::DwbController(rclcpp::executor::Executor & executor)
@@ -65,6 +66,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
     planner_.setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
 
+    ProgressChecker progress_checker(std::shared_ptr<rclcpp::Node>(this, [](auto) {}));
     rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
@@ -75,6 +77,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         if (isGoalReached(pose2d)) {
           break;
         }
+        progress_checker.check(pose2d);
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
@@ -147,4 +150,4 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   return true;
 }
 
-}  // namespace nav2_dwb_controller
+}  // namespace dwb_controller
