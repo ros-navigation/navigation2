@@ -40,8 +40,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 
-const double EPSILON = 1E-5;
-
 PLUGINLIB_EXPORT_CLASS(dwb_critics::RotateToGoalCritic, dwb_core::TrajectoryCritic)
 
 namespace dwb_critics
@@ -78,7 +76,7 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   }
 
   // If we're sufficiently close to the goal, any transforming velocity is invalid
-  if (fabs(traj.velocity.x) > EPSILON || fabs(traj.velocity.y) > EPSILON) {
+  if (fabs(traj.velocity.x) > 0 || fabs(traj.velocity.y) > 0) {
     throw nav_core2::IllegalTrajectoryException(name_, "Nonrotation command near goal.");
   }
 
