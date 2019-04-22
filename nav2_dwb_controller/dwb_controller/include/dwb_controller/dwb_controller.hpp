@@ -23,7 +23,7 @@
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 
-namespace nav2_dwb_controller
+namespace dwb_controller
 {
 
 class DwbController : public rclcpp::Node
@@ -49,6 +49,6 @@ protected:
   tf2_ros::TransformListener tfListener_;
 };
 
-}  // namespace nav2_dwb_controller
+}  // namespace dwb_controller
 
 #endif  // DWB_CONTROLLER__DWB_CONTROLLER_HPP_

@@ -29,6 +29,7 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name}
   src/dwb_controller.cpp
+  src/progress_checker.cpp
 )
 
 set(dependencies
