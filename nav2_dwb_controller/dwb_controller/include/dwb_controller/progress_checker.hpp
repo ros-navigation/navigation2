@@ -28,7 +28,7 @@ public:
   void check(nav_2d_msgs::msg::Pose2DStamped & current_pose);
 
 protected:
-  bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
+  bool is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose);
   void reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose);
 
   rclcpp::Node::SharedPtr nh_;

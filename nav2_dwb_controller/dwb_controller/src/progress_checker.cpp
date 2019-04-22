@@ -33,8 +33,9 @@ ProgressChecker::ProgressChecker(const rclcpp::Node::SharedPtr & node)
 
 void ProgressChecker::check(nav_2d_msgs::msg::Pose2DStamped & current_pose)
 {
-  // relies on short circuit evaluation to not call isRobotMovedEnough if baseline_pose is not set.
-  if ((!baseline_pose_set_) || (isRobotMovedEnough(current_pose.pose))) {
+  // relies on short circuit evaluation to not call is_robot_moved_enough if
+  // baseline_pose is not set.
+  if ((!baseline_pose_set_) || (is_robot_moved_enough(current_pose.pose))) {
     reset_baseline_pose(current_pose.pose);
     return;
   }
@@ -50,7 +51,7 @@ void ProgressChecker::reset_baseline_pose(const geometry_msgs::msg::Pose2D & pos
   baseline_pose_set_ = true;
 }
 
-bool ProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
+bool ProgressChecker::is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose)
 {
   if (pose_distance(pose, baseline_pose_) > radius_) {
     return true;
