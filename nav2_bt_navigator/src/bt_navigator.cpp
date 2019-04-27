@@ -20,6 +20,7 @@
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 
 using nav2_tasks::TaskStatus;
@@ -28,7 +29,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: Node("BtNavigator")
+: Node("BtNavigator", nav2_util::get_node_options_default())
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 
