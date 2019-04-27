@@ -18,6 +18,7 @@
 #include <memory>
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "dwb_controller/progress_checker.hpp"
 
 using namespace std::chrono_literals;
@@ -32,7 +33,7 @@ namespace dwb_controller
 {
 
 DwbController::DwbController(rclcpp::executor::Executor & executor)
-: Node("DwbController"),
+: Node("DwbController", nav2_util::get_node_options_default()),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {

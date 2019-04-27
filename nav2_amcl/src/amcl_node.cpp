@@ -28,6 +28,7 @@
 #include "nav2_amcl/amcl_node.hpp"
 #include "nav2_util/pf/pf.hpp"  // pf_vector_t
 #include "nav2_util/string_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_tasks/map_service_client.hpp"
 
 // For transform support
@@ -69,7 +70,7 @@ std::vector<std::pair<int, int>> AmclNode::free_space_indices;
 #endif
 
 AmclNode::AmclNode()
-: Node("amcl"),
+: Node("amcl", nav2_util::get_node_options_default()),
   sent_first_transform_(false),
   latest_tf_valid_(false),
   map_(NULL),

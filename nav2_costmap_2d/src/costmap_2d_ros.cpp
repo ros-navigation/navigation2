@@ -47,13 +47,14 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_util/duration_conversions.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 
 namespace nav2_costmap_2d
 {
 
 Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
-: Node(name, name),
+: Node(name, name, nav2_util::get_node_options_default()),
   layered_costmap_(NULL),
   name_(name),
   tf_(tf),

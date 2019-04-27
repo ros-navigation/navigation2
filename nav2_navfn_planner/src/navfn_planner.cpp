@@ -32,6 +32,7 @@
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -47,7 +48,7 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: Node("NavfnPlanner"),
+: Node("NavfnPlanner", nav2_util::get_node_options_default()),
   global_frame_("map"),
   allow_unknown_(true)
 {

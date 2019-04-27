@@ -20,6 +20,7 @@
 #include <fstream>
 #include <stdexcept>
 #include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "yaml-cpp/yaml.h"
 
 using namespace std::chrono_literals;
@@ -28,7 +29,7 @@ namespace nav2_map_server
 {
 
 MapServer::MapServer(const std::string & node_name)
-: Node(node_name)
+: Node(node_name, nav2_util::get_node_options_default())
 {
   // Get the MAP YAML file, which includes the image filename and the map type
   getParameters();
