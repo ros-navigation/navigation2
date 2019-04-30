@@ -43,6 +43,7 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
@@ -60,7 +61,8 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared("inflation_test_node");
+    node_ = rclcpp::Node::make_shared(
+      "inflation_test_node", nav2_util::get_node_options_default());
     // Set cost_scaling_factor parameter to 1.0 for inflation layer
     node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
   }

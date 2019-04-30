@@ -39,7 +39,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
-
+#include "nav2_util/node_utils.hpp"
 
 class RclCppFixture
 {
@@ -54,7 +54,8 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared("obstacle_test_node");
+    node_ = rclcpp::Node::make_shared(
+      "obstacle_test_node", nav2_util::get_node_options_default());
   }
 
   ~TestNode() {}

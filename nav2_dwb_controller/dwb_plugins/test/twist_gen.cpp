@@ -40,6 +40,7 @@
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "dwb_plugins/limited_accel_generator.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using std::hypot;
 using std::fabs;
@@ -74,7 +75,7 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
 
 rclcpp::Node::SharedPtr makeTestNode(const std::string & name)
 {
-  rclcpp::NodeOptions node_options;
+  rclcpp::NodeOptions node_options = nav2_util::get_node_options_default();
   node_options.initial_parameters(getDefaultKinematicParameters());
   return rclcpp::Node::make_shared(name, node_options);
 }

@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "nav2_dynamic_params/dynamic_params_validator.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using rcl_interfaces::msg::SetParametersResult;
@@ -59,7 +60,8 @@ class ValidatorTest : public ::testing::Test
 public:
   ValidatorTest()
   {
-    node_ = rclcpp::Node::make_shared("dynamic_param_validator_test");
+    node_ = rclcpp::Node::make_shared(
+      "dynamic_param_validator_test", nav2_util::get_node_options_default());
     param_validator_ = std::make_unique<nav2_dynamic_params::DynamicParamsValidator>(node_);
   }
 

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "nav2_dynamic_params/dynamic_params_client.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -25,9 +26,10 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  auto node_A = rclcpp_lifecycle::LifecycleNode::make_shared("test_node");
+  auto node_A = rclcpp_lifecycle::LifecycleNode::make_shared(
+    "test_node", nav2_util::get_node_options_default());
   auto node_B = rclcpp_lifecycle::LifecycleNode::make_shared(
-    "test_node", "test_namespace", rclcpp::NodeOptions());
+    "test_node", "test_namespace", nav2_util::get_node_options_default());
 
   node_A->set_parameters({rclcpp::Parameter("foo", 1.0)});
   node_B->set_parameters({rclcpp::Parameter("bar", 1)});
