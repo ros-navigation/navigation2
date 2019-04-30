@@ -10,6 +10,7 @@ find_package(SDL_image REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -45,6 +46,7 @@ set(map_server_dependencies
   yaml_cpp_vendor
   std_msgs
   tf2
+  nav2_lifecycle
 )
 
 set(map_saver_dependencies
