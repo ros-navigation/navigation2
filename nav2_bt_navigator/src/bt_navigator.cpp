@@ -21,9 +21,6 @@
 #include <utility>
 
 #include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/task_status.hpp"
-
-using nav2_tasks::TaskStatus;
 
 namespace nav2_bt_navigator
 {
@@ -32,6 +29,9 @@ BtNavigator::BtNavigator()
 : nav2_lifecycle::LifecycleNode("bt_navigator", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+
+  // Declare this node's parameters
+  declare_parameter("bt_xml_filename", rclcpp::ParameterValue(std::string("bt_navigator.xml")));
 }
 
 BtNavigator::~BtNavigator()
@@ -49,17 +49,17 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
+    client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
       std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create an action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "navigate_to_pose",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
       std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(node);
+  bt_ = std::make_unique<NavigateToPoseBehaviorTree>();
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();
@@ -71,14 +71,14 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Put items on the blackboard
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
   blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
-  blackboard_->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node);  // NOLINT
+  blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
+  blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
   // Get the BT filename to use from the node parameter
   std::string bt_xml_filename;
-  get_parameter_or<std::string>(std::string("bt_xml_filename"), bt_xml_filename,
-    std::string("bt_navigator.xml"));
+  get_parameter("bt_xml_filename", bt_xml_filename);
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
@@ -108,7 +108,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State &)
+BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -116,7 +116,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_deactivate(const rclcpp_lifecycle::State &)
+BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -124,7 +124,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
+BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -142,14 +142,14 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State &)
+BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_shutdown(const rclcpp_lifecycle::State &)
+BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -162,56 +162,44 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
 
-  // TODO(mjeronimo): handle or reject an attempted pre-emption
-
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-  // Get the goal pointer off of the blackboard...
-  auto bb_goal = blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal");
-
-  // and update it with the incoming command
-  *bb_goal = goal->pose;
+  // Update the goal pose on the blackboard
+  *(blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal")) = goal->pose;
 
   // Execute the BT that was previously created in the configure step
   auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
-  TaskStatus rc = bt_->run(tree_, is_canceling);
+  nav2_tasks::BtStatus rc = bt_->run(tree_, is_canceling);
 
   switch (rc) {
-    case TaskStatus::CANCELED:
-      // Even though the BT is no longer running, remote actions may still be executing. So,
-      // an explicit canceling of all actions allows the task clients to send cancel messages
-      // to their corresponding task servers
-      bt_->cancelAllActions(tree_->root_node);
+    case nav2_tasks::BtStatus::SUCCEEDED:
+      RCLCPP_INFO(get_logger(), "Navigation succeeded");
+      goal_handle->succeed(result);
+      break;
 
+    case nav2_tasks::BtStatus::FAILED:
+      RCLCPP_ERROR(get_logger(), "Navigation failed");
+      goal_handle->abort(result);
+      break;
+
+    case nav2_tasks::BtStatus::CANCELED:
+      RCLCPP_INFO(get_logger(), "Navigation canceled");
+      goal_handle->canceled(result);
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
-      goal_handle->set_canceled(result);
-      break;
-
-    case TaskStatus::SUCCEEDED:
-      goal_handle->set_succeeded(result);
-      break;
-
-    case TaskStatus::FAILED:
-      goal_handle->set_aborted(result);
       break;
 
     default:
       throw std::logic_error("Invalid status return from BT");
   }
-
-  RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", rc);
 }
 
 void
 BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  RCLCPP_INFO(get_logger(), "onGoalPoseReceived");
-
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
-
   self_client_->async_send_goal(goal);
 }
 

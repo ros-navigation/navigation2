@@ -24,8 +24,8 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/msg/path.hpp"
-#include "nav2_util/simple_action_client.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -45,13 +45,13 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // An action server that implements the NavigateToPose action
-  std::unique_ptr<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>> action_server_;
-
   using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
 
-  // The method invoked by the action server
+  // Our action server implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
   void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);
 
   // A subscription and callback to handle the topic-based goal published from rviz
