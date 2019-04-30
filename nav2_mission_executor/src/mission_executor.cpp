@@ -34,7 +34,7 @@ MissionExecutor::~MissionExecutor()
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
+MissionExecutor::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -48,21 +48,21 @@ MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_activate(const rclcpp_lifecycle::State &)
+MissionExecutor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_deactivate(const rclcpp_lifecycle::State &)
+MissionExecutor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
+MissionExecutor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -73,14 +73,14 @@ MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_error(const rclcpp_lifecycle::State &)
+MissionExecutor::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_shutdown(const rclcpp_lifecycle::State &)
+MissionExecutor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
