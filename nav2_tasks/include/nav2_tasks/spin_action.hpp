@@ -37,17 +37,13 @@ public:
   {
   }
 
-  void onConfigure() override
+  void on_init() override
   {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::SpinCommand>();
-    result_ = std::make_shared<nav2_tasks::SpinResult>();
-
     // TODO(orduno) #423 Fixed spin angle
     // Rotate 90deg CCW
     tf2::Quaternion quaternion;
     quaternion.setRPY(0, 0, M_PI / 2);  // yaw, pitch and roll are rotation in z, y, x respectively
-    command_->quaternion = tf2::toMsg(quaternion);
+    goal_->quaternion = tf2::toMsg(quaternion);
   }
 };
 

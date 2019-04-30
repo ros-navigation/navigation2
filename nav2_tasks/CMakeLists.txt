@@ -4,6 +4,7 @@ project(nav2_tasks)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -32,6 +33,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
   rclcpp
+  rclcpp_action
   geometry_msgs
   nav2_msgs
   behaviortree_cpp
@@ -64,8 +66,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
-  # ament_add_gtest(test_tasks test/test_tasks.cpp)
-  # ament_target_dependencies(test_tasks ${dependencies})
 endif()
 
 ament_export_include_directories(include)

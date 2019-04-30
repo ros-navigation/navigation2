@@ -18,57 +18,48 @@
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/compute_path_to_pose_action.hpp"
-#include "nav2_tasks/follow_path_action.hpp"
-#include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_tasks
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node)
-: node_(node)
+BehaviorTreeEngine::BehaviorTreeEngine()
 {
 }
 
-TaskStatus
+BtStatus
 BehaviorTreeEngine::run(
   BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  // Set a couple values that all of the action nodes expect/require
-  blackboard->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node_);
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
-
-  // The complete behavior tree that results from parsing the incoming XML. When the tree goes
-  // out of scope, all the nodes are destroyed
+  // Parse the input XML and create the corresponding Behavior Tree
   BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
-  // Loop until something happens with ROS or the node completes w/ success or failure
+  // Loop until something happens with ROS or the node completes
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
     result = tree.root_node->executeTick();
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      return TaskStatus::CANCELED;
+      tree.root_node->halt();
+      return BtStatus::CANCELED;
     }
 
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?
-         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
-TaskStatus
+BtStatus
 BehaviorTreeEngine::run(
   std::unique_ptr<BT::Tree> & tree,
   std::function<bool()> cancelRequested,
@@ -83,14 +74,14 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      return TaskStatus::CANCELED;
+      tree->root_node->halt();
+      return BtStatus::CANCELED;
     }
 
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?
-         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
 BT::Tree

@@ -34,15 +34,12 @@ public:
   {
   }
 
-  void onConfigure() override
+  void on_init() override
   {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::BackUpCommand>();
-    result_ = std::make_shared<nav2_tasks::BackUpResult>();
-
-    command_->x = -0.15;
-    command_->y = 0.0;
-    command_->z = 0.0;
+    // Populate the input message
+    goal->x = -0.15;
+    goal->y = 0.0;
+    goal->z = 0.0;
   }
 };
 

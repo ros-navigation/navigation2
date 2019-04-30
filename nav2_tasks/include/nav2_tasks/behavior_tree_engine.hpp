@@ -22,34 +22,32 @@
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "nav2_tasks/task_status.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {
 
+enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
+
 class BehaviorTreeEngine
 {
 public:
-  explicit BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node);
-  BehaviorTreeEngine() = delete;
+  BehaviorTreeEngine();
   virtual ~BehaviorTreeEngine() {}
 
-  TaskStatus run(
+  BtStatus run(
     BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  TaskStatus run(
+  BtStatus run(
     std::unique_ptr<BT::Tree> & tree,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
 
-  void cancelAllActions(BT::TreeNode * root_node)
+  void haltAllActions(BT::TreeNode * root_node)
   {
     auto visitor = [](BT::TreeNode * node) {
         if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
@@ -69,10 +67,7 @@ public:
   }
 
 protected:
-  // The ROS node to use for any task clients
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
-
-  // A factory that will be used to dynamically construct the behavior tree
+  // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };
 
