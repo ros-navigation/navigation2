@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,8 @@ Nav2ControllerClient::resume()
   callService(resume_client_, "nav2_controller/resume");
 }
 
-geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
+geometry_msgs::msg::Quaternion
+Nav2ControllerClient::orientationAroundZAxis(double angle)
 {
   auto orientation = geometry_msgs::msg::Quaternion();
 

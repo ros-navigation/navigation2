@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "nav2_controller/nav2_controller.hpp"
 
 #include <chrono>
@@ -21,13 +20,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED      "\x1b[31m"
+#define ANSI_COLOR_YELLOW   "\x1b[33m"
+#define ANSI_COLOR_BLUE     "\x1b[34m"
+#define ANSI_COLOR_RESET    "\x1b[0m"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -125,19 +121,31 @@ Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 {
   for (const auto & kv : node_map_) {
     if (!kv.second->change_state(transition)) {
-      std::cerr << ANSI_COLOR_RED "Failed to change state for " << kv.first.c_str() <<
-        ANSI_COLOR_RESET;
+      std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
+      error(error_msg);
       return;
     }
   }
 }
 
-void
+bool
 Nav2Controller::bringupNode(const std::string & node_name)
 {
   message(std::string("Configuring and activating ") + node_name);
-  node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
+  if (!node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE)) {
+    std::string error_msg = std::string("Failed to configure ") + node_name;
+    error(error_msg);
+    return false;
+  }
+
+  auto rc = node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
+  if (!rc) {
+    std::string error_msg = std::string("Failed to activate ") + node_name;
+    error(error_msg);
+    return false;
+  }
+
+  return true;
 }
 
 void
@@ -155,7 +163,11 @@ Nav2Controller::startup()
   message("Starting the system bringup...");
   createLifecycleServiceClients();
   for (auto & node_name : node_names_) {
-    bringupNode(node_name);
+    if (!bringupNode(node_name)) {
+      std::string error_msg =
+        std::string("Failed to bring up node: ") + node_name + ", aborting bringup";
+      error(error_msg);
+    }
   }
   message("The system is active");
 }
@@ -177,8 +189,8 @@ Nav2Controller::pause()
     if (!kv.second->change_state(Transition::TRANSITION_DEACTIVATE) ||
       !kv.second->change_state(Transition::TRANSITION_CLEANUP))
     {
-      std::cerr << ANSI_COLOR_RED "Failed to change state for " << kv.first.c_str() <<
-        ANSI_COLOR_RESET;
+      std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
+      error(error_msg);
       return;
     }
   }
@@ -190,7 +202,10 @@ Nav2Controller::resume()
 {
   message("Resuming the system...");
   for (auto & node_name : node_names_) {
-    bringupNode(node_name);
+    if (!bringupNode(node_name)) {
+      std::string error_msg = std::string("Failed to resume node: ") + node_name + ", aborting";
+      error(error_msg);
+    }
   }
   message("The system has been resumed");
 }
@@ -198,7 +213,13 @@ Nav2Controller::resume()
 void
 Nav2Controller::message(const std::string & msg)
 {
-  std::cerr << ANSI_COLOR_BLUE << "\33[1m" << msg << "\33[0m" << ANSI_COLOR_RESET;
+  RCLCPP_INFO(get_logger(), ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET, msg.c_str());
+}
+
+void
+Nav2Controller::error(const std::string & error_msg)
+{
+  RCLCPP_INFO(get_logger(), ANSI_COLOR_RED "\33[1m%s\33[0m" ANSI_COLOR_RESET, error_msg.c_str());
 }
 
 }  // namespace nav2_controller

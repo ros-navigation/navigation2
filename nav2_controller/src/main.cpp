@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,5 @@ int main(int argc, char ** argv)
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
-  RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
   return 0;
 }
