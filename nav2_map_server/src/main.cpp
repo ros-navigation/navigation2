@@ -28,7 +28,6 @@ int main(int argc, char ** argv)
     auto node = std::make_shared<nav2_map_server::MapServer>();
     rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
-    RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
     return 0;
   } catch (std::exception & ex) {
     RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());

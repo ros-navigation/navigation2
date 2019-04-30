@@ -21,7 +21,6 @@
   <depend>launch_testing</depend>
   <depend>tf2</depend>
   <depend>nav2_lifecycle</depend>
-  <depend>nav2_tasks</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

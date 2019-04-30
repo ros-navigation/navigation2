@@ -126,13 +126,13 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
     } else if (mode_str == "raw") {
       loadParameters.mode = RAW;
     } else {
-      RCLCPP_DEBUG(node_->get_logger(),
+      RCLCPP_WARN(node_->get_logger(),
         "Mode parameter not recognized: '%s', using default value (trinary)",
         mode_str.c_str());
       loadParameters.mode = TRINARY;
     }
   } catch (YAML::Exception &) {
-    RCLCPP_DEBUG(node_->get_logger(), "Mode parameter not set, using default value (trinary)");
+    RCLCPP_WARN(node_->get_logger(), "Mode parameter not set, using default value (trinary)");
     loadParameters.mode = TRINARY;
   }
 
