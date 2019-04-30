@@ -7,6 +7,7 @@ find_package(rclcpp REQUIRED)
 find_package(nav2_util)
 find_package(nav2_msgs)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
@@ -32,6 +33,7 @@ set(dependencies
   nav2_util
   nav2_msgs
   nav2_costmap_2d
+  nav2_lifecycle
   tf2_ros
 )
 
