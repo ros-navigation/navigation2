@@ -43,14 +43,22 @@ protected:
 
   // The WorldModel provides the GetCostmap service
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
+
+  // The callback for the GetCostmap service
   void costmap_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
-  // The implementation of the WorldModel uses a Costmap2DROS node, spinning on its own thread
+  // The implementation of the WorldModel uses a Costmap2DROS node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+
+  // The thread for the Costmap2DROS node
   std::unique_ptr<std::thread> costmap_thread_;
+
+  // The frame_id and metadata layer values used in the service response message
+  static constexpr const char * frame_id_{"map"};
+  static constexpr const char * metadata_layer_{"Master"};
 };
 
 }  // namespace nav2_world_model

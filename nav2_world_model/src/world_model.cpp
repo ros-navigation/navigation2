@@ -14,7 +14,6 @@
 
 #include "nav2_world_model/world_model.hpp"
 
-#include <iostream>
 #include <memory>
 
 namespace nav2_world_model
@@ -25,7 +24,10 @@ WorldModel::WorldModel()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  // The costmap node is used in the implementation of the world model
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("world_model_global_costmap");
+
+  // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
     [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
     {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
@@ -44,7 +46,7 @@ WorldModel::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  // Create a service that will use the callback function to handle requests.
+  // Create a service that will use the callback function to handle requests
   costmap_service_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       std::bind(&WorldModel::costmap_service_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -84,14 +86,14 @@ WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::on_error(const rclcpp_lifecycle::State &)
+WorldModel::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::on_shutdown(const rclcpp_lifecycle::State &)
+WorldModel::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -115,15 +117,16 @@ WorldModel::costmap_service_callback(
   auto size_y = costmap_->getSizeInCellsY();
   auto data_length = size_x * size_y;
   unsigned char * data = costmap_->getCharMap();
+  auto current_time = now();
 
-  response->map.header.stamp = now();
-  response->map.header.frame_id = "map";
+  response->map.header.stamp = current_time;
+  response->map.header.frame_id = frame_id_;
   response->map.metadata.size_x = size_x;
   response->map.metadata.size_y = size_y;
   response->map.metadata.resolution = costmap_->getResolution();
-  response->map.metadata.layer = "Master";
-  response->map.metadata.map_load_time = now();
-  response->map.metadata.update_time = now();
+  response->map.metadata.layer = metadata_layer_;
+  response->map.metadata.map_load_time = current_time;
+  response->map.metadata.update_time = current_time;
   response->map.metadata.origin.position.x = costmap_->getOriginX();
   response->map.metadata.origin.position.y = costmap_->getOriginY();
   response->map.metadata.origin.position.z = 0.0;
