@@ -112,7 +112,7 @@ public:
     }
 
     response = future_result.get();
-    return true;
+    return response.get();
   }
 
   void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
