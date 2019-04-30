@@ -22,7 +22,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent Charts)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rviz_common REQUIRED)
@@ -79,7 +79,6 @@ target_include_directories(${library_name} PUBLIC
 
 target_link_libraries(${library_name}
   rviz_common::rviz_common
-  Qt5::Charts
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport,

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@
 #include "nav2_controller/nav2_controller_client.hpp"
 #include "rviz_common/panel.hpp"
 
+#include <QtWidgets>
+
 class QPushButton;
 
 namespace nav2_rviz_plugins
 {
 
-/// Panel for choosing the view controller and saving and restoring viewpoints.
+/// Panel to interface to the nav2 stack
 class Nav2Panel : public rviz_common::Panel
 {
   Q_OBJECT
@@ -39,14 +41,27 @@ public:
   void save(rviz_common::Config config) const override;
 
 private Q_SLOTS:
-  void onStartupClicked();
-  void onShutdownClicked();
+  void onStartup();
+  void onShutdown();
+  void onPause();
+  void onResume();
 
 private:
+  void loadLogFiles();
+
+  // The client used to control the nav2 stack
   nav2_controller::Nav2ControllerClient client_;
 
-  QPushButton * startup_button;
-  QPushButton * shutdown_button;
+  QPushButton * start_stop_button_{nullptr};
+  QPushButton * pause_resume_button_{nullptr};
+
+  QStateMachine machine_;
+
+  QState * initial_{nullptr};
+  QState * starting_{nullptr};
+  QState * stopping_{nullptr};
+  QState * pausing_{nullptr};
+  QState * resuming_{nullptr};
 };
 
 }  // namespace nav2_rviz_plugins

@@ -14,29 +14,14 @@
 
 #include "nav2_rviz_plugins/nav2_panel.hpp"
 
+#include <dirent.h>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
-#include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
-
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLegend>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QValueAxis>
+#include <QVBoxLayout>
 
 #include "rviz_common/display_context.hpp"
-
-using QtCharts::QBarSeries;
-using QtCharts::QBarSet;
-using QtCharts::QChart;
-using QtCharts::QChartView;
-using QtCharts::QLegend;
-using QtCharts::QLineSeries;
-using QtCharts::QScatterSeries;
-using QtCharts::QValueAxis;
 
 namespace nav2_rviz_plugins
 {
@@ -44,120 +29,76 @@ namespace nav2_rviz_plugins
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent)
 {
-  startup_button = new QPushButton("Startup");
-  shutdown_button = new QPushButton("Shutdown");
+  // Create the control button and its tooltip
 
-  connect(startup_button, SIGNAL(clicked()), this, SLOT(onStartupClicked()));
-  connect(shutdown_button, SIGNAL(clicked()), this, SLOT(onShutdownClicked()));
+  start_stop_button_ = new QPushButton;
+  pause_resume_button_ = new QPushButton;
 
-  startup_button->setToolTip("TODO");
-  shutdown_button->setToolTip("TODO");
+  // Create the state machine used to present the proper control button states in the UI
 
-  QChart * chart = new QChart();
-  QChartView * chartView = new QChartView(chart);
-  chartView->setMinimumSize(400, 300);
+  const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
+  const char * shutdown_msg1 = "Deactivate and cleanup all nav2 lifecycle nodes";
+  const char * shutdown_msg2 = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
 
-  QValueAxis * axisX = new QValueAxis;
-  axisX->setRange(0, 2000);
-  axisX->setLabelFormat("%g");
-  axisX->setTitleText("Loop Iteration");
+  initial_ = new QState();
+  initial_->setObjectName("initial");
+  initial_->assignProperty(start_stop_button_, "text", "Startup");
+  initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
+  initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  initial_->assignProperty(pause_resume_button_, "enabled", false);
+  initial_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
 
-  QValueAxis * axisY = new QValueAxis;
-  axisY->setRange(0, 50);
-  axisY->setTitleText("Time (ms)");
+  starting_ = new QState();
+  starting_->setObjectName("starting");
+  starting_->assignProperty(start_stop_button_, "text", "Shutdown");
+  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg2);
+  starting_->assignProperty(pause_resume_button_, "enabled", true);
+  starting_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
 
-  QLineSeries * series = new QLineSeries;
-  series->setName("loop rate samples");
-  QPen pen1(QRgb(0xfdb157));
-  pen1.setWidth(2);
-  series->setPen(pen1);
-  QVector<QPointF> points;
-  for (int i = 0; i < 2000; i++) {
-    points.append(QPointF(i, 25));
-  }
-  series->replace(points);
+  stopping_ = new QState();
+  stopping_->setObjectName("stopping");
+  stopping_->assignProperty(start_stop_button_, "enabled", false);
+  stopping_->assignProperty(pause_resume_button_, "enabled", false);
 
-  QLineSeries * lineseries = new QLineSeries;
-  lineseries->setName("target");
-  QPen pen(QRgb(0xff0000));
-  pen.setWidth(2);
-  lineseries->setPen(pen);
-  QVector<QPointF> points2;
-  points2.append(QPointF(0, 10));
-  points2.append(QPointF(2000, 10));
-  lineseries->replace(points2);
+  pausing_ = new QState();
+  pausing_->setObjectName("pausing");
+  pausing_->assignProperty(start_stop_button_, "enabled", false);
+  pausing_->assignProperty(pause_resume_button_, "text", "Resume");
+  pausing_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
 
-  QPainterPath starPath;
-  starPath.moveTo(28, 15);
-  for (int i = 1; i < 5; i++) {
-    starPath.lineTo(14 + 14 * qCos(0.8 * i * M_PI),
-      15 + 14 * qSin(0.8 * i * M_PI));
-  }
-  starPath.closeSubpath();
+  resuming_ = new QState();
+  resuming_->setObjectName("resuming");
+  resuming_->assignProperty(start_stop_button_, "enabled", true);
+  resuming_->assignProperty(pause_resume_button_, "text", "Pause");
+  resuming_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
 
-  QImage star(30, 30, QImage::Format_ARGB32);
-  star.fill(Qt::transparent);
+  QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
+  QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
+  QObject::connect(pausing_, SIGNAL(entered()), this, SLOT(onPause()));
+  QObject::connect(resuming_, SIGNAL(entered()), this, SLOT(onResume()));
 
-  QPainter painter(&star);
-  painter.setRenderHint(QPainter::Antialiasing);
-  painter.setPen(QRgb(0x0000ff));
-  painter.setBrush(painter.pen().color());
-  painter.drawPath(starPath);
+  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
+  starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  starting_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
+  pausing_->addTransition(pause_resume_button_, SIGNAL(clicked()), resuming_);
+  resuming_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
+  resuming_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
 
-#if 0
-  QAbstractBarSeries QHorizontalBarSeries QScatterSeries
-  QAbstractSeries QHorizontalPercentBarSeries QSplineSeries
-  QAreaSeries QHorizontalStackedBarSeries QStackedBarSeries
-  QBarSeries QLineSeries QXYSeries
-  QBoxPlotSeries QPercentBarSeries
-  QCandlestickSeries QPieSeries
-#endif
+  machine_.addState(initial_);
+  machine_.addState(starting_);
+  machine_.addState(stopping_);
+  machine_.addState(pausing_);
+  machine_.addState(resuming_);
 
-#if 0
-  QBarSet * set0 = new QBarSet("samples");
-  for (int i = 0; i < 1000; i++) {
-    *set0 << i;
-  }
-  QBarSeries * barseries = new QBarSeries();
-  barseries->append(set0);
-#endif
+  machine_.setInitialState(initial_);
+  machine_.start();
 
-  QScatterSeries * series2 = new QScatterSeries();
-  series2->setName("scatter3");
-  series2->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-  series2->setMarkerSize(30.0);
-
-  *series2 << QPointF(1, 5) << QPointF(500, 25) << QPointF(1500, 50);
-  series2->setBrush(star);
-  series2->setPen(QColor(Qt::transparent));
-
-  chart->setAxisX(axisX, series);
-  chart->setAxisY(axisY, series);
-  chart->addSeries(series);
-  chart->addSeries(lineseries);
-  chart->addSeries(series2);
-  // chart->addSeries(barseries);
-  chart->legend()->hide();
-  chart->setTitle("DWB Loop Rate");
-
-  series->attachAxis(axisX);
-  series->attachAxis(axisY);
-  lineseries->attachAxis(axisX);
-  lineseries->attachAxis(axisY);
-  series2->attachAxis(axisX);
-  series2->attachAxis(axisY);
-  // barseries->attachAxis(axisX);
-  // barseries->attachAxis(axisY);
-
-  QHBoxLayout * button_layout = new QHBoxLayout;
-  button_layout->addWidget(startup_button);
-  button_layout->addWidget(shutdown_button);
-  button_layout->setContentsMargins(2, 0, 2, 2);
+  // Lay out the items in the panel
 
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addWidget(chartView);
-  main_layout->addLayout(button_layout);
+  main_layout->addWidget(pause_resume_button_);
+  main_layout->addWidget(start_stop_button_);
+  main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 }
 
@@ -168,19 +109,31 @@ Nav2Panel::onInitialize()
 }
 
 void
-Nav2Panel::onStartupClicked()
+Nav2Panel::onStartup()
 {
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
-  startup_button->setEnabled(false);
 }
 
 void
-Nav2Panel::onShutdownClicked()
+Nav2Panel::onShutdown()
 {
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
-  shutdown_button->setEnabled(false);
+}
+
+void
+Nav2Panel::onPause()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::pause, &client_));
+}
+
+void
+Nav2Panel::onResume()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::resume, &client_));
 }
 
 void
