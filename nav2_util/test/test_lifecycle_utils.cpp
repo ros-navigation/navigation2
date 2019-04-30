@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_util/lifecycle_utils.hpp"
 #include <thread>
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
+#include <vector>
+
 #include "gtest/gtest.h"
+#include "nav2_util/lifecycle_utils.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using nav2_util::bringup_lifecycle_nodes;
 
