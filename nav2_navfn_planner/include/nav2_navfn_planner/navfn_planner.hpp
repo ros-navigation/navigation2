@@ -24,11 +24,13 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_robot/robot.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_util/costmap_service_client.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -50,10 +52,14 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The task server receives the ComputePathToPose command, invoking computePathToPose()
-  nav2_tasks::TaskStatus computePathToPose(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ComputePathToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+
+  // Our action server implements the ComputePathToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void computePathToPose(const std::shared_ptr<GoalHandle> goal_handle);
 
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(
