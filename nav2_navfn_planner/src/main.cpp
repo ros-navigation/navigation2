@@ -10,16 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License. Reserved.
+// limitations under the License.
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_navfn_planner/navfn_planner.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<nav2_navfn_planner::NavfnPlanner>());
+  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
+  rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
   return 0;
