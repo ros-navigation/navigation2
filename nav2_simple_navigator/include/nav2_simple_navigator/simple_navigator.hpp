@@ -18,10 +18,13 @@
 #include <memory>
 #include <string>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_util/simple_action_server.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_simple_navigator
 {
@@ -41,13 +44,28 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The task server receives the NavigateToPose commands, invoking navigateToPose()
-  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
 
-  // The SimpleNavigator uses the planner and controller to carry out the task
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
-  std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
+  // An action server that implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);
+
+  // The SimpleNavigator uses planner and controller actions to carry out its own action
+  rclcpp_action::Client<nav2_msgs::action::ComputePathToPose>::SharedPtr planner_client_;
+  rclcpp_action::Client<nav2_msgs::action::FollowPath>::SharedPtr controller_client_;
+
+  // A regular, non-spinning ROS node that we can use for calls to the action clients
+  rclcpp::Node::SharedPtr client_node_;
+
+  // A subscription and callback to handle the topic-based goal published from rviz
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+
+  // A client that we'll use to send a command message to our own task server
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
 };
 
 }  // namespace nav2_simple_navigator
