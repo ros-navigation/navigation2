@@ -4,7 +4,9 @@ project(nav2_bt_navigator)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -12,6 +14,7 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -34,7 +37,9 @@ add_library(${library_name} SHARED
 
 set(dependencies
   rclcpp
+  rclcpp_action
   std_msgs
+  geometry_msgs
   nav2_tasks
   nav_msgs
   nav2_msgs
@@ -42,6 +47,7 @@ set(dependencies
   std_srvs
   nav2_robot
   nav2_util
+  nav2_lifecycle
 )
 
 ament_target_dependencies(${executable_name}
