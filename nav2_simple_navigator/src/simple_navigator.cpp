@@ -63,21 +63,21 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_activate(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -89,14 +89,14 @@ SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_error(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
