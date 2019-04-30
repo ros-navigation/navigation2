@@ -102,7 +102,8 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
 
   // Set a couple values on the blackboard that all of the nodes require
   blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100));  // NOLINT
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout",  // NOLINT
+    std::chrono::milliseconds(100));
 
   // Create the Behavior Tree for this mission
   ExecuteMissionBehaviorTree bt;
@@ -115,17 +116,17 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
   switch (rc) {
     case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Mission succeeded");
-      goal_handle->set_succeeded(result);
+      goal_handle->succeed(result);
       return;
 
     case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Mission failed");
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       return;
 
     case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Mission canceled");
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       return;
 
     default:
