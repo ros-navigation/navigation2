@@ -20,6 +20,6 @@ Second, install dependencies:
 ```sh
 cd <directory_ros2_ws> source install/setup.bash
 cd <turtlebot3_ws> source install setup.bash
-cd <experimental_rl_ws> colcon build --symlink-install
+cd <navigation2_ws> colcon build --symlink-install
 
 ```
