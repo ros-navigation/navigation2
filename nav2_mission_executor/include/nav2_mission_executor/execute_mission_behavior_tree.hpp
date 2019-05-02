@@ -24,8 +24,7 @@ namespace nav2_mission_executor
 class ExecuteMissionBehaviorTree : public nav2_tasks::BehaviorTreeEngine
 {
 public:
-  explicit ExecuteMissionBehaviorTree(rclcpp::Node::SharedPtr node);
-  ExecuteMissionBehaviorTree() = delete;
+  ExecuteMissionBehaviorTree();
 };
 
 }  // namespace nav2_mission_executor
