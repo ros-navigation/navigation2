@@ -23,24 +23,6 @@
 namespace nav2_util
 {
 
-template<typename FutureT, typename WaitTimeT>
-std::future_status
-wait_for_result(
-  FutureT & future,
-  WaitTimeT time_to_wait)
-{
-  auto end = std::chrono::steady_clock::now() + time_to_wait;
-  std::chrono::milliseconds wait_period(100);
-  std::future_status status = std::future_status::timeout;
-  do {
-    auto now = std::chrono::steady_clock::now();
-    auto time_left = end - now;
-    if (time_left <= std::chrono::seconds(0)) {break;}
-    status = future.wait_for((time_left < wait_period) ? time_left : wait_period);
-  } while (rclcpp::ok() && status != std::future_status::ready);
-  return status;
-}
-
 template<class ServiceT>
 class ServiceClient
 {
@@ -48,6 +30,7 @@ public:
   explicit ServiceClient(
     const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
+  : service_name_(service_name)
   {
     if (provided_node) {
       node_ = provided_node;
@@ -58,6 +41,7 @@ public:
   }
 
   ServiceClient(const std::string & service_name, const std::string & parent_name)
+  : service_name_(service_name)
   {
     node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client");
     client_ = node_->create_client<ServiceT>(service_name);
@@ -73,18 +57,21 @@ public:
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
-                "ServiceClient: service call interrupted while waiting for service");
+                service_name_ + " service client: interrupted while waiting for service");
       }
-      RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+      RCLCPP_INFO(
+        node_->get_logger(), "%s service client: waiting for service to appear...",
+        service_name.c_str());
     }
 
-    RCLCPP_DEBUG(node_->get_logger(), "send async request");
+    RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
+      service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
-      throw std::runtime_error("ServiceClient::async_send_request: service call failed");
+      throw std::runtime_error(service_name_ + " service client: async_send_request failed");
     }
 
     return future_result.get();
@@ -97,12 +84,15 @@ public:
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
-                "ServiceClient: service call interrupted while waiting for service");
+                service_name_ + " service client: interrupted while waiting for service");
       }
-      RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
+      RCLCPP_INFO(
+        node_->get_logger(), "%s service client: waiting for service to appear...",
+        service_name.c_str());
     }
 
-    RCLCPP_DEBUG(node_->get_logger(), "send async request");
+    RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
+      service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_, future_result) !=
@@ -120,12 +110,13 @@ public:
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
-                "waitForServer: interrupted while waiting for service to appear");
+                service_name_ + " service client: interrupted while waiting for service");
       }
     }
   }
 
 protected:
+  std::string service_name_;
   rclcpp::Node::SharedPtr node_;
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };

@@ -63,10 +63,12 @@ public:
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
 
     // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
     action_client_->wait_for_action_server();
 
     // Give the derive class a chance to do any initialization
     on_init();
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
   }
 
   // Derived classes can override any of the following methods to hook into the
