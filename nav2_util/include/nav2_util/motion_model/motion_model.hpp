@@ -27,6 +27,10 @@ class MotionModel
 public:
   virtual ~MotionModel() = default;
   virtual void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta) = 0;
+
+  static MotionModel * createMotionModel(
+    std::string & type, double alpha1, double alpha2,
+    double alpha3, double alpha4, double alpha5);
 };
 
 class OmniMotionModel : public MotionModel

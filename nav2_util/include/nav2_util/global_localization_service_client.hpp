@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+
+#include <string>
 
 #include "nav2_util/service_client.hpp"
 #include "std_srvs/srv/empty.hpp"
 
-namespace nav2_tasks
+namespace nav2_util
 {
 
 class GlobalLocalizationServiceClient : public nav2_util::ServiceClient<std_srvs::srv::Empty>
 {
 public:
-  GlobalLocalizationServiceClient()
-  : nav2_util::ServiceClient<std_srvs::srv::Empty>("global_localization")
+  explicit GlobalLocalizationServiceClient(const std::string & parent_node_name)
+  : ServiceClient<std_srvs::srv::Empty>("global_localization", parent_node_name)
   {
   }
 
@@ -35,6 +37,6 @@ public:
     nav2_util::ServiceClient<std_srvs::srv::Empty>::ResponseType;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_util
 
-#endif  // NAV2_TASKS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
