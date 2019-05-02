@@ -35,7 +35,7 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
+SimpleNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
