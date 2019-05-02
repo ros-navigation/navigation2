@@ -16,11 +16,11 @@ import os.path
 from turtlebot3_env import TurtlebotEnv
 import numpy as np
 import rclpy
+import parameters
+
 from rclpy.node import Node
 from time import sleep
 from keras.models import load_model
-
-LOOP_RATE = 0.2 # Seconds
 
 def loadModel(env):
     state = env.reset()
@@ -28,7 +28,8 @@ def loadModel(env):
     state = np.reshape(state, [1, observation_space])
 
     project_path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(project_path,"../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
+    path = os.path.join(\
+        project_path,"../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
     model = load_model(path)
     while True:
             q_values = model.predict(state)
@@ -36,7 +37,7 @@ def loadModel(env):
             next_state, reward, terminal = env.step(action)
             next_state = np.reshape(next_state, [1, observation_space])
             state = next_state
-            sleep(LOOP_RATE)
+            sleep(parameters.LOOP_RATE)
 
 def main(args=None):
     rclpy.init(args=args)

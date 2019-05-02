@@ -24,6 +24,8 @@ from threading import Thread
 
 import numpy as np
 import math
+import parameters
+
 from math import pi
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
@@ -31,19 +33,14 @@ from std_srvs.srv import Empty
 from std_msgs.msg import String
 from gazebo_msgs.srv import GetEntityState, SetEntityState
 
-LINEAR_FWD_VELOCITY = 0.16
-ANGULAR_FWD_VELOCITY = 0.0
-LINEAR_STR_VELOCITY = 0.06
-ANGULAR_VELOCITY = 0.6
-
 class TurtlebotEnv():
     def __init__(self):
         node_ = rclpy.create_node('turtlebot3_env')
         self.act = 0
         self.done = False
-        self.actions = [[LINEAR_FWD_VELOCITY, ANGULAR_FWD_VELOCITY],
-                        [LINEAR_STR_VELOCITY, ANGULAR_VELOCITY],
-                        [LINEAR_STR_VELOCITY, -ANGULAR_VELOCITY]]
+        self.actions = [[parameters.LINEAR_FWD_VELOCITY, parameters.ANGULAR_FWD_VELOCITY],
+                        [parameters.LINEAR_STR_VELOCITY, parameters.ANGULAR_VELOCITY],
+                        [parameters.LINEAR_STR_VELOCITY, -parameters.ANGULAR_VELOCITY]]
         self.bonous_reward = 0
 
         self.collision = False

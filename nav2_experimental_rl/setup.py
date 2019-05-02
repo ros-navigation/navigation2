@@ -10,6 +10,8 @@ setup(
         'random_crawl_train',
         'random_crawl',
         'turtlebot3_env',
+        'dqn',
+        'parameters',
          ],
     data_files=[
         ('share/ament_index/resource_index/packages',
