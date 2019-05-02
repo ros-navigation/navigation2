@@ -26,13 +26,13 @@ Nav2ControllerClient::Nav2ControllerClient()
   node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client");
 
   // All of the services use the same (Empty) request
-  request_ = std::make_shared<Srv::Request>();
+  request_ = std::make_shared<Empty::Request>();
 
   // Create the service clients
-  startup_client_ = node_->create_client<Srv>("nav2_controller/startup");
-  pause_client_ = node_->create_client<Srv>("nav2_controller/pause");
-  resume_client_ = node_->create_client<Srv>("nav2_controller/resume");
-  shutdown_client_ = node_->create_client<Srv>("nav2_controller/shutdown");
+  startup_client_ = node_->create_client<Empty>("nav2_controller/startup");
+  pause_client_ = node_->create_client<Empty>("nav2_controller/pause");
+  resume_client_ = node_->create_client<Empty>("nav2_controller/resume");
+  shutdown_client_ = node_->create_client<Empty>("nav2_controller/shutdown");
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -144,7 +144,7 @@ Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
 
 void
 Nav2ControllerClient::callService(
-  rclcpp::Client<Srv>::SharedPtr service_client,
+  rclcpp::Client<Empty>::SharedPtr service_client,
   const char * service_name)
 {
   RCLCPP_INFO(node_->get_logger(), "Waiting for the nav2_controller's %s service...", service_name);

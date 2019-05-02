@@ -43,22 +43,22 @@ public:
   bool navigate_to_pose(double x, double y, double theta);
 
 protected:
-  using Srv = std_srvs::srv::Empty;
+  using Empty = std_srvs::srv::Empty;
 
   // A generic method used to call startup, shutdown, etc.
-  void callService(rclcpp::Client<Srv>::SharedPtr service_client, const char * service_name);
+  void callService(rclcpp::Client<Empty>::SharedPtr service_client, const char * service_name);
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
 
   // The same (empty) request for all of the services
-  std::shared_ptr<Srv::Request> request_;
+  std::shared_ptr<Empty::Request> request_;
 
   // The service clients
-  rclcpp::Client<Srv>::SharedPtr startup_client_;
-  rclcpp::Client<Srv>::SharedPtr pause_client_;
-  rclcpp::Client<Srv>::SharedPtr resume_client_;
-  rclcpp::Client<Srv>::SharedPtr shutdown_client_;
+  rclcpp::Client<Empty>::SharedPtr startup_client_;
+  rclcpp::Client<Empty>::SharedPtr pause_client_;
+  rclcpp::Client<Empty>::SharedPtr resume_client_;
+  rclcpp::Client<Empty>::SharedPtr shutdown_client_;
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
 
