@@ -12,27 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__MAP_SERVICE_CLIENT_HPP_
-#define NAV2_TASKS__MAP_SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__MAP_SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__MAP_SERVICE_CLIENT_HPP_
+
+#include <memory>
+#include <string>
 
 #include "nav2_util/service_client.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 
-namespace nav2_tasks
+namespace nav2_util
 {
 
 class MapServiceClient : public nav2_util::ServiceClient<nav_msgs::srv::GetMap>
 {
 public:
-  MapServiceClient()
-  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map")
+  explicit MapServiceClient(const std::string & parent_node_name)
+  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map", parent_node_name)
   {
+  }
+
+  explicit MapServiceClient(rclcpp::Node::SharedPtr node)
+  : nav2_util::ServiceClient<nav_msgs::srv::GetMap>("map", node)
+  {
+  }
+
+  bool getMap(nav_msgs::msg::OccupancyGrid & map)
+  {
+    auto request = std::make_shared<nav2_util::MapServiceClient::MapServiceRequest>();
+    auto response = std::make_shared<nav2_util::MapServiceClient::MapServiceResponse>();
+
+    bool rc = invoke(request, response);
+    if (rc) {
+      map = response->map;
+    }
+
+    return rc;
   }
 
   using MapServiceRequest = nav2_util::ServiceClient<nav_msgs::srv::GetMap>::RequestType;
   using MapServiceResponse = nav2_util::ServiceClient<nav_msgs::srv::GetMap>::ResponseType;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_util
 
-#endif  // NAV2_TASKS__MAP_SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__MAP_SERVICE_CLIENT_HPP_

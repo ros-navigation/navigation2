@@ -21,8 +21,7 @@
 namespace nav2_tasks
 {
 
-using ExecuteMissionAction =
-  BtActionNode<ExecuteMissionCommand, ExecuteMissionResult>;
+using ExecuteMissionAction = BtActionNode<ExecuteMissionCommand, ExecuteMissionResult>;
 
 }  // namespace nav2_tasks
 
