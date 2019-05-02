@@ -13,20 +13,18 @@
 # limitations under the License.
 
 from time import sleep
+from threading import Thread
 
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 
-import random
-import pandas
-from threading import Thread
-
 import numpy as np
 import math
+import random
+import pandas
 import parameters
 
-from math import pi
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Empty

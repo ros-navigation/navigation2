@@ -28,12 +28,12 @@ To train Random Crawl:
 Firtst run Gazebo:
 ```sh 
 export <directory_for_turtlebot3_ws>/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
-export TURTLEBOT3_MODEL=burger
+export TURTLEBOT3_MODEL=burger or waffle
 ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 ```
 Then, 
 ```sh
-cd <experimental_rl_ws> source install setup.bash
+cd <navigation2_ws> source install setup.bash
 cd  install/turtlebot3_rl/bin
 ```
 Run:
@@ -47,13 +47,13 @@ Firtst run Gazebo:
 
 ```sh 
 export <directory_for_turtlebot3_ws>/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
-export TURTLEBOT3_MODEL=burger
+export TURTLEBOT3_MODEL=burger or waffle
 ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 ```
 
 Then, 
 ```sh
-cd <experimental_rl_ws> source install setup.bash
+cd <navigation2_ws> source install setup.bash
 cd  install/turtlebot3_rl/bin
 ```
 Run:
