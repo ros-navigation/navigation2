@@ -15,34 +15,33 @@
 #ifndef NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 #define NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 
-#include <string>
 #include <memory>
-#include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include <string>
+
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
 
 namespace nav2_tasks
 {
 
-class NavigateToPoseAction : public BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>
+class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {
 public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
-  : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name, params)
+  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, params)
   {
   }
 
-  void onInit() override
+  void on_tick() override
   {
-    BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>::onInit();
-
-    // Use the position and orientation fields from the XML attributes
+    // Use the position and orientation fields from the XML attributes to initialize the goal
     geometry_msgs::msg::Point position;
-    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
-
     geometry_msgs::msg::Quaternion orientation;
+
+    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
     bool have_orientation = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
 
     if (!have_position || !have_orientation) {
@@ -50,13 +49,8 @@ public:
         "NavigateToPoseAction: position or orientation not provided");
     }
 
-    // Create the command message for this task
-    command_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-    command_->pose.position = position;
-    command_->pose.orientation = orientation;
-
-    // Create the result message
-    result_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
+    goal_.pose.pose.position = position;
+    goal_.pose.pose.orientation = orientation;
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method

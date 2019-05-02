@@ -24,6 +24,9 @@
 
 #include <math.h>
 
+namespace nav2_util
+{
+
 class angleutils
 {
 public:
@@ -53,5 +56,7 @@ angleutils::angle_diff(double a, double b)
     return d2;
   }
 }
+
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__ANGLEUTILS_HPP_

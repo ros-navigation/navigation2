@@ -15,32 +15,45 @@
 #ifndef NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 #define NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 
-#include <string>
 #include <memory>
-#include "nav2_tasks/bt_conversions.hpp"
+#include <string>
+
+#include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/follow_path_task.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_tasks
 {
 
-class FollowPathAction : public BtActionNode<FollowPathCommand, FollowPathResult>
+class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
 public:
   explicit FollowPathAction(const std::string & action_name)
-  : BtActionNode<FollowPathCommand, FollowPathResult>(action_name)
+  : BtActionNode<nav2_msgs::action::FollowPath>(action_name)
   {
   }
 
-  void onInit() override
+  void on_init() override
   {
-    BtActionNode<FollowPathCommand, FollowPathResult>::onInit();
+    blackboard()->set<bool>("path_updated", false);
+  }
 
-    // Set up the input and output messages
-    command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-    result_ = std::make_shared<nav2_tasks::FollowPathResult>();
+  void on_tick() override
+  {
+    goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+  }
+
+  void on_loop_timeout() override
+  {
+    // Check if the goal has been updated
+    if (blackboard()->get<bool>("path_updated")) {
+      // Reset the flag in the blackboard
+      blackboard()->set<bool>("path_updated", false);  // NOLINT
+
+      // Grab the new goal and set the flag so that we send the new goal to
+      // the action server on the next loop iteration
+      goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+      goal_updated_ = true;
+    }
   }
 };
 

@@ -22,8 +22,9 @@
 namespace BT
 {
 
-// The follow templates are needed to be able to use these types as parameters
-// in the BT XML files
+// The follow templates are required when using these types as parameters
+// in our BT XML files. They parse the strings in the XML into their corresponding
+// data type.
 
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView & key)
