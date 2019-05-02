@@ -61,7 +61,7 @@ public:
       }
       RCLCPP_INFO(
         node_->get_logger(), "%s service client: waiting for service to appear...",
-        service_name.c_str());
+        service_name_.c_str());
     }
 
     RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
@@ -88,7 +88,7 @@ public:
       }
       RCLCPP_INFO(
         node_->get_logger(), "%s service client: waiting for service to appear...",
-        service_name.c_str());
+        service_name_.c_str());
     }
 
     RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
