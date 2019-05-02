@@ -15,34 +15,59 @@
 #ifndef NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 #define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 
+#include <memory>
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "nav2_tasks/task_status.hpp"
 
 namespace nav2_tasks
 {
 
+enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
+
 class BehaviorTreeEngine
 {
 public:
-  explicit BehaviorTreeEngine(rclcpp::Node::SharedPtr node);
-  BehaviorTreeEngine() = delete;
+  BehaviorTreeEngine();
+  virtual ~BehaviorTreeEngine() {}
 
-  TaskStatus run(
+  BtStatus run(
     BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-protected:
-  // The ROS node to use for any task clients
-  rclcpp::Node::SharedPtr node_;
+  BtStatus run(
+    std::unique_ptr<BT::Tree> & tree,
+    std::function<bool()> cancelRequested,
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  // A factory that will be used to dynamically construct the behavior tree
+  BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
+
+  void haltAllActions(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
+          action->halt();
+        }
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
+  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+  void resetTree(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        node->setStatus(BT::NodeStatus::IDLE);
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
+protected:
+  // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };
 

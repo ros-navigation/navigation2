@@ -12,28 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__BACK_UP_TASK_HPP_
-#define NAV2_TASKS__BACK_UP_TASK_HPP_
+#include "nav2_util/motion_model/motion_model.hpp"
 
-#include "nav2_tasks/task_client.hpp"
-#include "nav2_tasks/task_server.hpp"
-#include "geometry_msgs/msg/point.hpp"
+#include <string>
 
-namespace nav2_tasks
+namespace nav2_util
 {
 
-using BackUpCommand = geometry_msgs::msg::Point;
-using BackUpResult = std_msgs::msg::Empty;
-
-using BackUpTaskClient = TaskClient<BackUpCommand, BackUpResult>;
-using BackUpTaskServer = TaskServer<BackUpCommand, BackUpResult>;
-
-template<>
-inline const char * getTaskName<BackUpCommand, BackUpResult>()
+MotionModel *
+MotionModel::createMotionModel(
+  std::string & type, double alpha1, double alpha2,
+  double alpha3, double alpha4, double alpha5)
 {
-  return "BackUpTask";
+  if (type == "differential") {
+    return new DifferentialMotionModel(alpha1, alpha2, alpha3, alpha4);
+  } else if (type == "omnidirectional") {
+    return new OmniMotionModel(alpha1, alpha2, alpha3, alpha4, alpha5);
+  }
+
+  return nullptr;
 }
 
-}  // namespace nav2_tasks
-
-#endif  // NAV2_TASKS__BACK_UP_TASK_HPP_
+}  // namespace nav2_util

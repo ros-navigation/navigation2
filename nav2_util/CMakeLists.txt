@@ -12,6 +12,8 @@ find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(test_msgs REQUIRED)
 
 nav2_package()
 
