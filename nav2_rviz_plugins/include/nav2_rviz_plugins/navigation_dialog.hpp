@@ -23,6 +23,7 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 class QCheckBox;
 class QDialogButtonBox;
@@ -42,6 +43,7 @@ public:
 
 protected:
   void timerEvent(QTimerEvent * event);
+  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
 private slots:
   void onCancelButtonPressed();

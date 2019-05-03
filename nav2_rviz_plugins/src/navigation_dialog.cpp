@@ -93,16 +93,11 @@ NavigationDialog::timerEvent(QTimerEvent * event)
 }
 
 geometry_msgs::msg::Quaternion
-orientationAroundZAxis(double angle)
+NavigationDialog::orientationAroundZAxis(double angle)
 {
-  auto orientation = geometry_msgs::msg::Quaternion();
-
-  orientation.x = 0.0;
-  orientation.y = 0.0;
-  orientation.z = sin(angle) / (2 * cos(angle / 2));
-  orientation.w = cos(angle / 2);
-
-  return orientation;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);  // void returning function
+  return tf2::toMsg(q);
 }
 
 void

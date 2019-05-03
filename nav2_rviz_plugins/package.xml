@@ -24,6 +24,7 @@
   <depend>rviz_ogre_vendor</depend>
   <depend>rviz_rendering</depend>
   <depend>std_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
