@@ -80,9 +80,8 @@ protected:
   // For each node in the map, transition to the new target state
   void changeStateForAllNodes(std::uint8_t transition);
 
-  // Convenience functions to highlight the output on the console
+  // Convenience function to highlight the output on the console
   void message(const std::string & msg);
-  void error(const std::string & msg);
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;

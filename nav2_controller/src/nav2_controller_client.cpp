@@ -17,6 +17,8 @@
 #include <cmath>
 #include <memory>
 
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+
 namespace nav2_controller
 {
 
@@ -68,14 +70,9 @@ Nav2ControllerClient::resume()
 geometry_msgs::msg::Quaternion
 Nav2ControllerClient::orientationAroundZAxis(double angle)
 {
-  auto orientation = geometry_msgs::msg::Quaternion();
-
-  orientation.x = 0.0;
-  orientation.y = 0.0;
-  orientation.z = sin(angle) / (2 * cos(angle / 2));
-  orientation.w = cos(angle / 2);
-
-  return orientation;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);  // void returning function
+  return tf2::toMsg(q);
 }
 
 void

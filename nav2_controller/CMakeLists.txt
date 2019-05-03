@@ -13,6 +13,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 nav2_package()
 
@@ -38,6 +39,7 @@ set(dependencies
   rclcpp_lifecycle
   std_msgs
   std_srvs
+  tf2_geometry_msgs
 )
 
 ament_target_dependencies(${library_name}

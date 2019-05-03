@@ -17,13 +17,9 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-
-#define ANSI_COLOR_RED      "\x1b[31m"
-#define ANSI_COLOR_YELLOW   "\x1b[33m"
-#define ANSI_COLOR_BLUE     "\x1b[34m"
-#define ANSI_COLOR_RESET    "\x1b[0m"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -35,11 +31,17 @@ namespace nav2_controller
 {
 
 Nav2Controller::Nav2Controller()
-: Node("nav2_controller"),
-  node_names_{"map_server", "amcl", "world_model", "dwb_controller", "navfn_planner",
-    "bt_navigator"}
+: Node("nav2_controller")
 {
   RCLCPP_INFO(get_logger(), "Creating");
+
+  // The default set of node names for the nav2 stack
+  std::vector<std::string> default_node_names{"map_server", "amcl", "world_model", "dwb_controller",
+    "navfn_planner", "bt_navigator"};
+
+  // However, it is parameterized, allowing this module to be used with a different set of nodes
+  declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
+  get_parameter("node_names", node_names_);
 
   startup_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/startup",
       std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3));
@@ -64,8 +66,8 @@ Nav2Controller::~Nav2Controller()
 void
 Nav2Controller::startupCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
+  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
 {
   startup();
 }
@@ -73,8 +75,8 @@ Nav2Controller::startupCallback(
 void
 Nav2Controller::shutdownCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
+  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
 {
   shutdown();
 }
@@ -82,8 +84,8 @@ Nav2Controller::shutdownCallback(
 void
 Nav2Controller::pauseCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
+  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
 {
   pause();
 }
@@ -91,8 +93,8 @@ Nav2Controller::pauseCallback(
 void
 Nav2Controller::resumeCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
+  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
 {
   resume();
 }
@@ -121,8 +123,7 @@ Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 {
   for (const auto & kv : node_map_) {
     if (!kv.second->change_state(transition)) {
-      std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
-      error(error_msg);
+      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", kv.first.c_str());
       return;
     }
   }
@@ -133,15 +134,13 @@ Nav2Controller::bringupNode(const std::string & node_name)
 {
   message(std::string("Configuring and activating ") + node_name);
   if (!node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE)) {
-    std::string error_msg = std::string("Failed to configure ") + node_name;
-    error(error_msg);
+    RCLCPP_ERROR(get_logger(), "Failed to configure node: %s", node_name.c_str());
     return false;
   }
 
   auto rc = node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
   if (!rc) {
-    std::string error_msg = std::string("Failed to activate ") + node_name;
-    error(error_msg);
+    RCLCPP_ERROR(get_logger(), "Failed to activate node: %s", node_name.c_str());
     return false;
   }
 
@@ -164,9 +163,8 @@ Nav2Controller::startup()
   createLifecycleServiceClients();
   for (auto & node_name : node_names_) {
     if (!bringupNode(node_name)) {
-      std::string error_msg =
-        std::string("Failed to bring up node: ") + node_name + ", aborting bringup";
-      error(error_msg);
+      RCLCPP_ERROR(get_logger(), "Failed to bring up node: %s, aboring bringup", node_name.c_str());
+      return;
     }
   }
   message("The system is active");
@@ -189,8 +187,7 @@ Nav2Controller::pause()
     if (!kv.second->change_state(Transition::TRANSITION_DEACTIVATE) ||
       !kv.second->change_state(Transition::TRANSITION_CLEANUP))
     {
-      std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
-      error(error_msg);
+      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", kv.first.c_str());
       return;
     }
   }
@@ -203,23 +200,24 @@ Nav2Controller::resume()
   message("Resuming the system...");
   for (auto & node_name : node_names_) {
     if (!bringupNode(node_name)) {
-      std::string error_msg = std::string("Failed to resume node: ") + node_name + ", aborting";
-      error(error_msg);
+      RCLCPP_ERROR(get_logger(), "Failed to resume node: %s, aborting", node_name.c_str());
+      return;
     }
   }
   message("The system has been resumed");
 }
 
+// TODO(mjeronimo): This is used to emphasize the major events during system bring-up and
+// shutdown so that the messgaes can be easily seen among the log output. We should replace
+// this with a ROS2-supported way of highlighting console output, if possible.
+
+#define ANSI_COLOR_RESET    "\x1b[0m"
+#define ANSI_COLOR_BLUE     "\x1b[34m"
+
 void
 Nav2Controller::message(const std::string & msg)
 {
   RCLCPP_INFO(get_logger(), ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET, msg.c_str());
-}
-
-void
-Nav2Controller::error(const std::string & error_msg)
-{
-  RCLCPP_INFO(get_logger(), ANSI_COLOR_RED "\33[1m%s\33[0m" ANSI_COLOR_RESET, error_msg.c_str());
 }
 
 }  // namespace nav2_controller
