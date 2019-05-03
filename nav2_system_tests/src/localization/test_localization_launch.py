@@ -22,7 +22,7 @@ from launch import LaunchService
 import launch.actions
 from launch.actions import ExecuteProcess
 import launch_ros.actions
-from launch_testing import LaunchTestService
+from launch_testing.legacy import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
