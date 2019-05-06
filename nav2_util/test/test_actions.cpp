@@ -79,7 +79,7 @@ preempted:
       }
 
       // Check if we've gotten an new goal, pre-empting the current one
-      if (action_server_->update_requested()) {
+      if (action_server_->preempt_requested()) {
         current_goal_handle = action_server_->get_updated_goal_handle();
         goto preempted;
       }
