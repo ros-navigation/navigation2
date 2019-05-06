@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
+#include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 
@@ -38,6 +39,9 @@ public:
 
   // Clears the region outside of a user-specified area reverting to the static map
   void clearExceptRegion(double reset_distance = 3.0);
+
+  // Clears within a window around the robot
+  void clearAroundRobot(double window_size_x, double window_size_y);
 
   // Clears all layers
   void clearEntirely();
@@ -60,6 +64,12 @@ private:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
+
+  rclcpp::Service<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr clear_around_service_;
+  void clearAroundRobotCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Response> response);
 
   rclcpp::Service<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clear_entire_service_;
   void clearEntireCallback(
