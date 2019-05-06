@@ -1,7 +1,0 @@
-#goal definition
-geometry_msgs/Point target_location
----
-#result definition
-std_msgs/Empty result
----
-#feedback
