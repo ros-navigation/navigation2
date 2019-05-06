@@ -7,29 +7,21 @@ find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(action_msgs REQUIRED)
 
 nav2_package()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
-  "msg/MissionPlan.msg"
   "msg/Path.msg"
+  "msg/MissionPlan.msg"
   "msg/TaskStatus.msg"
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
-  "action/BackUp.action"
-  "action/ComputePathToPose.action"
-  "action/ExecuteMission.action"
-  "action/FollowPath.action"
-  "action/NavigateToPose.action"
-  "action/Spin.action"
-  "action/Stop.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)
