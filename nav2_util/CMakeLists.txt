@@ -59,11 +59,13 @@ add_library(sensors_lib SHARED
   src/sensors/laser/likelihood_field_model.cpp
   src/sensors/laser/likelihood_field_model_prob.cpp
 )
+target_link_libraries(sensors_lib pf_lib)
 
 add_library(motions_lib SHARED
   src/motion_model/omni_motion_model.cpp
   src/motion_model/differential_motion_model.cpp
 )
+target_link_libraries(motions_lib pf_lib)
 
 add_library(map_loader SHARED
   src/map_loader/map_loader.cpp
