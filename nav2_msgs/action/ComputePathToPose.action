@@ -1,0 +1,7 @@
+#goal definition
+geometry_msgs/PoseStamped pose
+---
+#result definition
+nav2_msgs/Path path
+---
+#feedback
