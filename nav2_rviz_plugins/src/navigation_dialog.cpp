@@ -31,7 +31,7 @@ NavigationDialog::onCancelButtonPressed()
   if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(client_node_->get_logger(), "Failed to send cancellation");
+    RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
     return;
   }
 
@@ -65,7 +65,6 @@ void
 NavigationDialog::timerEvent(QTimerEvent * event)
 {
   if (event->timerId() == timer_.timerId()) {
-    // update();
     auto future_result = action_client_->async_get_result(goal_handle_);
     if (rclcpp::spin_until_future_complete(client_node_, future_result, 1ms) ==
       rclcpp::executor::FutureReturnCode::TIMEOUT)
