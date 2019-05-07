@@ -102,19 +102,19 @@ NavigationDialog::orientationAroundZAxis(double angle)
 void
 NavigationDialog::startNavigation(double x, double y, double theta, std::string & frame)
 {
-  auto pose = std::make_shared<geometry_msgs::msg::PoseStamped>();
+  auto pose = geometry_msgs::msg::PoseStamped();
 
-  pose->header.stamp = rclcpp::Clock().now();
-  pose->header.frame_id = frame;
-  pose->pose.position.x = x;
-  pose->pose.position.y = y;
-  pose->pose.position.z = 0.0;
-  pose->pose.orientation = orientationAroundZAxis(theta);
+  pose.header.stamp = rclcpp::Clock().now();
+  pose.header.frame_id = frame;
+  pose.pose.position.x = x;
+  pose.pose.position.y = y;
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation = orientationAroundZAxis(theta);
 
   action_client_->wait_for_action_server();
 
   // Send the goal pose
-  goal_.pose = *pose;
+  goal_.pose = pose;
   auto future_goal_handle = action_client_->async_send_goal(goal_);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
