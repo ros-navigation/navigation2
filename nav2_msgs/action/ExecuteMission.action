@@ -1,0 +1,7 @@
+#goal definition
+nav2_msgs/MissionPlan mission_plan
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
