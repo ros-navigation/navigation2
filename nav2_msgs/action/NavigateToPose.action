@@ -1,0 +1,7 @@
+#goal definition
+geometry_msgs/PoseStamped pose
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
