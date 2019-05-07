@@ -4,17 +4,20 @@
 
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <FallbackStar name="root">
-      <GoalReached/>
+    <SequenceStar name="root">
+      <ComputePathToPose goal="${goal}" path="${path}"/>
       <Sequence>
-       <Fallback>
+        <Fallback>
           <GoalReached/>
           <RateController hz="1.0">
-            <ComputePathToPose goal="${goal}" path="${path}"/>
+            <Sequence>
+              <ComputePathToPose goal="${goal}" path="${path}"/>
+              <UpdatePath/>
+            </Sequence> 
           </RateController>
-       </Fallback>
-       <FollowPath path="${path}"/>
+        </Fallback>
+        <FollowPath path="${path}"/>
       </Sequence>
-    </FallbackStar>
+    </SequenceStar>
   </BehaviorTree>
 </root>

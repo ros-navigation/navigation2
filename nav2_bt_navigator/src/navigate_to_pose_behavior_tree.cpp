@@ -75,7 +75,7 @@ BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
     "path");
 
   follow_path_task_client_->sendUpdate(path);
-  return BT::NodeStatus::RUNNING;
+  return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
