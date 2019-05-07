@@ -56,6 +56,7 @@ public:
   Layer();
   virtual ~Layer() {}
 
+  // TODO(mjeronimo): should the following functions changed to a lifecycle-style interface?
   void initialize(
     LayeredCostmap * parent,
     std::string name,
@@ -65,14 +66,6 @@ public:
   virtual void deactivate() {} /** @brief Stop publishers. */
   virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
   virtual void reset() {}
-
-#if 0
-  // TODO(mjeronimo):
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-#endif
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how

@@ -218,7 +218,10 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(
   std::vector<geometry_msgs::msg::Point> points;
   std::string footprint;
 
-  node->get_parameter_or<std::string>(full_param_name, footprint, "[]");
+  node->declare_parameter(full_param_name, rclcpp::ParameterValue("[]"));
+  node->declare_parameter(full_radius_param_name, rclcpp::ParameterValue(0.1));
+
+  node->get_parameter(full_param_name, footprint);
   if (footprint != "" && footprint != "[]") {
     if (makeFootprintFromString(std::string(footprint), points)) {
       writeFootprintToParam(node, points);
@@ -227,7 +230,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(
   }
 
   double robot_radius;
-  node->get_parameter_or<double>(full_radius_param_name, robot_radius, 0.1);
+  node->get_parameter(full_radius_param_name, robot_radius);
   points = makeFootprintFromRadius(robot_radius);
 
   auto set_parameters_results = node->set_parameters({

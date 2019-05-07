@@ -59,17 +59,27 @@ void VoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
 
-  node_->get_parameter_or_set(name_ + "." + "enabled", enabled_, true);
-  node_->get_parameter_or_set(name_ + "." + "footprint_clearing_enabled",
-    footprint_clearing_enabled_, true);
-  node_->get_parameter_or_set(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
-  node_->get_parameter_or_set(name_ + "." + "z_voxels", size_z_, 10);
-  node_->get_parameter_or_set(name_ + "." + "origin_z", origin_z_, 0.0);
-  node_->get_parameter_or_set(name_ + "." + "z_resolution", z_resolution_, 0.2);
-  node_->get_parameter_or_set(name_ + "." + "unknown_threshold", unknown_threshold_, 15);
-  node_->get_parameter_or_set(name_ + "." + "mark_threshold", mark_threshold_, 0);
-  node_->get_parameter_or_set(name_ + "." + "combination_method", combination_method_, 1);
-  node_->get_parameter_or_set(name_ + "." + "publish_voxel_map", publish_voxel_, false);
+  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
+  node_->declare_parameter(name_ + "." + "z_voxels", rclcpp::ParameterValue(10));
+  node_->declare_parameter(name_ + "." + "origin_z", rclcpp::ParameterValue(0.0));
+  node_->declare_parameter(name_ + "." + "z_resolution", rclcpp::ParameterValue(0.2));
+  node_->declare_parameter(name_ + "." + "unknown_threshold", rclcpp::ParameterValue(15));
+  node_->declare_parameter(name_ + "." + "mark_threshold", rclcpp::ParameterValue(0));
+  node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
+  node_->declare_parameter(name_ + "." + "publish_voxel_map", rclcpp::ParameterValue(false));
+
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
+  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
+  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
+  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
 
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 1;

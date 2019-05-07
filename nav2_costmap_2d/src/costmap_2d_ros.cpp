@@ -230,27 +230,51 @@ Costmap2DROS::getParameters()
 {
   RCLCPP_DEBUG(get_logger(), " getParameters");
 
+  std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
+  std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
+
+  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
+  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
+  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
+  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("height", rclcpp::ParameterValue(10));
+  declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
+  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+  declare_parameter("plugin_names", rclcpp::ParameterValue(plugin_names));
+  declare_parameter("plugin_types", rclcpp::ParameterValue(plugin_types));
+  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
+  declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
+  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
+  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+  declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
+  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  declare_parameter("width", rclcpp::ParameterValue(10));
+
   // Get all of the required parameters
-  get_parameter_or("always_send_full_costmap", always_send_full_costmap_, false);
-  get_parameter_or("footprint", footprint_, std::string("[]"));
-  get_parameter_or("footprint_padding", footprint_padding_, 0.01f);
-  get_parameter_or("global_frame", global_frame_, std::string("map"));
-  get_parameter_or("height", map_height_meters_, 10);
-  get_parameter_or("width", map_width_meters_, 10);
-  get_parameter_or("publish_frequency", map_publish_frequency_, 1.0);
-  get_parameter_or("update_frequency", map_update_frequency_, 5.0);
-  get_parameter_or("origin_x", origin_x_, 0.0);
-  get_parameter_or("origin_y", origin_y_, 0.0);
-  get_parameter_or("plugin_names", plugin_names_, {"static_layer", "obstacle_layer",
-      "inflation_layer"});
-  get_parameter_or("plugin_types", plugin_types_, {"nav2_costmap_2d::StaticLayer",
-      "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"});
-  get_parameter_or("resolution", resolution_, 0.1);
-  get_parameter_or("robot_base_frame", robot_base_frame_, std::string("base_link"));
-  get_parameter_or("robot_radius", robot_radius_, 0.1);
-  get_parameter_or("rolling_window", rolling_window_, false);
-  get_parameter_or("track_unknown_space", track_unknown_space_, false);
-  get_parameter_or("transform_tolerance", transform_tolerance_, 0.3);
+  get_parameter("always_send_full_costmap", always_send_full_costmap_);
+  get_parameter("footprint", footprint_);
+  get_parameter("footprint_padding", footprint_padding_);
+  get_parameter("global_frame", global_frame_);
+  get_parameter("height", map_height_meters_);
+  get_parameter("origin_x", origin_x_);
+  get_parameter("origin_y", origin_y_);
+  get_parameter("plugin_names", plugin_names_);
+  get_parameter("plugin_types", plugin_types_);
+  get_parameter("publish_frequency", map_publish_frequency_);
+  get_parameter("resolution", resolution_);
+  get_parameter("robot_base_frame", robot_base_frame_);
+  get_parameter("robot_radius", robot_radius_);
+  get_parameter("rolling_window", rolling_window_);
+  get_parameter("track_unknown_space", track_unknown_space_);
+  get_parameter("transform_tolerance", transform_tolerance_);
+  get_parameter("update_frequency", map_update_frequency_);
+  get_parameter("width", map_width_meters_);
 
   // Semantic checks...
 
@@ -318,7 +342,7 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
 void
 Costmap2DROS::mapUpdateLoop(double frequency)
 {
-  RCLCPP_DEBUG(get_logger(), "mapUpdateLoop: %lf", frequency);
+  RCLCPP_DEBUG(get_logger(), "mapUpdateLoop frequency: %lf", frequency);
 
   // the user might not want to run the loop every cycle
   if (frequency == 0.0) {
@@ -327,7 +351,8 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
 
-  rclcpp::Rate r(frequency);
+  rclcpp::Rate r(frequency);	// 200ms by default
+
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
 
@@ -475,7 +500,7 @@ Costmap2DROS::resetLayers()
 }
 
 bool
-Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
+Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
 {
   geometry_msgs::msg::PoseStamped robot_pose;
 

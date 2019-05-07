@@ -127,7 +127,7 @@ public:
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
+  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const;
 
   /** @brief Returns costmap name */
   std::string getName() const
@@ -143,6 +143,7 @@ public:
 
   /**
    * @brief Return a pointer to the "master" costmap which receives updates from all the layers.
+   *
    * Same as calling getLayeredCostmap()->getCostmap().
    */
   Costmap2D * getCostmap()

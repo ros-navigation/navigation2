@@ -69,13 +69,16 @@ void ObstacleLayer::onInitialize()
 {
   bool track_unknown_space;
 
-  node_->get_parameter_or(name_ + "." + "enabled", enabled_, true);
-  node_->get_parameter_or(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_,
-    true);
-  node_->get_parameter_or(name_ + "." + "max_obstacle_height", max_obstacle_height_, 2.0);
-  node_->get_parameter_or(name_ + "." + "combination_method", combination_method_, 1);
-  node_->get_parameter_or("track_unknown_space", track_unknown_space,
-    layered_costmap_->isTrackingUnknown());
+  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
+  node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
+
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node_->get_parameter("track_unknown_space", track_unknown_space);
 
   rolling_window_ = layered_costmap_->isRolling();
 
