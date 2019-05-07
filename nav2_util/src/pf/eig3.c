@@ -3,8 +3,6 @@
 
 #include <math.h>
 
-#pragma clang diagnostic ignored "-Wgnu-folding-constant"
-
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
