@@ -1,0 +1,7 @@
+#goal definition
+nav2_msgs/Path path
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
