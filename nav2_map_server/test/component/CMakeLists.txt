@@ -11,7 +11,7 @@ target_link_libraries(test_occ_grid_node
 
 ament_add_test(test_occ_grid_cpp
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_occ_grid_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_occ_grid.launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_DIR=${TEST_DIR}

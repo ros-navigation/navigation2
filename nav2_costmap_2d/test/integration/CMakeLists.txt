@@ -44,7 +44,7 @@ target_link_libraries(obstacle_tests_exec
 
 # ament_add_test(footprint_tests
 #   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests.launch.py"
 #   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 #   ENV
 #     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -54,7 +54,7 @@ target_link_libraries(obstacle_tests_exec
 
 # ament_add_test(static_tests
 #   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests.launch.py"
 #   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 #   ENV
 #     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -64,7 +64,7 @@ target_link_libraries(obstacle_tests_exec
 
 # ament_add_test(inflation_tests
 #   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+#   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests.launch.py"
 #   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 #   ENV
 #     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -74,7 +74,7 @@ target_link_libraries(obstacle_tests_exec
 
 ament_add_test(obstacle_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests.launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml

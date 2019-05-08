@@ -2,7 +2,7 @@
 # nav2_bringup package.
 ament_add_test(test_simple_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system.launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 120
   ENV
@@ -19,7 +19,7 @@ ament_add_test(test_simple_navigator
 # in the nav2_bringup package.
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system.launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 120
   ENV
