@@ -34,11 +34,10 @@ ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 Then, 
 ```sh
 cd <navigation2_ws> source install setup.bash
-cd  install/turtlebot3_rl/bin
 ```
 Run:
 ```sh 
-./random_crawl_train.py
+ros2 run turtlebot3_rl random_crawl_train
 ```
 
 ####Running
@@ -54,9 +53,8 @@ ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 Then, 
 ```sh
 cd <navigation2_ws> source install setup.bash
-cd  install/turtlebot3_rl/bin
 ```
 Run:
 ```sh 
-./random_crawl.py
+ros2 run turtlebot3_rl random_crawl
 ```
