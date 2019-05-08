@@ -15,10 +15,10 @@
 #ifndef NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 #define NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 
-#include "nav2_controller/nav2_controller_client.hpp"
-#include "rviz_common/panel.hpp"
-
 #include <QtWidgets>
+
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
+#include "rviz_common/panel.hpp"
 
 class QPushButton;
 
@@ -50,7 +50,7 @@ private:
   void loadLogFiles();
 
   // The client used to control the nav2 stack
-  nav2_controller::Nav2ControllerClient client_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_;
 
   QPushButton * start_stop_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};

@@ -11,8 +11,8 @@
   <build_depend>qtbase5-dev</build_depend>
 
   <depend>geometry_msgs</depend>
-  <depend>nav2_controller</depend>
   <depend>nav2_lifecycle</depend>
+  <depend>nav2_lifecycle_manager</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_CLIENT_HPP_
-#define NAV2_CONTROLLER__NAV2_CONTROLLER_CLIENT_HPP_
+#ifndef NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_CLIENT_HPP_
+#define NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_CLIENT_HPP_
 
 #include <memory>
 
@@ -24,15 +24,15 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
 
-namespace nav2_controller
+namespace nav2_lifecycle_manager
 {
 
-class Nav2ControllerClient
+class LifecycleManagerClient
 {
 public:
-  Nav2ControllerClient();
+  LifecycleManagerClient();
 
-  // Client-side interface to the Nav2 controller
+  // Client-side interface to the Nav2 lifecycle manager
   void startup();
   void shutdown();
   void pause();
@@ -72,6 +72,6 @@ protected:
   geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 };
 
-}  // namespace nav2_controller
+}  // namespace nav2_lifecycle_manager
 
-#endif  // NAV2_CONTROLLER__NAV2_CONTROLLER_CLIENT_HPP_
+#endif  // NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_CLIENT_HPP_

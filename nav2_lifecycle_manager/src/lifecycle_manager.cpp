@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_controller/nav2_controller.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 
 #include <chrono>
 #include <memory>
@@ -27,11 +27,11 @@ using namespace std::placeholders;
 using lifecycle_msgs::msg::Transition;
 using nav2_util::LifecycleServiceClient;
 
-namespace nav2_controller
+namespace nav2_lifecycle_manager
 {
 
-Nav2Controller::Nav2Controller()
-: Node("nav2_controller")
+LifecycleManager::LifecycleManager()
+: Node("lifecycle_manager")
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -43,28 +43,28 @@ Nav2Controller::Nav2Controller()
   declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
   get_parameter("node_names", node_names_);
 
-  startup_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/startup",
-      std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3));
+  startup_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/startup",
+      std::bind(&LifecycleManager::startupCallback, this, _1, _2, _3));
 
-  shutdown_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/shutdown",
-      std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3));
+  shutdown_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/shutdown",
+      std::bind(&LifecycleManager::shutdownCallback, this, _1, _2, _3));
 
-  pause_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/pause",
-      std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3));
+  pause_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/pause",
+      std::bind(&LifecycleManager::pauseCallback, this, _1, _2, _3));
 
-  resume_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/resume",
-      std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3));
+  resume_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/resume",
+      std::bind(&LifecycleManager::resumeCallback, this, _1, _2, _3));
 
-  service_client_node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client_node");
+  service_client_node_ = std::make_shared<rclcpp::Node>("lifecycle_manager");
 }
 
-Nav2Controller::~Nav2Controller()
+LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 void
-Nav2Controller::startupCallback(
+LifecycleManager::startupCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
@@ -73,7 +73,7 @@ Nav2Controller::startupCallback(
 }
 
 void
-Nav2Controller::shutdownCallback(
+LifecycleManager::shutdownCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
@@ -82,7 +82,7 @@ Nav2Controller::shutdownCallback(
 }
 
 void
-Nav2Controller::pauseCallback(
+LifecycleManager::pauseCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
@@ -91,7 +91,7 @@ Nav2Controller::pauseCallback(
 }
 
 void
-Nav2Controller::resumeCallback(
+LifecycleManager::resumeCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
@@ -100,7 +100,7 @@ Nav2Controller::resumeCallback(
 }
 
 void
-Nav2Controller::createLifecycleServiceClients()
+LifecycleManager::createLifecycleServiceClients()
 {
   message("Creating and initializing lifecycle service clients");
   for (auto & node_name : node_names_) {
@@ -110,7 +110,7 @@ Nav2Controller::createLifecycleServiceClients()
 }
 
 void
-Nav2Controller::destroyLifecycleServiceClients()
+LifecycleManager::destroyLifecycleServiceClients()
 {
   message("Destroying lifecycle service clients");
   for (auto & kv : node_map_) {
@@ -119,7 +119,7 @@ Nav2Controller::destroyLifecycleServiceClients()
 }
 
 void
-Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
+LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
 {
   for (const auto & kv : node_map_) {
     if (!kv.second->change_state(transition)) {
@@ -130,7 +130,7 @@ Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 }
 
 bool
-Nav2Controller::bringupNode(const std::string & node_name)
+LifecycleManager::bringupNode(const std::string & node_name)
 {
   message(std::string("Configuring and activating ") + node_name);
   if (!node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE)) {
@@ -148,7 +148,7 @@ Nav2Controller::bringupNode(const std::string & node_name)
 }
 
 void
-Nav2Controller::shutdownAllNodes()
+LifecycleManager::shutdownAllNodes()
 {
   message("Deactivate, cleanup, and shutdown nodes");
   changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE);
@@ -157,7 +157,7 @@ Nav2Controller::shutdownAllNodes()
 }
 
 void
-Nav2Controller::startup()
+LifecycleManager::startup()
 {
   message("Starting the system bringup...");
   createLifecycleServiceClients();
@@ -171,7 +171,7 @@ Nav2Controller::startup()
 }
 
 void
-Nav2Controller::shutdown()
+LifecycleManager::shutdown()
 {
   message("Shutting down the system...");
   shutdownAllNodes();
@@ -180,7 +180,7 @@ Nav2Controller::shutdown()
 }
 
 void
-Nav2Controller::pause()
+LifecycleManager::pause()
 {
   message("Pausing the system...");
   for (const auto & kv : node_map_) {
@@ -195,7 +195,7 @@ Nav2Controller::pause()
 }
 
 void
-Nav2Controller::resume()
+LifecycleManager::resume()
 {
   message("Resuming the system...");
   for (auto & node_name : node_names_) {
@@ -215,9 +215,9 @@ Nav2Controller::resume()
 #define ANSI_COLOR_BLUE     "\x1b[34m"
 
 void
-Nav2Controller::message(const std::string & msg)
+LifecycleManager::message(const std::string & msg)
 {
   RCLCPP_INFO(get_logger(), ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET, msg.c_str());
 }
 
-}  // namespace nav2_controller
+}  // namespace nav2_lifecycle_manager
