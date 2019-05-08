@@ -25,7 +25,7 @@ namespace nav2_lifecycle_manager
 LifecycleManagerClient::LifecycleManagerClient()
 {
   // Create the node to use for all of the service clients
-  node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
+  node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
 
   // All of the services use the same (Empty) request
   request_ = std::make_shared<Empty::Request>();
