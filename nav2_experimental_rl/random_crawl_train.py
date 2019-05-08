@@ -40,15 +40,15 @@ def trainModel(env, action_size):
             agent.step += 1
             target_model_update_counter += 1
             if target_model_update_counter%parameters.TARGET_MODEL_UPDATE_STEP == 0:
-             agent.save_load_model_weights()
-             target_model_update_counter = 0
+                agent.save_load_model_weights()
+                target_model_update_counter = 0
             action = agent.get_action(state)
             next_state, reward, done = env.step(action)
             next_state = np.reshape(next_state, [1, observation_space])
             agent.save_to_memory(state, action, reward, next_state, done)
             state = next_state
             if not done: 
-             agent.experience_replay()
+                agent.experience_replay()
             sleep(parameters.LOOP_RATE)
         agent.model.save('random_crawl_model.h5')
 
