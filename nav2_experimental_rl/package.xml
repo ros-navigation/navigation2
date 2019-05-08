@@ -10,12 +10,16 @@
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tensorflow</exec_depend>
+  <exec_depend>tensorflow-gpu</exec_depend>
   <exec_depend>keras</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
+  <test_depend>tensorflow</test_depend>
+  <test_depend>tensorflow-gpu</test_depend>
   <test_depend>keras</test_depend>
 
   <export>

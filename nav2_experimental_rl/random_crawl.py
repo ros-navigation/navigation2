@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os.path
+from ament_index_python.packages import get_package_share_directory
 from turtlebot3_env import TurtlebotEnv
 import numpy as np
 import rclpy
@@ -26,12 +27,11 @@ def loadModel(env):
     state = env.reset()
     observation_space = len(state)
     state = np.reshape(state, [1, observation_space])
-
-    project_path = os.path.abspath(os.path.dirname(__file__))
+    pkg_share_directory = get_package_share_directory('turtlebot3_rl')
     path = os.path.join(\
-        project_path,"../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
+        pkg_share_directory,"../../../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
     model = load_model(path)
-    while True:
+    while rclpy.ok():
             q_values = model.predict(state)
             action = np.argmax(q_values)
             next_state, reward, terminal = env.step(action)
