@@ -32,12 +32,12 @@ def loadModel(env):
         pkg_share_directory,"../../../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
     model = load_model(path)
     while rclpy.ok():
-            q_values = model.predict(state)
-            action = np.argmax(q_values)
-            next_state, reward, terminal = env.step(action)
-            next_state = np.reshape(next_state, [1, observation_space])
-            state = next_state
-            sleep(parameters.LOOP_RATE)
+        q_values = model.predict(state)
+        action = np.argmax(q_values)
+        next_state, reward, terminal = env.step(action)
+        next_state = np.reshape(next_state, [1, observation_space])
+        state = next_state
+        sleep(parameters.LOOP_RATE)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -64,24 +64,24 @@ class TurtlebotEnv():
     def get_reward(self):
         reward = 0
         if self.collision == True:
-          reward = -10
-          self.done = True
-          return reward, self.done
+            reward = -10
+            self.done = True
+            return reward, self.done
         elif self.collision == False and self.act == 0:
-          if abs(min(self.states_input)) >= self.zero_div_tol:
-           reward = 0.08 - (1/(min(self.states_input)**2))*0.005
-          else:
-           reward = -10
-          if reward > 0:
-           self.bonous_reward += reward
-           reward = self.bonous_reward
+            if abs(min(self.states_input)) >= self.zero_div_tol:
+                reward = 0.08 - (1/(min(self.states_input)**2))*0.005
+            else:
+                reward = -10
+            if reward > 0:
+                self.bonous_reward += reward
+                reward = self.bonous_reward
         else:
-          bonous_discount_factor = 0.6
-          self.bonous_reward *= bonous_discount_factor
-          if abs(min(self.states_input)) >= self.zero_div_tol:
-           reward = 0.02 - (1/min(self.states_input))*0.005
-          else:
-           reward = -10
+            bonous_discount_factor = 0.6
+            self.bonous_reward *= bonous_discount_factor
+            if abs(min(self.states_input)) >= self.zero_div_tol:
+                reward = 0.02 - (1/min(self.states_input))*0.005
+            else:
+                reward = -10
         return reward, self.done
 
 
@@ -93,18 +93,18 @@ class TurtlebotEnv():
 
         for i in range(len(LaserScan.ranges)):
             if LaserScan.ranges[i] == float('Inf'):
-               self.laser_scan_range.append(range_max)
+                self.laser_scan_range.append(range_max)
             elif LaserScan.ranges[i] < self.range_min:
-               self.laser_scan_range.append(self.range_min + self.collision_tol)
-            else :
-               self.laser_scan_range.append(LaserScan.ranges[i])
+                self.laser_scan_range.append(self.range_min + self.collision_tol)
+            else:
+                self.laser_scan_range.append(LaserScan.ranges[i])
         if self.check_collision():
-          self.collision = True
-          self.done = True
+            self.collision = True
+            self.done = True
         self.states_input = []
         for i in range(8):
-          step = int(len(LaserScan.ranges)/8)
-          self.states_input.append(min(self.laser_scan_range[i*step:(i+1)*step], default=0))
+            step = int(len(LaserScan.ranges)/8)
+            self.states_input.append(min(self.laser_scan_range[i*step:(i+1)*step], default=0))
 
     def action_space(self):
         return len(self.actions)
@@ -122,8 +122,8 @@ class TurtlebotEnv():
     
     def check_collision(self):
         if  min(self.laser_scan_range) < self.range_min + self.collision_tol:
-         print("Near collision detected... " + str(min(self.laser_scan_range)))
-         return True
+            print("Near collision detected... " + str(min(self.laser_scan_range)))
+            return True
         return False
 
     def reset(self):
