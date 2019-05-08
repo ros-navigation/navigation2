@@ -57,7 +57,7 @@ class TurtlebotEnv():
         self.pause_proxy = node_.create_client(Empty, 'pause_physics')
         self.get_entity_state = node_.create_client(GetEntityState, 'get_entity_state')
         self.set_entity_state = node_.create_client(SetEntityState, 'set_entity_state')
-
+        self.scan_msg_received = False
         t = Thread(target=rclpy.spin, args=[node_])
         t.start()
 
@@ -86,6 +86,7 @@ class TurtlebotEnv():
 
 
     def scan_callback(self, LaserScan):
+        self.scan_msg_received = True
         self.laser_scan_range = []
         self.range_min = LaserScan.range_min
         range_max = LaserScan.range_max
@@ -126,6 +127,7 @@ class TurtlebotEnv():
         return False
 
     def reset(self):
+        self.scan_msg_received = False
         vel_cmd = Twist()
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
@@ -138,11 +140,12 @@ class TurtlebotEnv():
         while not self.reset_simulation.wait_for_service(timeout_sec=1.0):
             print('Reset simulation service is not available...')
         self.reset_simulation.call_async(Empty.Request())
-        sleep(2)
+
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
+        while not self.scan_msg_received and rclpy.ok():
+            continue
         self.collision = False
         self.done = False
         self.bonous_reward = 0
         return self.states_input
-

@@ -12,7 +12,7 @@ Random Crawl is a task which enables TurtleBot3 to randomly crawl around the env
 The following use-cases can be achieved with Random Crawl task:
 1. Map Exploration
 2. Localization test
-3. Secutirty Monitoring
+3. Security Monitoring
 
 #### Model
 TODO

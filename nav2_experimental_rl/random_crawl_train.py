@@ -36,7 +36,7 @@ def trainModel(env, action_size):
         observation_size = len(state)
         state = np.reshape(state, [1, observation_size])
         done = False
-        while not done:
+        while not done and rclpy.ok():
             agent.step += 1
             target_model_update_counter += 1
             if target_model_update_counter%parameters.TARGET_MODEL_UPDATE_STEP == 0:
