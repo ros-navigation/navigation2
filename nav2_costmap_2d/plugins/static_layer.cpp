@@ -60,7 +60,6 @@ namespace nav2_costmap_2d
 
 StaticLayer::StaticLayer()
 {
-  enabled_ = true;
 }
 
 StaticLayer::~StaticLayer()
@@ -70,8 +69,23 @@ StaticLayer::~StaticLayer()
 void
 StaticLayer::onInitialize()
 {
+  global_frame_ = layered_costmap_->getGlobalFrameID();
+
   getParameters();
   getMap();
+
+  if (!first_map_only_) {
+    RCLCPP_INFO(node_->get_logger(), "Subscribing to the map topic");
+    map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(map_topic_,
+      std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
+  }
+
+  if (subscribe_to_updates_) {
+    RCLCPP_INFO(node_->get_logger(), "Subscribing to updates");
+    map_update_sub_ = node_->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
+      map_topic_ + "_updates",
+      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
+  }
 
   current_ = true;
 }
@@ -89,6 +103,9 @@ StaticLayer::deactivate()
 void
 StaticLayer::reset()
 {
+  map_sub_.reset();
+  map_update_sub_.reset();
+
   onInitialize();
 }
 
@@ -98,14 +115,20 @@ StaticLayer::getParameters()
   int temp_lethal_threshold = 0;
 
   node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "first_map_only", rclcpp::ParameterValue(false));
+  node_->declare_parameter(name_ + "." + "subscribe_to_updates", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "first_map_only", first_map_only_);
+  node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
+  node_->get_parameter("map_topic", map_topic_);
   node_->get_parameter("track_unknown_space", track_unknown_space_);
   node_->get_parameter("use_maximum", use_maximum_);
   node_->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node_->get_parameter("unknown_cost_value", unknown_cost_value_);
   node_->get_parameter("trinary_costmap", trinary_costmap_);
 
+  // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
 }
 
@@ -177,7 +200,6 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   }
 
   map_frame_ = new_map.header.frame_id;
-  global_frame_ = layered_costmap_->getGlobalFrameID();
 
   // we have a new map, update full size of map
   x_ = y_ = 0;
@@ -214,6 +236,34 @@ StaticLayer::interpretValue(unsigned char value)
 
   double scale = static_cast<double>(value) / lethal_threshold_;
   return scale * LETHAL_OBSTACLE;
+}
+
+void
+StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  processMap(*new_map);
+}
+
+void
+StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  unsigned int di = 0;
+  for (unsigned int y = 0; y < update->height; y++) {
+    unsigned int index_base = (update->y + y) * size_x_;
+    for (unsigned int x = 0; x < update->width; x++) {
+      unsigned int index = index_base + x + update->x;
+      costmap_[index] = interpretValue(update->data[di++]);
+    }
+  }
+
+  x_ = update->x;
+  y_ = update->y;
+  width_ = update->width;
+  height_ = update->height;
+  has_updated_data_ = true;
 }
 
 void

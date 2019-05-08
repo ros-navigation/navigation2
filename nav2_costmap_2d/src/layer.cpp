@@ -46,13 +46,16 @@ Layer::Layer()
 void
 Layer::initialize(
   LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf,
-  nav2_lifecycle::LifecycleNode::SharedPtr node, rclcpp::Node::SharedPtr client_node)
+  nav2_lifecycle::LifecycleNode::SharedPtr node,
+  rclcpp::Node::SharedPtr client_node,
+  rclcpp::Node::SharedPtr rclcpp_node)
 {
   layered_costmap_ = parent;
   name_ = name;
   tf_ = tf;
   node_ = node;
   client_node_ = client_node;
+  rclcpp_node_ = rclcpp_node;
 
   onInitialize();
 }

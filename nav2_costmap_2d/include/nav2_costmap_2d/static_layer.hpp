@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 #define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
+#include <mutex>
 #include <string>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
@@ -75,10 +76,20 @@ private:
   void getParameters();
   void getMap();
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
+
+  /**
+   * @brief  Callback to update the costmap's map from the map_server
+   * @param new_map The map to put into the costmap. The origin of the new
+   * map along with its size will determine what parts of the costmap's
+   * static map are overwritten.
+   */
+  void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
+  void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
+
   unsigned char interpretValue(unsigned char value);
 
-  std::string global_frame_;
-  std::string map_frame_;
+  std::string global_frame_;  ///< @brief The global frame for the costmap
+  std::string map_frame_;  /// @brief frame that map is located in
 
   bool has_updated_data_{false};
 
@@ -87,7 +98,13 @@ private:
   unsigned int width_{0};
   unsigned int height_{0};
 
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+  rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+
   // Parameters
+  bool first_map_only_;      ///< @brief Only use the static map
+  std::string map_topic_;
+  bool subscribe_to_updates_;
   bool track_unknown_space_;
   bool use_maximum_;
   unsigned char lethal_threshold_;

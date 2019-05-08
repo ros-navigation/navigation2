@@ -59,7 +59,7 @@ namespace nav2_costmap_2d
 InflationLayer::InflationLayer()
 : inflation_radius_(0),
   inscribed_radius_(0),
-  weight_(0),
+  cost_scaling_factor_(0),
   inflate_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
@@ -82,7 +82,7 @@ InflationLayer::onInitialize()
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-  node_->get_parameter(name_ + "." + "cost_scaling_factor", weight_);
+  node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
   node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
 
   current_ = true;

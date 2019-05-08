@@ -92,7 +92,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
-      shared_from_this(), client_node_);
+      shared_from_this(), client_node_, rclcpp_node_);
   }
 
   // Create the publishers and subscribers
@@ -117,6 +117,9 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
+
+  costmap_update_monitor_ = std::make_unique<nav2_util::RateConstraint>(
+    name_ + "_output_costmap_update_rate", 5, 10, nullptr);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -208,6 +211,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   clear_costmap_service_.reset();
 
+  costmap_update_monitor_.reset();
+
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -239,6 +244,8 @@ Costmap2DROS::getParameters()
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter("height", rclcpp::ParameterValue(10));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+  declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
   declare_parameter("plugin_names", rclcpp::ParameterValue(plugin_names));
@@ -360,6 +367,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     timer.start();
     updateMap();
     timer.end();
+    costmap_update_monitor_->calc_looptime();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
 
@@ -446,8 +454,6 @@ Costmap2DROS::start()
     RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
     r.sleep();
   }
-
-  RCLCPP_INFO(get_logger(), "returning");
 }
 
 void

@@ -68,7 +68,7 @@ void addStaticLayer(
 {
   nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
-  slayer->initialize(&layers, "static", &tf, node, nullptr /*TODO*/);
+  slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
 }
 
 nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
@@ -76,7 +76,7 @@ nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
   tf2_ros::Buffer & tf, nav2_lifecycle::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
-  olayer->initialize(&layers, "obstacles", &tf, node, nullptr /*TODO*/);
+  olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
   return olayer;
 }
@@ -111,7 +111,7 @@ nav2_costmap_2d::InflationLayer * addInflationLayer(
   tf2_ros::Buffer & tf, nav2_lifecycle::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();
-  ilayer->initialize(&layers, "inflation", &tf, node, nullptr /*TODO*/);
+  ilayer->initialize(&layers, "inflation", &tf, node, nullptr, nullptr /*TODO*/);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
   return ilayer;

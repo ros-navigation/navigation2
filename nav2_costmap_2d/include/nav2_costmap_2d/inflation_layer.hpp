@@ -112,7 +112,7 @@ public:
     } else {
       // make sure cost falls off by Euclidean distance
       double euclidean_distance = distance * resolution_;
-      double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+      double factor = exp(-1.0 * cost_scaling_factor_ * (euclidean_distance - inscribed_radius_));
       cost = (unsigned char)((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
@@ -165,7 +165,7 @@ private:
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);
 
-  double inflation_radius_, inscribed_radius_, weight_;
+  double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;

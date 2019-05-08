@@ -68,7 +68,12 @@ ObstacleLayer::~ObstacleLayer()
 void ObstacleLayer::onInitialize()
 {
   bool track_unknown_space;
+  double transform_tolerance;
 
+  // The topics that we'll subscribe to from the parameter server
+  std::string topics_string;
+
+  // TODO(mjeronimo): these four are candidates for dynamic update
   node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
   node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
   node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
@@ -79,6 +84,10 @@ void ObstacleLayer::onInitialize()
   node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   node_->get_parameter(name_ + "." + "combination_method", combination_method_);
   node_->get_parameter("track_unknown_space", track_unknown_space);
+  node_->get_parameter("transform_tolerance", transform_tolerance);
+  node_->get_parameter("observation_sources", topics_string);
+
+  RCLCPP_INFO(node_->get_logger(), "Subscribed to Topics: %s", topics_string.c_str());
 
   rolling_window_ = layered_costmap_->isRolling();
 
@@ -93,21 +102,11 @@ void ObstacleLayer::onInitialize()
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-#if 0
-  double transform_tolerance;
-  node_->get_parameter_or("transform_tolerance", transform_tolerance, 0.2);
-
-  // get the topics that we'll subscribe to from the parameter server
-  std::string topics_string;
-  node_->get_parameter_or("observation_sources", topics_string, std::string(""));
-
-  RCLCPP_INFO(node_->get_logger(), "Subscribed to Topics: %s", topics_string.c_str());
-
   // now we need to split the topics based on whitespace which we can use a stringstream for
   std::stringstream ss(topics_string);
-#endif
 
-/*
+  std::cout << ss.str() << std::endl;
+
   std::string source;
   while (ss >> source) {
     // get the parameters for the specific topic
@@ -115,16 +114,29 @@ void ObstacleLayer::onInitialize()
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
 
-    node_->get_parameter_or(source + "." + "topic", topic, source);
-    node_->get_parameter_or(source + "." + "sensor_frame", sensor_frame, std::string(""));
-    node_->get_parameter_or(source + "." + "observation_persistence", observation_keep_time, 0.0);
-    node_->get_parameter_or(source + "." + "expected_update_rate", expected_update_rate, 0.0);
-    node_->get_parameter_or(source + "." + "data_type", data_type, std::string("LaserScan"));
-    node_->get_parameter_or(source + "." + "min_obstacle_height", min_obstacle_height, 0.0);
-    node_->get_parameter_or(source + "." + "max_obstacle_height", max_obstacle_height, 0.0);
-    node_->get_parameter_or(source + "." + "inf_is_valid", inf_is_valid, false);
-    node_->get_parameter_or(source + "." + "marking", marking, true);
-    node_->get_parameter_or(source + "." + "clearing", clearing, false);
+    node_->declare_parameter(source + "." + "topic", rclcpp::ParameterValue(source));
+    node_->declare_parameter(source + "." + "sensor_frame", rclcpp::ParameterValue(std::string("")));
+    node_->declare_parameter(source + "." + "observation_persistence", rclcpp::ParameterValue(0.0));
+    node_->declare_parameter(source + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
+    node_->declare_parameter(source + "." + "data_type", rclcpp::ParameterValue(std::string("LaserScan")));
+    node_->declare_parameter(source + "." + "min_obstacle_height", rclcpp::ParameterValue(0.0));
+    node_->declare_parameter(source + "." + "max_obstacle_height", rclcpp::ParameterValue(0.0));
+    node_->declare_parameter(source + "." + "inf_is_valid", rclcpp::ParameterValue(false));
+    node_->declare_parameter(source + "." + "marking", rclcpp::ParameterValue(true));
+    node_->declare_parameter(source + "." + "clearing", rclcpp::ParameterValue(false));
+    node_->declare_parameter(source + "." + "obstacle_range", rclcpp::ParameterValue(2.5));
+    node_->declare_parameter(source + "." + "raytrace_range", rclcpp::ParameterValue(3.0));
+
+    node_->get_parameter(source + "." + "topic", topic);
+    node_->get_parameter(source + "." + "sensor_frame", sensor_frame);
+    node_->get_parameter(source + "." + "observation_persistence", observation_keep_time);
+    node_->get_parameter(source + "." + "expected_update_rate", expected_update_rate);
+    node_->get_parameter(source + "." + "data_type", data_type);
+    node_->get_parameter(source + "." + "min_obstacle_height", min_obstacle_height);
+    node_->get_parameter(source + "." + "max_obstacle_height", max_obstacle_height);
+    node_->get_parameter(source + "." + "inf_is_valid", inf_is_valid);
+    node_->get_parameter(source + "." + "marking", marking);
+    node_->get_parameter(source + "." + "clearing", clearing);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(node_->get_logger(),
@@ -135,11 +147,11 @@ void ObstacleLayer::onInitialize()
 
     // get the obstacle range for the sensor
     double obstacle_range;
-    node_->get_parameter_or(source + "." + "obstacle_range", obstacle_range, 2.5);
+    node_->get_parameter(source + "." + "obstacle_range", obstacle_range);
 
     // get the raytrace range for the sensor
     double raytrace_range;
-    node_->get_parameter_or(source + "." + "raytrace_range", raytrace_range, 3.0);
+    node_->get_parameter(source + "." + "raytrace_range", raytrace_range);
 
     RCLCPP_DEBUG(node_->get_logger(),
       "Creating an observation buffer for source %s, topic %s, frame %s",
@@ -177,11 +189,11 @@ void ObstacleLayer::onInitialize()
     if (data_type == "LaserScan") {
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>
       > sub(new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(
-          node_, topic, custom_qos_profile));
+          rclcpp_node_, topic, custom_qos_profile));
 
       std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> filter(
         new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(
-          *sub, *tf_, global_frame_, 50, node_));
+          *sub, *tf_, global_frame_, 50, rclcpp_node_));
 
       if (inf_is_valid) {
         filter->registerCallback(std::bind(
@@ -201,7 +213,7 @@ void ObstacleLayer::onInitialize()
     } else {
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>
       > sub(new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(
-          node_, topic, custom_qos_profile));
+          rclcpp_node_, topic, custom_qos_profile));
 
       if (inf_is_valid) {
         RCLCPP_WARN(node_->get_logger(),
@@ -210,7 +222,7 @@ void ObstacleLayer::onInitialize()
 
       std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>
       > filter(new tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>(
-          *sub, *tf_, global_frame_, 50, node_));
+          *sub, *tf_, global_frame_, 50, rclcpp_node_));
       filter->registerCallback(std::bind(
           &ObstacleLayer::pointCloud2Callback, this, std::placeholders::_1,
           observation_buffers_.back()));
@@ -225,7 +237,7 @@ void ObstacleLayer::onInitialize()
       target_frames.push_back(sensor_frame);
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
-  } */
+  }
 }
 
 void

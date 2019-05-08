@@ -62,7 +62,8 @@ public:
     std::string name,
     tf2_ros::Buffer * tf,
     nav2_lifecycle::LifecycleNode::SharedPtr node,
-    rclcpp::Node::SharedPtr client_node);
+    rclcpp::Node::SharedPtr client_node,
+    rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
   virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
   virtual void reset() {}
@@ -126,6 +127,7 @@ protected:
   tf2_ros::Buffer * tf_;
   nav2_lifecycle::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
+  rclcpp::Node::SharedPtr rclcpp_node_;
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
