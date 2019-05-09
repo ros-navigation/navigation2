@@ -24,6 +24,7 @@
 #include "nav2_tasks/back_up_action.hpp"
 #include "nav2_tasks/spin_action.hpp"
 #include "nav2_tasks/is_localized_condition.hpp"
+#include "nav2_tasks/goal_reached_condition.hpp"
 
 
 using namespace std::chrono_literals;
@@ -44,6 +45,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
   factory_.registerNodeType<nav2_tasks::IsLocalizedCondition>("IsLocalized");
+  factory_.registerNodeType<nav2_tasks::GoalReachedCondition>("GoalReached");
 
   // Register our Simple Condition nodes
   factory_.registerSimpleCondition("initialPoseReceived",
@@ -73,7 +75,7 @@ BT::NodeStatus NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & tree_node)
     "path");
 
   follow_path_task_client_->sendUpdate(path);
-  return BT::NodeStatus::RUNNING;
+  return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus NavigateToPoseBehaviorTree::globalLocalizationServiceRequest()
