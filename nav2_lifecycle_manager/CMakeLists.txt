@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_controller)
+project(nav2_lifecycle_manager)
 
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -24,8 +24,8 @@ include_directories(
 set(library_name ${PROJECT_NAME}_core)
 
 add_library(${library_name} SHARED
-  src/nav2_controller.cpp
-  src/nav2_controller_client.cpp
+  src/lifecycle_manager.cpp
+  src/lifecycle_manager_client.cpp
 )
 
 set(dependencies
@@ -46,20 +46,20 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-add_executable(nav2_controller
+add_executable(lifecycle_manager
   src/main.cpp
 )
 
-target_link_libraries(nav2_controller
+target_link_libraries(lifecycle_manager
   ${library_name}
 )
 
-ament_target_dependencies(nav2_controller
+ament_target_dependencies(lifecycle_manager
   ${dependencies}
 )
 
 install(TARGETS
-  nav2_controller
+  lifecycle_manager
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

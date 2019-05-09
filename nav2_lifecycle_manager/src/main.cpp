@@ -14,13 +14,13 @@
 
 #include <memory>
 
-#include "nav2_controller/nav2_controller.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_controller::Nav2Controller>();
+  auto node = std::make_shared<nav2_lifecycle_manager::LifecycleManager>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

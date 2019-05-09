@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_controller/nav2_controller_client.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 
 #include <cmath>
 #include <memory>
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-namespace nav2_controller
+namespace nav2_lifecycle_manager
 {
 
-Nav2ControllerClient::Nav2ControllerClient()
+LifecycleManagerClient::LifecycleManagerClient()
 {
   // Create the node to use for all of the service clients
-  node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client");
+  node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
 
   // All of the services use the same (Empty) request
   request_ = std::make_shared<Empty::Request>();
 
   // Create the service clients
-  startup_client_ = node_->create_client<Empty>("nav2_controller/startup");
-  pause_client_ = node_->create_client<Empty>("nav2_controller/pause");
-  resume_client_ = node_->create_client<Empty>("nav2_controller/resume");
-  shutdown_client_ = node_->create_client<Empty>("nav2_controller/shutdown");
+  startup_client_ = node_->create_client<Empty>("lifecycle_manager/startup");
+  pause_client_ = node_->create_client<Empty>("lifecycle_manager/pause");
+  resume_client_ = node_->create_client<Empty>("lifecycle_manager/resume");
+  shutdown_client_ = node_->create_client<Empty>("lifecycle_manager/shutdown");
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -44,31 +44,31 @@ Nav2ControllerClient::Nav2ControllerClient()
 }
 
 void
-Nav2ControllerClient::startup()
+LifecycleManagerClient::startup()
 {
-  callService(startup_client_, "nav2_controller/startup");
+  callService(startup_client_, "lifecycle_manager/startup");
 }
 
 void
-Nav2ControllerClient::shutdown()
+LifecycleManagerClient::shutdown()
 {
-  callService(shutdown_client_, "nav2_controller/shutdown");
+  callService(shutdown_client_, "lifecycle_manager/shutdown");
 }
 
 void
-Nav2ControllerClient::pause()
+LifecycleManagerClient::pause()
 {
-  callService(pause_client_, "nav2_controller/pause");
+  callService(pause_client_, "lifecycle_manager/pause");
 }
 
 void
-Nav2ControllerClient::resume()
+LifecycleManagerClient::resume()
 {
-  callService(resume_client_, "nav2_controller/resume");
+  callService(resume_client_, "lifecycle_manager/resume");
 }
 
 geometry_msgs::msg::Quaternion
-Nav2ControllerClient::orientationAroundZAxis(double angle)
+LifecycleManagerClient::orientationAroundZAxis(double angle)
 {
   tf2::Quaternion q;
   q.setRPY(0, 0, angle);  // void returning function
@@ -76,7 +76,7 @@ Nav2ControllerClient::orientationAroundZAxis(double angle)
 }
 
 void
-Nav2ControllerClient::set_initial_pose(double x, double y, double theta)
+LifecycleManagerClient::set_initial_pose(double x, double y, double theta)
 {
   const double PI = 3.141592653589793238463;
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
@@ -95,7 +95,7 @@ Nav2ControllerClient::set_initial_pose(double x, double y, double theta)
 }
 
 bool
-Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
+LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
 {
   navigate_action_client_->wait_for_action_server();
 
@@ -140,11 +140,11 @@ Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
 }
 
 void
-Nav2ControllerClient::callService(
+LifecycleManagerClient::callService(
   rclcpp::Client<Empty>::SharedPtr service_client,
   const char * service_name)
 {
-  RCLCPP_INFO(node_->get_logger(), "Waiting for the nav2_controller's %s service...", service_name);
+  RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...", service_name);
   while (!service_client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
@@ -153,9 +153,9 @@ Nav2ControllerClient::callService(
     RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
   }
 
-  RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the nav2_controller", service_name);
+  RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager", service_name);
   auto future_result = service_client->async_send_request(request_);
   rclcpp::spin_until_future_complete(node_, future_result);
 }
 
-}  // namespace nav2_controller
+}  // namespace nav2_lifecycle_manager
