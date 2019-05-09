@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
-#define NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#ifndef NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_HPP_
+#define NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_HPP_
 
 #include <map>
 #include <memory>
@@ -24,14 +24,14 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 
-namespace nav2_controller
+namespace nav2_lifecycle_manager
 {
 
-class Nav2Controller : public rclcpp::Node
+class LifecycleManager : public rclcpp::Node
 {
 public:
-  Nav2Controller();
-  ~Nav2Controller();
+  LifecycleManager();
+  ~LifecycleManager();
 
 protected:
   // The ROS node to use when calling lifecycle services
@@ -90,6 +90,6 @@ protected:
   std::vector<std::string> node_names_;
 };
 
-}  // namespace nav2_controller
+}  // namespace nav2_lifecycle_manager
 
-#endif  // NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#endif  // NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_HPP_
