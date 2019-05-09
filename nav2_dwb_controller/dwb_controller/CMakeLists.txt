@@ -49,8 +49,6 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-target_link_libraries(${library_name})
-
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )

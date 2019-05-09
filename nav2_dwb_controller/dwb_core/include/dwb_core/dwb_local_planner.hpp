@@ -66,16 +66,6 @@ public:
 
   virtual ~DWBLocalPlanner() {}
 
-  /**
-   * @brief nav_core2 initialization
-   * @param name Namespace for this planner
-   * @param tf TFListener pointer
-   * @param costmap_ros Costmap pointer
-   */
-  void initialize(
-    nav2_lifecycle::LifecycleNode::SharedPtr private_nh, TFBufferPtr tf,
-    CostmapROSPtr costmap_ros);
-
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;

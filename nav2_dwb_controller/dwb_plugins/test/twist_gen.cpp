@@ -36,10 +36,12 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+
 #include "gtest/gtest.h"
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "dwb_plugins/limited_accel_generator.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using std::hypot;
 using std::fabs;
@@ -72,14 +74,16 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
   return parameters;
 }
 
-rclcpp::Node::SharedPtr makeTestNode(const std::string & name)
+rclcpp_lifecycle::LifecycleNode::SharedPtr makeTestNode(const std::string & name)
 {
-  return rclcpp::Node::make_shared(
-    name,
-    "",  // namespace
-    rclcpp::contexts::default_context::get_global_default_context(),
-    std::vector<std::string>(),  // arguments
-    getDefaultKinematicParameters());
+  rclcpp::NodeOptions node_options = nav2_util::get_node_options_default();
+  node_options.initial_parameters(getDefaultKinematicParameters());
+
+  auto node = rclcpp_lifecycle::LifecycleNode::make_shared(name, node_options);
+  node->on_configure(node->get_current_state());
+  node->on_activate(node->get_current_state());
+
+  return node;
 }
 
 void checkLimits(
