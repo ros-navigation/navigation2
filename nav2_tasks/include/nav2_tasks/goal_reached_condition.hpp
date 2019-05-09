@@ -43,19 +43,21 @@ public:
   BT::NodeStatus tick() override
   {
     if (!initialized_) {
-      node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-
-      node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-
-      robot_ = std::make_unique<nav2_robot::Robot>(node_);
-
-      initialized_ = true;
+      initialize();
     }
 
     if (goalReached()) {
       return BT::NodeStatus::SUCCESS;
     }
     return BT::NodeStatus::FAILURE;
+  }
+
+  void initialize()
+  {
+    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+    robot_ = std::make_unique<nav2_robot::Robot>(node_);
+    initialized_ = true;
   }
 
   bool
@@ -67,17 +69,16 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
-
-    blackboard()->get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command_); 
+    // TODO(mhpanah): replace this with a function
+    blackboard()->get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command_);
     double dx = command_->pose.position.x - current_pose->pose.pose.position.x;
     double dy = command_->pose.position.y - current_pose->pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
-    } else
-    {
+    } else {
       return false;
-    }   
+    }
   }
 
 private:
@@ -88,7 +89,6 @@ private:
 
   bool initialized_;
   double goal_reached_tol_;
-
 };
 
 }  // namespace nav2_tasks
