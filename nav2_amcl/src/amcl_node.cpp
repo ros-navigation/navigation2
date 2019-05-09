@@ -707,7 +707,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
         tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
       } catch (tf2::TransformException) {
-        RCLCPP_INFO(get_logger(), "Failed to subtract base to odom transform");
+        RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
         return;
       }
 
