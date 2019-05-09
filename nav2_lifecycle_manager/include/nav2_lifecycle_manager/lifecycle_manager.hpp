@@ -88,6 +88,9 @@ protected:
 
   // The names of the nodes to be managed, in the order of desired bring-up
   std::vector<std::string> node_names_;
+
+  // Whether to automatically start up the system
+  bool autostart_;
 };
 
 }  // namespace nav2_lifecycle_manager

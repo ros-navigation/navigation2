@@ -39,9 +39,12 @@ LifecycleManager::LifecycleManager()
   std::vector<std::string> default_node_names{"map_server", "amcl", "world_model", "dwb_controller",
     "navfn_planner", "bt_navigator"};
 
-  // However, it is parameterized, allowing this module to be used with a different set of nodes
+  // The list of names is parameterized, allowing this module to be used with a different set of nodes
   declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
+  declare_parameter("autostart", rclcpp::ParameterValue(false));
+
   get_parameter("node_names", node_names_);
+  get_parameter("autostart", autostart_);
 
   startup_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/startup",
       std::bind(&LifecycleManager::startupCallback, this, _1, _2, _3));
@@ -56,6 +59,10 @@ LifecycleManager::LifecycleManager()
       std::bind(&LifecycleManager::resumeCallback, this, _1, _2, _3));
 
   service_client_node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
+
+  if (autostart_) {
+    startup();
+  }
 }
 
 LifecycleManager::~LifecycleManager()
