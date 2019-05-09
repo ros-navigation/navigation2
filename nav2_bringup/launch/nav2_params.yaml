@@ -1,8 +1,10 @@
 map_server:
   ros__parameters:
     yaml_filename: "test_map.yaml"
+    use_sim_time: false
 DwbController:
   ros__parameters:
+    use_sim_time: false
     debug_trajectory_details: True
     min_vel_x: 0.0
     min_vel_y: 0.0
@@ -39,6 +41,7 @@ DwbController:
 local_costmap:
   local_costmap:
     ros__parameters:
+      use_sim_time: false
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
@@ -53,6 +56,7 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
+      use_sim_time: false
       robot_radius: 0.17
       obstacle_layer:
         enabled: True
@@ -63,3 +67,19 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
+amcl:
+  ros__parameters:
+    use_sim_time: false
+world_model:
+  ros__parameters:
+    use_sim_time: false
+navfn_planner:
+  ros__parameters:
+    use_sim_time: false
+bt_navigator:
+  ros__parameters:
+    use_sim_time: false
+    bt_xml_filename: bt_navigator.xml
+motion_primitives:
+  ros__parameters:
+    use_sim_time: false

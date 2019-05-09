@@ -3,10 +3,11 @@ from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
 from ament_index_python.packages import get_package_prefix
+from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
+    use_sim_time = text=launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
     params_file = launch.substitutions.LaunchConfiguration('params', default=
         [launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
@@ -15,6 +16,10 @@ def generate_launch_description():
                                         'behavior_trees',
                                         'navigate_w_recovery_retry.xml') # TODO(mkhansen): change to an input parameter
 
+    param_substitutions = { 'use_sim_time': use_sim_time,
+        'yaml_filename': map_yaml_file,
+        'bt_xml_filename': bt_navigator_xml }
+    configured_params = RewrittenYaml(source_file=params_file, rewrites=param_substitutions, convert_types=True)
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             'map', description='Full path to map file to load'),
@@ -26,45 +31,45 @@ def generate_launch_description():
             node_executable='map_server',
             node_name='map_server',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}, { 'yaml_filename': map_yaml_file }]),
+            parameters=[configured_params]),
 
         launch_ros.actions.Node(
             package='nav2_world_model',
             node_executable='world_model',
             output='screen',
-            parameters=[params_file]),
+            parameters=[configured_params]),
 
         launch_ros.actions.Node(
             package='nav2_amcl',
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[configured_params]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
-            parameters=[params_file]),
+            parameters=[configured_params]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
             node_executable='navfn_planner',
             node_name='navfn_planner',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
+            parameters=[configured_params]),
 
         launch_ros.actions.Node(
             package='nav2_motion_primitives',
             node_executable='motion_primitives_node',
             node_name='motion_primitives',
             output='screen',
-            parameters=[{ 'use_sim_time': use_sim_time}]),
-        
+            parameters=[configured_params]),
+
         launch_ros.actions.Node(
             package='nav2_bt_navigator',
             node_executable='bt_navigator',
             node_name='bt_navigator',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
+            parameters=[configured_params])
     ])
