@@ -75,14 +75,14 @@ protected:
   rclcpp::Node::SharedPtr node_;
   std::string primitive_name_;
   std::unique_ptr<ActionServer> action_server_;
-  std::shared_ptr<nav2_robot::RobotStateHelper> robot_state_;
+  std::shared_ptr<nav2_util::RobotStateHelper> robot_state_;
   std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
 
   void configure()
   {
     RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
 
-    robot_state_ = std::make_unique<nav2_robot::RobotStateHelper>(node);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
 
     vel_publisher_ = std::make_unique<nav2_util::VelocityPublisher>(node_);
 
