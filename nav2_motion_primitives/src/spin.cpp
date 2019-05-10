@@ -87,7 +87,7 @@ Status Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
-  robot_->sendVelocity(cmd_vel);
+  vel_publisher_->sendVelocity(cmd_vel);
 
   return Status::RUNNING;
 }
@@ -100,7 +100,7 @@ Status Spin::controlledSpin()
 
   // Get current robot orientation
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-  if (!robot_->getCurrentPose(current_pose)) {
+  if (!robot_state_->getCurrentPose(current_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
@@ -126,7 +126,7 @@ Status Spin::controlledSpin()
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = vel;
 
-  robot_->sendVelocity(cmd_vel);
+  vel_publisher_->sendVelocity(cmd_vel);
 
   // check if we are done
   if (dist_left >= (0.0 - goal_tolerance_angle_)) {

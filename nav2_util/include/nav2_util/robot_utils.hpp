@@ -47,7 +47,6 @@ public:
     const bool use_topic = false);
 
 private:
-
   void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   void onOdomReceived();
 

@@ -45,7 +45,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
   command_x_ = command->target.x;
 
-  if (!robot_->getOdometry(initial_pose_)) {
+  if (!robot_state_->getOdometry(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
     return Status::FAILED;
   }
@@ -57,7 +57,7 @@ Status BackUp::onCycleUpdate()
 {
   auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
 
-  if (!robot_->getOdometry(current_odom_pose)) {
+  if (!robot_state_->getOdometry(current_odom_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
     return Status::FAILED;
   }
@@ -75,7 +75,7 @@ Status BackUp::onCycleUpdate()
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
-  robot_->sendVelocity(cmd_vel);
+  vel_publisher_->sendVelocity(cmd_vel);
 
   return Status::RUNNING;
 }

@@ -36,7 +36,8 @@ public:
   TestRobotClass()
   {
     node_ = rclcpp::Node::make_shared("robot_class_test");
-    robot_ = std::make_unique<nav2_robot::Robot>(node_);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
+    vel_publisher_ = std::make_unique<nav2_util::VelocityPublisher>(node_);
 
     // Initializing Pose and Twist messages
     initTestPose();
@@ -100,7 +101,8 @@ TestRobotClass::velocityReceived(const geometry_msgs::msg::Twist::SharedPtr msg)
   velocityCmdReceived_ = true;
 }
 
-void TestRobotClass::initTestPose()
+void
+TestRobotClass::initTestPose()
 {
   testPose_.header.frame_id = "testPose";
   testPose_.header.stamp = rclcpp::Time();
@@ -116,7 +118,8 @@ void TestRobotClass::initTestPose()
   }
 }
 
-void TestRobotClass::initTestTwist()
+void
+TestRobotClass::initTestTwist()
 {
   testTwist_.linear.x = 0.0;
   testTwist_.linear.y = 0.0;

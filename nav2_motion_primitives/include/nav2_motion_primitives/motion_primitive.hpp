@@ -24,8 +24,14 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+<<<<<<< HEAD
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_robot/robot.hpp"
+=======
+#include "nav2_tasks/task_status.hpp"
+#include "nav2_tasks/task_server.hpp"
+#include "nav2_util/robot_utils.hpp"
+>>>>>>> changing all users of robot_ to their appropriate eq.
 
 namespace nav2_motion_primitives
 {
@@ -74,18 +80,17 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_;
   std::string primitive_name_;
-  std::shared_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<ActionServer> action_server_;
+  std::shared_ptr<nav2_robot::RobotStateHelper> robot_state_;
+  std::shared_ptr<nav2_robot::VelocityPublisher> vel_publisher_;
 
   void configure()
   {
     RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
 
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
+    robot_state_ = std::make_unique<nav2_robot::RobotStateHelper>(node);
+
+    vel_publisher_ = std::make_unique<nav2_robot::VelocityPublisher>(node_);
 
     action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
         std::bind(&MotionPrimitive::execute, this));
@@ -93,7 +98,7 @@ protected:
 
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
     action_server_.reset();
   }
 
@@ -157,7 +162,7 @@ protected:
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
 
-    robot_->sendVelocity(cmd_vel);
+    vel_publisher_->sendVelocity(cmd_vel);
   }
 };
 

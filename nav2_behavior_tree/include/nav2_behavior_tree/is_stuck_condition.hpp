@@ -81,7 +81,7 @@ public:
   {
     // TODO(orduno) #383 Once check for is stuck and state calculations are moved to robot class
     //              this becomes
-    // if (robot_.isStuck()) {
+    // if (robot_state_.isStuck()) {
 
     if (is_stuck_) {
       logStuck("Robot got stuck!");
