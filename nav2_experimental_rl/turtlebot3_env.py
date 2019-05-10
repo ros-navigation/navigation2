@@ -144,7 +144,7 @@ class TurtlebotEnv():
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
         while not self.scan_msg_received and rclpy.ok():
-            continue
+            sleep(0.1)
         self.collision = False
         self.done = False
         self.bonous_reward = 0
