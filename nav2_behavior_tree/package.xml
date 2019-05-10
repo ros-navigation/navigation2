@@ -26,7 +26,6 @@
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
-  <build_depend>nav2_robot</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>lifecycle_msgs</build_depend>
   <build_depend>nav2_common</build_depend>

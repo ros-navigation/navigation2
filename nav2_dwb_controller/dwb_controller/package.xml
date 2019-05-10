@@ -14,7 +14,6 @@
   <depend>rclcpp_action</depend>
   <depend>std_msgs</depend>
   <depend>nav2_util</depend>
-  <depend>nav2_robot</depend>
   <depend>nav2_msgs</depend>
   <depend>dwb_core</depend>
   <depend>nav_2d_utils</depend>

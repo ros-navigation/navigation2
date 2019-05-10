@@ -15,7 +15,6 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(nav2_robot REQUIRED)
 find_package(nav2_util REQUIRED)
 
 nav2_package()
@@ -41,7 +40,6 @@ set(dependencies
   rosidl_default_generators
   std_msgs
   std_srvs
-  nav2_robot
   nav2_util
 )
 

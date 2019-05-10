@@ -17,7 +17,6 @@
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>nav2_robot</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
