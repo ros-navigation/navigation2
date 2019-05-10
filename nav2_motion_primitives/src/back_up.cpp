@@ -75,7 +75,7 @@ Status BackUp::onCycleUpdate()
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
-  vel_publisher_->sendVelocity(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 
   return Status::RUNNING;
 }

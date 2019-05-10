@@ -74,7 +74,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+  vel_publisher_ = std::make_shared<nav2_util::VelocityPublisher>(node);
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -222,7 +222,7 @@ void DwbController::updateGlobalPath()
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
-  vel_pub_->publish(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 }
 
 void DwbController::publishZeroVelocity()

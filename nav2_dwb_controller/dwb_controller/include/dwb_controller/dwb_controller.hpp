@@ -23,9 +23,13 @@
 #include "dwb_core/dwb_local_planner.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
+<<<<<<< HEAD
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
+=======
+#include "nav2_util/robot_utils.hpp"
+>>>>>>> changing the controller to use the nav2_utils velocity publisher wrapper as well
 
 namespace dwb_controller
 {
@@ -69,7 +73,7 @@ protected:
 
   // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;

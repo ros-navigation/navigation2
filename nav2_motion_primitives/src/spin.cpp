@@ -87,7 +87,7 @@ Status Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
-  vel_publisher_->sendVelocity(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 
   return Status::RUNNING;
 }
@@ -126,7 +126,7 @@ Status Spin::controlledSpin()
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = vel;
 
-  vel_publisher_->sendVelocity(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 
   // check if we are done
   if (dist_left >= (0.0 - goal_tolerance_angle_)) {

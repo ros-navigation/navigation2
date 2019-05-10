@@ -155,7 +155,7 @@ TEST_F(TestRobotClass, sendVelocityTest)
 {
   rclcpp::Rate r(10);
   while (!velocityCmdReceived_) {
-    vel_publisher_->sendVelocity(testTwist_);
+    vel_publisher_->publishCommand(testTwist_);
     rclcpp::spin_some(node_);
     r.sleep();
   }

@@ -48,7 +48,7 @@ nav2_tasks::TaskStatus Stop::onRun(const nav2_tasks::StopCommand::SharedPtr /*co
   twist.angular.x = 0.0;
   twist.angular.y = 0.0;
   twist.angular.z = 0.0;
-  vel_publisher_->sendVelocity(twist);
+  vel_publisher_->publishCommand(twist);
 
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
