@@ -112,28 +112,30 @@ void
 Nav2Panel::onStartup()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
+      &client_));
 }
 
 void
 Nav2Panel::onShutdown()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
+      &client_));
 }
 
 void
 Nav2Panel::onPause()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::pause, &client_));
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause, &client_));
 }
 
 void
 Nav2Panel::onResume()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::resume, &client_));
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume, &client_));
 }
 
 void
