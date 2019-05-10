@@ -101,8 +101,12 @@ public:
   {
     on_tick();
 
+    // Enable result awareness by providing an empty lambda function
+    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+    send_goal_options.result_callback = [](auto){};
+
 new_goal_received:
-    auto future_goal_handle = action_client_->async_send_goal(goal_);
+    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {

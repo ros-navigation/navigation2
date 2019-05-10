@@ -127,8 +127,14 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
   planner_client_->wait_for_action_server();
 
+  // Enable result awareness by providing an empty lambda function
+  auto planner_goal_options =
+    typename rclcpp_action::Client<nav2_msgs::action::ComputePathToPose>::SendGoalOptions();
+  planner_goal_options.result_callback = [](auto) {};
+
   // Send the goal pose to the planner
-  auto planner_future_goal_handle = planner_client_->async_send_goal(planner_goal);
+  auto planner_future_goal_handle = planner_client_->async_send_goal(planner_goal,
+      planner_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, planner_future_goal_handle) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
@@ -180,9 +186,15 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   nav2_msgs::action::FollowPath::Goal controller_goal;
   controller_goal.path = planner_result.result->path;
 
+  // Enable result awareness by providing an empty lambda function
+  auto controller_goal_options =
+    typename rclcpp_action::Client<nav2_msgs::action::FollowPath>::SendGoalOptions();
+  controller_goal_options.result_callback = [](auto) {};
+
   // Send the goal pose to the local planner
   RCLCPP_INFO(get_logger(), "Sending path to the controller to execute");
-  auto controller_future_goal_handle = controller_client_->async_send_goal(controller_goal);
+  auto controller_future_goal_handle = controller_client_->async_send_goal(controller_goal,
+      controller_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, controller_future_goal_handle) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
