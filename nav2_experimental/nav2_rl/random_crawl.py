@@ -27,9 +27,8 @@ def loadModel(env):
     state = env.reset()
     observation_space = len(state)
     state = np.reshape(state, [1, observation_space])
-    pkg_share_directory = get_package_share_directory('turtlebot3_rl')
-    path = os.path.join(\
-        pkg_share_directory,"../../../../nav2_experimental_rl/saved_models/random_crawl_waffle.h5")
+    pkg_share_directory = get_package_share_directory('nav2_turtlebot3_rl')
+    path = os.path.join(pkg_share_directory,"saved_models/random_crawl_waffle.h5")
     model = load_model(path)
     while rclpy.ok():
         q_values = model.predict(state)
