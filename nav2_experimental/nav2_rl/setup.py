@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'turtlebot3_rl'
+package_name = 'nav2_turtlebot3_rl'
 
 setup(
     name=package_name,
@@ -17,6 +17,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+	    ('share/' + package_name + '/saved_models',\
+        ['saved_models/random_crawl_burger.h5','saved_models/random_crawl_waffle.h5']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

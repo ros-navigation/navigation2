@@ -37,7 +37,7 @@ cd <navigation2_ws> source install setup.bash
 ```
 Run:
 ```sh 
-ros2 run turtlebot3_rl random_crawl_train
+ros2 run nav2_turtlebot3_rl random_crawl_train
 ```
 
 ####Running
@@ -56,5 +56,5 @@ cd <navigation2_ws> source install setup.bash
 ```
 Run:
 ```sh 
-ros2 run turtlebot3_rl random_crawl
+ros2 run nav2_turtlebot3_rl random_crawl
 ```
