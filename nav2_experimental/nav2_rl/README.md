@@ -1,5 +1,5 @@
 # Overview
-The ROS 2 Experimental Reinfocement Learning (RL) package is a package that enables to train and control a robot with RL techniques.  This package is utilizing Gazebo simulator and ROS 2 to train TurtleBot 3 robot. 
+The ROS 2 Experimental Reinfocement Learning (RL) package is a package that enables to train and control a robot with RL techniques.  This package is utilizing the Gazebo simulator and ROS 2 to train a TurtleBot 3 robot. 
 
 # Contributing
 We have currently implemented a Random Crawl task to get started with RL and plan to implement and add more RL related tasks to this package. This Random Crawl RL task can be used as a tutorial to get started with RL.
