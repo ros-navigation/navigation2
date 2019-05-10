@@ -33,7 +33,7 @@ from gazebo_msgs.srv import GetEntityState, SetEntityState
 
 class TurtlebotEnv():
     def __init__(self):
-        node_ = rclpy.create_node('turtlebot3_env')
+        self.node_ = rclpy.create_node('turtlebot3_env')
         self.act = 0
         self.done = False
         self.actions = [[parameters.LINEAR_FWD_VELOCITY, parameters.ANGULAR_FWD_VELOCITY],
@@ -48,18 +48,21 @@ class TurtlebotEnv():
         self.zero_div_tol = 0.01
         self.range_min = 0.0
 
-        self.pub_cmd_vel = node_.create_publisher(Twist, 'cmd_vel')
-        self.sub_scan = node_.create_subscription(LaserScan, 'scan', self.scan_callback)
+        self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel')
+        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback)
 
-        self.reset_simulation = node_.create_client(Empty, 'reset_simulation')
-        self.reset_world = node_.create_client(Empty, 'reset_world')
-        self.unpause_proxy = node_.create_client(Empty, 'unpause_physics')
-        self.pause_proxy = node_.create_client(Empty, 'pause_physics')
-        self.get_entity_state = node_.create_client(GetEntityState, 'get_entity_state')
-        self.set_entity_state = node_.create_client(SetEntityState, 'set_entity_state')
+        self.reset_simulation = self.node_.create_client(Empty, 'reset_simulation')
+        self.reset_world = self.node_.create_client(Empty, 'reset_world')
+        self.unpause_proxy = self.node_.create_client(Empty, 'unpause_physics')
+        self.pause_proxy = self.node_.create_client(Empty, 'pause_physics')
+        self.get_entity_state = self.node_.create_client(GetEntityState, 'get_entity_state')
+        self.set_entity_state = self.node_.create_client(SetEntityState, 'set_entity_state')
         self.scan_msg_received = False
-        t = Thread(target=rclpy.spin, args=[node_])
-        t.start()
+        self.t = Thread(target=rclpy.spin, args=[self.node_])
+        self.t.start()
+    
+    def cleanup(self):
+        self.t.join()
 
     def get_reward(self):
         reward = 0
