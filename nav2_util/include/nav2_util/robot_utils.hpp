@@ -16,8 +16,11 @@
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
 #include <string>
+#include <shared_mutex>
+#include <mutex>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 
 namespace nav2_util
@@ -41,14 +44,14 @@ public:
   RobotStateHelper(rclcpp::Node::SharedPtr & node,
     const std::string odom_topic = std::string("/odom"));
 
-  bool getOdometry();
+  bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
 
   bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
     const bool use_topic = false);
 
 private:
   void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
-  void onOdomReceived();
+  void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr & msg);
 
   bool getGlobalLocalizerPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   bool getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
@@ -64,3 +67,5 @@ private:
 }
 
 } // end namespace nav2_util
+
+#endif

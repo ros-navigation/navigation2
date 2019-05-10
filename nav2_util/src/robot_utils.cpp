@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__ROBOT_UTILS_HPP_
-#define NAV2_UTIL__ROBOT_UTILS_HPP_
-
 #include <nav2_util/robot_utils.hpp>
 
 namespace nav2_util
@@ -46,7 +43,7 @@ RobotStateHelper::RobotStateHelper(rclcpp::Node::SharedPtr & node,
 }
 
 bool
-RobotStateHelper::getOdometry() {
+RobotStateHelper::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom) {
   std::shared_lock lock(state_mutex_);
   if (!initial_odom_received_) {
     RCLCPP_DEBUG(node_->get_logger(),
@@ -78,7 +75,7 @@ RobotStateHelper::onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::
 }
 
 void
-RobotStateHelper::onOdomReceived() {
+RobotStateHelper::onOdomReceived(nav_msgs::msg::Odometry::SharedPtr & msg) {
   std::scoped_lock lock(state_mutex_);
   current_odom_ = msg;
   if (!initial_odom_received_) {
