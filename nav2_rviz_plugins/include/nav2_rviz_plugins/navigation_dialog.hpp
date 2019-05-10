@@ -25,11 +25,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-class QCheckBox;
-class QDialogButtonBox;
-class QGroupBox;
-class QLabel;
-class QLineEdit;
 class QPushButton;
 
 class NavigationDialog : public QDialog
@@ -49,21 +44,20 @@ private slots:
   void onCancelButtonPressed();
 
 private:
-  QLabel * label;
-  QLineEdit * lineEdit;
-  QCheckBox * fromStartCheckBox;
-  QCheckBox * searchSelectionCheckBox;
-  QDialogButtonBox * buttonBox;
-  QPushButton * cancelButton;
-  QPushButton * moreButton;
-  QWidget * extension;
+  using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
 
-  QBasicTimer timer_;
-
+  // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
+
+  // The NavigateToPose action client
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr action_client_;
+
+  // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal goal_;
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr goal_handle_;
+  GoalHandle::SharedPtr goal_handle_;
+
+  // A timer used to check on the completion status of the action
+  QBasicTimer timer_;
 };
 
 #endif  //  NAV2_RVIZ_PLUGINS__NAVIGATION_DIALOG_HPP_
