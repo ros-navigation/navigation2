@@ -56,9 +56,18 @@ def main(args=None):
     rclpy.init(args=args)
     env = TurtlebotEnv()
     action_size = env.action_space()
-    trainModel(env, action_size)
+    
+    # Ctrl-C doesn't make rclpy.ok() to return false. Thus, we catch the exception with
+    # `finally` to shutdown ros and terminate the background thread cleanly.
+    try:
+        trainModel(env, action_size)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        rclpy.shutdown()
+        env.cleanup()
+    return
 
 if __name__ == "__main__":
     main()
-
 
