@@ -19,7 +19,7 @@ namespace nav2_util
 {
 
 VelocityPublisher::VelocityPublisher(rclcpp::Node::SharedPtr & node,
-    const std::string topic = std::string("/cmd_vel")) {
+    const std::string topic) {
     vel_pub_ = node->create_publisher<geometry_msgs::msg::Twist>(topic, 1);
   }
 
@@ -29,14 +29,12 @@ VelocityPublisher::publishCommand(const geometry_msgs::msg::Twist& cmd_vel) {
 }
 
 RobotStateHelper::RobotStateHelper(rclcpp::Node::SharedPtr & node,
-  const std::string odom_topic = std::string("/odom")) {
-  node_ = node;
+  const std::string odom_topic) : node_(node) {
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
+    "amcl_pose", std::bind(&RobotStateHelper::onPoseReceived, this, std::placeholders::_1));
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    odom_topic, std::bind(&Robot::onOdomReceived, this, 
-    std::placeholders::_1));
+    odom_topic, std::bind(&RobotStateHelper::onOdomReceived, this, std::placeholders::_1));
 
   initial_odom_received_ = false;
   initial_pose_received_ = false;
@@ -44,7 +42,7 @@ RobotStateHelper::RobotStateHelper(rclcpp::Node::SharedPtr & node,
 
 bool
 RobotStateHelper::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom) {
-  std::shared_lock lock(state_mutex_);
+  std::shared_lock<std::shared_timed_mutex> lock(state_mutex_);
   if (!initial_odom_received_) {
     RCLCPP_DEBUG(node_->get_logger(),
       "getOdometry: Can't return current velocity: Initial odometry not yet received.");
@@ -57,7 +55,7 @@ RobotStateHelper::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom) {
 
 bool
 RobotStateHelper::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
-  const bool use_topic = false) {
+  const bool use_topic) {
   if (use_topic) {
     return getGlobalLocalizerPose(robot_pose);
   }
@@ -66,8 +64,8 @@ RobotStateHelper::getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::
 }
 
 void
-RobotStateHelper::onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose) {
-  std::scoped_lock lock(state_mutex_);
+RobotStateHelper::onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr robot_pose) {
+  std::unique_lock<std::shared_timed_mutex> lock(state_mutex_);
   current_pose_ = robot_pose;
   if (!initial_pose_received_) {
     initial_pose_received_ = true;
@@ -75,8 +73,8 @@ RobotStateHelper::onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::
 }
 
 void
-RobotStateHelper::onOdomReceived(nav_msgs::msg::Odometry::SharedPtr & msg) {
-  std::scoped_lock lock(state_mutex_);
+RobotStateHelper::onOdomReceived(nav_msgs::msg::Odometry::SharedPtr msg) {
+  std::unique_lock<std::shared_timed_mutex> lock(state_mutex_);
   current_odom_ = msg;
   if (!initial_odom_received_) {
     initial_odom_received_ = true;
@@ -85,7 +83,7 @@ RobotStateHelper::onOdomReceived(nav_msgs::msg::Odometry::SharedPtr & msg) {
 
 bool
 RobotStateHelper::getGlobalLocalizerPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose) {
-  std::shared_lock lock(state_mutex_);
+  std::shared_lock<std::shared_timed_mutex> lock(state_mutex_);
   if (!initial_pose_received_) {
     RCLCPP_DEBUG(node_->get_logger(),
       "Robot: Can't return current pose: Initial pose not yet received.");
@@ -97,7 +95,8 @@ RobotStateHelper::getGlobalLocalizerPose(geometry_msgs::msg::PoseWithCovarianceS
 }
 
 bool
-RobotStateHelper::getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose) {
+RobotStateHelper::getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & /*robot_pose*/) {
+  std::shared_lock<std::shared_timed_mutex> lock(state_mutex_);
   RCLCPP_DEBUG(node_->get_logger(), "getTfPose is not yet implemented.");
   return false;
 }

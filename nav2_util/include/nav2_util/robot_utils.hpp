@@ -51,8 +51,8 @@ public:
     const bool use_topic = false);
 
 private:
-  void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
-  void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr & msg);
+  void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr robot_pose);
+  void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr msg);
 
   bool getGlobalLocalizerPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   bool getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
@@ -61,11 +61,11 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  std::shared_mutex state_mutex_;
+  std::shared_timed_mutex state_mutex_;
   bool initial_pose_received_, initial_odom_received_;
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
   nav_msgs::msg::Odometry::SharedPtr current_odom_;
-}
+};
 
 } // end namespace nav2_util
 
