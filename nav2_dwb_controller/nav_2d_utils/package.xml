@@ -4,9 +4,7 @@
   <name>nav_2d_utils</name>
   <version>0.1.5</version>
   <description>A handful of useful utility functions for nav_2d packages.</description>
-
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

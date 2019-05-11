@@ -6,9 +6,7 @@
       Standard implementations of the GoalChecker
       and TrajectoryGenerators for dwb_core
   </description>
-
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -21,7 +19,6 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>nav2_util</depend>
-  <depend>nav2_dynamic_params</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

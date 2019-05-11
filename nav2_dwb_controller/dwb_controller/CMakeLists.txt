@@ -12,6 +12,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -41,6 +42,7 @@ set(dependencies
   nav_2d_utils
   nav_2d_msgs
   nav2_util
+  nav2_lifecycle
 )
 
 ament_target_dependencies(${library_name}
@@ -50,6 +52,7 @@ ament_target_dependencies(${library_name}
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
 target_link_libraries(${executable_name} ${library_name})
 
 install(TARGETS ${executable_name} ${library_name}
