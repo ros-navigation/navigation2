@@ -17,36 +17,50 @@
 
 #include <memory>
 #include <string>
-#include "nav2_tasks/follow_path_task.hpp"
-#include "dwb_core/dwb_core.hpp"
+#include <thread>
+
 #include "dwb_core/common_types.hpp"
+#include "dwb_core/dwb_local_planner.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_tasks/follow_path_task.hpp"
 
 namespace dwb_controller
 {
 
-class DwbController : public rclcpp::Node
+class DwbController : public nav2_lifecycle::LifecycleNode
 {
 public:
-  explicit DwbController(rclcpp::executor::Executor & executor);
+  DwbController();
   ~DwbController();
 
+protected:
+  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+
+  // This module is a task server that implements the FollowPath task
+  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
   nav2_tasks::TaskStatus followPath(const nav2_tasks::FollowPathCommand::SharedPtr path);
 
-protected:
   bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
 
-  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
-  dwb_core::CostmapROSPtr cm_;
-  dwb_core::DWBLocalPlanner planner_;
+  // It uses a costmap node
+  dwb_core::CostmapROSPtr costmap_ros_;
+  std::unique_ptr<std::thread> costmap_thread_;
+
+  // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+
+  std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
 };
 
 }  // namespace dwb_controller

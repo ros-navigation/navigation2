@@ -37,7 +37,9 @@
 
 #include <string>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
@@ -58,7 +60,7 @@ namespace nav_2d_utils
  */
 template<class param_t>
 param_t searchAndGetParam(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string & param_name,
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh, const std::string & param_name,
   const param_t & default_value)
 {
   // TODO(crdelsey): Handle searchParam
@@ -84,7 +86,7 @@ param_t searchAndGetParam(
  */
 template<class param_t>
 param_t loadParameterWithDeprecation(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
   param_t value;
@@ -108,7 +110,7 @@ param_t loadParameterWithDeprecation(
  */
 template<class param_t>
 void moveDeprecatedParameter(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name)
 {
   param_t value;
@@ -136,7 +138,7 @@ void moveDeprecatedParameter(
  */
 template<class param_t>
 void moveParameter(
-  const std::shared_ptr<rclcpp::Node> & nh, std::string old_name,
+  const nav2_lifecycle::LifecycleNode::SharedPtr & nh, std::string old_name,
   std::string current_name, param_t default_value, bool should_delete = true)
 {
   param_t value;
