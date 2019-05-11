@@ -3,9 +3,7 @@
   <name>dwb_critics</name>
   <version>0.1.5</version>
   <description>The dwb_critics package</description>
-
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

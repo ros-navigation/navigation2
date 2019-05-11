@@ -43,7 +43,7 @@
 namespace dwb_plugins
 {
 
-void LimitedAccelGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+void LimitedAccelGenerator::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
   if (nh->get_parameter("sim_period", acceleration_time_)) {
@@ -61,7 +61,7 @@ void LimitedAccelGenerator::initialize(const std::shared_ptr<rclcpp::Node> & nh)
   }
 }
 
-void LimitedAccelGenerator::checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh)
+void LimitedAccelGenerator::checkUseDwaParam(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   bool use_dwa;
   nh->get_parameter_or("use_dwa", use_dwa, true);
