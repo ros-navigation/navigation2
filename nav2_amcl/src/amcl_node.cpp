@@ -591,9 +591,9 @@ bool AmclNode::addNewScanner(
     tf_buffer_->transform(ident, laser_pose, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
-      "even though the message notifier is in use",
+      "even though the message notifier is in use: (%s)",
       laser_scan->header.frame_id.c_str(),
-      base_frame_id_.c_str());
+      base_frame_id_.c_str(), e.what());
     return false;
   }
 
@@ -833,8 +833,8 @@ AmclNode::calculateMaptoOdomTransform(
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
     tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
-  } catch (tf2::TransformException &) {
-    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
+  } catch (tf2::TransformException & e) {
+    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform: (%s)", e.what());
     return;
   }
 

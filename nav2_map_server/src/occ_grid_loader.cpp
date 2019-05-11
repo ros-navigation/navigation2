@@ -90,8 +90,9 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   try {
     loadParameters.resolution = doc["resolution"].as<double>();
-  } catch (YAML::Exception &) {
-    throw std::runtime_error("The map does not contain a resolution tag or it is invalid");
+  } catch (YAML::Exception & e) {
+    std::string err("The map does not contain a resolution tag or it is invalid: %s", e.what());
+    throw std::runtime_error(err);
   }
 
   try {
@@ -99,19 +100,23 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
     loadParameters.origin[1] = doc["origin"][1].as<double>();
     loadParameters.origin[2] = doc["origin"][2].as<double>();
   } catch (YAML::Exception &) {
-    throw std::runtime_error("The map does not contain an origin tag or it is invalid");
+    std::string err("The map does not contain an origin tag or it is invalid: %s", e.what());
+    throw std::runtime_error(err);
   }
 
   try {
     loadParameters.free_thresh = doc["free_thresh"].as<double>();
-  } catch (YAML::Exception &) {
-    throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid");
+  } catch (YAML::Exception & e) {
+    std::string err("The map does not contain a free_thresh tag or it is invalid: %s", e.what());
+    throw std::runtime_error(err);
   }
 
   try {
     loadParameters.occupied_thresh = doc["occupied_thresh"].as<double>();
-  } catch (YAML::Exception &) {
-    throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid");
+  } catch (YAML::Exception & e) {
+    std::string err("The map does not contain an "
+      "occupied_thresh tag or it is invalid: %s", e.what());
+    throw std::runtime_error(err);    
   }
 
   std::string mode_str;
@@ -131,15 +136,18 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
         mode_str.c_str());
       loadParameters.mode = TRINARY;
     }
-  } catch (YAML::Exception &) {
-    RCLCPP_WARN(node_->get_logger(), "Mode parameter not set, using default value (trinary)");
+  } catch (YAML::Exception & e) {
+    RCLCPP_WARN(node_->get_logger(),
+      "Mode parameter not set, using default value (trinary): %s", e.what());
     loadParameters.mode = TRINARY;
   }
 
   try {
     loadParameters.negate = doc["negate"].as<int>();
-  } catch (YAML::Exception &) {
-    throw std::runtime_error("The map does not contain a negate tag or it is invalid");
+  } catch (YAML::Exception & e) {
+    std::string err("The map does not contain a negate tag or "
+      "it is invalid: %s", e.what());
+    throw std::runtime_error(err);    
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "resolution: %f", loadParameters.resolution);
