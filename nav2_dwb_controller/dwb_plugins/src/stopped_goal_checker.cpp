@@ -47,7 +47,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+void StoppedGoalChecker::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   SimpleGoalChecker::initialize(nh);
   nh->get_parameter_or("rot_stopped_velocity", rot_stopped_velocity_, 0.25);

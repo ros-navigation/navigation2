@@ -13,48 +13,120 @@
 // limitations under the License.
 
 #include "dwb_controller/dwb_controller.hpp"
-#include <string>
+
 #include <chrono>
 #include <memory>
+#include <string>
+
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "dwb_controller/progress_checker.hpp"
 
 using namespace std::chrono_literals;
-using std::shared_ptr;
 using nav2_tasks::TaskStatus;
-using dwb_core::DWBLocalPlanner;
-using dwb_core::CostmapROSPtr;
 
-#define NO_OP_DELETER [] (auto) {}
-
-namespace dwb_controller
+namespace nav2_dwb_controller
 {
 
-DwbController::DwbController(rclcpp::executor::Executor & executor)
-: Node("DwbController", nav2_util::get_node_options_default()),
-  tfBuffer_(get_clock()),
-  tfListener_(tfBuffer_)
+DwbController::DwbController()
+: LifecycleNode("dwb_controller")
 {
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
+  RCLCPP_INFO(get_logger(), "Creating");
 
-  cm_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap", tfBuffer_);
-  executor.add_node(cm_);
-  odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_pub_ =
-    this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-
-  auto nh = shared_from_this();
-  planner_.initialize(nh, shared_ptr<tf2_ros::Buffer>(&tfBuffer_, NO_OP_DELETER), cm_);
-
-  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(temp_node);
-  task_server_->setExecuteCallback(
-    std::bind(&DwbController::followPath, this, std::placeholders::_1));
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("dwb_controller_local_costmap");
+  costmap_thread_ = std::make_unique<std::thread>(
+    [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
 }
 
 DwbController::~DwbController()
 {
+  RCLCPP_INFO(get_logger(), "Destroying");
+  costmap_thread_->join();
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_configure(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Configuring");
+
+  costmap_ros_->on_configure(state);
+
+  auto node = shared_from_this();
+
+  planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
+    node, costmap_ros_->getTfBuffer(), costmap_ros_);
+  planner_->on_configure(state);
+
+  odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
+  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+
+  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(node);
+  task_server_->on_configure(state);
+  task_server_->setExecuteCallback(
+    std::bind(&DwbController::followPath, this, std::placeholders::_1));
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_activate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+
+  planner_->on_activate(state);
+  costmap_ros_->on_activate(state);
+  vel_pub_->on_activate();
+  task_server_->on_activate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+
+  planner_->on_deactivate(state);
+  costmap_ros_->on_deactivate(state);
+  vel_pub_->on_deactivate();
+  task_server_->on_deactivate(state);
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  // Cleanup the helper classes
+  planner_->on_cleanup(state);
+  costmap_ros_->on_cleanup(state);
+  task_server_->on_cleanup(state);
+
+  // Release any allocated resources
+  planner_.reset();
+  odom_sub_.reset();
+  vel_pub_.reset();
+  task_server_.reset();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_ERROR(get_logger(), "Handling error state");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+nav2_lifecycle::CallbackReturn
+DwbController::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 TaskStatus
@@ -64,7 +136,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
   try {
     auto path = nav_2d_utils::pathToPath2D(*command);
 
-    planner_.setPlan(path);
+    planner_->setPlan(path);
     RCLCPP_INFO(get_logger(), "Initialized");
 
     ProgressChecker progress_checker(std::shared_ptr<rclcpp::Node>(this, [](auto) {}));
@@ -80,7 +152,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
         }
         progress_checker.check(pose2d);
         auto velocity = odom_sub_->getTwist();
-        auto cmd_vel_2d = planner_.computeVelocityCommands(pose2d, velocity);
+        auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
 
@@ -101,7 +173,7 @@ DwbController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr command
 
           // and pass it to the local planner
           auto path = nav_2d_utils::pathToPath2D(*path_cmd);
-          planner_.setPlan(path);
+          planner_->setPlan(path);
         }
       }
       loop_rate.sleep();
@@ -137,13 +209,13 @@ void DwbController::publishZeroVelocity()
 bool DwbController::isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d)
 {
   nav_2d_msgs::msg::Twist2D velocity = odom_sub_->getTwist();
-  return planner_.isGoalReached(pose2d, velocity);
+  return planner_->isGoalReached(pose2d, velocity);
 }
 
 bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!cm_->getRobotPose(current_pose)) {
+  if (!costmap_ros_->getRobotPose(current_pose)) {
     RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
     return false;
   }
@@ -151,4 +223,4 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   return true;
 }
 
-}  // namespace dwb_controller
+}  // namespace nav2_dwb_controller
