@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MOTION_PRIMITIVES__STOP_HPP_
-#define NAV2_MOTION_PRIMITIVES__STOP_HPP_
+#ifndef NAV2_RECOVERIES__STOP_HPP_
+#define NAV2_RECOVERIES__STOP_HPP_
 
 #include <chrono>
 #include <memory>
 
-#include "nav2_motion_primitives/motion_primitive.hpp"
+#include "nav2_recoveries/recovery.hpp"
 #include "nav2_tasks/stop_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
-class Stop : public MotionPrimitive<nav2_tasks::StopCommand, nav2_tasks::StopResult>
+class Stop : public Recovery<nav2_tasks::StopCommand, nav2_tasks::StopResult>
 {
 public:
   explicit Stop(rclcpp::Node::SharedPtr & node);
@@ -39,6 +39,6 @@ public:
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
 };
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
 
-#endif  // NAV2_MOTION_PRIMITIVES__STOP_HPP_
+#endif  // NAV2_RECOVERIES__STOP_HPP_

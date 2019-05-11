@@ -23,31 +23,31 @@
 #include "std_msgs/msg/string.hpp"
 #include "nav2_tasks/task_client.hpp"
 #include "nav2_tasks/task_status.hpp"
-#include "nav2_motion_primitives/motion_primitive.hpp"
+#include "nav2_recoveries/recovery.hpp"
 
 using nav2_tasks::TaskStatus;
-using nav2_motion_primitives::MotionPrimitive;
+using nav2_recoveries::Recovery;
 using namespace std::chrono_literals;
 
-// Let's create a motion primitive for testing the base class
+// Let's create a recovery for testing the base class
 
-using DummyPrimitiveCommand = std_msgs::msg::String;
-using DummyPrimitiveResult = std_msgs::msg::String;
+using DummyRecoveryCommand = std_msgs::msg::String;
+using DummyRecoveryResult = std_msgs::msg::String;
 
-using DummyPrimitiveClient = nav2_tasks::TaskClient<DummyPrimitiveCommand, DummyPrimitiveResult>;
+using DummyRecoveryClient = nav2_tasks::TaskClient<DummyRecoveryCommand, DummyRecoveryResult>;
 
-class DummyPrimitive : public MotionPrimitive<DummyPrimitiveCommand, DummyPrimitiveResult>
+class DummyRecovery : public Recovery<DummyRecoveryCommand, DummyRecoveryResult>
 {
 public:
-  explicit DummyPrimitive(rclcpp::Node::SharedPtr & node)
-  : MotionPrimitive<DummyPrimitiveCommand, DummyPrimitiveResult>(node),
+  explicit DummyRecovery(rclcpp::Node::SharedPtr & node)
+  : Recovery<DummyRecoveryCommand, DummyRecoveryResult>(node),
     initialized_(false) {}
 
-  ~DummyPrimitive() {}
+  ~DummyRecovery() {}
 
-  TaskStatus onRun(const DummyPrimitiveCommand::SharedPtr command) override
+  TaskStatus onRun(const DummyRecoveryCommand::SharedPtr command) override
   {
-    // A normal primitive would catch the command and initialize
+    // A normal recovery would catch the command and initialize
     initialized_ = false;
     command_ = command;
     start_time_ = std::chrono::system_clock::now();
@@ -56,7 +56,7 @@ public:
     // The output is defined by the tester class on the command string.
 
     if (command_->data == "Testing failure on init") {
-      // A real primitive would return failed if initialization failed or command is invalid
+      // A real recovery would return failed if initialization failed or command is invalid
       return TaskStatus::FAILED;
       // return TaskStatus::SUCCEEDED;
     } else if (command_->data == "Testing success" || command->data == "Testing failure on run") {
@@ -67,9 +67,9 @@ public:
     }
   }
 
-  TaskStatus onCycleUpdate(DummyPrimitiveResult & /*result*/) override
+  TaskStatus onCycleUpdate(DummyRecoveryResult & /*result*/) override
   {
-    // A normal primitive would set the robot in motion in the first call
+    // A normal recovery would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
@@ -95,7 +95,7 @@ public:
 
 private:
   bool initialized_;
-  std::shared_ptr<DummyPrimitiveCommand> command_;
+  std::shared_ptr<DummyRecoveryCommand> command_;
   std::chrono::system_clock::time_point start_time_;
 };
 
@@ -106,34 +106,34 @@ namespace nav2_tasks
 {
 
 template<>
-inline const char * getTaskName<DummyPrimitiveCommand, DummyPrimitiveResult>()
+inline const char * getTaskName<DummyRecoveryCommand, DummyRecoveryResult>()
 {
-  return "TestMotionPrimitivesTask";
+  return "TestRecoveryTask";
 }
 
 }
 
 // Define a test class to hold the context for the tests
 
-class MotionPrimitivesTest : public ::testing::Test
+class RecoveryTest : public ::testing::Test
 {
 protected:
-  MotionPrimitivesTest()
+  RecoveryTest()
   : spinning_ok_(false) {}
 
-  ~MotionPrimitivesTest() {}
+  ~RecoveryTest() {}
 
   void SetUp() override
   {
-    node_ = std::make_shared<rclcpp::Node>("MotionPrimitivesTestNode");
+    node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
 
-    primitive_ = std::make_unique<DummyPrimitive>(node_);
+    recovery_ = std::make_unique<DummyRecovery>(node_);
 
-    client_ = std::make_unique<DummyPrimitiveClient>(node_);
+    client_ = std::make_unique<DummyRecoveryClient>(node_);
 
     // Launch a thread to spin the node
     spinning_ok_ = true;
-    spin_thread_ = new std::thread(&MotionPrimitivesTest::spin, this);
+    spin_thread_ = new std::thread(&RecoveryTest::spin, this);
   }
 
   void TearDown() override
@@ -155,16 +155,16 @@ protected:
 
   void sendStringCommand(const std::string & string_command)
   {
-    auto command = std::make_shared<DummyPrimitiveCommand>();
+    auto command = std::make_shared<DummyRecoveryCommand>();
     command->data = string_command;
     client_->sendCommand(command);
   }
 
-  TaskStatus waitForPrimitive()
+  TaskStatus waitForRecovery()
   {
-    auto result = std::make_shared<DummyPrimitiveResult>();
+    auto result = std::make_shared<DummyRecoveryResult>();
 
-    // Loop until primitive is completed
+    // Loop until recovery is completed
     while (true) {
       TaskStatus status = client_->waitForResult(result, 100ms);
 
@@ -175,46 +175,46 @@ protected:
   }
 
   std::shared_ptr<rclcpp::Node> node_;
-  std::unique_ptr<DummyPrimitive> primitive_;
-  std::unique_ptr<DummyPrimitiveClient> client_;
+  std::unique_ptr<DummyRecovery> recovery_;
+  std::unique_ptr<DummyRecoveryClient> client_;
   std::thread * spin_thread_;
   std::atomic<bool> spinning_ok_;
 };
 
 // Define the tests
 
-TEST_F(MotionPrimitivesTest, testingSuccess)
+TEST_F(RecoveryTest, testingSuccess)
 {
   sendStringCommand("Testing success");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::SUCCEEDED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::SUCCEEDED);
 }
 
-TEST_F(MotionPrimitivesTest, testingFailureOnRun)
+TEST_F(RecoveryTest, testingFailureOnRun)
 {
   sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
 }
 
-TEST_F(MotionPrimitivesTest, testingFailureOnInit)
+TEST_F(RecoveryTest, testingFailureOnInit)
 {
   sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
 }
 
-TEST_F(MotionPrimitivesTest, testingSequentialFailures)
+TEST_F(RecoveryTest, testingSequentialFailures)
 {
   sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
 
   sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
 }
 
-TEST_F(MotionPrimitivesTest, testCancel)
+TEST_F(RecoveryTest, testCancel)
 {
   sendStringCommand("Testing success");
   client_->cancel();
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::CANCELED);
+  EXPECT_EQ(waitForRecovery(), TaskStatus::CANCELED);
 }
 
 int main(int argc, char ** argv)

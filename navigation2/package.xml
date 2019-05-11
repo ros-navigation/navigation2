@@ -22,7 +22,7 @@
   <exec_depend>nav2_dynamic_params</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_mission_executor</exec_depend>
-  <exec_depend>nav2_motion_primitives</exec_depend>
+  <exec_depend>nav2_recoveries</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_robot</exec_depend>
   <exec_depend>nav2_simple_navigator</exec_depend>

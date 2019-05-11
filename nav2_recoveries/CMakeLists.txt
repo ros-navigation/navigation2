@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_motion_primitives)
+project(nav2_recoveries)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -20,7 +20,7 @@ include_directories(
   include
 )
 
-set(library_name motion_primitives)
+set(library_name recoveries)
 set(executable_name ${library_name}_node)
 
 set(dependencies

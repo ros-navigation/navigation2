@@ -16,16 +16,16 @@
 #include <ctime>
 #include <memory>
 
-#include "nav2_motion_primitives/back_up.hpp"
+#include "nav2_recoveries/back_up.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
+: Recovery<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
 {
   // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
@@ -93,4 +93,4 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   return TaskStatus::RUNNING;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries

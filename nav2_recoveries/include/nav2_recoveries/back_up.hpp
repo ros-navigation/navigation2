@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MOTION_PRIMITIVES__BACK_UP_HPP_
-#define NAV2_MOTION_PRIMITIVES__BACK_UP_HPP_
+#ifndef NAV2_RECOVERIES__BACK_UP_HPP_
+#define NAV2_RECOVERIES__BACK_UP_HPP_
 
 #include <chrono>
 #include <memory>
 
-#include "nav2_motion_primitives/motion_primitive.hpp"
+#include "nav2_recoveries/recovery.hpp"
 #include "nav2_tasks/back_up_task.hpp"
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
-class BackUp : public MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>
+class BackUp : public Recovery<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>
 {
 public:
   explicit BackUp(rclcpp::Node::SharedPtr & node);
@@ -45,6 +45,6 @@ protected:
   nav2_tasks::TaskStatus controlledBackup();
 };
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
 
-#endif  // NAV2_MOTION_PRIMITIVES__BACK_UP_HPP_
+#endif  // NAV2_RECOVERIES__BACK_UP_HPP_

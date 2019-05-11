@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_motion_primitives/spin.hpp"
+#include "nav2_recoveries/spin.hpp"
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
@@ -29,11 +29,11 @@
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 Spin::Spin(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
+: Recovery<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -67,7 +67,7 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
 nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
 {
   // Currently only an open-loop controller is implemented
-  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
+  // TODO(orduno) #423 Create a base class for open-loop controlled recoveries
   //              controlledSpin() has not been fully tested
   TaskStatus status = timedSpin();
 
@@ -146,4 +146,4 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   return TaskStatus::RUNNING;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries

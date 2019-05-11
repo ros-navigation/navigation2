@@ -14,9 +14,9 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_motion_primitives/spin.hpp"
-#include "nav2_motion_primitives/back_up.hpp"
-#include "nav2_motion_primitives/stop.hpp"
+#include "nav2_recoveries/spin.hpp"
+#include "nav2_recoveries/back_up.hpp"
+#include "nav2_recoveries/stop.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -25,18 +25,18 @@ int main(int argc, char ** argv)
 
   rclcpp::init(argc, argv);
 
-  auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");
+  auto recoveries_node = rclcpp::Node::make_shared("recoveries");
 
-  auto spin = std::make_shared<nav2_motion_primitives::Spin>(
-    motion_primitives_node);
+  auto spin = std::make_shared<nav2_recoveries::Spin>(
+    recoveries_node);
 
-  auto back_up = std::make_shared<nav2_motion_primitives::BackUp>(
-    motion_primitives_node);
+  auto back_up = std::make_shared<nav2_recoveries::BackUp>(
+    recoveries_node);
 
-  auto stop = std::make_shared<nav2_motion_primitives::Stop>(
-    motion_primitives_node);
+  auto stop = std::make_shared<nav2_recoveries::Stop>(
+    recoveries_node);
 
-  rclcpp::spin(motion_primitives_node);
+  rclcpp::spin(recoveries_node);
   rclcpp::shutdown();
 
   return 0;

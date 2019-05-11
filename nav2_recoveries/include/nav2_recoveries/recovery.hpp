@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
-#define NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
+#ifndef NAV2_RECOVERIES__RECOVERY_HPP_
+#define NAV2_RECOVERIES__RECOVERY_HPP_
 
 #include <memory>
 #include <string>
@@ -28,7 +28,7 @@
 #include "nav2_tasks/task_server.hpp"
 #include "nav2_robot/robot.hpp"
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 using namespace std::chrono_literals;  //NOLINT
@@ -37,10 +37,10 @@ template<class CommandMsg, class ResultMsg>
 const char * getTaskName();
 
 template<class CommandMsg, class ResultMsg>
-class MotionPrimitive
+class Recovery
 {
 public:
-  explicit MotionPrimitive(rclcpp::Node::SharedPtr & node)
+  explicit Recovery(rclcpp::Node::SharedPtr & node)
   : node_(node),
     task_server_(nullptr),
     taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
@@ -49,7 +49,7 @@ public:
 
     task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(node, false);
 
-    task_server_->setExecuteCallback(std::bind(&MotionPrimitive::run, this, std::placeholders::_1));
+    task_server_->setExecuteCallback(std::bind(&Recovery::run, this, std::placeholders::_1));
 
     // Start listening for incoming Spin task requests
     task_server_->start();
@@ -57,7 +57,7 @@ public:
     RCLCPP_INFO(node_->get_logger(), "Initialized the %s server", taskName_.c_str());
   }
 
-  virtual ~MotionPrimitive()
+  virtual ~Recovery()
   {
     task_server_->stop();
   }
@@ -166,6 +166,6 @@ protected:
   std::string taskName_;
 };
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
 
-#endif  // NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
+#endif  // NAV2_RECOVERIES__RECOVERY_HPP_

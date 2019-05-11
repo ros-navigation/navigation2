@@ -16,16 +16,16 @@
 #include <ctime>
 #include <memory>
 
-#include "nav2_motion_primitives/stop.hpp"
+#include "nav2_recoveries/stop.hpp"
 
 using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 Stop::Stop(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::StopCommand, nav2_tasks::StopResult>(node)
+: Recovery<nav2_tasks::StopCommand, nav2_tasks::StopResult>(node)
 {
   controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node_);
 }
@@ -70,4 +70,4 @@ nav2_tasks::TaskStatus Stop::onCycleUpdate(nav2_tasks::StopResult & /*result*/)
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries

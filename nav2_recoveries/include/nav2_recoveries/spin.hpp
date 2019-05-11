@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MOTION_PRIMITIVES__SPIN_HPP_
-#define NAV2_MOTION_PRIMITIVES__SPIN_HPP_
+#ifndef NAV2_RECOVERIES__SPIN_HPP_
+#define NAV2_RECOVERIES__SPIN_HPP_
 
 #include <chrono>
 #include <string>
 #include <memory>
 
-#include "nav2_motion_primitives/motion_primitive.hpp"
+#include "nav2_recoveries/recovery.hpp"
 #include "nav2_tasks/spin_task.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
-class Spin : public MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>
+class Spin : public Recovery<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>
 {
 public:
   explicit Spin(rclcpp::Node::SharedPtr & node);
@@ -51,6 +51,6 @@ protected:
   nav2_tasks::TaskStatus controlledSpin();
 };
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
 
-#endif  // NAV2_MOTION_PRIMITIVES__SPIN_HPP_
+#endif  // NAV2_RECOVERIES__SPIN_HPP_
