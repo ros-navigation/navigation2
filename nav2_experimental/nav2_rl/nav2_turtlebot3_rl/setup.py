@@ -39,8 +39,6 @@ setup(
         'console_scripts': [
             'random_crawl_train = random_crawl_train:main',
             'random_crawl = random_crawl:main',
-	    'turtlebot3_env = turtlebot3_env',
-
         ],
     },
 )
