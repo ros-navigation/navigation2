@@ -120,16 +120,6 @@ public:
      */
     bool hasSignFlipped();
 
-    /**
-     * @brief Disable this command trend object if we don't care about this axis
-     */
-    void disable() {enabled_ = false;}
-
-    /**
-     * @brief Re-enable this command trend object
-     */
-    void enable() {enabled_ = true;}
-
 private:
     // Simple Enum for Tracking
     // cppcheck-suppress syntaxError
@@ -137,7 +127,6 @@ private:
 
     Sign sign_;
     bool positive_only_, negative_only_;
-    bool enabled_;
   };
 
   /**
