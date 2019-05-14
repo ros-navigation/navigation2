@@ -59,6 +59,8 @@ Costmap2DPublisher::Costmap2DPublisher(
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
       custom_qos);
+  costmap_raw_pub_ = ros_node->create_publisher<nav2_msgs::msg::Costmap>(topic_name + "_raw",
+    custom_qos);      
   costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
 
@@ -124,8 +126,39 @@ void Costmap2DPublisher::prepareGrid()
   }
 }
 
+void Costmap2DPublisher::prepareCostmap()
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+  double resolution = costmap_->getResolution();
+
+  costmap_raw_.header.frame_id = global_frame_;
+  costmap_raw_.header.stamp = node_->now();
+
+  costmap_raw_.metadata.layer = "master";
+  costmap_raw_.metadata.resolution = resolution;
+
+  costmap_raw_.metadata.size_x = costmap_->getSizeInCellsX();
+  costmap_raw_.metadata.size_y = costmap_->getSizeInCellsY();
+
+  double wx, wy;
+  costmap_->mapToWorld(0, 0, wx, wy);
+  costmap_raw_.metadata.origin.position.x = wx - resolution / 2;
+  costmap_raw_.metadata.origin.position.y = wy - resolution / 2;
+  costmap_raw_.metadata.origin.position.z = 0.0;
+  costmap_raw_.metadata.origin.orientation.w = 1.0;
+
+  costmap_raw_.data.resize(costmap_raw_.metadata.size_x * costmap_raw_.metadata.size_y);
+
+  unsigned char * data = costmap_->getCharMap();
+  for (unsigned int i = 0; i < costmap_raw_.data.size(); i++) {
+    costmap_raw_.data[i] = data[i];
+  }
+}
+
 void Costmap2DPublisher::publishCostmap()
 {
+  prepareCostmap();
+  costmap_raw_pub_->publish(costmap_raw_);
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||
