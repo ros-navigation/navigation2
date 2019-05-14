@@ -130,7 +130,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
 
-  rclcpp::Rate loop_rate(100ms);	// period vs. hz
+  rclcpp::Rate loop_rate(100ms);    // period vs. hz
 
   auto goal = current_goal_handle->get_goal();
 
@@ -169,6 +169,10 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
           RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
           goal = current_goal_handle->get_goal();
+
+          // If so, pass the new path to the local planner
+          auto path = nav_2d_utils::pathToPath2D(goal->path);
+          planner_->setPlan(path);
         }
       }
 

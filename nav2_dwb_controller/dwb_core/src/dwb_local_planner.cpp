@@ -66,8 +66,10 @@ DWBLocalPlanner::DWBLocalPlanner(
   node_->declare_parameter("prune_plan", rclcpp::ParameterValue(true));
   node_->declare_parameter("prune_distance", rclcpp::ParameterValue(1.0));
   node_->declare_parameter("debug_trajectory_details", rclcpp::ParameterValue(false));
-  node_->declare_parameter("trajectory_generator_name", rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
-  node_->declare_parameter("goal_checker_name", rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
+  node_->declare_parameter("trajectory_generator_name",
+    rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
+  node_->declare_parameter("goal_checker_name",
+    rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
   node_->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
 }
 
@@ -191,7 +193,7 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
   critic_names.push_back("GoalDist");           // prefers trajectories that go towards
                                                 //   (local) goal, based on wave propagation
   node_->set_parameters({rclcpp::Parameter("critics", critic_names)});
-  /* *INDENT-OFF* */
+
   node_->declare_parameter("path_distance_bias");
   node_->declare_parameter("goal_distance_bias");
   node_->declare_parameter("occdist_scale");
@@ -205,6 +207,7 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
   node_->declare_parameter("ObstacleFootprint.max_scaling_factor");
   node_->declare_parameter("ObstacleFootprint.scaling_speed");
 
+  /* *INDENT-OFF* */
   nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathAlign.scale", 32.0, false);
   nav_2d_utils::moveParameter(node_, "goal_distance_bias", "GoalAlign.scale", 24.0, false);
   nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathDist.scale", 32.0);
