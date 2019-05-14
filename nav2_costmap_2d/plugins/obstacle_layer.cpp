@@ -105,8 +105,6 @@ void ObstacleLayer::onInitialize()
   // now we need to split the topics based on whitespace which we can use a stringstream for
   std::stringstream ss(topics_string);
 
-  std::cout << ss.str() << std::endl;
-
   std::string source;
   while (ss >> source) {
     // get the parameters for the specific topic
