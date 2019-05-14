@@ -334,7 +334,11 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  if (!active_) {return;}
+  if (!active_) {
+    RCLCPP_WARN(get_logger(), "Received an set initial pose request, "
+      "but AMCL is not yet in the active state");
+    return;
+  }
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
