@@ -31,12 +31,17 @@ using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
 using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
-ClearCostmapService::ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap)
+ClearCostmapService::ClearCostmapService(
+  nav2_lifecycle::LifecycleNode::SharedPtr node,
+  Costmap2DROS & costmap)
 : node_(node), costmap_(costmap)
 {
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  node_->get_parameter_or_set("clearable_layers", clearable_layers_, {"obstacle_layer"});
+  std::vector<std::string> clearable_layers{"obstacle_layer"};
+  node_->declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
+
+  node_->get_parameter("clearable_layers", clearable_layers_);
 
   clear_except_service_ = node_->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),

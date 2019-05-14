@@ -2,26 +2,26 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_costmap_2d)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_common REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rmw REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(map_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_sensor_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
-find_package(pluginlib REQUIRED)
+find_package(map_msgs REQUIRED)
 find_package(message_filters REQUIRED)
-find_package(nav2_dynamic_params)
+find_package(nav2_common REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
-find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rmw REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -53,23 +53,23 @@ add_library(nav2_costmap_2d_core SHARED
 )
 
 set(dependencies
-  rclcpp
   geometry_msgs
-  nav_msgs
-  std_msgs
-  map_msgs
-  sensor_msgs
-  tf2_ros
-  tf2
-  pluginlib
-  tf2_geometry_msgs
-  tf2_sensor_msgs
-  message_filters
-  nav2_dynamic_params
   laser_geometry
+  map_msgs
+  message_filters
+  nav2_lifecycle
+  nav2_msgs
   nav2_util
   nav2_voxel_grid
-  nav2_msgs
+  nav_msgs
+  pluginlib
+  rclcpp
+  sensor_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+  tf2_sensor_msgs
   visualization_msgs
 )
 

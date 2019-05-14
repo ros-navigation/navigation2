@@ -47,7 +47,7 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+  nav2_lifecycle::LifecycleNode::SharedPtr ros_node, Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
@@ -129,11 +129,6 @@ void Costmap2DPublisher::prepareGrid()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if (node_->count_subscribers(topic_name_) == 0) {
-    // No subscribers, so why do any work?
-    return;
-  }
-
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||

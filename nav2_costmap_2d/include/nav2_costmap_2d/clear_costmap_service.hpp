@@ -24,6 +24,7 @@
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -33,7 +34,7 @@ class Costmap2DROS;
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(rclcpp::Node::SharedPtr & node, Costmap2DROS & costmap);
+  ClearCostmapService(nav2_lifecycle::LifecycleNode::SharedPtr node, Costmap2DROS & costmap);
 
   ClearCostmapService() = delete;
 
@@ -48,7 +49,7 @@ public:
 
 private:
   // The ROS node to use for getting parameters, creating the service and logging
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
 
   // The costmap to clear
   Costmap2DROS & costmap_;
