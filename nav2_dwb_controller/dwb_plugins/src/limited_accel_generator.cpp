@@ -46,6 +46,9 @@ namespace dwb_plugins
 void LimitedAccelGenerator::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   StandardTrajectoryGenerator::initialize(nh);
+
+  nh->declare_parameter("sim_period");
+
   if (nh->get_parameter("sim_period", acceleration_time_)) {
   } else {
     double controller_frequency = nav_2d_utils::searchAndGetParam(
@@ -63,8 +66,10 @@ void LimitedAccelGenerator::initialize(const nav2_lifecycle::LifecycleNode::Shar
 
 void LimitedAccelGenerator::checkUseDwaParam(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
-  bool use_dwa;
-  nh->get_parameter_or("use_dwa", use_dwa, true);
+  bool use_dwa = true;
+
+  nh->get_parameter("use_dwa", use_dwa);
+
   if (!use_dwa) {
     throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
             "Please use StandardTrajectoryGenerator for that functionality.");

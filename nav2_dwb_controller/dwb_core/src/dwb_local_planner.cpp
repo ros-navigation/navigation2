@@ -62,6 +62,13 @@ DWBLocalPlanner::DWBLocalPlanner(
   goal_checker_loader_("dwb_core", "dwb_core::GoalChecker"),
   critic_loader_("dwb_core", "dwb_core::TrajectoryCritic")
 {
+  node_->declare_parameter("critics");
+  node_->declare_parameter("prune_plan", rclcpp::ParameterValue(true));
+  node_->declare_parameter("prune_distance", rclcpp::ParameterValue(1.0));
+  node_->declare_parameter("debug_trajectory_details", rclcpp::ParameterValue(false));
+  node_->declare_parameter("trajectory_generator_name", rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
+  node_->declare_parameter("goal_checker_name", rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
+  node_->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
 }
 
 nav2_lifecycle::CallbackReturn
@@ -70,13 +77,11 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   std::string traj_generator_name;
   std::string goal_checker_name;
 
-  node_->get_parameter_or("prune_plan", prune_plan_, true);
-  node_->get_parameter_or("prune_distance", prune_distance_, 1.0);
-  node_->get_parameter_or("debug_trajectory_details", debug_trajectory_details_, false);
-  node_->get_parameter_or("trajectory_generator_name", traj_generator_name,
-    std::string("dwb_plugins::StandardTrajectoryGenerator"));
-  node_->get_parameter_or("goal_checker_name", goal_checker_name,
-    std::string("dwb_plugins::SimpleGoalChecker"));
+  node_->get_parameter("prune_plan", prune_plan_);
+  node_->get_parameter("prune_distance", prune_distance_);
+  node_->get_parameter("debug_trajectory_details", debug_trajectory_details_);
+  node_->get_parameter("trajectory_generator_name", traj_generator_name);
+  node_->get_parameter("goal_checker_name", goal_checker_name);
 
   pub_ = std::make_unique<DWBPublisher>(node_);
   pub_->on_configure(state);
@@ -154,7 +159,10 @@ DWBLocalPlanner::loadCritics()
   for (unsigned int i = 0; i < critic_names.size(); i++) {
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
-    node_->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
+
+    node_->declare_parameter(plugin_name + "/class", rclcpp::ParameterValue(plugin_name));
+    node_->get_parameter(plugin_name + "/class", plugin_class);
+
     plugin_class = resolveCriticClassName(plugin_class);
 
     TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
@@ -184,6 +192,19 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
                                                 //   (local) goal, based on wave propagation
   node_->set_parameters({rclcpp::Parameter("critics", critic_names)});
   /* *INDENT-OFF* */
+  node_->declare_parameter("path_distance_bias");
+  node_->declare_parameter("goal_distance_bias");
+  node_->declare_parameter("occdist_scale");
+  node_->declare_parameter("max_scaling_factor");
+  node_->declare_parameter("scaling_speed");
+  node_->declare_parameter("PathAlign.scale");
+  node_->declare_parameter("GoalAlign.scale");
+  node_->declare_parameter("PathDist.scale");
+  node_->declare_parameter("GoalDist.scale");
+  node_->declare_parameter("ObstacleFootprint.scale");
+  node_->declare_parameter("ObstacleFootprint.max_scaling_factor");
+  node_->declare_parameter("ObstacleFootprint.scaling_speed");
+
   nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathAlign.scale", 32.0, false);
   nav_2d_utils::moveParameter(node_, "goal_distance_bias", "GoalAlign.scale", 24.0, false);
   nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathDist.scale", 32.0);

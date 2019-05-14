@@ -54,7 +54,10 @@ void StandardTrajectoryGenerator::initialize(const nav2_lifecycle::LifecycleNode
   kinematics_->initialize(nh);
   initializeIterator(nh);
 
-  nh->get_parameter_or("sim_time", sim_time_, 1.7);
+  nh->declare_parameter("sim_time", rclcpp::ParameterValue(1.7));
+  nh->declare_parameter("discretize_by_time", rclcpp::ParameterValue(false));
+
+  nh->get_parameter("sim_time", sim_time_);
   checkUseDwaParam(nh);
 
   /*
@@ -65,7 +68,7 @@ void StandardTrajectoryGenerator::initialize(const nav2_lifecycle::LifecycleNode
    *  two successive points on the trajectory, and angular_sim_granularity is the maximum amount of
    *  angular distance between two successive points.
    */
-  nh->get_parameter_or("discretize_by_time", discretize_by_time_, false);
+  nh->get_parameter("discretize_by_time", discretize_by_time_);
   if (discretize_by_time_) {
     time_granularity_ = loadParameterWithDeprecation(
       nh, "time_granularity", "sim_granularity", 0.5);
@@ -87,8 +90,8 @@ void StandardTrajectoryGenerator::initializeIterator(
 void StandardTrajectoryGenerator::checkUseDwaParam(
   const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
-  bool use_dwa;
-  nh->get_parameter_or("use_dwa", use_dwa, false);
+  bool use_dwa = false;
+  nh->get_parameter("use_dwa", use_dwa);
   if (use_dwa) {
     throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
             "Please use LimitedAccelGenerator for that functionality.");
