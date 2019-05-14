@@ -58,6 +58,10 @@ Costmap2DROS::Costmap2DROS(const std::string & name)
   RCLCPP_INFO(get_logger(), "Creating");
   client_node_ = std::make_shared<rclcpp::Node>(name + "_client");
 
+  std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
+  std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer",
+    "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
+
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
   declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
@@ -259,9 +263,6 @@ void
 Costmap2DROS::getParameters()
 {
   RCLCPP_DEBUG(get_logger(), " getParameters");
-
-  std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
-  std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
 
   // Get all of the required parameters
   get_parameter("always_send_full_costmap", always_send_full_costmap_);
