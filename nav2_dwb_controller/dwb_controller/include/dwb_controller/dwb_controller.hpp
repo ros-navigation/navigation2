@@ -58,7 +58,6 @@ protected:
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
-  void cbLooptimeOverrun(int iter_num, rclcpp::Duration jitter);
 
   // The DWBController contains a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

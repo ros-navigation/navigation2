@@ -219,9 +219,4 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   return true;
 }
 
-void DwbController::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
-{
-  printf("cbLooptimeOverrun Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
-}
-
 }  // namespace nav2_dwb_controller
