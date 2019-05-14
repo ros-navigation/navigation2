@@ -81,18 +81,15 @@ void VoxelLayer::onInitialize()
   node_->get_parameter(name_ + "." + "combination_method", combination_method_);
   node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
 
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   if (publish_voxel_) {
     voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", custom_qos_profile);
+      "voxel_grid", custom_qos);
   }
 
   clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
-    "clearing_endpoints", custom_qos_profile);
+    "clearing_endpoints", custom_qos);
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();

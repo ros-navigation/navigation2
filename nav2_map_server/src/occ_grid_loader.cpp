@@ -167,12 +167,8 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
   occ_service_ = node_->create_service<nav_msgs::srv::GetMap>(service_name_, handle_occ_callback);
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    topic_name_, custom_qos_profile);
+    topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
