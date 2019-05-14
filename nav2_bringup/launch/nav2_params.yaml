@@ -92,6 +92,13 @@ local_costmap:
   local_costmap:
     ros__parameters:
       use_sim_time: True
+      global_frame: odom
+      plugin_names: ["obstacle_layer", "inflation_layer"]
+      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      rolling_window: true
+      width: 3
+      height: 3
+      resolution: 0.05
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
