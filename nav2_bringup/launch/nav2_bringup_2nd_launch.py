@@ -12,7 +12,7 @@ def generate_launch_description():
     bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
                                     'behavior_trees',
-                                    'navigate_w_recovery_retry.xml') # TODO(mkhansen): change to an input parameter
+                                    'parallel.xml') # TODO(mkhansen): change to an input parameter
 
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(
