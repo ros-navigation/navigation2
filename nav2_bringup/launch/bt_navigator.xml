@@ -1,0 +1,10 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <RateController hz="1.0">
+        <ComputePathToPose goal="${goal}"/>
+      </RateController>
+      <FollowPath path="${path}"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
