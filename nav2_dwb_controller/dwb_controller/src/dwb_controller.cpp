@@ -20,7 +20,6 @@
 
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav2_util/rate_constraint.hpp"
 
 using namespace std::chrono_literals;
 
@@ -59,7 +58,6 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-  loop_time_pub_ = create_publisher<nav2_msgs::msg::LoopTime>("/loop_time", rclcpp::SystemDefaultsQoS());
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -76,7 +74,6 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
-  loop_time_pub_->on_activate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -89,7 +86,6 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
   vel_pub_->on_deactivate();
-  loop_time_pub_->on_deactivate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -107,7 +103,6 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   planner_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
-  loop_time_pub_.reset();
   action_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -137,10 +132,6 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   rclcpp::Rate loop_rate(100ms);	// period vs. hz
 
-  nav2_util::RateConstraint cmd_vel_monitor("dwb_output_cmd_vel_rate", 
-    10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
-    std::placeholders::_1, std::placeholders::_2));
-
   auto goal = current_goal_handle->get_goal();
 
   try {
@@ -165,7 +156,6 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
         RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
-        cmd_vel_monitor.calc_looptime();
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");

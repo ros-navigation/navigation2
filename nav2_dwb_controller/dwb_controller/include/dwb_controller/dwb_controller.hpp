@@ -25,7 +25,6 @@
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
-#include "nav2_msgs/msg/loop_time.hpp"
 #include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_dwb_controller
@@ -68,7 +67,6 @@ protected:
   // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::LoopTime>::SharedPtr loop_time_pub_;
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
