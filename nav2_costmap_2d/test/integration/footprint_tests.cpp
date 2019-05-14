@@ -85,7 +85,7 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-    auto node = rclcpp::Node::make_shared("footprint_tests");
+    auto node = nav2_lifecycle::LifecycleNode::make_shared("footprint_tests");
 
     tf_ = new tf2_ros::Buffer(node->get_clock());
     tfl_ = new tf2_ros::TransformListener(*tf_);
@@ -114,7 +114,7 @@ protected:
 // Start with empty test before updating test footprints
 TEST_F(TestNode, footprint_empty)
 {
-  //FootprintTestNode cm("costmap_footprint_empty", *tf_);
+  // FootprintTestNode cm("costmap_footprint_empty", *tf_);
   std::vector<geometry_msgs::msg::Point> footprint = costmap_->getRobotFootprint();
   // With no specification of footprint or radius,
   // defaults to 0.1 meter radius plus 0.01 meter padding.

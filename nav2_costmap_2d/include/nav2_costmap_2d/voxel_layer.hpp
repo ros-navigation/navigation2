@@ -42,7 +42,6 @@
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
 #include <nav2_costmap_2d/observation_buffer.hpp>
-#include <nav2_dynamic_params/dynamic_params_client.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav2_msgs/msg/voxel_grid.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -83,8 +82,6 @@ public:
   virtual void reset();
 
 protected:
-  virtual void setupDynamicReconfigure();
-
   virtual void resetMaps();
 
 private:
@@ -95,8 +92,6 @@ private:
     double * min_x, double * min_y,
     double * max_x,
     double * max_y);
-
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
 
   bool publish_voxel_;
   rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
