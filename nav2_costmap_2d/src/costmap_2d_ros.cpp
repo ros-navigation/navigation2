@@ -57,6 +57,31 @@ Costmap2DROS::Costmap2DROS(const std::string & name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
   client_node_ = std::make_shared<rclcpp::Node>(name + "_client");
+
+  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
+  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
+  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
+  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("height", rclcpp::ParameterValue(10));
+  declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+  declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
+  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
+  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+  declare_parameter("plugin_names", rclcpp::ParameterValue(plugin_names));
+  declare_parameter("plugin_types", rclcpp::ParameterValue(plugin_types));
+  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
+  declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
+  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
+  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+  declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
+  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  declare_parameter("width", rclcpp::ParameterValue(10));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -237,31 +262,6 @@ Costmap2DROS::getParameters()
 
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
   std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
-
-  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
-  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
-  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
-  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("height", rclcpp::ParameterValue(10));
-  declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
-  declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
-  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
-  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
-  declare_parameter("plugin_names", rclcpp::ParameterValue(plugin_names));
-  declare_parameter("plugin_types", rclcpp::ParameterValue(plugin_types));
-  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
-  declare_parameter("resolution", rclcpp::ParameterValue(0.1));
-  declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
-  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
-  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
-  declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
-  declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
-  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
-  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  declare_parameter("width", rclcpp::ParameterValue(10));
 
   // Get all of the required parameters
   get_parameter("always_send_full_costmap", always_send_full_costmap_);
