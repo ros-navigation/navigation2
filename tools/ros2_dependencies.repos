@@ -19,3 +19,7 @@ repositories:
     type: git
     url: https://github.com/ros-perception/vision_opencv.git
     version: ros2
+  rclcpp:
+    type: git
+    url: https://github.com/mjeronimo/rclcpp.git
+    version: add-missing-parameter-templates
