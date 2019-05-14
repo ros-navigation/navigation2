@@ -135,7 +135,7 @@ protected:
     // Helper to get odometric pose from transform system
     geometry_msgs::msg::PoseStamped & pose,
     double & x, double & y, double & yaw,
-    const rclcpp::Time & t, const std::string & f);
+    const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
 
   // Particle filter
@@ -176,8 +176,6 @@ protected:
   double laser_likelihood_max_dist_;
   double laser_max_range_;
   double laser_min_range_;
-  // TODO(mjeronimo): need both?
-  std::string laser_model_type_;
   std::string sensor_model_type_;
   int max_beams_;
   int max_particles_;
@@ -189,7 +187,7 @@ protected:
   double alpha_slow_;
   int resample_interval_;
   std::string robot_model_type_;
-  tf2::Duration save_pose_period;
+  tf2::Duration save_pose_period_;
   double sigma_hit_;
   bool tf_broadcast_;
   tf2::Duration transform_tolerance_;
