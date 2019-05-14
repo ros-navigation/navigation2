@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_controller/nav2_controller_client.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 
 using namespace std::chrono_literals;
 
@@ -30,7 +30,7 @@ struct xytheta
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  nav2_controller::Nav2ControllerClient client;
+  nav2_lifecycle_manager::LifecycleManagerClient client;
 
   // Create a set of target poses across the map
   std::vector<xytheta> target_poses;
