@@ -34,6 +34,7 @@
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_lifecycle/lifecycle_node.hpp"
 
 static inline void mapToWorld3D(
   const unsigned int mx,
@@ -65,9 +66,12 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
 V_Cell g_marked;
 V_Cell g_unknown;
-rclcpp::Node::SharedPtr g_node;
+
+nav2_lifecycle::LifecycleNode::SharedPtr g_node;
+
 rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_marked;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_unknown;
+
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
@@ -195,7 +199,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  g_node = rclcpp::Node::make_shared("costmap_2d_cloud");
+  g_node = nav2_lifecycle::LifecycleNode::make_shared("costmap_2d_cloud");
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
@@ -206,5 +210,8 @@ int main(int argc, char ** argv)
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", voxelCallback);
 
-  rclcpp::spin(g_node);
+  rclcpp::spin(g_node->get_node_base_interface());
+  rclcpp::shutdown();
+
+  return 0;
 }

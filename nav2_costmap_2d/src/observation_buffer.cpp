@@ -47,7 +47,7 @@
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  rclcpp::Node::SharedPtr nh, std::string topic_name, double observation_keep_time,
+  nav2_lifecycle::LifecycleNode::SharedPtr nh, std::string topic_name, double observation_keep_time,
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
