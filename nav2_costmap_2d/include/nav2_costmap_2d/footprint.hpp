@@ -129,20 +129,6 @@ bool makeFootprintFromString(
   const std::string & footprint_string,
   std::vector<geometry_msgs::msg::Point> & footprint);
 
-/**
- * @brief Read the ros-params "footprint" and/or "robot_radius" from
- * the given NodeHandle using searchParam() to go up the tree.
- */
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(
-  nav2_lifecycle::LifecycleNode::SharedPtr node);
-
-/** @brief Write the current unpadded_footprint_ to the "footprint"
- * parameter of the given NodeHandle so that dynamic_reconfigure
- * will see the new value. */
-void writeFootprintToParam(
-  nav2_lifecycle::LifecycleNode::SharedPtr node,
-  const std::vector<geometry_msgs::msg::Point> & footprint);
-
 }  // end namespace nav2_costmap_2d
 
 #endif  // NAV2_COSTMAP_2D__FOOTPRINT_HPP_
