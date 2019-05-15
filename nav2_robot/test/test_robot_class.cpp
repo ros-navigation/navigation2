@@ -127,15 +127,15 @@ public:
     initTestTwist();
 
     // Creating fake publishers
-    rmw_qos_profile_t pose_qos_profile = rmw_qos_profile_default;
-    pose_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-
     pose_pub_ = client_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "amcl_pose", pose_qos_profile);
-    odom_pub_ = client_->create_publisher<nav_msgs::msg::Odometry>("odom");
+      "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local());
+
+    odom_pub_ = client_->create_publisher<nav_msgs::msg::Odometry>(
+      "odom", rclcpp::SystemDefaultsQoS());
 
     // Subscribing to cmdVelocity topic to make sure Robot class is publishing velocity
     vel_sub_ = client_->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
+        rclcpp::SystemDefaultsQoS(),
         std::bind(&TestRobotClass::velocityReceived, this, std::placeholders::_1));
 
     velocityCmdReceived_ = false;
