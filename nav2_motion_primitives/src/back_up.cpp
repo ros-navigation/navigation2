@@ -43,7 +43,7 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-  command_x_ = command->x;
+  command_x_2_ = command->x * command->x;
   if (!robot_->getOdometry(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
     return nav2_tasks::TaskStatus::FAILED;
@@ -55,14 +55,10 @@ nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr 
 nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
 {
   TaskStatus status = controlledBackup();
-
-  // For now sending an empty task result
   nav2_tasks::BackUpResult empty_result;
   result = empty_result;
-
   return status;
 }
-
 
 nav2_tasks::TaskStatus BackUp::controlledBackup()
 {
@@ -79,15 +75,15 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
 
   double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
   double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
-  double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
+  double distance_2 = diff_x * diff_x + diff_y * diff_y;
 
-  if (distance >= abs(command_x_)) {
+  if (distance_2 >= abs(command_x_2_)) {
     cmd_vel.linear.x = 0;
     robot_->sendVelocity(cmd_vel);
     return TaskStatus::SUCCEEDED;
   }
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
-  command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+  command_x_2_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
   robot_->sendVelocity(cmd_vel);
 
   return TaskStatus::RUNNING;

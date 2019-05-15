@@ -36,19 +36,14 @@ public:
 
   nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::SpinResult & result) override;
 
-protected:
+private:
+  nav2_tasks::TaskStatus rotateSome();
+
   double min_rotational_vel_;
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double goal_tolerance_angle_;
-
   double start_yaw_;
-
-  std::chrono::system_clock::time_point start_time_;
-
-  nav2_tasks::TaskStatus timedSpin();
-
-  nav2_tasks::TaskStatus controlledSpin();
 };
 
 }  // namespace nav2_motion_primitives

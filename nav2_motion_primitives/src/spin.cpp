@@ -49,65 +49,21 @@ Spin::~Spin()
 
 nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
 {
-  double yaw, pitch, roll;
-  tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
-
-  if (roll != 0.0 || pitch != 0.0) {
-    RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
-      "will only spin in Z.");
-  }
-
-  RCLCPP_INFO(node_->get_logger(), "Currently only supported spinning by a fixed amount");
-
-  start_time_ = std::chrono::system_clock::now();
-
+  double pitch, roll;
+  tf2::getEulerYPR(command->quaternion, start_yaw_, pitch, roll);
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
 nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
 {
-  // Currently only an open-loop controller is implemented
-  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
-  //              controlledSpin() has not been fully tested
-  TaskStatus status = timedSpin();
-
-  // For now sending an empty task result
+  TaskStatus status = rotateSome();
   nav2_tasks::SpinResult empty_result;
   result = empty_result;
-
   return status;
 }
 
-nav2_tasks::TaskStatus Spin::timedSpin()
+nav2_tasks::TaskStatus Spin::rotateSome()
 {
-  // Output control command
-  geometry_msgs::msg::Twist cmd_vel;
-
-  // TODO(orduno) #423 fixed speed
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.5;
-  robot_->sendVelocity(cmd_vel);
-
-  // TODO(orduno) #423 fixed time
-  auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 6s) {  // almost 180 degrees
-    // Stop the robot
-    cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);
-
-    return TaskStatus::SUCCEEDED;
-  }
-
-  return TaskStatus::RUNNING;
-}
-
-nav2_tasks::TaskStatus Spin::controlledSpin()
-{
-  // TODO(orduno) #423 Test and tune controller
-  //              check it doesn't abruptly start and stop
-  //              or cause massive wheel slippage when accelerating
-
   // Get current robot orientation
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
   if (!robot_->getCurrentPose(current_pose)) {
@@ -115,20 +71,15 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
     return TaskStatus::FAILED;
   }
 
-  double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
+  // Get distance left
+  const double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
+  const double current_angle_dist = current_yaw - start_yaw_;
+  const double dist_left = M_PI - current_angle_dist;
 
-  double current_angle = current_yaw - start_yaw_;
+  // TODO(stevemacenski) #553 check for collisions
 
-  double dist_left = M_PI - current_angle;
-
-  // TODO(orduno) #379 forward simulation to check if future position is feasible
-
-  // compute the velocity that will let us stop by the time we reach the goal
-  // v_f^2 == v_i^2 + 2 * a * d
-  // solving for v_i if v_f = 0
+  // Compute the velocity, clip, and send
   double vel = sqrt(2 * rotational_acc_lim_ * dist_left);
-
-  // limit velocity
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
   geometry_msgs::msg::Twist cmd_vel;
@@ -138,8 +89,8 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 
   robot_->sendVelocity(cmd_vel);
 
-  // check if we are done
-  if (dist_left >= (0.0 - goal_tolerance_angle_)) {
+  // Termination conditions
+  if (fabs(dist_left) < goal_tolerance_angle_) {
     return TaskStatus::SUCCEEDED;
   }
 
