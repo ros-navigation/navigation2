@@ -16,7 +16,8 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_controller/nav2_controller_client.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
+#include "rcutils/cmdline_parser.h"
 
 using namespace std::chrono_literals;
 
@@ -30,7 +31,7 @@ struct xytheta
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  nav2_controller::Nav2ControllerClient client;
+  nav2_lifecycle_manager::LifecycleManagerClient client;
 
   // Create a set of target poses across the map
   std::vector<xytheta> target_poses;
@@ -54,40 +55,49 @@ int main(int argc, char ** argv)
   // Wait for a couple secs to let the rviz display update
   std::this_thread::sleep_for(2s);
 
-#ifdef ITERATIVE_NAVIGATION
-  // Navigate through all of the poses (skip the first, which is the initial pose)
-  for (std::vector<xytheta>::size_type i = 1; i < target_poses.size(); i++) {
-    auto pose = target_poses[i];
-    if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
-      printf("Navigation FAILED!\n");
-      break;
-    }
+  // Parse the command line options
+  char * nav_type_arg = rcutils_cli_get_option(argv, argv + argc, "-t");
+  if (nav_type_arg != nullptr) {
+    std::string nav_type(nav_type_arg);
+
+    if (nav_type == "iterative") {
+      // In the iterative case, navigate through all of the poses (but skip the
+      // first one, which is the initial pose)
+      for (std::vector<xytheta>::size_type i = 1; i < target_poses.size(); i++) {
+        auto pose = target_poses[i];
+        if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
+          printf("Navigation FAILED!\n");
+          break;
+        }
+      }
+    } else if (nav_type == "random") {
+      // In the random case, navigate to randomly-selected poses from the target_poses
+      // collection
+
+      // Get set up to generate random indices
+      std::random_device r;
+      std::default_random_engine e1(r());
+      std::uniform_int_distribution<int> uniform_dist(0, target_poses.size() - 1);
+
+      for (int i = 0, cur_index = 0; i < 10; i++) {
+        // Get a random index that is not the current one (so we can navigate
+        // to a pose different than our current location)
+        int next_index;
+        do {
+          next_index = uniform_dist(r);
+        } while (next_index == cur_index);
+
+        // Grab the pose for that index and start the navigation
+        auto pose = target_poses[next_index];
+        if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
+          printf("Navigation FAILED!\n");
+          break;
+        }
+      }
+    } else {
+      printf("Unrecognized test type: %s, running simple up/down test\n", nav_type.c_str());
+	}
   }
-#endif
-
-#ifdef RANDOM_NAVIGATION
-  // Get set up to generate random indices
-  std::random_device r;
-  std::default_random_engine e1(r());
-  std::uniform_int_distribution<int> uniform_dist(0, target_poses.size() - 1);
-
-  // Navigate to randomly-selected poses from the target_poses collection
-  for (int i = 0, cur_index = 0; i < 10; i++) {
-    // Get a random index that is not the current one (so we can navigate
-    // to a pose different than our current location)
-    int next_index;
-    do {
-      next_index = uniform_dist(r);
-    } while (next_index == cur_index);
-
-    // Grab the pose for that index and start the navigation
-    auto pose = target_poses[next_index];
-    if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
-      printf("Navigation FAILED!\n");
-      break;
-    }
-  }
-#endif
 
   // Shut down the nav2 system, bringing it to the FINALIZED state
   client.shutdown();
