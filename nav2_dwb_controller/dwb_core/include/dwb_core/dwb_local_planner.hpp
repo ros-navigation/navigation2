@@ -174,6 +174,7 @@ protected:
   bool prune_plan_;
   double prune_distance_;
   bool debug_trajectory_details_;
+  rclcpp::Duration transform_tolerance_{0, 0};
 
   /**
    * @brief try to resolve a possibly shortened critic name with the default namespaces and the suffix "Critic"
