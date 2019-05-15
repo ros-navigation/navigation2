@@ -68,7 +68,8 @@ public:
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
-  // and provides a status.
+  // and provides a status. The primitive will finish once SUCCEEDED is returned
+  // It's up to the derived class to define the final commanded velocity.
   virtual Status onCycleUpdate() = 0;
 
 protected:
@@ -79,7 +80,7 @@ protected:
 
   void configure()
   {
-    RCLCPP_INFO(node_->get_logger(), "Configuring ", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
 
     robot_ = std::make_unique<nav2_robot::Robot>(
       node_->get_node_base_interface(),
@@ -99,7 +100,7 @@ protected:
 
   void execute(const typename std::shared_ptr<GoalHandle> goal_handle)
   {
-    RCLCPP_INFO(node_->get_logger(), "Attempting ", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
 
     initialCheck(goal_handle);
 
@@ -108,14 +109,12 @@ protected:
         [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
 
     loop(goal_handle);
-
-    stopRobot();
   }
 
   void initialCheck(const typename std::shared_ptr<GoalHandle> goal_handle)
   {
     if (onRun(goal_handle->get_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for ", primitive_name_.c_str());
+      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
       goal_handle->abort(std::make_shared<typename ActionT::Result>());
     }
   }
@@ -127,42 +126,30 @@ protected:
 
     while (rclcpp::ok()) {
       if (goal_handle->is_canceling()) {
-        RCLCPP_INFO(node_->get_logger(), "Canceling", primitive_name_.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
         goal_handle->canceled(result);
         return;
       }
 
       // TODO(orduno) Handle or reject an attempted pre-emption
 
-      auto status = onCycleUpdate();
+      switch (onCycleUpdate()) {
+        case Status::SUCCEEDED:
+          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
+          // Primitives actions are empty msgs
+          goal_handle->succeed(result);
+          return;
 
-      if (status == Status::SUCCEEDED) {
-        RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
-        // Primitives actions are empty msgs
-        goal_handle->succeed(result);
-        return;
-      }
+        case Status::FAILED:
+          RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
+          goal_handle->abort(result);
+          return;
 
-      if (status == Status::FAILED) {
-        RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
-        goal_handle->abort(result);
-        return;
+        default:
       }
 
       loop_rate.sleep();
     }
-  }
-
-  void stopRobot()
-  {
-    geometry_msgs::msg::Twist twist;
-    twist.linear.x = 0.0;
-    twist.linear.y = 0.0;
-    twist.linear.z = 0.0;
-    twist.angular.x = 0.0;
-    twist.angular.y = 0.0;
-    twist.angular.z = 0.0;
-    robot_->sendVelocity(twist);
   }
 };
 

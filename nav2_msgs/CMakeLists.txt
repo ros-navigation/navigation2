@@ -27,7 +27,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/FollowPath.action"
   "action/NavigateToPose.action"
   "action/Spin.action"
-  "action/Empty.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs
 )
 
