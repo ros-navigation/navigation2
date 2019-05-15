@@ -40,15 +40,14 @@ Robot::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // This class may be used from a module that comes up after AMCL has output
   // its initial pose, so that pose message uses durability TRANSIENT_LOCAL
-  rmw_qos_profile_t pose_qos_profile = rmw_qos_profile_default;
-  pose_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
 
   pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", std::bind(&Robot::onPoseReceived, this, std::placeholders::_1), pose_qos_profile);
+    "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local(),
+	std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom", std::bind(&Robot::onOdomReceived, this, std::placeholders::_1),
-    rmw_qos_profile_sensor_data);
+    "odom", rclcpp::SensorDataQoS(),
+	std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
 
   vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 

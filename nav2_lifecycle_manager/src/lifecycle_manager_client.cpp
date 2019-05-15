@@ -40,7 +40,8 @@ LifecycleManagerClient::LifecycleManagerClient()
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
 
   initial_pose_publisher_ =
-    node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose");
+    node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "initialpose", rclcpp::SystemDefaultsQoS());
 }
 
 void

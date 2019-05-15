@@ -46,6 +46,7 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
+      rclcpp::SystemDefaultsQoS(),
       std::bind(&SimpleNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create our two task clients
