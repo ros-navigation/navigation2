@@ -1,0 +1,7 @@
+#goal definition
+std_msgs/Empty goal
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback

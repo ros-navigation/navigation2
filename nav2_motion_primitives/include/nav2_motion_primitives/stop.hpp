@@ -19,22 +19,24 @@
 #include <memory>
 
 #include "nav2_motion_primitives/motion_primitive.hpp"
-#include "nav2_tasks/stop_task.hpp"
+#include "nav2_msgs/action/empty.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
 
 namespace nav2_motion_primitives
 {
+using StopAction = nav2_msgs::action::Empty;
 
-class Stop : public MotionPrimitive<nav2_tasks::StopCommand, nav2_tasks::StopResult>
+class Stop : public MotionPrimitive<StopAction>
 {
 public:
   explicit Stop(rclcpp::Node::SharedPtr & node);
   ~Stop();
 
-  nav2_tasks::TaskStatus onRun(const nav2_tasks::StopCommand::SharedPtr command) override;
+  Status onRun(const std::shared_ptr<const StopAction::Goal> command) override;
 
-  nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::StopResult & result) override;
+  Status onCycleUpdate() override;
 
+protected:
   // For stopping the path following controller from sending commands to the robot
   std::unique_ptr<nav2_tasks::FollowPathTaskClient> controller_client_;
 };

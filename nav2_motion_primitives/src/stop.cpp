@@ -18,14 +18,13 @@
 
 #include "nav2_motion_primitives/stop.hpp"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives
 {
 
 Stop::Stop(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::StopCommand, nav2_tasks::StopResult>(node)
+: MotionPrimitive<StopAction>(node, "Stop")
 {
   controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node_);
 }
@@ -34,13 +33,13 @@ Stop::~Stop()
 {
 }
 
-nav2_tasks::TaskStatus Stop::onRun(const nav2_tasks::StopCommand::SharedPtr /*command*/)
+Status Stop::onRun(const std::shared_ptr<const StopAction::Goal>/*command*/)
 {
   // Stop the robot
-  RCLCPP_INFO(node_->get_logger(), "StopAction: cancelling path following task server");
+  RCLCPP_INFO(node_->get_logger(), "Cancelling path following controller");
   controller_client_->cancel();
 
-  RCLCPP_INFO(node_->get_logger(), "StopAction: publishing zero velocity command");
+  RCLCPP_INFO(node_->get_logger(), "Publishing zero velocity command");
   geometry_msgs::msg::Twist twist;
   twist.linear.x = 0.0;
   twist.linear.y = 0.0;
@@ -50,10 +49,10 @@ nav2_tasks::TaskStatus Stop::onRun(const nav2_tasks::StopCommand::SharedPtr /*co
   twist.angular.z = 0.0;
   robot_->sendVelocity(twist);
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return Status::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Stop::onCycleUpdate(nav2_tasks::StopResult & /*result*/)
+Status Stop::onCycleUpdate()
 {
   // The goal is to take robot to a stopped and stable state
   // For now we only wait some time
@@ -67,7 +66,7 @@ nav2_tasks::TaskStatus Stop::onCycleUpdate(nav2_tasks::StopResult & /*result*/)
 
   // TODO(orduno) #425 detect if the robot is still oscillating or tipping over
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return Status::SUCCEEDED;
 }
 
 }  // namespace nav2_motion_primitives
