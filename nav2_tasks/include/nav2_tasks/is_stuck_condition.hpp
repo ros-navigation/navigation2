@@ -55,6 +55,7 @@ public:
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
 
     odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
+        rclcpp::SystemDefaultsQoS(),
         std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
     RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");

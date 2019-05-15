@@ -126,10 +126,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>("footprint",
+      rclcpp::SystemDefaultsQoS(),
       std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_footprint", rmw_qos_profile_default);
+    "published_footprint", rclcpp::SystemDefaultsQoS());
 
   costmap_publisher_ = new Costmap2DPublisher(shared_from_this(),
       layered_costmap_->getCostmap(), global_frame_,
@@ -146,9 +147,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
-
-  costmap_update_monitor_ = std::make_unique<nav2_util::RateConstraint>(
-    name_ + "_output_costmap_update_rate", 5, 10, nullptr);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -239,8 +237,6 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   layered_costmap_ = nullptr;
 
   clear_costmap_service_.reset();
-
-  costmap_update_monitor_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -368,7 +364,6 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     timer.start();
     updateMap();
     timer.end();
-    costmap_update_monitor_->calc_looptime();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
 
