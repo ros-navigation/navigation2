@@ -31,7 +31,7 @@ DwbController::DwbController()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("dwb_controller_local_costmap");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
   costmap_thread_ = std::make_unique<std::thread>(
     [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
     {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);

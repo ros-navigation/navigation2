@@ -53,7 +53,7 @@ namespace nav2_costmap_2d
 {
 
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: nav2_lifecycle::LifecycleNode(name, "", true), name_(name)
+: nav2_lifecycle::LifecycleNode(name, name, true), name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
   client_node_ = std::make_shared<rclcpp::Node>(name + "_client");
