@@ -50,8 +50,12 @@ StoppedGoalChecker::StoppedGoalChecker()
 void StoppedGoalChecker::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   SimpleGoalChecker::initialize(nh);
-  nh->get_parameter_or("rot_stopped_velocity", rot_stopped_velocity_, 0.25);
-  nh->get_parameter_or("trans_stopped_velocity", trans_stopped_velocity_, 0.25);
+
+  nh->declare_parameter("rot_stopped_velocity", rclcpp::ParameterValue(0.25));
+  nh->declare_parameter("trans_stopped_velocity", rclcpp::ParameterValue(0.25));
+
+  nh->get_parameter("rot_stopped_velocity", rot_stopped_velocity_);
+  nh->get_parameter("trans_stopped_velocity", trans_stopped_velocity_);
 }
 
 bool StoppedGoalChecker::isGoalReached(

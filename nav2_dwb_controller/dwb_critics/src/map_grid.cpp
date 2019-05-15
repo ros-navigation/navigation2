@@ -69,8 +69,10 @@ void MapGridCritic::onInit()
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
+  nh_->declare_parameter(name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
+
   std::string aggro_str;
-  nh_->get_parameter_or(name_ + ".aggregation_type", aggro_str, std::string("last"));
+  nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;
