@@ -50,7 +50,7 @@ Spin::~Spin()
 nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
 {
   double yaw, pitch, roll;
-  tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
+  tf2::getEulerYPR(command->target.quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "

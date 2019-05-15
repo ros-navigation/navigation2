@@ -39,11 +39,11 @@ BackUp::~BackUp()
 
 nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr command)
 {
-  if (command->y != 0.0 || command->z != 0.0) {
+  if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-  command_x_ = command->x;
+  command_x_ = command->target.x;
   if (!robot_->getOdometry(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
     return nav2_tasks::TaskStatus::FAILED;
