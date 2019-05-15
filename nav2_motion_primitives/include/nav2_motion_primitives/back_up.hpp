@@ -40,7 +40,7 @@ protected:
   double linear_acc_lim_;
 
   nav_msgs::msg::Odometry::SharedPtr initial_pose_;
-  double command_x_2_;
+  double command_x_;
 
   nav2_tasks::TaskStatus controlledBackup();
 };
