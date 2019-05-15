@@ -67,6 +67,7 @@ public:
     nh.get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
       nh.create_subscription<nav_msgs::msg::Odometry>(odom_topic,
+        rclcpp::SystemDefaultsQoS(),
         std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
 
     nh.get_parameter_or("min_x_velocity_threshold", min_x_velocity_threshold_, 0.0001);
