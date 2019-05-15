@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+
 #include "dwb_controller/dwb_controller.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -23,6 +24,5 @@ int main(int argc, char ** argv)
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
-  RCLCPP_INFO(node->get_logger(), "Exiting, returning 0");
   return 0;
 }

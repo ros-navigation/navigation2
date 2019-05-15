@@ -39,8 +39,10 @@ namespace dwb_critics
 {
 void TwirlingCritic::onInit()
 {
+  nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(0.0));
+
   // Scale is set to 0 by default, so if it was not set otherwise, set to 0
-  nh_->get_parameter_or(name_ + ".scale", scale_, 0.0);
+  nh_->get_parameter(name_ + ".scale", scale_);
 }
 
 double TwirlingCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
