@@ -208,7 +208,7 @@ int main(int argc, char ** argv)
   pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud>(
     "voxel_unknown_cloud", 1);
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
-    "voxel_grid", voxelCallback);
+    "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
 
   rclcpp::spin(g_node->get_node_base_interface());
   rclcpp::shutdown();

@@ -18,14 +18,13 @@
 
 #include "nav2_motion_primitives/back_up.hpp"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives
 {
 
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
+: MotionPrimitive<BackUpAction>(node, "BackUp")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
@@ -37,40 +36,30 @@ BackUp::~BackUp()
 {
 }
 
-nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr command)
+Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
+  
   command_x_ = command->target.x;
+
   if (!robot_->getOdometry(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
-    return nav2_tasks::TaskStatus::FAILED;
+    return Status::FAILED;
   }
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return Status::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
-{
-  TaskStatus status = controlledBackup();
-
-  // For now sending an empty task result
-  nav2_tasks::BackUpResult empty_result;
-  result = empty_result;
-
-  return status;
-}
-
-
-nav2_tasks::TaskStatus BackUp::controlledBackup()
+Status BackUp::onCycleUpdate()
 {
   auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
 
   if (!robot_->getOdometry(current_odom_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
-    return TaskStatus::FAILED;
+    return Status::FAILED;
   }
 
   geometry_msgs::msg::Twist cmd_vel;
@@ -84,13 +73,13 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
   if (distance >= abs(command_x_)) {
     cmd_vel.linear.x = 0;
     robot_->sendVelocity(cmd_vel);
-    return TaskStatus::SUCCEEDED;
+    return Status::SUCCEEDED;
   }
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
   robot_->sendVelocity(cmd_vel);
 
-  return TaskStatus::RUNNING;
+  return Status::RUNNING;
 }
 
 }  // namespace nav2_motion_primitives

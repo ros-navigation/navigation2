@@ -77,6 +77,7 @@ StaticLayer::onInitialize()
   if (!first_map_only_) {
     RCLCPP_INFO(node_->get_logger(), "Subscribing to the map topic");
     map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(map_topic_,
+      rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
   }
 
@@ -84,6 +85,7 @@ StaticLayer::onInitialize()
     RCLCPP_INFO(node_->get_logger(), "Subscribing to updates");
     map_update_sub_ = node_->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
       map_topic_ + "_updates",
+      rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
 

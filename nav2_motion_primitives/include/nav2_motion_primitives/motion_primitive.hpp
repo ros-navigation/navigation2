@@ -24,146 +24,133 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_tasks/task_status.hpp"
-#include "nav2_tasks/task_server.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav2_robot/robot.hpp"
 
 namespace nav2_motion_primitives
 {
 
+enum class Status : int8_t
+{
+  SUCCEEDED = 1,
+  FAILED = 2,
+  RUNNING = 3,
+};
+
 using namespace std::chrono_literals;  //NOLINT
 
-template<class CommandMsg, class ResultMsg>
-const char * getTaskName();
-
-template<class CommandMsg, class ResultMsg>
+template<typename ActionT>
 class MotionPrimitive
 {
 public:
-  explicit MotionPrimitive(rclcpp::Node::SharedPtr & node)
+  using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
+  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+
+  explicit MotionPrimitive(rclcpp::Node::SharedPtr & node, const std::string & primitive_name)
   : node_(node),
-    task_server_(nullptr),
-    taskName_(nav2_tasks::getTaskName<CommandMsg, ResultMsg>())
+    primitive_name_(primitive_name),
+    action_server_(nullptr)
   {
-    robot_ = std::make_unique<nav2_robot::Robot>(node);
-
-    task_server_ = std::make_unique<nav2_tasks::TaskServer<CommandMsg, ResultMsg>>(node, false);
-
-    task_server_->setExecuteCallback(std::bind(&MotionPrimitive::run, this, std::placeholders::_1));
-
-    // Start listening for incoming Spin task requests
-    task_server_->start();
-
-    RCLCPP_INFO(node_->get_logger(), "Initialized the %s server", taskName_.c_str());
+    configure();
   }
 
   virtual ~MotionPrimitive()
   {
-    task_server_->stop();
+    cleanup();
   }
 
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
   // once and should return SUCCEEDED otherwise behavior will return FAILED.
-  virtual nav2_tasks::TaskStatus onRun(
-    const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command) = 0;
+  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) = 0;
+
 
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
-  // and provides a status.
-  virtual nav2_tasks::TaskStatus onCycleUpdate(
-    /*nav2_tasks::*/ ResultMsg & result) = 0;
-
-  // Runs the behavior
-  nav2_tasks::TaskStatus run(
-    const typename /*nav2_tasks::*/ CommandMsg::SharedPtr command)
-  {
-    RCLCPP_INFO(node_->get_logger(), "%s attempting behavior", taskName_.c_str());
-
-    auto status = onRun(command);
-
-    if (status != nav2_tasks::TaskStatus::SUCCEEDED) {
-      return nav2_tasks::TaskStatus::FAILED;
-    }
-
-    ResultMsg result;
-    status = cycle(result);
-    task_server_->setResult(result);
-
-    return status;
-  }
+  // and provides a status. The primitive will finish once SUCCEEDED is returned
+  // It's up to the derived class to define the final commanded velocity.
+  virtual Status onCycleUpdate() = 0;
 
 protected:
-  nav2_tasks::TaskStatus cycle(ResultMsg & result)
+  rclcpp::Node::SharedPtr node_;
+  std::string primitive_name_;
+  std::shared_ptr<nav2_robot::Robot> robot_;
+  std::unique_ptr<ActionServer> action_server_;
+
+  void configure()
   {
-    auto time_since_msg = std::chrono::system_clock::now();
-    auto start_time = std::chrono::system_clock::now();
-    auto current_time = std::chrono::system_clock::now();
+    RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
 
-    auto status = nav2_tasks::TaskStatus::FAILED;
+    robot_ = std::make_unique<nav2_robot::Robot>(
+      node_->get_node_base_interface(),
+      node_->get_node_topics_interface(),
+      node_->get_node_logging_interface(),
+      true);
 
-    rclcpp::Rate loop_rate(10);
-    while (rclcpp::ok()) {
-      if (task_server_->cancelRequested()) {
-        RCLCPP_INFO(node_->get_logger(), "%s cancelled", taskName_.c_str());
-        task_server_->setCanceled();
-        status = nav2_tasks::TaskStatus::CANCELED;
-        break;
-      }
-
-      // Log a message every second
-      current_time = std::chrono::system_clock::now();
-      if (current_time - time_since_msg >= 1s) {
-        RCLCPP_INFO(node_->get_logger(), "%s running...", taskName_.c_str());
-        time_since_msg = std::chrono::system_clock::now();
-      }
-
-      status = onCycleUpdate(result);
-
-      if (status == nav2_tasks::TaskStatus::SUCCEEDED) {
-        RCLCPP_INFO(node_->get_logger(), "%s completed successfully", taskName_.c_str());
-        break;
-      }
-
-      if (status == nav2_tasks::TaskStatus::FAILED) {
-        RCLCPP_WARN(node_->get_logger(), "%s was not completed", taskName_.c_str());
-        break;
-      }
-
-      if (status == nav2_tasks::TaskStatus::CANCELED) {
-        RCLCPP_WARN(node_->get_logger(), "%s onCycleUpdate() should not check for"
-          " task cancellation, it will be checked by the base class.", taskName_.c_str());
-        break;
-      }
-      loop_rate.sleep();
-    }
-
-    auto end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-
-    RCLCPP_INFO(node_->get_logger(), "%s ran for %.2f seconds",
-      taskName_.c_str(), elapsed_seconds.count());
-
-    geometry_msgs::msg::Twist twist;
-    twist.linear.x = 0.0;
-    twist.linear.y = 0.0;
-    twist.linear.z = 0.0;
-    twist.angular.x = 0.0;
-    twist.angular.y = 0.0;
-    twist.angular.z = 0.0;
-    robot_->sendVelocity(twist);
-
-    return status;
+    action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
+        std::bind(&MotionPrimitive::execute, this, std::placeholders::_1));
   }
 
-  rclcpp::Node::SharedPtr node_;
+  void cleanup()
+  {
+    robot_.reset();
+    action_server_.reset();
+  }
 
-  std::shared_ptr<nav2_robot::Robot> robot_;
+  void execute(const typename std::shared_ptr<GoalHandle> goal_handle)
+  {
+    RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
 
-  typename std::unique_ptr<nav2_tasks::TaskServer<CommandMsg, ResultMsg>> task_server_;
+    initialCheck(goal_handle);
 
-  std::string taskName_;
+    // Log a message every second
+    auto timer = node_->create_wall_timer(1s,
+        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
+
+    loop(goal_handle);
+  }
+
+  void initialCheck(const typename std::shared_ptr<GoalHandle> goal_handle)
+  {
+    if (onRun(goal_handle->get_goal()) != Status::SUCCEEDED) {
+      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
+      goal_handle->abort(std::make_shared<typename ActionT::Result>());
+    }
+  }
+
+  void loop(const typename std::shared_ptr<GoalHandle> goal_handle)
+  {
+    auto result = std::make_shared<typename ActionT::Result>();
+    rclcpp::Rate loop_rate(10);
+
+    while (rclcpp::ok()) {
+      if (goal_handle->is_canceling()) {
+        RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
+        goal_handle->canceled(result);
+        return;
+      }
+
+      // TODO(orduno) Handle or reject an attempted pre-emption
+
+      switch (onCycleUpdate()) {
+        case Status::SUCCEEDED:
+          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
+          // Primitives actions are empty msgs
+          goal_handle->succeed(result);
+          return;
+
+        case Status::FAILED:
+          RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
+          goal_handle->abort(result);
+          return;
+
+        default:
+      }
+
+      loop_rate.sleep();
+    }
+  }
 };
 
 }  // namespace nav2_motion_primitives
