@@ -38,10 +38,7 @@
 #include "nav_msgs/srv/get_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2_ros/transform_broadcaster.h"
-#pragma GCC diagnostic pop
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"

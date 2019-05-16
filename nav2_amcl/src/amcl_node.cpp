@@ -43,6 +43,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
+#include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "message_filters/subscriber.h"
 
