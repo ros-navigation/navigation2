@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DWB_CRITICS__COLLISION_CHECKER_HPP_
-#define DWB_CRITICS__COLLISION_CHECKER_HPP_
+#ifndef NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
+#define NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
 
 #include <string>
 
@@ -33,7 +33,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-namespace dwb_critics
+namespace nav2_costmap_2d
 {
 typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
@@ -42,8 +42,8 @@ class CollisionChecker
 public:
   CollisionChecker(
     rclcpp::Node::SharedPtr ros_node,
-    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
-    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub,
+    std::shared_ptr<CostmapSubscriber> costmap_sub,
+    std::shared_ptr<FootprintSubscriber> footprint_sub,
     tf2_ros::Buffer & tf_buffer,
     std::string name = "collision_checker");
   
@@ -69,9 +69,9 @@ protected:
 
   rclcpp::Node::SharedPtr node_;
   std::string name_;
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;  
+  std::shared_ptr<CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<FootprintSubscriber> footprint_sub_;  
 };
-}  // namespace dwb_critics
+}  // namespace nav2_costmap_2d
 
-#endif  // DWB_CRITICS__COLLISION_CHECKER_HPP_
+#endif  // NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_

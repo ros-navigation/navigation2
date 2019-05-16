@@ -12,27 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dwb_critics/collision_checker.hpp"
+#include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "dwb_critics/line_iterator.hpp"
-#include "dwb_core/exceptions.hpp"
+#include "nav2_util/line_iterator.hpp"
+#include "nav2_costmap_2d/exceptions.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
-namespace dwb_critics
+namespace nav2_costmap_2d
 {
 
 CollisionChecker::CollisionChecker(
   rclcpp::Node::SharedPtr ros_node,
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
-  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub,
+  std::shared_ptr<CostmapSubscriber> costmap_sub,
+  std::shared_ptr<FootprintSubscriber> footprint_sub,
   tf2_ros::Buffer & tf_buffer,
   std::string name)
 : tf_buffer_(tf_buffer),
   node_(ros_node), name_(name),
   costmap_sub_(costmap_sub), footprint_sub_(footprint_sub)
 {
-  node_->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
-  node_->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, std::string("base_link"));
+  node_->get_parameter_or<std::string>(
+    "global_frame", global_frame_, std::string("map"));
+  node_->get_parameter_or<std::string>(
+    "robot_base_frame", robot_base_frame_, std::string("base_link"));
 }
 
 CollisionChecker::~CollisionChecker() {}
@@ -45,10 +47,10 @@ const geometry_msgs::msg::Pose2D & pose)
       return false;
     }
     return true;
-  } catch (const nav_core2::IllegalTrajectoryException & e) {
+  } catch (const IllegalPoseException & e) {
     RCLCPP_ERROR(node_->get_logger(), "%s", e.what());
     return false;
-  } catch (const nav_core2::PlannerException & e) {
+  } catch (const CollisionCheckerException & e) {
     RCLCPP_ERROR(node_->get_logger(), "%s", e.what());
     return false;
   }
@@ -57,27 +59,27 @@ const geometry_msgs::msg::Pose2D & pose)
 double CollisionChecker::scorePose(
 const geometry_msgs::msg::Pose2D & pose)
 {
-  nav2_costmap_2d::Costmap2D * costmap_;
+  Costmap2D * costmap_;
   try {
     costmap_ = costmap_sub_->getCostmap();
   } catch (const std::runtime_error & e) {
-    throw nav_core2::PlannerException(e.what());
+    throw CollisionCheckerException(e.what());
   }
 
   unsigned int cell_x, cell_y;
   if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
-    RCLCPP_ERROR(node_->get_logger(), "Map Cell: [%d, %d]", cell_x, cell_y);
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
+    RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", cell_x, cell_y);
+    throw IllegalPoseException(name_, "Pose Goes Off Grid.");
   }
 
   Footprint footprint;
   if (!footprint_sub_->getFootprint(footprint)) {
-    throw nav_core2::PlannerException("Footprint not available.");
+    throw CollisionCheckerException("Footprint not available.");
   }
 
   Footprint footprint_spec;
   unorientFootprint(footprint, footprint_spec);
-  nav2_costmap_2d::transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
+  transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
 
   // now we really have to lay down the footprint in the costmap grid
   unsigned int x0, x1, y0, y1;
@@ -89,13 +91,13 @@ const geometry_msgs::msg::Pose2D & pose)
     // get the cell coord of the first point
     if (!costmap_->worldToMap(footprint[i].x, footprint[i].y, x0, y0)) {
       RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x0, y0);
-      throw nav_core2::IllegalTrajectoryException(name_, "Footprint Goes Off Grid at map.");
+      throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
     }
 
     // get the cell coord of the second point
     if (!costmap_->worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
       RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x1, y1);
-      throw nav_core2::IllegalTrajectoryException(name_, "Footprint Goes Off Grid.");
+      throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
     }
 
     line_cost = lineCost(x0, x1, y0, y1);
@@ -106,13 +108,13 @@ const geometry_msgs::msg::Pose2D & pose)
   // get the cell coord of the last point
   if (!costmap_->worldToMap(footprint.back().x, footprint.back().y, x0, y0)) {
       RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x0, y0);
-    throw nav_core2::IllegalTrajectoryException(name_, "Footprint Goes Off Grid.");
+    throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
   }
 
   // get the cell coord of the first point
   if (!costmap_->worldToMap(footprint.front().x, footprint.front().y, x1, y1)) {
       RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x1, y1);
-    throw nav_core2::IllegalTrajectoryException(name_, "Footprint Goes Off Grid.");
+    throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
   }
 
   line_cost = lineCost(x0, x1, y0, y1);
@@ -127,7 +129,7 @@ double CollisionChecker::lineCost(int x0, int x1, int y0, int y1)
   double line_cost = 0.0;
   double point_cost = -1.0;
 
-  for (LineIterator line(x0, y0, x1, y1); line.isValid(); line.advance()) {
+  for (nav2_util::LineIterator line(x0, y0, x1, y1); line.isValid(); line.advance()) {
     point_cost = pointCost(line.getX(), line.getY());   // Score the current point
 
     if (line_cost < point_cost) {
@@ -140,16 +142,16 @@ double CollisionChecker::lineCost(int x0, int x1, int y0, int y1)
 
 double CollisionChecker::pointCost(int x, int y)
 {
-  nav2_costmap_2d::Costmap2D * costmap_ = costmap_sub_->getCostmap();
+  Costmap2D * costmap_ = costmap_sub_->getCostmap();
 
   unsigned char cost = costmap_->getCost(x, y);
   // if the cell is in an obstacle the path is invalid or unknown
-  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
+  if (cost == LETHAL_OBSTACLE) {
     RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x, y);
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
-  } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
+    throw IllegalPoseException(name_, "Footprint Hits Obstacle.");
+  } else if (cost == NO_INFORMATION) {
     RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x, y);
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Unknown Region.");
+    throw IllegalPoseException(name_, "Footprint Hits Unknown Region.");
   }
 
   return cost;
@@ -182,7 +184,6 @@ CollisionChecker::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) co
       "Extrapolation Error looking up robot pose: %s\n", ex.what());
     return false;
   }
-  // check global_pose timeout
 
   return true;
 }
@@ -193,7 +194,7 @@ void CollisionChecker::unorientFootprint(
 {
   geometry_msgs::msg::PoseStamped current_pose;
    if (!getRobotPose(current_pose)) {
-    throw nav_core2::PlannerException("Robot pose unavailable.");
+    throw CollisionCheckerException("Robot pose unavailable.");
   }
 
   double x = current_pose.pose.position.x;
@@ -201,9 +202,9 @@ void CollisionChecker::unorientFootprint(
   double theta = tf2::getYaw(current_pose.pose.orientation);
 
   Footprint temp;
-  nav2_costmap_2d::transformFootprint(-x, -y, 0, oriented_footprint, temp);
-  nav2_costmap_2d::transformFootprint(0, 0, -theta, temp, reset_footprint);
+  transformFootprint(-x, -y, 0, oriented_footprint, temp);
+  transformFootprint(0, 0, -theta, temp, reset_footprint);
 }
 
-}  // namespace dwb_critics
+}  // namespace nav2_costmap_2d
 
