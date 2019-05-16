@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <random>
+#include <string>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -52,7 +53,8 @@ int main(int argc, char ** argv)
   // Set the robot's starting pose (approximately where it comes up in gazebo)
   client.set_initial_pose(initial_pose.x, initial_pose.y, initial_pose.theta);
 
-  // Wait for a couple secs to let the rviz display update
+  // Wait for a couple secs to make sure the nodes have processed all discovery
+  // info before starting
   std::this_thread::sleep_for(2s);
 
   // Parse the command line options
@@ -66,7 +68,7 @@ int main(int argc, char ** argv)
       for (std::vector<xytheta>::size_type i = 1; i < target_poses.size(); i++) {
         auto pose = target_poses[i];
         if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
-          printf("Navigation FAILED!\n");
+          RCLCPP_ERROR(rclcpp::get_logger("test_updown"), "Navigation failed!");
           break;
         }
       }
@@ -82,7 +84,7 @@ int main(int argc, char ** argv)
       for (int i = 0, cur_index = 0; i < 10; i++) {
         // Get a random index that is not the current one (so we can navigate
         // to a pose different than our current location)
-        int next_index;
+        int next_index = 0;
         do {
           next_index = uniform_dist(r);
         } while (next_index == cur_index);
@@ -90,13 +92,14 @@ int main(int argc, char ** argv)
         // Grab the pose for that index and start the navigation
         auto pose = target_poses[next_index];
         if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
-          printf("Navigation FAILED!\n");
+          RCLCPP_ERROR(rclcpp::get_logger("test_updown"), "Navigation failed!");
           break;
         }
       }
     } else {
-      printf("Unrecognized test type: %s, running simple up/down test\n", nav_type.c_str());
-	}
+      RCLCPP_ERROR(rclcpp::get_logger("test_updown"),
+        "Unrecognized test type: %s, running simple up/down test\n", nav_type);
+    }
   }
 
   // Shut down the nav2 system, bringing it to the FINALIZED state
