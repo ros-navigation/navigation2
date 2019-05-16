@@ -38,11 +38,13 @@ BackUp::~BackUp()
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
-  if (command->target_location.y != 0.0 || command->target_location.z != 0.0) {
+  if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-  command_x_ = command->target_location.x;
+  
+  command_x_ = command->target.x;
+
   if (!robot_->getOdometry(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
     return Status::FAILED;
