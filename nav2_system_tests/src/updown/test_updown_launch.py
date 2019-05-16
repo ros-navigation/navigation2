@@ -16,8 +16,6 @@ import os
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
-from launch.conditions import IfCondition
-from launch.conditions import UnlessCondition
 
 import launch.actions
 
@@ -27,25 +25,32 @@ def generate_launch_description():
     # Configuration parameters for the launch
 
     world = launch.substitutions.LaunchConfiguration('world')
-    params_file = launch.substitutions.LaunchConfiguration('params',
-            default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
+    urdf = launch.substitutions.LaunchConfiguration('urdf')
+
+    params_file = launch.substitutions.LaunchConfiguration(
+        'params',
+        default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
-            'world',
-            default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3_worlds/burger.model'),
-            description='Full path to world file to load')
+        'world',
+        default_value=[launch.substitutions.ThisLaunchFileDir(),
+                       '/../../worlds/turtlebot3_ros2_demo.world'],
+        description='Full path to world file to load')
 
-    declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-            'params_file',
-            description='Full path to the ROS2 parameters file to use for all launched nodes')
+    declare_urdf_cmd = launch.actions.DeclareLaunchArgument(
+        'urdf',
+        default_value=[launch.substitutions.ThisLaunchFileDir(),
+                       '/../../urdf/turtlebot3_burger.urdf'],
+        description='Full path to model file to load')
 
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
-    gz = launch.substitutions.LaunchConfiguration('gz', default=['gzserver'])
+    launch_dir = os.path.join(
+        get_package_share_directory('nav2_bringup'), 'launch')
 
     # Specify the actions
 
     start_gazebo_cmd = launch.actions.ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world, ['__params:=', params_file]],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+             world, ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
@@ -53,10 +58,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('robot_state_publisher'),
                 'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_burger.urdf'),
-            ['__params:=', params_file]],
+            urdf, ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_map_server_cmd = launch.actions.ExecuteProcess(
@@ -110,8 +112,8 @@ def generate_launch_description():
     start_controller_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_controller'),
-                'lib/nav2_controller/nav2_controller'),
+                get_package_prefix('nav2_lifecycle_manager'),
+                'lib/nav2_lifecycle_manager/lifecycle_manager'),
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
@@ -132,6 +134,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_urdf_cmd)
     ld.add_action(start_controller_cmd)
     ld.add_action(start_gazebo_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
