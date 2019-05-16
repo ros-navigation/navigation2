@@ -51,6 +51,10 @@ bt_navigator:
     use_sim_time: True
     bt_xml_filename: "bt_navigator.xml"
 
+bt_navigator_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
 dwb_controller:
   ros__parameters:
     use_sim_time: True
@@ -105,18 +109,22 @@ dwb_controller_local_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
+lifecycle_manager:
+  ros__parameters:
+    use_sim_time: True
+
+lifecycle_manager_client_service_client:
+  ros__parameters:
+    use_sim_time: True
+
+lifecycle_manager_service_client:
+  ros__parameters:
+    use_sim_time: True
+
 map_server:
   ros__parameters:
     use_sim_time: True
-    yaml_filename: "test_map.yaml"
-
-nav2_controller:
-  ros__parameters:
-    use_sim_time: True
-
-nav2_controller_lifecycle_client_node:
-  ros__parameters:
-    use_sim_time: True
+    yaml_filename: "turtlebot3_world.yaml"
 
 navfn_planner:
   ros__parameters:
@@ -125,6 +133,10 @@ navfn_planner:
     use_astar: false
 
 navfn_planner_GetCostmap_client:
+  ros__parameters:
+    use_sim_time: True
+
+navfn_planner_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
