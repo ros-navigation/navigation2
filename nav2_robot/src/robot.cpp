@@ -17,39 +17,54 @@
 #include <string>
 #include <exception>
 
+#include "rclcpp/create_subscription.hpp"
+#include "rclcpp/create_publisher.hpp"
+#include "rclcpp/qos.hpp"
 #include "urdf/model.h"
 
 namespace nav2_robot
 {
 
 Robot::Robot(nav2_lifecycle::LifecycleNode::SharedPtr node)
-: node_(node)
+: Robot(node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_logging_interface(),
+    false)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Creating");
+}
+
+Robot::Robot(
+  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+  const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+  const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+  bool auto_start)
+: node_base_(node_base),
+  node_topics_(node_topics),
+  node_logging_(node_logging),
+  auto_start_(auto_start)
+{
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Creating");
+
+  if (auto_start_) {
+    configure();
+  }
 }
 
 Robot::~Robot()
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Destroying");
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Destroying");
+
+  if (auto_start_) {
+    cleanup();
+  }
 }
 
 nav2_lifecycle::CallbackReturn
 Robot::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Configuring");
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Configuring");
 
-  // This class may be used from a module that comes up after AMCL has output
-  // its initial pose, so that pose message uses durability TRANSIENT_LOCAL
-
-  pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local(),
-	std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
-
-  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom", rclcpp::SensorDataQoS(),
-	std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
-
-  vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+  configure();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -57,9 +72,7 @@ Robot::on_configure(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Robot::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Activating");
-
-  vel_pub_->on_activate();
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Activating");
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -67,9 +80,7 @@ Robot::on_activate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Robot::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Deactivating");
-
-  vel_pub_->on_deactivate();
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Deactivating");
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -77,13 +88,37 @@ Robot::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Robot::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Robot: Cleaning up");
+  RCLCPP_INFO(node_logging_->get_logger(), "Robot: Cleaning up");
 
+  cleanup();
+
+  return nav2_lifecycle::CallbackReturn::SUCCESS;
+}
+
+void
+Robot::configure()
+{
+  // This class may be used from a module that comes up after AMCL has output
+  // its initial pose, so that pose message uses durability TRANSIENT_LOCAL
+
+  pose_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    node_topics_, "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local(),
+    std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
+
+  odom_sub_ = rclcpp::create_subscription<nav_msgs::msg::Odometry>(
+    node_topics_, "odom", rclcpp::SensorDataQoS(),
+    std::bind(&Robot::onOdomReceived, this, std::placeholders::_1));
+
+  vel_pub_ = rclcpp::create_publisher<geometry_msgs::msg::Twist>(
+    node_topics_, "/cmd_vel", rclcpp::QoS(rclcpp::KeepLast(1)));
+}
+
+void
+Robot::cleanup()
+{
   pose_sub_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
-
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 void
@@ -110,7 +145,7 @@ Robot::getGlobalLocalizerPose(
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
 {
   if (!initial_pose_received_) {
-    RCLCPP_DEBUG(node_->get_logger(),
+    RCLCPP_DEBUG(node_logging_->get_logger(),
       "Robot: Can't return current pose: Initial pose not yet received.");
     return false;
   }
@@ -131,7 +166,7 @@ bool
 Robot::getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom)
 {
   if (!initial_odom_received_) {
-    RCLCPP_DEBUG(node_->get_logger(),
+    RCLCPP_DEBUG(node_logging_->get_logger(),
       "Robot: Can't return current velocity: Initial odometry not yet received.");
     return false;
   }
