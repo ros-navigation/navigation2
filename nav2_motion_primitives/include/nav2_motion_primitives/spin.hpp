@@ -20,21 +20,22 @@
 #include <memory>
 
 #include "nav2_motion_primitives/motion_primitive.hpp"
-#include "nav2_tasks/spin_task.hpp"
+#include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_motion_primitives
 {
+using SpinAction = nav2_msgs::action::Spin;
 
-class Spin : public MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>
+class Spin : public MotionPrimitive<SpinAction>
 {
 public:
   explicit Spin(rclcpp::Node::SharedPtr & node);
   ~Spin();
 
-  nav2_tasks::TaskStatus onRun(const nav2_tasks::SpinCommand::SharedPtr command) override;
+  Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
 
-  nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::SpinResult & result) override;
+  Status onCycleUpdate() override;
 
 protected:
   double min_rotational_vel_;
@@ -46,9 +47,9 @@ protected:
 
   std::chrono::system_clock::time_point start_time_;
 
-  nav2_tasks::TaskStatus timedSpin();
+  Status timedSpin();
 
-  nav2_tasks::TaskStatus controlledSpin();
+  Status controlledSpin();
 };
 
 }  // namespace nav2_motion_primitives
