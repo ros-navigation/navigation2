@@ -26,14 +26,13 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives
 {
 
 Spin::Spin(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<nav2_tasks::SpinCommand, nav2_tasks::SpinResult>(node)
+: MotionPrimitive<SpinAction>(node, "Spin")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -47,10 +46,10 @@ Spin::~Spin()
 {
 }
 
-nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
+Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   double yaw, pitch, roll;
-  tf2::getEulerYPR(command->quaternion, yaw, pitch, roll);
+  tf2::getEulerYPR(command->goal.quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
@@ -61,24 +60,17 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
 
   start_time_ = std::chrono::system_clock::now();
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return Status::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus Spin::onCycleUpdate(nav2_tasks::SpinResult & result)
+Status Spin::onCycleUpdate()
 {
-  // Currently only an open-loop controller is implemented
-  // TODO(orduno) #423 Create a base class for open-loop controlled motion_primitives
-  //              controlledSpin() has not been fully tested
-  TaskStatus status = timedSpin();
-
-  // For now sending an empty task result
-  nav2_tasks::SpinResult empty_result;
-  result = empty_result;
-
-  return status;
+  // Currently only an open-loop time-based controller is implemented
+  // The closed-loop version 'controlledSpin()' has not been fully tested
+  return timedSpin();
 }
 
-nav2_tasks::TaskStatus Spin::timedSpin()
+Status Spin::timedSpin()
 {
   // Output control command
   geometry_msgs::msg::Twist cmd_vel;
@@ -96,13 +88,13 @@ nav2_tasks::TaskStatus Spin::timedSpin()
     cmd_vel.angular.z = 0.0;
     robot_->sendVelocity(cmd_vel);
 
-    return TaskStatus::SUCCEEDED;
+    return Status::SUCCEEDED;
   }
 
-  return TaskStatus::RUNNING;
+  return Status::RUNNING;
 }
 
-nav2_tasks::TaskStatus Spin::controlledSpin()
+Status Spin::controlledSpin()
 {
   // TODO(orduno) #423 Test and tune controller
   //              check it doesn't abruptly start and stop
@@ -112,7 +104,7 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
   auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
   if (!robot_->getCurrentPose(current_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-    return TaskStatus::FAILED;
+    return Status::FAILED;
   }
 
   double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
@@ -140,10 +132,10 @@ nav2_tasks::TaskStatus Spin::controlledSpin()
 
   // check if we are done
   if (dist_left >= (0.0 - goal_tolerance_angle_)) {
-    return TaskStatus::SUCCEEDED;
+    return Status::SUCCEEDED;
   }
 
-  return TaskStatus::RUNNING;
+  return Status::RUNNING;
 }
 
 }  // namespace nav2_motion_primitives
