@@ -30,6 +30,11 @@ class Robot : public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   explicit Robot(nav2_lifecycle::LifecycleNode::SharedPtr node);
+  explicit Robot(
+    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    bool auto_start = false);
   Robot() = delete;
   ~Robot();
 
@@ -41,19 +46,21 @@ public:
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
-  // The ROS node to use to create publishers and subscribers
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
-
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
+  // Interfaces used for logging and creating publishers and subscribers
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
+
   // Publishers and subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
 
   // Subscription callbacks
   void onPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
@@ -72,6 +79,11 @@ protected:
   // Information about the robot is contained in the URDF file
   std::string urdf_file_;
   urdf::Model model_;
+
+  // Auto-start feature for non-lifecycle nodes
+  bool auto_start_;
+  void configure();
+  void cleanup();
 };
 
 }  // namespace nav2_robot
