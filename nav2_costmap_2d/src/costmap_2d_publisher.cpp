@@ -47,23 +47,20 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+  nav2_lifecycle::LifecycleNode::SharedPtr ros_node, Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
 : node_(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
   always_send_full_costmap_(always_send_full_costmap), topic_name_(topic_name)
 {
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
-      custom_qos_profile);
+      custom_qos);
   costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-    topic_name + "_updates", custom_qos_profile);
+    topic_name + "_updates", custom_qos);
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];
@@ -129,11 +126,6 @@ void Costmap2DPublisher::prepareGrid()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if (node_->count_subscribers(topic_name_) == 0) {
-    // No subscribers, so why do any work?
-    return;
-  }
-
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||

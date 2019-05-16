@@ -45,13 +45,16 @@ public:
     while (node->count_subscribers("/scan") < 1) {
       rclcpp::spin_some(node);
     }
+
     initial_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "initialpose");
+      "initialpose", rclcpp::SystemDefaultsQoS());
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "amcl_pose",
+      "amcl_pose", rclcpp::SystemDefaultsQoS(),
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
+
     initial_pose_pub_->publish(testPose_);
   }
+
   bool defaultAmclTest();
 
 protected:
