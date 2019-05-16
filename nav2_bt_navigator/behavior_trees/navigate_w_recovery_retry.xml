@@ -1,0 +1,34 @@
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz and it also has primitive
+  recovery actions.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RetryUntilSuccesful name="retry_navigate" num_attempts="6">
+      <Fallback>
+        <SequenceStar>
+          <ComputePathToPose goal="${goal}" path="${path}"/>
+          <Sequence>
+            <Fallback>
+              <GoalReached/>
+              <RateController hz="1.0">
+                <Sequence>
+                  <ComputePathToPose goal="${goal}" path="${path}"/>
+                  <UpdatePath/>
+                </Sequence>
+              </RateController>
+            </Fallback>
+            <FollowPath path="${path}"/>
+          </Sequence>
+        </SequenceStar>
+        <ForceFailure>
+          <SequenceStar name="recovery">
+            <clearEntirelyCostmapServiceRequest service_name="/local_costmap/clear_entirely_local_costmap"/>
+            <clearEntirelyCostmapServiceRequest service_name="/global_costmap/clear_entirely_global_costmap"/>
+            <Spin/>
+          </SequenceStar>
+        </ForceFailure>
+      </Fallback>
+    </RetryUntilSuccesful>
+  </BehaviorTree>
+</root>

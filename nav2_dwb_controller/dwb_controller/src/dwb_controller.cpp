@@ -74,7 +74,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_publisher_ = std::make_shared<nav2_util::VelocityPublisher>(node);
+  vel_publisher_ = std::make_shared<nav2_util::VelocityPublisher>(temp_node);
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",

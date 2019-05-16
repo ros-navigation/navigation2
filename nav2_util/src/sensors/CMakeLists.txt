@@ -5,6 +5,7 @@ add_library(sensors_lib SHARED
   laser/likelihood_field_model_prob.cpp
 )
 target_link_libraries(sensors_lib pf_lib)
+<<<<<<< HEAD
 
 install(TARGETS
   sensors_lib
@@ -12,3 +13,5 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
+=======
+>>>>>>> resolve merge conflicts

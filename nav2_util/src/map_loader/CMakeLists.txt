@@ -15,6 +15,7 @@ target_link_libraries(map_loader
     ${SDL_LIBRARY}
     ${SDL_IMAGE_LIBRARIES}
 )
+<<<<<<< HEAD
 
 install(TARGETS
   map_loader
@@ -22,3 +23,5 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
+=======
+>>>>>>> resolve merge conflicts
