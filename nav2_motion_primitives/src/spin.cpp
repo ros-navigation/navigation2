@@ -49,7 +49,7 @@ Spin::~Spin()
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   double yaw, pitch, roll;
-  tf2::getEulerYPR(command->goal.quaternion, yaw, pitch, roll);
+  tf2::getEulerYPR(command->target.quaternion, yaw, pitch, roll);
 
   if (roll != 0.0 || pitch != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
