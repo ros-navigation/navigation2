@@ -19,27 +19,26 @@
 #include <memory>
 #include <cmath>
 
-#include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/back_up_task.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 
 namespace nav2_tasks
 {
 
-class BackUpAction : public BtActionNode<BackUpCommand, BackUpResult>
+class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
 public:
   explicit BackUpAction(const std::string & action_name)
-  : BtActionNode<BackUpCommand, BackUpResult>(action_name)
+  : BtActionNode<nav2_msgs::action::BackUp>(action_name)
   {
   }
 
   void on_init() override
   {
     // Populate the input message
-    goal->x = -0.15;
-    goal->y = 0.0;
-    goal->z = 0.0;
+    goal_.target.x = -0.15;
+    goal_.target.y = 0.0;
+    goal_.target.z = 0.0;
   }
 };
 
