@@ -536,6 +536,7 @@ AmclNode::globalLocalizationCallback(
     return;
   }
 
+  initial_pose_received = true;
   std::lock_guard<std::recursive_mutex> gl(configuration_mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
