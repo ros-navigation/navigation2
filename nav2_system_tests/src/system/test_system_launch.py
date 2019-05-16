@@ -32,27 +32,16 @@ def generate_launch_description():
     world = os.getenv('TEST_WORLD')
     params_file = os.getenv('TEST_PARAMS')
     astar = (os.getenv('ASTAR').lower() == 'true')
-    navigator = os.getenv('NAVIGATOR')
-    if (navigator == 'simple'):
-        navigator_action = launch_ros.actions.Node(
-            package='nav2_simple_navigator',
-            node_executable='simple_navigator',
-            node_name='simple_navigator',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}])
-    elif (navigator == 'bt'):
-        bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
-        bt_navigator_xml = os.path.join(bt_navigator_install_path,
-                                        'behavior_trees',
-                                        os.getenv('BT_NAVIGATOR_XML'))
-        navigator_action = launch_ros.actions.Node(
-            package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
-    else:
-        raise EnvironmentError('NAVIGATOR environment variable not set correctly.')
+    bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
+    bt_navigator_xml = os.path.join(bt_navigator_install_path,
+                                    'behavior_trees',
+                                    os.getenv('BT_NAVIGATOR_XML'))
+    navigator_action = launch_ros.actions.Node(
+        package='nav2_bt_navigator',
+        node_executable='bt_navigator',
+        node_name='bt_navigator',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
 
     return LaunchDescription([
         # Launch gazebo server for simulation

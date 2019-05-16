@@ -1,10 +1,25 @@
-<root main_tree_to_execute="BehaviorTree">
-  <BehaviorTree ID="BehaviorTree">
-    <RetryUntilSuccesful name="retry_navigate" num_attempts="7">
-      <FallbackStar>
-        <SequenceStar name="navigate">
-          <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-	  <FollowPath path="${path}"/>
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz and it also has primitive
+  recovery actions.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RetryUntilSuccesful name="retry_navigate" num_attempts="6">
+      <Fallback>
+        <SequenceStar>
+          <ComputePathToPose goal="${goal}" path="${path}"/>
+          <Sequence>
+            <Fallback>
+              <GoalReached/>
+              <RateController hz="1.0">
+                <Sequence>
+                  <ComputePathToPose goal="${goal}" path="${path}"/>
+                  <UpdatePath/>
+                </Sequence>
+              </RateController>
+            </Fallback>
+            <FollowPath path="${path}"/>
+          </Sequence>
         </SequenceStar>
         <ForceFailure>
           <SequenceStar name="recovery">
@@ -13,8 +28,7 @@
             <Spin/>
           </SequenceStar>
         </ForceFailure>
-      </FallbackStar>
+      </Fallback>
     </RetryUntilSuccesful>
   </BehaviorTree>
 </root>
-
