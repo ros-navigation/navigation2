@@ -46,7 +46,8 @@ def generate_launch_description():
     return LaunchDescription([
         # Launch gazebo server for simulation
         launch.actions.ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+                 '--minimal_comms', world],
             output='screen'),
 
         # Launch navigation2 nodes
@@ -96,6 +97,13 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 
         navigator_action,
+
+        launch_ros.actions.Node(
+            package='nav2_lifecycle_manager',
+            node_executable='lifecycle_manager',
+            node_name='lifecycle_manager',
+            output='screen',
+            parameters=[node_names, {'autostart': True}]),
     ])
 
 
