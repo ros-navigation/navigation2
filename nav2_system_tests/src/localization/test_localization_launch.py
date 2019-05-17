@@ -53,8 +53,14 @@ def main(argv=sys.argv[1:]):
         package='nav2_amcl',
         node_executable='amcl',
         output='screen')
+    run_lifecycle_manager = launch_ros.actions.Node(
+        package='nav2_lifecycle_manager',
+        node_executable='lifecycle_manager',
+        node_name='lifecycle_manager',
+        output='screen',
+        parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}])
     ld = LaunchDescription([launch_gazebo, link_footprint, footprint_scan,
-                            run_map_server, run_amcl])
+                            run_map_server, run_amcl, run_lifecycle_manager])
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
