@@ -25,7 +25,6 @@
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
 using nav2_util::Costmap;
 using nav2_util::TestCostmap;
 
