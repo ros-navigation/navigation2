@@ -40,8 +40,10 @@ Spin::Spin(rclcpp::Node::SharedPtr & node)
   max_rotational_vel_ = 1.0;
   min_rotational_vel_ = 0.4;
   rotational_acc_lim_ = 3.2;
-  goal_tolerance_angle_ = 0.10;
-  start_yaw_ = 0.0;
+  goal_tolerance_angle_ = 0.17;
+  direction_ = 1.0;
+  commanded_dist_ = 0.0;
+  initial_pose_ = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 }
 
 Spin::~Spin()
@@ -50,8 +52,28 @@ Spin::~Spin()
 
 nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr command)
 {
-  double pitch, roll;
-  tf2::getEulerYPR(command->quaternion, start_yaw_, pitch, roll);
+  double pitch_holder, roll_holder;
+  if (!robot_->getOdometry(initial_pose_)) {
+    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
+    return nav2_tasks::TaskStatus::FAILED;
+  }
+
+  // getEulerYPR are normalized angles (-M_PI, M_PI]
+  tf2::getEulerYPR(command->quaternion, commanded_dist_, pitch_holder, roll_holder);
+
+  if (roll_holder != 0.0 || pitch_holder != 0.0) {
+    RCLCPP_WARN(node_->get_logger(), "Spinning on Y and X not supported, "
+      "will only spin in Z.");
+  }
+
+  // gets unsigned distance and turning direction TODO
+  if (commanded_dist_ < 0.0) {
+    commanded_dist_ += 2 * M_PI;
+    direction_ = -1.0;
+  } else {
+    direction_ = 1.0;
+  }
+
   return nav2_tasks::TaskStatus::SUCCEEDED;
 }
 
@@ -73,11 +95,10 @@ nav2_tasks::TaskStatus Spin::rotateSome()
   }
 
   // Get distance left
-  const double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
-  const double current_angle_dist = current_yaw - start_yaw_;
-  const double dist_left = M_PI - current_angle_dist;
+  const double current_angle_dist = tf2::angleShortestPath(current_pose, initial_pose_);
+  const double dist_left = commanded_dist_ - fabs(current_angle_dist);
 
-  // TODO(stevemacenski) #553 check for collisions
+  // TODO(stevemacenski) #533 check for collisions
 
   // Compute the velocity, clip, and send
   double vel = sqrt(2 * rotational_acc_lim_ * dist_left);
@@ -86,12 +107,14 @@ nav2_tasks::TaskStatus Spin::rotateSome()
   geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = vel;
+  cmd_vel.angular.z = vel * direction_;
 
   robot_->sendVelocity(cmd_vel);
 
   // Termination conditions
-  if (fabs(dist_left) < goal_tolerance_angle_) {
+  if (dist_left < goal_tolerance_angle_) {
+    cmd_vel.angular.z = 0.0;
+    robot_->sendVelocity(cmd_vel);
     return TaskStatus::SUCCEEDED;
   }
 

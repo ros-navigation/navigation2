@@ -43,7 +43,9 @@ private:
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double goal_tolerance_angle_;
-  double start_yaw_;
+  double direction_;
+  double commanded_dist_;
+  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
 };
 
 }  // namespace nav2_motion_primitives
