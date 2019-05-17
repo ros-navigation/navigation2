@@ -66,6 +66,24 @@ bool transformPose(
   try {
     tf->transform(in_pose, out_pose, frame);
     return true;
+  } catch (tf2::ExtrapolationException & ex) {
+    auto transform = tf->lookupTransform(frame, in_pose.header.frame_id, tf2::TimePointZero);
+    if ((rclcpp::Time(in_pose.header.stamp) - rclcpp::Time(transform.header.stamp)) >
+      rclcpp::Duration(100ms))
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+        "Transform data too old when converting from %s to %s",
+        in_pose.header.frame_id.c_str(),
+        frame.c_str());
+      RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+        "Data time: %ds %uns, Transform time: %ds %uns",
+        in_pose.header.stamp.sec, in_pose.header.stamp.nanosec,
+        transform.header.stamp.sec, transform.header.stamp.nanosec);
+      return false;
+    } else {
+      tf2::doTransform(in_pose, out_pose, transform);
+      return true;
+    }
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
       "Exception in transformPose: %s", ex.what());
