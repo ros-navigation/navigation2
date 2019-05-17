@@ -13,8 +13,7 @@ find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_tasks REQUIRED)
-find_package(nav2_dynamic_params REQUIRED)
+find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -45,8 +44,7 @@ set(dependencies
   tf2_ros
   tf2
   nav2_util
-  nav2_tasks
-  nav2_dynamic_params
+  nav2_lifecycle
 )
 
 ament_target_dependencies(${executable_name}
