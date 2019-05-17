@@ -65,7 +65,7 @@ public:
   ClientTest()
   {
     node_ = rclcpp::Node::make_shared(
-      "dynamic_param_client_test", nav2_util::get_node_options_default());
+      "dynamic_param_client_test"); //       "dynamic_param_client_test", nav2_util::get_node_options_default());
     dynamic_params_client_ = std::make_unique<DynamicParamsClientTest>(node_);
   }
 

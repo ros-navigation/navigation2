@@ -62,7 +62,7 @@ public:
   TestNode()
   {
     node_ = rclcpp::Node::make_shared(
-      "inflation_test_node", nav2_util::get_node_options_default());
+      "inflation_test_node"); // "inflation_test_node", nav2_util::get_node_options_default());
     // Set cost_scaling_factor parameter to 1.0 for inflation layer
     node_->set_parameters({rclcpp::Parameter("inflation.cost_scaling_factor", 1.0)});
   }

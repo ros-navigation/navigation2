@@ -61,7 +61,7 @@ public:
   ValidatorTest()
   {
     node_ = rclcpp::Node::make_shared(
-      "dynamic_param_validator_test", nav2_util::get_node_options_default());
+      "dynamic_param_validator_test"); // "dynamic_param_validator_test", nav2_util::get_node_options_default());
     param_validator_ = std::make_unique<nav2_dynamic_params::DynamicParamsValidator>(node_);
   }
 

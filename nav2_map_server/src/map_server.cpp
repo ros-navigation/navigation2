@@ -29,7 +29,7 @@ namespace nav2_map_server
 {
 
 MapServer::MapServer(const std::string & node_name)
-: Node(node_name, nav2_util::get_node_options_default())
+: Node(node_name) // Node(node_name, nav2_util::get_node_options_default())
 {
   // Get the MAP YAML file, which includes the image filename and the map type
   getParameters();

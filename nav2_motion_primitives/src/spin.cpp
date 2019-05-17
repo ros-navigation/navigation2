@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "nav2_motion_primitives/spin.hpp"
-#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop

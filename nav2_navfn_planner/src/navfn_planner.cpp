@@ -48,7 +48,7 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: Node("NavfnPlanner", nav2_util::get_node_options_default()),
+: Node("NavfnPlanner"), // Node("NavfnPlanner", nav2_util::get_node_options_default()),
   global_frame_("map"),
   allow_unknown_(true)
 {

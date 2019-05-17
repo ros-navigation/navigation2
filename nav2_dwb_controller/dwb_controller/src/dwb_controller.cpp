@@ -33,7 +33,7 @@ namespace dwb_controller
 {
 
 DwbController::DwbController(rclcpp::executor::Executor & executor)
-: Node("DwbController", nav2_util::get_node_options_default()),
+: Node("DwbController"), // Node("DwbController", nav2_util::get_node_options_default()),
   tfBuffer_(get_clock()),
   tfListener_(tfBuffer_)
 {

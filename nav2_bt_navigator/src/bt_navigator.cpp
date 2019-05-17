@@ -29,7 +29,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: Node("BtNavigator", nav2_util::get_node_options_default())
+: Node("BtNavigator") // Node("BtNavigator", nav2_util::get_node_options_default())
 {
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 

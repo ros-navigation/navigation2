@@ -55,7 +55,7 @@ public:
   TestNode()
   {
     node_ = rclcpp::Node::make_shared(
-      "obstacle_test_node", nav2_util::get_node_options_default());
+      "obstacle_test_node"); // "obstacle_test_node", nav2_util::get_node_options_default());
   }
 
   ~TestNode() {}
