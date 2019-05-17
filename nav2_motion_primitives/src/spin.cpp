@@ -43,7 +43,6 @@ Spin::Spin(rclcpp::Node::SharedPtr & node)
   goal_tolerance_angle_ = 0.17;
   direction_ = 1.0;
   commanded_dist_ = 0.0;
-  initial_pose_ = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 }
 
 Spin::~Spin()
@@ -66,7 +65,7 @@ nav2_tasks::TaskStatus Spin::onRun(const nav2_tasks::SpinCommand::SharedPtr comm
       "will only spin in Z.");
   }
 
-  // gets unsigned distance and turning direction TODO
+  // gets unsigned distance and turning direction
   if (commanded_dist_ < 0.0) {
     commanded_dist_ += 2 * M_PI;
     direction_ = -1.0;
