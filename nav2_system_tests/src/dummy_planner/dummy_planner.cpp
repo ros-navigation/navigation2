@@ -18,7 +18,6 @@
 
 #include "dummy_planner.hpp"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_system_tests
@@ -46,7 +45,7 @@ DummyPlanner::~DummyPlanner()
   RCLCPP_INFO(get_logger(), "Shutting down DummyPlanner");
 }
 
-TaskStatus
+void
 DummyPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
@@ -59,15 +58,14 @@ DummyPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::Shar
   if (task_server_->cancelRequested()) {
     RCLCPP_INFO(get_logger(), "Cancelled planning task.");
     task_server_->setCanceled();
-    return TaskStatus::CANCELED;
+    return;
   }
 
   RCLCPP_INFO(get_logger(), "Found a dummy path");
 
   nav2_tasks::ComputePathToPoseResult result;
+  // set succeeded
   task_server_->setResult(result);
-
-  return TaskStatus::SUCCEEDED;
 }
 
 }  // namespace nav2_system_tests
