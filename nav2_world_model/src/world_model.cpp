@@ -25,7 +25,7 @@ WorldModel::WorldModel()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // The costmap node is used in the implementation of the world model
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("world_model_global_costmap");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(

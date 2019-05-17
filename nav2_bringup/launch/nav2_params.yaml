@@ -117,11 +117,11 @@ global_costmap:
         clearing: True
         marking: True
 
-dwb_controller_local_costmap_client:
+local_costmap_client:
   ros__parameters:
     use_sim_time: True
 
-dwb_controller_local_costmap_rclcpp_node:
+local_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
@@ -130,11 +130,15 @@ map_server:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
 
-nav2_controller:
+lifecycle_manager:
   ros__parameters:
     use_sim_time: True
 
-nav2_controller_lifecycle_client_node:
+lifecycle_manager_service_client:
+  ros__parameters:
+    use_sim_time: True
+
+lifecycle_manager_client_service_client:
   ros__parameters:
     use_sim_time: True
 
@@ -156,10 +160,10 @@ world_model:
   ros__parameters:
     use_sim_time: True
 
-world_model_global_costmap_client:
+global_costmap_client:
   ros__parameters:
     use_sim_time: True
 
-world_model_global_costmap_rclcpp_node:
+global_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
