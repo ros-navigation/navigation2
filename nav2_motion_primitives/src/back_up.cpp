@@ -75,9 +75,9 @@ nav2_tasks::TaskStatus BackUp::controlledBackup()
 
   double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
   double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
-  double distance_ = sqrt(diff_x * diff_x + diff_y * diff_y);
+  double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
-  if (distance_ >= abs(command_x_)) {
+  if (distance >= abs(command_x_)) {
     cmd_vel.linear.x = 0;
     robot_->sendVelocity(cmd_vel);
     return TaskStatus::SUCCEEDED;
