@@ -133,7 +133,7 @@ private:
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
-  nav2_msgs::msg::Costmap costmap_raw_;  
+  nav2_msgs::msg::Costmap costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.
   static char * cost_translation_table_;
 };

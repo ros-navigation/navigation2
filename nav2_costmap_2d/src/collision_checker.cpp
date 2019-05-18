@@ -40,7 +40,7 @@ CollisionChecker::CollisionChecker(
 CollisionChecker::~CollisionChecker() {}
 
 bool CollisionChecker::isCollisionFree(
-const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose2D & pose)
 {
   try {
     if (scorePose(pose) < 0) {
@@ -57,7 +57,7 @@ const geometry_msgs::msg::Pose2D & pose)
 }
 
 double CollisionChecker::scorePose(
-const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose2D & pose)
 {
   Costmap2D * costmap_;
   try {
@@ -107,13 +107,13 @@ const geometry_msgs::msg::Pose2D & pose)
   // we also need to connect the first point in the footprint to the last point
   // get the cell coord of the last point
   if (!costmap_->worldToMap(footprint.back().x, footprint.back().y, x0, y0)) {
-      RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x0, y0);
+    RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x0, y0);
     throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
   }
 
   // get the cell coord of the first point
   if (!costmap_->worldToMap(footprint.front().x, footprint.front().y, x1, y1)) {
-      RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x1, y1);
+    RCLCPP_DEBUG(node_->get_logger(), "Map Cell: [%d, %d]", x1, y1);
     throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
   }
 
@@ -193,7 +193,7 @@ void CollisionChecker::unorientFootprint(
   std::vector<geometry_msgs::msg::Point> & reset_footprint)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-   if (!getRobotPose(current_pose)) {
+  if (!getRobotPose(current_pose)) {
     throw CollisionCheckerException("Robot pose unavailable.");
   }
 
@@ -207,4 +207,3 @@ void CollisionChecker::unorientFootprint(
 }
 
 }  // namespace nav2_costmap_2d
-

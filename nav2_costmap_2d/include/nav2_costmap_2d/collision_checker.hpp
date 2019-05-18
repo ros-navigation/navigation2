@@ -46,7 +46,7 @@ public:
     std::shared_ptr<FootprintSubscriber> footprint_sub,
     tf2_ros::Buffer & tf_buffer,
     std::string name = "collision_checker");
-  
+
   ~CollisionChecker();
 
   double scorePose(
@@ -70,7 +70,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
   std::string name_;
   std::shared_ptr<CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<FootprintSubscriber> footprint_sub_;  
+  std::shared_ptr<FootprintSubscriber> footprint_sub_;
 };
 }  // namespace nav2_costmap_2d
 
