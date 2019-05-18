@@ -72,24 +72,23 @@ public:
 
     costmap_pub_ = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(node_,
         layers_.getCostmap(), global_frame_, "costmap", true);
-    
+
     publish();
   }
 
   ~TestCollisionChecker() {}
 
-  bool testPose(double x,double y, double theta)
+  bool testPose(double x, double y, double theta)
   {
     geometry_msgs::msg::Pose2D pose;
     pose.x = x;
     pose.y = y;
     pose.theta = theta;
 
-    setPose(x,y,theta);
+    setPose(x, y, theta);
     costmap_received_ = false;
 
-    while(!costmap_received_)
-    {
+    while (!costmap_received_) {
       rclcpp::spin_some(node_);
     }
 
@@ -129,19 +128,19 @@ protected:
 
   void publish()
   {
-    auto timer_callback = [this]() -> void 
-    {
-      try {
-        costmap_sub_->getCostmap();
-        costmap_received_ = true;
-      } catch (const std::runtime_error & e) {
-        costmap_received_ = false;
-      }
+    auto timer_callback = [this]() -> void
+      {
+        try {
+          costmap_sub_->getCostmap();
+          costmap_received_ = true;
+        } catch (const std::runtime_error & e) {
+          costmap_received_ = false;
+        }
         publishFootprint();
         publishCostmap();
-    };
+      };
 
-    timer_ = node_->create_wall_timer(0.1s, timer_callback);     
+    timer_ = node_->create_wall_timer(0.1s, timer_callback);
   }
 
   void publishFootprint()
@@ -180,7 +179,7 @@ public:
 
     node_ = rclcpp::Node::make_shared(
       "test_collision_checker", nav2_util::get_node_options_default());
-    
+
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -189,7 +188,8 @@ public:
     costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node_, costmap_topic);
     footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(node_, footprint_topic);
 
-    collision_checker_ = std::make_unique<TestCollisionChecker>(node_, costmap_sub_, footprint_sub_, *tf_buffer_);
+    collision_checker_ = std::make_unique<TestCollisionChecker>(node_, costmap_sub_, footprint_sub_,
+        *tf_buffer_);
   }
 
   ~TestNode() {}

@@ -50,4 +50,3 @@ FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped
 }
 
 }  // namespace nav2_costmap_2d
-

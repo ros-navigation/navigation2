@@ -31,7 +31,7 @@ public:
     std::string & topic_name);
   ~FootprintSubscriber() {}
 
-bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
+  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
 protected:
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);

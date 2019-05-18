@@ -43,16 +43,16 @@ void CostmapSubscriber::toCostmap2D()
 {
   if (!costmap_received_) {
     costmap_ = new Costmap2D(
-    msg_->metadata.size_x, msg_->metadata.size_y,
-    msg_->metadata.resolution, msg_->metadata.origin.position.x,
-    msg_->metadata.origin.position.y);
+      msg_->metadata.size_x, msg_->metadata.size_y,
+      msg_->metadata.resolution, msg_->metadata.origin.position.x,
+      msg_->metadata.origin.position.y);
   } else if (costmap_->getSizeInCellsX() != msg_->metadata.size_x ||
     costmap_->getSizeInCellsY() != msg_->metadata.size_y ||
     costmap_->getResolution() != msg_->metadata.resolution ||
     costmap_->getOriginX() != msg_->metadata.origin.position.x ||
     costmap_->getOriginY() != msg_->metadata.origin.position.y)
   {
-    // Update the size of the costmap 
+    // Update the size of the costmap
     costmap_->resizeMap(msg_->metadata.size_x, msg_->metadata.size_y,
       msg_->metadata.resolution,
       msg_->metadata.origin.position.x,
@@ -61,7 +61,7 @@ void CostmapSubscriber::toCostmap2D()
 
   unsigned char * master_array = costmap_->getCharMap();
   unsigned int index = 0;
-  for (unsigned int i = 0; i <  msg_->metadata.size_x; ++i) {
+  for (unsigned int i = 0; i < msg_->metadata.size_x; ++i) {
     for (unsigned int j = 0; j < msg_->metadata.size_y; ++j) {
       master_array[index] = msg_->data[index];
       ++index;
@@ -79,4 +79,3 @@ void CostmapSubscriber::costmap_callback(const nav2_msgs::msg::Costmap::SharedPt
 }
 
 }  // namespace nav2_costmap_2d
-

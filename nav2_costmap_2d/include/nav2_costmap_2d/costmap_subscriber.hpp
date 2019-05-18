@@ -32,7 +32,7 @@ public:
     std::string & topic_name);
   ~CostmapSubscriber() {}
 
-Costmap2D * getCostmap();
+  Costmap2D * getCostmap();
 
 protected:
   void toCostmap2D();
