@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/lifecycle_utils.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"

@@ -25,6 +25,7 @@ add_library(${library_name} SHARED
   src/lifecycle_service_client.cpp
   src/lifecycle_utils.cpp
   src/node_utils.cpp
+  src/rate_constraint.cpp
   src/string_utils.cpp
 )
 
