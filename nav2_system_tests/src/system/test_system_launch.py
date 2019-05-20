@@ -103,7 +103,8 @@ def generate_launch_description():
             node_executable='lifecycle_manager',
             node_name='lifecycle_manager',
             output='screen',
-            parameters=[node_names, {'autostart': True}]),
+            parameters=[{'node_names': ['map_server', 'amcl', 'world_model',
+                'dwb_controller', 'navfn_planner', 'simple_navigator']}, {'autostart': True}]),
     ])
 
 
