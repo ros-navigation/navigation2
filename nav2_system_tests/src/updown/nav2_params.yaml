@@ -87,25 +87,26 @@ dwb_controller:
     GoalDist.scale: 24.0
     RotateToGoal.scale: 32.0
 
-dwb_controller_local_costmap:
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: True
+      robot_radius: 0.092
+      obstacle_layer:
+        enabled: False
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
+        marking: True
+
+local_costmap_client:
   ros__parameters:
     use_sim_time: True
-    robot_radius: 0.092
-    obstacle_layer:
-      enabled: False
-    always_send_full_costmap: True
-    observation_sources: scan
-    scan:
-      topic: /scan
-      max_obstacle_height: 2.0
-      clearing: True
-      marking: True
 
-dwb_controller_local_costmap_client:
-  ros__parameters:
-    use_sim_time: True
-
-dwb_controller_local_costmap_rclcpp_node:
+local_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
@@ -152,23 +153,24 @@ world_model:
   ros__parameters:
     use_sim_time: True
 
-world_model_global_costmap:
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: True
+      obstacle_layer:
+        enabled: False
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
+        marking: True
+
+global_costmap_client:
   ros__parameters:
     use_sim_time: True
-    obstacle_layer:
-      enabled: False
-    always_send_full_costmap: True
-    observation_sources: scan
-    scan:
-      topic: /scan
-      max_obstacle_height: 2.0
-      clearing: True
-      marking: True
 
-world_model_global_costmap_client:
-  ros__parameters:
-    use_sim_time: True
-
-world_model_global_costmap_rclcpp_node:
+global_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
