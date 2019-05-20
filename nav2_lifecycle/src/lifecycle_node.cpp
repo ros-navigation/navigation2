@@ -17,6 +17,8 @@
 #include <memory>
 #include <string>
 
+#include "lifecycle_msgs/msg/state.hpp"
+
 namespace nav2_lifecycle
 {
 
@@ -45,7 +47,7 @@ LifecycleNode::LifecycleNode(
   use_rclcpp_node_(use_rclcpp_node)
 {
   if (use_rclcpp_node_) {
-    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node");
+    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_);
     rclcpp_thread_ = std::make_unique<std::thread>(
       [](rclcpp::Node::SharedPtr node) {rclcpp::spin(node);}, rclcpp_node_
     );
@@ -54,6 +56,12 @@ LifecycleNode::LifecycleNode(
 
 LifecycleNode::~LifecycleNode()
 {
+  // In case this lifecycle node wasn't properly shut down, do it here
+  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    on_deactivate(get_current_state());
+    on_cleanup(get_current_state());
+  }
+
   if (use_rclcpp_node_) {
     rclcpp_thread_->join();
   }
