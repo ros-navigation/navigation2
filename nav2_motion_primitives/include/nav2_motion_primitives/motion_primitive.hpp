@@ -144,6 +144,9 @@ protected:
           RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
           goal_handle->abort(result);
           return;
+
+        default:
+          break;
       }
 
       loop_rate.sleep();
