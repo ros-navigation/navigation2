@@ -63,6 +63,9 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
+  for (auto &notifier : observation_notifiers_) {
+    notifier.reset();
+  }
 }
 
 void ObstacleLayer::onInitialize()
@@ -185,8 +188,8 @@ void ObstacleLayer::onInitialize()
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
-      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>
-      > sub(new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub(
+        new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(
           rclcpp_node_, topic, custom_qos_profile));
 
       std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> filter(
@@ -205,12 +208,13 @@ void ObstacleLayer::onInitialize()
       }
 
       observation_subscribers_.push_back(sub);
-      observation_notifiers_.push_back(filter);
 
+      observation_notifiers_.push_back(filter);
       observation_notifiers_.back()->setTolerance(nav2_util::duration_from_seconds(0.05));
+
     } else {
-      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>
-      > sub(new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub(
+        new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(
           rclcpp_node_, topic, custom_qos_profile));
 
       if (inf_is_valid) {
@@ -218,9 +222,10 @@ void ObstacleLayer::onInitialize()
           "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
-      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>
-      > filter(new tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>(
+      std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> filter(
+        new tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>(
           *sub, *tf_, global_frame_, 50, rclcpp_node_));
+
       filter->registerCallback(std::bind(
           &ObstacleLayer::pointCloud2Callback, this, std::placeholders::_1,
           observation_buffers_.back()));
