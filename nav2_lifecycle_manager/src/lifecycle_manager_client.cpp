@@ -110,8 +110,12 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
   auto goal = nav2_msgs::action::NavigateToPose::Goal();
   goal.pose = target_pose;
 
+  // Enable result awareness by providing an empty lambda function
+  auto send_goal_options = typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = [](auto){};
+
   // Send it
-  auto future_goal_handle = navigate_action_client_->async_send_goal(goal);
+  auto future_goal_handle = navigate_action_client_->async_send_goal(goal, send_goal_options);
   if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
