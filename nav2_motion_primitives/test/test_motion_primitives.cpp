@@ -15,66 +15,58 @@
 #include <string>
 #include <memory>
 #include <chrono>
-#include <atomic>
 #include <iostream>
+#include <future>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "nav2_tasks/task_client.hpp"
-#include "nav2_tasks/task_status.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_motion_primitives/motion_primitive.hpp"
+#include "nav2_msgs/action/motion_primitive.hpp"
 
-using nav2_tasks::TaskStatus;
 using nav2_motion_primitives::MotionPrimitive;
+using nav2_motion_primitives::Status;
+using MotionPrimitiveAction = nav2_msgs::action::MotionPrimitive;
+using ClientGoalHandle = rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>;
+
 using namespace std::chrono_literals;
 
-// Let's create a motion primitive for testing the base class
+// A motion primitive for testing the base class
 
-using DummyPrimitiveCommand = std_msgs::msg::String;
-using DummyPrimitiveResult = std_msgs::msg::String;
-
-using DummyPrimitiveClient = nav2_tasks::TaskClient<DummyPrimitiveCommand, DummyPrimitiveResult>;
-
-class DummyPrimitive : public MotionPrimitive<DummyPrimitiveCommand, DummyPrimitiveResult>
+class DummyPrimitive : public MotionPrimitive<MotionPrimitiveAction>
 {
 public:
   explicit DummyPrimitive(rclcpp::Node::SharedPtr & node)
-  : MotionPrimitive<DummyPrimitiveCommand, DummyPrimitiveResult>(node),
+  : MotionPrimitive<MotionPrimitiveAction>(node, "MotionPrimitive"),
     initialized_(false) {}
 
   ~DummyPrimitive() {}
 
-  TaskStatus onRun(const DummyPrimitiveCommand::SharedPtr command) override
+  Status onRun(const std::shared_ptr<const MotionPrimitiveAction::Goal> goal) override
   {
     // A normal primitive would catch the command and initialize
     initialized_ = false;
-    command_ = command;
+    command_ = goal->command.data;
     start_time_ = std::chrono::system_clock::now();
 
     // onRun method can have various possible outcomes (success, failure, cancelled)
     // The output is defined by the tester class on the command string.
-
-    if (command_->data == "Testing failure on init") {
-      // A real primitive would return failed if initialization failed or command is invalid
-      return TaskStatus::FAILED;
-      // return TaskStatus::SUCCEEDED;
-    } else if (command_->data == "Testing success" || command->data == "Testing failure on run") {
+    if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;
-      return TaskStatus::SUCCEEDED;
-    } else {
-      return TaskStatus::FAILED;
+      return Status::SUCCEEDED;
     }
+
+    return Status::FAILED;
   }
 
-  TaskStatus onCycleUpdate(DummyPrimitiveResult & /*result*/) override
+  Status onCycleUpdate() override
   {
     // A normal primitive would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
-    if (command_->data != "Testing success" || !initialized_) {
-      return TaskStatus::FAILED;
+    if (command_ != "Testing success" || !initialized_) {
+      return Status::FAILED;
     }
 
     // Fake getting the robot state, calculate and send control output
@@ -87,40 +79,24 @@ public:
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
-      return TaskStatus::SUCCEEDED;
+      return Status::SUCCEEDED;
     }
 
-    return TaskStatus::RUNNING;
+    return Status::RUNNING;
   }
 
 private:
   bool initialized_;
-  std::shared_ptr<DummyPrimitiveCommand> command_;
+  std::string command_;
   std::chrono::system_clock::time_point start_time_;
 };
-
-// The following getTaskName function is required and currently has to be
-// in the nav2_tasks namespace
-
-namespace nav2_tasks
-{
-
-template<>
-inline const char * getTaskName<DummyPrimitiveCommand, DummyPrimitiveResult>()
-{
-  return "TestMotionPrimitivesTask";
-}
-
-}
 
 // Define a test class to hold the context for the tests
 
 class MotionPrimitivesTest : public ::testing::Test
 {
 protected:
-  MotionPrimitivesTest()
-  : spinning_ok_(false) {}
-
+  MotionPrimitivesTest() {}
   ~MotionPrimitivesTest() {}
 
   void SetUp() override
@@ -129,92 +105,99 @@ protected:
 
     primitive_ = std::make_unique<DummyPrimitive>(node_);
 
-    client_ = std::make_unique<DummyPrimitiveClient>(node_);
-
-    // Launch a thread to spin the node
-    spinning_ok_ = true;
-    spin_thread_ = new std::thread(&MotionPrimitivesTest::spin, this);
+    client_ = rclcpp_action::create_client<MotionPrimitiveAction>(node_, "MotionPrimitive");
   }
 
-  void TearDown() override
-  {
-    spinning_ok_ = false;
-    spin_thread_->join();
-    delete spin_thread_;
-  }
+  void TearDown() override {}
 
-  void spin()
+  bool sendCommand(const std::string & command)
   {
-    while (spinning_ok_) {
-      // Spin the node to get messages from the subscriptions
-      rclcpp::spin_some(node_->get_node_base_interface());
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (!client_->wait_for_action_server(4s)) {
+      return false;
     }
-    std::cout << "Exiting node spinning function" << std::endl;
-  }
 
-  void sendStringCommand(const std::string & string_command)
-  {
-    auto command = std::make_shared<DummyPrimitiveCommand>();
-    command->data = string_command;
-    client_->sendCommand(command);
-  }
+    auto future_goal = getGoal(command);
 
-  TaskStatus waitForPrimitive()
-  {
-    auto result = std::make_shared<DummyPrimitiveResult>();
-
-    // Loop until primitive is completed
-    while (true) {
-      TaskStatus status = client_->waitForResult(result, 100ms);
-
-      if (status != TaskStatus::RUNNING) {
-        return status;
-      }
+    if (rclcpp::spin_until_future_complete(node_, future_goal) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      return false;
     }
+
+    goal_handle_ = future_goal.get();
+
+    if (!goal_handle_) {
+      return false;
+    }
+
+    return true;
+  }
+
+  std::shared_future<ClientGoalHandle::SharedPtr> getGoal(const std::string & command)
+  {
+    auto goal = MotionPrimitiveAction::Goal();
+    goal.command.data = command;
+
+    auto goal_options = rclcpp_action::Client<MotionPrimitiveAction>::SendGoalOptions();
+    goal_options.result_callback = [](auto){};
+
+    return client_->async_send_goal(goal, goal_options);
+  }
+
+  Status getOutcome()
+  {
+    if (getResult().code == rclcpp_action::ResultCode::SUCCEEDED) {
+      return Status::SUCCEEDED;
+    }
+
+    return Status::FAILED;
+  }
+
+  ClientGoalHandle::WrappedResult getResult()
+  {
+    auto future_result = goal_handle_->async_result();
+    rclcpp::executor::FutureReturnCode frc;
+
+    do {
+      frc = rclcpp::spin_until_future_complete(node_, future_result);
+    } while (frc != rclcpp::executor::FutureReturnCode::SUCCESS);
+
+    return future_result.get();
   }
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<DummyPrimitive> primitive_;
-  std::unique_ptr<DummyPrimitiveClient> client_;
-  std::thread * spin_thread_;
-  std::atomic<bool> spinning_ok_;
+  std::shared_ptr<rclcpp_action::Client<MotionPrimitiveAction>> client_;
+  std::shared_ptr<rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>> goal_handle_;
 };
 
 // Define the tests
 
 TEST_F(MotionPrimitivesTest, testingSuccess)
 {
-  sendStringCommand("Testing success");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::SUCCEEDED);
+  ASSERT_TRUE(sendCommand("Testing success"));
+  EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
 }
 
 TEST_F(MotionPrimitivesTest, testingFailureOnRun)
 {
-  sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 TEST_F(MotionPrimitivesTest, testingFailureOnInit)
 {
-  sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 TEST_F(MotionPrimitivesTest, testingSequentialFailures)
 {
-  sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 
-  sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::FAILED);
-}
-
-TEST_F(MotionPrimitivesTest, testCancel)
-{
-  sendStringCommand("Testing success");
-  client_->cancel();
-  EXPECT_EQ(waitForPrimitive(), TaskStatus::CANCELED);
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 int main(int argc, char ** argv)
