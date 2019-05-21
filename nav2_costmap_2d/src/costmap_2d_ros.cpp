@@ -102,6 +102,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
 
   // we need to make sure that the transform between the robot base frame
   // and the global frame is available
+  rclcpp::Rate r(10);
   while (rclcpp::ok() &&
     !tf_.canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
@@ -116,6 +117,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf)
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
     tf_error.clear();
+    r.sleep();
   }
 
   // check if we want a rolling window version of the costmap
@@ -382,7 +384,7 @@ void Costmap2DROS::start()
   stop_updates_ = false;
 
   // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(100.0);
+  rclcpp::Rate r(20.0);
   while (rclcpp::ok() && !initialized_) {
     r.sleep();
   }
