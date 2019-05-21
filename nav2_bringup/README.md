@@ -37,7 +37,7 @@ Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simul
 # Set the tf publisher node to use simulation time or AMCL won't get the transforms correctly
 ros2 param set /robot_state_publisher use_sim_time True
 # Launch map_server and AMCL, set map_type as "occupancy" by default.
-ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy use_sim_time:=True
+ros2 launch nav2_bringup nav2_bringup_localization_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy use_sim_time:=True
 ```
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
@@ -46,7 +46,7 @@ In RVIZ:
 ### Terminal 4:
 Run the rest of the Navigation2 bringup
 
-`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py use_sim_time:=True`
+`ros2 launch nav2_bringup nav2_bringup_navigation_launch.py use_sim_time:=True`
 
 ### Terminal 5:
 Set the World Model and the two costmap nodes to use simulation time
@@ -81,7 +81,7 @@ Pre-requisites:
 
 Launch the code using this launch file and your map.yaml:
 
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
+`ros2 launch nav2_bringup nav2_bringup_localization_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
 
 In another terminal, run RVIZ:
 
@@ -93,7 +93,7 @@ In RVIZ:
 
 Run the rest of the Navigation2 bringup
 
-`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
+`ros2 launch nav2_bringup nav2_bringup_navigation_launch.py`
 
 In RVIZ:
 * Localize the robot using “2D Pose Estimate” button.
@@ -105,7 +105,7 @@ Pre-requisites:
 * You know your transforms are being published correctly and AMCL can localize
 
 Follow directions above *except*
-* Instead of running the `nav2_bringup_1st_launch.py` then the `nav2_bringup_2nd_launch.py`
+* Instead of running the `nav2_bringup_localization_launch.py` then the `nav2_bringup_navigation_launch.py`
 * You can do it in one step like this:
 ```
 ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>
