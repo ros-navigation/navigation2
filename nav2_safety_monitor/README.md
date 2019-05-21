@@ -23,7 +23,7 @@ process:
         type: sonar
         topic: sonar_2
       bump:
-        type: collision
+        type: contact
         topic: bump
       collision_zone: [0.1, 0.1, 0.0, 0.0]
       safety_zone: [0.3, 0.3, 0.0, 0.0]

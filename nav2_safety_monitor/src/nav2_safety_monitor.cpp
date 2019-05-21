@@ -25,9 +25,6 @@ SafetyMonitor::SafetyMonitor(rclcpp::Node::SharedPtr & node)
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   std::string topic, config_type;
-  node_->get_parameter_or<std::string>("laser_topic", topic, std::string("scan"));
-  safety_sensors_.push_back(new LaserSensor(node_, topic));
-
   rclcpp::Parameter sensors_param = node_->get_parameter("sensors");
   std::vector<std::string> sensors_configs = sensors_param.as_string_array();
 
@@ -39,20 +36,21 @@ SafetyMonitor::SafetyMonitor(rclcpp::Node::SharedPtr & node)
 
     if (topic == std::string("") || config_type == std::string("")) {
       RCLCPP_WARN(node_->get_logger(), "No topic given for config %s.", sensors_configs[i].c_str());
+      continue;
     }
 
     if (config_type == std::string("laser")) {
       RCLCPP_INFO(node_->get_logger(), "Creating laser sensor of topic: %s.", topic.c_str());
       safety_sensors_.push_back(std::make_unique<LaserSensor>(node_, topic));
-    } else if (config_type == std::string("collision")) {
-      RCLCPP_INFO(node_->get_logger(), "Creating collision sensor of topic: %s.", topic.c_str());
-      safety_sensors_.push_back(std::make_unique<CollisionSensor>(node_, topic));
+    } else if (config_type == std::string("contact")) {
+      RCLCPP_INFO(node_->get_logger(), "Creating contact sensor of topic: %s.", topic.c_str());
+      safety_sensors_.push_back(std::make_unique<ContactSensor>(node_, topic));
     } else if (config_type == std::string("sonar")) {
       RCLCPP_INFO(node_->get_logger(), "Creating sonar sensor of topic: %s.", topic.c_str());
       safety_sensors_.push_back(std::make_unique<SonarSensor>(node_, topic));
     } else {
       RCLCPP_WARN(node_->get_logger(), "Config: %s's type: %s is invalid. "
-        "Options are: laser, collision, or sonar.", sensors_configs[i].c_str(), config_type.c_str());
+        "Options are: laser, contact, or sonar.", sensors_configs[i].c_str(), config_type.c_str());
     }
   }
 }
@@ -75,7 +73,7 @@ SafetyMonitor::toggleCallback(
 void
 SafetyMonitor::process()
 {
-  std::vector<SafetySensor*>::const_iterator sensor = safety_sensors_.begin();
+  std::vector<std::unique_ptr<SafetySensor> >::const_iterator sensor = safety_sensors_.begin();
   for ( ; sensor != safety_sensors_.end(); ++sensor) {
     (*sensor)->process();
   }
@@ -88,7 +86,7 @@ SafetyMonitor::isInCollisionZone()
     return false;
   }
 
-  std::vector<SafetySensor*>::const_iterator sensor = safety_sensors_.begin();
+  std::vector<std::unique_ptr<SafetySensor> >::const_iterator sensor = safety_sensors_.begin();
 
   for ( ; sensor != safety_sensors_.end(); ++sensor) {
     if ((*sensor)->getState() == SafetyState::COLLISION) {
@@ -106,7 +104,7 @@ SafetyMonitor::isInSafetyZone()
     return false;
   }
 
-  std::vector<SafetySensor*>::const_iterator sensor = safety_sensors_.begin();
+  std::vector<std::unique_ptr<SafetySensor> >::const_iterator sensor = safety_sensors_.begin();
 
   for ( ; sensor != safety_sensors_.end(); ++sensor) {
     if ((*sensor)->getState() == SafetyState::SLOW) {
