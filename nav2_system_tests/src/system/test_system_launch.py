@@ -23,7 +23,7 @@ from launch import LaunchDescription
 from launch import LaunchService
 import launch.actions
 import launch_ros.actions
-from launch_testing import LaunchTestService
+from launch_testing.legacy import LaunchTestService
 
 
 def generate_launch_description():
@@ -33,8 +33,6 @@ def generate_launch_description():
     params_file = os.getenv('TEST_PARAMS')
     astar = (os.getenv('ASTAR').lower() == 'true')
     navigator = os.getenv('NAVIGATOR')
-    node_names = {'node_names': [
-        'map_server', 'amcl', 'world_model', 'dwb_controller', 'navfn_planner', 'bt_navigator']}
     if (navigator == 'simple'):
         navigator_action = launch_ros.actions.Node(
             package='nav2_simple_navigator',
@@ -42,8 +40,6 @@ def generate_launch_description():
             node_name='simple_navigator',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}])
-        node_names = {'node_names': ['map_server', 'amcl', 'world_model',
-                                     'dwb_controller', 'navfn_planner', 'simple_navigator']}
     elif (navigator == 'bt'):
         bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
         bt_navigator_xml = os.path.join(bt_navigator_install_path,
@@ -119,7 +115,8 @@ def generate_launch_description():
             node_executable='lifecycle_manager',
             node_name='lifecycle_manager',
             output='screen',
-            parameters=[node_names, {'autostart': True}]),
+            parameters=[{'node_names': ['map_server', 'amcl', 'world_model',
+                'dwb_controller', 'navfn_planner', 'simple_navigator']}, {'autostart': True}]),
     ])
 
 

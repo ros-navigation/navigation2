@@ -57,6 +57,43 @@ AmclNode::AmclNode()
 : nav2_lifecycle::LifecycleNode("amcl", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+
+  declare_parameter("alpha1", rclcpp::ParameterValue(0.2));
+  declare_parameter("alpha2", rclcpp::ParameterValue(0.2));
+  declare_parameter("alpha3", rclcpp::ParameterValue(0.2));
+  declare_parameter("alpha4", rclcpp::ParameterValue(0.2));
+  declare_parameter("alpha5", rclcpp::ParameterValue(0.2));
+  declare_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
+  declare_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
+  declare_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
+  declare_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
+  declare_parameter("do_beamskip", rclcpp::ParameterValue(false));
+  declare_parameter("global_frame_id", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("lambda_short", rclcpp::ParameterValue(0.1));
+  declare_parameter("laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
+  declare_parameter("laser_max_range", rclcpp::ParameterValue(100.0));
+  declare_parameter("laser_min_range", rclcpp::ParameterValue(-1.0));
+  declare_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
+  declare_parameter("max_beams", rclcpp::ParameterValue(60));
+  declare_parameter("max_particles", rclcpp::ParameterValue(2000));
+  declare_parameter("min_particles", rclcpp::ParameterValue(500));
+  declare_parameter("odom_frame_id", rclcpp::ParameterValue(std::string("odom")));
+  declare_parameter("pf_err", rclcpp::ParameterValue(0.05));
+  declare_parameter("pf_z", rclcpp::ParameterValue(0.99));
+  declare_parameter("recovery_alpha_fast", rclcpp::ParameterValue(0.0));
+  declare_parameter("recovery_alpha_slow", rclcpp::ParameterValue(0.0));
+  declare_parameter("resample_interval", rclcpp::ParameterValue(1));
+  declare_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  declare_parameter("save_pose_rate", rclcpp::ParameterValue(0.5));
+  declare_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
+  declare_parameter("tf_broadcast", rclcpp::ParameterValue(true));
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(1.0));
+  declare_parameter("update_min_a", rclcpp::ParameterValue(0.2));
+  declare_parameter("update_min_d", rclcpp::ParameterValue(0.25));
+  declare_parameter("z_hit", rclcpp::ParameterValue(0.5));
+  declare_parameter("z_max", rclcpp::ParameterValue(0.05));
+  declare_parameter("z_rand", rclcpp::ParameterValue(0.5));
+  declare_parameter("z_short", rclcpp::ParameterValue(0.05));
 }
 
 AmclNode::~AmclNode()
@@ -85,28 +122,21 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 void
 AmclNode::waitForTransforms()
 {
-  rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
 
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-    tf2::durationFromSec(0.1), &tf_error))
+    tf2::durationFromSec(1.0), &tf_error))
   {
-    if (last_error + nav2_util::duration_from_seconds(1.0) < rclcpp_node_->now()) {
-      RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
-        " to become available, tf error: %s",
-        odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
-      last_error = rclcpp_node_->now();
-    }
+    RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
+      " to become available, tf error: %s",
+      odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
 
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
     tf_error.clear();
-
-    // Let the transforms populate, then retry
-    std::this_thread::sleep_for(10ms);
   }
 }
 
@@ -775,42 +805,42 @@ AmclNode::initParameters()
   double save_pose_rate;
   double tmp_tol;
 
-  get_parameter_or_set("alpha1", alpha1_, 0.2);
-  get_parameter_or_set("alpha2", alpha2_, 0.2);
-  get_parameter_or_set("alpha3", alpha3_, 0.2);
-  get_parameter_or_set("alpha4", alpha4_, 0.2);
-  get_parameter_or_set("alpha5", alpha5_, 0.2);
-  get_parameter_or_set("base_frame_id", base_frame_id_, std::string("base_footprint"));
-  get_parameter_or_set("beam_skip_distance", beam_skip_distance_, 0.5);
-  get_parameter_or_set("beam_skip_error_threshold", beam_skip_error_threshold_, 0.9);
-  get_parameter_or_set("beam_skip_threshold", beam_skip_threshold_, 0.3);
-  get_parameter_or_set("do_beamskip", do_beamskip_, false);
-  get_parameter_or_set("global_frame_id", global_frame_id_, std::string("map"));
-  get_parameter_or_set("lambda_short", lambda_short_, 0.1);
-  get_parameter_or_set("laser_likelihood_max_dist", laser_likelihood_max_dist_, 2.0);
-  get_parameter_or_set("laser_max_range", laser_max_range_, 100.0);
-  get_parameter_or_set("laser_min_range", laser_min_range_, -1.0);
-  get_parameter_or_set("laser_model_type", sensor_model_type_, std::string("likelihood_field"));
-  get_parameter_or_set("max_beams", max_beams_, 60);
-  get_parameter_or_set("max_particles", max_particles_, 2000);
-  get_parameter_or_set("min_particles", min_particles_, 500);
-  get_parameter_or_set("odom_frame_id", odom_frame_id_, std::string("odom"));
-  get_parameter_or_set("pf_err", pf_err_, 0.05);
-  get_parameter_or_set("pf_z", pf_z_, 0.99);
-  get_parameter_or_set("recovery_alpha_fast", alpha_fast_, 0.0);
-  get_parameter_or_set("recovery_alpha_slow", alpha_slow_, 0.0);
-  get_parameter_or_set("resample_interval", resample_interval_, 1);
-  get_parameter_or_set("robot_model_type", robot_model_type_, std::string("differential"));
-  get_parameter_or_set("save_pose_rate", save_pose_rate, 0.5);
-  get_parameter_or_set("sigma_hit", sigma_hit_, 0.2);
-  get_parameter_or_set("tf_broadcast", tf_broadcast_, true);
-  get_parameter_or_set("transform_tolerance", tmp_tol, 1.0);
-  get_parameter_or_set("update_min_a", a_thresh_, 0.2);
-  get_parameter_or_set("update_min_d", d_thresh_, 0.25);
-  get_parameter_or_set("z_hit", z_hit_, 0.5);
-  get_parameter_or_set("z_max", z_max_, 0.05);
-  get_parameter_or_set("z_rand", z_rand_, 0.5);
-  get_parameter_or_set("z_short", z_short_, 0.05);
+  get_parameter("alpha1", alpha1_);
+  get_parameter("alpha2", alpha2_);
+  get_parameter("alpha3", alpha3_);
+  get_parameter("alpha4", alpha4_);
+  get_parameter("alpha5", alpha5_);
+  get_parameter("base_frame_id", base_frame_id_);
+  get_parameter("beam_skip_distance", beam_skip_distance_);
+  get_parameter("beam_skip_error_threshold", beam_skip_error_threshold_);
+  get_parameter("beam_skip_threshold", beam_skip_threshold_);
+  get_parameter("do_beamskip", do_beamskip_);
+  get_parameter("global_frame_id", global_frame_id_);
+  get_parameter("lambda_short", lambda_short_);
+  get_parameter("laser_likelihood_max_dist", laser_likelihood_max_dist_);
+  get_parameter("laser_max_range", laser_max_range_);
+  get_parameter("laser_min_range", laser_min_range_);
+  get_parameter("laser_model_type", sensor_model_type_);
+  get_parameter("max_beams", max_beams_);
+  get_parameter("max_particles", max_particles_);
+  get_parameter("min_particles", min_particles_);
+  get_parameter("odom_frame_id", odom_frame_id_);
+  get_parameter("pf_err", pf_err_);
+  get_parameter("pf_z", pf_z_);
+  get_parameter("recovery_alpha_fast", alpha_fast_);
+  get_parameter("recovery_alpha_slow", alpha_slow_);
+  get_parameter("resample_interval", resample_interval_);
+  get_parameter("robot_model_type", robot_model_type_);
+  get_parameter("save_pose_rate", save_pose_rate);
+  get_parameter("sigma_hit", sigma_hit_);
+  get_parameter("tf_broadcast", tf_broadcast_);
+  get_parameter("transform_tolerance", tmp_tol);
+  get_parameter("update_min_a", a_thresh_);
+  get_parameter("update_min_d", d_thresh_);
+  get_parameter("z_hit", z_hit_);
+  get_parameter("z_max", z_max_);
+  get_parameter("z_rand", z_rand_);
+  get_parameter("z_short", z_short_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -929,16 +959,14 @@ AmclNode::initPubSub()
   RCLCPP_INFO(get_logger(), "initPubSub");
 
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>("particlecloud",
-      rmw_qos_profile_sensor_data);
-
-  rmw_qos_profile_t amcl_qos_profile = rmw_qos_profile_default;
-  amcl_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+      rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-      amcl_qos_profile);
+      rclcpp::SystemDefaultsQoS().transient_local());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "initialpose", std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
+    "initialpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 }
 
 void

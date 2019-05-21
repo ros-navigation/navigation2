@@ -13,15 +13,13 @@
 // limitations under the License. Reserved.
 
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_motion_primitives/spin.hpp"
 #include "nav2_motion_primitives/back_up.hpp"
+#include "nav2_motion_primitives/spin.hpp"
 
 int main(int argc, char ** argv)
 {
-  // Force flush of the stdout buffer.
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-
   rclcpp::init(argc, argv);
 
   auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");
