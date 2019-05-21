@@ -102,13 +102,13 @@ void DWBLocalPlanner::initialize(
   std::string traj_generator_name;
   nh_->get_parameter_or("trajectory_generator_name", traj_generator_name,
     std::string("dwb_plugins::StandardTrajectoryGenerator"));
-  traj_generator_ = std::move(traj_gen_loader_.createUniqueInstance(traj_generator_name));
+  traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
   traj_generator_->initialize(nh_);
 
   std::string goal_checker_name;
   nh_->get_parameter_or("goal_checker_name", goal_checker_name,
     std::string("dwb_plugins::SimpleGoalChecker"));
-  goal_checker_ = std::move(goal_checker_loader_.createUniqueInstance(goal_checker_name));
+  goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
   goal_checker_->initialize(nh_);
 
   loadCritics();
@@ -150,7 +150,7 @@ void DWBLocalPlanner::loadCritics()
     nh_->get_parameter_or(plugin_name + "/class", plugin_class, plugin_name);
     plugin_class = resolveCriticClassName(plugin_class);
 
-    TrajectoryCritic::Ptr plugin = std::move(critic_loader_.createUniqueInstance(plugin_class));
+    TrajectoryCritic::Ptr plugin = critic_loader_.createUniqueInstance(plugin_class);
     RCLCPP_INFO(nh_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);

@@ -10,13 +10,13 @@ DwbController:
     max_vel_y: 0.0
     max_vel_theta: 1.0
     min_speed_xy: 0.0
-    # Set max XY speed to a large value so noisy Y data from IMU doesn't
-    # prevent operation. Since this robot has no Y velocity capability, any Y
-    # velocity reported in /odom data is due to slippage or noise, and there is
-    # no need to reduce the robot's operating envelope when generating possible
-    # trajectories.
-    max_speed_xy: 100.0
+    max_speed_xy: 0.26
     min_speed_theta: 0.0
+    min_x_velocity_threshold: 0.001
+    # Add high threshold velocity for turtlebot 3 issue.
+    # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
     acc_lim_x: 2.5
     acc_lim_y: 0.0
     acc_lim_theta: 3.2

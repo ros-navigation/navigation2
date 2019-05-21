@@ -212,7 +212,6 @@ private:
   std::string robot_model_type_;
   std::string sensor_model_type_;
 
-  std::chrono::duration<double> cloud_pub_interval;
 
   // Time for tolerance on the published transform,
   // basically defines how long a map->odom transform is good for
@@ -226,7 +225,6 @@ private:
 
   amcl_hyp_t * initial_pose_hyp_;
   bool first_map_received_;
-  bool first_reconfigure_call_;
 
   std::recursive_mutex configuration_mutex_;
 
