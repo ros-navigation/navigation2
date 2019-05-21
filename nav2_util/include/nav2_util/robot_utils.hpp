@@ -48,7 +48,7 @@ public:
   bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
 
   bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
-    const bool use_topic = false);
+    const bool use_topic = true);
 
 private:
   void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr robot_pose);
