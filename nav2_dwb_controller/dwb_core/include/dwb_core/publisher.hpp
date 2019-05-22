@@ -42,12 +42,12 @@
 #include "dwb_core/common_types.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
-#include "nav2_lifecycle/lifecycle_helper_interface.hpp"
+#include "nav2_util/lifecycle_helper_interface.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 using rclcpp_lifecycle::LifecyclePublisher;
 
@@ -66,15 +66,15 @@ namespace dwb_core
  *   5) Markers representing the different trajectories evaluated
  *   6) The CostGrid (in the form of a complex PointCloud2)
  */
-class DWBPublisher : public nav2_lifecycle::LifecycleHelperInterface
+class DWBPublisher : public nav2_util::LifecycleHelperInterface
 {
 public:
-  explicit DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node);
+  explicit DWBPublisher(nav2_util::LifecycleNode::SharedPtr node);
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved
@@ -129,7 +129,7 @@ protected:
   std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
 
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace dwb_core

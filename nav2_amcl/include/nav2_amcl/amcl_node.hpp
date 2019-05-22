@@ -31,7 +31,7 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/map_service_client.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
@@ -52,7 +52,7 @@
 namespace nav2_amcl
 {
 
-class AmclNode : public nav2_lifecycle::LifecycleNode
+class AmclNode : public nav2_util::LifecycleNode
 {
 public:
   AmclNode();
@@ -60,12 +60,12 @@ public:
 
 protected:
   // Implement the lifecycle interface
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // Since the sensor data from gazebo or the robot is not lifecycle enabled, we won't
   // respond until we're in the active state

@@ -29,7 +29,7 @@ namespace nav2_map_server
 {
 
 MapServer::MapServer()
-: nav2_lifecycle::LifecycleNode("map_server")
+: nav2_util::LifecycleNode("map_server")
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -42,7 +42,7 @@ MapServer::~MapServer()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -79,26 +79,26 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
 
   map_loader_->on_configure(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   map_loader_->on_activate(state);
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
   map_loader_->on_deactivate(state);
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -106,21 +106,21 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
   map_loader_->on_cleanup(state);
   map_loader_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 MapServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 }  // namespace nav2_map_server

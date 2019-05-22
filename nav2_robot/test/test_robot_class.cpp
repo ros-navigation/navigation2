@@ -34,42 +34,42 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
-class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
+class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
   TestLifecycleNode()
-  : nav2_lifecycle::LifecycleNode("TestLifecycleNode")
+  : nav2_util::LifecycleNode("TestLifecycleNode")
   {
   }
 
-  nav2_lifecycle::CallbackReturn
+  nav2_util::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & state) override
   {
     robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
     robot_->on_configure(state);
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn
+  nav2_util::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & state) override
   {
     robot_->on_activate(state);
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn
+  nav2_util::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & state) override
   {
     robot_->on_deactivate(state);
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn
+  nav2_util::CallbackReturn
   on_cleanup(const rclcpp_lifecycle::State & state) override
   {
     robot_->on_cleanup(state);
     robot_.reset();
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
   bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom)
@@ -106,7 +106,7 @@ public:
     lifecycle_node_ = std::make_shared<TestLifecycleNode>();
 
     lifecycle_thread_ = std::make_unique<std::thread>(
-      [this](nav2_lifecycle::LifecycleNode::SharedPtr node) {
+      [this](nav2_util::LifecycleNode::SharedPtr node) {
         for (;; ) {
           rclcpp::spin_some(node->get_node_base_interface());
           if (shut_down_threads_) {return;}

@@ -53,7 +53,7 @@ namespace nav2_costmap_2d
 {
 
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: nav2_lifecycle::LifecycleNode(name, name, true), name_(name)
+: nav2_util::LifecycleNode(name, name, true), name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
   client_node_ = std::make_shared<rclcpp::Node>(name + "_client");
@@ -93,7 +93,7 @@ Costmap2DROS::~Costmap2DROS()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -148,10 +148,10 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -187,10 +187,10 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
         &Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 
   start();
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -207,10 +207,10 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   delete map_update_thread_;
   map_update_thread_ = nullptr;
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -231,21 +231,21 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   clear_costmap_service_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Costmap2DROS::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

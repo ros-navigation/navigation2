@@ -46,14 +46,14 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_core
 {
 
 DWBLocalPlanner::DWBLocalPlanner(
-  nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf,
+  nav2_util::LifecycleNode::SharedPtr node, TFBufferPtr tf,
   CostmapROSPtr costmap_ros)
 : node_(node),
   tf_(tf),
@@ -73,7 +73,7 @@ DWBLocalPlanner::DWBLocalPlanner(
   node_->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
   std::string traj_generator_name;
@@ -96,26 +96,26 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
 
   loadCritics();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBLocalPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
   pub_->on_activate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBLocalPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   pub_->on_deactivate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBLocalPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   pub_->on_cleanup(state);
@@ -123,7 +123,7 @@ DWBLocalPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
   traj_generator_.reset();
   goal_checker_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 std::string

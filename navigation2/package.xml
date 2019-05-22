@@ -17,7 +17,6 @@
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_dwb_controller</exec_depend>
-  <exec_depend>nav2_lifecycle</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_mission_executor</exec_depend>

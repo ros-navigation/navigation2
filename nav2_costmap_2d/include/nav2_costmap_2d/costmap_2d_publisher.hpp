@@ -46,7 +46,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "tf2/transform_datatypes.h"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -61,7 +61,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    nav2_lifecycle::LifecycleNode::SharedPtr ros_node,
+    nav2_util::LifecycleNode::SharedPtr ros_node,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
@@ -115,7 +115,7 @@ private:
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
   Costmap2D * costmap_;
   std::string global_frame_;
   std::string topic_name_;

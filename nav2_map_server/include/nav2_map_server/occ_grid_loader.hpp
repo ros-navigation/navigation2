@@ -22,22 +22,22 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_map_server
 {
 
-class OccGridLoader : public nav2_lifecycle::LifecycleHelperInterface
+class OccGridLoader : public nav2_util::LifecycleHelperInterface
 {
 public:
   OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);
   OccGridLoader() = delete;
   ~OccGridLoader();
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
   // The ROS node to use for ROS-related operations such as creating a service
