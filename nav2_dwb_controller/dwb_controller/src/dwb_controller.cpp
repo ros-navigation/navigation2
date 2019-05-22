@@ -25,7 +25,7 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_dwb_controller
+namespace dwb_controller
 {
 
 DwbController::DwbController()
@@ -142,7 +142,8 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
     RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
     planner_->setPlan(path);
 
-    ProgressChecker progress_checker(std::shared_ptr<rclcpp::Node>(this, [](auto) {}));
+    ProgressChecker progress_checker(rclcpp_node_);
+
     rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
@@ -227,4 +228,4 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   return true;
 }
 
-}  // namespace nav2_dwb_controller
+}  // namespace dwb_controller

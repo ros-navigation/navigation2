@@ -159,6 +159,37 @@ protected:
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
 
+  // Pose hypothesis
+  typedef struct
+  {
+    double weight;             // Total weight (weights sum to 1)
+    pf_vector_t pf_pose_mean;  // Mean of pose esimate
+    pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
+  } amcl_hyp_t;
+
+  bool addNewScanner(
+    int & laser_index,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::string & laser_scan_frame_id,
+    geometry_msgs::msg::PoseStamped & laser_pose);
+  bool shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta);
+  bool updateFilter(
+    const int & laser_index,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const pf_vector_t & pose);
+  void publishParticleCloud(const pf_sample_set_t * set);
+  bool getMaxWeightHyp(
+    std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
+    int & max_weight_hyp);
+  void publishAmclPose(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp);
+  void calculateMaptoOdomTransform(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
+    const std::vector<amcl_hyp_t> & hyps,
+    const int & max_weight_hyp);
+  void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
+
   // Node parameters (initialized via initParameters)
   void initParameters();
   double alpha1_;
