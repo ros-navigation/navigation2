@@ -15,4 +15,5 @@ ament_add_test(test_localization
     TEST_EXECUTABLE=$<TARGET_FILE:test_localization_node>
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
+    RMW_IMPLEMENTATION=rmw_opensplice_cpp
 )
