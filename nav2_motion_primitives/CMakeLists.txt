@@ -5,7 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -28,7 +28,7 @@ set(executable_name ${library_name}_node)
 set(dependencies
   rclcpp
   rclcpp_action
-  nav2_lifecycle
+  rclcpp_lifecycle
   std_msgs
   nav2_util
   nav2_tasks
