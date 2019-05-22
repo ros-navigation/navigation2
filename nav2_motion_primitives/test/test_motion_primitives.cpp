@@ -22,11 +22,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_motion_primitives/motion_primitive.hpp"
-#include "nav2_msgs/action/motion_primitive.hpp"
+#include "nav2_msgs/action/do_dummy_primitive.hpp"
 
 using nav2_motion_primitives::MotionPrimitive;
 using nav2_motion_primitives::Status;
-using MotionPrimitiveAction = nav2_msgs::action::MotionPrimitive;
+using MotionPrimitiveAction = nav2_msgs::action::DoDummyPrimitive;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>;
 
 using namespace std::chrono_literals;
@@ -121,12 +121,14 @@ protected:
     if (rclcpp::spin_until_future_complete(node_, future_goal) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
+      // failed sending the goal
       return false;
     }
 
     goal_handle_ = future_goal.get();
 
     if (!goal_handle_) {
+      // goal was rejected by the action server
       return false;
     }
 
@@ -139,7 +141,7 @@ protected:
     goal.command.data = command;
 
     auto goal_options = rclcpp_action::Client<MotionPrimitiveAction>::SendGoalOptions();
-    goal_options.result_callback = [](auto){};
+    goal_options.result_callback = [](auto) {};
 
     return client_->async_send_goal(goal, goal_options);
   }
