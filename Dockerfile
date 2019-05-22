@@ -80,3 +80,9 @@ RUN . $ROS_WS/install/setup.sh && \
 RUN sed --in-place \
       's|^source .*|source "$NAV2_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
+
+# install and run opensplice so tests will pass
+ENV RMW_IMPLEMENTATION=rmw_opensplice_cpp
+RUN apt-get update && apt-get install -q -y libopensplice69
+
+
