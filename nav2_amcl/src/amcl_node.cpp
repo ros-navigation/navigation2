@@ -34,6 +34,7 @@
 #include "nav2_util/map_service_client.hpp"
 #include "nav2_util/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
+#include "nav2_util/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/LinearMath/Transform.h"
@@ -439,14 +440,6 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
   pf_init_ = false;
 }
 
-// Pose hypothesis
-typedef struct
-{
-  double weight;             // Total weight (weights sum to 1)
-  pf_vector_t pf_pose_mean;  // Mean of pose esimate
-  pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
-} amcl_hyp_t;
-
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
@@ -499,9 +492,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       }
     }
     if (lasers_update_[laser_index]) {
-      motionModel_->odometryUpdate(pf_, pose, delta);
+      motion_model_->odometryUpdate(pf_, pose, delta);
     }
-    m_force_update = false;
+    force_update_ = false;
   }
 
   bool resampled = false;
@@ -519,7 +512,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     pf_sample_set_t * set = pf_->sets + pf_->current_set;
     RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
 
-    if (!m_force_update) {
+    if (!force_update_) {
       publishParticleCloud(set);
     }
   }
@@ -550,15 +543,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         transform_tolerance_;
       sendMapToOdomTransform(transform_expiration);
     }
-
-    // Is it time to save our last pose to the param server
-    tf2::TimePoint now = tf2_ros::fromMsg(this->now());
-    if ((tf2::durationToSec(save_pose_period) > 0.0) &&
-      (now - save_pose_last_time) >= save_pose_period)
-    {
-      this->savePoseToServer();
-      save_pose_last_time = now;
-    }
   }
 }
 
@@ -577,7 +561,7 @@ bool AmclNode::addNewScanner(
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
   try {
-    this->tf_->transform(ident, laser_pose, base_frame_id_);
+    tf_buffer_->transform(ident, laser_pose, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
       "even though the message notifier is in use",
@@ -600,13 +584,13 @@ bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
 {
   delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
   delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-  delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+  delta.v[2] = nav2_util::angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
 
   // See if we should update the filter
   bool update = fabs(delta.v[0]) > d_thresh_ ||
     fabs(delta.v[1]) > d_thresh_ ||
     fabs(delta.v[2]) > a_thresh_;
-  update = update || m_force_update;
+  update = update || force_update_;
   return update;
 }
 
@@ -615,7 +599,7 @@ bool AmclNode::updateFilter(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
   const pf_vector_t & pose)
 {
-  LaserData ldata;
+  nav2_util::LaserData ldata;
   ldata.laser = lasers_[laser_index];
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
@@ -634,8 +618,8 @@ bool AmclNode::updateFilter(
   inc_q.header = min_q.header;
   tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
   try {
-    tf_->transform(min_q, min_q, base_frame_id_);
-    tf_->transform(inc_q, inc_q, base_frame_id_);
+    tf_buffer_->transform(min_q, min_q, base_frame_id_);
+    tf_buffer_->transform(inc_q, inc_q, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_WARN(get_logger(), "Unable to transform min/max laser angles into base frame: %s",
       e.what());
@@ -678,7 +662,7 @@ bool AmclNode::updateFilter(
     ldata.ranges[i][1] = angle_min +
       (i * angle_increment);
   }
-  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<LaserData *>(&ldata));
+  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<nav2_util::LaserData *>(&ldata));
   lasers_update_[laser_index] = false;
   pf_odom_pose_ = pose;
   return true;
@@ -775,9 +759,10 @@ AmclNode::publishAmclPose(
   }
   temp += p.pose.pose.position.x + p.pose.pose.position.y;
   if (!std::isnan(temp)) {
-    RCLCPP_DEBUG(get_logger(), "AmclNode publishing pose");
+    RCLCPP_DEBUG(get_logger(), "Publishing pose");
+	first_pose_sent_ = true;
     pose_pub_->publish(p);
-    last_published_pose = p;
+    last_published_pose_ = p;
   } else {
     RCLCPP_WARN(get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
       "configuration or faulty sensor measurements! Pose is not available!");
@@ -808,7 +793,7 @@ AmclNode::calculateMaptoOdomTransform(
     tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
-    this->tf_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
+    tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
   } catch (tf2::TransformException) {
     RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
     return;
@@ -826,14 +811,27 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
   tmp_tf_stamped.child_frame_id = odom_frame_id_;
   tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-  this->tfb_->sendTransform(tmp_tf_stamped);
+  tf_broadcaster_->sendTransform(tmp_tf_stamped);
 }
 
-void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+nav2_util::Laser *
+AmclNode::createLaserObject()
 {
-  handleInitialPoseMessage(*msg);
-  initial_pose_received = true;
+  RCLCPP_INFO(get_logger(), "createLaserObject");
+
+  if (sensor_model_type_ == "beam") {
+    return new nav2_util::BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
+             0.0, max_beams_, map_);
+  }
+
+  if (sensor_model_type_ == "likelihood_field_prob") {
+    return new nav2_util::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_,
+             laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
+             beam_skip_error_threshold_, max_beams_, map_);
+  }
+
+  return new nav2_util::LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_,
+           laser_likelihood_max_dist_, max_beams_, map_);
 }
 
 void

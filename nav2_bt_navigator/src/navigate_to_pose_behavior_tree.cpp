@@ -59,7 +59,6 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
   factory_.registerSimpleAction("clearEntirelyCostmapServiceRequest",
     std::bind(&NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest, this,
     std::placeholders::_1));
-}
 
   global_localization_client_ =
     std::make_unique<nav2_util::GlobalLocalizationServiceClient>("bt_navigator");
@@ -95,7 +94,6 @@ BT::NodeStatus NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest(
     auto result = clear_entirely_costmap.invoke(request, std::chrono::seconds(3));
     return BT::NodeStatus::SUCCESS;
   } catch (std::runtime_error & e) {
-    RCLCPP_WARN(node_->get_logger(), e.what());
     return BT::NodeStatus::FAILURE;
   }
 }

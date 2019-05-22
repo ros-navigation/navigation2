@@ -80,7 +80,8 @@ dwb_controller:
     sim_time: 1.7
     linear_granularity: 0.05
     xy_goal_tolerance: 0.25
-    critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    critics: ["RotateToGoal", "Oscillation", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     BaseObstacle.scale: 0.02
     PathAlign.scale: 32.0
     GoalAlign.scale: 24.0
@@ -94,21 +95,7 @@ local_costmap:
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
-        enabled: True
-      always_send_full_costmap: True
-      observation_sources: scan
-      scan:
-        topic: /scan
-        max_obstacle_height: 2.0
-        clearing: True
-        marking: True
-
-global_costmap:
-  global_costmap:
-    ros__parameters:
-      robot_radius: 0.17
-      obstacle_layer:
-        enabled: True
+        enabled: False
       always_send_full_costmap: True
       observation_sources: scan
       scan:
@@ -124,6 +111,30 @@ local_costmap:
 
 local_costmap:
   local_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: True
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      robot_radius: 0.17
+      obstacle_layer:
+        enabled: False
+      always_send_full_costmap: True
+      observation_sources: scan
+      scan:
+        topic: /scan
+        max_obstacle_height: 2.0
+        clearing: True
+        marking: True
+
+global_costmap:
+  global_costmap_client:
+    ros__parameters:
+      use_sim_time: True
+
+global_costmap:
+  global_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
 
@@ -161,13 +172,3 @@ robot_state_publisher:
 world_model:
   ros__parameters:
     use_sim_time: True
-
-global_costmap:
-  global_costmap_client:
-    ros__parameters:
-      use_sim_time: True
-
-global_costmap:
-  global_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: True

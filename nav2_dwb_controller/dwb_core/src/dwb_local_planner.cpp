@@ -91,8 +91,8 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
   goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
 
-  traj_generator_->initialize(nh_);
-  goal_checker_->initialize(nh_);
+  traj_generator_->initialize(node_);
+  goal_checker_->initialize(node_);
 
   loadCritics();
 
@@ -538,7 +538,7 @@ DWBLocalPlanner::transformGlobalPlan(
   // process it on the next iteration.
   if (prune_plan_) {
     global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
-    pub_.publishGlobalPlan(global_plan_);
+    pub_->publishGlobalPlan(global_plan_);
   }
 
   if (transformed_plan.poses.size() == 0) {
