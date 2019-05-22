@@ -17,11 +17,12 @@
 
 #include <string>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_robot/robot.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
+//#include "nav2_tasks/compute_path_to_pose_task.hpp"
 
 namespace nav2_tasks
 {
@@ -56,13 +57,14 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    robot_ = std::make_unique<nav2_robot::Robot>(node_);
+    //robot_ = std::make_unique<nav2_robot::Robot>(node_);
     initialized_ = true;
   }
 
   bool
   goalReached()
   {
+#if 0
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(current_pose)) {
@@ -79,6 +81,9 @@ public:
     } else {
       return false;
     }
+#else
+  return false;
+#endif
   }
 
 private:

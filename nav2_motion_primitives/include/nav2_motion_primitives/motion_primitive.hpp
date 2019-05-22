@@ -145,11 +145,12 @@ protected:
           goal_handle->abort(result);
           return;
 
+        case Status::RUNNING:
         default:
+          loop_rate.sleep();
           break;
       }
 
-      loop_rate.sleep();
     }
   }
 };

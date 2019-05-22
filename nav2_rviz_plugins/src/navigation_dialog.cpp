@@ -65,7 +65,8 @@ void
 NavigationDialog::timerEvent(QTimerEvent * event)
 {
   if (event->timerId() == timer_.timerId()) {
-    auto future_result = action_client_->async_get_result(goal_handle_);
+    auto future_result = goal_handle_->async_result();
+
     if (rclcpp::spin_until_future_complete(client_node_, future_result, 1ms) ==
       rclcpp::executor::FutureReturnCode::TIMEOUT)
     {
