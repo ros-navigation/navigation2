@@ -39,6 +39,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
@@ -121,6 +122,10 @@ public:
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
+  void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
+  bool hasParameter(const std::string & param_name);
+  void undeclareAllParameters();
+
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
@@ -140,6 +145,9 @@ protected:
   // Currently this var is managed by subclasses.
   // TODO(bpwilcox): make this managed by this class and/or container class.
   bool enabled_;
+
+  // Names of the parameters declared on the ROS node
+  std::unordered_set<std::string> local_params_;
 
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;

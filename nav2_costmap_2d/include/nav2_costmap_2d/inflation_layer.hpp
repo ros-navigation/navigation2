@@ -40,6 +40,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
@@ -97,7 +98,11 @@ public:
   }
   virtual void matchSize();
 
-  virtual void reset() {onInitialize();}
+  virtual void reset()
+  {
+    undeclareAllParameters();
+    onInitialize();
+    }
 
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells

@@ -75,10 +75,10 @@ InflationLayer::InflationLayer()
 void
 InflationLayer::onInitialize()
 {
-  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "inflation_radius", rclcpp::ParameterValue(0.55));
-  node_->declare_parameter(name_ + "." + "cost_scaling_factor", rclcpp::ParameterValue(10.0));
-  node_->declare_parameter(name_ + "." + "inflate_unknown", rclcpp::ParameterValue(false));
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
+  declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
+  declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);

@@ -112,6 +112,7 @@ void VoxelLayer::reset()
   resetMaps();
   voxel_grid_.reset();
   activate();
+  undeclareAllParameters();
 }
 
 void VoxelLayer::resetMaps()
