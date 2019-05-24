@@ -60,7 +60,8 @@ void VoxelLayer::onInitialize()
   ObstacleLayer::onInitialize();
 
   node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled",
+    rclcpp::ParameterValue(true));
   node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
   node_->declare_parameter(name_ + "." + "z_voxels", rclcpp::ParameterValue(10));
   node_->declare_parameter(name_ + "." + "origin_z", rclcpp::ParameterValue(0.0));

@@ -71,23 +71,28 @@ Layer::declareParameter(
   const std::string & param_name, const rclcpp::ParameterValue & value)
 {
   local_params_.insert(param_name);
-  node_->declare_parameter(name_ + "." + param_name, value);
+  node_->declare_parameter(getRegName(param_name), value);
 }
 
 bool
 Layer::hasParameter(const std::string & param_name)
 {
-  return node_->has_parameter(name_ + "." + param_name);
+  return node_->has_parameter(getRegName(param_name));
 }
 
 void
 Layer::undeclareAllParameters()
 {
-  std::for_each(begin(local_params_), end(local_params_),
-    [&node = node_, &local_params = local_params_](const std::string & param) {
-     node->undeclare_parameter(param);
-     local_params.erase(param);
+  std::for_each(begin(local_params_), end(local_params_), [this](const std::string & param_name) {
+     node_->undeclare_parameter(getRegName(param_name));
   });
+  local_params_.clear();
+}
+
+std::string
+Layer::getRegName(const std::string & param_name)
+{
+  return std::string(name_ + "." + param_name);
 }
 
 }  // end namespace nav2_costmap_2d

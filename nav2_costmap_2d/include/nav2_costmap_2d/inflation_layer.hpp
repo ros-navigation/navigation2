@@ -40,7 +40,6 @@
 
 #include <map>
 #include <vector>
-#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
