@@ -89,7 +89,7 @@ param_t loadParameterWithDeprecation(
   const nav2_lifecycle::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
-  param_t value;
+  param_t value = 0;
   if (nh->get_parameter(current_name, value)) {
     return value;
   }
