@@ -137,6 +137,8 @@ protected:
     double & x, double & y, double & yaw,
     const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
+  std::atomic<bool> amcl_node_ready_;
+  std::atomic<bool> first_laser_scan_rec_;
 
   // Particle filter
   void initParticleFilter();
@@ -189,6 +191,9 @@ protected:
     const std::vector<amcl_hyp_t> & hyps,
     const int & max_weight_hyp);
   void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
+  void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  bool init_pose_received_on_inactive{false};
+  bool initial_pose_is_known_{false};
 
   // Node parameters (initialized via initParameters)
   void initParameters();
