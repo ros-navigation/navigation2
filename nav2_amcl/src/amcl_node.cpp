@@ -159,7 +159,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Wait until the transform listener thread has had a chance to spin up and get the
   // transforms that it needs
-  waitForTransforms();
+  //waitForTransforms();
 
   if (init_pose_received_on_inactive) {
    handleInitialPose(
@@ -351,7 +351,7 @@ AmclNode::globalLocalizationCallback(
   pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
     reinterpret_cast<void *>(map_));
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
-
+  initial_pose_is_known_ = true;
   pf_init_ = false;
 }
 
@@ -833,6 +833,8 @@ AmclNode::calculateMaptoOdomTransform(
 void
 AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
 {
+  // AMCL will update transform only when it has knowledge about robot's initial position
+  if (!initial_pose_is_known_){ return; }
   geometry_msgs::msg::TransformStamped tmp_tf_stamped;
   tmp_tf_stamped.header.frame_id = global_frame_id_;
   tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
