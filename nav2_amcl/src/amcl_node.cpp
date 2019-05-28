@@ -159,11 +159,11 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Wait until the transform listener thread has had a chance to spin up and get the
   // transforms that it needs
-  //waitForTransforms();
+  // waitForTransforms();
 
   if (init_pose_received_on_inactive) {
-   handleInitialPose(
-     std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+    handleInitialPose(
+      std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
   }
 
   // Make sure we've output the first pose before continuing
@@ -383,7 +383,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       nav2_util::strip_leading_slash(msg->header.frame_id).c_str(),
       global_frame_id_.c_str());
     return;
-  }  
+  }
 
   last_published_pose_ = *msg;
 
@@ -399,8 +399,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-
- // initOdometry();
+  // initOdometry();
   initParticleFilter();
 
   // In case the client sent us a pose estimate in the past, integrate the
@@ -756,8 +755,8 @@ AmclNode::publishAmclPose(
 {
   amcl_node_ready_ = true;
 
-  //If initial pose is not known, AMCL does not know the current pose
-  if(!initial_pose_is_known_) { return; }
+  // If initial pose is not known, AMCL does not know the current pose
+  if (!initial_pose_is_known_) {return;}
 
   geometry_msgs::msg::PoseWithCovarianceStamped p;
   // Fill in the header
@@ -834,7 +833,7 @@ void
 AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
 {
   // AMCL will update transform only when it has knowledge about robot's initial position
-  if (!initial_pose_is_known_){ return; }
+  if (!initial_pose_is_known_) {return;}
   geometry_msgs::msg::TransformStamped tmp_tf_stamped;
   tmp_tf_stamped.header.frame_id = global_frame_id_;
   tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
