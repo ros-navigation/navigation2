@@ -99,10 +99,10 @@ int main(int argc, char ** argv)
   auto map_gen = std::make_shared<nav2_map_server::MapGenerator>(mapname, threshold_occupied,
       threshold_free);
 
-  rclcpp::Rate r(10);
+  auto sleep_dir = std::chrono::milliseconds(100);
   while (!map_gen->saved_map_ && rclcpp::ok()) {
     rclcpp::spin_some(map_gen);
-    r.sleep();
+    rclcpp::sleep_for(sleep_dir);
   }
 
   rclcpp::shutdown();
