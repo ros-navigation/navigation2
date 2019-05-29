@@ -57,7 +57,7 @@ namespace nav_2d_utils
 bool transformPose(
   const std::shared_ptr<tf2_ros::Buffer> tf, const std::string frame,
   const geometry_msgs::msg::PoseStamped & in_pose, geometry_msgs::msg::PoseStamped & out_pose,
-  rclcpp::Duration & tranform_tolerance)
+  rclcpp::Duration & transform_tolerance)
 {
   if (in_pose.header.frame_id == frame) {
     out_pose = in_pose;
@@ -70,7 +70,7 @@ bool transformPose(
   } catch (tf2::ExtrapolationException & ex) {
     auto transform = tf->lookupTransform(frame, in_pose.header.frame_id, tf2::TimePointZero);
     if ((rclcpp::Time(in_pose.header.stamp) - rclcpp::Time(transform.header.stamp)) >
-      tranform_tolerance)
+      transform_tolerance)
     {
       RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
         "Transform data too old when converting from %s to %s",
@@ -106,12 +106,12 @@ bool transformPose(
 bool transformPose(
   const std::shared_ptr<tf2_ros::Buffer> tf, const std::string frame,
   const nav_2d_msgs::msg::Pose2DStamped & in_pose, nav_2d_msgs::msg::Pose2DStamped & out_pose,
-  rclcpp::Duration & tranform_tolerance)
+  rclcpp::Duration & transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
   geometry_msgs::msg::PoseStamped out_3d_pose;
 
-  bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose, tranform_tolerance);
+  bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose, transform_tolerance);
   if (ret) {
     out_pose = poseStampedToPose2D(out_3d_pose);
   }
