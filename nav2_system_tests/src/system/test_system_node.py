@@ -98,15 +98,12 @@ class NavTester(Node):
         state_client = self.create_client(GetState, '/bt_navigator/get_state')
         while not state_client.wait_for_service(timeout_sec=1.0):
             print('bt_navigator/get_state service not available, waiting again...')
-        # empty request
-        req = GetState.Request()
+        req = GetState.Request() # empty request
         future = state_client.call_async(req)
         state = 'Unknown'
-        retries = 10
-        while (state != 'active' and retries > 0):
+        while (state != 'active'):
             self.get_logger().info('Getting bt_navigator state...')
             rclpy.spin_until_future_complete(self, future)
-            retries = retries - 1
             if future.result() is not None:
                 self.get_logger().info('Result of get_state: %s' % future.result().current_state.label)
                 state = future.result().current_state.label
