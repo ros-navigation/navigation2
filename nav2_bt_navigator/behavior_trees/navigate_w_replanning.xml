@@ -1,0 +1,17 @@
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <RateController hz="1.0">
+        <Fallback>
+          <GoalReached/>
+          <ComputePathToPose goal="${goal}"/>
+        </Fallback>
+      </RateController>
+      <FollowPath path="${path}"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
