@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TaskStatus.msg"
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
+  "srv/GetRobotPose.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
