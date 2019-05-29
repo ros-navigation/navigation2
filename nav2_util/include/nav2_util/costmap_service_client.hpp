@@ -23,23 +23,23 @@
 namespace nav2_util
 {
 
-class CostmapServiceClient : public nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>
+class CostmapServiceClient : public ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
   explicit CostmapServiceClient(const std::string & parent_node_name)
-  : nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", parent_node_name)
+  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", parent_node_name)
   {
   }
 
-  explicit CostmapServiceClient(rclcpp::Node::SharedPtr node)
+  explicit CostmapServiceClient(rclcpp::Node::SharedPtr & node)
   : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node)
   {
   }
 
   using CostmapServiceRequest =
-    nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>::RequestType;
+    ServiceClient<nav2_msgs::srv::GetCostmap>::RequestType;
   using CostmapServiceResponse =
-    nav2_util::ServiceClient<nav2_msgs::srv::GetCostmap>::ResponseType;
+    ServiceClient<nav2_msgs::srv::GetCostmap>::ResponseType;
 };
 
 }  // namespace nav2_util
