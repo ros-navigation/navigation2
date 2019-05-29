@@ -19,7 +19,10 @@
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <RateController hz="1.0">
-        <ComputePathToPose goal="${goal}"/>
+        <Fallback>
+          <GoalReached/>
+          <ComputePathToPose goal="${goal}"/>
+        </Fallback>
       </RateController>
       <SequenceStar name="RememberFollowPathResult">
         <FollowPath path="${path}"/>
