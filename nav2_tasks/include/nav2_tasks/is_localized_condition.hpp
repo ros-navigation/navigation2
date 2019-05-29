@@ -39,6 +39,7 @@ public:
 
   ~IsLocalizedCondition()
   {
+    cleanup();
   }
 
   BT::NodeStatus tick() override
@@ -51,7 +52,11 @@ public:
       node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
       node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
 
-      robot_ = std::make_unique<nav2_robot::Robot>(node_);
+      robot_ = std::make_unique<nav2_robot::Robot>(
+        node_->get_node_base_interface(),
+        node_->get_node_topics_interface(),
+        node_->get_node_logging_interface(),
+        true);
 
       initialized_ = true;
     }
@@ -60,6 +65,11 @@ public:
   }
 
 protected:
+  void cleanup()
+  {
+    robot_.reset();
+  }
+
   bool isLocalized()
   {
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
