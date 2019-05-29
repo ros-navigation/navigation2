@@ -71,26 +71,26 @@ Layer::declareParameter(
   const std::string & param_name, const rclcpp::ParameterValue & value)
 {
   local_params_.insert(param_name);
-  node_->declare_parameter(getRegName(param_name), value);
+  node_->declare_parameter(getFullName(param_name), value);
 }
 
 bool
 Layer::hasParameter(const std::string & param_name)
 {
-  return node_->has_parameter(getRegName(param_name));
+  return node_->has_parameter(getFullName(param_name));
 }
 
 void
 Layer::undeclareAllParameters()
 {
   std::for_each(begin(local_params_), end(local_params_), [this](const std::string & param_name) {
-     node_->undeclare_parameter(getRegName(param_name));
+     node_->undeclare_parameter(getFullName(param_name));
   });
   local_params_.clear();
 }
 
 std::string
-Layer::getRegName(const std::string & param_name)
+Layer::getFullName(const std::string & param_name)
 {
   return std::string(name_ + "." + param_name);
 }

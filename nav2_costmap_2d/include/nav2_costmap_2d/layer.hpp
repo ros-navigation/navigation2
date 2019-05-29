@@ -126,7 +126,7 @@ public:
   void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
   bool hasParameter(const std::string & param_name);
   void undeclareAllParameters();
-  std::string getRegName(const std::string & param_name);
+  std::string getFullName(const std::string & param_name);
 
 protected:
   LayeredCostmap * layered_costmap_;

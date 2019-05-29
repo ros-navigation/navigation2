@@ -101,7 +101,7 @@ public:
   {
     undeclareAllParameters();
     onInitialize();
-    }
+  }
 
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
