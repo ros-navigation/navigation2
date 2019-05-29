@@ -22,7 +22,6 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_robot/robot.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-//#include "nav2_tasks/compute_path_to_pose_task.hpp"
 
 namespace nav2_tasks
 {
@@ -39,6 +38,7 @@ public:
 
   ~GoalReachedCondition()
   {
+    cleanup();
   }
 
   BT::NodeStatus tick() override
@@ -57,14 +57,17 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    //robot_ = std::make_unique<nav2_robot::Robot>(node_);
+    robot_ = std::make_unique<nav2_robot::Robot>(
+      node_->get_node_base_interface(),
+      node_->get_node_topics_interface(),
+      node_->get_node_logging_interface(),
+      true);
     initialized_ = true;
   }
 
   bool
   goalReached()
   {
-#if 0
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(current_pose)) {
@@ -72,25 +75,27 @@ public:
       return false;
     }
     // TODO(mhpanah): replace this with a function
-    blackboard()->get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command_);
-    double dx = command_->pose.position.x - current_pose->pose.pose.position.x;
-    double dy = command_->pose.position.y - current_pose->pose.pose.position.y;
+    blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
+    double dx = goal_->pose.position.x - current_pose->pose.pose.position.x;
+    double dy = goal_->pose.position.y - current_pose->pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
     } else {
       return false;
     }
-#else
-  return false;
-#endif
+  }
+
+protected:
+  void cleanup()
+  {
+    robot_.reset();
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<nav2_robot::Robot> robot_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
-  geometry_msgs::msg::PoseStamped::SharedPtr command_;
 
   bool initialized_;
   double goal_reached_tol_;
