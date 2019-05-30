@@ -87,7 +87,8 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'), ],
+        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            [ "__log_level:=fatal"]],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = launch.actions.RegisterEventHandler(
