@@ -66,4 +66,33 @@ Layer::getFootprint() const
   return layered_costmap_->getFootprint();
 }
 
+void
+Layer::declareParameter(
+  const std::string & param_name, const rclcpp::ParameterValue & value)
+{
+  local_params_.insert(param_name);
+  node_->declare_parameter(getFullName(param_name), value);
+}
+
+bool
+Layer::hasParameter(const std::string & param_name)
+{
+  return node_->has_parameter(getFullName(param_name));
+}
+
+void
+Layer::undeclareAllParameters()
+{
+  std::for_each(begin(local_params_), end(local_params_), [this](const std::string & param_name) {
+     node_->undeclare_parameter(getFullName(param_name));
+  });
+  local_params_.clear();
+}
+
+std::string
+Layer::getFullName(const std::string & param_name)
+{
+  return std::string(name_ + "." + param_name);
+}
+
 }  // end namespace nav2_costmap_2d
