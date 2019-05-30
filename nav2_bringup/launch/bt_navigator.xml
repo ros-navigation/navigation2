@@ -21,7 +21,9 @@
       <RateController hz="1.0">
         <ComputePathToPose goal="${goal}"/>
       </RateController>
-      <FollowPath path="${path}"/>
+      <SequenceStar name="RememberFollowPathResult">
+        <FollowPath path="${path}"/>
+      </SequenceStar>
     </Sequence>
   </BehaviorTree>
 </root>
