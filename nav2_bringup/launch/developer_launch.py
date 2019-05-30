@@ -34,6 +34,7 @@ def generate_launch_description():
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt')
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     use_sim_time = text = launch.substitutions.LaunchConfiguration('use_sim_time')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
@@ -71,6 +72,11 @@ def generate_launch_description():
         'params',
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
         description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
+        'rviz_config',
+        default_value='nav2_default_view.rviz',
+        description='Full path to the RVIZ config file to use')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
@@ -111,7 +117,8 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'), ],
+        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            ['-d', rviz_config_file]],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = launch.actions.RegisterEventHandler(
@@ -191,6 +198,7 @@ def generate_launch_description():
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_simulation_cmd)
