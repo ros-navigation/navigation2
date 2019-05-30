@@ -19,22 +19,23 @@
 #include <string>
 
 #include "behaviortree_cpp/action_node.h"
+#include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_tasks
 {
 
 template<class ActionT>
-class BtActionNode : public BT::CoroActionNode
+class BtActionNode : public BT::AsyncActionNode
 {
 public:
   explicit BtActionNode(const std::string & action_name)
-  : BT::CoroActionNode(action_name), action_name_(action_name)
+  : BT::AsyncActionNode(action_name), action_name_(action_name)
   {
   }
 
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
-  : BT::CoroActionNode(action_name, params), action_name_(action_name)
+  : BT::AsyncActionNode(action_name, params), action_name_(action_name)
   {
   }
 
@@ -50,12 +51,13 @@ public:
   // but override on_init instead.
   void onInit() final
   {
+    node_ = nav2_util::generate_internal_node();
+
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
 
     // Get the required items from the blackboard
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_loop_timeout_ =
       blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
@@ -126,13 +128,12 @@ new_goal_received:
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
         on_loop_timeout();
 
-        if (goal_updated_) {
+        // We can handle a new goal if we're still executing
+        auto status = goal_handle_->get_status();
+        if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)) {        
           goal_updated_ = false;
           goto new_goal_received;
         }
-
-        // Yield to any other CoroActionNodes (couroutines)
-        setStatusRunningAndYield();
       }
     } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -168,7 +169,6 @@ new_goal_received:
     }
 
     setStatus(BT::NodeStatus::IDLE);
-    CoroActionNode::halt();
   }
 
 protected:
