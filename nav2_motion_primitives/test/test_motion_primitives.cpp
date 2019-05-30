@@ -22,11 +22,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_motion_primitives/motion_primitive.hpp"
-#include "nav2_msgs/action/do_dummy_primitive.hpp"
+#include "nav2_msgs/action/dummy_primitive.hpp"
 
 using nav2_motion_primitives::MotionPrimitive;
 using nav2_motion_primitives::Status;
-using MotionPrimitiveAction = nav2_msgs::action::DoDummyPrimitive;
+using MotionPrimitiveAction = nav2_msgs::action::DummyPrimitive;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>;
 
 using namespace std::chrono_literals;
