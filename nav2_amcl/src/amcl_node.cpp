@@ -765,13 +765,13 @@ AmclNode::publishAmclPose(
 
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {
-    if (checkElapsedTime(2s, last_time_printed_msg_)){
+    if (checkElapsedTime(2s, last_time_printed_msg_)) {
       RCLCPP_WARN(get_logger(), "ACML cannot publish a pose or update the transform. "
-      "Please set the initial pose...");
-     last_time_printed_msg_ = now();
+        "Please set the initial pose...");
+      last_time_printed_msg_ = now();
     }
     return;
-    }
+  }
 
   geometry_msgs::msg::PoseWithCovarianceStamped p;
   // Fill in the header
@@ -1042,7 +1042,7 @@ AmclNode::initPubSub()
       rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),
