@@ -63,7 +63,7 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
-  for (auto &notifier : observation_notifiers_) {
+  for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
 }
@@ -78,7 +78,8 @@ void ObstacleLayer::onInitialize()
 
   // TODO(mjeronimo): these four are candidates for dynamic update
   node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled",
+    rclcpp::ParameterValue(true));
   node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
   node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
 
@@ -116,10 +117,12 @@ void ObstacleLayer::onInitialize()
     bool inf_is_valid, clearing, marking;
 
     node_->declare_parameter(source + "." + "topic", rclcpp::ParameterValue(source));
-    node_->declare_parameter(source + "." + "sensor_frame", rclcpp::ParameterValue(std::string("")));
+    node_->declare_parameter(source + "." + "sensor_frame",
+      rclcpp::ParameterValue(std::string("")));
     node_->declare_parameter(source + "." + "observation_persistence", rclcpp::ParameterValue(0.0));
     node_->declare_parameter(source + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
-    node_->declare_parameter(source + "." + "data_type", rclcpp::ParameterValue(std::string("LaserScan")));
+    node_->declare_parameter(source + "." + "data_type",
+      rclcpp::ParameterValue(std::string("LaserScan")));
     node_->declare_parameter(source + "." + "min_obstacle_height", rclcpp::ParameterValue(0.0));
     node_->declare_parameter(source + "." + "max_obstacle_height", rclcpp::ParameterValue(0.0));
     node_->declare_parameter(source + "." + "inf_is_valid", rclcpp::ParameterValue(false));
@@ -622,6 +625,7 @@ ObstacleLayer::reset()
   resetMaps();
   current_ = true;
   activate();
+  undeclareAllParameters();
 }
 
 }  // namespace nav2_costmap_2d
