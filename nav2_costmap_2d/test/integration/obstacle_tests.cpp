@@ -33,14 +33,23 @@
  */
 
 #include <memory>
-#include <set>
 #include <string>
+#include <algorithm>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
+
+using std::begin;
+using std::end;
+using std::for_each;
+using std::all_of;
+using std::none_of;
+using std::pair;
+using std::string;
 
 class RclCppFixture
 {
@@ -53,7 +62,7 @@ RclCppFixture g_rclcppfixture;
 class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
 {
 public:
-  explicit TestLifecycleNode(const std::string & name)
+  explicit TestLifecycleNode(const string & name)
   : nav2_lifecycle::LifecycleNode(name)
   {
   }
@@ -95,6 +104,8 @@ public:
   TestNode()
   {
     node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
+
+    node_->declare_parameter("map_topic", rclcpp::ParameterValue(string("/map")));
   }
 
   ~TestNode() {}
@@ -129,6 +140,7 @@ protected:
  *   upper left is 0,0, lower right is 9,9
  */
 
+#if (0)
 /**
  * Test for ray tracing free space
  */
@@ -299,4 +311,59 @@ TEST_F(TestNode, testMultipleAdditions) {
   // printMap(*costmap);
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
+}
+#endif
+/**
+ * Verify correct init/reset cycling of layer
+ */
+TEST_F(TestNode, testRepeatedResets) {
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  addStaticLayer(layers, tf, node_);
+
+  // TODO(orduno) Add obstacle layer
+
+  // Define a node-level parameter
+  pair<string, string> node_dummy = {"node_dummy_param", "node_dummy_val"};
+  node_->declare_parameter(node_dummy.first, rclcpp::ParameterValue(node_dummy.second));
+
+  // Define a layer-level parameter
+  pair<string, string> layer_dummy = {"dummy_param", "dummy_val"};
+
+  // Set parameters
+  auto plugins = layers.getPlugins();
+  for_each(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+
+      // Notice we are using Layer::declareParameter
+      plugin->declareParameter(layer_param, rclcpp::ParameterValue(layer_dummy.second));
+    });
+
+  // Check that all parameters have been set
+  // node-level param
+  ASSERT_TRUE(node_->has_parameter(node_dummy.first));
+
+  // layer-level param
+  ASSERT_TRUE(
+    all_of(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+      return plugin->hasParameter(layer_param);
+    }));
+
+  // Reset all layers. This will un-declare all params and might re-declare internal ones
+  // Should run without throwing exceptions
+  ASSERT_NO_THROW(
+    for_each(begin(*plugins), end(*plugins), [](const auto & plugin) {
+      plugin->reset();
+    }));
+
+  // Check for node-level param
+  ASSERT_TRUE(node_->has_parameter(node_dummy.first));
+
+  // Layer-level parameters shouldn't be found
+  ASSERT_TRUE(
+    none_of(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+      return plugin->hasParameter(layer_param);
+    }));
 }

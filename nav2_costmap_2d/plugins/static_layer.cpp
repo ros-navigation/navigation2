@@ -75,10 +75,10 @@ StaticLayer::onInitialize()
   getMap();
 
   if (!first_map_only_) {
-    RCLCPP_INFO(node_->get_logger(), "Subscribing to the map topic");
+    RCLCPP_INFO(node_->get_logger(), "Subscribing to the map topic (%s)", map_topic_.c_str());
     map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(map_topic_,
-      rclcpp::SystemDefaultsQoS(),
-      std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
+        rclcpp::SystemDefaultsQoS(),
+        std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
   }
 
   if (subscribe_to_updates_) {
@@ -108,6 +108,7 @@ StaticLayer::reset()
   map_sub_.reset();
   map_update_sub_.reset();
 
+  undeclareAllParameters();
   onInitialize();
 }
 
@@ -116,9 +117,9 @@ StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
 
-  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "first_map_only", rclcpp::ParameterValue(false));
-  node_->declare_parameter(name_ + "." + "subscribe_to_updates", rclcpp::ParameterValue(false));
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("first_map_only", rclcpp::ParameterValue(false));
+  declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "first_map_only", first_map_only_);
