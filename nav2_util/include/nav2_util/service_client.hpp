@@ -58,12 +58,12 @@ public:
 
   void wait_for_service(const std::chrono::seconds timeout = std::chrono::seconds::max())
   {
-    auto sleep_dir = std::chrono::milliseconds(10);
+    auto sleep_dur = std::chrono::milliseconds(10);
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
         throw std::runtime_error("waitForServer: interrupted while waiting for service to appear");
       }
-      rclcpp::sleep_for(sleep_dir);
+      rclcpp::sleep_for(sleep_dur);
     }
   }
 
