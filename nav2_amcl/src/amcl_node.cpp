@@ -157,16 +157,12 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // process incoming callbacks until we are
   active_ = true;
 
-  // Wait until the transform listener thread has had a chance to spin up and get the
-  // transforms that it needs
-  // waitForTransforms();
-
   if (init_pose_received_on_inactive) {
     handleInitialPose(
       std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
   }
 
-  // Make sure we've output the first pose before continuing
+  // Make sure amcl is ready before continuing
   while (!amcl_node_ready_) {
     std::this_thread::sleep_for(100ms);
   }
@@ -263,6 +259,16 @@ AmclNode::checkLaserReceived()
       " seconds.  Verify that data is being published on the %s topic.",
       d.nanoseconds() * 1e-9, scan_topic_);
   }
+}
+
+bool
+AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
+{
+  rclcpp::Duration elapsed_time = rclcpp_node_->now() - last_time;
+  if (elapsed_time.nanoseconds() * 1e-9 > check_interval.count()) {
+    return true;
+  }
+  return false;
 }
 
 #if NEW_UNIFORM_SAMPLING
@@ -384,7 +390,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       global_frame_id_.c_str());
     return;
   }
-
+  // Overriding last published pose to initial pose
   last_published_pose_ = *msg;
 
   if (!active_) {
@@ -692,6 +698,8 @@ bool AmclNode::updateFilter(
 void
 AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 {
+  // If initial pose is not known, AMCL does not know the current pose
+  if (!initial_pose_is_known_) {return;}
   geometry_msgs::msg::PoseArray cloud_msg;
   cloud_msg.header.stamp = this->now();
   cloud_msg.header.frame_id = global_frame_id_;
@@ -756,7 +764,14 @@ AmclNode::publishAmclPose(
   amcl_node_ready_ = true;
 
   // If initial pose is not known, AMCL does not know the current pose
-  if (!initial_pose_is_known_) {return;}
+  if (!initial_pose_is_known_) {
+    if (checkElapsedTime(2s, last_time_printed_msg_)){
+      RCLCPP_WARN(get_logger(), "ACML cannot publish a pose or update the transform. "
+      "Please set the initial pose...");
+     last_time_printed_msg_ = now();
+    }
+    return;
+    }
 
   geometry_msgs::msg::PoseWithCovarianceStamped p;
   // Fill in the header
@@ -912,6 +927,8 @@ AmclNode::initParameters()
   base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
   global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
 
+  last_time_printed_msg_ = now();
+
   // Semantic checks
 
   if (min_particles_ > max_particles_) {
@@ -1025,7 +1042,7 @@ AmclNode::initPubSub()
       rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-      rclcpp::SystemDefaultsQoS().transient_local());
+       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),

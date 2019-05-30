@@ -161,6 +161,9 @@ protected:
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
 
+  bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
+  rclcpp::Time last_time_printed_msg_;
+
   // Pose hypothesis
   typedef struct
   {
