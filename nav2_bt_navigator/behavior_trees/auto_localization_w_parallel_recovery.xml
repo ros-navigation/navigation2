@@ -1,0 +1,58 @@
+<!--
+  This Behavior Tree first goes into a branch where it will check to see if the robot's initial
+  pose is given. If the initial pose is not given it trys to automatically localize the robot.
+  After finding the initial pose it will continue with the recovery and navigation branch.  The
+  AutoLocalization branch is based on 'AutoLocalization.xml' and the navigation branch is based on
+  `parallel_w_recovery.xml`.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <FallbackStar name="AutoLocalization">
+        <initialPoseReceived/>
+        <SequenceStar name="doSelfLocalization">
+          <RetryUntilSuccesful num_attempts="5" name="retry_client_request">
+            <globalLocalizationServiceRequest/>
+         </RetryUntilSuccesful>
+         <RetryUntilSuccesful num_attempts="10" name="retry_localization">
+            <Sequence>
+              <Fallback>
+                <IsLocalized/>
+                <SequenceStar>
+                 <Spin/>
+                <BackUp/>
+                 <Spin/>
+              </SequenceStar>
+             </Fallback>
+             <IsLocalized/>
+            </Sequence> 
+          </RetryUntilSuccesful>
+        </SequenceStar>
+      </FallbackStar>
+      <FallbackStar name="check_motion">
+        <Inverter name="is_not_stuck">
+          <IsStuck/>
+        </Inverter>
+        <SequenceStar name="stuck_recovery">
+          <Stop/>
+          <BackUp/>
+          <Spin/>
+        </SequenceStar>
+      </FallbackStar>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <ParallelNode threshold="1">
+          <FollowPath path="${path}"/>
+          <Sequence>
+            <RateController hz="2">
+              <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+            </RateController>
+            <UpdatePath/>
+          </Sequence>
+        </ParallelNode>
+      </SequenceStar>
+    </Sequence>
+  </BehaviorTree>
+</root>
+
+
