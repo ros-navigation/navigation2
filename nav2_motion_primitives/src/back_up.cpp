@@ -42,7 +42,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-  
+
   command_x_ = command->target.x;
 
   if (!robot_->getOdometry(initial_pose_)) {

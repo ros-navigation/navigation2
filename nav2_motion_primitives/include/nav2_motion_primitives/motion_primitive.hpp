@@ -102,25 +102,16 @@ protected:
   {
     RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
 
-    initialCheck(goal_handle);
+    if (onRun(goal_handle->get_goal()) != Status::SUCCEEDED) {
+      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
+      goal_handle->abort(std::make_shared<typename ActionT::Result>());
+      return;
+    }
 
     // Log a message every second
     auto timer = node_->create_wall_timer(1s,
         [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
 
-    loop(goal_handle);
-  }
-
-  void initialCheck(const typename std::shared_ptr<GoalHandle> goal_handle)
-  {
-    if (onRun(goal_handle->get_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
-      goal_handle->abort(std::make_shared<typename ActionT::Result>());
-    }
-  }
-
-  void loop(const typename std::shared_ptr<GoalHandle> goal_handle)
-  {
     auto result = std::make_shared<typename ActionT::Result>();
     rclcpp::Rate loop_rate(10);
 
@@ -131,12 +122,10 @@ protected:
         return;
       }
 
-      // TODO(orduno) Handle or reject an attempted pre-emption
-
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
-          // Primitives actions are empty msgs
+          // Primitives actions results are empty msgs
           goal_handle->succeed(result);
           return;
 
@@ -146,11 +135,11 @@ protected:
           return;
 
         case Status::RUNNING:
+
         default:
           loop_rate.sleep();
           break;
       }
-
     }
   }
 };
