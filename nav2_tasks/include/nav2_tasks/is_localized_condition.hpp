@@ -45,24 +45,29 @@ public:
   BT::NodeStatus tick() override
   {
     if (!initialized_) {
-      initialize();
+      // Get the required items from the blackboard
+      node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
+
+      node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
+      node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
+      node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
+
+      robot_ = std::make_unique<nav2_robot::Robot>(
+        node_->get_node_base_interface(),
+        node_->get_node_topics_interface(),
+        node_->get_node_logging_interface(),
+        true);
+
+      initialized_ = true;
     }
 
     return isLocalized() ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
   }
 
-  void initialize()
+protected:
+  void cleanup()
   {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-    node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
-    node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
-    node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
-    initialized_ = true;
+    robot_.reset();
   }
 
   bool isLocalized()
@@ -88,18 +93,11 @@ public:
     return false;
   }
 
-protected:
-  void cleanup()
-  {
-    robot_.reset();
-  }
-
-private:
   static const int cov_x_ = 0;
   static const int cov_y_ = 7;
   static const int cov_a_ = 35;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2_lifecycle::LifecycleNode::SharedPtr node_;
   std::unique_ptr<nav2_robot::Robot> robot_;
 
   bool initialized_;

@@ -6,15 +6,21 @@
   <BehaviorTree ID="MainTree">
     <RetryUntilSuccesful name="retry_navigate" num_attempts="6">
       <Fallback>
-        <Sequence>
-          <RateController hz="1.0">
+        <SequenceStar>
+          <ComputePathToPose goal="${goal}" path="${path}"/>
+          <Sequence>
             <Fallback>
               <GoalReached/>
-              <ComputePathToPose goal="${goal}" path="${path}"/>
+              <RateController hz="1.0">
+                <Sequence>
+                  <ComputePathToPose goal="${goal}" path="${path}"/>
+                  <UpdatePath/>
+                </Sequence>
+              </RateController>
             </Fallback>
-          </RateController>
-          <FollowPath path="${path}"/>
-        </Sequence>
+            <FollowPath path="${path}"/>
+          </Sequence>
+        </SequenceStar>
         <ForceFailure>
           <SequenceStar name="recovery">
             <clearEntirelyCostmapServiceRequest service_name="/local_costmap/clear_entirely_local_costmap"/>

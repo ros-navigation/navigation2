@@ -1,0 +1,34 @@
+<!--
+  This Behavior Tree first goes into a branch where it will check if the robot is stuck.
+  If that is the case, it will attempt to recover. Otherwise it will continue with
+  the navigation branch. In this case the navigation branch is based on `parallel.xml`.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <FallbackStar name="check_motion">
+        <Inverter name="is_not_stuck">
+          <IsStuck/>
+        </Inverter>
+        <SequenceStar name="stuck_recovery">
+          <Stop/>
+          <BackUp/>
+          <Spin/>
+        </SequenceStar>
+      </FallbackStar>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <ParallelNode threshold="1">
+          <FollowPath path="${path}"/>
+          <Sequence>
+            <RateController hz="2">
+              <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+            </RateController>
+            <UpdatePath/>
+          </Sequence>
+        </ParallelNode>
+      </SequenceStar>
+    </Sequence>
+  </BehaviorTree>
+</root>
