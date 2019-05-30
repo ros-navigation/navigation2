@@ -1,0 +1,26 @@
+<!--
+  This Behavior Tree first goes into a branch where it will check if the robot is stuck.
+  If that is the case, it will attempt to recover. Otherwise it will continue with
+  the navigation branch. In this case the navigation branch is based on `simple_sequential.xml`.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <FallbackStar name="check_motion">
+        <Inverter name="is_not_stuck">
+          <IsStuck/>
+        </Inverter>
+        <SequenceStar name="stuck_recovery">
+          <Stop/>
+          <BackUp/>
+          <Spin/>
+        </SequenceStar>
+      </FallbackStar>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <FollowPath path="${path}"/>
+      </SequenceStar>
+    </Sequence>
+  </BehaviorTree>
+</root>
