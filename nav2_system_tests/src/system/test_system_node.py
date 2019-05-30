@@ -20,9 +20,9 @@ import time
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from lifecycle_msgs.srv import GetState
 import rclpy
 from rclpy.node import Node
-from lifecycle_msgs.srv import GetState
 
 
 class NavTester(Node):
@@ -93,15 +93,16 @@ class NavTester(Node):
                 self.get_logger().error("Error couldn't set use_sim_time param on: " +
                                         nav2_node + ' retrying...')
 
-    def wait_for_bt_active(self):
+    def wait_for_node_active(self, node):
         # wait for the bt_navigator to be in active state
-        state_client = self.create_client(GetState, '/bt_navigator/get_state')
+        node_service = '/' + node + '/get_state'
+        state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
-            print('/bt_navigator/get_state service not available, waiting...')
-        req = GetState.Request() # empty request
+            print(node_service + ' service not available, waiting...')
+        req = GetState.Request()  # empty request
         state = 'UNKNOWN'
         while (state != 'active'):
-            self.get_logger().info('Getting bt_navigator state...')
+            self.get_logger().info('Getting ' + node + ' state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
@@ -158,8 +159,10 @@ def test_all(test_robot):
     if (result):
         result = test_InitialPose(test_robot, 10)
     if (result):
-        test_robot.setSimTime()
-        test_robot.wait_for_bt_active()
+        test_robot.setSimTime()  # needed for nodes to become active
+        test_robot.wait_for_node_active('bt_navigator')
+        result = test_InitialPose(test_robot, 10)  # TODO: (mkhansen) remove this (navfn needs)
+    if (result):
         result = test_RobotMovesToGoal(test_robot)
 
     # Add more tests here if desired
