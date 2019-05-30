@@ -88,7 +88,7 @@ WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 WorldModel::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_ERROR(get_logger(), "Handling error state");
+  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
