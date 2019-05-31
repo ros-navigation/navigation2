@@ -163,6 +163,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
   try {
     // Get the current pose from the robot
+    getCostmap(costmap_);
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(start)) {
