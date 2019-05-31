@@ -95,7 +95,7 @@ local_costmap:
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
-        enabled: False
+        enabled: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
@@ -119,7 +119,7 @@ global_costmap:
     ros__parameters:
       robot_radius: 0.17
       obstacle_layer:
-        enabled: False
+        enabled: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
