@@ -50,7 +50,7 @@ using std::string;
 namespace dwb_core
 {
 
-DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
+DWBPublisher::DWBPublisher(nav2_util::LifecycleNode::SharedPtr node)
 : node_(node)
 {
   node_->declare_parameter("publish_evaluation", rclcpp::ParameterValue(true));
@@ -61,7 +61,7 @@ DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
   node_->declare_parameter("publish_cost_grid_pc", rclcpp::ParameterValue(false));
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   node_->get_parameter("publish_evaluation", publish_evaluation_);
@@ -80,10 +80,10 @@ DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   prev_marker_count_ = 0;
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBPublisher::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_->on_activate();
@@ -93,10 +93,10 @@ DWBPublisher::on_activate(const rclcpp_lifecycle::State & /*state*/)
   marker_pub_->on_activate();
   cost_grid_pc_pub_->on_activate();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBPublisher::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_->on_deactivate();
@@ -106,10 +106,10 @@ DWBPublisher::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   marker_pub_->on_deactivate();
   cost_grid_pc_pub_->on_deactivate();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DWBPublisher::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   eval_pub_.reset();
@@ -119,7 +119,7 @@ DWBPublisher::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   marker_pub_.reset();
   cost_grid_pc_pub_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

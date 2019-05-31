@@ -16,13 +16,13 @@
 #define NAV2_MAP_SERVER__MAP_SERVER_HPP_
 
 #include <memory>
-#include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_lifecycle/lifecycle_helper_interface.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_helper_interface.hpp"
 
 namespace nav2_map_server
 {
 
-class MapServer : public nav2_lifecycle::LifecycleNode
+class MapServer : public nav2_util::LifecycleNode
 {
 public:
   MapServer();
@@ -30,15 +30,15 @@ public:
 
 protected:
   // Implement the lifecycle interface
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The map loader that will actually do the work
-  std::unique_ptr<nav2_lifecycle::LifecycleHelperInterface> map_loader_;
+  std::unique_ptr<nav2_util::LifecycleHelperInterface> map_loader_;
 };
 
 }  // namespace nav2_map_server

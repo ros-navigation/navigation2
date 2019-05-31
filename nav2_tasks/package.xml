@@ -29,7 +29,6 @@
   <build_depend>nav2_robot</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>lifecycle_msgs</build_depend>
-  <build_depend>nav2_lifecycle</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclcpp_action</exec_depend>
@@ -44,7 +43,6 @@
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>
-  <exec_depend>nav2_lifecycle</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

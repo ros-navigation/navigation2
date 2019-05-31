@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_tasks/behavior_tree_engine.hpp"
 #include "nav2_tasks/clear_entirely_costmap_service_client.hpp"

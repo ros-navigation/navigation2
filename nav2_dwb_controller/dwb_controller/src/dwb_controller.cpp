@@ -45,7 +45,7 @@ DwbController::~DwbController()
   costmap_thread_->join();
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -65,10 +65,10 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&DwbController::followPath, this, std::placeholders::_1));
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -77,10 +77,10 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -89,10 +89,10 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_deactivate(state);
   vel_pub_->on_deactivate();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -107,21 +107,21 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_pub_.reset();
   action_server_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 DwbController::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

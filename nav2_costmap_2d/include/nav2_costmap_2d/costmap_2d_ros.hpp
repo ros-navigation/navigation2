@@ -49,7 +49,7 @@
 #include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"
@@ -69,7 +69,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS : public nav2_lifecycle::LifecycleNode
+class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -80,12 +80,12 @@ public:
   explicit Costmap2DROS(const std::string & name);
   ~Costmap2DROS();
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief  Subscribes to sensor topics if necessary and starts costmap

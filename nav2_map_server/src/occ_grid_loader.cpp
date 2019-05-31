@@ -60,7 +60,7 @@ OccGridLoader::~OccGridLoader()
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Destroying");
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
@@ -170,10 +170,10 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Activating");
@@ -182,20 +182,20 @@ OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_->on_activate();
   occ_pub_->publish(*msg_);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Deactivating");
 
   occ_pub_->on_deactivate();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Cleaning up");
@@ -204,7 +204,7 @@ OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   occ_service_.reset();
   msg_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

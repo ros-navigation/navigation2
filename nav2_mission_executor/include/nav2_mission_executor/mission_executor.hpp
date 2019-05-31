@@ -17,14 +17,14 @@
 
 #include <memory>
 
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/execute_mission.hpp"
 #include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_mission_executor
 {
 
-class MissionExecutor : public nav2_lifecycle::LifecycleNode
+class MissionExecutor : public nav2_util::LifecycleNode
 {
 public:
   MissionExecutor();
@@ -32,12 +32,12 @@ public:
 
 protected:
   // Implement the lifecycle interface
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ExecuteMission>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ExecuteMission>;

@@ -45,13 +45,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
 class LayeredCostmap;
 
-class Layer  // TODO(mjeronimo): public nav2_lifecycle::LifecycleHelperInterface
+class Layer  // TODO(mjeronimo): public nav2_util::LifecycleHelperInterface
 {
 public:
   Layer();
@@ -62,7 +62,7 @@ public:
     LayeredCostmap * parent,
     std::string name,
     tf2_ros::Buffer * tf,
-    nav2_lifecycle::LifecycleNode::SharedPtr node,
+    nav2_util::LifecycleNode::SharedPtr node,
     rclcpp::Node::SharedPtr client_node,
     rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
@@ -132,7 +132,7 @@ protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
   tf2_ros::Buffer * tf_;
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
 

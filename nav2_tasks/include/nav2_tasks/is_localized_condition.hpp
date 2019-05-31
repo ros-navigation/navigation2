@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_robot/robot.hpp"
 #include "rclcpp/rclcpp.hpp"
 

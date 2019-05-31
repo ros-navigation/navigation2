@@ -87,42 +87,42 @@ void trueFalse(
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
-class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
+class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
   explicit TestLifecycleNode(const std::string & name)
-  : nav2_lifecycle::LifecycleNode(name)
+  : nav2_util::LifecycleNode(name)
   {
   }
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_lifecycle::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 };
 

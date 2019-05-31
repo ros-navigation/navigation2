@@ -20,7 +20,7 @@ namespace nav2_world_model
 {
 
 WorldModel::WorldModel()
-: nav2_lifecycle::LifecycleNode("world_model")
+: nav2_util::LifecycleNode("world_model")
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -39,7 +39,7 @@ WorldModel::~WorldModel()
   costmap_thread_->join();
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -51,30 +51,30 @@ WorldModel::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&WorldModel::costmap_service_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   costmap_ros_->on_activate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   costmap_ros_->on_deactivate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -82,21 +82,21 @@ WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_cleanup(state);
   costmap_service_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 WorldModel::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void
