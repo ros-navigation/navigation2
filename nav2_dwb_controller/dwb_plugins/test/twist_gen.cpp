@@ -76,7 +76,7 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
 rclcpp::Node::SharedPtr makeTestNode(const std::string & name)
 {
   rclcpp::NodeOptions node_options = nav2_util::get_node_options_default();
-  node_options.initial_parameters(getDefaultKinematicParameters());
+  node_options.parameter_overrides(getDefaultKinematicParameters());
   return rclcpp::Node::make_shared(name, node_options);
 }
 
