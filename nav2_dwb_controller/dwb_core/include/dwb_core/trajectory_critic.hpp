@@ -46,7 +46,7 @@
 #include "nav_2d_msgs/msg/path2_d.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_core
 {
@@ -92,7 +92,7 @@ public:
    * @param costmap_ros Pointer to the costmap
    */
   void initialize(
-    const nav2_lifecycle::LifecycleNode::SharedPtr & nh,
+    const nav2_util::LifecycleNode::SharedPtr & nh,
     std::string & name,
     CostmapROSPtr costmap_ros)
   {
@@ -173,7 +173,7 @@ protected:
   std::string name_;
   CostmapROSPtr costmap_ros_;
   double scale_;
-  nav2_lifecycle::LifecycleNode::SharedPtr nh_;
+  nav2_util::LifecycleNode::SharedPtr nh_;
 };
 
 }  // namespace dwb_core

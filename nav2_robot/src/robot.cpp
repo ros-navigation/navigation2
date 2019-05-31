@@ -25,7 +25,7 @@
 namespace nav2_robot
 {
 
-Robot::Robot(nav2_lifecycle::LifecycleNode::SharedPtr node)
+Robot::Robot(nav2_util::LifecycleNode::SharedPtr node)
 : Robot(node->get_node_base_interface(),
     node->get_node_topics_interface(),
     node->get_node_logging_interface(),
@@ -59,40 +59,40 @@ Robot::~Robot()
   }
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Robot::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_logging_->get_logger(), "Robot: Configuring");
 
   configure();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Robot::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_logging_->get_logger(), "Robot: Activating");
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Robot::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_logging_->get_logger(), "Robot: Deactivating");
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 Robot::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_logging_->get_logger(), "Robot: Cleaning up");
 
   cleanup();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

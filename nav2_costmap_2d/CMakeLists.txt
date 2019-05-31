@@ -7,13 +7,13 @@ find_package(laser_geometry REQUIRED)
 find_package(map_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -57,13 +57,13 @@ set(dependencies
   laser_geometry
   map_msgs
   message_filters
-  nav2_lifecycle
   nav2_msgs
   nav2_util
   nav2_voxel_grid
   nav_msgs
   pluginlib
   rclcpp
+  rclcpp_lifecycle
   sensor_msgs
   std_msgs
   tf2

@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_LIFECYCLE__LIFECYCLE_NODE_HPP_
-#define NAV2_LIFECYCLE__LIFECYCLE_NODE_HPP_
+#ifndef NAV2_UTIL__LIFECYCLE_NODE_HPP_
+#define NAV2_UTIL__LIFECYCLE_NODE_HPP_
 
 #include <memory>
 #include <string>
 #include <thread>
 
-#include "nav2_lifecycle/lifecycle_helper_interface.hpp"
+#include "nav2_util/lifecycle_helper_interface.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav2_lifecycle
+namespace nav2_util
 {
 
 // The following is a temporary wrapper for rclcpp_lifecycle::LifecycleNode. This class
@@ -53,6 +53,6 @@ protected:
   std::unique_ptr<std::thread> rclcpp_thread_;
 };
 
-}  // namespace nav2_lifecycle
+}  // namespace nav2_util
 
-#endif  // NAV2_LIFECYCLE__LIFECYCLE_NODE_HPP_
+#endif  // NAV2_UTIL__LIFECYCLE_NODE_HPP_
