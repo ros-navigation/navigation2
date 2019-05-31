@@ -80,8 +80,7 @@ dwb_controller:
     sim_time: 1.7
     linear_granularity: 0.05
     xy_goal_tolerance: 0.25
-    # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-    critics: ["RotateToGoal", "Oscillation", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     BaseObstacle.scale: 0.02
     PathAlign.scale: 32.0
     GoalAlign.scale: 24.0
