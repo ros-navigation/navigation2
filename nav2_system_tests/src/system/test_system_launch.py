@@ -36,12 +36,6 @@ def generate_launch_description():
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))
-    navigator_action = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
 
     return LaunchDescription([
         # Launch gazebo server for simulation
@@ -96,7 +90,19 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 
-        navigator_action,
+        launch_ros.actions.Node(
+            package='nav2_motion_primitives',
+            node_executable='motion_primitives_node',
+            node_name='motion_primitives',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}]),
+
+        launch_ros.actions.Node(
+            package='nav2_bt_navigator',
+            node_executable='bt_navigator',
+            node_name='bt_navigator',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}]),
 
         launch_ros.actions.Node(
             package='nav2_lifecycle_manager',
