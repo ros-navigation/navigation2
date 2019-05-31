@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 #include <memory>
 #include <string>
 
 #include "lifecycle_msgs/msg/state.hpp"
 
-namespace nav2_lifecycle
+namespace nav2_util
 {
 
-// The nav2_lifecycle::LifecycleNode class is temporary until we get the
+// The nav2_util::LifecycleNode class is temporary until we get the
 // required support for lifecycle nodes in MessageFilter, TransformListener,
 // and TransforBroadcaster. We have submitted issues for these and will
 // be submitting PRs to add the fixes:
@@ -67,4 +67,4 @@ LifecycleNode::~LifecycleNode()
   }
 }
 
-}  // namespace nav2_lifecycle
+}  // namespace nav2_util

@@ -18,7 +18,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "urdf/model.h"
@@ -26,10 +26,10 @@
 namespace nav2_robot
 {
 
-class Robot : public nav2_lifecycle::LifecycleHelperInterface
+class Robot : public nav2_util::LifecycleHelperInterface
 {
 public:
-  explicit Robot(nav2_lifecycle::LifecycleNode::SharedPtr node);
+  explicit Robot(nav2_util::LifecycleNode::SharedPtr node);
   explicit Robot(
     const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
     const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
@@ -46,10 +46,10 @@ public:
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
   // Interfaces used for logging and creating publishers and subscribers

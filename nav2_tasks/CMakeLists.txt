@@ -17,7 +17,6 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_robot REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -44,7 +43,6 @@ set(dependencies
   std_srvs
   nav2_robot
   nav2_util
-  nav2_lifecycle
 )
 
 ament_target_dependencies(${library_name}

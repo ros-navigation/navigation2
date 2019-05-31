@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_LIFECYCLE__LIFECYCLE_HELPER_INTERFACE_HPP_
-#define NAV2_LIFECYCLE__LIFECYCLE_HELPER_INTERFACE_HPP_
+#ifndef NAV2_UTIL__LIFECYCLE_HELPER_INTERFACE_HPP_
+#define NAV2_UTIL__LIFECYCLE_HELPER_INTERFACE_HPP_
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-namespace nav2_lifecycle
+namespace nav2_util
 {
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -38,6 +38,6 @@ public:
   virtual CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) = 0;
 };
 
-}  // namespace nav2_lifecycle
+}  // namespace nav2_util
 
-#endif  // NAV2_LIFECYCLE__LIFECYCLE_HELPER_INTERFACE_HPP_
+#endif  // NAV2_UTIL__LIFECYCLE_HELPER_INTERFACE_HPP_

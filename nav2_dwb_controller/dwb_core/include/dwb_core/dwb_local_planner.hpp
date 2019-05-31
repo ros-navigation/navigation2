@@ -45,7 +45,7 @@
 #include "dwb_core/trajectory_generator.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace dwb_core
@@ -55,21 +55,21 @@ namespace dwb_core
  * @class DWBLocalPlanner
  * @brief Plugin-based flexible local_planner
  */
-class DWBLocalPlanner : public nav2_lifecycle::LifecycleHelperInterface
+class DWBLocalPlanner : public nav2_util::LifecycleHelperInterface
 {
 public:
   /**
    * @brief Constructor that brings up pluginlib loaders
    */
   DWBLocalPlanner(
-    nav2_lifecycle::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
+    nav2_util::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
 
   virtual ~DWBLocalPlanner() {}
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief nav_core2 setPlan - Sets the global plan
@@ -191,7 +191,7 @@ protected:
 
   void loadBackwardsCompatibleParameters();
 
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
   TFBufferPtr tf_;
   CostmapROSPtr costmap_ros_;
 

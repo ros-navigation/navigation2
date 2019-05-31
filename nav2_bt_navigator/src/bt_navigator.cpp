@@ -26,7 +26,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_lifecycle::LifecycleNode("bt_navigator", "", true)
+: nav2_util::LifecycleNode("bt_navigator", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -39,7 +39,7 @@ BtNavigator::~BtNavigator()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -86,7 +86,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (!xml_file.good()) {
     RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename.c_str());
-    return nav2_lifecycle::CallbackReturn::FAILURE;
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   xml_string_ = std::string(std::istreambuf_iterator<char>(xml_file),
@@ -105,26 +105,26 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tree_->nodes = std::move(temp_tree.nodes);
   temp_tree.root_node = nullptr;
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -139,21 +139,21 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   blackboard_.reset();
   bt_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

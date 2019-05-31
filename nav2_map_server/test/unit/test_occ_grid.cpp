@@ -40,7 +40,7 @@
 
 #include "yaml-cpp/yaml.h"
 #include "nav2_map_server/occ_grid_loader.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -64,7 +64,7 @@ class TestMapLoader : public nav2_map_server::OccGridLoader
   FRIEND_TEST(MapLoaderTest, loadInvalidFile);
 
 public:
-  explicit TestMapLoader(nav2_lifecycle::LifecycleNode::SharedPtr node, std::string yaml_filename)
+  explicit TestMapLoader(nav2_util::LifecycleNode::SharedPtr node, std::string yaml_filename)
   : OccGridLoader(node, yaml_filename)
   {
   }
@@ -75,27 +75,27 @@ public:
   }
 };
 
-class FakeMapServer : public nav2_lifecycle::LifecycleNode
+class FakeMapServer : public nav2_util::LifecycleNode
 {
 public:
   FakeMapServer()
-  : nav2_lifecycle::LifecycleNode("FakeMapServer") {}
+  : nav2_util::LifecycleNode("FakeMapServer") {}
 
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
   {
-    return nav2_lifecycle::CallbackReturn::SUCCESS;
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 };
 
@@ -123,7 +123,7 @@ public:
   }
 
 protected:
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
   std::unique_ptr<TestMapLoader> map_loader_;
 };
 

@@ -19,14 +19,14 @@
 #include <thread>
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 
 namespace nav2_world_model
 {
 
-class WorldModel : public nav2_lifecycle::LifecycleNode
+class WorldModel : public nav2_util::LifecycleNode
 {
 public:
   WorldModel();
@@ -34,12 +34,12 @@ public:
 
 protected:
   // Implement the lifecycle interface
-  nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The WorldModel provides the GetCostmap service
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;

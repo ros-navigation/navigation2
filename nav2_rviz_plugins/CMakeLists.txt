@@ -16,7 +16,7 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -53,7 +53,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
   geometry_msgs
-  nav2_lifecycle
+  nav2_util
   nav2_lifecycle_manager
   nav2_msgs
   nav2_msgs

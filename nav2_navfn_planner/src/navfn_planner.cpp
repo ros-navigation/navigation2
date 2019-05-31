@@ -45,7 +45,7 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: nav2_lifecycle::LifecycleNode("navfn_planner", "", true)
+: nav2_util::LifecycleNode("navfn_planner", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -59,7 +59,7 @@ NavfnPlanner::~NavfnPlanner()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -94,10 +94,10 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
       std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -106,10 +106,10 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
   plan_marker_publisher_->on_activate();
   robot_->on_activate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -118,10 +118,10 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
   plan_marker_publisher_->on_deactivate();
   robot_->on_deactivate(state);
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -135,21 +135,21 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
   action_server_.reset();
   planner_.reset();
 
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_lifecycle::CallbackReturn
+nav2_util::CallbackReturn
 NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_lifecycle::CallbackReturn::SUCCESS;
+  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void

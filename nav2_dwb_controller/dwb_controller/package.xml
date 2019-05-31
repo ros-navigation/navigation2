@@ -16,7 +16,6 @@
   <depend>nav2_util</depend>
   <depend>nav2_robot</depend>
   <depend>nav2_msgs</depend>
-  <depend>nav2_lifecycle</depend>
   <depend>dwb_core</depend>
   <depend>nav_2d_utils</depend>
   <depend>nav_2d_msgs</depend>

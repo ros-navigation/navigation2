@@ -5,7 +5,6 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(nav2_lifecycle REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -31,7 +30,6 @@ add_library(${library_name} SHARED
 set(dependencies
   geometry_msgs
   lifecycle_msgs
-  nav2_lifecycle
   nav2_msgs
   nav2_util
   rclcpp
