@@ -135,8 +135,7 @@ AmclNode::AmclNode()
 
 
   custom_qos_profile.depth = 1;
-  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this,
-      scan_topic_, custom_qos_profile);
+  laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(this, scan_topic_, rmw_qos_profile_sensor_data);
   laser_scan_filter_ =
     new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(*laser_scan_sub_,
       *tf_,
