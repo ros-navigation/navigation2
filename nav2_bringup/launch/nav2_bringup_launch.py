@@ -33,6 +33,7 @@ def generate_launch_description():
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
 
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
@@ -41,18 +42,18 @@ def generate_launch_description():
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
-        'use_sim_time', 
+        'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
         'use_simulation', condition=IfCondition('True'),
-        default_value='True', 
+        default_value='True',
         description='Whether to run in simulation')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
-        default_value='gzserver', 
+        default_value='gzserver',
         description='The simulator to use (gazebo or gzserver)')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
@@ -64,6 +65,11 @@ def generate_launch_description():
         'params',
         default_value='nav2_params.yaml',
         description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
+        'rviz_config',
+        default_value='nav2_default_view.rviz',
+        description='Full path to the RVIZ config file to use')
 
     map_server_params = {
         "yaml_filename" : "/home/mjeronimo/src/navigation2/nav2_bringup/launch/test_map.yaml"
@@ -89,6 +95,7 @@ def generate_launch_description():
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             [ "__log_level:=fatal"]],
+            ['-d', rviz_config_file]],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = launch.actions.RegisterEventHandler(
@@ -162,6 +169,7 @@ def generate_launch_description():
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_rviz_config_file_cmd)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
