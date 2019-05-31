@@ -29,12 +29,11 @@ def generate_launch_description():
     # Create the launch configuration variables
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
-    simulator = launch.substitutions.LaunchConfiguration('simulator')
-    world = launch.substitutions.LaunchConfiguration('world')
     params_file = launch.substitutions.LaunchConfiguration('params')
-    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
 
+    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+        
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
@@ -46,66 +45,11 @@ def generate_launch_description():
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
-    declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-        'use_simulation', condition=IfCondition('True'),
-        default_value='True',
-        description='Whether to run in simulation')
-
-    declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
-        'simulator',
-        default_value='gzserver',
-        description='The simulator to use (gazebo or gzserver)')
-
-    declare_world_cmd = launch.actions.DeclareLaunchArgument(
-        'world',
-        default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3_worlds/burger.model'),
-        description='Full path to world file to load')
-
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
         'params',
         default_value='nav2_params.yaml',
         description='Full path to the ROS2 parameters file to use for all launched nodes')
-
-    declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
-        'rviz_config',
-        default_value='nav2_default_view.rviz',
-        description='Full path to the RVIZ config file to use')
-
-    map_server_params = {
-        "yaml_filename" : "/home/mjeronimo/src/navigation2/nav2_bringup/launch/test_map.yaml"
-    }
-
-    # Specify the actions
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-        cwd=[launch_dir], output='screen')
-
-    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
-        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
-
-    start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('robot_state_publisher'),
-                'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_burger.urdf'),
-            ['__params:=', params_file]],
-        cwd=[launch_dir], output='screen')
-
-    start_rviz_cmd = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            [ "__log_level:=fatal"],
-            ['-d', rviz_config_file]],
-        cwd=[launch_dir], output='screen')
-
-    exit_event_handler = launch.actions.RegisterEventHandler(
-        event_handler=launch.event_handlers.OnProcessExit(
-            target_action=start_rviz_cmd,
-            on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
-
+        
     start_map_server_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
@@ -165,26 +109,14 @@ def generate_launch_description():
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
-    # Declare the launch options
-    ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_use_simulation_cmd)
-    ld.add_action(declare_simulator_cmd)
-    ld.add_action(declare_world_cmd)
-    ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_rviz_config_file_cmd)
-
     # Set environment variables
     ld.add_action(stdout_linebuf_envvar)
 
-    # Add any actions to launch in simulation (conditioned on 'use_simulation')
-    ld.add_action(start_gazebo_cmd)
-
-    # Add other nodes and processes we need
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_rviz_cmd)
-    ld.add_action(exit_event_handler)
-
+    # Declare the launch options
+    ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_params_file_cmd)
+    
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_map_server_cmd)
