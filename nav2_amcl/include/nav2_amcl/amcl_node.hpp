@@ -137,6 +137,7 @@ protected:
     double & x, double & y, double & yaw,
     const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
+  std::atomic<bool> amcl_node_ready_;
 
   // Particle filter
   void initParticleFilter();
@@ -158,6 +159,9 @@ protected:
   rclcpp::Time last_laser_received_ts_;
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
+
+  bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
+  rclcpp::Time last_time_printed_msg_;
 
   // Pose hypothesis
   typedef struct
@@ -189,6 +193,9 @@ protected:
     const std::vector<amcl_hyp_t> & hyps,
     const int & max_weight_hyp);
   void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
+  void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  bool init_pose_received_on_inactive{false};
+  bool initial_pose_is_known_{false};
 
   // Node parameters (initialized via initParameters)
   void initParameters();

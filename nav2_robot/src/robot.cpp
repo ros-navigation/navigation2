@@ -102,7 +102,8 @@ Robot::configure()
   // its initial pose, so that pose message uses durability TRANSIENT_LOCAL
 
   pose_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    node_topics_, "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local(),
+    node_topics_, "amcl_pose",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&Robot::onPoseReceived, this, std::placeholders::_1));
 
   odom_sub_ = rclcpp::create_subscription<nav_msgs::msg::Odometry>(
