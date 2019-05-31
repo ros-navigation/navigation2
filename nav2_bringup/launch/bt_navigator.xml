@@ -24,9 +24,7 @@
           <ComputePathToPose goal="${goal}"/>
         </Fallback>
       </RateController>
-      <SequenceStar name="RememberFollowPathResult">
-        <FollowPath path="${path}"/>
-      </SequenceStar>
+      <FollowPath path="${path}"/>
     </Sequence>
   </BehaviorTree>
 </root>
