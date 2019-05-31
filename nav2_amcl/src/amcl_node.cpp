@@ -405,7 +405,6 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  // initOdometry();
   initParticleFilter();
 
   // In case the client sent us a pose estimate in the past, integrate the
