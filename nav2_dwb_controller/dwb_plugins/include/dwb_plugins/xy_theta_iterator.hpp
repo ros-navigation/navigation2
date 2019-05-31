@@ -39,7 +39,7 @@
 
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/one_d_velocity_iterator.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -49,7 +49,7 @@ public:
   XYThetaIterator()
   : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
   void initialize(
-    const nav2_lifecycle::LifecycleNode::SharedPtr & nh,
+    const nav2_util::LifecycleNode::SharedPtr & nh,
     KinematicParameters::Ptr kinematics) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
   bool hasMoreTwists() override;

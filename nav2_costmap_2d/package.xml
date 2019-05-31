@@ -24,13 +24,13 @@
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>
   <depend>message_filters</depend>
-  <depend>nav2_lifecycle</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_voxel_grid</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2</depend>

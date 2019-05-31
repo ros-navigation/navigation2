@@ -32,7 +32,7 @@ using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
-  nav2_lifecycle::LifecycleNode::SharedPtr node,
+  nav2_util::LifecycleNode::SharedPtr node,
   Costmap2DROS & costmap)
 : node_(node), costmap_(costmap)
 {

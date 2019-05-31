@@ -42,7 +42,7 @@
 
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav_2d_utils
@@ -61,7 +61,7 @@ public:
    * @param nh NodeHandle for creating subscriber
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
-  explicit OdomSubscriber(nav2_lifecycle::LifecycleNode & nh, std::string default_topic = "odom")
+  explicit OdomSubscriber(nav2_util::LifecycleNode & nh, std::string default_topic = "odom")
   {
     std::string odom_topic;
     nh.get_parameter_or("odom_topic", odom_topic, default_topic);

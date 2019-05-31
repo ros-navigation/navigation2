@@ -47,7 +47,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
+void StoppedGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   SimpleGoalChecker::initialize(nh);
 

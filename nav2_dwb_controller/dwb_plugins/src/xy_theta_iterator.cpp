@@ -39,7 +39,7 @@
 namespace dwb_plugins
 {
 void XYThetaIterator::initialize(
-  const nav2_lifecycle::LifecycleNode::SharedPtr & nh,
+  const nav2_util::LifecycleNode::SharedPtr & nh,
   KinematicParameters::Ptr kinematics)
 {
   kinematics_ = kinematics;

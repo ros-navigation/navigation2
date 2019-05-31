@@ -4,6 +4,7 @@ add_library(${library_name} SHARED
   lifecycle_service_client.cpp
   string_utils.cpp
   lifecycle_utils.cpp
+  lifecycle_node.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -14,6 +15,7 @@ ament_target_dependencies(${library_name}
   nav_msgs
   geometry_msgs
   lifecycle_msgs
+  rclcpp_lifecycle
 )
 
 add_subdirectory(pf)
