@@ -139,6 +139,7 @@ map_server:
 lifecycle_manager:
   ros__parameters:
     use_sim_time: True
+    autostart: True
 
 lifecycle_manager_service_client:
   ros__parameters:
