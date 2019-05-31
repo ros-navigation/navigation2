@@ -99,7 +99,8 @@ public:
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    nh_->get_parameter_or(name_ + ".scale", scale_, 1.0);
+    nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
+    nh_->get_parameter(name_ + ".scale", scale_);
     onInit();
   }
   virtual void onInit() {}
