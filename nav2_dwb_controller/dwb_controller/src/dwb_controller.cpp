@@ -159,7 +159,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
 
-        RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+        RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
 
         if (current_goal_handle->is_canceling()) {

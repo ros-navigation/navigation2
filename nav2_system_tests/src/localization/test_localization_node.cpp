@@ -21,6 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
 class RclCppFixture
@@ -43,6 +44,7 @@ public:
     node = rclcpp::Node::make_shared("localization_test");
 
     while (node->count_subscribers("/scan") < 1) {
+      std::this_thread::sleep_for(100ms);
       rclcpp::spin_some(node);
     }
 
@@ -51,7 +53,6 @@ public:
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "amcl_pose", rclcpp::SystemDefaultsQoS(),
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
-
     initial_pose_pub_->publish(testPose_);
   }
 
@@ -82,6 +83,9 @@ bool TestAmclPose::defaultAmclTest()
 {
   initial_pose_pub_->publish(testPose_);
   while (!pose_callback_) {
+    // TODO(mhpanah): Initial pose should only be published once.
+    initial_pose_pub_->publish(testPose_);
+    std::this_thread::sleep_for(100ms);
     rclcpp::spin_some(node);
   }
   if (std::abs(amcl_pose_x - testPose_.pose.pose.position.x) < tol_ &&
