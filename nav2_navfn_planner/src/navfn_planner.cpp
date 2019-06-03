@@ -162,8 +162,19 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
   // TODO(mjeronimo): handle or reject an attempted pre-emption
 
   try {
-    // Get the current pose from the robot
+    // Get the current costmap
     getCostmap(costmap_);
+    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
+      costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+    // Update planner based on the new costmap size
+    if (isPlannerOutOfDate()) {
+      current_costmap_size_[0] = costmap_.metadata.size_x;
+      current_costmap_size_[1] = costmap_.metadata.size_y;
+      planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+    }
+
+    // Get the current pose from the robot
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(start)) {
