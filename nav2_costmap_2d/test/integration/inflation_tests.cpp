@@ -169,7 +169,7 @@ void TestNode::initNode(double inflation_radius)
     auto options = rclcpp::NodeOptions();
     options.parameter_overrides(parameters);
 
-    node_ = std::make_shared<nav2_lifecycle::LifecycleNode>(
+    node_ = std::make_shared<nav2_util::LifecycleNode>(
       "inflation_test_node", "", false, options);
 
     // Declare non-plugin specific costmap parameters
