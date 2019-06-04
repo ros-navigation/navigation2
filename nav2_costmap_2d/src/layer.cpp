@@ -84,8 +84,8 @@ void
 Layer::undeclareAllParameters()
 {
   std::for_each(begin(local_params_), end(local_params_), [this](const std::string & param_name) {
-     node_->undeclare_parameter(getFullName(param_name));
-  });
+      node_->undeclare_parameter(getFullName(param_name));
+    });
   local_params_.clear();
 }
 

@@ -99,7 +99,7 @@ std::vector<Point> TestNode::setRadii(
   p.y = length;
   polygon.push_back(p);
   layers.setFootprint(polygon);
-    
+
   return polygon;
 }
 
@@ -161,26 +161,27 @@ void TestNode::validatePointInflation(
 
 void TestNode::initNode(double inflation_radius)
 {
-    std::vector<rclcpp::Parameter> parameters;
-    // Set cost_scaling_factor parameter to 1.0 for inflation layer
-    parameters.push_back(rclcpp::Parameter("inflation.cost_scaling_factor", 1.0));
-    parameters.push_back(rclcpp::Parameter("inflation.inflation_radius", inflation_radius));
+  std::vector<rclcpp::Parameter> parameters;
+  // Set cost_scaling_factor parameter to 1.0 for inflation layer
+  parameters.push_back(rclcpp::Parameter("inflation.cost_scaling_factor", 1.0));
+  parameters.push_back(rclcpp::Parameter("inflation.inflation_radius", inflation_radius));
 
-    auto options = rclcpp::NodeOptions();
-    options.parameter_overrides(parameters);
+  auto options = rclcpp::NodeOptions();
+  options.parameter_overrides(parameters);
 
-    node_ = std::make_shared<nav2_util::LifecycleNode>(
-      "inflation_test_node", "", false, options);
+  node_ = std::make_shared<nav2_util::LifecycleNode>(
+    "inflation_test_node", "", false, options);
 
-    // Declare non-plugin specific costmap parameters
-    node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
-    node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
-    node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-    node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-    node_->declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
-    node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
-    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
-    node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));  
+  // Declare non-plugin specific costmap parameters
+  node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+  node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+  node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  node_->declare_parameter("unknown_cost_value",
+    rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+  node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
 }
 
 TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
@@ -191,7 +192,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
   layers.resizeMap(10, 10, 1, 0, 0);
 
   // Footprint with inscribed radius = 2.1
-  //               circumscribed radius = 3.1  
+  //               circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
@@ -211,7 +212,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
   EXPECT_EQ(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, costmap->getCost(1, 1));
 }
 
-TEST_F(TestNode, testInflationShouldNotCreateUnknowns) 
+TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
 {
   initNode(4.1);
   tf2_ros::Buffer tf(node_->get_clock());
@@ -219,7 +220,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   layers.resizeMap(10, 10, 1, 0, 0);
 
   // Footprint with inscribed radius = 2.1
-  // circumscribed radius = 3.1  
+  // circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
@@ -246,7 +247,7 @@ TEST_F(TestNode, testCostFunctionCorrectness)
   layers.resizeMap(100, 100, 1, 0, 0);
   // Footprint with inscribed radius = 5.0
   //               circumscribed radius = 8.0
-  std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);  
+  std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
   nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
