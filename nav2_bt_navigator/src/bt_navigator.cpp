@@ -170,9 +170,8 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto is_canceling = [&current_goal_handle]() -> bool
     {return current_goal_handle->is_canceling();};
 
-  auto on_loop = [this, &current_goal_handle, &result] {
+  auto on_loop = [this, &current_goal_handle] {
       if (action_server_->preempt_requested()) {
-        current_goal_handle->abort(result);
         current_goal_handle = action_server_->get_updated_goal_handle();
         initializeGoalPose(current_goal_handle);
       }
