@@ -16,6 +16,7 @@
 #define NAV2_TASKS__BT_ACTION_NODE_HPP_
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "behaviortree_cpp/action_node.h"
@@ -51,7 +52,7 @@ public:
   // but override on_init instead.
   void onInit() final
   {
-    node_ = nav2_util::generate_internal_node();
+    node_ = nav2_util::generate_internal_node(action_name_);
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -123,7 +124,12 @@ new_goal_received:
     auto future_result = goal_handle_->async_result();
     rclcpp::executor::FutureReturnCode rc;
     do {
-      rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
+      {
+        // Can only have one spin_until_future_complete at a time. Otherwise we get
+        // the "already on a executor" error
+        std::lock_guard<std::mutex> guard(spin_mutex_);
+        rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
+      }
 
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
         on_loop_timeout();
@@ -165,7 +171,10 @@ new_goal_received:
     if (status() == BT::NodeStatus::RUNNING) {
       action_client_->async_cancel_goal(goal_handle_);
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      rclcpp::spin_until_future_complete(node_, future_cancel);
+      {
+        std::lock_guard<std::mutex> guard(spin_mutex_);
+        rclcpp::spin_until_future_complete(node_, future_cancel);
+      }
     }
 
     setStatus(BT::NodeStatus::IDLE);
@@ -187,6 +196,9 @@ protected:
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
+
+  // A mutex to allow only one spin_until_future_complete at a time
+  std::mutex spin_mutex_;
 };
 
 }  // namespace nav2_tasks
