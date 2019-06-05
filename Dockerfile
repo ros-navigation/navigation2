@@ -66,6 +66,10 @@ RUN . $ROS_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+#Workaround hard coded paths in nightly tarball setup scripts
+ARG UPSTREAM_CI_WS=/home/jenkins-agent/workspace/packaging_linux/ws
+RUN mkdir -p $UPSTREAM_CI_WS && ln -s /opt/ros/$ROS_DISTRO $UPSTREAM_CI_WS/install
+
 # build navigation2 package source
 RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 ARG COVERAGE_ENABLED=False
