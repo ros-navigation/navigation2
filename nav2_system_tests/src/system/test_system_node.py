@@ -157,6 +157,7 @@ def test_all(test_robot):
     # set transforms to use_sim_time
     result = True
     if (result):
+        test_robot.wait_for_node_active('amcl')
         result = test_InitialPose(test_robot, 10)
     if (result):
         test_robot.setSimTime()  # needed for nodes to become active
