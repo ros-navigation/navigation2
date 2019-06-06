@@ -104,8 +104,15 @@ public:
   TestNode()
   {
     node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
-
-    node_->declare_parameter("map_topic", rclcpp::ParameterValue(string("/map")));
+    node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+    node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+    node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+    node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    node_->declare_parameter("unknown_cost_value",
+      rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+    node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+    node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   }
 
   ~TestNode() {}
@@ -224,7 +231,7 @@ TEST_F(TestNode, testRaytracing2) {
  */
 TEST_F(TestNode, testWaveInterference) {
   tf2_ros::Buffer tf(node_->get_clock());
-
+  node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
   // Start with an empty map, no rolling window, tracking unknown
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);

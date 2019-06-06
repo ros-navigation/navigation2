@@ -20,9 +20,9 @@ import sys
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
-import launch_ros.actions
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
