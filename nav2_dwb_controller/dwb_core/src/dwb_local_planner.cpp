@@ -94,7 +94,12 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   traj_generator_->initialize(node_);
   goal_checker_->initialize(node_);
 
-  loadCritics();
+  try {
+    loadCritics();
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(node_->get_logger(), "Couldn't load critics! Caught exception: %s", e.what());
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -171,7 +176,13 @@ DWBLocalPlanner::loadCritics()
     RCLCPP_INFO(node_->get_logger(),
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
-    plugin->initialize(node_, plugin_name, costmap_ros_);
+    try {
+      plugin->initialize(node_, plugin_name, costmap_ros_);
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(node_->get_logger(), "Couldn't initialize critic plugin!");
+      throw e;
+    }
+    RCLCPP_INFO(node_->get_logger(), "Critic plugin initialized");
   }
 }
 
