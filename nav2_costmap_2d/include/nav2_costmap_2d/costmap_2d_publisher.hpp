@@ -78,11 +78,13 @@ public:
   {
     costmap_pub_->on_activate();
     costmap_update_pub_->on_activate();
+    costmap_raw_pub_->on_activate();
   }
   void on_deactivate()
   {
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
+    costmap_raw_pub_->on_deactivate();
   }
   void on_cleanup() {}
 
