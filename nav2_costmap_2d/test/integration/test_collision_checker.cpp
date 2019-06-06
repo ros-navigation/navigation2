@@ -23,6 +23,7 @@
 #include "nav2_costmap_2d/static_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/testing_helper.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -34,46 +35,128 @@
 
 using namespace std::chrono_literals;
 
-class TestCollisionChecker : public nav2_costmap_2d::CollisionChecker
+class RclCppFixture
 {
 public:
-  TestCollisionChecker(
-    rclcpp::Node::SharedPtr node,
-    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
-    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub,
-    tf2_ros::Buffer & tf_buffer)
-  : CollisionChecker(node, costmap_sub, footprint_sub, tf_buffer),
-    node_(node),
-    layers_("frame", false, false),
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+class TestCollisionChecker : public nav2_util::LifecycleNode
+{
+public:
+  TestCollisionChecker(std::string name)
+  : LifecycleNode(name, "", true),
     costmap_received_(false),
-    tf_(tf_buffer)
+    global_frame_("map")
   {
-    node_->get_parameter_or<std::string>("global_frame", global_frame_, std::string("map"));
+    // Declare non-plugin specific costmap parameters
+    declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+    declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+    declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+    declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    declare_parameter("unknown_cost_value",
+      rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+    declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));    
+  }
+
+  nav2_util::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_INFO(get_logger(), "Configuring");
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    std::string costmap_topic = "costmap_raw";
+    std::string footprint_topic = "footprint";
+
+    costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      rclcpp_node_, costmap_topic);
+    footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+      rclcpp_node_, footprint_topic);
+    collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
+      rclcpp_node_, costmap_sub_, footprint_sub_, *tf_buffer_);
 
     base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
     base_rel_map.child_frame_id = "base_link";
     base_rel_map.header.frame_id = "map";
-    base_rel_map.header.stamp = node_->now();
-    tf_.setTransform(base_rel_map, "collision_checker_test");
+    base_rel_map.header.stamp = now();
+    tf_buffer_->setTransform(base_rel_map, "collision_checker_test");
 
+
+    layers_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
     // Add Static Layer
-    nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
-    layers_.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
-    slayer->initialize(&layers_, "static", &tf_, node_);
+    addStaticLayer(*layers_, *tf_buffer_, shared_from_this());
 
     // Add Inflation Layer
-    nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();
-    ilayer->initialize(&layers_, "inflation", &tf_, node_);
-    std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
-    layers_.addPlugin(ipointer);
+    nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(
+      *layers_, *tf_buffer_, shared_from_this());
 
-    footprint_pub_ = node_->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      "footprint", rmw_qos_profile_default);
+    footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
+      footprint_topic, rclcpp::SystemDefaultsQoS());
 
-    costmap_pub_ = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(node_,
-        layers_.getCostmap(), global_frame_, "costmap", true);
+    costmap_pub_ = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(shared_from_this(),
+        layers_->getCostmap(), global_frame_, "costmap", true);
 
-    publish();
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_INFO(get_logger(), "Activating");
+
+    costmap_pub_->on_activate();
+    footprint_pub_->on_activate();
+
+    auto timer_callback = [this]() -> void
+      {
+        try {
+          costmap_sub_->getCostmap();
+          costmap_received_ = true;
+        } catch (const std::runtime_error & e) {
+          costmap_received_ = false;
+        }
+        publishFootprint();
+        publishCostmap();
+      };
+
+    timer_ = create_wall_timer(0.1s, timer_callback);
+
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_INFO(get_logger(), "Deactivating");
+
+    costmap_pub_->on_deactivate();
+    footprint_pub_->on_deactivate();
+    timer_->cancel();
+
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_INFO(get_logger(), "Cleaning Up");
+    delete layers_;
+    layers_ = nullptr;
+
+    timer_->reset();
+    tf_buffer_.reset();
+    tf_listener_.reset();
+
+    footprint_sub_.reset();
+    footprint_pub_.reset();
+
+    costmap_sub_.reset();
+    costmap_pub_.reset();
+
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 
   ~TestCollisionChecker() {}
@@ -89,10 +172,10 @@ public:
     costmap_received_ = false;
 
     while (!costmap_received_) {
-      rclcpp::spin_some(node_);
+      rclcpp::spin_some(get_node_base_interface());
     }
 
-    return isCollisionFree(pose);
+    return collision_checker_->isCollisionFree(pose);
   }
 
   void setFootprint(double footprint_padding, double robot_radius)
@@ -101,7 +184,7 @@ public:
     new_footprint = nav2_costmap_2d::makeFootprintFromRadius(robot_radius);
     nav2_costmap_2d::padFootprint(new_footprint, footprint_padding);
     footprint_ = new_footprint;
-    layers_.setFootprint(footprint_);
+    layers_->setFootprint(footprint_);
   }
 
 protected:
@@ -122,52 +205,38 @@ protected:
     tf2::Transform transform;
     tf2::fromMsg(pose, transform);
     base_rel_map.transform = tf2::toMsg(transform);
-    base_rel_map.header.stamp = node_->now();
-    tf_.setTransform(base_rel_map, "collision_checker_test");
-  }
-
-  void publish()
-  {
-    auto timer_callback = [this]() -> void
-      {
-        try {
-          costmap_sub_->getCostmap();
-          costmap_received_ = true;
-        } catch (const std::runtime_error & e) {
-          costmap_received_ = false;
-        }
-        publishFootprint();
-        publishCostmap();
-      };
-
-    timer_ = node_->create_wall_timer(0.1s, timer_callback);
+    base_rel_map.header.stamp = now();
+    tf_buffer_->setTransform(base_rel_map, "collision_checker_test");
   }
 
   void publishFootprint()
   {
     geometry_msgs::msg::PolygonStamped oriented_footprint;
     oriented_footprint.header.frame_id = global_frame_;
-    oriented_footprint.header.stamp = node_->now();
+    oriented_footprint.header.stamp = now();
     nav2_costmap_2d::transformFootprint(x_, y_, yaw_, footprint_, oriented_footprint);
     footprint_pub_->publish(oriented_footprint);
   }
 
   void publishCostmap()
   {
-    layers_.updateMap(x_, y_, yaw_);
+    layers_->updateMap(x_, y_, yaw_);
     costmap_pub_->publishCostmap();
   }
 
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double x_, y_, yaw_;
-  rclcpp::Node::SharedPtr node_;
-  nav2_costmap_2d::LayeredCostmap layers_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
+  nav2_costmap_2d::LayeredCostmap * layers_{nullptr};
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   std::unique_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
   std::vector<geometry_msgs::msg::Point> footprint_;
   std::string global_frame_;
   bool costmap_received_;
   geometry_msgs::msg::TransformStamped base_rel_map;
-  tf2_ros::Buffer & tf_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 
@@ -176,31 +245,19 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   {
-
-    node_ = rclcpp::Node::make_shared(
-      "test_collision_checker", nav2_util::get_node_options_default());
-
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-    std::string costmap_topic = "costmap_raw";
-    std::string footprint_topic = "footprint";
-    costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node_, costmap_topic);
-    footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(node_, footprint_topic);
-
-    collision_checker_ = std::make_unique<TestCollisionChecker>(node_, costmap_sub_, footprint_sub_,
-        *tf_buffer_);
+    collision_checker_ = std::make_shared<TestCollisionChecker>("test_collision_checker");
+    collision_checker_->on_configure(collision_checker_->get_current_state());
+    collision_checker_->on_activate(collision_checker_->get_current_state());
   }
 
-  ~TestNode() {}
+  ~TestNode()
+  {
+    collision_checker_->on_deactivate(collision_checker_->get_current_state());
+    collision_checker_->on_cleanup(collision_checker_->get_current_state());
+  }
 
 protected:
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  std::unique_ptr<TestCollisionChecker> collision_checker_;
+  std::shared_ptr<TestCollisionChecker> collision_checker_;
 };
 
 TEST_F(TestNode, uknownSpace)
@@ -215,7 +272,6 @@ TEST_F(TestNode, uknownSpace)
 
   // In unknown region inside map
   ASSERT_EQ(collision_checker_->testPose(2, 4, 0), false);
-
 }
 
 TEST_F(TestNode, FreeSpace)
@@ -238,20 +294,4 @@ TEST_F(TestNode, CollisionSpace)
 
   // Partially in obstacle
   ASSERT_EQ(collision_checker_->testPose(4.5, 4.5, 0), false);
-
-}
-
-int main(int argc, char ** argv)
-{
-  ::testing::InitGoogleTest(&argc, argv);
-
-  // initialize ROS
-  rclcpp::init(0, nullptr);
-
-  bool all_successful = RUN_ALL_TESTS();
-
-  // shutdown ROS
-  rclcpp::shutdown();
-
-  return all_successful;
 }
