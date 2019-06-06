@@ -30,12 +30,12 @@
       <RetryUntilSuccesful name="navigate_w_replanning_and_retry" num_attempts="6">
         <Fallback>
           <Sequence>
-            <RateController hz="1.0">
-              <Fallback>
-                <GoalReached/>
-                <ComputePathToPose goal="${goal}" path="${path}"/>
-              </Fallback>
-            </RateController>
+            <Fallback>
+              <GoalReached/>
+              <RateController hz="1.0">
+                <ComputePathToPose goal="${goal}"/>
+              </RateController>
+            </Fallback>
             <FollowPath path="${path}"/>
           </Sequence>
           <ForceFailure>

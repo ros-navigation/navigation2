@@ -56,7 +56,7 @@ public:
   void initialize()
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-    node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+    node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.50);
     robot_ = std::make_unique<nav2_robot::Robot>(
       node_->get_node_base_interface(),
       node_->get_node_topics_interface(),
@@ -70,6 +70,7 @@ public:
   {
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
+    rclcpp::spin_some(node_);
     if (!robot_->getCurrentPose(current_pose)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;

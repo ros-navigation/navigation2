@@ -5,12 +5,12 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
-      <RateController hz="1.0">
-        <Fallback>
-          <GoalReached/>
+      <Fallback>
+        <GoalReached/>
+        <RateController hz="1.0">
           <ComputePathToPose goal="${goal}"/>
-        </Fallback>
-      </RateController>
+        </RateController>
+      </Fallback>
       <FollowPath path="${path}"/>
     </Sequence>
   </BehaviorTree>
