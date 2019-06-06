@@ -40,8 +40,16 @@ public:
   void on_success() override
   {
     *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
-    blackboard()->set<bool>("path_updated", true);  // NOLINT
+
+    if (first_time_) {
+      first_time_ = false;
+    } else {
+      blackboard()->set<bool>("path_updated", true);  // NOLINT
+    }
   }
+
+private:
+  bool first_time_{true};
 };
 
 }  // namespace nav2_tasks
