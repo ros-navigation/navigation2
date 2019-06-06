@@ -51,9 +51,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_, "NavigateToPose");
 
-  goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("/move_base_simple/goal",
-      rclcpp::SystemDefaultsQoS(),
-      std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+  goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "/move_base_simple/goal",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create an action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
@@ -159,34 +160,39 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void
 BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  // Initialize the goal and result
-  auto goal = goal_handle->get_goal();
+  // The action may be pre-empted, so keep a pointer to the current goal handle
+  std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
   auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
 
-  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-  // Update the goal pose on the blackboard
-  *(blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal")) = goal->pose;
+  initializeGoalPose(current_goal_handle);
 
   // Execute the BT that was previously created in the configure step
-  auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
-  nav2_tasks::BtStatus rc = bt_->run(tree_, is_canceling);
+  auto is_canceling = [&current_goal_handle]() -> bool
+    {return current_goal_handle->is_canceling();};
+
+  auto on_loop = [this, &current_goal_handle] {
+      if (action_server_->preempt_requested()) {
+        current_goal_handle = action_server_->get_updated_goal_handle();
+        initializeGoalPose(current_goal_handle);
+      }
+    };
+
+  nav2_tasks::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
 
   switch (rc) {
     case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      goal_handle->succeed(result);
+      current_goal_handle->succeed(result);
       break;
 
     case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      goal_handle->abort(result);
+      current_goal_handle->abort(result);
       break;
 
     case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      goal_handle->canceled(result);
+      current_goal_handle->canceled(result);
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;
@@ -194,6 +200,18 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     default:
       throw std::logic_error("Invalid status return from BT");
   }
+}
+
+void
+BtNavigator::initializeGoalPose(std::shared_ptr<GoalHandle> goal_handle)
+{
+  auto goal = goal_handle->get_goal();
+
+  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
+    goal->pose.pose.position.x, goal->pose.pose.position.y);
+
+  // Update the goal pose on the blackboard
+  *(blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal")) = goal->pose;
 }
 
 void

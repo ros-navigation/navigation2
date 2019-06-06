@@ -62,6 +62,7 @@ BehaviorTreeEngine::run(
 BtStatus
 BehaviorTreeEngine::run(
   std::unique_ptr<BT::Tree> & tree,
+  std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
@@ -70,6 +71,8 @@ BehaviorTreeEngine::run(
 
   // Loop until something happens with ROS or the node completes w/ success or failure
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    onLoop();
+
     result = tree->root_node->executeTick();
 
     // Check if we've received a cancel message

@@ -56,12 +56,12 @@ public:
 
         // If we're currently working on a task, set a flag so that the
         // action server can grab the pre-empting request in its loop
-        if (received_handle_ != nullptr && received_handle_->is_active()) {
+        if (current_handle_ != nullptr && current_handle_->is_active()) {
           preempt_requested_ = true;
-          received_handle_ = handle;
+          new_handle_ = handle;
         } else {
           // Otherwise, safe to start a new task
-          received_handle_ = handle;
+          current_handle_ = handle;
           std::thread{execute_callback_, handle}.detach();
         }
       };
@@ -84,8 +84,13 @@ public:
   get_updated_goal_handle()
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
+
+    current_handle_->abort(std::make_shared<typename ActionT::Result>());
+    current_handle_ = new_handle_;
+    new_handle_.reset();
     preempt_requested_ = false;
-    return received_handle_;
+
+    return current_handle_;
   }
 
 protected:
@@ -96,7 +101,8 @@ protected:
 
   std::mutex update_mutex_;
   bool preempt_requested_{false};
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> received_handle_;
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> new_handle_;
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
 };
