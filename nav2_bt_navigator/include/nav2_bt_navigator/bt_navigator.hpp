@@ -54,6 +54,9 @@ protected:
   // The action server callback
   void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);
 
+  // Goal pose initialization on the blackboard
+  void initializeGoalPose(std::shared_ptr<GoalHandle> goal_handle);
+
   // A subscription and callback to handle the topic-based goal published from rviz
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
