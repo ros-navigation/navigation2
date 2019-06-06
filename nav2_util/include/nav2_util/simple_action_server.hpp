@@ -101,8 +101,6 @@ protected:
 
   std::mutex update_mutex_;
   bool preempt_requested_{false};
-  // std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> received_handle_;
-
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> new_handle_;
 
