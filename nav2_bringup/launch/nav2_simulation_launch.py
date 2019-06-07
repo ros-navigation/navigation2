@@ -36,7 +36,7 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params')
     rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
-    use_sim_time = text = launch.substitutions.LaunchConfiguration('use_sim_time')
+    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     world = launch.substitutions.LaunchConfiguration('world')
 
@@ -89,14 +89,14 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
 
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-        'use_simulation', condition=IfCondition('True'),
+        'use_simulation',
         default_value='True',
         description='Whether to run in simulation')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
         default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-                                   'worlds/turtlebot3_worlds/burger.model'),
+                                   'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
     # Specify the actions
@@ -112,7 +112,7 @@ def generate_launch_description():
                 'lib/robot_state_publisher/robot_state_publisher'),
             os.path.join(
                 get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_burger.urdf'),
+                'urdf', 'turtlebot3_waffle.urdf'),
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
