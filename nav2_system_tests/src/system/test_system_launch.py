@@ -75,7 +75,7 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}]),
+            parameters=[params_file]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
