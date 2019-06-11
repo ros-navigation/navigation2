@@ -71,11 +71,29 @@ protected:
   // respond until we're in the active state
   std::atomic<bool> active_{false};
 
+  // Pose hypothesis
+  typedef struct
+  {
+    double weight;             // Total weight (weights sum to 1)
+    pf_vector_t pf_pose_mean;  // Mean of pose esimate
+    pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
+  } amcl_hyp_t;
+
   // Map-related
   void initMap();
+  void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg);
+  void freeMapDependentMemory();
+  void applyInitialPose();
   nav2_util::MapServiceClient map_client_{"amcl"};
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
+  bool use_map_topic_{true};
+  bool first_map_only_{false};
+  bool first_map_received_{false};
+  amcl_hyp_t * initial_pose_hyp_;
+  std::recursive_mutex configuration_mutex_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 #if NEW_UNIFORM_SAMPLING
   static std::vector<std::pair<int, int>> free_space_indices;
 #endif
@@ -162,14 +180,6 @@ protected:
 
   bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
   rclcpp::Time last_time_printed_msg_;
-
-  // Pose hypothesis
-  typedef struct
-  {
-    double weight;             // Total weight (weights sum to 1)
-    pf_vector_t pf_pose_mean;  // Mean of pose esimate
-    pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
-  } amcl_hyp_t;
 
   bool addNewScanner(
     int & laser_index,

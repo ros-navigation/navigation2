@@ -108,7 +108,9 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   initParameters();
-  initMap();
+  if (!use_map_topic_){
+    initMap();
+  }
   initTransforms();
   initMessageFilters();
   initPubSub();
@@ -163,9 +165,9 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Make sure amcl is ready before continuing
-  while (!amcl_node_ready_) {
+  /*while (!amcl_node_ready_) {
     std::this_thread::sleep_for(100ms);
-  }
+  }*/
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -472,6 +474,13 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
   if (!active_) {return;}
+  if (!first_map_received_) {
+      if (checkElapsedTime(2s, last_time_printed_msg_)) {
+        RCLCPP_WARN(get_logger(), "Waiting for map....");
+        last_time_printed_msg_ = now();
+    }
+    return;
+    }
 
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = now();
@@ -918,6 +927,8 @@ AmclNode::initParameters()
   get_parameter("z_max", z_max_);
   get_parameter("z_rand", z_rand_);
   get_parameter("z_short", z_short_);
+  get_parameter("use_map_topic_", use_map_topic_);
+  get_parameter("first_map_only_", first_map_only_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -935,6 +946,111 @@ AmclNode::initParameters()
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
   }
+}
+
+void
+AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
+  RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
+  if (first_map_only_ && first_map_received_) {
+    return;
+  }
+
+  handleMapMessage(*msg);
+  first_map_received_ = true;
+}
+
+void
+AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
+{
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
+
+  RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix\n",
+    msg.info.width,
+    msg.info.height,
+    msg.info.resolution);
+  if (msg.header.frame_id != global_frame_id_) {
+    RCLCPP_WARN(
+      get_logger(), "Frame_id of map received:'%s' doesn't match global_frame_id:'%s'. This could"
+      " cause issues with reading published topics",
+      msg.header.frame_id.c_str(),
+      global_frame_id_.c_str());
+  }
+
+  freeMapDependentMemory();
+  // Clear queued laser objects because they hold pointers to the existing
+  // map, #5202.
+  lasers_.clear();
+  lasers_update_.clear();
+  frame_to_laser_.clear();
+
+  map_ = convertMap(msg);
+
+#if NEW_UNIFORM_SAMPLING
+  // Index of free space
+  free_space_indices.resize(0);
+  for (int i = 0; i < map_->size_x; i++) {
+    for (int j = 0; j < map_->size_y; j++) {
+      if (map_->cells[MAP_INDEX(map_, i, j)].occ_state == -1) {
+        free_space_indices.push_back(std::make_pair(i, j));
+      }
+    }
+  }
+#endif
+  // Create the particle filter
+  initParticleFilter();
+  // resample_count = 0 is extra
+
+  // Instantiate the sensor objects
+  motion_model_.reset();
+  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+        robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+
+  // Laser
+  lasers_.clear();
+
+  // In case the initial pose message arrived before the first map,
+  // try to apply the initial pose now that the map has arrived.
+  applyInitialPose();
+}
+
+
+void
+AmclNode::applyInitialPose()
+{
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
+
+  // If initial_pose_hyp_ and map_ are both non-null, apply the initial
+  // pose to the particle filter state.
+
+  if (initial_pose_hyp_ != nullptr && map_ != nullptr) {
+    pf_init(pf_, initial_pose_hyp_->pf_pose_mean, initial_pose_hyp_->pf_pose_cov);
+    pf_init_ = false;
+    delete initial_pose_hyp_;
+    initial_pose_hyp_ = nullptr;
+  }
+}
+
+void
+AmclNode::freeMapDependentMemory()
+{
+  if (map_ != NULL) {
+    map_free(map_);
+    map_ = NULL;
+  }
+
+  if (pf_ != NULL) {
+    pf_free(pf_);
+    pf_ = NULL;
+  }
+
+  motion_model_.reset();
+  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+        robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+
+  // Laser
+  lasers_.clear();
+ // createLaserObject();
 }
 
 void
@@ -957,6 +1073,8 @@ AmclNode::initMap()
       " This could cause issues with reading published topics",
       msg.header.frame_id.c_str(), global_frame_id_.c_str());
   }
+
+  first_map_received_ = true;
 
   // Convert to our own local data structure
   map_ = convertMap(msg);
@@ -1046,6 +1164,14 @@ AmclNode::initPubSub()
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
+  
+  if (use_map_topic_){
+    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>("map",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+    
+    RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
+  }
 }
 
 void
