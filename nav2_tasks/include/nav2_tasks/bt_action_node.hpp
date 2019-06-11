@@ -174,7 +174,8 @@ new_goal_received:
       {
         std::lock_guard<std::mutex> guard(spin_mutex_);
         if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-          rclcpp::executor::FutureReturnCode::SUCCESS) {
+          rclcpp::executor::FutureReturnCode::SUCCESS)
+        {
           RCLCPP_ERROR(node_->get_logger(),
             "Failed to cancel action server for %s", action_name_.c_str());
         }
