@@ -32,63 +32,35 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Create the control button and its tooltip
 
   start_stop_button_ = new QPushButton;
-  pause_resume_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
-  const char * shutdown_msg1 = "Deactivate and cleanup all nav2 lifecycle nodes";
-  const char * shutdown_msg2 = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
+  const char * shutdown_msg = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
 
   initial_ = new QState();
   initial_->setObjectName("initial");
   initial_->assignProperty(start_stop_button_, "text", "Startup");
   initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
-  initial_->assignProperty(pause_resume_button_, "text", "Pause");
-  initial_->assignProperty(pause_resume_button_, "enabled", false);
-  initial_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
 
   starting_ = new QState();
   starting_->setObjectName("starting");
   starting_->assignProperty(start_stop_button_, "text", "Shutdown");
-  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg2);
-  starting_->assignProperty(pause_resume_button_, "enabled", true);
-  starting_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
+  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
 
   stopping_ = new QState();
   stopping_->setObjectName("stopping");
   stopping_->assignProperty(start_stop_button_, "enabled", false);
-  stopping_->assignProperty(pause_resume_button_, "enabled", false);
-
-  pausing_ = new QState();
-  pausing_->setObjectName("pausing");
-  pausing_->assignProperty(start_stop_button_, "enabled", false);
-  pausing_->assignProperty(pause_resume_button_, "text", "Resume");
-  pausing_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
-
-  resuming_ = new QState();
-  resuming_->setObjectName("resuming");
-  resuming_->assignProperty(start_stop_button_, "enabled", true);
-  resuming_->assignProperty(pause_resume_button_, "text", "Pause");
-  resuming_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
 
   QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
   QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
-  QObject::connect(pausing_, SIGNAL(entered()), this, SLOT(onPause()));
-  QObject::connect(resuming_, SIGNAL(entered()), this, SLOT(onResume()));
 
   initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
   starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
-  starting_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
-  pausing_->addTransition(pause_resume_button_, SIGNAL(clicked()), resuming_);
-  resuming_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
-  resuming_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
 
   machine_.addState(initial_);
   machine_.addState(starting_);
   machine_.addState(stopping_);
-  machine_.addState(pausing_);
-  machine_.addState(resuming_);
 
   machine_.setInitialState(initial_);
   machine_.start();
@@ -96,7 +68,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Lay out the items in the panel
 
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_stop_button_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
@@ -122,20 +93,6 @@ Nav2Panel::onShutdown()
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
       &client_));
-}
-
-void
-Nav2Panel::onPause()
-{
-  QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause, &client_));
-}
-
-void
-Nav2Panel::onResume()
-{
-  QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume, &client_));
 }
 
 void
