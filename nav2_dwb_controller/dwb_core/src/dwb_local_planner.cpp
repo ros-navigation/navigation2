@@ -82,7 +82,7 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   std::string goal_checker_name;
 
   double transform_tolerance;
-  node_->get_parameter_or("transform_tolerance", transform_tolerance);
+  node_->get_parameter("transform_tolerance", transform_tolerance);
   transform_tolerance_ = nav2_util::duration_from_seconds(transform_tolerance);
   RCLCPP_INFO(node_->get_logger(), "Setting transform_tolerance to %f", transform_tolerance);
 
