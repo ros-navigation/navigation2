@@ -118,7 +118,7 @@ TEST_F(TestNode, footprint_empty)
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
   // With no specification of footprint or radius,
   // defaults to 0.1 meter radius plus 0.01 meter padding.
-  EXPECT_EQ(16, footprint.size());
+  EXPECT_EQ((unsigned int)16, footprint.size());
 
   EXPECT_NEAR(0.11f, footprint[0].x, 0.0001);
   EXPECT_NEAR(0.0f, footprint[0].y, 0.0001);
@@ -130,7 +130,7 @@ TEST_F(TestNode, unpadded_footprint_from_string_param)
   footprint_tester_->testFootprint(0.0, "[[1, 1], [-1, 1], [-1, -1]]");
 
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
-  EXPECT_EQ(3, footprint.size());
+  EXPECT_EQ((unsigned int)3, footprint.size());
 
   EXPECT_EQ(1.0f, footprint[0].x);
   EXPECT_EQ(1.0f, footprint[0].y);
@@ -150,7 +150,7 @@ TEST_F(TestNode, padded_footprint_from_string_param)
   footprint_tester_->testFootprint(0.5, "[[1, 1], [-1, 1], [-1, -1]]");
 
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
-  EXPECT_EQ(3, footprint.size());
+  EXPECT_EQ((unsigned int)3, footprint.size());
 
   EXPECT_EQ(1.5f, footprint[0].x);
   EXPECT_EQ(1.5f, footprint[0].y);
@@ -170,7 +170,7 @@ TEST_F(TestNode, radius_param)
   footprint_tester_->testFootprint(0, 10.0);
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
   // Circular robot has 16-point footprint auto-generated.
-  EXPECT_EQ(16, footprint.size());
+  EXPECT_EQ((unsigned int)16, footprint.size());
 
   // Check the first point
   EXPECT_EQ(10.0f, footprint[0].x);
@@ -187,7 +187,7 @@ TEST_F(TestNode, footprint_from_same_level_param)
 {
   footprint_tester_->testFootprint(0.0, "[[1, 2], [3, 4], [5, 6]]");
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
-  EXPECT_EQ(3, footprint.size());
+  EXPECT_EQ((unsigned int)3, footprint.size());
 
   EXPECT_EQ(1.0f, footprint[0].x);
   EXPECT_EQ(2.0f, footprint[0].y);

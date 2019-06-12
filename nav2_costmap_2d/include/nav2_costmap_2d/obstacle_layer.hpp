@@ -44,7 +44,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "laser_geometry/laser_geometry.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreorder"
 #include "tf2_ros/message_filter.h"
+#pragma GCC diagnostic pop
 #include "message_filters/subscriber.h"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"

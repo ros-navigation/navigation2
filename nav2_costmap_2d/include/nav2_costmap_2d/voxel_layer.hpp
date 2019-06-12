@@ -126,11 +126,11 @@ private:
       return false;
     }
 
-    mx = static_cast<int>((wx - origin_x_) / resolution_);
-    my = static_cast<int>((wy - origin_y_) / resolution_);
-    mz = static_cast<int>((wz - origin_z_) / z_resolution_);
+    mx = static_cast<unsigned int>((wx - origin_x_) / resolution_);
+    my = static_cast<unsigned int>((wy - origin_y_) / resolution_);
+    mz = static_cast<unsigned int>((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
+    if (mx < size_x_ && my < size_y_ && mz < (unsigned int)size_z_) {
       return true;
     }
 

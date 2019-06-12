@@ -104,7 +104,7 @@ InflationLayer::matchSize()
 
 void
 InflationLayer::updateBounds(
-  double robot_x, double robot_y, double robot_yaw, double * min_x,
+  double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
   if (need_reinflation_) {
@@ -211,7 +211,7 @@ InflationLayer::updateCosts(
   // can overtake previously inserted but farther away cells
   std::map<double, std::vector<CellData>>::iterator bin;
   for (bin = inflation_cells_.begin(); bin != inflation_cells_.end(); ++bin) {
-    for (int i = 0; i < bin->second.size(); ++i) {
+    for (unsigned int i = 0; i < bin->second.size(); ++i) {
       // process all cells at distance dist_bin.first
       const CellData & cell = bin->second[i];
 

@@ -165,7 +165,7 @@ void VoxelLayer::updateBounds(
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
-    for (unsigned int i = 0; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
       // if the obstacle is too high or too far away from the robot we won't add it
       if (*iter_z > max_obstacle_height_) {
         continue;

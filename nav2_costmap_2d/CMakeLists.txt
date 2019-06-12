@@ -27,7 +27,6 @@ remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
 
 nav2_package()
-add_compile_options(-Wno-sign-compare -Wno-reorder -Wno-strict-aliasing -Wno-unused-parameter -Wno-unused-variable)
 
 include_directories(
   include
