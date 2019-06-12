@@ -51,8 +51,8 @@ Costmap2DPublisher::Costmap2DPublisher(
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
-  always_send_full_costmap_(always_send_full_costmap), topic_name_(topic_name)
+: node_(ros_node), costmap_(costmap), global_frame_(global_frame), topic_name_(topic_name),
+  active_(false), always_send_full_costmap_(always_send_full_costmap)
 {
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 

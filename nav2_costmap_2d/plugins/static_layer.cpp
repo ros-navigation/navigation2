@@ -273,7 +273,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
 
 void
 StaticLayer::updateBounds(
-  double robot_x, double robot_y, double robot_yaw, double * min_x,
+  double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, double * min_x,
   double * min_y,
   double * max_x,
   double * max_y)
@@ -332,8 +332,8 @@ StaticLayer::updateCosts(
     tf2::Transform tf2_transform;
     tf2::fromMsg(transform.transform, tf2_transform);
 
-    for (unsigned int i = min_i; i < max_i; ++i) {
-      for (unsigned int j = min_j; j < max_j; ++j) {
+    for (int i = min_i; i < max_i; ++i) {
+      for (int j = min_j; j < max_j; ++j) {
         // Convert master_grid coordinates (i,j) into global_frame_(wx,wy) coordinates
         layered_costmap_->getCostmap()->mapToWorld(i, j, wx, wy);
         // Transform from global_frame_ to map_frame_

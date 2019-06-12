@@ -43,7 +43,6 @@
 #include <string>
 #include <vector>
 
-#include "tf2_ros/message_filter.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_util/duration_conversions.hpp"

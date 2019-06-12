@@ -118,7 +118,7 @@ void TestNode::validatePointInflation(
   for (std::map<double, std::vector<CellData>>::iterator bin = m.begin();
     bin != m.end(); ++bin)
   {
-    for (int i = 0; i < bin->second.size(); ++i) {
+    for (unsigned int i = 0; i < bin->second.size(); ++i) {
       const CellData & cell = bin->second[i];
       if (!seen[cell.index_]) {
         seen[cell.index_] = true;
@@ -196,7 +196,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   addObservation(olayer, 0, 0, MAX_Z);
@@ -224,7 +224,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   addObservation(olayer, 0, 0, MAX_Z);
@@ -232,7 +232,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   layers.updateMap(0, 0, 0);
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
-  EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 0);
+  EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), (unsigned int)0);
 }
 
 /**
@@ -350,7 +350,7 @@ TEST_F(TestNode, testInflation)
 
   addStaticLayer(layers, tf, node_);
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
@@ -420,7 +420,7 @@ TEST_F(TestNode, testInflation2)
 
   addStaticLayer(layers, tf, node_);
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   // Creat a small L-Shape all at once
@@ -449,7 +449,7 @@ TEST_F(TestNode, testInflation3)
   std::vector<Point> polygon = setRadii(layers, 1, 1.75);
 
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   // There should be no occupied cells

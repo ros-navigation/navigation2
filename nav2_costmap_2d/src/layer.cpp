@@ -37,10 +37,10 @@ namespace nav2_costmap_2d
 
 Layer::Layer()
 : layered_costmap_(nullptr),
-  current_(false),
-  enabled_(false),
   name_(),
-  tf_(nullptr)
+  tf_(nullptr),
+  current_(false),
+  enabled_(false)
 {}
 
 void

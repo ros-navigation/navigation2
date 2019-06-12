@@ -17,8 +17,8 @@ const double MAX_Z(1.0);
 void setValues(nav2_costmap_2d::Costmap2D & costmap, const unsigned char * map)
 {
   int index = 0;
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       costmap.setCost(j, i, map[index]);
     }
   }
@@ -38,8 +38,8 @@ char printableCost(unsigned char cost)
 void printMap(nav2_costmap_2d::Costmap2D & costmap)
 {
   printf("map:\n");
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       printf("%4d", static_cast<int>(costmap.getCost(j, i)));
     }
     printf("\n\n");
@@ -51,8 +51,8 @@ unsigned int countValues(
   unsigned char value, bool equal = true)
 {
   unsigned int count = 0;
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       unsigned char c = costmap.getCost(j, i);
       if ((equal && c == value) || (!equal && c != value)) {
         count += 1;
