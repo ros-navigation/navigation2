@@ -153,7 +153,6 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   particlecloud_pub_->on_activate();
 
   first_pose_sent_ = false;
-  amcl_node_ready_ = false;
 
   // Keep track of whether we're in the active state. We won't
   // process incoming callbacks until we are
@@ -163,11 +162,6 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     handleInitialPose(
       std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
   }
-
-  // Make sure amcl is ready before continuing
-  /*while (!amcl_node_ready_) {
-    std::this_thread::sleep_for(100ms);
-  }*/
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -769,8 +763,6 @@ AmclNode::publishAmclPose(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
   const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
 {
-  amcl_node_ready_ = true;
-
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {
     if (checkElapsedTime(2s, last_time_printed_msg_)) {

@@ -155,7 +155,6 @@ protected:
     double & x, double & y, double & yaw,
     const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
-  std::atomic<bool> amcl_node_ready_;
 
   // Particle filter
   void initParticleFilter();
