@@ -25,6 +25,7 @@ using namespace std::chrono_literals;
 using namespace std::placeholders;
 
 using lifecycle_msgs::msg::Transition;
+using lifecycle_msgs::msg::State;
 using nav2_util::LifecycleServiceClient;
 
 namespace nav2_lifecycle_manager
@@ -56,6 +57,14 @@ LifecycleManager::LifecycleManager()
   auto options = rclcpp::NodeOptions().arguments(
     {std::string("__node:=") + get_name() + "service_client"});
   service_client_node_ = std::make_shared<rclcpp::Node>("_", options);
+
+  transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
+  transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
+  transition_state_map_[Transition::TRANSITION_ACTIVATE] = State::PRIMARY_STATE_ACTIVE;
+  transition_state_map_[Transition::TRANSITION_DEACTIVATE] = State::PRIMARY_STATE_INACTIVE;
+  transition_state_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
+    State::PRIMARY_STATE_FINALIZED;
+
   if (autostart_) {
     startup();
   }
@@ -103,29 +112,38 @@ LifecycleManager::destroyLifecycleServiceClients()
   }
 }
 
-void
+bool
+LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
+{
+  if (!node_map_[node_name]->change_state(transition) ||
+    !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool
 LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
 {
   for (const auto & kv : node_map_) {
-    if (!kv.second->change_state(transition)) {
-      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", kv.first.c_str());
-      return;
+    if (!changeStateForNode(kv.first, transition)) {
+      return false;
     }
   }
+
+  return true;
 }
 
 bool
 LifecycleManager::bringupNode(const std::string & node_name)
 {
   message(std::string("Configuring and activating ") + node_name);
-  if (!node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE)) {
-    RCLCPP_ERROR(get_logger(), "Failed to configure node: %s", node_name.c_str());
-    return false;
-  }
-
-  auto rc = node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
-  if (!rc) {
-    RCLCPP_ERROR(get_logger(), "Failed to activate node: %s", node_name.c_str());
+  if (!changeStateForNode(node_name, Transition::TRANSITION_CONFIGURE) ||
+    !changeStateForNode(node_name, Transition::TRANSITION_ACTIVATE))
+  {
     return false;
   }
 
@@ -148,7 +166,8 @@ LifecycleManager::startup()
   createLifecycleServiceClients();
   for (auto & node_name : node_names_) {
     if (!bringupNode(node_name)) {
-      RCLCPP_ERROR(get_logger(), "Failed to bring up node: %s, aboring bringup", node_name.c_str());
+      RCLCPP_ERROR(get_logger(), "Failed to bring up node: %s, aborting bringup",
+        node_name.c_str());
       return;
     }
   }
