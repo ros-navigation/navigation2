@@ -4,25 +4,21 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RetryUntilSuccesful name="retry_navigate" num_attempts="6">
-      <Fallback>
-        <Sequence>
-          <RateController hz="1.0">
-            <Fallback>
-              <GoalReached/>
-              <ComputePathToPose goal="${goal}" path="${path}"/>
-            </Fallback>
-          </RateController>
-          <FollowPath path="${path}"/>
-        </Sequence>
-        <ForceFailure>
-          <SequenceStar name="recovery">
-            <clearEntirelyCostmapServiceRequest service_name="/local_costmap/clear_entirely_local_costmap"/>
-            <clearEntirelyCostmapServiceRequest service_name="/global_costmap/clear_entirely_global_costmap"/>
-            <Spin/>
-          </SequenceStar>
-        </ForceFailure>
-      </Fallback>
-    </RetryUntilSuccesful>
+    <RecoveryNode num_of_retries="6">
+      <Sequence name="NavigateWReplanning">
+        <RateController hz="1.0">
+          <Fallback>
+            <GoalReached/>
+             <ComputePathToPose goal="${goal}" path="${path}"/>
+          </Fallback>
+        </RateController>
+        <FollowPath path="${path}"/>
+      </Sequence>
+      <SequenceStar name="RecoveryActions">
+        <clearEntirelyCostmapServiceRequest service_name="/local_costmap/clear_entirely_local_costmap"/>
+        <clearEntirelyCostmapServiceRequest service_name="/global_costmap/clear_entirely_global_costmap"/>
+        <Spin/>
+      </SequenceStar>
+    </RecoveryNode>
   </BehaviorTree>
 </root>
