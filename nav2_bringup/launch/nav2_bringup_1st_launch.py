@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-from launch import LaunchDescription
 import launch.actions
+from launch import LaunchDescription
+
 import launch_ros.actions
+
 from nav2_common.launch import RewrittenYaml
 
 
@@ -29,7 +30,6 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        'autostart': autostart,
         'use_sim_time': use_sim_time,
         'yaml_filename': map_yaml_file
     }
@@ -51,8 +51,9 @@ def generate_launch_description():
 
         launch.actions.DeclareLaunchArgument(
             'params',
-            default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
-            description='Full path to the ROS2 parameters file to use for all launched nodes'),
+            default_value=[launch.substitutions.ThisLaunchFileDir(),
+                           '/nav2_params.yaml'],
+            description='Full path to the ROS2 parameters file to use'),
 
         launch_ros.actions.Node(
             package='nav2_map_server',
@@ -71,10 +72,10 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager',
+            node_name='lifecycle_manager_localize',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': True},
+                        {'autostart': autostart},
                         {'node_names': ['map_server', 'amcl']}]),
 
     ])
