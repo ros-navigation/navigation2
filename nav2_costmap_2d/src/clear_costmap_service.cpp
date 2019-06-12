@@ -206,7 +206,7 @@ string ClearCostmapService::getLayerName(const Layer & layer) const
 {
   string name = layer.getName();
 
-  int slash = name.rfind('/');
+  size_t slash = name.rfind('/');
 
   if (slash != std::string::npos) {
     name = name.substr(slash + 1);

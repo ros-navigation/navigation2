@@ -113,7 +113,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, rclcpp_node_, false);
 
   // Then load and add the plug-ins to the costmap
-  for (int i = 0; i < plugin_names_.size(); ++i) {
+  for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names_[i].c_str());
 
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);

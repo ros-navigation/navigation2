@@ -154,7 +154,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
       // uint32_t a = g_colors_a[c.status] * 255.0;
 
       uint32_t col = (r << 16) | (g << 8) | b;
-      cval = *reinterpret_cast<float *>(&col);
+      memcpy(&cval, &col, sizeof col);
     }
 
     pub_marked->publish(cloud);
@@ -185,7 +185,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
       // uint32_t a = g_colors_a[c.status] * 255.0;
 
       uint32_t col = (r << 16) | (g << 8) | b;
-      cval = *reinterpret_cast<float *>(&col);
+      memcpy(&cval, &col, sizeof col);
     }
 
     pub_unknown->publish(cloud);
