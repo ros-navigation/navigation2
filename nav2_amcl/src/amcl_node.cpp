@@ -1042,7 +1042,6 @@ AmclNode::freeMapDependentMemory()
 
   // Laser
   lasers_.clear();
-  // createLaserObject();
 }
 
 void
