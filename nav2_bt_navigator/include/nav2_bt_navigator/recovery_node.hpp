@@ -49,6 +49,7 @@ public:
 private:
   unsigned int current_child_idx_;
   unsigned int num_of_retries_;
+  unsigned int retry_count_;
   BT::NodeStatus tick() override;
 };
 }  // namespace nav2_bt_navigator
