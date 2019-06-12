@@ -39,7 +39,8 @@ LifecycleManager::LifecycleManager()
   std::vector<std::string> default_node_names{"map_server", "amcl", "world_model", "dwb_controller",
     "navfn_planner", "bt_navigator"};
 
-  // The list of names is parameterized, allowing this module to be used with a different set of nodes
+  // The list of names is parameterized, allowing this module to be used with a different set
+  // of nodes
   declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
   declare_parameter("autostart", rclcpp::ParameterValue(false));
 
