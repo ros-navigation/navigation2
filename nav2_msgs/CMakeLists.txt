@@ -14,7 +14,6 @@ nav2_package()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
-  "msg/MissionPlan.msg"
   "msg/Path.msg"
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
@@ -23,7 +22,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ClearEntireCostmap.srv"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
-  "action/ExecuteMission.action"
   "action/FollowPath.action"
   "action/NavigateToPose.action"
   "action/Spin.action"
