@@ -26,6 +26,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "dwb_controller/progress_checker.hpp"
 
 namespace dwb_controller
 {
@@ -45,18 +46,21 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
 
   // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback
-  void followPath(const std::shared_ptr<GoalHandle> goal_handle);
+  void followPath();
 
-  bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);
+  void setPlannerPath(const nav2_msgs::msg::Path & path);
+  bool computeAndUpdate(ProgressChecker & progress_checker);
+  void cancelAndStop();
+  void processPendingPreemption();
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
+  bool isGoalReached();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
 
   // The DWBController contains a costmap node

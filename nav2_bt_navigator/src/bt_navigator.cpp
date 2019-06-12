@@ -60,7 +60,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create an action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
-      std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1), false);
+      std::bind(&BtNavigator::navigateToPose, this), false);
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<NavigateToPoseBehaviorTree>();
@@ -164,22 +164,18 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 void
-BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
+BtNavigator::navigateToPose()
 {
-  // The action may be pre-empted, so keep a pointer to the current goal handle
-  std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
-  auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
-
-  initializeGoalPose(current_goal_handle);
+  initializeGoalPose();
 
   // Execute the BT that was previously created in the configure step
-  auto is_canceling = [&current_goal_handle]() -> bool
-    {return current_goal_handle->is_canceling();};
+  auto is_canceling =
+    [this]() -> bool {return action_server_->is_cancelling_current_goal();};
 
-  auto on_loop = [this, &current_goal_handle] {
+  auto on_loop = [this]() {
       if (action_server_->preempt_requested()) {
-        current_goal_handle = action_server_->get_updated_goal_handle();
-        initializeGoalPose(current_goal_handle);
+        action_server_->accept_pending_goal();
+        initializeGoalPose();
       }
     };
 
@@ -188,17 +184,17 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   switch (rc) {
     case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      current_goal_handle->succeed(result);
+      action_server_->succeeded_current();
       break;
 
     case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      current_goal_handle->abort(result);
+      action_server_->abort_all();
       break;
 
     case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      current_goal_handle->canceled(result);
+      action_server_->cancel_all();
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;
@@ -209,9 +205,9 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 }
 
 void
-BtNavigator::initializeGoalPose(std::shared_ptr<GoalHandle> goal_handle)
+BtNavigator::initializeGoalPose()
 {
-  auto goal = goal_handle->get_goal();
+  auto goal = action_server_->get_current_goal();
 
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);

@@ -37,8 +37,20 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ExecuteMission>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ExecuteMission>;
+
   // The map loader that will actually do the work
   std::unique_ptr<nav2_util::LifecycleHelperInterface> map_loader_;
+
+  // Out action server implements the ExecuteMission action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void executeMission();
+
+  // A regular, non-spinning ROS node that we can use for the Behavior Tree
+  rclcpp::Node::SharedPtr client_node_;
 };
 
 }  // namespace nav2_map_server

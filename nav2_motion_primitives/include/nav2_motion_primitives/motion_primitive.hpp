@@ -43,7 +43,6 @@ template<typename ActionT>
 class MotionPrimitive
 {
 public:
-  using GoalHandle = rclcpp_action::ServerGoalHandle<ActionT>;
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
   explicit MotionPrimitive(rclcpp::Node::SharedPtr & node, const std::string & primitive_name)
@@ -89,7 +88,7 @@ protected:
       true);
 
     action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
-        std::bind(&MotionPrimitive::execute, this, std::placeholders::_1));
+        std::bind(&MotionPrimitive::execute, this));
   }
 
   void cleanup()
@@ -98,13 +97,13 @@ protected:
     action_server_.reset();
   }
 
-  void execute(const typename std::shared_ptr<GoalHandle> goal_handle)
+  void execute()
   {
     RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
 
-    if (onRun(goal_handle->get_goal()) != Status::SUCCEEDED) {
+    if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
       RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
-      goal_handle->abort(std::make_shared<typename ActionT::Result>());
+      action_server_->abort_all();
       return;
     }
 
@@ -112,26 +111,24 @@ protected:
     auto timer = node_->create_wall_timer(1s,
         [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
 
-    auto result = std::make_shared<typename ActionT::Result>();
     rclcpp::Rate loop_rate(10);
 
     while (rclcpp::ok()) {
-      if (goal_handle->is_canceling()) {
+      if (action_server_->is_cancelling_current_goal()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
-        goal_handle->canceled(result);
+        action_server_->cancel_all();
         return;
       }
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
-          // Primitives actions results are empty msgs
-          goal_handle->succeed(result);
+          action_server_->succeeded_current();
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
-          goal_handle->abort(result);
+          action_server_->abort_all();
           return;
 
         case Status::RUNNING:
