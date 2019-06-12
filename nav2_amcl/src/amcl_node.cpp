@@ -108,7 +108,7 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   initParameters();
-  if (!use_map_topic_){
+  if (!use_map_topic_) {
     initMap();
   }
   initTransforms();
@@ -469,12 +469,12 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   // we don't want our callbacks to fire until we're in the active state
   if (!active_) {return;}
   if (!first_map_received_) {
-      if (checkElapsedTime(2s, last_time_printed_msg_)) {
-        RCLCPP_WARN(get_logger(), "Waiting for map....");
-        last_time_printed_msg_ = now();
+    if (checkElapsedTime(2s, last_time_printed_msg_)) {
+      RCLCPP_WARN(get_logger(), "Waiting for map....");
+      last_time_printed_msg_ = now();
     }
     return;
-    }
+  }
 
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = now();
@@ -1042,7 +1042,7 @@ AmclNode::freeMapDependentMemory()
 
   // Laser
   lasers_.clear();
- // createLaserObject();
+  // createLaserObject();
 }
 
 void
@@ -1156,12 +1156,12 @@ AmclNode::initPubSub()
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
-  
-  if (use_map_topic_){
+
+  if (use_map_topic_) {
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>("map",
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
-    
+        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+        std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+
     RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
   }
 }
