@@ -63,14 +63,20 @@ protected:
   void shutdownAllNodes();
   void destroyLifecycleServiceClients();
 
+  // For a node, transition to the new target state
+  bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
+
   // For each node in the map, transition to the new target state
-  void changeStateForAllNodes(std::uint8_t transition);
+  bool changeStateForAllNodes(std::uint8_t transition);
 
   // Convenience function to highlight the output on the console
   void message(const std::string & msg);
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
+
+  // A map of the expected transitions to primary states
+  std::unordered_map<std::uint8_t, std::uint8_t> transition_state_map_;
 
   // The names of the nodes to be managed, in the order of desired bring-up
   std::vector<std::string> node_names_;
