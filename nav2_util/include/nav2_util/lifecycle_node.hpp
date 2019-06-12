@@ -15,7 +15,9 @@
 #ifndef NAV2_UTIL__LIFECYCLE_NODE_HPP_
 #define NAV2_UTIL__LIFECYCLE_NODE_HPP_
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -51,7 +53,9 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<std::thread> rclcpp_thread_;
-  std::atomic<bool> stop_rclcpp_thread_{false};
+
+  std::condition_variable cv_;
+  std::mutex m_;
 };
 
 }  // namespace nav2_util

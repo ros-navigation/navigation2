@@ -19,6 +19,8 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 
+using namespace std::chrono_literals;
+
 namespace nav2_util
 {
 
@@ -47,12 +49,24 @@ LifecycleNode::LifecycleNode(
   use_rclcpp_node_(use_rclcpp_node)
 {
   if (use_rclcpp_node_) {
-    stop_rclcpp_thread_ = false;
+    // Create a non-lifecycle node to use to interface to ROS2 functionality that is
+    // not yet lifecycle enabled
     rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_);
-    rclcpp_thread_ = std::make_unique<std::thread>(
-      [&](rclcpp::Node::SharedPtr node) {
-        while (!stop_rclcpp_thread_ && rclcpp::ok()) {rclcpp::spin_some(node);}}, rclcpp_node_
-    );
+
+    // The lambda function for this thread will efficiently spin the node
+    auto f = [this](rclcpp::Node::SharedPtr node) {
+      std::shared_future<void> future_result = std::async(std::launch::async,
+        [this]{ 
+		  std::unique_lock<std::mutex> lk(m_); 
+		  cv_.wait(lk); 
+		}); 
+
+      // Wait for the result
+      rclcpp::spin_until_future_complete(node, future_result);
+    };
+
+    // Create the thread to spin this node
+    rclcpp_thread_ = std::make_unique<std::thread>(f, rclcpp_node_);
   }
 }
 
@@ -65,7 +79,11 @@ LifecycleNode::~LifecycleNode()
   }
 
   if (use_rclcpp_node_) {
-    stop_rclcpp_thread_ = true;
+    cv_.notify_one();
+
+	auto timer_callback = [this]() -> void {RCLCPP_INFO(this->get_logger(), "Hello, world!");};
+    auto timer_ = create_wall_timer(1ms, timer_callback);
+
     rclcpp_thread_->join();
   }
 }
