@@ -57,9 +57,9 @@ LifecycleNode::LifecycleNode(
     auto f = [this](rclcpp::Node::SharedPtr node) {
       std::shared_future<void> future_result = std::async(std::launch::async,
         [this]{ 
-		  std::unique_lock<std::mutex> lk(m_); 
-		  cv_.wait(lk); 
-		}); 
+          std::unique_lock<std::mutex> lk(m_); 
+          cv_.wait(lk); 
+        }); 
 
       // Wait for the result
       rclcpp::spin_until_future_complete(node, future_result);
@@ -81,8 +81,8 @@ LifecycleNode::~LifecycleNode()
   if (use_rclcpp_node_) {
     cv_.notify_one();
 
-	auto timer_callback = [this]() -> void {RCLCPP_INFO(this->get_logger(), "Hello, world!");};
-    auto timer_ = create_wall_timer(1ms, timer_callback);
+    auto timer_callback = [this]() -> void {RCLCPP_INFO(this->get_logger(), "Hello, world!");};
+    auto timer_ = rclcpp_node_->create_wall_timer(1ms, timer_callback);
 
     rclcpp_thread_->join();
   }
