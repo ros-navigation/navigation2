@@ -252,7 +252,7 @@ AmclNode::checkLaserReceived()
     return;
   }
 
-  rclcpp::Duration d = rclcpp_node_->now() - last_laser_received_ts_;
+  rclcpp::Duration d = now() - last_laser_received_ts_;
   if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
     RCLCPP_WARN(
       get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
@@ -264,7 +264,7 @@ AmclNode::checkLaserReceived()
 bool
 AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
 {
-  rclcpp::Duration elapsed_time = rclcpp_node_->now() - last_time;
+  rclcpp::Duration elapsed_time = now() - last_time;
   if (elapsed_time.nanoseconds() * 1e-9 > check_interval.count()) {
     return true;
   }
@@ -411,7 +411,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   // intervening odometric change.
   geometry_msgs::msg::TransformStamped tx_odom;
   try {
-    rclcpp::Time rclcpp_time = rclcpp_node_->now();
+    rclcpp::Time rclcpp_time = now();
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
 
     // Check if the transform is available
@@ -439,7 +439,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   // Transform into the global frame
 
   RCLCPP_INFO(get_logger(), "Setting pose (%.6f): %.3f %.3f %.3f",
-    rclcpp_node_->now().nanoseconds() * 1e-9,
+    now().nanoseconds() * 1e-9,
     pose_new.getOrigin().x(),
     pose_new.getOrigin().y(),
     tf2::getYaw(pose_new.getRotation()));
@@ -474,7 +474,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   if (!active_) {return;}
 
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-  last_laser_received_ts_ = rclcpp_node_->now();
+  last_laser_received_ts_ = now();
   int laser_index = -1;
   geometry_msgs::msg::PoseStamped laser_pose;
 
