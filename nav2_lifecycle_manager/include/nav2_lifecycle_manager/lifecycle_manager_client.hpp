@@ -35,8 +35,6 @@ public:
   // Client-side interface to the Nav2 lifecycle manager
   void startup();
   void shutdown();
-  void pause();
-  void resume();
 
   // A couple convenience methods to facilitate scripting tests
   void set_initial_pose(double x, double y, double theta);
@@ -56,8 +54,6 @@ protected:
 
   // The service clients
   rclcpp::Client<Empty>::SharedPtr startup_client_;
-  rclcpp::Client<Empty>::SharedPtr pause_client_;
-  rclcpp::Client<Empty>::SharedPtr resume_client_;
   rclcpp::Client<Empty>::SharedPtr shutdown_client_;
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;

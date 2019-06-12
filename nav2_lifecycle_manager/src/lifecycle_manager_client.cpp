@@ -32,8 +32,6 @@ LifecycleManagerClient::LifecycleManagerClient()
 
   // Create the service clients
   startup_client_ = node_->create_client<Empty>("lifecycle_manager/startup");
-  pause_client_ = node_->create_client<Empty>("lifecycle_manager/pause");
-  resume_client_ = node_->create_client<Empty>("lifecycle_manager/resume");
   shutdown_client_ = node_->create_client<Empty>("lifecycle_manager/shutdown");
 
   navigate_action_client_ =
@@ -54,18 +52,6 @@ void
 LifecycleManagerClient::shutdown()
 {
   callService(shutdown_client_, "lifecycle_manager/shutdown");
-}
-
-void
-LifecycleManagerClient::pause()
-{
-  callService(pause_client_, "lifecycle_manager/pause");
-}
-
-void
-LifecycleManagerClient::resume()
-{
-  callService(resume_client_, "lifecycle_manager/resume");
 }
 
 geometry_msgs::msg::Quaternion

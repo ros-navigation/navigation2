@@ -40,8 +40,6 @@ protected:
   // The services provided by this node
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startup_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr shutdown_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr pause_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr resume_srv_;
 
   void startupCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -53,21 +51,9 @@ protected:
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
-  void pauseCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request,
-    std::shared_ptr<std_srvs::srv::Empty::Response> response);
-
-  void resumeCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request,
-    std::shared_ptr<std_srvs::srv::Empty::Response> response);
-
   // Support functions for the service calls
   void startup();
   void shutdown();
-  void pause();
-  void resume();
 
   // Support functions for bring-up
   void createLifecycleServiceClients();
