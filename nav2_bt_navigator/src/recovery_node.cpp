@@ -37,25 +37,18 @@ BT::NodeStatus RecoveryNode::tick()
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
-    switch (child_status) {
-      case BT::NodeStatus::SUCCESS:
-        {
-          if (current_child_idx_ == 0) {
+    if (current_child_idx_ == 0) {
+      switch (child_status) {
+        case BT::NodeStatus::SUCCESS:
+          {
             retry_count_ = 0;
-            haltChildren(0);
             return BT::NodeStatus::SUCCESS;
           }
-          if (current_child_idx_ == 1) {
-            retry_count_++;
-            current_child_idx_--;   //  retry first child
-            haltChildren(1);   // Is this necessary?
-          }
-        }
-        break;
+          break;
 
-      case BT::NodeStatus::FAILURE:
-        {
-          if (current_child_idx_ == 0) {
+        case BT::NodeStatus::FAILURE:
+          {
+            // tick second child
             if (retry_count_ <= num_of_retries_) {
               current_child_idx_++;
               break;
@@ -64,26 +57,48 @@ BT::NodeStatus RecoveryNode::tick()
               return BT::NodeStatus::FAILURE;
             }
           }
-          if (current_child_idx_ == 1) {
-            ControlNode::halt();
-            // retry_count_ = 0;
+          break;
+
+        case BT::NodeStatus::RUNNING:
+          {
+            return BT::NodeStatus::RUNNING;
+          }
+          break;
+        default:
+          {
+          }
+      }  // end switch
+
+    } else if (current_child_idx_ == 1) {
+      switch (child_status) {
+        case BT::NodeStatus::SUCCESS:
+          {
+            retry_count_++;
+            current_child_idx_--;
+            haltChildren(1);
+          }
+          break;
+
+        case BT::NodeStatus::FAILURE:
+          {
+            current_child_idx_--;
+            retry_count_ = 0;
             return BT::NodeStatus::FAILURE;
           }
-        }
-        break;
+          break;
 
-      case BT::NodeStatus::RUNNING:
-        {
-          return BT::NodeStatus::RUNNING;  // Is this necessary?
-        }
-        break;
-
-      default:
-        {
-          // throw?
-        }
-    }  // end switch
+        case BT::NodeStatus::RUNNING:
+          {
+            return BT::NodeStatus::RUNNING;
+          }
+          break;
+        default:
+          {
+          }
+      }  // end switch
+    }
   }  // end while loop
+  retry_count_ = 0;
   return BT::NodeStatus::FAILURE;
 }
 
