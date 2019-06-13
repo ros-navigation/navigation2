@@ -43,7 +43,8 @@ public:
   ServiceClient(const std::string & service_name, const std::string & parent_name)
   : service_name_(service_name)
   {
-    node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client", rclcpp::NodeOptions().use_global_arguments(false));
+    node_ = rclcpp::Node::make_shared(parent_name + std::string("_") + service_name + "_client",
+      rclcpp::NodeOptions().use_global_arguments(false));
     client_ = node_->create_client<ServiceT>(service_name);
   }
 

@@ -42,8 +42,8 @@ NavigationDialog::onCancelButtonPressed()
 NavigationDialog::NavigationDialog(QWidget * parent)
 : QDialog(parent)
 {
-  client_node_ = std::make_shared<rclcpp::Node>("navigation_dialog_action_client",
-                                                rclcpp::NodeOptions().use_global_arguments(false));
+  client_node_ = std::make_shared<rclcpp::Node>(
+    "navigation_dialog_action_client", rclcpp::NodeOptions().use_global_arguments(false));
   action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
       "NavigateToPose");
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
