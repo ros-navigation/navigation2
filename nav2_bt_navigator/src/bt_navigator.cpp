@@ -46,7 +46,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
 
   // Support for handling the topic-based goal pose from rviz
-  client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
+  client_node_ =
+      std::make_shared<rclcpp::Node>("bt_navigator_client_node", rclcpp::NodeOptions().use_global_arguments(false));
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_, "NavigateToPose");
