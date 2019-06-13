@@ -365,7 +365,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      auto current_time = rclcpp_node_->now();
+      auto current_time = now();
       if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
         (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
       {
@@ -406,7 +406,7 @@ Costmap2DROS::updateMap()
 
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
-      footprint.header.stamp = rclcpp_node_->now();
+      footprint.header.stamp = now();
 
       transformFootprint(x, y, yaw, padded_footprint_, footprint);
 
@@ -495,7 +495,7 @@ Costmap2DROS::resetLayers()
 }
 
 bool
-Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
+Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
   geometry_msgs::msg::PoseStamped robot_pose;
 
@@ -506,7 +506,7 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
   robot_pose.header.stamp = rclcpp::Time();
 
   // Save time for checking tf delay later
-  rclcpp::Time current_time = rclcpp_node_->now();
+  rclcpp::Time current_time = now();
 
   // Get the global pose of the robot
   try {

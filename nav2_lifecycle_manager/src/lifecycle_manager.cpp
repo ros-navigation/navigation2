@@ -39,7 +39,8 @@ LifecycleManager::LifecycleManager()
   std::vector<std::string> default_node_names{"map_server", "amcl", "world_model", "dwb_controller",
     "navfn_planner", "bt_navigator"};
 
-  // The list of names is parameterized, allowing this module to be used with a different set of nodes
+  // The list of names is parameterized, allowing this module to be used with a different set
+  // of nodes
   declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
   declare_parameter("autostart", rclcpp::ParameterValue(false));
 
@@ -52,14 +53,7 @@ LifecycleManager::LifecycleManager()
   shutdown_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/shutdown",
       std::bind(&LifecycleManager::shutdownCallback, this, _1, _2, _3));
 
-  pause_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/pause",
-      std::bind(&LifecycleManager::pauseCallback, this, _1, _2, _3));
-
-  resume_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/resume",
-      std::bind(&LifecycleManager::resumeCallback, this, _1, _2, _3));
-
-  service_client_node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client",
-                                                        rclcpp::NodeOptions().use_global_arguments(false));
+  service_client_node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
 
   if (autostart_) {
     startup();
@@ -87,24 +81,6 @@ LifecycleManager::shutdownCallback(
   std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
 {
   shutdown();
-}
-
-void
-LifecycleManager::pauseCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
-{
-  pause();
-}
-
-void
-LifecycleManager::resumeCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
-{
-  resume();
 }
 
 void
@@ -185,34 +161,6 @@ LifecycleManager::shutdown()
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("The system has been sucessfully shut down");
-}
-
-void
-LifecycleManager::pause()
-{
-  message("Pausing the system...");
-  for (const auto & kv : node_map_) {
-    if (!kv.second->change_state(Transition::TRANSITION_DEACTIVATE) ||
-      !kv.second->change_state(Transition::TRANSITION_CLEANUP))
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", kv.first.c_str());
-      return;
-    }
-  }
-  message("The system has been paused");
-}
-
-void
-LifecycleManager::resume()
-{
-  message("Resuming the system...");
-  for (auto & node_name : node_names_) {
-    if (!bringupNode(node_name)) {
-      RCLCPP_ERROR(get_logger(), "Failed to resume node: %s, aborting", node_name.c_str());
-      return;
-    }
-  }
-  message("The system has been resumed");
 }
 
 // TODO(mjeronimo): This is used to emphasize the major events during system bring-up and

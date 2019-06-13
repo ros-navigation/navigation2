@@ -32,8 +32,6 @@ LifecycleManagerClient::LifecycleManagerClient()
 
   // Create the service clients
   startup_client_ = node_->create_client<Empty>("lifecycle_manager/startup");
-  pause_client_ = node_->create_client<Empty>("lifecycle_manager/pause");
-  resume_client_ = node_->create_client<Empty>("lifecycle_manager/resume");
   shutdown_client_ = node_->create_client<Empty>("lifecycle_manager/shutdown");
 
   navigate_action_client_ =
@@ -41,7 +39,7 @@ LifecycleManagerClient::LifecycleManagerClient()
 
   initial_pose_publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "initialpose", rclcpp::SystemDefaultsQoS());
+    "initialpose", rclcpp::SystemDefaultsQoS());
 }
 
 void
@@ -54,18 +52,6 @@ void
 LifecycleManagerClient::shutdown()
 {
   callService(shutdown_client_, "lifecycle_manager/shutdown");
-}
-
-void
-LifecycleManagerClient::pause()
-{
-  callService(pause_client_, "lifecycle_manager/pause");
-}
-
-void
-LifecycleManagerClient::resume()
-{
-  callService(resume_client_, "lifecycle_manager/resume");
 }
 
 geometry_msgs::msg::Quaternion
@@ -111,8 +97,9 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
   goal.pose = target_pose;
 
   // Enable result awareness by providing an empty lambda function
-  auto send_goal_options = typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
-  send_goal_options.result_callback = [](auto){};
+  auto send_goal_options =
+    typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = [](auto) {};
 
   // Send it
   auto future_goal_handle = navigate_action_client_->async_send_goal(goal, send_goal_options);
@@ -149,7 +136,9 @@ LifecycleManagerClient::callService(
   rclcpp::Client<Empty>::SharedPtr service_client,
   const char * service_name)
 {
-  RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...", service_name);
+  RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
+    service_name);
+
   while (!service_client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
@@ -158,7 +147,8 @@ LifecycleManagerClient::callService(
     RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
   }
 
-  RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager", service_name);
+  RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
+    service_name);
   auto future_result = service_client->async_send_request(request_);
   rclcpp::spin_until_future_complete(node_, future_result);
 }

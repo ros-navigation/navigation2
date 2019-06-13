@@ -212,7 +212,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.004999999888241291
           Shaft Length: 0.019999999552965164
-          Topic: /global_plan
+          Topic: /plan
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -220,7 +220,7 @@ Visualization Manager:
           Color: 25; 255; 0
           Enabled: false
           Name: Polygon
-          Topic: /global_costmap/footprint
+          Topic: /global_costmap/published_footprint
           Unreliable: false
           Value: false
       Enabled: true
@@ -274,7 +274,7 @@ Visualization Manager:
           Color: 25; 255; 0
           Enabled: true
           Name: Polygon
-          Topic: /local_costmap/footprint
+          Topic: /local_costmap/published_footprint
           Unreliable: false
           Value: true
       Enabled: true
