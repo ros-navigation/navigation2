@@ -26,6 +26,10 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+// For the following two tests, if the LifecycleNode doesn't shut down properly,
+// the overall test will hang since the rclcpp thread will still be running,
+// preventing the executable from exiting (the test will hang)
+
 TEST(LifecycleNode, RclcppNodeExitsCleanly)
 {
   // Make sure the node exits cleanly when using an rclcpp_node and associated thread
