@@ -91,6 +91,7 @@ dwb_controller:
 local_costmap:
   local_costmap:
     ros__parameters:
+      use_sim_time: True
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
@@ -116,6 +117,7 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
+      use_sim_time: True
       robot_radius: 0.17
       obstacle_layer:
         enabled: True

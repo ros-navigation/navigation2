@@ -43,8 +43,6 @@ public:
 private Q_SLOTS:
   void onStartup();
   void onShutdown();
-  void onPause();
-  void onResume();
 
 private:
   void loadLogFiles();
@@ -53,15 +51,12 @@ private:
   nav2_lifecycle_manager::LifecycleManagerClient client_;
 
   QPushButton * start_stop_button_{nullptr};
-  QPushButton * pause_resume_button_{nullptr};
 
   QStateMachine machine_;
 
   QState * initial_{nullptr};
   QState * starting_{nullptr};
   QState * stopping_{nullptr};
-  QState * pausing_{nullptr};
-  QState * resuming_{nullptr};
 };
 
 }  // namespace nav2_rviz_plugins
