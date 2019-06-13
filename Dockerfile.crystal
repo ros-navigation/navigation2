@@ -7,17 +7,9 @@
 # docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
 #   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.crystal ./
 
-FROM ros:crystal
+ARG BRANCH=crystal
 
-# install ROS2 dependencies
-RUN apt-get update && apt-get install -q -y \
-      build-essential \
-      cmake \
-      git \
-      python3-colcon-common-extensions \
-      python3-vcstool \
-      wget \
-    && rm -rf /var/lib/apt/lists/*
+FROM ros:$BRANCH
 
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws

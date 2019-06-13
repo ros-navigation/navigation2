@@ -5,16 +5,6 @@
 # docker build -t nav2:latest --build-arg CMAKE_BUILD_TYPE ./
 FROM osrf/ros2:nightly
 
-# install ROS2 dependencies
-RUN apt-get update && apt-get install -q -y \
-      build-essential \
-      cmake \
-      git \
-      python3-colcon-common-extensions \
-      python3-vcstool \
-      wget \
-    && rm -rf /var/lib/apt/lists/*
-
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
