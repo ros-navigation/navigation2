@@ -41,6 +41,7 @@ BT::NodeStatus RecoveryNode::tick()
       case BT::NodeStatus::SUCCESS:
         {
           if (current_child_idx_ == 0) {
+            retry_count_ = 0;
             haltChildren(0);
             return BT::NodeStatus::SUCCESS;
           }
@@ -65,6 +66,7 @@ BT::NodeStatus RecoveryNode::tick()
           }
           if (current_child_idx_ == 1) {
             ControlNode::halt();
+            // retry_count_ = 0;
             return BT::NodeStatus::FAILURE;
           }
         }
