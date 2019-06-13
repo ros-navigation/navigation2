@@ -54,8 +54,8 @@ protected:
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<std::thread> rclcpp_thread_;
 
-  std::condition_variable cv_;
-  std::mutex m_;
+  std::condition_variable should_exit_cv_;
+  std::mutex mutex_;
 };
 
 }  // namespace nav2_util
