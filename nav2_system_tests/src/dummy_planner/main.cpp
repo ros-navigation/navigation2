@@ -18,6 +18,7 @@
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<nav2_system_tests::DummyPlanner>());
   rclcpp::shutdown();

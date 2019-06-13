@@ -143,6 +143,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
   g_node = nav2_util::LifecycleNode::make_shared("costmap_2d_marker");
 

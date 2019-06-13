@@ -204,6 +204,7 @@ TEST_F(MotionPrimitivesTest, testingSequentialFailures)
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   ::testing::InitGoogleTest(&argc, argv);
 
   // initialize ROS

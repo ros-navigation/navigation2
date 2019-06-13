@@ -36,6 +36,7 @@ void usage()
 
 int main(int argc, char * argv[])
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   if (argc == 1) {
     usage();
   }

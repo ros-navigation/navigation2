@@ -65,6 +65,7 @@ void event_callback()
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
 
   auto node = rclcpp::Node::make_shared("example_dynamic_params_client", "some_other_namespace");

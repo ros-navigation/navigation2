@@ -45,6 +45,7 @@ using namespace std::chrono_literals;
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
   rclcpp::Logger logger = rclcpp::get_logger("map_saver");
 

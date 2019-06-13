@@ -434,6 +434,7 @@ TEST(TrajectoryGenerator, dwa)
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   forward.x = 0.3;
   rclcpp::init(0, nullptr);
   testing::InitGoogleTest(&argc, argv);

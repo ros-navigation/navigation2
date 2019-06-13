@@ -46,6 +46,7 @@ SetParametersResult custom_validation_callback(const std::vector<rclcpp::Paramet
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
 
   auto node_A = rclcpp::Node::make_shared("example_node_A");

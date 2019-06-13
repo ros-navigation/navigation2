@@ -31,6 +31,7 @@ struct xytheta
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
   nav2_lifecycle_manager::LifecycleManagerClient client;
 

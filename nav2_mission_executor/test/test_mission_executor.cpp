@@ -32,6 +32,7 @@ static const char xml_text[] =
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<rclcpp::Node>("mission_executor_test_node");

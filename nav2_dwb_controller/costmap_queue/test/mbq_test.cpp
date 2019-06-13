@@ -112,6 +112,7 @@ TEST(MapBasedQueue, checkDynamicOrdering3)
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

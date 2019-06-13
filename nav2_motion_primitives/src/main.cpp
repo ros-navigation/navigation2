@@ -20,6 +20,7 @@
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   rclcpp::init(argc, argv);
 
   auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");

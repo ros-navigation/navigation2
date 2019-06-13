@@ -1198,6 +1198,7 @@ TEST(costmap, testTrickyPropagation) {
 
 int main(int argc, char ** argv)
 {
+  std::setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
   for (unsigned int i = 0; i < GRID_WIDTH * GRID_HEIGHT; i++) {
     EMPTY_10_BY_10.push_back(0);
     MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);
