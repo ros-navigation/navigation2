@@ -232,7 +232,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   layers.updateMap(0, 0, 0);
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
-  EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), (unsigned int)0);
+  EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 0u);
 }
 
 /**
@@ -357,8 +357,8 @@ TEST_F(TestNode, testInflation)
 
   layers.updateMap(0, 0, 0);
   // printMap(*costmap);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), (unsigned int)20);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)28);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28u);
 
   /*/ Iterate over all id's and verify they are obstacles
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
@@ -375,7 +375,7 @@ TEST_F(TestNode, testInflation)
 
   // It and its 2 neighbors makes 3 obstacles
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)51);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 51u);
 
   // @todo Rewrite
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
@@ -388,7 +388,7 @@ TEST_F(TestNode, testInflation)
   // but not over-writing the inflation of the obstacle
   // at <0, 1>
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)54);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 54u);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   addObservation(olayer, 1, 9);
@@ -454,8 +454,8 @@ TEST_F(TestNode, testInflation3)
 
   // There should be no occupied cells
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), (unsigned int)0);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)0);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 0u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 0u);
   printMap(*costmap);
   // Add an obstacle at 5,5
   addObservation(olayer, 5, 5, MAX_Z);
@@ -463,14 +463,14 @@ TEST_F(TestNode, testInflation3)
   printMap(*costmap);
 
   // Test fails because updated cell value is 0
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), (unsigned int)29);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), (unsigned int)1);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)4);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), 29u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4u);
 
   // Update again - should see no change
   layers.updateMap(0, 0, 0);
 
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), (unsigned int)29);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), (unsigned int)1);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), (unsigned int)4);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), 29u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4u);
 }
