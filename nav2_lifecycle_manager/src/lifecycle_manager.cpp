@@ -54,7 +54,7 @@ LifecycleManager::LifecycleManager()
       std::bind(&LifecycleManager::shutdownCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
-      {"__node:=lifecycle_manager_service_client"});
+      {std::string("__node:=") + get_name() + "service_client"});
   service_client_node_ = std::make_shared<rclcpp::Node>("_", options);
   if (autostart_) {
     startup();

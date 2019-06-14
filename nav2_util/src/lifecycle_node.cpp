@@ -19,8 +19,7 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 
-namespace nav2_util
-{
+namespace nav2_util {
 
 // The nav2_util::LifecycleNode class is temporary until we get the
 // required support for lifecycle nodes in MessageFilter, TransformListener,
@@ -34,34 +33,37 @@ namespace nav2_util
 // Until then, this class can provide a normal ROS node that has a thread
 // that processes the node's messages. If a derived class needs to interface
 // to one of these classes - MessageFilter, etc. - that don't yet support
-// lifecycle nodes, it can simply set the use_rclcpp_node flag in the constructor
-// and then provide the rclcpp_node_ to the helper classes, like MessageFilter.
+// lifecycle nodes, it can simply set the use_rclcpp_node flag in the
+// constructor and then provide the rclcpp_node_ to the helper classes, like
+// MessageFilter.
 //
 
-LifecycleNode::LifecycleNode(
-  const std::string & node_name,
-  const std::string & namespace_,
-  bool use_rclcpp_node,
-  const rclcpp::NodeOptions & options)
-: rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
-  use_rclcpp_node_(use_rclcpp_node)
-{
+LifecycleNode::LifecycleNode(const std::string& node_name,
+    const std::string& namespace_, bool use_rclcpp_node,
+    const rclcpp::NodeOptions& options)
+    : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
+      use_rclcpp_node_(use_rclcpp_node) {
   if (use_rclcpp_node_) {
     stop_rclcpp_thread_ = false;
-    auto options = rclcpp::NodeOptions().arguments(
-        {"__node:=" + node_name + "_rclcpp_node"});
-    rclcpp_node_ = std::make_shared<rclcpp::Node>("_", namespace_, options);
+    std::vector<std::string> new_args = options.arguments();
+    new_args.push_back(
+        std::string("__node:=") + this->get_name() + "_rclcpp_node");
+    rclcpp_node_ = std::make_shared<rclcpp::Node>(
+        "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<std::thread>(
-      [&](rclcpp::Node::SharedPtr node) {
-        while (!stop_rclcpp_thread_ && rclcpp::ok()) {rclcpp::spin_some(node);}}, rclcpp_node_
-    );
+        [&](rclcpp::Node::SharedPtr node) {
+          while (!stop_rclcpp_thread_ && rclcpp::ok()) {
+            rclcpp::spin_some(node);
+          }
+        },
+        rclcpp_node_);
   }
 }
 
-LifecycleNode::~LifecycleNode()
-{
+LifecycleNode::~LifecycleNode() {
   // In case this lifecycle node wasn't properly shut down, do it here
-  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+  if (get_current_state().id() ==
+      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
   }
