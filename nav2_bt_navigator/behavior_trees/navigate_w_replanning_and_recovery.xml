@@ -4,7 +4,7 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RecoveryNode num_of_retries="6">
+    <RecoveryNode number_of_retries="6">
       <Sequence name="NavigateWReplanning">
         <RateController hz="1.0">
           <Fallback>

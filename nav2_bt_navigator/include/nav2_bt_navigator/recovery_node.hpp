@@ -42,13 +42,13 @@ public:
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"num_of_retries", "1"}};
+    static BT::NodeParameters params = {{"number_of_retries", "1"}};
     return params;
   }
 
 private:
   unsigned int current_child_idx_;
-  unsigned int num_of_retries_;
+  unsigned int number_of_retries_;
   unsigned int retry_count_;
   BT::NodeStatus tick() override;
 };

@@ -53,7 +53,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
 
-  // Register our custom Recovery nodes
+  // Register our custom control nodes
   factory_.registerNodeType<nav2_bt_navigator::RecoveryNode>("RecoveryNode");
 
   // Register our simple action nodes

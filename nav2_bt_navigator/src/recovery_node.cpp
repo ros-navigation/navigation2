@@ -20,20 +20,20 @@ namespace nav2_bt_navigator
 RecoveryNode::RecoveryNode(const std::string & name, const BT::NodeParameters & params)
 : BT::ControlNode::ControlNode(name, params), current_child_idx_(0), retry_count_(0)
 {
-  getParam<unsigned int>("num_of_retries", num_of_retries_);
+  getParam<unsigned int>("number_of_retries", number_of_retries_);
 }
 
 BT::NodeStatus RecoveryNode::tick()
 {
   const unsigned children_count = children_nodes_.size();
 
-  if (children_count > 2) {
+  if (children_count != 2) {
     throw BT::BehaviorTreeException("Recovery Node '" + name() + "' must only have 2 children.");
   }
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  while (current_child_idx_ < children_count && retry_count_ < num_of_retries_) {
+  while (current_child_idx_ < children_count && retry_count_ < number_of_retries_) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
@@ -49,7 +49,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::FAILURE:
           {
             // tick second child
-            if (retry_count_ <= num_of_retries_) {
+            if (retry_count_ <= number_of_retries_) {
               current_child_idx_++;
               break;
             } else {
@@ -64,6 +64,7 @@ BT::NodeStatus RecoveryNode::tick()
             return BT::NodeStatus::RUNNING;
           }
           break;
+
         default:
           {
           }
@@ -92,6 +93,7 @@ BT::NodeStatus RecoveryNode::tick()
             return BT::NodeStatus::RUNNING;
           }
           break;
+
         default:
           {
           }
