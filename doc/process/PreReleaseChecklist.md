@@ -21,10 +21,11 @@ in the `package.xml` file. This can be done by not sourcing any ros `setup.bash`
 There is a docker file to do that, so run
 
 ```bash
-sudo docker build -t nav2:crystal_full  --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 --build-arg ROS2_BRANCH=crystal -f Dockerfile.full_ros_build ./
-
+sudo docker build -t nav2:dashing_full --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.full_ros_build ./
 ```
 
+ROS2_BRANCH should be the release you are targeting or just `master` if you want
+to compare against ROS2 master.
 
 ### Ensure all dependencies are released.
 
@@ -36,9 +37,12 @@ everything.
 There is a dockerfile to do that for `crystal`, so, run
 
 ```bash
-sudo docker build -t nav2:crystal  --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.crystal ./
-
+sudo docker build -t nav2:dashing --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.release_branch ./
 ```
+
+As before, ROS2_BRANCH is the branch you are targeting. In this case, there is
+no master option. We can only run this dockerfile against a set of released
+packages.
 
 ### Ensure the test suite passes
 
