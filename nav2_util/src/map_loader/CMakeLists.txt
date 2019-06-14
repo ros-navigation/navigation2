@@ -15,3 +15,10 @@ target_link_libraries(map_loader
     ${SDL_LIBRARY}
     ${SDL_IMAGE_LIBRARIES}
 )
+
+install(TARGETS
+  map_loader
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
