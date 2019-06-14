@@ -20,7 +20,6 @@
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros dashing packages. Instead we are going to build
 # everything from source in one big workspace.
-ARG ROS2_BRANCH=master
 ARG ROS2_DOCKER_BRANCH=osrf/ros2:nightly
 FROM $ROS2_DOCKER_BRANCH
 
@@ -37,6 +36,7 @@ WORKDIR $ROS2_WS
 
 # clone ROS 2 packages
 
+ARG ROS2_BRANCH=master
 RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos
 RUN vcs import src < ros2.repos
 
