@@ -103,13 +103,9 @@ local_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
-
-local_costmap:
   local_costmap_client:
     ros__parameters:
       use_sim_time: True
-
-local_costmap:
   local_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
@@ -128,13 +124,9 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
-
-global_costmap:
   global_costmap_client:
     ros__parameters:
       use_sim_time: True
-
-global_costmap:
   global_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
