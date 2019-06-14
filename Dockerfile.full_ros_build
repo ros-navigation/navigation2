@@ -5,22 +5,18 @@
 # export CMAKE_BUILD_TYPE=Debug
 # export BUILD_SYSTEM_TESTS=False
 # export ROS2_BRANCH=master
-# docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
+# docker build -t nav2:dashing --build-arg BUILD_SYSTEM_TESTS
 #   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.full_ros_build ./
 
 # We're only building on top of a ROS docker image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
-# actually use any of the ros crystal packages. Instead we are going to build
+# actually use any of the ros dashing packages. Instead we are going to build
 # everything from source in one big workspace.
-FROM ros:crystal-ros-core
+ARG BRANCH=dashing
+FROM ros:$BRANCH-ros-core
 
 # install ROS2 dependencies
 RUN apt-get update && apt-get install -q -y \
-      build-essential \
-      cmake \
-      git \
-      python3-colcon-common-extensions \
-      python3-vcstool \
       wget \
       libasio-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -31,7 +27,7 @@ RUN mkdir -p $ROS2_WS/src
 WORKDIR $ROS2_WS
 
 # clone ROS 2 packages
-ARG ROS2_BRANCH=master
+ARG ROS2_BRANCH=dashing
 
 RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos
 RUN vcs import src < ros2.repos
@@ -67,5 +63,6 @@ RUN apt-get update && \
 ARG CMAKE_BUILD_TYPE=Debug
 RUN colcon build \
       --symlink-install \
+      # --packages-up-to nav2_bringup \
       --cmake-args \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \

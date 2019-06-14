@@ -7,7 +7,7 @@
 # docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
 #   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.crystal ./
 
-ARG BRANCH=crystal
+ARG ROS2_BRANCH=dashing
 
 FROM ros:$BRANCH
 
