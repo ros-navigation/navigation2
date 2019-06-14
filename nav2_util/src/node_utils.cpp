@@ -63,13 +63,10 @@ std::string generate_internal_node_name(const std::string & prefix)
   return sanitize_node_name(prefix) + "_" + time_to_string(8);
 }
 
-rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
-{
-  rclcpp::NodeOptions options;
-  options.use_global_arguments(false);
-  options.start_parameter_services(false);
-  options.start_parameter_event_publisher(false);
-  return rclcpp::Node::make_shared(generate_internal_node_name(prefix));
+rclcpp::Node::SharedPtr generate_internal_node(const std::string& prefix) {
+  auto options = rclcpp::NodeOptions().arguments(
+      {"__node:=" + generate_internal_node_name(prefix)});
+  return rclcpp::Node::make_shared("_", options);
 }
 
 rclcpp::NodeOptions
