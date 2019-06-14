@@ -56,8 +56,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name)
 : nav2_util::LifecycleNode(name, name, true), name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-  auto options =
-      rclcpp::NodeOptions().arguments({"__node:=" + name + "_client"});
+  auto options = rclcpp::NodeOptions().arguments(
+      {std::string("__node:=") + get_name() + "_client"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
