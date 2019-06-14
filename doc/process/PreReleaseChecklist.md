@@ -21,7 +21,7 @@ in the `package.xml` file. This can be done by not sourcing any ros `setup.bash`
 There is a docker file to do that, so run
 
 ```bash
-sudo docker build -t nav2:dashing_full --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.full_ros_build ./
+sudo docker build -t nav2:full_build --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.full_ros_build ./
 ```
 
 ROS2_BRANCH should be the release you are targeting or just `master` if you want
@@ -34,10 +34,10 @@ to the branch we are targeting. To do that, we skip the
 `ros2_dependencies.repos` install step and rely solely on rosdep to install
 everything.
 
-There is a dockerfile to do that for `crystal`, so, run
+There is a dockerfile to do that as well, so run
 
 ```bash
-sudo docker build -t nav2:dashing --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.release_branch ./
+sudo docker build -t nav2:rosdep_only_build --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.release_branch ./
 ```
 
 As before, ROS2_BRANCH is the branch you are targeting. In this case, there is
