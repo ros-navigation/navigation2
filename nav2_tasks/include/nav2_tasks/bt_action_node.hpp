@@ -168,7 +168,8 @@ new_goal_received:
       action_client_->async_cancel_goal(goal_handle_);
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
       if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS) {
+        rclcpp::executor::FutureReturnCode::SUCCESS)
+      {
         RCLCPP_ERROR(node_->get_logger(),
           "Failed to cancel action server for %s", action_name_.c_str());
       }
