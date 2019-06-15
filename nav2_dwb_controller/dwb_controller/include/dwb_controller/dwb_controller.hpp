@@ -56,8 +56,8 @@ protected:
 
   void setPlannerPath(const nav2_msgs::msg::Path & path);
   bool computeAndUpdate(ProgressChecker & progress_checker);
-  void cancelAndStop();
-  void processPendingPreemption();
+  bool shouldCancel();
+  bool checkPreemption();
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool isGoalReached();

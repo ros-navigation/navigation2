@@ -146,23 +146,18 @@ void DwbController::followPath()
 
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
-      // Check if the action was cancelled by the client
-      if (action_server_->is_cancelling_current_goal()) {
-        cancelAndStop();
+      if (shouldCancel()) {
         return;
       }
 
-      // Check if there is an update to the path to follow
-      if (action_server_->preempt_requested()) {
-        RCLCPP_DEBUG(get_logger(), "Preempting the goal. Passing the new path to the planner.");
-        setPlannerPath(action_server_->accept_pending_goal()->path);
-      }
+      checkPreemption();
 
-      // Now the real work, compute the velocity commands
       if (!computeAndUpdate(progress_checker)) {
         RCLCPP_WARN(get_logger(), "Error during control computation. Stopping the robot");
         publishZeroVelocity();
-      } else if (isGoalReached()) {
+      }
+
+      if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
       }
@@ -177,8 +172,9 @@ void DwbController::followPath()
   }
 
   RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
+
+  // TODO(orduno) #861 Handle a pending preemption.
   action_server_->succeeded_current();
-  processPendingPreemption();
 
   publishZeroVelocity();
 }
@@ -214,33 +210,36 @@ bool DwbController::computeAndUpdate(ProgressChecker & progress_checker)
   return true;
 }
 
-void DwbController::cancelAndStop()
+bool DwbController::shouldCancel()
 {
-  RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
+  // Check if the client requested a goal cancelation
+  if (action_server_->is_cancelling_current_goal()) {
+    RCLCPP_INFO(get_logger(), "Request to cancel the current goal was made.");
 
-  // Check if a new action is available
-  if (action_server_->preempt_requested()) {
-    // TODO(orduno): Assuming the cancel request applies for current goal and preempt request
-    RCLCPP_WARN(this->get_logger(), "A preempt goal was available, we're cancelling all.");
+    // Before cancelling, check if a new action is available
+    if (checkPreemption()) {
+      RCLCPP_INFO(get_logger(), "Not cancelling since preemption was available.");
+      return false;
+    } else {
+      RCLCPP_INFO(get_logger(), "Cancelling and stopping.");
+      action_server_->cancel_all();
+      publishZeroVelocity();
+      return true;
+    }
   }
 
-  action_server_->cancel_all();
-  publishZeroVelocity();
+  return false;
 }
 
-void DwbController::processPendingPreemption()
+bool DwbController::checkPreemption()
 {
-  // TODO(orduno) What to do with a pending preemption if the controller has
-  //              succeeded or failed on the current goal?
-  //              Currently, the controller will abort the pending preempt.
-  //              However, other options exist e.g. abort if paths have the same end pose
-  //               or pursue if different end pose.
   if (action_server_->preempt_requested()) {
-    RCLCPP_WARN(get_logger(),
-      "A preempt request was made while controller reaching a final state (i.e. succeed, failed)"
-      " on the current goal. Controller won't pursue this new goal and instead abort.");
-    action_server_->abort_all();
+    RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
+    setPlannerPath(action_server_->accept_pending_goal()->path);
+    return true;
   }
+
+  return false;
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)

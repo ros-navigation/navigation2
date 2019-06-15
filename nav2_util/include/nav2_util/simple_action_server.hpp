@@ -66,24 +66,31 @@ public:
       [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
       {
         std::lock_guard<std::mutex> lock(update_mutex_);
-
         debug_msg("Receiving a new goal");
 
-        if (current_handle_ != nullptr && current_handle_->is_active()) {
+        if (is_active(current_handle_)) {
           debug_msg("An older goal is active, moving the new goal to a pending slot.");
 
-          if (pending_handle_ != nullptr && pending_handle_->is_active()) {
+          if (is_active(pending_handle_)) {
             debug_msg("The pending slot is occupied."
-              " The pending goal will be aborted and replaced.");
+              " The pending goal will be canceled and replaced.");
 
-            pending_handle_->abort(std::make_shared<typename ActionT::Result>());
+            pending_handle_->canceled(empty_result());
             pending_handle_.reset();
           }
 
-          debug_msg("Setting flag so the action server can grab the pre-empt request.");
+          debug_msg("Setting flag so the action server can grab the preempt request.");
           preempt_requested_ = true;
           pending_handle_ = handle;
         } else {
+          if (is_active(pending_handle_)) {
+            // Shouldn't reach a state with a pending goal but no current one.
+            error_msg("Forgot to handle a preemption. Cancelling the pending goal.");
+
+            pending_handle_->canceled(empty_result());
+            pending_handle_.reset();
+          }
+
           debug_msg("Starting a thread to process the goals");
 
           current_handle_ = handle;
@@ -139,36 +146,34 @@ public:
     return preempt_requested_;
   }
 
-  const std::shared_ptr<const typename ActionT::Goal>
-  accept_pending_goal()
+  const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
     if (!pending_handle_ || !pending_handle_->is_active()) {
-      error_msg("Attempting to get new goal when not available");
+      error_msg("Attempting to get pending goal when not available");
       return std::shared_ptr<const typename ActionT::Goal>();
     }
 
-    if (current_handle_->is_active() && current_handle_ != pending_handle_) {
-      debug_msg("Aborting previous goal");
-      current_handle_->abort(std::make_shared<typename ActionT::Result>());
+    if (is_active(current_handle_) && current_handle_ != pending_handle_) {
+      debug_msg("Cancelling the previous goal");
+      current_handle_->abort(empty_result());
     }
 
     current_handle_ = pending_handle_;
     pending_handle_.reset();
     preempt_requested_ = false;
 
-    debug_msg("Pre-empted goal");
+    debug_msg("Preempted goal");
 
     return current_handle_->get_goal();
   }
 
-  const std::shared_ptr<const typename ActionT::Goal>
-  get_current_goal() const
+  const std::shared_ptr<const typename ActionT::Goal> get_current_goal() const
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
-    if (!current_handle_ || !current_handle_->is_active()) {
+    if (!is_active(current_handle_)) {
       error_msg("A goal is not available or has reached a final state");
       return std::shared_ptr<const typename ActionT::Goal>();
     }
@@ -188,42 +193,20 @@ public:
     return current_handle_->is_canceling();
   }
 
-  void cancel_current_goal()
-  {
-    std::lock_guard<std::mutex> lock(update_mutex_);
-
-    if (current_handle_ != nullptr) {
-      debug_msg("Cancelling the current goal.");
-      current_handle_->canceled(std::make_shared<typename ActionT::Result>());
-      current_handle_.reset();
-    }
-  }
-
   void cancel_all()
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
     if (current_handle_ != nullptr) {
       debug_msg("Cancelling the current goal.");
-      current_handle_->canceled(std::make_shared<typename ActionT::Result>());
+      current_handle_->canceled(empty_result());
       current_handle_.reset();
     }
 
     if (pending_handle_ != nullptr) {
-      warn_msg("Cancelling a pending goal. Should check for pre-empt requests before cancelling.");
-      pending_handle_->canceled(std::make_shared<typename ActionT::Result>());
+      warn_msg("Cancelling a pending goal. Should check for pre-empt requests.");
+      pending_handle_->canceled(empty_result());
       pending_handle_.reset();
-    }
-  }
-
-  void abort_current_goal()
-  {
-    std::lock_guard<std::mutex> lock(update_mutex_);
-
-    if (current_handle_ != nullptr) {
-      debug_msg("Aborting the current goal.");
-      current_handle_->abort(std::make_shared<typename ActionT::Result>());
-      current_handle_.reset();
     }
   }
 
@@ -233,13 +216,13 @@ public:
 
     if (current_handle_ != nullptr) {
       debug_msg("Aborting the current goal.");
-      current_handle_->abort(std::make_shared<typename ActionT::Result>());
+      current_handle_->abort(empty_result());
       current_handle_.reset();
     }
 
     if (pending_handle_ != nullptr) {
-      warn_msg("Cancelling a pending goal. Should check for pre-empt requests before cancelling");
-      pending_handle_->abort(std::make_shared<typename ActionT::Result>());
+      warn_msg("Aborting a pending goal. Should check for pre-empt requests.");
+      pending_handle_->abort(empty_result());
       pending_handle_.reset();
     }
   }
@@ -250,26 +233,18 @@ public:
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
-    if (current_handle_ != nullptr /*&& current_handle_->is_executing()*/) {
+    if (is_active(current_handle_)) {
       debug_msg("Setting succeed on current goal.");
       current_handle_->succeed(result);
       current_handle_.reset();
     }
-  }
 
-  void debug_msg(const std::string & msg) const
-  {
-    RCLCPP_DEBUG(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
-  }
-
-  void error_msg(const std::string & msg) const
-  {
-    RCLCPP_ERROR(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
-  }
-
-  void warn_msg(const std::string & msg) const
-  {
-    RCLCPP_WARN(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
+    // TODO(orduno) Cancelling any pending goal. Get consensus on policy.
+    if (is_active(pending_handle_)) {
+      warn_msg("A preemption request was available before succeeding on the current goal.");
+      pending_handle_->canceled(empty_result());
+      pending_handle_.reset();
+    }
   }
 
 protected:
@@ -286,6 +261,32 @@ protected:
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> pending_handle_;
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
+
+  constexpr auto empty_result() const
+  {
+    return std::make_shared<typename ActionT::Result>();
+  }
+
+  constexpr bool is_active(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle) const
+  {
+    return handle != nullptr && handle->is_active();
+  }
+
+  void debug_msg(const std::string & msg) const
+  {
+    RCLCPP_DEBUG(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
+  }
+
+  void error_msg(const std::string & msg) const
+  {
+    RCLCPP_ERROR(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
+  }
+
+  void warn_msg(const std::string & msg) const
+  {
+    RCLCPP_WARN(node_->get_logger(), "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
+  }
 };
 
 }  // namespace nav2_util
