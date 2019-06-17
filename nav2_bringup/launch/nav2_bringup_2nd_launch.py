@@ -47,7 +47,7 @@ def generate_launch_description():
             description='Use simulation (Gazebo) clock if true'),
 
         launch.actions.DeclareLaunchArgument(
-            'autostart', default_value='false',
+            'autostart', default_value='true',
             description='Automatically startup the nav2 stack'),
 
         launch.actions.DeclareLaunchArgument(
