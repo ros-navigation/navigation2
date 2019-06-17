@@ -77,6 +77,9 @@ protected:
 
   // The name of the service for getting a map
   static constexpr const char * service_name_{"map"};
+
+  // Timer for republishing map
+  rclcpp::TimerBase::SharedPtr timer_;
 };
 
 }  // namespace nav2_map_server
