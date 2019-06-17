@@ -21,6 +21,8 @@ from launch.conditions import IfCondition
 import launch.actions
 import launch_ros.actions
 
+from nav2_common.launch import RewrittenYaml
+
 
 def generate_launch_description():
     # Get the launch directory
@@ -33,7 +35,16 @@ def generate_launch_description():
 
     stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
-        
+
+    # Create our own temporary YAML files that include substitutions
+    param_substitutions = {
+        'use_sim_time': use_sim_time,
+        'yaml_filename': map_yaml_file
+    }
+    configured_params = RewrittenYaml(
+        source_file=params_file, rewrites=param_substitutions,
+        convert_types=True)
+    
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
@@ -55,7 +66,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_map_server'),
                 'lib/nav2_map_server/map_server'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_localizer_cmd = launch.actions.ExecuteProcess(
@@ -63,7 +74,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_amcl'),
                 'lib/nav2_amcl/amcl'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_world_model_cmd = launch.actions.ExecuteProcess(
@@ -71,7 +82,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_world_model'),
                 'lib/nav2_world_model/world_model'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_dwb_cmd = launch.actions.ExecuteProcess(
@@ -79,7 +90,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('dwb_controller'),
                 'lib/dwb_controller/dwb_controller'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_planner_cmd = launch.actions.ExecuteProcess(
@@ -87,7 +98,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_navfn_planner'),
                 'lib/nav2_navfn_planner/navfn_planner'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_navigator_cmd = launch.actions.ExecuteProcess(
@@ -95,7 +106,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_bt_navigator'),
                 'lib/nav2_bt_navigator/bt_navigator'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     start_lifecycle_manager_cmd = launch.actions.ExecuteProcess(
@@ -103,7 +114,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_lifecycle_manager'),
                 'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            ['__params:=', params_file]],
+            ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
     # Create the launch description and populate
