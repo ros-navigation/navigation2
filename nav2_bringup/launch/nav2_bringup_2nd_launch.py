@@ -34,7 +34,8 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'bt_xml_filename': bt_xml_file
+        'bt_xml_filename': bt_xml_file,
+        'autostart': autostart
     }
 
     configured_params = RewrittenYaml(
