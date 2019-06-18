@@ -47,17 +47,17 @@ LifecycleNode::LifecycleNode(
   use_rclcpp_node_(use_rclcpp_node)
 {
   if (use_rclcpp_node_) {
-    stop_rclcpp_thread_ = false;
     std::vector<std::string> new_args = options.arguments();
     new_args.push_back(
       std::string("__node:=") + this->get_name() + "_rclcpp_node");
     rclcpp_node_ = std::make_shared<rclcpp::Node>(
       "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
+    rclcpp_exec_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
     rclcpp_thread_ = std::make_unique<std::thread>(
       [&](rclcpp::Node::SharedPtr node) {
-        while (!stop_rclcpp_thread_ && rclcpp::ok()) {
-          rclcpp::spin_some(node);
-        }
+        rclcpp_exec_->add_node(node);
+        rclcpp_exec_->spin();
+        rclcpp_exec_->remove_node(node);
       },
       rclcpp_node_);
   }
@@ -74,7 +74,7 @@ LifecycleNode::~LifecycleNode()
   }
 
   if (use_rclcpp_node_) {
-    stop_rclcpp_thread_ = true;
+    rclcpp_exec_->cancel();
     rclcpp_thread_->join();
   }
 }
