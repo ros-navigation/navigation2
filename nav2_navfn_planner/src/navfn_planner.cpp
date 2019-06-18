@@ -150,8 +150,6 @@ NavfnPlanner::computePathToPose()
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
-  // TODO(mjeronimo): handle or reject an attempted pre-emption
-
   try {
     // Get the current costmap
     getCostmap(costmap_);
@@ -167,20 +165,23 @@ NavfnPlanner::computePathToPose()
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
+    if (action_server_->is_cancelling()) {
+      RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+      action_server_->cancel_all();
+      return;
+    }
+
+    if (action_server_->preempt_requested()) {
+      RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
+      goal = action_server_->accept_pending_goal();
+    }
+
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start.position.x, start.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
     bool foundPath = makePlan(start, goal->pose.pose, tolerance_, result->path);
-
-    // TODO(orduno): should check for cancel within the makePlan() method?
-    if (action_server_->is_cancelling_current_goal()) {
-      RCLCPP_INFO(get_logger(), "Canceling global planning task");
-      // TODO(orduno): define behavior if a preemption is available
-      action_server_->cancel_all();
-      return;
-    }
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"

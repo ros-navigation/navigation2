@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "lifecycle_msgs/msg/state.hpp"
 

@@ -168,17 +168,17 @@ BtNavigator::navigateToPose()
 {
   initializeGoalPose();
 
-  // Execute the BT that was previously created in the configure step
-  auto is_canceling =
-    [this]() -> bool {return action_server_->is_cancelling_current_goal();};
+  auto is_canceling = [this]() {return action_server_->is_cancelling();};
 
   auto on_loop = [this]() {
       if (action_server_->preempt_requested()) {
+        RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
       }
     };
 
+  // Execute the BT that was previously created in the configure step
   nav2_tasks::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
 
   switch (rc) {

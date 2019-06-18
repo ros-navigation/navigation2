@@ -26,10 +26,11 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "dwb_controller/progress_checker.hpp"
 
 namespace dwb_controller
 {
+
+class ProgressChecker;
 
 class DwbController : public nav2_util::LifecycleNode
 {
@@ -55,9 +56,8 @@ protected:
   void followPath();
 
   void setPlannerPath(const nav2_msgs::msg::Path & path);
-  bool computeAndUpdate(ProgressChecker & progress_checker);
-  bool shouldCancel();
-  bool checkPreemption();
+  void computeAndPublishVelocity();
+  void updateGlobalPath();
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool isGoalReached();
@@ -76,6 +76,8 @@ protected:
 
   // An executor used to spin the costmap node
   std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
+
+  std::unique_ptr<ProgressChecker> progress_checker_;
 };
 
 }  // namespace dwb_controller

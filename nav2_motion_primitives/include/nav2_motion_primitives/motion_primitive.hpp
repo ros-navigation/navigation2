@@ -114,9 +114,19 @@ protected:
     rclcpp::Rate loop_rate(10);
 
     while (rclcpp::ok()) {
-      if (action_server_->is_cancelling_current_goal()) {
+      if (action_server_->is_cancelling()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
         action_server_->cancel_all();
+        return;
+      }
+
+      // TODO(orduno) #868 Enable preempting a motion primitive on-the-fly without stopping
+      if (action_server_->preempt_requested()) {
+        RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
+          " however feature is currently not implemented. Aborting and stopping.",
+          primitive_name_.c_str());
+        stopRobot();
+        action_server_->abort_all();
         return;
       }
 
@@ -138,6 +148,16 @@ protected:
           break;
       }
     }
+  }
+
+  void stopRobot()
+  {
+    geometry_msgs::msg::Twist cmd_vel;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.0;
+
+    robot_->sendVelocity(cmd_vel);
   }
 };
 

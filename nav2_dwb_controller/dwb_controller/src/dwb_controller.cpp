@@ -21,6 +21,7 @@
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "dwb_controller/progress_checker.hpp"
 
 using namespace std::chrono_literals;
 
@@ -65,6 +66,8 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_configure(state);
 
   auto node = shared_from_this();
+
+  progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
 
   planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
     node, costmap_ros_->getTfBuffer(), costmap_ros_);
@@ -142,20 +145,20 @@ void DwbController::followPath()
 
   try {
     setPlannerPath(action_server_->get_current_goal()->path);
-    ProgressChecker progress_checker(rclcpp_node_);
+    progress_checker_->reset();
 
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
-      if (shouldCancel()) {
+      if (action_server_->is_cancelling()) {
+        RCLCPP_INFO(get_logger(), "Goal was canceled. Cancelling and stopping.");
+        action_server_->cancel_all();
+        publishZeroVelocity();
         return;
       }
 
-      checkPreemption();
+      updateGlobalPath();
 
-      if (!computeAndUpdate(progress_checker)) {
-        RCLCPP_WARN(get_logger(), "Error during control computation. Stopping the robot");
-        publishZeroVelocity();
-      }
+      computeAndPublishVelocity();
 
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
@@ -173,10 +176,10 @@ void DwbController::followPath()
 
   RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
 
+  publishZeroVelocity();
+
   // TODO(orduno) #861 Handle a pending preemption.
   action_server_->succeeded_current();
-
-  publishZeroVelocity();
 }
 
 void DwbController::setPlannerPath(const nav2_msgs::msg::Path & path)
@@ -192,54 +195,28 @@ void DwbController::setPlannerPath(const nav2_msgs::msg::Path & path)
     end_pose.position.x, end_pose.position.y);
 }
 
-bool DwbController::computeAndUpdate(ProgressChecker & progress_checker)
+void DwbController::computeAndPublishVelocity()
 {
   nav_2d_msgs::msg::Pose2DStamped pose2d;
 
   if (!getRobotPose(pose2d)) {
-    return false;
+    throw nav_core2::PlannerException("Failed to obtain robot pose");
   }
 
-  progress_checker.check(pose2d);
+  progress_checker_->check(pose2d);
 
   auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, odom_sub_->getTwist());
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
-
-  return true;
 }
 
-bool DwbController::shouldCancel()
-{
-  // Check if the client requested a goal cancelation
-  if (action_server_->is_cancelling_current_goal()) {
-    RCLCPP_INFO(get_logger(), "Request to cancel the current goal was made.");
-
-    // Before cancelling, check if a new action is available
-    if (checkPreemption()) {
-      RCLCPP_INFO(get_logger(), "Not cancelling since preemption was available.");
-      return false;
-    } else {
-      RCLCPP_INFO(get_logger(), "Cancelling and stopping.");
-      action_server_->cancel_all();
-      publishZeroVelocity();
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool DwbController::checkPreemption()
+void DwbController::updateGlobalPath()
 {
   if (action_server_->preempt_requested()) {
     RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
     setPlannerPath(action_server_->accept_pending_goal()->path);
-    return true;
   }
-
-  return false;
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)

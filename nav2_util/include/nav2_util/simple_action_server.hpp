@@ -181,31 +181,37 @@ public:
     return current_handle_->get_goal();
   }
 
-  bool is_cancelling_current_goal() const
+  bool is_cancelling() const
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
     if (current_handle_ == nullptr) {
-      error_msg("Current goal is not available");
+      error_msg("Checking for cancel but current goal is not available");
       return false;
+    }
+
+    if (pending_handle_ != nullptr) {
+      return pending_handle_->is_canceling();
     }
 
     return current_handle_->is_canceling();
   }
 
-  void cancel_all()
+  void cancel_all(
+    typename std::shared_ptr<typename ActionT::Result> result =
+    std::make_shared<typename ActionT::Result>())
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
     if (current_handle_ != nullptr) {
       debug_msg("Cancelling the current goal.");
-      current_handle_->canceled(empty_result());
+      current_handle_->canceled(result);
       current_handle_.reset();
     }
 
     if (pending_handle_ != nullptr) {
       warn_msg("Cancelling a pending goal. Should check for pre-empt requests.");
-      pending_handle_->canceled(empty_result());
+      pending_handle_->canceled(result);
       pending_handle_.reset();
     }
   }
@@ -245,6 +251,15 @@ public:
       pending_handle_->canceled(empty_result());
       pending_handle_.reset();
     }
+  }
+
+  void publish_feedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
+  {
+    if (!is_active(current_handle_)) {
+      error_msg("Trying to publish feedback when the current goal handle is not active");
+    }
+
+    current_handle_->publish_feedback(feedback);
   }
 
 protected:

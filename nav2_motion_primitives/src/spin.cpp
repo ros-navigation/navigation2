@@ -76,21 +76,18 @@ Status Spin::timedSpin()
   // Output control command
   geometry_msgs::msg::Twist cmd_vel;
 
+  // TODO(orduno) #423 fixed time
+  auto current_time = std::chrono::system_clock::now();
+  if (current_time - start_time_ >= 6s) {  // almost 180 degrees
+    stopRobot();
+    return Status::SUCCEEDED;
+  }
+
   // TODO(orduno) #423 fixed speed
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
   robot_->sendVelocity(cmd_vel);
-
-  // TODO(orduno) #423 fixed time
-  auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 6s) {  // almost 180 degrees
-    // Stop the robot
-    cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);
-
-    return Status::SUCCEEDED;
-  }
 
   return Status::RUNNING;
 }
@@ -133,6 +130,7 @@ Status Spin::controlledSpin()
 
   // check if we are done
   if (dist_left >= (0.0 - goal_tolerance_angle_)) {
+    stopRobot();
     return Status::SUCCEEDED;
   }
 
