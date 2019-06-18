@@ -71,10 +71,10 @@ def generate_launch_description():
         description='Automatically startup the nav2 stack')
 
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
-            'bt_xml_file',
-            default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
-                'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
-            description='Full path to the behavior tree xml file to use')
+        'bt_xml_file',
+        default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
+            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
+        description='Full path to the behavior tree xml file to use')
 
     start_map_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
