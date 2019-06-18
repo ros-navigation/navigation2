@@ -59,8 +59,8 @@ def generate_launch_description():
 
         launch.actions.DeclareLaunchArgument(
             'bt_xml_file',
-            default_value=[launch.substitutions.ThisLaunchFileDir(), 
-                           '/bt_navigator.xml'],
+            default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
+                'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
             description='Full path to the behavior tree xml file to use'),
 
         launch_ros.actions.Node(
