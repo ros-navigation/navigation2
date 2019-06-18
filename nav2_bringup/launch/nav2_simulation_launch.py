@@ -99,6 +99,9 @@ def generate_launch_description():
                                    'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
+    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+
     # Specify the actions
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         condition=IfCondition(use_simulation),
@@ -203,6 +206,9 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_world_cmd)
+
+    # Set environment variables
+    ld.add_action(stdout_linebuf_envvar)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
