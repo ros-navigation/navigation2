@@ -81,6 +81,9 @@ def generate_launch_description():
         cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
         cwd=[launch_dir], output='screen')
 
+    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
@@ -170,6 +173,9 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
+
+    # Set environment variables
+    ld.add_action(stdout_linebuf_envvar)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
