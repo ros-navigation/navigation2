@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
+#include "nav2_bt_navigator/recovery_node.hpp"
 
 #include <memory>
 #include <string>
@@ -51,6 +52,9 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
 
   // Register our custom decorator nodes
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
+
+  // Register our custom control nodes
+  factory_.registerNodeType<nav2_bt_navigator::RecoveryNode>("RecoveryNode");
 
   // Register our simple action nodes
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
