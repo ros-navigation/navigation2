@@ -183,7 +183,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
       return;
     }
 
-    RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
@@ -213,7 +213,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
     // TODO(orduno): Enable potential visualization
 
-    RCLCPP_INFO(get_logger(),
+    RCLCPP_DEBUG(get_logger(),
       "Successfully computed a path to (%.2f, %.2f) with tolerance %.2f",
       goal->pose.pose.position.x, goal->pose.pose.position.y, tolerance_);
     goal_handle->succeed(result);

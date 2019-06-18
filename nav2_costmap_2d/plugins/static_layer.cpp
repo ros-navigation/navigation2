@@ -75,7 +75,7 @@ StaticLayer::onInitialize()
   getMap();
 
   if (!first_map_only_) {
-    RCLCPP_INFO(node_->get_logger(), "Subscribing to the map topic (%s)", map_topic_.c_str());
+    RCLCPP_DEBUG(node_->get_logger(), "Subscribing to the map topic (%s)", map_topic_.c_str());
     map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(map_topic_,
         rclcpp::SystemDefaultsQoS(),
         std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
@@ -152,7 +152,7 @@ StaticLayer::getMap()
 void
 StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 {
-  RCLCPP_INFO(node_->get_logger(), "StaticLayer: Process map");
+  RCLCPP_DEBUG(node_->get_logger(), "StaticLayer: Process map");
 
   unsigned int size_x = new_map.info.width;
   unsigned int size_y = new_map.info.height;

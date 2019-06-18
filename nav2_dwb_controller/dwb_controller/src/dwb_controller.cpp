@@ -171,7 +171,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
         // Check if there is an update to the path to follow
         if (action_server_->preempt_requested()) {
-          RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
+          RCLCPP_DEBUG(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
           goal = current_goal_handle->get_goal();
 

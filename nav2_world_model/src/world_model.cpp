@@ -105,7 +105,7 @@ WorldModel::costmap_service_callback(
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Received costmap service request");
+  RCLCPP_DEBUG(get_logger(), "Received costmap service request");
 
   // TODO(bpwilcox): Grab correct orientation information
   tf2::Quaternion quaternion;
