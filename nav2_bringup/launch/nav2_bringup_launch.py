@@ -32,6 +32,8 @@ def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
+    autostart = launch.substitutions.LaunchConfiguration('autostart')
 
     stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -39,7 +41,9 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file
+        'yaml_filename': map_yaml_file,
+        'bt_xml_filename': bt_xml_file,
+        'autostart': autostart
     }
 
     configured_params = RewrittenYaml(
@@ -68,8 +72,8 @@ def generate_launch_description():
 
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
             'bt_xml_file',
-            default_value=os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                'behavior_trees/navigate_w_replanning_and_recovery.xml'),
+            default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
+                'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
             description='Full path to the behavior tree xml file to use')
 
     start_map_server_cmd = launch_ros.actions.Node(
