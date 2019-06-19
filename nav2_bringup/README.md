@@ -40,8 +40,6 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 
 ```
 source navigation2_ws/install/setup.bash
-# Set line buffering to show all output to the screen
-export RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED=1
 # Launch the nav2 system
 ros2 launch nav2_bringup nav2_bringup_1st_launch.py use_sim_time:=True autostart:=True \
 map:=<full/path/to/map.yaml>
