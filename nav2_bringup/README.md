@@ -13,7 +13,7 @@ https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md
 ## Launch Navigation2 in simulation with Gazebo
 ### Pre-requisites:
 * Gazebo installed on the system
-* gazebo\_ros\_pkgs for ROS2 installed on the system
+* gazebo_ros_pkgs for ROS2 installed on the system
 * A Gazebo world for simulating the robot (see Gazebo tutorials)
 * A map of that world saved to a map.pgm and map.yaml (see ROS Navigation tutorials)
 
@@ -41,7 +41,7 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 ```
 source navigation2_ws/install/setup.bash
 # Launch the nav2 system
-ros2 launch nav2_bringup nav2_bringup_1st_launch.py use_sim_time:=True autostart:=True \
+ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=True \
 map:=<full/path/to/map.yaml>
 ```
 
