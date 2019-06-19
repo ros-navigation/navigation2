@@ -69,7 +69,7 @@ In this section, the recovery node is being introduced to the navigation package
 
 Recovery node is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
 
-<img src="./doc/RecoveryNode.png" title="" width="65%" align="middle">
+<img src="./doc/RecoveryNode.png" title="" width="40%" align="middle">
 <br/>
 
 ### Navigate with replanning and simple recovery actions
