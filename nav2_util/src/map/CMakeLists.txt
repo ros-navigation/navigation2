@@ -5,3 +5,10 @@ add_library(map_lib SHARED
   map_draw.c
   map_cspace.cpp
 )
+
+install(TARGETS
+  map_lib
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)

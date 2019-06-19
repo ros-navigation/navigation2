@@ -23,19 +23,6 @@ include_directories(include)
 set(library_name ${PROJECT_NAME}_core)
 add_subdirectory(src)
 
-install(TARGETS
-  ${library_name}
-  map_lib
-  pf_lib
-  sensors_lib
-  motions_lib
-  map_loader
-  lifecycle_bringup
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
 install(DIRECTORY include/
   DESTINATION include/
 )

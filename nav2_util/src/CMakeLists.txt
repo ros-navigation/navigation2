@@ -28,3 +28,11 @@ add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
 target_link_libraries(lifecycle_bringup ${library_name})
+
+install(TARGETS
+  ${library_name}
+  lifecycle_bringup
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
