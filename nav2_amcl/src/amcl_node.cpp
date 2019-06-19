@@ -1016,7 +1016,7 @@ AmclNode::initTransforms()
 
   sent_first_transform_ = false;
   latest_tf_valid_ = false;
-  memset(&latest_tf_, 0, sizeof(latest_tf_));
+  latest_tf_ = tf2::Transform::getIdentity();
 }
 
 void
@@ -1076,7 +1076,7 @@ AmclNode::initOdometry()
   motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
-  memset(&latest_odom_pose_, 0, sizeof(latest_odom_pose_));
+  latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }
 
 void
@@ -1111,7 +1111,7 @@ void
 AmclNode::initLaserScan()
 {
   scan_error_count_ = 0;
-  memset(&last_laser_received_ts_, 0, sizeof(last_laser_received_ts_));
+  last_laser_received_ts_ = rclcpp::Time(0);
 }
 
 }  // namespace nav2_amcl
