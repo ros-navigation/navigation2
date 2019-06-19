@@ -31,6 +31,7 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
 
+
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
@@ -43,6 +44,9 @@ def generate_launch_description():
         convert_types=True)
 
     return LaunchDescription([
+        launch.actions.SetEnvironmentVariable(
+            'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+
         launch.actions.DeclareLaunchArgument(
             'use_sim_time', default_value='false',
             description='Use simulation (Gazebo) clock if true'),
