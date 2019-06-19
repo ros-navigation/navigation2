@@ -67,7 +67,7 @@ protected:
   bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
 
   // For each node in the map, transition to the new target state
-  bool changeStateForAllNodes(std::uint8_t transition);
+  bool changeStateForAllNodes(std::uint8_t transition, bool reverse_order = false);
 
   // Convenience function to highlight the output on the console
   void message(const std::string & msg);
