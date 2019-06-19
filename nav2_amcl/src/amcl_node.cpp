@@ -289,7 +289,7 @@ AmclNode::getOdomPose(
 
   try {
     tf_buffer_->transform(ident, odom_pose, odom_frame_id_);
-  } catch (tf2::TransformException e) {
+  } catch (tf2::TransformException & e) {
     ++scan_error_count_;
     if (scan_error_count_ % 20 == 0) {
       RCLCPP_ERROR(
@@ -417,7 +417,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg->header.stamp),
         base_frame_id_, tf2_time, odom_frame_id_);
-  } catch (tf2::TransformException e) {
+  } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
     // transformation for on-the-move pose-setting, so ignoring this
@@ -834,7 +834,7 @@ AmclNode::calculateMaptoOdomTransform(
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
     tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
-  } catch (tf2::TransformException) {
+  } catch (tf2::TransformException &) {
     RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
     return;
   }

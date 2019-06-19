@@ -84,13 +84,13 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
       map_filename = std::string(dirname(fname_copy)) + '/' + map_filename;
       free(fname_copy);
     }
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain an image tag or it is invalid");
   }
 
   try {
     loadParameters.resolution = doc["resolution"].as<double>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain a resolution tag or it is invalid");
   }
 
@@ -98,19 +98,19 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
     loadParameters.origin[0] = doc["origin"][0].as<double>();
     loadParameters.origin[1] = doc["origin"][1].as<double>();
     loadParameters.origin[2] = doc["origin"][2].as<double>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain an origin tag or it is invalid");
   }
 
   try {
     loadParameters.free_thresh = doc["free_thresh"].as<double>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain a free_thresh tag or it is invalid");
   }
 
   try {
     loadParameters.occupied_thresh = doc["occupied_thresh"].as<double>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain an occupied_thresh tag or it is invalid");
   }
 
@@ -138,7 +138,7 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   try {
     loadParameters.negate = doc["negate"].as<int>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     throw std::runtime_error("The map does not contain a negate tag or it is invalid");
   }
 
