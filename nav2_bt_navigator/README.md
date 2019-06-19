@@ -20,7 +20,7 @@ Using the XML filename as a parameter makes it easy to change or extend the logi
 
 ## Behavior Tree nodes
 
-A Behavior Tree consists of: control flow nodes, such as fallback, sequence, parallel, and decorator, as well as two execution nodes: condition and action nodes. Execution nodes are the leaf nodes of the tree. When a leaf node is ticked, the node does some work and it returns either SUCCESS, FAILURE or RUNNING.  The  The current Navigation2 software implements a few custom nodes, including Conditions and Actions. The user can also define and register additional node types that can then be used in BTs and the corresponding XML descriptions.
+A Behavior Tree consists of control flow nodes, such as fallback, sequence, parallel, and decorator, as well as two execution nodes: condition and action nodes. Execution nodes are the leaf nodes of the tree. When a leaf node is ticked, the node does some work and it returns either SUCCESS, FAILURE or RUNNING.  The current Navigation2 software implements a few custom nodes, including Conditions and Actions. The user can also define and register additional node types that can then be used in BTs and the corresponding XML descriptions.
 
 ## Navigation Behavior Trees
 
@@ -139,6 +139,11 @@ Image below depicts the graphical version of the complete Navigation Task with A
 
 <img src="./doc/AutoLocalization_w_recovery_parallel.png" title="Navigation Behavior Tree with AutoLocalization, Recovery, and Planning & Control" width="70%" align="middle">
 
+## Future Work
+Currently, in our navigation stack global recoverable actions are implemented.  However, a better approach is to implement both local and global recovery actions.  The local recovery actions would be responsible for recovering each module locally and if that fails the failure should propagate up to the tree to invoke global recovery actions. Global recovery actions could be recovery actions such as re-initializing system, re-calibrating robot, bringing the system to a good known state, etc.  A simple global and local recoverable node is depicted in the diagram below.
+
+<img src="./doc/navigate_w_replanning_and_local_recovery.png" title="" width="95%" align="middle">
+<br/>
 
 ## Open Issues
 
