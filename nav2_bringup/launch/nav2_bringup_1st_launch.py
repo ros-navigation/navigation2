@@ -38,6 +38,7 @@ def generate_launch_description():
         convert_types=True)
 
     return LaunchDescription([
+        # Set env var to print messages to stdout immediately
         launch.actions.SetEnvironmentVariable(
             'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
