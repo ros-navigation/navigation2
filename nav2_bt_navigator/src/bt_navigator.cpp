@@ -60,7 +60,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create an action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
-      std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
+      std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1), false);
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<NavigateToPoseBehaviorTree>();
@@ -116,6 +116,8 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  action_server_->activate();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -123,6 +125,8 @@ nav2_util::CallbackReturn
 BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  action_server_->deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
