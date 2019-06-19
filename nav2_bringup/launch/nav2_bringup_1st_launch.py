@@ -38,6 +38,9 @@ def generate_launch_description():
         convert_types=True)
 
     return LaunchDescription([
+        launch.actions.SetEnvironmentVariable(
+            'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+
         launch.actions.DeclareLaunchArgument(
             'map', description='Full path to map file to load'),
 
