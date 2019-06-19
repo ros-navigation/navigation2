@@ -50,8 +50,8 @@ Visualization Manager:
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
       Description File: ""
-      Description Source: File
-      Description Topic: /tf
+      Description Source: Topic
+      Description Topic: /robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -111,7 +111,7 @@ Visualization Manager:
       Size (m): 0.009999999776482582
       Style: Flat Squares
       Topic: /scan
-      Unreliable: false
+      Unreliable: true
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
