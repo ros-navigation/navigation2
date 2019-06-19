@@ -126,11 +126,20 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 }
 
 bool
-LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
+LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool reverse_order)
 {
-  for (const auto & kv : node_map_) {
-    if (!changeStateForNode(kv.first, transition)) {
-      return false;
+  if (!reverse_order) {
+    for (auto & node_name : node_names_) {
+      if (!changeStateForNode(node_name, transition)) {
+        return false;
+      }
+    }
+  } else {
+    std::vector<std::string>::reverse_iterator rit;
+    for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
+      if (!changeStateForNode(*rit, transition)) {
+        return false;
+      }
     }
   }
 
@@ -154,9 +163,9 @@ void
 LifecycleManager::shutdownAllNodes()
 {
   message("Deactivate, cleanup, and shutdown nodes");
-  changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE);
-  changeStateForAllNodes(Transition::TRANSITION_CLEANUP);
-  changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+  changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, true);
+  changeStateForAllNodes(Transition::TRANSITION_CLEANUP, true);
+  changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN, true);
 }
 
 void
