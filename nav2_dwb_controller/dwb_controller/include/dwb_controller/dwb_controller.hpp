@@ -69,6 +69,9 @@ protected:
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
+
+  // An executor used to spin the costmap node
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
 };
 
 }  // namespace dwb_controller

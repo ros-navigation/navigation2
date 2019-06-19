@@ -33,15 +33,26 @@ DwbController::DwbController()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  // The costmap node is used in the implementation of the DWB controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
+
+  // Create an executor that will be used to spin the costmap node
+  costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+
+  // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
-    [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
-    {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
+    [&](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    {
+      costmap_executor_->add_node(node->get_node_base_interface());
+      costmap_executor_->spin();
+      costmap_executor_->remove_node(node->get_node_base_interface());
+    }, costmap_ros_);
 }
 
 DwbController::~DwbController()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
+  costmap_executor_->cancel();
   costmap_thread_->join();
 }
 
