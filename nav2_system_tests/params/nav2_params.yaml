@@ -46,10 +46,10 @@ amcl_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
-#bt_navigator:
-#  ros__parameters:
-#    use_sim_time: True
-#    bt_xml_filename: "bt_navigator.xml"
+bt_navigator:
+  ros__parameters:
+    use_sim_time: True
+    bt_xml_filename: "bt_navigator.xml"
 
 dwb_controller:
   ros__parameters:
@@ -80,8 +80,8 @@ dwb_controller:
     sim_time: 1.7
     linear_granularity: 0.05
     xy_goal_tolerance: 0.25
-    # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-    critics: ["RotateToGoal", "Oscillation", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    # critics: ["RotateToGoal", "Oscillation", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     BaseObstacle.scale: 0.02
     PathAlign.scale: 32.0
     GoalAlign.scale: 24.0
@@ -92,6 +92,14 @@ dwb_controller:
 local_costmap:
   local_costmap:
     ros__parameters:
+      use_sim_time: True
+      global_frame: odom
+      plugin_names: ["obstacle_layer", "inflation_layer"]
+      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      rolling_window: true
+      width: 3
+      height: 3
+      resolution: 0.05
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
@@ -103,13 +111,9 @@ local_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
-
-local_costmap:
   local_costmap_client:
     ros__parameters:
       use_sim_time: True
-
-local_costmap:
   local_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
@@ -117,6 +121,7 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
+      use_sim_time: True
       robot_radius: 0.17
       obstacle_layer:
         enabled: True
@@ -127,25 +132,21 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
-
-global_costmap:
   global_costmap_client:
     ros__parameters:
       use_sim_time: True
-
-global_costmap:
   global_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
 
-#map_server:
-#  ros__parameters:
-#    use_sim_time: True
-#    yaml_filename: "turtlebot3_world.yaml"
+map_server:
+  ros__parameters:
+    use_sim_time: True
+    yaml_filename: "turtlebot3_world.yaml"
 
-#lifecycle_manager:
-#  ros__parameters:
-#    use_sim_time: True
+lifecycle_manager:
+  ros__parameters:
+    use_sim_time: True
 
 lifecycle_manager_service_client:
   ros__parameters:
@@ -155,20 +156,20 @@ lifecycle_manager_client_service_client:
   ros__parameters:
     use_sim_time: True
 
-#navfn_planner:
-#  ros__parameters:
-#    use_sim_time: True
-#    tolerance: 0.0
-#    use_astar: false
+navfn_planner:
+  ros__parameters:
+    use_sim_time: True
+    tolerance: 0.0
+    use_astar: false
 
 navfn_planner_GetCostmap_client:
   ros__parameters:
     use_sim_time: True
 
-#robot_state_publisher:
-#  ros__parameters:
-#    use_sim_time: True
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: True
 
-#world_model:
-#  ros__parameters:
-#    use_sim_time: True
+world_model:
+  ros__parameters:
+    use_sim_time: True
