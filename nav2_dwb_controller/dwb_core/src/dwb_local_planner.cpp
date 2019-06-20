@@ -180,7 +180,7 @@ DWBLocalPlanner::loadCritics()
       plugin->initialize(node_, plugin_name, costmap_ros_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(node_->get_logger(), "Couldn't initialize critic plugin!");
-      throw e;
+      throw;
     }
     RCLCPP_INFO(node_->get_logger(), "Critic plugin initialized");
   }
