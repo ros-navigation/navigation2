@@ -72,7 +72,16 @@ StaticLayer::onInitialize()
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
   getParameters();
-  getMap();
+
+  if (!first_map_from_service_ && first_map_only_) {
+    throw std::runtime_error(
+      "Static layer does not have a map. Either set parameter "
+      "first_map_from_service=true or set parameter first_map_only=false");
+  }
+
+  if (first_map_from_service_) {
+    getMap();
+  }
 
   if (!first_map_only_) {
     RCLCPP_DEBUG(node_->get_logger(), "Subscribing to the map topic (%s)", map_topic_.c_str());
@@ -118,10 +127,12 @@ StaticLayer::getParameters()
   int temp_lethal_threshold = 0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("first_map_from_service", rclcpp::ParameterValue(true));
   declareParameter("first_map_only", rclcpp::ParameterValue(false));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
-
   node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(
+    name_ + "." + "first_map_from_service", first_map_from_service_);
   node_->get_parameter(name_ + "." + "first_map_only", first_map_only_);
   node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node_->get_parameter("map_topic", map_topic_);
@@ -143,7 +154,7 @@ StaticLayer::getMap()
 
   nav_msgs::msg::OccupancyGrid map;
   if (!map_client->getMap(map)) {
-    throw "StaticLayer: Failed to get map";
+    throw std::runtime_error("StaticLayer: Failed to get map");
   }
 
   processMap(map);

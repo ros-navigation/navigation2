@@ -102,6 +102,7 @@ private:
   rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
 
   // Parameters
+  bool first_map_from_service_;
   bool first_map_only_;      ///< @brief Only use the static map
   std::string map_topic_;
   bool subscribe_to_updates_;
