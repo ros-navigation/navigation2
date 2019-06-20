@@ -64,7 +64,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
   std::string map_type;
   try {
     map_type = doc["map_type"].as<std::string>();
-  } catch (YAML::Exception) {
+  } catch (YAML::Exception &) {
     // Default to occupancy grid if not specified in the YAML file
     map_type = "occupancy";
   }
