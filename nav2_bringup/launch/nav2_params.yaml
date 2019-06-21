@@ -80,6 +80,7 @@ dwb_controller:
     sim_time: 1.7
     linear_granularity: 0.05
     xy_goal_tolerance: 0.25
+    transform_tolerance: 0.2
     critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     BaseObstacle.scale: 0.02
     PathAlign.scale: 32.0
@@ -92,6 +93,13 @@ local_costmap:
   local_costmap:
     ros__parameters:
       use_sim_time: True
+      global_frame: odom
+      plugin_names: ["obstacle_layer", "inflation_layer"]
+      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      rolling_window: true
+      width: 3
+      height: 3
+      resolution: 0.05
       robot_radius: 0.17
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:

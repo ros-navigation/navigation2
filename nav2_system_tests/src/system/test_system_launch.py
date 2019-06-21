@@ -19,6 +19,7 @@ import sys
 
 
 from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
 import launch.actions
@@ -30,7 +31,8 @@ def generate_launch_description():
     use_sim_time = True
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
-    params_file = os.getenv('TEST_PARAMS')
+    bringup_package = get_package_share_directory('nav2_bringup')
+    params_file = os.path.join(bringup_package, 'launch/nav2_params.yaml')
     astar = (os.getenv('ASTAR').lower() == 'true')
     bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,

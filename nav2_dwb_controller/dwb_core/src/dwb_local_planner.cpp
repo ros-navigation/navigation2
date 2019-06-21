@@ -48,6 +48,7 @@
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_util/duration_conversions.hpp"
 
 namespace dwb_core
 {
@@ -71,6 +72,7 @@ DWBLocalPlanner::DWBLocalPlanner(
   node_->declare_parameter("goal_checker_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
   node_->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
+  node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
 }
 
 nav2_util::CallbackReturn
@@ -78,6 +80,11 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
   std::string traj_generator_name;
   std::string goal_checker_name;
+
+  double transform_tolerance;
+  node_->get_parameter("transform_tolerance", transform_tolerance);
+  transform_tolerance_ = nav2_util::duration_from_seconds(transform_tolerance);
+  RCLCPP_INFO(node_->get_logger(), "Setting transform_tolerance to %f", transform_tolerance);
 
   node_->get_parameter("prune_plan", prune_plan_);
   node_->get_parameter("prune_distance", prune_distance_);
@@ -241,10 +248,12 @@ DWBLocalPlanner::isGoalReached(
   }
 
   nav_2d_msgs::msg::Pose2DStamped local_start_pose, goal_pose, local_goal_pose;
-  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), pose, local_start_pose);
+  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), pose,
+    local_start_pose, transform_tolerance_);
   goal_pose.header.frame_id = global_plan_.header.frame_id;
   goal_pose.pose = global_plan_.poses.back();
-  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose, local_goal_pose);
+  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose,
+    local_goal_pose, transform_tolerance_);
 
   return goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
 }
@@ -292,7 +301,8 @@ DWBLocalPlanner::prepareGlobalPlan(
 
   goal_pose.header.frame_id = global_plan_.header.frame_id;
   goal_pose.pose = global_plan_.poses.back();
-  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose, goal_pose);
+  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose,
+    goal_pose, transform_tolerance_);
 }
 
 nav_2d_msgs::msg::Twist2DStamped
@@ -467,7 +477,9 @@ DWBLocalPlanner::transformGlobalPlan(
 
   // let's get the pose of the robot in the frame of the plan
   nav_2d_msgs::msg::Pose2DStamped robot_pose;
-  if (!nav_2d_utils::transformPose(tf_, global_plan_.header.frame_id, pose, robot_pose)) {
+  if (!nav_2d_utils::transformPose(tf_, global_plan_.header.frame_id, pose,
+    robot_pose, transform_tolerance_))
+  {
     throw nav_core2::PlannerTFException("Unable to transform robot pose into global plan's frame");
   }
 
@@ -536,7 +548,7 @@ DWBLocalPlanner::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.pose = global_plan_pose;
       nav_2d_utils::transformPose(tf_, transformed_plan.header.frame_id,
-        stamped_pose, transformed_pose);
+        stamped_pose, transformed_pose, transform_tolerance_);
       return transformed_pose.pose;
     };
 
