@@ -88,7 +88,7 @@ protected:
   nav2_util::MapServiceClient map_client_{"amcl"};
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
-  bool use_map_topic_{false};
+  bool use_map_topic_{true};
   bool first_map_only_{true};
   bool first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
