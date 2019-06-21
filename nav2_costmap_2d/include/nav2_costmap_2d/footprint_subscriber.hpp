@@ -19,6 +19,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -27,19 +28,30 @@ class FootprintSubscriber
 {
 public:
   FootprintSubscriber(
-    rclcpp::Node::SharedPtr ros_node,
+    nav2_util::LifecycleNode::SharedPtr node,
     std::string & topic_name);
+
+  FootprintSubscriber(
+    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    std::string & topic_name);
+
   ~FootprintSubscriber() {}
 
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
 protected:
+  // Interfaces used for logging and creating publishers and subscribers
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
+
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 
-  rclcpp::Node::SharedPtr node_;
   std::string topic_name_;
-  bool footprint_received_;
-  std::vector<geometry_msgs::msg::Point> footprint_;
+  bool footprint_received_{false};
+  geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };
 

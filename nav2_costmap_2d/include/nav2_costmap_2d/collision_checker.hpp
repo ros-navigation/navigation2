@@ -41,7 +41,6 @@ class CollisionChecker
 {
 public:
   CollisionChecker(
-    rclcpp::Node::SharedPtr ros_node,
     std::shared_ptr<CostmapSubscriber> costmap_sub,
     std::shared_ptr<FootprintSubscriber> footprint_sub,
     tf2_ros::Buffer & tf_buffer,
@@ -67,6 +66,7 @@ protected:
   std::string global_frame_;
   std::string robot_base_frame_;
 
+  std::shared_ptr<Costmap2D> costmap_;
   rclcpp::Node::SharedPtr node_;
   std::string name_;
   std::shared_ptr<CostmapSubscriber> costmap_sub_;
