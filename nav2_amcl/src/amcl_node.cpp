@@ -401,8 +401,6 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  initParticleFilter();
-
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
   geometry_msgs::msg::TransformStamped tx_odom;
@@ -947,9 +945,10 @@ AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
   if (first_map_only_ && first_map_received_) {
     return;
   }
-
-  handleMapMessage(*msg);
-  first_map_received_ = true;
+  if (initial_pose_is_known_) {
+    handleMapMessage(*msg);
+    first_map_received_ = true;
+  }
 }
 
 void
@@ -979,15 +978,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   map_ = convertMap(msg);
 
 #if NEW_UNIFORM_SAMPLING
-  // Index of free space
-  free_space_indices.resize(0);
-  for (int i = 0; i < map_->size_x; i++) {
-    for (int j = 0; j < map_->size_y; j++) {
-      if (map_->cells[MAP_INDEX(map_, i, j)].occ_state == -1) {
-        free_space_indices.push_back(std::make_pair(i, j));
-      }
-    }
-  }
+  createFreeSpaceVector();
 #endif
   // Create the particle filter
   initParticleFilter();
@@ -1001,25 +992,21 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Laser
   lasers_.clear();
 
-  // In case the initial pose message arrived before the first map,
-  // try to apply the initial pose now that the map has arrived.
-  applyInitialPose();
+  handleInitialPose(
+    std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
 }
 
-
 void
-AmclNode::applyInitialPose()
+AmclNode::createFreeSpaceVector()
 {
-  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
-
-  // If initial_pose_hyp_ and map_ are both non-null, apply the initial
-  // pose to the particle filter state.
-
-  if (initial_pose_hyp_ != nullptr && map_ != nullptr) {
-    pf_init(pf_, initial_pose_hyp_->pf_pose_mean, initial_pose_hyp_->pf_pose_cov);
-    pf_init_ = false;
-    delete initial_pose_hyp_;
-    initial_pose_hyp_ = nullptr;
+  // Index of free space
+  free_space_indices.resize(0);
+  for (int i = 0; i < map_->size_x; i++) {
+    for (int j = 0; j < map_->size_y; j++) {
+      if (map_->cells[MAP_INDEX(map_, i, j)].occ_state == -1) {
+        free_space_indices.push_back(std::make_pair(i, j));
+      }
+    }
   }
 }
 
@@ -1071,14 +1058,7 @@ AmclNode::initMap()
   map_ = convertMap(msg);
 
 #if NEW_UNIFORM_SAMPLING
-  // Index of free space
-  for (int i = 0; i < map_->size_x; i++) {
-    for (int j = 0; j < map_->size_y; j++) {
-      if (map_->cells[MAP_INDEX(map_, i, j)].occ_state == -1) {
-        free_space_indices.push_back(std::make_pair(i, j));
-      }
-    }
-  }
+  createFreeSpaceVector();
 #endif
 }
 

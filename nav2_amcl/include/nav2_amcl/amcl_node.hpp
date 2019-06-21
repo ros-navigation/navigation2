@@ -83,13 +83,13 @@ protected:
   void initMap();
   void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   void handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg);
+  void createFreeSpaceVector();
   void freeMapDependentMemory();
-  void applyInitialPose();
   nav2_util::MapServiceClient map_client_{"amcl"};
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
   bool use_map_topic_{false};
-  bool first_map_only_{false};
+  bool first_map_only_{true};
   bool first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
   std::recursive_mutex configuration_mutex_;
