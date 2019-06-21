@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  # gets the direc
 colcon test --packages-skip nav2_system_tests nav2_dynamic_params nav2_motion_primitives \
                             nav2_bt_navigator nav2_costmap_2d nav2_lifecycle_manager \
                             nav2_tasks nav2_robot
-                            
+
 # run the stable tests in nav2_dynamic_params
 colcon test --packages-select nav2_dynamic_params --ctest-args --exclude-regex "test_dynamic_params_client"
 
@@ -24,5 +24,6 @@ colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "te
 # that happened in any of the `colcon test` lines above.
 colcon test-result --verbose
 
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator
+$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization$
+$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator$
+$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator_with_dijkstra$
