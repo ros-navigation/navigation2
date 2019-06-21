@@ -29,8 +29,15 @@ public:
   {
   }
 
-  explicit GetRobotPoseClient(rclcpp::Node::SharedPtr & node)
-  : ServiceClient<nav2_msgs::srv::GetRobotPose>("GetRobotPose", node)
+  explicit GetRobotPoseClient(rclcpp::Node::SharedPtr node,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
+  : ServiceClient<nav2_msgs::srv::GetRobotPose>("GetRobotPose", node, group)
+  {
+  }
+
+  explicit GetRobotPoseClient(rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
+  : ServiceClient<nav2_msgs::srv::GetRobotPose>("GetRobotPose", node, group)
   {
   }
 

@@ -43,6 +43,9 @@ public:
   NavfnPlanner();
   ~NavfnPlanner();
 
+  // Provides the executor (with the node added) for spinning
+  std::unique_ptr<rclcpp::executor::Executor> get_executor();
+
 protected:
   // Implement the lifecycle interface
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
@@ -131,9 +134,12 @@ protected:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
-  // Service client for getting the costmap
-  nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"navfn_planner"};
+  // Service clients for getting the costmap and robot pose
+  std::unique_ptr<nav2_util::CostmapServiceClient> costmap_client_;
+  std::unique_ptr<nav2_util::GetRobotPoseClient> get_robot_pose_client_;
+
+  // Callback group of the service clients, these will be asynchronous
+  std::shared_ptr<rclcpp::callback_group::CallbackGroup> async_services_group_;
 
   // Publishers for the path and endpoints
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

@@ -59,6 +59,32 @@ NavfnPlanner::~NavfnPlanner()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
+std::unique_ptr<rclcpp::executor::Executor> NavfnPlanner::get_executor()
+{
+  // Some navfn service callbacks, e.g. lifecycle state changes, perform service requests
+  // to other nodes. On a single-threaded executor, waiting for the service response
+  // (while on the callback) would block spinning the node.
+
+  // With a multi-threaded executor, a second thread will process the service response, if the
+  // service client is assigned to a `Reentrant` callback group.
+
+  // TODO(orduno) It is not necessary to have two threads processing executables all the time
+  //              for a single node. Replace the double-threaded executor with a custom
+  //              async service executor.
+
+  using namespace rclcpp::executors;
+  using namespace rclcpp::executor;
+
+  const bool yield_before_execute = true;
+  const unsigned number_of_threads = 2;
+
+  auto exec = std::make_unique<MultiThreadedExecutor>(ExecutorArgs(),
+    number_of_threads, yield_before_execute);
+  exec->add_node(this->get_node_base_interface());
+
+  return std::move(exec);
+}
+
 nav2_util::CallbackReturn
 NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
@@ -68,11 +94,21 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("tolerance", tolerance_);
   get_parameter("use_astar", use_astar_);
 
+  // Initialize services
+  auto node = shared_from_this();
+  async_services_group_ = create_callback_group(
+    rclcpp::callback_group::CallbackGroupType::Reentrant);
+
+  costmap_client_ = std::make_unique<nav2_util::CostmapServiceClient>(node,
+    async_services_group_);
+  get_robot_pose_client_ = std::make_unique<nav2_util::GetRobotPoseClient>(node,
+    async_services_group_);
+
+  // Create a planner based on the new costmap size
   getCostmap(costmap_);
   RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
     costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-  // Create a planner based on the new costmap size
   if (isPlannerOutOfDate()) {
     current_costmap_size_[0] = costmap_.metadata.size_x;
     current_costmap_size_[1] = costmap_.metadata.size_y;
@@ -83,8 +119,6 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
   plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
-
-  auto node = shared_from_this();
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
@@ -542,7 +576,7 @@ NavfnPlanner::getCostmap(
   auto request = std::make_shared<nav2_util::CostmapServiceClient::CostmapServiceRequest>();
   request->specs.resolution = 1.0;
 
-  auto result = costmap_client_.invoke(request, 5s);
+  auto result = costmap_client_->invoke(request, 5s);
   costmap = result.get()->map;
 }
 
@@ -665,7 +699,7 @@ NavfnPlanner::getRobotPose()
 {
   auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
 
-  auto result = get_robot_pose_client_.invoke(request, 5s);
+  auto result = get_robot_pose_client_->invoke(request, 5s);
   if (!result.get()->is_pose_valid) {
     throw std::runtime_error("Current robot pose is not available.");
   }

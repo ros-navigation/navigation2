@@ -26,20 +26,20 @@ namespace nav2_util
 class CostmapServiceClient : public ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
-  explicit CostmapServiceClient(const std::string & parent_node_name)
-  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", parent_node_name)
+  explicit CostmapServiceClient(rclcpp::Node::SharedPtr node,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
+  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node, group)
   {
   }
 
-  explicit CostmapServiceClient(rclcpp::Node::SharedPtr & node)
-  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node)
+  explicit CostmapServiceClient(rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
+  : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node, group)
   {
   }
 
-  using CostmapServiceRequest =
-    ServiceClient<nav2_msgs::srv::GetCostmap>::RequestType;
-  using CostmapServiceResponse =
-    ServiceClient<nav2_msgs::srv::GetCostmap>::ResponseType;
+  using CostmapServiceRequest = ServiceClient<nav2_msgs::srv::GetCostmap>::RequestType;
+  using CostmapServiceResponse = ServiceClient<nav2_msgs::srv::GetCostmap>::ResponseType;
 };
 
 }  // namespace nav2_util

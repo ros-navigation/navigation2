@@ -19,10 +19,20 @@
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
-  rclcpp::spin(node->get_node_base_interface());
-  rclcpp::shutdown();
+  using namespace rclcpp::executors;
+  using namespace rclcpp::executor;
 
+  rclcpp::init(argc, argv);
+
+  auto planner = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
+
+  // The planner needs a special executor
+  // <FEEDBACK REQUEST> I'm open to suggestions but I'd rather not expose we're using
+  // a multithreaded executor due to some implementation detail. Can you think of a better pattern?
+  // Also consider we'll have to revist this once we start composing nodes.
+  auto exec = planner->get_executor();
+  exec->spin();
+
+  rclcpp::shutdown();
   return 0;
 }

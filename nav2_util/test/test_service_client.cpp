@@ -37,8 +37,8 @@ public:
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
   : ServiceClient(name, provided_node) {}
 
-  string name() {return node_->get_name();}
-  const rclcpp::Node::SharedPtr & getNode() {return node_;}
+  string name() {return node_base_->get_name();}
+  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr & getBaseNode() {return node_base_;}
 };
 
 TEST(ServiceClient, are_non_alphanumerics_removed)
@@ -53,6 +53,6 @@ TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
 {
   auto node = rclcpp::Node::make_shared("test_node");
   TestServiceClient t("bar", node);
-  ASSERT_EQ(t.getNode(), node);
+  ASSERT_EQ(t.getBaseNode(), node->get_node_base_interface());
   ASSERT_EQ(t.name(), "test_node");
 }
