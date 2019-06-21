@@ -60,7 +60,7 @@ Costmap2DPublisher::Costmap2DPublisher(
   costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
       custom_qos);
   costmap_raw_pub_ = ros_node->create_publisher<nav2_msgs::msg::Costmap>(topic_name + "_raw",
-    custom_qos);      
+      custom_qos);
   costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
 

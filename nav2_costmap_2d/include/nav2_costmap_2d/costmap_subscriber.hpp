@@ -20,6 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -28,21 +29,32 @@ class CostmapSubscriber
 {
 public:
   CostmapSubscriber(
-    rclcpp::Node::SharedPtr ros_node,
+    nav2_util::LifecycleNode::SharedPtr node,
     std::string & topic_name);
+
+  CostmapSubscriber(
+    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    std::string & topic_name);
+
   ~CostmapSubscriber() {}
 
-  Costmap2D * getCostmap();
+  std::shared_ptr<Costmap2D> getCostmap();
 
 protected:
+  // Interfaces used for logging and creating publishers and subscribers
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
+
   void toCostmap2D();
   void costmap_callback(const nav2_msgs::msg::Costmap::SharedPtr msg);
 
-  rclcpp::Node::SharedPtr node_;
-  Costmap2D * costmap_;
-  nav2_msgs::msg::Costmap::SharedPtr msg_;
+  std::shared_ptr<Costmap2D> costmap_;
+  nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
   std::string topic_name_;
-  bool costmap_received_;
+  bool costmap_received_{false};
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
 };
 

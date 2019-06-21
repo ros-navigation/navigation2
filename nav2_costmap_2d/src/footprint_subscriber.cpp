@@ -20,11 +20,26 @@ namespace nav2_costmap_2d
 {
 
 FootprintSubscriber::FootprintSubscriber(
-  rclcpp::Node::SharedPtr ros_node,
+  nav2_util::LifecycleNode::SharedPtr node,
   std::string & topic_name)
-: node_(ros_node), topic_name_(topic_name), footprint_received_(false)
+: FootprintSubscriber(node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_logging_interface(),
+    topic_name)
+{}
+
+FootprintSubscriber::FootprintSubscriber(
+  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+  const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+  const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+  std::string & topic_name)
+: node_base_(node_base),
+  node_topics_(node_topics),
+  node_logging_(node_logging),
+  topic_name_(topic_name)
 {
-  footprint_sub_ = node_->create_subscription<geometry_msgs::msg::PolygonStamped>(topic_name,
+  footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(node_topics_,
+      topic_name, rclcpp::SystemDefaultsQoS(),
       std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
 }
 
@@ -34,19 +49,19 @@ FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footp
   if (!footprint_received_) {
     return false;
   }
-  footprint = footprint_;
+
+  footprint = toPointVector(
+    std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
   return true;
 }
 
 void
 FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
 {
+  footprint_ = msg;
   if (!footprint_received_) {
     footprint_received_ = true;
   }
-
-  footprint_ = toPointVector(
-    std::make_shared<geometry_msgs::msg::Polygon>(msg->polygon));
 }
 
 }  // namespace nav2_costmap_2d
