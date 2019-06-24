@@ -24,6 +24,11 @@ int main(int argc, char ** argv)
 
   auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");
 
+  motion_primitives_node->declare_parameter(
+    "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+  motion_primitives_node->declare_parameter(
+    "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
   auto spin = std::make_shared<nav2_motion_primitives::Spin>(
     motion_primitives_node);
 

@@ -24,6 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_robot/robot.hpp"
 
@@ -48,7 +49,8 @@ public:
   explicit MotionPrimitive(rclcpp::Node::SharedPtr & node, const std::string & primitive_name)
   : node_(node),
     primitive_name_(primitive_name),
-    action_server_(nullptr)
+    action_server_(nullptr),
+    cycle_frequency_(10)
   {
     configure();
   }
@@ -76,10 +78,22 @@ protected:
   std::string primitive_name_;
   std::shared_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<ActionServer> action_server_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  double cycle_frequency_;
 
   void configure()
   {
     RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
+
+    std::string costmap_topic;
+    std::string footprint_topic;
+
+    node_->get_parameter("costmap_topic", costmap_topic);
+    node_->get_parameter("footprint_topic", footprint_topic);
 
     robot_ = std::make_unique<nav2_robot::Robot>(
       node_->get_node_base_interface(),
@@ -89,12 +103,38 @@ protected:
 
     action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
         std::bind(&MotionPrimitive::execute, this));
+
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      node_->get_node_base_interface(),
+      node_->get_node_topics_interface(),
+      node_->get_node_logging_interface(),
+      costmap_topic);
+
+    footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+      node_->get_node_base_interface(),
+      node_->get_node_topics_interface(),
+      node_->get_node_logging_interface(),
+      footprint_topic);
+
+    collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
+      costmap_sub_, footprint_sub_, *tf_buffer_);    
   }
 
   void cleanup()
   {
     robot_.reset();
     action_server_.reset();
+    
+    tf_buffer_.reset();
+    tf_listener_.reset();
+
+    footprint_sub_.reset();
+    costmap_sub_.reset();
+    collision_checker_.reset();
+
   }
 
   void execute()
@@ -111,7 +151,7 @@ protected:
     auto timer = node_->create_wall_timer(1s,
         [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
 
-    rclcpp::Rate loop_rate(10);
+    rclcpp::Rate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
