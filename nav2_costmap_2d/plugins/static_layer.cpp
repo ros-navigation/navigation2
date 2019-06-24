@@ -73,12 +73,6 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  if (!first_map_from_service_ && first_map_only_) {
-    throw std::runtime_error(
-      "Static layer does not have a map. Either set parameter "
-      "first_map_from_service=true or set parameter first_map_only=false");
-  }
-
   if (first_map_from_service_) {
     getMap();
   }
@@ -141,6 +135,12 @@ StaticLayer::getParameters()
   node_->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node_->get_parameter("unknown_cost_value", unknown_cost_value_);
   node_->get_parameter("trinary_costmap", trinary_costmap_);
+
+  if (!first_map_from_service_ && first_map_only_) {
+    throw std::runtime_error(
+      "Static layer does not have a map. Either set parameter "
+      "first_map_from_service=true or set parameter first_map_only=false");
+  }
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
