@@ -138,8 +138,8 @@ StaticLayer::getParameters()
 
   if (!first_map_from_service_ && first_map_only_) {
     throw std::runtime_error(
-      "Static layer does not have a map. Either set parameter "
-      "first_map_from_service=true or set parameter first_map_only=false");
+            "Static layer does not have a map. Either set parameter "
+            "first_map_from_service=true or set parameter first_map_only=false");
   }
 
   // Enforce bounds
