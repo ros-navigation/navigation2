@@ -4,12 +4,13 @@
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
 # export BUILD_SYSTEM_TESTS=False
-# docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
-#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.crystal ./
+# docker build -t nav2:release_branch --build-arg ROS2_BRANCH=dashing \
+#  --build-arg BUILD_SYSTEM_TESTS #   --build-arg CMAKE_BUILD_TYPE \
+#  -f Dockerfile.release_branch ./
 
 ARG ROS2_BRANCH=dashing
 
-FROM ros:$BRANCH
+FROM ros:$ROS2_BRANCH
 
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws

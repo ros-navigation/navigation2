@@ -21,7 +21,7 @@ in the `package.xml` file. This can be done by not sourcing any ros `setup.bash`
 There is a docker file to do that, so run
 
 ```bash
-sudo docker build -t nav2:full_build --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.full_ros_build ./
+sudo docker build -t nav2:full_ros_build --build-arg ROS2_BRANCH=dashing --build-arg http_proxy=http://myproxy.example.com:80  --build-arg https_proxy=http://myproxy.example.com:80 -f Dockerfile.full_ros_build ./
 ```
 
 ROS2_BRANCH should be the release you are targeting or just `master` if you want

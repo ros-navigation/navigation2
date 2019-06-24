@@ -13,7 +13,7 @@
 # has been removed that an older codebase depends on. In those cases, using
 # ros:DISTRO-ros-core would be a good choice where distro is crystal, dashing, etc.
 # export ROS2_DOCKER_IMAGE=osrf/ros2:nightly
-# docker build -t nav2:dashing --build-arg BUILD_SYSTEM_TESTS
+# docker build -t nav2:full_ros_build --build-arg BUILD_SYSTEM_TESTS
 #   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.full_ros_build ./
 
 # We're only building on top of a ROS docker image to get the basics
@@ -71,6 +71,5 @@ RUN apt-get update && \
 ARG CMAKE_BUILD_TYPE=Debug
 RUN colcon build \
       --symlink-install \
-      # --packages-up-to nav2_bringup \
       --cmake-args \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
