@@ -4,5 +4,3 @@
 nav2_msgs/CostmapMetaData specs
 ---
 nav2_msgs/Costmap map
-geometry_msgs/PoseStamped pose
-bool is_pose_valid
