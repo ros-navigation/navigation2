@@ -82,8 +82,10 @@ Status BackUp::onCycleUpdate()
   pose2d.theta = tf2::getYaw(current_odom_pose->pose.pose.orientation);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
-    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute spin without collision.");
-    return Status::FAILED;
+    cmd_vel.linear.x = 0;
+    robot_->sendVelocity(cmd_vel);
+    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute back up without collision.");
+    return Status::SUCCEEDED;
   }
 
   robot_->sendVelocity(cmd_vel);
