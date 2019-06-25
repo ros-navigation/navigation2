@@ -46,7 +46,7 @@ public:
     auto handle_goal =
       [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
-        std::lock_guard<std::mutex> lock(activation_mutex_);
+        std::lock_guard<std::mutex> lock(update_mutex_);
 
         if (!server_active_) {
           return rclcpp_action::GoalResponse::REJECT;
@@ -86,13 +86,12 @@ public:
 
   void activate()
   {
-    std::lock_guard<std::mutex> lock(activation_mutex_);
+    std::lock_guard<std::mutex> lock(update_mutex_);
     server_active_ = true;
   }
 
   void deactivate()
   {
-    std::lock_guard<std::mutex> lock_server_state(activation_mutex_);
     std::lock_guard<std::mutex> lock_goal_handle(update_mutex_);
 
     server_active_ = false;
@@ -100,14 +99,14 @@ public:
     // TODO(orduno) Replace with `abort_all()` once #849 is merged
     if (current_handle_ != nullptr && current_handle_->is_active()) {
       RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
-        " with an active goal. Cancelling the goal.");
+        " with an active goal. Cancelling the current goal.");
       current_handle_->abort(std::make_shared<typename ActionT::Result>());
       current_handle_.reset();
     }
 
     if (new_handle_ != nullptr && new_handle_->is_active()) {
       RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
-        " with an active goal. Cancelling the goal.");
+        " with a pending preemption. Cancelling the preemptive goal.");
       new_handle_->abort(std::make_shared<typename ActionT::Result>());
       new_handle_.reset();
     }
@@ -115,7 +114,7 @@ public:
 
   bool serverIsActive()
   {
-    std::lock_guard<std::mutex> lock(activation_mutex_);
+    std::lock_guard<std::mutex> lock(update_mutex_);
     return server_active_;
   }
 
@@ -145,7 +144,6 @@ protected:
   ExecuteCallback execute_callback_;
 
   std::mutex update_mutex_;
-  std::mutex activation_mutex_;
   bool server_active_{false};
   bool preempt_requested_{false};
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
