@@ -114,7 +114,7 @@ protected:
     rclcpp::Rate loop_rate(10);
 
     while (rclcpp::ok()) {
-      if (action_server_->is_cancelling()) {
+      if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
         action_server_->cancel_all();
         return;

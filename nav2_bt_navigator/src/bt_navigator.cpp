@@ -168,7 +168,7 @@ BtNavigator::navigateToPose()
 {
   initializeGoalPose();
 
-  auto is_canceling = [this]() {return action_server_->is_cancelling();};
+  auto is_canceling = [this]() {return action_server_->is_cancel_requested();};
 
   auto on_loop = [this]() {
       if (action_server_->preempt_requested()) {

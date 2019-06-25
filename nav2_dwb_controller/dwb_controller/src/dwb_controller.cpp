@@ -149,7 +149,7 @@ void DwbController::followPath()
 
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
-      if (action_server_->is_cancelling()) {
+      if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(get_logger(), "Goal was canceled. Cancelling and stopping.");
         action_server_->cancel_all();
         publishZeroVelocity();

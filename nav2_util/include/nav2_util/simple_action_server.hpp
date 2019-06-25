@@ -181,7 +181,7 @@ public:
     return current_handle_->get_goal();
   }
 
-  bool is_cancelling() const
+  bool is_cancel_requested() const
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 

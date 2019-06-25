@@ -165,7 +165,7 @@ NavfnPlanner::computePathToPose()
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
-    if (action_server_->is_cancelling()) {
+    if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
       action_server_->cancel_all();
       return;

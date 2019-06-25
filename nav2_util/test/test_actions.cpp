@@ -69,7 +69,7 @@ preempted:
 
     for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
       // Check if this action has been canceled
-      if (action_server_->is_cancelling()) {
+      if (action_server_->is_cancel_requested()) {
         result->sequence = sequence;
         action_server_->cancel_all(result);
         return;
