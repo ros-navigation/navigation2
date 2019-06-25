@@ -115,23 +115,17 @@ public:
   void deactivate()
   {
     std::lock_guard<std::mutex> lock_goal_handle(update_mutex_);
-
     server_active_ = false;
 
-    // TODO(orduno) Replace with `abort_all()` once #849 is merged
-    if (current_handle_ != nullptr && current_handle_->is_active()) {
-      RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
-        " with an active goal. Cancelling the current goal.");
-      current_handle_->abort(std::make_shared<typename ActionT::Result>());
-      current_handle_.reset();
+    if (is_active(current_handle_)) {
+      warn_msg("Taking action server to deactive state with an active goal, will be aborted");
     }
 
-    if (new_handle_ != nullptr && new_handle_->is_active()) {
-      RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
-        " with a pending preemption. Cancelling the preemptive goal.");
-      new_handle_->abort(std::make_shared<typename ActionT::Result>());
-      new_handle_.reset();
+    if (is_active(pending_handle_)) {
+      warn_msg("Taking action server to deactive state with a pending preemption, will be aborted");
     }
+
+    abort_all();
   }
 
   bool serverIsActive()
