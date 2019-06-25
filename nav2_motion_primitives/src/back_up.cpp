@@ -77,7 +77,7 @@ Status BackUp::onCycleUpdate()
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
 
   geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_odom_pose->pose.pose.position.x + cmd_vel.linear.x * (1/cycle_frequency_);
+  pose2d.x = current_odom_pose->pose.pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
   pose2d.y = current_odom_pose->pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_odom_pose->pose.pose.orientation);
 

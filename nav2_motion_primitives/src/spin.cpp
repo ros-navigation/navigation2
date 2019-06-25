@@ -91,11 +91,12 @@ Status Spin::timedSpin()
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose.pose.orientation) + cmd_vel.angular.z * (1/cycle_frequency_);
+  pose2d.theta = tf2::getYaw(current_pose.pose.orientation) +
+    cmd_vel.angular.z * (1 / cycle_frequency_);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
     cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);    
+    robot_->sendVelocity(cmd_vel);
     RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute spin without collision.");
     return Status::SUCCEEDED;
   }
