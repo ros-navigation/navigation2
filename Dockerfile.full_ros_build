@@ -1,0 +1,75 @@
+# This dockerfile expects proxies to be set via --build-arg if needed
+# It also expects to be contained in the /navigation2 root folder for file copy
+#
+# Example build command:
+# export CMAKE_BUILD_TYPE=Debug
+# export BUILD_SYSTEM_TESTS=False
+#
+# This determines which version of the ROS2 code base to pull
+# export ROS2_BRANCH=master
+#
+# This determines which ros2 docker image to use as a base for getting ros2_dependencies
+# The latest (osrf/ros2:nightly) is usually the best choice unless a dependency
+# has been removed that an older codebase depends on. In those cases, using
+# ros:DISTRO-ros-core would be a good choice where distro is crystal, dashing, etc.
+# export ROS2_DOCKER_IMAGE=osrf/ros2:nightly
+# docker build -t nav2:full_ros_build --build-arg BUILD_SYSTEM_TESTS
+#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.full_ros_build ./
+
+# We're only building on top of a ROS docker image to get the basics
+# prerequisites installed such as the apt source, rosdep, etc. We don't want to
+# actually use any of the ros dashing packages. Instead we are going to build
+# everything from source in one big workspace.
+ARG ROS2_DOCKER_BRANCH=osrf/ros2:nightly
+FROM $ROS2_DOCKER_BRANCH
+
+# install ROS2 dependencies
+RUN apt-get update && apt-get install -q -y \
+      wget \
+      libasio-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# setup directory structure
+ENV ROS2_WS /opt/ros2_ws
+RUN mkdir -p $ROS2_WS/src
+WORKDIR $ROS2_WS
+
+# clone ROS 2 packages
+
+ARG ROS2_BRANCH=master
+RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos
+RUN vcs import src < ros2.repos
+
+# copy nav 2 source code
+ENV NAV2_DIR $ROS2_WS/src/navigation2
+COPY ./ src/navigation2/
+
+# clone dependency package repos
+ENV NAV2_DEPS_DIR $ROS2_WS/src/navigation2_dependencies
+RUN mkdir -p $NAV2_DEPS_DIR
+RUN vcs import src < $NAV2_DIR/tools/ros2_dependencies.repos
+
+# delete nav2_system_tests/COLCON_IGNORE before running rosdep, otherwise it
+# doesn't install nav2_system_tests dependencies.
+ARG BUILD_SYSTEM_TESTS=True
+RUN if [ "$BUILD_SYSTEM_TESTS" = "True" ] ; then \
+        rm $NAV2_DIR/nav2_system_tests/COLCON_IGNORE ; \
+        echo "Building of system tests enabled" ; \
+    fi
+
+
+# install package dependencies
+RUN apt-get update && \
+    rosdep install -q -y \
+      --from-paths \
+        $ROS2_WS/src \
+        src \
+      --ignore-src --skip-keys rti-connext-dds-5.3.1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# build entire workspace
+ARG CMAKE_BUILD_TYPE=Debug
+RUN colcon build \
+      --symlink-install \
+      --cmake-args \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \

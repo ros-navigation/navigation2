@@ -4,20 +4,13 @@
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
 # export BUILD_SYSTEM_TESTS=False
-# docker build -t nav2:crystal --build-arg BUILD_SYSTEM_TESTS
-#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.crystal ./
+# docker build -t nav2:release_branch --build-arg ROS2_BRANCH=dashing \
+#  --build-arg BUILD_SYSTEM_TESTS #   --build-arg CMAKE_BUILD_TYPE \
+#  -f Dockerfile.release_branch ./
 
-FROM ros:crystal
+ARG ROS2_BRANCH=dashing
 
-# install ROS2 dependencies
-RUN apt-get update && apt-get install -q -y \
-      build-essential \
-      cmake \
-      git \
-      python3-colcon-common-extensions \
-      python3-vcstool \
-      wget \
-    && rm -rf /var/lib/apt/lists/*
+FROM ros:$ROS2_BRANCH
 
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
