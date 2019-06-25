@@ -47,11 +47,11 @@ public:
   // Returns the obstacle footprint score for a particular pose
   double scorePose(const geometry_msgs::msg::Pose2D & pose);
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
+  bool getRobotPose(geometry_msgs::msg::Pose & current_pose);
 
 protected:
   double lineCost(int x0, int x1, int y0, int y1) const;
   double pointCost(int x, int y) const;
-  bool getRobotPose(geometry_msgs::msg::Pose & current_pose);
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
   void worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
