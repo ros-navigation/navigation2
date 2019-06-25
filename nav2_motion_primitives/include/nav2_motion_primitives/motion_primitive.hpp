@@ -120,21 +120,20 @@ protected:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      costmap_sub_, footprint_sub_, *tf_buffer_);    
+      costmap_sub_, footprint_sub_, *tf_buffer_);
   }
 
   void cleanup()
   {
     robot_.reset();
     action_server_.reset();
-    
+
     tf_buffer_.reset();
     tf_listener_.reset();
 
     footprint_sub_.reset();
     costmap_sub_.reset();
     collision_checker_.reset();
-
   }
 
   void execute()
