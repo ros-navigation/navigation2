@@ -41,10 +41,10 @@ public:
 
   void on_init()
   {
-    action_server_ = std::make_shared<nav2_util::SimpleActionServer<Fibonacci>>(
+    action_server_ = std::make_unique<nav2_util::SimpleActionServer<Fibonacci>>(
       shared_from_this(),
       "fibonacci",
-      std::bind(&FibonacciServerNode::execute, this, std::placeholders::_1));
+      std::bind(&FibonacciServerNode::execute, this));
   }
 
   void on_term()
@@ -52,16 +52,13 @@ public:
     action_server_.reset();
   }
 
-  void execute(const std::shared_ptr<GoalHandle> goal_handle)
+  void execute()
   {
-    // The goal may be pre-empted, so keep a pointer to the current goal
-    std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
-
     rclcpp::Rate loop_rate(10);
 
 preempted:
     // Initialize the goal, feedback, and result
-    auto goal = current_goal_handle->get_goal();
+    auto goal = action_server_->get_current_goal();
     auto feedback = std::make_shared<Fibonacci::Feedback>();
     auto result = std::make_shared<Fibonacci::Result>();
 
@@ -72,15 +69,15 @@ preempted:
 
     for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
       // Check if this action has been canceled
-      if (current_goal_handle->is_canceling()) {
+      if (action_server_->is_cancel_requested()) {
         result->sequence = sequence;
-        current_goal_handle->canceled(result);
+        action_server_->cancel_all(result);
         return;
       }
 
       // Check if we've gotten an new goal, pre-empting the current one
       if (action_server_->preempt_requested()) {
-        current_goal_handle = action_server_->get_updated_goal_handle();
+        action_server_->accept_pending_goal();
         goto preempted;
       }
 
@@ -88,19 +85,19 @@ preempted:
       sequence.push_back(sequence[i] + sequence[i - 1]);
 
       // Publish feedback
-      current_goal_handle->publish_feedback(feedback);
+      action_server_->publish_feedback(feedback);
       loop_rate.sleep();
     }
 
     // Check if goal is done
     if (rclcpp::ok()) {
       result->sequence = sequence;
-      current_goal_handle->succeed(result);
+      action_server_->succeeded_current(result);
     }
   }
 
 private:
-  std::shared_ptr<nav2_util::SimpleActionServer<Fibonacci>> action_server_;
+  std::unique_ptr<nav2_util::SimpleActionServer<Fibonacci>> action_server_;
 };
 
 class RclCppFixture

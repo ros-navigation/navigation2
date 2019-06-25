@@ -52,14 +52,13 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ComputePathToPose>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
 
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback
-  void computePathToPose(const std::shared_ptr<GoalHandle> goal_handle);
+  void computePathToPose();
 
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(

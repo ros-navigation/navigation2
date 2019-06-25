@@ -62,20 +62,18 @@ Status BackUp::onCycleUpdate()
     return Status::FAILED;
   }
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-
   double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
   double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   if (distance >= abs(command_x_)) {
-    cmd_vel.linear.x = 0;
-    robot_->sendVelocity(cmd_vel);
+    stopRobot();
     return Status::SUCCEEDED;
   }
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = 0.0;
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
   robot_->sendVelocity(cmd_vel);
 

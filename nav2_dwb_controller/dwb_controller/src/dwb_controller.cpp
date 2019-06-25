@@ -67,6 +67,8 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
+  progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
+
   planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
     node, costmap_ros_->getTfBuffer(), costmap_ros_);
   planner_->on_configure(state);
@@ -76,7 +78,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
-      std::bind(&DwbController::followPath, this, std::placeholders::_1));
+      std::bind(&DwbController::followPath, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -137,61 +139,30 @@ DwbController::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
+void DwbController::followPath()
 {
   RCLCPP_INFO(get_logger(), "Received a goal, begin following path");
-  auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-
-  std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
-
-  rclcpp::Rate loop_rate(100ms);    // period vs. hz
-
-  auto goal = current_goal_handle->get_goal();
 
   try {
-    auto path = nav_2d_utils::pathToPath2D(goal->path);
+    setPlannerPath(action_server_->get_current_goal()->path);
+    progress_checker_->reset();
 
-    RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
-    planner_->setPlan(path);
-
-    ProgressChecker progress_checker(rclcpp_node_);
-
-    rclcpp::Rate loop_rate(10);
+    rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
-      nav_2d_msgs::msg::Pose2DStamped pose2d;
-      if (!getRobotPose(pose2d)) {
-        RCLCPP_INFO(get_logger(), "No pose. Stopping the robot");
+      if (action_server_->is_cancel_requested()) {
+        RCLCPP_INFO(get_logger(), "Goal was canceled. Cancelling and stopping.");
+        action_server_->cancel_all();
         publishZeroVelocity();
-      } else {
-        if (isGoalReached(pose2d)) {
-          RCLCPP_INFO(get_logger(), "Reached the goal");
-          break;
-        }
-        progress_checker.check(pose2d);
-        auto velocity = odom_sub_->getTwist();
-        auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
+        return;
+      }
 
-        RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
-        publishVelocity(cmd_vel_2d);
+      updateGlobalPath();
 
-        if (current_goal_handle->is_canceling()) {
-          RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
-          current_goal_handle->canceled(result);
-          publishZeroVelocity();
-          return;
-        }
+      computeAndPublishVelocity();
 
-        // Check if there is an update to the path to follow
-        if (action_server_->preempt_requested()) {
-          RCLCPP_DEBUG(get_logger(), "Received a new goal, pre-empting the old one");
-          current_goal_handle = action_server_->get_updated_goal_handle();
-          goal = current_goal_handle->get_goal();
-
-          // If so, pass the new path to the local planner
-          auto path = nav_2d_utils::pathToPath2D(goal->path);
-          planner_->setPlan(path);
-        }
+      if (isGoalReached()) {
+        RCLCPP_INFO(get_logger(), "Reached the goal!");
+        break;
       }
 
       loop_rate.sleep();
@@ -199,13 +170,53 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
-    current_goal_handle->abort(result);
+    action_server_->abort_all();
     return;
   }
 
   RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
-  current_goal_handle->succeed(result);
+
   publishZeroVelocity();
+
+  // TODO(orduno) #861 Handle a pending preemption.
+  action_server_->succeeded_current();
+}
+
+void DwbController::setPlannerPath(const nav2_msgs::msg::Path & path)
+{
+  auto path2d = nav_2d_utils::pathToPath2D(path);
+
+  RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
+  planner_->setPlan(path2d);
+
+  auto end_pose = *(path.poses.end() - 1);
+
+  RCLCPP_DEBUG(get_logger(), "Path end point is (%.2f, %.2f)",
+    end_pose.position.x, end_pose.position.y);
+}
+
+void DwbController::computeAndPublishVelocity()
+{
+  nav_2d_msgs::msg::Pose2DStamped pose2d;
+
+  if (!getRobotPose(pose2d)) {
+    throw nav_core2::PlannerException("Failed to obtain robot pose");
+  }
+
+  progress_checker_->check(pose2d);
+
+  auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, odom_sub_->getTwist());
+
+  RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+  publishVelocity(cmd_vel_2d);
+}
+
+void DwbController::updateGlobalPath()
+{
+  if (action_server_->preempt_requested()) {
+    RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
+    setPlannerPath(action_server_->accept_pending_goal()->path);
+  }
 }
 
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
@@ -224,8 +235,13 @@ void DwbController::publishZeroVelocity()
   publishVelocity(velocity);
 }
 
-bool DwbController::isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d)
+bool DwbController::isGoalReached()
 {
+  nav_2d_msgs::msg::Pose2DStamped pose2d;
+  if (!getRobotPose(pose2d)) {
+    return false;
+  }
+
   nav_2d_msgs::msg::Twist2D velocity = odom_sub_->getTwist();
   return planner_->isGoalReached(pose2d, velocity);
 }

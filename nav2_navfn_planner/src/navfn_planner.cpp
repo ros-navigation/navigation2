@@ -88,7 +88,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
-      std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
+      std::bind(&NavfnPlanner::computePathToPose, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -144,13 +144,11 @@ NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
+NavfnPlanner::computePathToPose()
 {
   // Initialize the ComputePathToPose goal and result
-  auto goal = goal_handle->get_goal();
+  auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
-
-  // TODO(mjeronimo): handle or reject an attempted pre-emption
 
   try {
     // Get the current costmap
@@ -167,6 +165,17 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
+    if (action_server_->is_cancel_requested()) {
+      RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+      action_server_->cancel_all();
+      return;
+    }
+
+    if (action_server_->preempt_requested()) {
+      RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
+      goal = action_server_->accept_pending_goal();
+    }
+
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start.position.x, start.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
@@ -174,17 +183,11 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     // Make the plan for the provided goal pose
     bool foundPath = makePlan(start, goal->pose.pose, tolerance_, result->path);
 
-    // TODO(orduno): should check for cancel within the makePlan() method?
-    if (goal_handle->is_canceling()) {
-      RCLCPP_INFO(get_logger(), "Canceling global planning task");
-      goal_handle->canceled(result);
-      return;
-    }
-
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", goal->pose.pose.position.x, goal->pose.pose.position.y);
-      goal_handle->abort(result);
+      // TODO(orduno): define behavior if a preemption is available
+      action_server_->abort_all();
       return;
     }
 
@@ -200,7 +203,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     RCLCPP_DEBUG(get_logger(),
       "Successfully computed a path to (%.2f, %.2f) with tolerance %.2f",
       goal->pose.pose.position.x, goal->pose.pose.position.y, tolerance_);
-    goal_handle->succeed(result);
+    action_server_->succeeded_current(result);
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
@@ -208,14 +211,14 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    goal_handle->abort(result);
+    action_server_->abort_all();
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
-    goal_handle->abort(result);
+    action_server_->abort_all();
     return;
   }
 }

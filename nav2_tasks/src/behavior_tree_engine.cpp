@@ -34,6 +34,7 @@ BtStatus
 BehaviorTreeEngine::run(
   BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
+  std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
@@ -45,13 +46,14 @@ BehaviorTreeEngine::run(
 
   // Loop until something happens with ROS or the node completes
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree.root_node->executeTick();
-
-    // Check if we've received a cancel message
     if (cancelRequested()) {
       tree.root_node->halt();
       return BtStatus::CANCELED;
     }
+
+    onLoop();
+
+    result = tree.root_node->executeTick();
 
     loopRate.sleep();
   }
@@ -71,15 +73,14 @@ BehaviorTreeEngine::run(
 
   // Loop until something happens with ROS or the node completes w/ success or failure
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    onLoop();
-
-    result = tree->root_node->executeTick();
-
-    // Check if we've received a cancel message
     if (cancelRequested()) {
       tree->root_node->halt();
       return BtStatus::CANCELED;
     }
+
+    onLoop();
+
+    result = tree->root_node->executeTick();
 
     loopRate.sleep();
   }

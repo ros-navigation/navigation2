@@ -26,6 +26,7 @@ class ProgressChecker
 public:
   explicit ProgressChecker(const rclcpp::Node::SharedPtr & node);
   void check(nav_2d_msgs::msg::Pose2DStamped & current_pose);
+  void reset() {baseline_pose_set_ = false;}
 
 protected:
   bool is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose);
