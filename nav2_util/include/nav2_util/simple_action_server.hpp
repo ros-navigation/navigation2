@@ -15,7 +15,6 @@
 #ifndef NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
 #define NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
 
-#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -36,12 +35,23 @@ public:
   explicit SimpleActionServer(
     rclcpp::Node::SharedPtr node,
     const std::string & action_name,
-    ExecuteCallback execute_callback)
+    ExecuteCallback execute_callback,
+    bool autostart = true)
   : node_(node), execute_callback_(execute_callback)
   {
+    if (autostart) {
+      server_active_ = true;
+    }
+
     auto handle_goal =
-      [](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
+      [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
+        std::lock_guard<std::mutex> lock(update_mutex_);
+
+        if (!server_active_) {
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
       };
 
@@ -74,6 +84,40 @@ public:
       handle_accepted);
   }
 
+  void activate()
+  {
+    std::lock_guard<std::mutex> lock(update_mutex_);
+    server_active_ = true;
+  }
+
+  void deactivate()
+  {
+    std::lock_guard<std::mutex> lock_goal_handle(update_mutex_);
+
+    server_active_ = false;
+
+    // TODO(orduno) Replace with `abort_all()` once #849 is merged
+    if (current_handle_ != nullptr && current_handle_->is_active()) {
+      RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
+        " with an active goal. Cancelling the current goal.");
+      current_handle_->abort(std::make_shared<typename ActionT::Result>());
+      current_handle_.reset();
+    }
+
+    if (new_handle_ != nullptr && new_handle_->is_active()) {
+      RCLCPP_WARN(node_->get_logger(), "Taking action server to deactive state "
+        " with a pending preemption. Cancelling the preemptive goal.");
+      new_handle_->abort(std::make_shared<typename ActionT::Result>());
+      new_handle_.reset();
+    }
+  }
+
+  bool serverIsActive()
+  {
+    std::lock_guard<std::mutex> lock(update_mutex_);
+    return server_active_;
+  }
+
   bool preempt_requested()
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
@@ -100,6 +144,7 @@ protected:
   ExecuteCallback execute_callback_;
 
   std::mutex update_mutex_;
+  bool server_active_{false};
   bool preempt_requested_{false};
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> new_handle_;
