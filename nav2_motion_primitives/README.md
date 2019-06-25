@@ -21,7 +21,7 @@ Currently the package provides the following primitives:
 
 ## Implementation
 
-The module is implemented as a single node containing multiple primitives and follows the `nav2` [task hierarchy](../nav2_tasks/README.md#Overview). Each primitive is defined as a `nav2_task` with corresponding *command* and *result* message definitions.
+The module is implemented as a single node containing multiple primitives and follows the `nav2` [task hierarchy](../nav2_behavior_tree/README.md#Overview). Each primitive is defined as a `nav2_task` with corresponding *command* and *result* message definitions.
 
 The `MotionPrimitive` base class manages the task server, provides a robot interface and calls the primitive's update functions.
 
@@ -31,10 +31,10 @@ To gain insight into the package lets go over how to implement and execute a new
 
 In this section we'll go over how to define a new primitive and implement the corresponding motion.
 
-The first step is to provide the [task definition](../nav2_tasks/README.md) inside the `nav2_tasks` package. For example, lets define a `SomePrimitive` task interface, i.e. the types of messages to use for the command and result, as well as the client and server.
+The first step is to provide the [task definition](../nav2_behavior_tree/README.md) inside the `nav2_behavior_tree` package. For example, lets define a `SomePrimitive` task interface, i.e. the types of messages to use for the command and result, as well as the client and server.
 
 ```cpp
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 using SomePrimitiveCommand = geometry_msgs::msg::Point;
@@ -49,7 +49,7 @@ inline const char * getTaskName<SomePrimitiveCommand, SomePrimitiveResult>()
   return "SomePrimitiveTask";
 }
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 ```
 
 For this example we arbitrarily pick `geometry_msgs::msg::Point` and `std_msgs::msg::Empty` as message types for command and result.
@@ -57,13 +57,13 @@ For this example we arbitrarily pick `geometry_msgs::msg::Point` and `std_msgs::
 Next we define the class for our new primitive. This class should derive from `MotionPrimitive` and use the command and result messages defined on the corresponding task.
 
 ```cpp
-class SomePrimitive : public MotionPrimitive<nav2_tasks::SomePrimitiveCommand, nav2_tasks::SomePrimitiveResult>
+class SomePrimitive : public MotionPrimitive<nav2_behavior_tree::SomePrimitiveCommand, nav2_behavior_tree::SomePrimitiveResult>
 ```
 
 On the implementation of `SomePrimitive` all we do is override `onRun` and `onCycleUpdate`.
 
 ```cpp
-using nav2_tasks
+using nav2_behavior_tree
 
 TaskStatus SomePrimitive::onRun(const SomePrimitiveCommand::SharedPtr command)
 {
@@ -80,20 +80,20 @@ The `onRun` method is the entry point for the primitive and here we should:
 - Catch the command.
 - Perform checks before the main execution loop.
 - Possibly do some initialization.
-- Return a `nav2_tasks::TaskStatus` given the initial checks.
+- Return a `nav2_behavior_tree::TaskStatus` given the initial checks.
 
 The `onCycleUpdate` method is called periodically until it returns `FAILED` or `SUCCEEDED`, here we should:
 - Set the robot in motion.
 - Perform some unit of work.
 - Check if the robot state, determine if work completed
-- Return a `nav2_tasks::TaskStatus`.
+- Return a `nav2_behavior_tree::TaskStatus`.
 
 ### Defining the primitive's client
 
-Primitives use the `nav2_tasks` interface, so we need to define the task client:
+Primitives use the `nav2_behavior_tree` interface, so we need to define the task client:
 
 ```cpp
-nav2_tasks::TaskClient<SomePrimitiveCommand, SomePrimitiveResult> some_primitive_task_client;
+nav2_behavior_tree::TaskClient<SomePrimitiveCommand, SomePrimitiveResult> some_primitive_task_client;
 ```
 
 To send requests we create the command and sent it over the client:
@@ -106,7 +106,7 @@ some_primitive_task_client.sendCommand(command)
 
 ### (optional) Define the Behavior Tree action node
 
-For using motion primitivies within a behavior tree such as [bt_navigator](../nav2_bt_navigator/README.md##Navigation-Behavior-Trees), then a corresponding *action node* needs to be defined. Checkout `nav2_tasks` for examples on how to implement one.
+For using motion primitivies within a behavior tree such as [bt_navigator](../nav2_bt_navigator/README.md##Navigation-Behavior-Trees), then a corresponding *action node* needs to be defined. Checkout `nav2_behavior_tree` for examples on how to implement one.
 
 ## Plans
 

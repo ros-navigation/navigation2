@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
-#define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_
+#define NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_
 
 #include <memory>
 #include <string>
@@ -23,7 +23,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
@@ -73,6 +73,6 @@ protected:
   BT::BehaviorTreeFactory factory_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_

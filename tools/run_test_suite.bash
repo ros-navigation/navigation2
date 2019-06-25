@@ -7,7 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  # gets the direc
 # Skip flaky tests. Nav2 system tests will be run later.
 colcon test --packages-skip nav2_system_tests nav2_dynamic_params nav2_motion_primitives \
                             nav2_bt_navigator nav2_costmap_2d nav2_lifecycle_manager \
-                            nav2_tasks nav2_robot
+                            nav2_behavior_tree nav2_robot
 
 # run the stable tests in nav2_dynamic_params
 colcon test --packages-select nav2_dynamic_params --ctest-args --exclude-regex "test_dynamic_params_client"

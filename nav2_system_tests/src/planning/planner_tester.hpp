@@ -21,7 +21,7 @@
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_behavior_tree/compute_path_to_pose_task.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
@@ -51,15 +51,15 @@ public:
   // TODO(orduno): #443 Assuming a robot the size of a costmap cell
   bool plannerTest(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
-    nav2_tasks::ComputePathToPoseResult::SharedPtr & path);
+    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
+    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path);
 
   // Sends the request to the planner and gets the result.
   // Uses the default map or preloaded costmaps.
   // Success criteria is a collision free path and a deviation to a
   // reference path smaller than a tolerance.
   bool defaultPlannerTest(
-    nav2_tasks::ComputePathToPoseResult::SharedPtr & path,
+    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path,
     const double deviation_tolerance = 1.0);
 
   bool defaultPlannerRandomTests(
@@ -74,26 +74,26 @@ private:
 
   void startCostmapServer(std::string serviceName);
 
-  nav2_tasks::TaskStatus sendRequest(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
-    nav2_tasks::ComputePathToPoseResult::SharedPtr & path
+  nav2_behavior_tree::TaskStatus sendRequest(
+    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
+    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path
   );
 
-  bool isCollisionFree(const nav2_tasks::ComputePathToPoseResult & path);
+  bool isCollisionFree(const nav2_behavior_tree::ComputePathToPoseResult & path);
 
   bool isWithinTolerance(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_tasks::ComputePathToPoseCommand & goal,
-    const nav2_tasks::ComputePathToPoseResult & path) const;
+    const nav2_behavior_tree::ComputePathToPoseCommand & goal,
+    const nav2_behavior_tree::ComputePathToPoseResult & path) const;
 
   bool isWithinTolerance(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_tasks::ComputePathToPoseCommand & goal,
-    const nav2_tasks::ComputePathToPoseResult & path,
+    const nav2_behavior_tree::ComputePathToPoseCommand & goal,
+    const nav2_behavior_tree::ComputePathToPoseResult & path,
     const double deviationTolerance,
-    const nav2_tasks::ComputePathToPoseResult & reference_path) const;
+    const nav2_behavior_tree::ComputePathToPoseResult & reference_path) const;
 
-  void printPath(const nav2_tasks::ComputePathToPoseResult & path) const;
+  void printPath(const nav2_behavior_tree::ComputePathToPoseResult & path) const;
 
   // The static map
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
@@ -102,7 +102,7 @@ private:
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
   // The interface to the global planner
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;
+  std::unique_ptr<nav2_behavior_tree::ComputePathToPoseTaskClient> planner_client_;
   std::string plannerName_;
 
   // Server for providing a costmap

@@ -34,6 +34,7 @@
 *
 * Author: Dave Hershberger
 *********************************************************************/
+#include <memory>
 #include <string>
 #include <vector>
 
