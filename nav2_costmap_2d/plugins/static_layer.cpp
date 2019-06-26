@@ -72,11 +72,6 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  nav_msgs::msg::OccupancyGrid empty_map;
-  // processMap updates the size of other costmap layers, so we have to call
-  // it, even if the map is 0x0
-  processMap(empty_map);
-
   rclcpp::QoS map_qos(1);
   if (map_subscribe_transient_local_) {
     map_qos.transient_local();
@@ -97,7 +92,6 @@ StaticLayer::onInitialize()
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
-  current_ = true;
 }
 
 void
@@ -206,6 +200,8 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   width_ = size_x_;
   height_ = size_y_;
   has_updated_data_ = true;
+
+  current_ = true;
 }
 
 void
