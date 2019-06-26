@@ -100,7 +100,7 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.05
-      robot_radius: 0.17
+      robot_radius: 0.22
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
         enabled: True
@@ -122,7 +122,7 @@ global_costmap:
   global_costmap:
     ros__parameters:
       use_sim_time: True
-      robot_radius: 0.17
+      robot_radius: 0.22
       obstacle_layer:
         enabled: True
       always_send_full_costmap: True
