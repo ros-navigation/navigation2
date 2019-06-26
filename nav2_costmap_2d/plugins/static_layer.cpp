@@ -178,7 +178,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       new_map.info.origin.position.x,
       new_map.info.origin.position.y,
       true);
-  } else if (size_x_ != size_x || size_y_ != size_y ||
+  } else if (size_x_ != size_x || size_y_ != size_y ||  // NOLINT
     resolution_ != new_map.info.resolution ||
     origin_x_ != new_map.info.origin.position.x ||
     origin_y_ != new_map.info.origin.position.y)
