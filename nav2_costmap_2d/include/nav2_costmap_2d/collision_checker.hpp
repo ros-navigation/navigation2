@@ -23,11 +23,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#include "tf2/transform_datatypes.h"
-#include "tf2_ros/buffer.h"
-#include "tf2/convert.h"
-#include "tf2/LinearMath/Transform.h"
-#include "tf2_ros/transform_listener.h"
+#include "nav2_util/get_robot_pose_client.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -43,7 +39,6 @@ public:
   CollisionChecker(
     std::shared_ptr<CostmapSubscriber> costmap_sub,
     std::shared_ptr<FootprintSubscriber> footprint_sub,
-    tf2_ros::Buffer & tf_buffer,
     std::string name = "collision_checker");
 
   ~CollisionChecker();
@@ -56,19 +51,13 @@ public:
 protected:
   double lineCost(int x0, int x1, int y0, int y1);
   double pointCost(int x, int y);
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const;
+  bool getRobotPose(geometry_msgs::msg::Pose & current_pose);
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
 
-  // Transform buffer
-  tf2_ros::Buffer & tf_buffer_;
-
-  // TF Frames
-  std::string global_frame_;
-  std::string robot_base_frame_;
-
   std::shared_ptr<Costmap2D> costmap_;
-  rclcpp::Node::SharedPtr node_;
+
   std::string name_;
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"collision_checker"};
   std::shared_ptr<CostmapSubscriber> costmap_sub_;
   std::shared_ptr<FootprintSubscriber> footprint_sub_;
 };

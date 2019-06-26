@@ -24,16 +24,18 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
+#include "nav2_msgs/srv/get_robot_pose.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2/transform_datatypes.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
 using namespace std::chrono_literals;
+using namespace std::placeholders;
 
 class RclCppFixture
 {
@@ -79,7 +81,7 @@ class TestCollisionChecker : public nav2_util::LifecycleNode
 {
 public:
   TestCollisionChecker(std::string name)
-  : LifecycleNode(name, "", false),
+  : LifecycleNode(name, "", true),
     global_frame_("map")
   {
     // Declare non-plugin specific costmap parameters
@@ -111,13 +113,10 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      costmap_sub_, footprint_sub_, *tf_buffer_);
+      costmap_sub_, footprint_sub_, get_name());
 
-    base_rel_map.transform = tf2::toMsg(tf2::Transform::getIdentity());
-    base_rel_map.child_frame_id = "base_link";
-    base_rel_map.header.frame_id = "map";
-    base_rel_map.header.stamp = now();
-    tf_buffer_->setTransform(base_rel_map, "collision_checker_test");
+    get_robot_pose_service_ = rclcpp_node_->create_service<nav2_msgs::srv::GetRobotPose>(
+      "GetRobotPose", std::bind(&TestCollisionChecker::get_robot_pose_callback, this, _1, _2, _3));
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
     // Add Static Layer
@@ -189,19 +188,12 @@ protected:
     y_ = y;
     yaw_ = theta;
 
-    geometry_msgs::msg::Pose pose;
-    pose.position.x = x_;
-    pose.position.y = y_;
-    pose.position.z = 0;
+    current_pose_.pose.position.x = x_;
+    current_pose_.pose.position.y = y_;
+    current_pose_.pose.position.z = 0;
     tf2::Quaternion q;
     q.setRPY(0, 0, yaw_);
-    pose.orientation = tf2::toMsg(q);
-
-    tf2::Transform transform;
-    tf2::fromMsg(pose, transform);
-    base_rel_map.transform = tf2::toMsg(transform);
-    base_rel_map.header.stamp = now();
-    tf_buffer_->setTransform(base_rel_map, "collision_checker_test");
+    current_pose_.pose.orientation = tf2::toMsg(q);
   }
 
   void publishFootprint()
@@ -253,16 +245,29 @@ protected:
     return costmap_msg;
   }
 
+  void get_robot_pose_callback(
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response)
+  {
+    response->is_pose_valid = true;
+    response->pose = current_pose_;
+  }
+
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
-  std::string global_frame_;
-  geometry_msgs::msg::TransformStamped base_rel_map;
-  double x_, y_, yaw_;
+
   nav2_costmap_2d::LayeredCostmap * layers_{nullptr};
+  std::string global_frame_;
+  double x_, y_, yaw_;
+  geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
+
 };
 
 

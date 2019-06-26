@@ -38,7 +38,7 @@ CostmapSubscriber::CostmapSubscriber(
   node_logging_(node_logging),
   topic_name_(topic_name)
 {
-  costmap_sub_ = rclcpp::create_subscription<nav2_msgs::msg::Costmap>(node_topics_, topic_name,
+  costmap_sub_ = rclcpp::create_subscription<nav2_msgs::msg::Costmap>(node_topics_, topic_name_,
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&CostmapSubscriber::costmap_callback, this, std::placeholders::_1));
 }

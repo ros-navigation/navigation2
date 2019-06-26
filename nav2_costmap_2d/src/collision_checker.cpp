@@ -14,9 +14,11 @@
 
 #include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_util/line_iterator.hpp"
 #include "nav2_costmap_2d/exceptions.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_util/line_iterator.hpp"
+
+using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
@@ -24,16 +26,11 @@ namespace nav2_costmap_2d
 CollisionChecker::CollisionChecker(
   std::shared_ptr<CostmapSubscriber> costmap_sub,
   std::shared_ptr<FootprintSubscriber> footprint_sub,
-  tf2_ros::Buffer & tf_buffer,
   std::string name)
-: tf_buffer_(tf_buffer),
-  name_(name),
+: name_(name),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
-{
-  global_frame_ = std::string("map");
-  robot_base_frame_ = std::string("base_link");
-}
+{}
 
 CollisionChecker::~CollisionChecker() {}
 
@@ -153,32 +150,15 @@ double CollisionChecker::pointCost(int x, int y)
 }
 
 bool
-CollisionChecker::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
+CollisionChecker::getRobotPose(geometry_msgs::msg::Pose & current_pose)
 {
-  tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
-  geometry_msgs::msg::PoseStamped robot_pose;
-  tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
+  auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
 
-  robot_pose.header.frame_id = robot_base_frame_;
-  robot_pose.header.stamp = rclcpp::Time();
-
-  // get the global pose of the robot
-  try {
-    tf_buffer_.transform(robot_pose, global_pose, global_frame_);
-  } catch (tf2::LookupException & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger(name_),
-      "No Transform available Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ConnectivityException & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger(name_),
-      "Connectivity Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ExtrapolationException & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger(name_),
-      "Extrapolation Error looking up robot pose: %s\n", ex.what());
+  auto result = get_robot_pose_client_.invoke(request, 1s);
+  if (!result.get()->is_pose_valid) {
     return false;
   }
-
+  current_pose = result.get()->pose.pose;
   return true;
 }
 
@@ -186,14 +166,14 @@ void CollisionChecker::unorientFootprint(
   const std::vector<geometry_msgs::msg::Point> & oriented_footprint,
   std::vector<geometry_msgs::msg::Point> & reset_footprint)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::Pose current_pose;
   if (!getRobotPose(current_pose)) {
     throw CollisionCheckerException("Robot pose unavailable.");
   }
 
-  double x = current_pose.pose.position.x;
-  double y = current_pose.pose.position.y;
-  double theta = tf2::getYaw(current_pose.pose.orientation);
+  double x = current_pose.position.x;
+  double y = current_pose.position.y;
+  double theta = tf2::getYaw(current_pose.orientation);
 
   Footprint temp;
   transformFootprint(-x, -y, 0, oriented_footprint, temp);
