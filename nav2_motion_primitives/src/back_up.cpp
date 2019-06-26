@@ -56,14 +56,13 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 Status BackUp::onCycleUpdate()
 {
   geometry_msgs::msg::Pose current_pose;
-
   if (!collision_checker_->getRobotPose(current_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Robot pose is not available.");
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
-  double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
-  double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
+  double diff_x = initial_pose_.position.x - current_pose.position.x;
+  double diff_y = initial_pose_.position.y - current_pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   if (distance >= abs(command_x_)) {
@@ -82,9 +81,8 @@ Status BackUp::onCycleUpdate()
   pose2d.theta = tf2::getYaw(current_pose.orientation);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
-    cmd_vel.linear.x = 0;
-    robot_->sendVelocity(cmd_vel);
-    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute back up without collision.");
+    stopRobot();
+    RCLCPP_INFO(node_->get_logger(), "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
   }
 

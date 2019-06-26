@@ -101,9 +101,8 @@ Status Spin::timedSpin()
     cmd_vel.angular.z * (1 / cycle_frequency_);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
-    cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);
-    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute spin without collision.");
+    stopRobot();
+    RCLCPP_INFO(node_->get_logger(), "Collision Ahead -Exiting Spin ");
     return Status::SUCCEEDED;
   }
 
