@@ -91,8 +91,6 @@ StaticLayer::onInitialize()
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
-
-  current_ = true;
 }
 
 void
@@ -221,6 +219,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   width_ = size_x_;
   height_ = size_y_;
   has_updated_data_ = true;
+  current_ = true;
 }
 
 void
