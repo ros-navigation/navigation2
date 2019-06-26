@@ -233,7 +233,7 @@ DWBPublisher::publishCostGrid(
 
   sensor_msgs::msg::ChannelFloat32 totals;
   totals.name = "total_cost";
-  totals.values.resize(size_x * size_y);
+  totals.values.resize(size_x * size_y, 0.0);
 
   for (TrajectoryCritic::Ptr critic : critics) {
     unsigned int channel_index = cost_grid_pc.channels.size();
@@ -244,7 +244,7 @@ DWBPublisher::publishCostGrid(
     }
     double scale = critic->getScale();
     for (i = 0; i < size_x * size_y; i++) {
-      totals.values[i] = cost_grid_pc.channels[channel_index].values[i] * scale;
+      totals.values[i] += cost_grid_pc.channels[channel_index].values[i] * scale;
     }
   }
   cost_grid_pc.channels.push_back(totals);
