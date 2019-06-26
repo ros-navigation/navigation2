@@ -74,7 +74,13 @@ StaticLayer::onInitialize()
   getParameters();
 
   if (first_map_from_service_) {
+
     getMap();
+  } else {
+    nav_msgs::msg::OccupancyGrid empty_map;
+    // processMap updates the size of other costmap layers, so we have to call
+    // it, even if the map is 0x0
+    processMap(empty_map);
   }
 
   if (!first_map_only_) {
@@ -91,6 +97,7 @@ StaticLayer::onInitialize()
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
+  current_ = true;
 }
 
 void
@@ -219,7 +226,6 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   width_ = size_x_;
   height_ = size_y_;
   has_updated_data_ = true;
-  current_ = true;
 }
 
 void
@@ -263,6 +269,26 @@ void
 StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  if (update->y < static_cast<int32_t>(y_) ||
+      y_ + height_ < update->y + update->height ||
+      update->x < static_cast<int32_t>(x_) ||
+      x_ + width_ < update->x + update->width) {
+    RCLCPP_WARN(
+        node_->get_logger(),
+        "StaticLayer: Map update ignored. Exceeds bounds of static layer.\n"
+        "Static layer origin: %d, %d   bounds: %d X %d\n"
+        "Update origin: %d, %d   bounds: %d X %d",
+        x_, y_, width_, height_, update->x, update->y, update->width,
+        update->height);
+    return;
+  }
+
+  if (update->header.frame_id != map_frame_) {
+    RCLCPP_WARN(node_->get_logger(),
+                "StaticLayer: Map update ignored. Current map is in frame %s "
+                "but update was in frame %s",
+                map_frame_.c_str(), update->header.frame_id.c_str());
+  }
 
   unsigned int di = 0;
   for (unsigned int y = 0; y < update->height; y++) {
