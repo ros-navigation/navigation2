@@ -179,7 +179,7 @@ BtNavigator::navigateToPose()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_tasks::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
