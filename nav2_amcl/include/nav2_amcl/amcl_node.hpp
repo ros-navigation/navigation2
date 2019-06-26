@@ -32,7 +32,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/map_service_client.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav_msgs/srv/set_map.hpp"
@@ -80,15 +79,12 @@ protected:
   } amcl_hyp_t;
 
   // Map-related
-  void initMap();
   void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   void handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg);
   void createFreeSpaceVector();
   void freeMapDependentMemory();
-  nav2_util::MapServiceClient map_client_{"amcl"};
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
-  bool use_map_topic_{true};
   bool first_map_only_{true};
   bool first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
