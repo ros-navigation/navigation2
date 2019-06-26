@@ -45,8 +45,8 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
   command_x_ = command->target.x;
 
-  if (!robot_->getOdometry(initial_pose_)) {
-    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
+  if (!collision_checker_->getRobotPose(initial_pose_)) {
+    RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -55,10 +55,10 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
 Status BackUp::onCycleUpdate()
 {
-  auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
+  geometry_msgs::msg::Pose current_pose;
 
-  if (!robot_->getOdometry(current_odom_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
+  if (!collision_checker_->getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -77,9 +77,9 @@ Status BackUp::onCycleUpdate()
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
 
   geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_odom_pose->pose.pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
-  pose2d.y = current_odom_pose->pose.pose.position.y;
-  pose2d.theta = tf2::getYaw(current_odom_pose->pose.pose.orientation);
+  pose2d.x = current_pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
     cmd_vel.linear.x = 0;

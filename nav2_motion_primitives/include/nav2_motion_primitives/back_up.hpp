@@ -40,7 +40,7 @@ protected:
   double max_linear_vel_;
   double linear_acc_lim_;
 
-  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
+  geometry_msgs::msg::Pose initial_pose_;
   double command_x_;
 };
 

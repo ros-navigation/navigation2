@@ -76,33 +76,6 @@ Status Spin::timedSpin()
   // Output control command
   geometry_msgs::msg::Twist cmd_vel;
 
-  // TODO(orduno) #423 fixed speed
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.5;
-
-  geometry_msgs::msg::PoseStamped current_pose;
-
-  if (!collision_checker_->getRobotPose(current_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-    return Status::FAILED;
-  }
-
-  geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose.pose.position.x;
-  pose2d.y = current_pose.pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose.pose.orientation) +
-    cmd_vel.angular.z * (1 / cycle_frequency_);
-
-  if (!collision_checker_->isCollisionFree(pose2d)) {
-    cmd_vel.angular.z = 0.0;
-    robot_->sendVelocity(cmd_vel);
-    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute spin without collision.");
-    return Status::SUCCEEDED;
-  }
-
-  robot_->sendVelocity(cmd_vel);
-
   // TODO(orduno) #423 fixed time
   auto current_time = std::chrono::system_clock::now();
   if (current_time - start_time_ >= 6s) {  // almost 180 degrees
@@ -114,6 +87,26 @@ Status Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
+
+  geometry_msgs::msg::Pose current_pose;
+  if (!collision_checker_->getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return Status::FAILED;
+  }
+
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.position.x;
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation) +
+    cmd_vel.angular.z * (1 / cycle_frequency_);
+
+  if (!collision_checker_->isCollisionFree(pose2d)) {
+    cmd_vel.angular.z = 0.0;
+    robot_->sendVelocity(cmd_vel);
+    RCLCPP_ERROR(node_->get_logger(), "Cannot safely execute spin without collision.");
+    return Status::SUCCEEDED;
+  }
+
   robot_->sendVelocity(cmd_vel);
 
   return Status::RUNNING;
