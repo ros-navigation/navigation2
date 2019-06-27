@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__GOAL_REACHED_CONDITION_HPP_
-#define NAV2_TASKS__GOAL_REACHED_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__IS_LOCALIZED_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__IS_LOCALIZED_CONDITION_HPP_
 
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
-#include "nav2_robot/robot.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_robot/robot.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
-class GoalReachedCondition : public BT::ConditionNode
+class IsLocalizedCondition : public BT::ConditionNode
 {
 public:
-  explicit GoalReachedCondition(const std::string & condition_name)
+  explicit IsLocalizedCondition(const std::string & condition_name)
   : BT::ConditionNode(condition_name), initialized_(false)
   {
   }
 
-  GoalReachedCondition() = delete;
+  IsLocalizedCondition() = delete;
 
-  ~GoalReachedCondition()
+  ~IsLocalizedCondition()
   {
     cleanup();
   }
@@ -47,16 +48,15 @@ public:
       initialize();
     }
 
-    if (goalReached()) {
-      return BT::NodeStatus::SUCCESS;
-    }
-    return BT::NodeStatus::FAILURE;
+    return isLocalized() ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
   }
 
   void initialize()
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-    node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+    node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
+    node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
+    node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
     robot_ = std::make_unique<nav2_robot::Robot>(
       node_->get_node_base_interface(),
       node_->get_node_topics_interface(),
@@ -65,8 +65,7 @@ public:
     initialized_ = true;
   }
 
-  bool
-  goalReached()
+  bool isLocalized()
   {
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
@@ -75,16 +74,19 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
-    // TODO(mhpanah): replace this with a function
-    blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
-    double dx = goal_->pose.position.x - current_pose->pose.pose.position.x;
-    double dy = goal_->pose.position.y - current_pose->pose.pose.position.y;
 
-    if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
+    // Naive way to check if the robot has been localized
+    // TODO(mhpanah): come up with a method to properly check particles convergence
+    if (current_pose->pose.covariance[cov_x_] < x_tol_ &&
+      current_pose->pose.covariance[cov_y_] < y_tol_ &&
+      current_pose->pose.covariance[cov_a_] < rot_tol_)
+    {
+      RCLCPP_INFO(node_->get_logger(), "AutoLocalization Passed!");
+      blackboard()->set<bool>("initial_pose_received", true);  // NOLINT
       return true;
-    } else {
-      return false;
     }
+
+    return false;
   }
 
 protected:
@@ -94,14 +96,19 @@ protected:
   }
 
 private:
+  static const int cov_x_ = 0;
+  static const int cov_y_ = 7;
+  static const int cov_a_ = 35;
+
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<nav2_robot::Robot> robot_;
-  geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;
-  double goal_reached_tol_;
+  double x_tol_;
+  double y_tol_;
+  double rot_tol_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__GOAL_REACHED_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__IS_LOCALIZED_CONDITION_HPP_

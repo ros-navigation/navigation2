@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-#define NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 
 #include <memory>
 #include <string>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_behavior_tree/bt_action_node.hpp"
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
@@ -52,6 +52,6 @@ private:
   bool first_time_{true};
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_

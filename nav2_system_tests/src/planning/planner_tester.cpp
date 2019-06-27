@@ -39,9 +39,9 @@ PlannerTester::PlannerTester()
 {
   // The client used to invoke the services of the global planner (ComputePathToPose)
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-  planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(temp_node);
+  planner_client_ = std::make_unique<nav2_behavior_tree::ComputePathToPoseTaskClient>(temp_node);
 
-  if (!planner_client_->waitForServer(nav2_tasks::defaultServerTimeout)) {
+  if (!planner_client_->waitForServer(nav2_behavior_tree::defaultServerTimeout)) {
     RCLCPP_ERROR(this->get_logger(), "Planner not running");
     throw std::runtime_error("Planner not running");
   }
@@ -188,7 +188,7 @@ void PlannerTester::startCostmapServer(std::string serviceName)
 }
 
 bool PlannerTester::defaultPlannerTest(
-  nav2_tasks::ComputePathToPoseResult::SharedPtr & path,
+  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path,
   const double /*deviation_tolerance*/)
 {
   if (!costmap_set_) {
@@ -198,7 +198,7 @@ bool PlannerTester::defaultPlannerTest(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  auto goal = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
+  auto goal = std::make_shared<nav2_behavior_tree::ComputePathToPoseCommand>();
   auto costmap_properties = costmap_->get_properties();
 
   if (using_fake_costmap_) {
@@ -262,8 +262,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  auto goal = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
-  auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
+  auto goal = std::make_shared<nav2_behavior_tree::ComputePathToPoseCommand>();
+  auto path = std::make_shared<nav2_behavior_tree::ComputePathToPoseResult>();
 
   unsigned int num_fail = 0;
   for (unsigned int test_num = 0; test_num < number_tests; ++test_num) {
@@ -300,8 +300,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
 bool PlannerTester::plannerTest(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
-  nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
+  const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
+  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path)
 {
   RCLCPP_DEBUG(this->get_logger(), "Getting the path from the planner");
 
@@ -344,8 +344,8 @@ void PlannerTester::publishRobotPosition(const geometry_msgs::msg::Point & posit
 }
 
 TaskStatus PlannerTester::sendRequest(
-  const nav2_tasks::ComputePathToPoseCommand::SharedPtr & goal,
-  nav2_tasks::ComputePathToPoseResult::SharedPtr & path)
+  const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
+  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path)
 {
   planner_client_->sendCommand(goal);
 
@@ -359,7 +359,7 @@ TaskStatus PlannerTester::sendRequest(
   }
 }
 
-bool PlannerTester::isCollisionFree(const nav2_tasks::ComputePathToPoseResult & path)
+bool PlannerTester::isCollisionFree(const nav2_behavior_tree::ComputePathToPoseResult & path)
 {
   // At each point of the path, check if the corresponding cell is free
 
@@ -391,19 +391,19 @@ bool PlannerTester::isCollisionFree(const nav2_tasks::ComputePathToPoseResult & 
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_tasks::ComputePathToPoseCommand & goal,
-  const nav2_tasks::ComputePathToPoseResult & path) const
+  const nav2_behavior_tree::ComputePathToPoseCommand & goal,
+  const nav2_behavior_tree::ComputePathToPoseResult & path) const
 {
   return isWithinTolerance(
-    robot_position, goal, path, 0.0, nav2_tasks::ComputePathToPoseResult());
+    robot_position, goal, path, 0.0, nav2_behavior_tree::ComputePathToPoseResult());
 }
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_tasks::ComputePathToPoseCommand & goal,
-  const nav2_tasks::ComputePathToPoseResult & path,
+  const nav2_behavior_tree::ComputePathToPoseCommand & goal,
+  const nav2_behavior_tree::ComputePathToPoseResult & path,
   const double /*deviationTolerance*/,
-  const nav2_tasks::ComputePathToPoseResult & /*reference_path*/) const
+  const nav2_behavior_tree::ComputePathToPoseResult & /*reference_path*/) const
 {
   // TODO(orduno) #443 Work in progress, for now we only check that the path start matches the
   //              robot start location and that the path end matches the goal.
@@ -440,7 +440,7 @@ bool PlannerTester::sendCancel()
   return false;
 }
 
-void PlannerTester::printPath(const nav2_tasks::ComputePathToPoseResult & path) const
+void PlannerTester::printPath(const nav2_behavior_tree::ComputePathToPoseResult & path) const
 {
   int index = 0;
   for (auto pose : path.poses) {

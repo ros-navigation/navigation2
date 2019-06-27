@@ -66,7 +66,7 @@ TaskStatus execute(path)
       std::this_thread::sleep_for(10ms);
     }
 
-  nav2_tasks::FollowPathResult result;
+  nav2_behavior_tree::FollowPathResult result;
   setResult(result);
 
   return TaskStatus::SUCCEEDED;

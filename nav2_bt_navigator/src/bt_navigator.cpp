@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 
-#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -179,20 +179,20 @@ BtNavigator::navigateToPose()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_tasks::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
 
   switch (rc) {
-    case nav2_tasks::BtStatus::SUCCEEDED:
+    case nav2_behavior_tree::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
       action_server_->succeeded_current();
       break;
 
-    case nav2_tasks::BtStatus::FAILED:
+    case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
       action_server_->abort_all();
       break;
 
-    case nav2_tasks::BtStatus::CANCELED:
+    case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       action_server_->cancel_all();
       // Reset the BT so that it can be run again in the future

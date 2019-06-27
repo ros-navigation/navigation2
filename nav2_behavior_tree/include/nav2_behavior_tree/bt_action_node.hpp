@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__BT_ACTION_NODE_HPP_
-#define NAV2_TASKS__BT_ACTION_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -22,7 +22,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 template<class ActionT>
@@ -197,6 +197,6 @@ protected:
   std::chrono::milliseconds node_loop_timeout_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__BT_ACTION_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_

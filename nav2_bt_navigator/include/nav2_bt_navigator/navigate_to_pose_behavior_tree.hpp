@@ -19,15 +19,15 @@
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
-#include "nav2_tasks/behavior_tree_engine.hpp"
-#include "nav2_tasks/clear_entirely_costmap_service_client.hpp"
+#include "nav2_behavior_tree/behavior_tree_engine.hpp"
+#include "nav2_behavior_tree/clear_entirely_costmap_service_client.hpp"
 #include "nav2_util/global_localization_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_bt_navigator
 {
 
-class NavigateToPoseBehaviorTree : public nav2_tasks::BehaviorTreeEngine
+class NavigateToPoseBehaviorTree : public nav2_behavior_tree::BehaviorTreeEngine
 {
 public:
   NavigateToPoseBehaviorTree();

@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
+#include "nav2_behavior_tree/compute_path_to_pose_task.hpp"
 
 namespace nav2_system_tests
 {
@@ -28,11 +28,11 @@ public:
   DummyPlanner();
   ~DummyPlanner();
 
-  nav2_tasks::TaskStatus computePathToPose(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
+  nav2_behavior_tree::TaskStatus computePathToPose(
+    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr command);
 
 private:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+  std::unique_ptr<nav2_behavior_tree::ComputePathToPoseTaskServer> task_server_;
 };
 
 }  // namespace nav2_system_tests

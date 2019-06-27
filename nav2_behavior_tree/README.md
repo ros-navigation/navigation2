@@ -2,14 +2,14 @@
 
 A *task* is an abstraction roughly modeled after ROS1's SimpleActionClient/Server (which is not yet available in ROS2). A *task client* issues a command to *task server*, which receives the command, performs a (typically long-running) task, and asynchronously returns a result to the client. The task client may cancel the task during its execution. After cancellation or completion, the task client may issue another task to the task server.  
 
-The **nav2_tasks** library defines:
+The **nav2_behavior_tree** library defines:
 
-* [TaskServer](include/nav2_tasks/task_server.hpp) and [TaskClient](include/nav2_tasks/task_client.hpp) templates which are used as base classes to implement task servers and their associated task clients
-* A few derived classes, such as [ComputePathToPoseTask](include/nav2_tasks/compute_path_to_pose_task.hpp), that define specific task clients and servers
+* [TaskServer](include/nav2_behavior_tree/task_server.hpp) and [TaskClient](include/nav2_behavior_tree/task_client.hpp) templates which are used as base classes to implement task servers and their associated task clients
+* A few derived classes, such as [ComputePathToPoseTask](include/nav2_behavior_tree/compute_path_to_pose_task.hpp), that define specific task clients and servers
 
 For convenience the nav_tasks library also provides:
-* A [ServiceClient](include/nav2_tasks/service_client.hpp) template used to define clients for ROS2 services
-* A couple specific service client classes, such as [MapServiceClient](include/nav2_tasks/map_service_client.hpp) that use the ServiceClient template
+* A [ServiceClient](include/nav2_behavior_tree/service_client.hpp) template used to define clients for ROS2 services
+* A couple specific service client classes, such as [MapServiceClient](include/nav2_behavior_tree/map_service_client.hpp) that use the ServiceClient template
 
 ## Overview
 
@@ -26,7 +26,7 @@ One can define additional tasks using the TaskClient and TaskSever templates. To
 For example, to define a new task, named *DoSomething*, that takes a String as input and an Empty message as a result, 
 
 ```C++
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 using DoSomethingCommand = std_msgs::msg::String;
@@ -47,18 +47,18 @@ inline const char * getTaskName<DoSomethingCommand, DoSomethingResult>()
 Then, to implement the task server, a derived class inherits from this newly-defined task type and overrides the execute() method. For example,
 
 ```C++
-class DoSomethingImplementation : public nav2_tasks::DoSomethingTaskServer
+class DoSomethingImplementation : public nav2_behavior_tree::DoSomethingTaskServer
 {
 public:
   DoSomethingImplementation();
   ~DoSomethingImplementation();
 
-  nav2_tasks::TaskStatus execute(
-    const nav2_tasks::DoSomethingCommand::SharedPtr command) override;
+  nav2_behavior_tree::TaskStatus execute(
+    const nav2_behavior_tree::DoSomethingCommand::SharedPtr command) override;
 };
 
 TaskStatus
-DoSomethingImplementation::execute(const nav2_tasks::DoSomethingCommand::SharedPtr command)
+DoSomethingImplementation::execute(const nav2_behavior_tree::DoSomethingCommand::SharedPtr command)
 {  
   for (;;) {
     
@@ -73,7 +73,7 @@ DoSomethingImplementation::execute(const nav2_tasks::DoSomethingCommand::SharedP
     
     // If we've successfully completed the task, return the result
     if (done) {
-      nav2_tasks::DoSomethingResult result; 
+      nav2_behavior_tree::DoSomethingResult result; 
       
       // TODO: Set fields in the result message, if any
       
