@@ -19,9 +19,6 @@
 
 int main(int argc, char ** argv)
 {
-  using namespace rclcpp::executors;
-  using namespace rclcpp::executor;
-
   rclcpp::init(argc, argv);
 
   auto planner = std::make_shared<nav2_navfn_planner::NavfnPlanner>();

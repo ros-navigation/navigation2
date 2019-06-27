@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -72,14 +73,13 @@ std::unique_ptr<rclcpp::executor::Executor> NavfnPlanner::get_executor()
   //              for a single node. Replace the double-threaded executor with a custom
   //              async service executor.
 
-  using namespace rclcpp::executors;
-  using namespace rclcpp::executor;
-
   const bool yield_before_execute = true;
   const unsigned number_of_threads = 2;
 
-  auto exec = std::make_unique<MultiThreadedExecutor>(ExecutorArgs(),
+  auto exec = std::make_unique<rclcpp::executors::MultiThreadedExecutor>(
+    rclcpp::executor::ExecutorArgs(),
     number_of_threads, yield_before_execute);
+
   exec->add_node(this->get_node_base_interface());
 
   return std::move(exec);
@@ -100,9 +100,9 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
     rclcpp::callback_group::CallbackGroupType::Reentrant);
 
   costmap_client_ = std::make_unique<nav2_util::CostmapServiceClient>(node,
-    async_services_group_);
+      async_services_group_);
   get_robot_pose_client_ = std::make_unique<nav2_util::GetRobotPoseClient>(node,
-    async_services_group_);
+      async_services_group_);
 
   // Create a planner based on the new costmap size
   getCostmap(costmap_);

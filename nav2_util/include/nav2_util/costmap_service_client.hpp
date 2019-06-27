@@ -26,13 +26,15 @@ namespace nav2_util
 class CostmapServiceClient : public ServiceClient<nav2_msgs::srv::GetCostmap>
 {
 public:
-  explicit CostmapServiceClient(rclcpp::Node::SharedPtr node,
+  explicit CostmapServiceClient(
+    rclcpp::Node::SharedPtr node,
     rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
   : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node, group)
   {
   }
 
-  explicit CostmapServiceClient(rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  explicit CostmapServiceClient(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr)
   : ServiceClient<nav2_msgs::srv::GetCostmap>("GetCostmap", node, group)
   {
