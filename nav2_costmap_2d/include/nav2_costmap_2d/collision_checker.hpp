@@ -37,29 +37,29 @@ class CollisionChecker
 {
 public:
   CollisionChecker(
-    std::shared_ptr<CostmapSubscriber> costmap_sub,
-    std::shared_ptr<FootprintSubscriber> footprint_sub,
+    CostmapSubscriber & costmap_sub,
+    FootprintSubscriber & footprint_sub,
     std::string name = "collision_checker");
 
   ~CollisionChecker();
 
-  double scorePose(
-    const geometry_msgs::msg::Pose2D & pose);
-  bool isCollisionFree(
-    const geometry_msgs::msg::Pose2D & pose);
+  // Returns the obstacle footprint score for a particular pose
+  double scorePose(const geometry_msgs::msg::Pose2D & pose);
+  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
 
 protected:
-  double lineCost(int x0, int x1, int y0, int y1);
-  double pointCost(int x, int y);
+  double lineCost(int x0, int x1, int y0, int y1) const;
+  double pointCost(int x, int y) const;
   bool getRobotPose(geometry_msgs::msg::Pose & current_pose);
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
 
   std::shared_ptr<Costmap2D> costmap_;
 
+  // Name used for logging
   std::string name_;
   nav2_util::GetRobotPoseClient get_robot_pose_client_{"collision_checker"};
-  std::shared_ptr<CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<FootprintSubscriber> footprint_sub_;
+  CostmapSubscriber & costmap_sub_;
+  FootprintSubscriber & footprint_sub_;
 };
 }  // namespace nav2_costmap_2d
 
