@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_costmap_2d/collision_checker.hpp"
+
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/exceptions.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -24,8 +25,8 @@ namespace nav2_costmap_2d
 {
 
 CollisionChecker::CollisionChecker(
-  std::shared_ptr<CostmapSubscriber> costmap_sub,
-  std::shared_ptr<FootprintSubscriber> footprint_sub,
+  CostmapSubscriber & costmap_sub,
+  FootprintSubscriber & footprint_sub,
   std::string name)
 : name_(name),
   costmap_sub_(costmap_sub),
@@ -55,7 +56,7 @@ double CollisionChecker::scorePose(
   const geometry_msgs::msg::Pose2D & pose)
 {
   try {
-    costmap_ = costmap_sub_->getCostmap();
+    costmap_ = costmap_sub_.getCostmap();
   } catch (const std::runtime_error & e) {
     throw CollisionCheckerException(e.what());
   }
@@ -67,7 +68,7 @@ double CollisionChecker::scorePose(
   }
 
   Footprint footprint;
-  if (!footprint_sub_->getFootprint(footprint)) {
+  if (!footprint_sub_.getFootprint(footprint)) {
     throw CollisionCheckerException("Footprint not available.");
   }
 
@@ -118,7 +119,7 @@ double CollisionChecker::scorePose(
   return footprint_cost;
 }
 
-double CollisionChecker::lineCost(int x0, int x1, int y0, int y1)
+double CollisionChecker::lineCost(int x0, int x1, int y0, int y1) const
 {
   double line_cost = 0.0;
   double point_cost = -1.0;
@@ -134,7 +135,7 @@ double CollisionChecker::lineCost(int x0, int x1, int y0, int y1)
   return line_cost;
 }
 
-double CollisionChecker::pointCost(int x, int y)
+double CollisionChecker::pointCost(int x, int y) const
 {
   unsigned char cost = costmap_->getCost(x, y);
   // if the cell is in an obstacle the path is invalid or unknown
@@ -155,10 +156,10 @@ CollisionChecker::getRobotPose(geometry_msgs::msg::Pose & current_pose)
   auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
 
   auto result = get_robot_pose_client_.invoke(request, 1s);
-  if (!result.get()->is_pose_valid) {
+  if (!result->is_pose_valid) {
     return false;
   }
-  current_pose = result.get()->pose.pose;
+  current_pose = result->pose.pose;
   return true;
 }
 

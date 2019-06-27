@@ -29,6 +29,15 @@ CostmapSubscriber::CostmapSubscriber(
 {}
 
 CostmapSubscriber::CostmapSubscriber(
+  rclcpp::Node::SharedPtr node,
+  std::string & topic_name)
+: CostmapSubscriber(node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_logging_interface(),
+    topic_name)
+{}
+
+CostmapSubscriber::CostmapSubscriber(
   const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
   const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
   const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,

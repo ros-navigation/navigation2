@@ -113,7 +113,7 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      costmap_sub_, footprint_sub_, get_name());
+      *costmap_sub_, *footprint_sub_, get_name());
 
     get_robot_pose_service_ = rclcpp_node_->create_service<nav2_msgs::srv::GetRobotPose>(
       "GetRobotPose", std::bind(&TestCollisionChecker::get_robot_pose_callback, this, _1, _2, _3));
@@ -218,26 +218,24 @@ protected:
   {
     double resolution = costmap->getResolution();
 
+    double wx, wy;
+    costmap->mapToWorld(0, 0, wx, wy);
+
+    unsigned char * data = costmap->getCharMap();
+
     nav2_msgs::msg::Costmap costmap_msg;
     costmap_msg.header.frame_id = global_frame_;
     costmap_msg.header.stamp = now();
-
     costmap_msg.metadata.layer = "master";
     costmap_msg.metadata.resolution = resolution;
-
     costmap_msg.metadata.size_x = costmap->getSizeInCellsX();
     costmap_msg.metadata.size_y = costmap->getSizeInCellsY();
-
-    double wx, wy;
-    costmap->mapToWorld(0, 0, wx, wy);
     costmap_msg.metadata.origin.position.x = wx - resolution / 2;
     costmap_msg.metadata.origin.position.y = wy - resolution / 2;
     costmap_msg.metadata.origin.position.z = 0.0;
     costmap_msg.metadata.origin.orientation.w = 1.0;
-
     costmap_msg.data.resize(costmap_msg.metadata.size_x * costmap_msg.metadata.size_y);
 
-    unsigned char * data = costmap->getCharMap();
     for (unsigned int i = 0; i < costmap_msg.data.size(); i++) {
       costmap_msg.data[i] = data[i];
     }
