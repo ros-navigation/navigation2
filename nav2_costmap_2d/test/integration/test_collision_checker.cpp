@@ -113,7 +113,7 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, get_name());
+      *costmap_sub_, *footprint_sub_, get_robot_pose_client_, get_name());
 
     get_robot_pose_service_ = rclcpp_node_->create_service<nav2_msgs::srv::GetRobotPose>(
       "GetRobotPose", std::bind(&TestCollisionChecker::get_robot_pose_callback, this, _1, _2, _3));
@@ -256,6 +256,8 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"test_collision_checker"};
+
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;

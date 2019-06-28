@@ -39,6 +39,7 @@ public:
   CollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
+    nav2_util::GetRobotPoseClient & get_robot_pose_client,
     std::string name = "collision_checker");
 
   ~CollisionChecker();
@@ -60,7 +61,7 @@ protected:
 
   // Name used for logging
   std::string name_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"collision_checker"};
+  nav2_util::GetRobotPoseClient & get_robot_pose_client_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
 };
