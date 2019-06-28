@@ -80,6 +80,7 @@ protected:
   std::unique_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"motion_primitive"};
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
 
@@ -109,7 +110,7 @@ protected:
       node_, footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_);
+      *costmap_sub_, *footprint_sub_, get_robot_pose_client_);
   }
 
   void cleanup()
@@ -183,6 +184,18 @@ protected:
     cmd_vel.angular.z = 0.0;
 
     robot_->sendVelocity(cmd_vel);
+  }
+
+  bool getRobotPose(geometry_msgs::msg::Pose & current_pose)
+  {
+    auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
+
+    auto result = get_robot_pose_client_.invoke(request, 1s);
+    if (!result->is_pose_valid) {
+      return false;
+    }
+    current_pose = result->pose.pose;
+    return true;
   }
 };
 

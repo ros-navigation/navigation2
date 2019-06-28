@@ -89,7 +89,7 @@ Status Spin::timedSpin()
   cmd_vel.angular.z = 0.5;
 
   geometry_msgs::msg::Pose current_pose;
-  if (!collision_checker_->getRobotPose(current_pose)) {
+  if (!getRobotPose(current_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
@@ -102,7 +102,7 @@ Status Spin::timedSpin()
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node_->get_logger(), "Collision Ahead -Exiting Spin ");
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin ");
     return Status::SUCCEEDED;
   }
 

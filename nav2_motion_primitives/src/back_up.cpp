@@ -45,7 +45,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
   command_x_ = command->target.x;
 
-  if (!collision_checker_->getRobotPose(initial_pose_)) {
+  if (!getRobotPose(initial_pose_)) {
     RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
   }
@@ -56,7 +56,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 Status BackUp::onCycleUpdate()
 {
   geometry_msgs::msg::Pose current_pose;
-  if (!collision_checker_->getRobotPose(current_pose)) {
+  if (!getRobotPose(current_pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
