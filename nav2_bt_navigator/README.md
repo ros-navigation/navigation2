@@ -24,11 +24,11 @@ A Behavior Tree consists of control flow nodes, such as fallback, sequence, para
 
 ## Navigation Behavior Trees
 
-The BT Navigator package has three sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml), [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml), and [auto_localization_w_replanning_and_recovery.xml](behavior_trees/auto_localization_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user needs.
+The BT Navigator package has three sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml), [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml), and [auto_localization_w_replanning_and_recovery.xml](behavior_trees/auto_localization_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
 
 ### Navigate with Replanning
 
-[navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz and following the path at a rate of 10Hz.
+[navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default local planner, the nav2_dwb_controller, implements path following at a rate of 10Hz.
 
 ```XML
 <root main_tree_to_execute="MainTree">
@@ -60,7 +60,8 @@ Navigate with replanning is composed of the following custom decorator, conditio
 
 The graphical version of this Behavior Tree:
 
-<img src="./doc/navigation_w_replanning.png" title="Navigation with replanning Behavior Tree" align="middle">
+<img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
+<br/>
 
 The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal.
 
@@ -69,14 +70,14 @@ In this section, the recovery node is being introduced to the navigation package
 
 Recovery node is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
 
-<img src="./doc/RecoveryNode.png" title="" width="40%" align="middle">
+<img src="./doc/recovery_node.png" title="" width="40%" align="middle">
 <br/>
 
 ### Navigate with replanning and simple recovery actions
 
 With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below. 
 
-<img src="./doc/navigation_w_replanning_and_recovery.png" title="" width="95%" align="middle">
+<img src="./doc/parallel_w_recovery.png" title="" width="95%" align="middle">
 <br/>
 
 
@@ -140,9 +141,9 @@ Image below depicts the graphical version of the complete Navigation Task with A
 <img src="./doc/AutoLocalization_w_recovery_parallel.png" title="Navigation Behavior Tree with AutoLocalization, Recovery, and Planning & Control" width="70%" align="middle">
 
 ## Future Work
-Currently, in our navigation stack global recoverable actions are implemented.  However, a better approach is to implement both local and global recovery actions.  The local recovery actions would be responsible for recovering each module locally and if that fails the failure should propagate up to the tree to invoke global recovery actions. Global recovery actions could be recovery actions such as re-initializing system, re-calibrating robot, bringing the system to a good known state, etc.  A simple global and local recoverable node is depicted in the diagram below.
+Scope-based failure handling: Utilizing Behavior Trees with a recovery node allows one to handle failures at multiple scopes. With this capability, any action in a large system can be constructed with specific recovery actions suitable for that action. Thus, failures in these actions can be handled locally within the scope. With such design, a system can be recovered at multiple levels based on the nature of the failure. Higher level recovery actions could be recovery actions such as re-initializing the system, re-calibrating the robot, bringing the system to a good known state, etc.  Currently, in the navigation stack, multi-scope recovery actions are not implemented. The figure below highlights a simple multi-scope recovery handling for the navigation task.
 
-<img src="./doc/navigate_w_replanning_and_local_recovery.png" title="" width="95%" align="middle">
+<img src="./doc/proposed_recovery.png" title="" width="95%" align="middle">
 <br/>
 
 ## Open Issues
