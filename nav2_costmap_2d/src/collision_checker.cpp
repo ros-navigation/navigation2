@@ -27,8 +27,10 @@ namespace nav2_costmap_2d
 CollisionChecker::CollisionChecker(
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
+  nav2_util::GetRobotPoseClient & get_robot_pose_client,
   std::string name)
 : name_(name),
+  get_robot_pose_client_(get_robot_pose_client),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
 {}
