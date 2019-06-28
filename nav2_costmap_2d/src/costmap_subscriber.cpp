@@ -49,7 +49,7 @@ CostmapSubscriber::CostmapSubscriber(
 {
   costmap_sub_ = rclcpp::create_subscription<nav2_msgs::msg::Costmap>(node_topics_, topic_name_,
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&CostmapSubscriber::costmap_callback, this, std::placeholders::_1));
+      std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
 }
 
 std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
@@ -91,7 +91,7 @@ void CostmapSubscriber::toCostmap2D()
   }
 }
 
-void CostmapSubscriber::costmap_callback(const nav2_msgs::msg::Costmap::SharedPtr msg)
+void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg)
 {
   costmap_msg_ = msg;
   if (!costmap_received_) {

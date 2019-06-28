@@ -53,7 +53,7 @@ protected:
   rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
 
   void toCostmap2D();
-  void costmap_callback(const nav2_msgs::msg::Costmap::SharedPtr msg);
+  void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
 
   std::shared_ptr<Costmap2D> costmap_;
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
