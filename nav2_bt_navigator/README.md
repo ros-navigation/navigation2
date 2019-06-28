@@ -24,7 +24,7 @@ A Behavior Tree consists of control flow nodes, such as fallback, sequence, para
 
 ## Navigation Behavior Trees
 
-The BT Navigator package has three sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml), [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml), and [auto_localization_w_replanning_and_recovery.xml](behavior_trees/auto_localization_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
+The BT Navigator package has two sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
 
 ### Navigate with Replanning
 
@@ -82,63 +82,6 @@ With the recovery node, simple recoverable navigation with replanning can be imp
 
 
 This tree is currently our default tree in the stack and the xml file is located here: [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).
-
-
-### AutoLocalization Behavior Tree
-**Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
-
-[auto_localization.xml](behavior_trees/auto_localization.xml) Allows differential type robot to automatically localize its initial position when Nav Goal command is given to the robot without the initial pose.
-
-
-Below is the `xml` representation of the tree.
-```XML
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <FallbackStar name="root_AutoLocalization">
-      <initialPoseReceived/>
-      <SequenceStar name="doSelfLocalization">
-        <RetryUntilSuccesful num_attempts="5" name="retry_client_request">
-          <globalLocalizationServiceRequest/>
-        </RetryUntilSuccesful>
-        <RetryUntilSuccesful num_attempts="10" name="retry_localization">
-          <Sequence>
-            <Fallback>
-              <IsLocalized/>
-              <SequenceStar>
-               <Spin/>
-               <BackUp/>
-               <Spin/>
-             </SequenceStar>
-            </Fallback>
-            <IsLocalized/>
-          </Sequence>
-        </RetryUntilSuccesful>
-      </SequenceStar>
-    </FallbackStar>
-  </BehaviorTree>
-</root>
-```
-
-Image below depicts the graphical version of this Behavior Tree:
-<img src="./doc/auto_localization.png" title="AutoLocalization branch of the Navigation Behavior Tree" width="60%" align="middle">
-
-AutoLocalization branch is composed of the following condition and action nodes:
-
-#### Condition Nodes
-* initialPoseReceived: Checks `initial_pose` topic to determine if the initial pose has been received. Upon completion, this node returns either Success or Failure.
-* isLocalized: Subscribes to `amcl_pose` and it checks the amcl pose covariance values for (x,y,rot) to determine if the robot is localized based on pre-defined tolerance. Upon completion, this node returns either Success or Failure.
-#### Action Nodes
-* globalLocalizationServiceRequest: Invokes a service call to amcl’s global localization to disperse particle cloud in free space of the map.
-* Spin: Rotates the robot by sending angular velocity commands. This node currently is time based; the control based method has not been implemented yet. It returns either Success, Failure, or Running.
-* BackUp: Backs up the robot by sending linear velocity commands in -x direction. This node currently is time based; the control based method has not been implemented yet. It returns either Success, Failure, or Running. Be advised that currently **obstacle avoidance** has not been integrated in the back up task yet.
-
-The AutoLocalization branch starts by first determining if the initial robot pose has been received or not. If there is an initial pose, it will simply return Success and the AutoLocalization will not proceed. On the other hand, if initial pose is not received, it will return failure which causes the doAutoLocalization SequenceStar node to invoke. In this branch, first, the globalLocalizationServiceRequest gets ticked to generate uniform particle cloud in the free space of the map. Then, robot starts to spin and back up while simultaneously isLocalized node checks to determine if the robot is localized. If the robot location cannot be determined, the retry node will attempt the AutoLocalization process with pre-determined number of tries. Once the robot is localized, the tree will return success. If the robot is not localized by attempting all the retries, AutoLocalization branch will return Failure.
-
-To run AutoLocalization branch, the `bt_navigator_params.yaml` file needs to be modified to include `auto_localization.xml` file. To run AutoLocalization with Recovery and Parallel Planning and Control, the `auto_localization_w_parallel_recovery.xml` needs to be included in the `bt_navigator_params.yaml` file.
-
-Image below depicts the graphical version of the complete Navigation Task with AutoLocalization, Recovery, Parallel Planning and Control Behavior Tree:
-
-<img src="./doc/AutoLocalization_w_recovery_parallel.png" title="Navigation Behavior Tree with AutoLocalization, Recovery, and Planning & Control" width="70%" align="middle">
 
 ## Future Work
 Scope-based failure handling: Utilizing Behavior Trees with a recovery node allows one to handle failures at multiple scopes. With this capability, any action in a large system can be constructed with specific recovery actions suitable for that action. Thus, failures in these actions can be handled locally within the scope. With such design, a system can be recovered at multiple levels based on the nature of the failure. Higher level recovery actions could be recovery actions such as re-initializing the system, re-calibrating the robot, bringing the system to a good known state, etc.  Currently, in the navigation stack, multi-scope recovery actions are not implemented. The figure below highlights a simple multi-scope recovery handling for the navigation task.
