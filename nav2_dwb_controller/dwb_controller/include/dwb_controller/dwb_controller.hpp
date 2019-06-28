@@ -23,13 +23,10 @@
 #include "dwb_core/dwb_local_planner.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
-<<<<<<< HEAD
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
-=======
 #include "nav2_util/robot_utils.hpp"
->>>>>>> changing the controller to use the nav2_utils velocity publisher wrapper as well
 
 namespace dwb_controller
 {

@@ -94,6 +94,7 @@ protected:
   {
     robot_state_.reset();
     action_server_.reset();
+    vel_publisher_.reset();
   }
 
   void execute()
@@ -156,7 +157,7 @@ protected:
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
 
-    vel_publisher_->sendVelocity(cmd_vel);
+    vel_publisher_->publishCommand(cmd_vel);
   }
 };
 

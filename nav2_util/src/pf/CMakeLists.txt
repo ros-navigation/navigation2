@@ -10,7 +10,6 @@ add_library(pf_lib SHARED
   eig3.c
   pf_draw.c
 )
-<<<<<<< HEAD
 
 install(TARGETS
   pf_lib
@@ -18,5 +17,3 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-=======
->>>>>>> resolve merge conflicts

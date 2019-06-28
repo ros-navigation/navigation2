@@ -4,12 +4,8 @@ add_library(${library_name} SHARED
   lifecycle_service_client.cpp
   string_utils.cpp
   lifecycle_utils.cpp
-<<<<<<< HEAD
   lifecycle_node.cpp
-  src/robot_utils.cpp
-=======
   robot_utils.cpp
->>>>>>> resolve merge conflicts
 )
 
 ament_target_dependencies(${library_name}
@@ -20,10 +16,7 @@ ament_target_dependencies(${library_name}
   nav_msgs
   geometry_msgs
   lifecycle_msgs
-<<<<<<< HEAD
   rclcpp_lifecycle
-=======
->>>>>>> resolve merge conflicts
 )
 
 add_subdirectory(pf)
@@ -36,7 +29,6 @@ add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
 target_link_libraries(lifecycle_bringup ${library_name})
-<<<<<<< HEAD
 
 install(TARGETS
   ${library_name}
@@ -45,5 +37,3 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-=======
->>>>>>> resolve merge conflicts

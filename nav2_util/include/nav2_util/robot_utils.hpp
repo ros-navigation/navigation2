@@ -30,31 +30,35 @@ namespace nav2_util
 class VelocityPublisher
 {
 public:
-  VelocityPublisher(rclcpp::Node::SharedPtr & node,
+  VelocityPublisher(
+    rclcpp::Node::SharedPtr & node,
     const std::string topic = std::string("/cmd_vel"));
 
-  void publishCommand(const geometry_msgs::msg::Twist& cmd_vel);
+  void publishCommand(const geometry_msgs::msg::Twist & cmd_vel);
 
 private:
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
 };
 
 class RobotStateHelper
 {
 public:
-  RobotStateHelper(rclcpp::Node::SharedPtr & node,
+  RobotStateHelper(
+    rclcpp::Node::SharedPtr & node,
     const std::string odom_topic = std::string("/odom"));
 
   bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
 
-  bool getCurrentPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
+  bool getCurrentPose(
+    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
     const bool use_topic = true);
 
 private:
   void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr robot_pose);
   void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr msg);
 
-  bool getGlobalLocalizerPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
+  bool getGlobalLocalizerPose(
+    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
   bool getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
 
 private:

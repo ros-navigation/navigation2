@@ -86,7 +86,7 @@ public:
 protected:
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
   }
 
 private:

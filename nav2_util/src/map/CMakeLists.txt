@@ -5,7 +5,6 @@ add_library(map_lib SHARED
   map_draw.c
   map_cspace.cpp
 )
-<<<<<<< HEAD
 
 install(TARGETS
   map_lib
@@ -13,5 +12,3 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-=======
->>>>>>> resolve merge conflicts

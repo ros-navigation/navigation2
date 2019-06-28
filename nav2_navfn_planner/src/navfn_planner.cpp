@@ -84,11 +84,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
-<<<<<<< HEAD
   auto node = shared_from_this();
-=======
-  robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(temp_node);
->>>>>>> changing all users of robot_ to their appropriate eq.
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",

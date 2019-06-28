@@ -74,7 +74,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_publisher_ = std::make_shared<nav2_util::VelocityPublisher>(temp_node);
+  vel_publisher_ = std::make_shared<nav2_util::VelocityPublisher>(rclcpp_node_);
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -90,7 +90,6 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
-  vel_pub_->on_activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -102,7 +101,6 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
-  vel_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -119,7 +117,7 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   // Release any allocated resources
   planner_.reset();
   odom_sub_.reset();
-  vel_pub_.reset();
+  vel_publisher_.reset();
   action_server_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
