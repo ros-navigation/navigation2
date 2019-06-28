@@ -59,8 +59,30 @@ AmclNode::AmclNode()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  declare_parameter("alpha1", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha2", rclcpp::ParameterValue(0.2));
+  auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+
+  descriptor.name = "alpha1";
+  descriptor.description = "This is the alpha1 parameter";
+  descriptor.additional_constraints = "These are additional constraints";
+  descriptor.read_only = false;
+  descriptor.floating_point_range.resize(1);
+  descriptor.floating_point_range[0].from_value = 0.0;
+  descriptor.floating_point_range[0].to_value = 1.0;
+  descriptor.floating_point_range[0].step = 0.1;
+  descriptor.integer_range.resize(0);
+  declare_parameter(descriptor.name, rclcpp::ParameterValue(0.2), descriptor);
+
+  descriptor.name = "alpha2";
+  descriptor.description = "This is the alpha2 parameter";
+  descriptor.additional_constraints = "These are additional constraints for alpha2";
+  descriptor.read_only = false;
+  descriptor.floating_point_range.resize(0);
+  descriptor.integer_range.resize(1);
+  descriptor.integer_range[0].from_value = 0;
+  descriptor.integer_range[0].to_value = 100;
+  descriptor.integer_range[0].step = 1;
+  declare_parameter(descriptor.name, rclcpp::ParameterValue(0.2), descriptor);
+
   declare_parameter("alpha3", rclcpp::ParameterValue(0.2));
   declare_parameter("alpha4", rclcpp::ParameterValue(0.2));
   declare_parameter("alpha5", rclcpp::ParameterValue(0.2));
