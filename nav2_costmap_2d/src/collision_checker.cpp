@@ -67,6 +67,19 @@ double CollisionChecker::scorePose(
     throw IllegalPoseException(name_, "Pose Goes Off Grid.");
   }
 
+  return footprintCost(getFootprint(pose));
+}
+
+void CollisionChecker::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
+{
+  if (!costmap_->worldToMap(wx, wy, mx, my)) {
+    RCLCPP_DEBUG(rclcpp::get_logger(name_), "Map Cell: [%d, %d]", mx, my);
+    throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
+  }
+}
+
+Footprint CollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
+{
   Footprint footprint;
   if (!footprint_sub_.getFootprint(footprint)) {
     throw CollisionCheckerException("Footprint not available.");
@@ -76,44 +89,34 @@ double CollisionChecker::scorePose(
   unorientFootprint(footprint, footprint_spec);
   transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
 
+  return footprint;
+}
+
+double CollisionChecker::footprintCost(const Footprint footprint)
+{
   // now we really have to lay down the footprint in the costmap_ grid
   unsigned int x0, x1, y0, y1;
-  double line_cost = 0.0;
   double footprint_cost = 0.0;
 
   // we need to rasterize each line in the footprint
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
     // get the cell coord of the first point
-    if (!costmap_->worldToMap(footprint[i].x, footprint[i].y, x0, y0)) {
-      RCLCPP_DEBUG(rclcpp::get_logger(name_), "Map Cell: [%d, %d]", x0, y0);
-      throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
-    }
+    worldToMap(footprint[i].x, footprint[i].y, x0, y0);
 
     // get the cell coord of the second point
-    if (!costmap_->worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
-      RCLCPP_DEBUG(rclcpp::get_logger(name_), "Map Cell: [%d, %d]", x1, y1);
-      throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
-    }
+    worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1);
 
-    line_cost = lineCost(x0, x1, y0, y1);
-    footprint_cost = std::max(line_cost, footprint_cost);
+    footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
   }
 
   // we also need to connect the first point in the footprint to the last point
   // get the cell coord of the last point
-  if (!costmap_->worldToMap(footprint.back().x, footprint.back().y, x0, y0)) {
-    RCLCPP_DEBUG(rclcpp::get_logger(name_), "Map Cell: [%d, %d]", x0, y0);
-    throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
-  }
+  worldToMap(footprint.back().x, footprint.back().y, x0, y0);
 
   // get the cell coord of the first point
-  if (!costmap_->worldToMap(footprint.front().x, footprint.front().y, x1, y1)) {
-    RCLCPP_DEBUG(rclcpp::get_logger(name_), "Map Cell: [%d, %d]", x1, y1);
-    throw IllegalPoseException(name_, "Footprint Goes Off Grid.");
-  }
+  worldToMap(footprint.front().x, footprint.front().y, x1, y1);
 
-  line_cost = lineCost(x0, x1, y0, y1);
-  footprint_cost = std::max(line_cost, footprint_cost);
+  footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
 
   // if all line costs are legal... then we can return that the footprint is legal
   return footprint_cost;

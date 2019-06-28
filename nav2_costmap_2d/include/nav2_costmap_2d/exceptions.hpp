@@ -46,7 +46,6 @@ class CollisionCheckerException : public std::runtime_error
 public:
   explicit CollisionCheckerException(const std::string description)
   : std::runtime_error(description) {}
-  typedef std::shared_ptr<CollisionCheckerException> Ptr;
 };
 
 /**

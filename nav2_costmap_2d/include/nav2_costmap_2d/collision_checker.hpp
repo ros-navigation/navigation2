@@ -52,6 +52,9 @@ protected:
   double pointCost(int x, int y) const;
   bool getRobotPose(geometry_msgs::msg::Pose & current_pose);
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
+  void worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
+  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
+  double footprintCost(const Footprint footprint);
 
   std::shared_ptr<Costmap2D> costmap_;
 
