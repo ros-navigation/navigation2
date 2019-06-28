@@ -82,7 +82,7 @@ Status BackUp::onCycleUpdate()
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
     stopRobot();
-    RCLCPP_INFO(node_->get_logger(), "Collision Ahead - Exiting BackUp");
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
   }
 
