@@ -103,19 +103,13 @@ protected:
         std::bind(&MotionPrimitive::execute, this));
 
     costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      costmap_topic);
+      node_, costmap_topic);
 
     footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      footprint_topic);
+      node_, footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      costmap_sub_, footprint_sub_);
+      *costmap_sub_, *footprint_sub_);
   }
 
   void cleanup()

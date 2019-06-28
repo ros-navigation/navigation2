@@ -129,9 +129,11 @@ private:
   bool active_;
   bool always_send_full_costmap_;
 
+  // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
   rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
     costmap_update_pub_;
+  // Publisher for raw costmap values as msg::Costmap from layered costmap
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
