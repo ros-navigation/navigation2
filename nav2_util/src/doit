@@ -1,9 +1,0 @@
-
-../../build/nav2_util/src/dump_params --node_names="map_server,amcl,world_model,dwb_controller,navfn_planner,local_costmap/local_costmap,global_costmap/global_costmap,lifecycle_manager" --format=yaml > 1.yaml
-
-../../build/nav2_util/src/dump_params --node_names="map_server,amcl,world_model,dwb_controller,navfn_planner,local_costmap/local_costmap,global_costmap/global_costmap,lifecycle_manager" --format=yaml --verbose > 2.yaml
-
-../../build/nav2_util/src/dump_params --node_names="map_server,amcl,world_model,dwb_controller,navfn_planner,local_costmap/local_costmap,global_costmap/global_costmap,lifecycle_manager" --format=md > 1.md
-
-../../build/nav2_util/src/dump_params --node_names="map_server,amcl,world_model,dwb_controller,navfn_planner,local_costmap/local_costmap,global_costmap/global_costmap,lifecycle_manager" --format=md --verbose > 2.md
-
