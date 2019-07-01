@@ -191,7 +191,11 @@ In this tutorial we will be using the **master**.
     sudo rosdep init
     rosdep update
 
-*Note*: If `sudo resdep init` doesn't work, use `sudo -E rosdep init`.
+*Note*: If `sudo rosdep init` doesn't work, use `sudo -E rosdep init`.
+
+*If you see an error message saying "default source list file already exists", you need to remove that file first and run `rosdep init` again. You can delete the file by typing,
+
+    sudo rm -rf /etc/ros/rosdep/source.list.d/*
 
 **Install dependencies using rosdep**
 
@@ -433,8 +437,6 @@ Now, we know all the packages and ROS tools we need to use the Navigation stack 
 
 Open a new terminal and open your .bashrc file which is located in your home directory. You can use any one of your favorite text editors, just remember to have  super user rights to be able to modify the file. I will use gedit to edit the file.
 
-    cd ..
-    cd ..
     sudo gedit ~/.bashrc
 
 Add the following lines to the end of the file
