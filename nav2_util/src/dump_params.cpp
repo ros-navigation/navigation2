@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -121,6 +122,15 @@ get_param_descriptors_for_node(
   return result->descriptors;
 }
 
+// A local version to avoid trailing zeros
+template<typename T>
+static std::string to_string(const T a_value)
+{
+  std::ostringstream out;
+  out << a_value;
+  return out.str();
+}
+
 static void
 print_yaml(
   std::string node_name, std::vector<std::string> & param_names,
@@ -131,32 +141,6 @@ print_yaml(
   std::cout << "  ros__parameters:" << std::endl;
 
   for (unsigned i = 0; i < param_names.size(); i++) {
-    if (verbose) {
-      // Use a field width wide enough for all of the headers
-      auto fw = 24;
-      std::cout << "\n";
-      std::cout << "    # " << std::left << std::setw(fw) << "description: " <<
-        param_descriptors[i].description << "\n";
-      std::cout << "    # " << std::left << std::setw(fw) << "additional_constraints: " <<
-        param_descriptors[i].additional_constraints << "\n";
-      std::cout << "    # " << std::left << std::setw(fw) << "read_only: " <<
-      (param_descriptors[i].read_only ? "True" : "False") << "\n";
-
-      if (param_descriptors[i].floating_point_range.size()) {
-        auto range = param_descriptors[i].floating_point_range[0];
-        std::cout << "    # " << std::left << std::setw(fw) << "Floating point range: ";
-        std::cout << range.from_value << ";"
-          << range.to_value << ";"
-          << range.step << "\n";
-      } else if (param_descriptors[i].integer_range.size()) {
-        auto range = param_descriptors[i].integer_range[0];
-        std::cout << "    # " << std::left << std::setw(fw) << "Integer range: ";
-        std::cout << range.from_value << ";"
-          << range.to_value << ";"
-          << range.step << "\n";
-      }
-    }
-
     std::function<std::string(void)> pf;
 
     switch (param_values[i].type) {
@@ -164,29 +148,29 @@ print_yaml(
         pf = []() {return "NOT_SET";};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:            // bool
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:
         pf = [param_values, i]() {return param_values[i].bool_value ? "True" : "False";};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:            // int64
+      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:
         pf = [param_values, i]() {return std::to_string(param_values[i].integer_value);};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:            // float64
-        pf = [param_values, i]() {return std::to_string(param_values[i].double_value);};
+      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:
+        pf = [param_values, i]() {return to_string(param_values[i].double_value);};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:            // string
+      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:
         pf = [param_values, i]() {
             return std::string("\"") + param_values[i].string_value + std::string("\"");
           };
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:        // byte[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:        // bool[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:    // int64[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:    // float64[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:    // string[]
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
         pf = [param_values, i]() {
             std::stringstream stream;
             stream << "[";
@@ -220,7 +204,40 @@ print_yaml(
         break;
     }
 
-    std::cout << "    " << param_names[i] << ": " << pf() << "\n";
+    // Use a field width wide enough for all of the headers
+    auto fw = 30;
+
+    if (verbose) {
+      std::cout << "    " << std::left << std::setw(fw + 2) << param_names[i] + ":" << pf() << "\n";
+    } else {
+      std::cout << "    " << param_names[i] << ": " << pf() << "\n";
+    }
+
+    if (verbose) {
+      std::cout << "    # " << std::left << std::setw(fw) << "Range: ";
+      if (param_descriptors[i].floating_point_range.size()) {
+        auto range = param_descriptors[i].floating_point_range[0];
+        std::cout << range.from_value << ";" <<
+          range.to_value << ";" <<
+          range.step << "\n";
+      } else if (param_descriptors[i].integer_range.size()) {
+        auto range = param_descriptors[i].integer_range[0];
+        std::cout << range.from_value << ";" <<
+          range.to_value << ";" <<
+          range.step << "\n";
+      } else {
+        std::cout << "N/A\n";
+      }
+
+      std::cout << "    # " << std::left << std::setw(fw) << "Description: " <<
+        param_descriptors[i].description << "\n";
+      std::cout << "    # " << std::left << std::setw(fw) << "Additional constraints: " <<
+        param_descriptors[i].additional_constraints << "\n";
+      std::cout << "    # " << std::left << std::setw(fw) << "Read-only: " <<
+      (param_descriptors[i].read_only ? "True" : "False") << "\n";
+
+      std::cout << std::endl;
+    }
   }
 
   std::cout << std::endl;
@@ -236,8 +253,8 @@ print_markdown(
   std::cout << "## " << node_name << " Parameters" << "\n";
 
   if (verbose) {
-    std::cout << "|Parameter|Default Value|Description|Additional Constraints|Read Only|Range|" 
-      << "\n";
+    std::cout << "|Parameter|Default Value|Range|Description|Additional Constraints|Read-Only|" <<
+      "\n";
     std::cout << "|---|---|---|---|---|---|" << "\n";
   } else {
     std::cout << "|Parameter|Default Value|" << "\n";
@@ -252,29 +269,29 @@ print_markdown(
         pf = []() {return "NOT_SET";};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:            // bool
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:
         pf = [param_values, i]() {return param_values[i].bool_value ? "True" : "False";};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:            // int64
+      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:
         pf = [param_values, i]() {return std::to_string(param_values[i].integer_value);};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:            // float64
-        pf = [param_values, i]() {return std::to_string(param_values[i].double_value);};
+      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:
+        pf = [param_values, i]() {return to_string(param_values[i].double_value);};
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:            // string
+      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:
         pf = [param_values, i]() {
             return std::string("\"") + param_values[i].string_value + std::string("\"");
           };
         break;
 
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:        // byte[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:        // bool[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:    // int64[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:    // float64[]
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:    // string[]
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
+      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
         pf = [param_values, i]() {
             std::stringstream stream;
             stream << "[";
@@ -311,26 +328,30 @@ print_markdown(
     std::cout << "|" << param_names[i] << "|" << pf();
 
     if (verbose) {
+      if (param_descriptors[i].floating_point_range.size()) {
+        auto range = param_descriptors[i].floating_point_range[0];
+        std::cout << "|" <<
+          range.from_value << ";" <<
+          range.to_value << ";" <<
+          range.step << "|";
+      } else if (param_descriptors[i].integer_range.size()) {
+        auto range = param_descriptors[i].integer_range[0];
+        std::cout << "|" <<
+          range.from_value << ";" <<
+          range.to_value << ";" <<
+          range.step << "|";
+      } else {
+        // No range specified
+        std::cout << "|N/A";
+      }
+
       std::cout << "|" <<
         param_descriptors[i].description << "|" <<
         param_descriptors[i].additional_constraints << "|" <<
       (param_descriptors[i].read_only ? "True" : "False");
-
-      if (param_descriptors[i].floating_point_range.size()) {
-        auto range = param_descriptors[i].floating_point_range[0];
-        std::cout << "|"
-          << range.from_value << ";"
-          << range.to_value << ";"
-          << range.step;
-      } else if (param_descriptors[i].integer_range.size()) {
-        auto range = param_descriptors[i].integer_range[0];
-        std::cout << "|"
-          << range.from_value << ";"
-          << range.to_value << ";"
-          << range.step;
-      }
     }
 
+    // End the parameter
     std::cout << "|\n";
   }
 
@@ -369,12 +390,16 @@ int main(int argc, char * argv[])
 
   try {
     po::options_description desc("Options");
+
+    /* *INDENT-OFF* */
     desc.add_options()("help,h", "Print help message")
-      // ("all,a", "Dump parameters for all nodes")
+      // TODO(mjeronimo): ("all,a", "Dump parameters for all nodes")
       ("node_names,n", po::value<option_sequence<std::string>>(),
-      "A list of comma-separated node names")("format,f", po::value<std::string>(),
-      "The format to dump ('yaml' or 'markdown')")("verbose,v", "Verbose option")
+        "A list of comma-separated node names")
+      ("format,f", po::value<std::string>(), "The format to dump ('yaml' or 'markdown')")
+      ("verbose,v", "Verbose option")
     ;
+    /* *INDENT-ON* */
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
