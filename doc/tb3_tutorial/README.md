@@ -1,6 +1,7 @@
 
 
 
+
 ﻿ROS2 Navigation - Turtlebot3 - June, 2019
 
 # ROS 2 NAVIGATION 2 TUTORIAL
@@ -221,12 +222,12 @@ The easiest way to do it is using the ROS's famous talker and listener examples.
 
 Open a new terminal and run (this node is written in C++)
 
-    . ~/ros2_all_ws/ros2_ws/install/local_setup.bash
+    source ~/ros2_all_ws/ros2_ws/install/local_setup.bash
     ros2 run demo_nodes_cpp talker
 
 Open another terminal and run (this node is written in Python)
 
-    . ~/ros2_all_ws/ros2_ws/install/local_setup.bash
+    source ~/ros2_all_ws/ros2_ws/install/local_setup.bash
     ros2 run demo_nodes_py listener
    
 After running both nodes, you should see results similar to this.
