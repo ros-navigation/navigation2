@@ -1,5 +1,6 @@
 
 
+
 ﻿ROS2 Navigation - Turtlebot3 - June, 2019
 
 # ROS 2 NAVIGATION 2 TUTORIAL
@@ -178,7 +179,6 @@ During this tutorial, we are going to build a lot of packages from source, so le
     mkdir ros2_ws
     cd ros2_ws
     mkdir src
-    cd ..
 
 **Clone all the up to date repositories in ros2_ws**
 
@@ -243,12 +243,18 @@ We will use Gazebo as our simulator, so let's install Gazebo 9. You can find mor
 
 If for some reason this doesn't work, you can also use `sudo apt-get install gazebo9` to install Gazebo.
 
+If you see a message saying Gazebo is already installed you can skip this step. That means Gazebo is already installed.
+
 ## Test Gazebo
 
 Let's test ROS2-Gazebo and Gazebo together.
 
     sudo apt install ros-dashing-ros-core ros-dashing-geometry2
     gazebo --verbose /opt/ros/dashing/share/gazebo_plugins/worlds/gazebo_ros_diff_drive_demo.world
+
+If Gazebo prints "plugin can't be found" error message, try running it again
+
+    soruce /opt/ros/dashing/setup.bash
 
 You should see a similar result. Now let's publish to a topic to move our robot.
 
@@ -274,8 +280,7 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
 
 **Clone the Navigation2 Stack in our main workspace.**
 
-    cd
-    cd ros2_all_ws
+    cd ~/ros2_all_ws
     wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
     chmod a+x initial_ros_setup.sh
     ./initial_ros_setup.sh
@@ -312,12 +317,10 @@ In this step, we won't build the Navigation 2 stack, but we still need these dep
 
 **Create a workspace for Turtlebot 3 package**
   
-      cd
-      cd ros2_all_ws
+      cd ~/ros2_all_ws
       mkdir turtlebot3_ws
       cd turtlebot3_ws
       mkdir src
-      cd ..
 
 **Clone all the up to date repositories**
 
@@ -326,13 +329,27 @@ In this step, we won't build the Navigation 2 stack, but we still need these dep
 
 **Important:** You must remove Navigation2 packages from the Turtlebot3 workspace before you build it. Because we will download and build Navigation2 stack separately.
 
-    cd src
+    cd ~/ros2_all_ws/turtlebot3_ws/src
     sudo rm -r navigation2
-    cd ..
+    cd ~/ros2_all_ws/turtlebot3_ws
     
 **Build the package**
 
+we should source the preciously installed packages first,
+	
+    source ~/ros2_all_ws/ros2_ws/install/setup.bash
+    source ~/ros2_all_ws/navigation2_ws/install/setup.bash
+    source ~/ros2_all_ws/navstack_dependencies_ws/install/setup.bash    
+
+build the package,
+
     colcon build --symlink-install
+
+If you see some warning messages  such as "package A had stdeer output", as long as all the packages are successfully built you can ignore those warning messages.
+
+if you see any dependency related error messages, you can try to run rosdep and try to build the package again,
+
+	rosdep install --from-paths src --ignore-src -r -y
 
 ### Test Turtlebot 3
 
@@ -394,7 +411,7 @@ Open one last terminal and type
 Tell Gazebo where to find the world and robot models. We need to set some environment variables first and then launch Gazebo with Turtlebot and it's Turtle word model.
 
     echo '# Add gazebo model path' >> ~/.bashrc
-    echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models' >> ~/.bashrc
+    echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_all_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models' >> ~/.bashrc
     source ~/.bashrcros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 
 
@@ -427,7 +444,7 @@ Add the following lines to the end of the file
     source ~/ros2_all_ws/navigation2/install/setup.bash source
     source ~/ros2_all_ws/navstack_dependencies_ws/install/setup.bash
     export TURTLEBOT3_MODEL=waffle
-    export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
+    export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_all_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
 
 save the file and close it. Whenever we open a new terminal, this script will be executed. Please note that this will will make your terminal's start up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.
 
