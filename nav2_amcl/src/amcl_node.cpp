@@ -59,64 +59,69 @@ AmclNode::AmclNode()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+  add_parameter("alpha1", rclcpp::ParameterValue(0.2),
+    "This is the alpha1 parameter", "These are additional constraints for alpha1", {0.0, 1.0, 0.1});
 
-  descriptor.name = "alpha1";
-  descriptor.description = "This is the alpha1 parameter";
-  descriptor.additional_constraints = "These are additional constraints";
-  descriptor.read_only = false;
-  descriptor.floating_point_range.resize(1);
-  descriptor.floating_point_range[0].from_value = 0.0;
-  descriptor.floating_point_range[0].to_value = 1.0;
-  descriptor.floating_point_range[0].step = 0.1;
-  descriptor.integer_range.resize(0);
-  declare_parameter(descriptor.name, rclcpp::ParameterValue(0.2), descriptor);
+  add_parameter("alpha2", rclcpp::ParameterValue(0.2),
+    "This is the alpha2 parameter", "These are additional constraints for alpha2");
 
-  descriptor.name = "alpha2";
-  descriptor.description = "This is the alpha2 parameter";
-  descriptor.additional_constraints = "These are additional constraints for alpha2";
-  descriptor.read_only = false;
-  descriptor.floating_point_range.resize(0);
-  descriptor.integer_range.resize(1);
-  descriptor.integer_range[0].from_value = 0;
-  descriptor.integer_range[0].to_value = 100;
-  descriptor.integer_range[0].step = 1;
-  declare_parameter(descriptor.name, rclcpp::ParameterValue(0.2), descriptor);
+  add_parameter("alpha3", rclcpp::ParameterValue(0.2),
+    "This is the alpha3 parameter", "These are additional constraints for alpha3");
 
-  declare_parameter("alpha3", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha4", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha5", rclcpp::ParameterValue(0.2));
-  declare_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
-  declare_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
-  declare_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
-  declare_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
-  declare_parameter("do_beamskip", rclcpp::ParameterValue(false));
-  declare_parameter("global_frame_id", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("lambda_short", rclcpp::ParameterValue(0.1));
-  declare_parameter("laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
-  declare_parameter("laser_max_range", rclcpp::ParameterValue(100.0));
-  declare_parameter("laser_min_range", rclcpp::ParameterValue(-1.0));
-  declare_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
-  declare_parameter("max_beams", rclcpp::ParameterValue(60));
-  declare_parameter("max_particles", rclcpp::ParameterValue(2000));
-  declare_parameter("min_particles", rclcpp::ParameterValue(500));
-  declare_parameter("odom_frame_id", rclcpp::ParameterValue(std::string("odom")));
-  declare_parameter("pf_err", rclcpp::ParameterValue(0.05));
-  declare_parameter("pf_z", rclcpp::ParameterValue(0.99));
-  declare_parameter("recovery_alpha_fast", rclcpp::ParameterValue(0.0));
-  declare_parameter("recovery_alpha_slow", rclcpp::ParameterValue(0.0));
-  declare_parameter("resample_interval", rclcpp::ParameterValue(1));
-  declare_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
-  declare_parameter("save_pose_rate", rclcpp::ParameterValue(0.5));
-  declare_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
-  declare_parameter("tf_broadcast", rclcpp::ParameterValue(true));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(1.0));
-  declare_parameter("update_min_a", rclcpp::ParameterValue(0.2));
-  declare_parameter("update_min_d", rclcpp::ParameterValue(0.25));
-  declare_parameter("z_hit", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_max", rclcpp::ParameterValue(0.05));
-  declare_parameter("z_rand", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_short", rclcpp::ParameterValue(0.05));
+  add_parameter("alpha4", rclcpp::ParameterValue(0.2),
+    "This is the alpha4 parameter", "These are additional constraints for alpha4");
+
+  add_parameter("alpha5", rclcpp::ParameterValue(0.2),
+    "This is the alpha5 parameter", "These are additional constraints for alpha5");
+
+  add_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")),
+    "Which frame to use for the robot base");
+
+  add_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
+  add_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
+  add_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
+  add_parameter("do_beamskip", rclcpp::ParameterValue(false));
+
+  add_parameter("global_frame_id", rclcpp::ParameterValue(std::string("map")),
+    "The name of the coordinate frame published by the localization system");
+
+  add_parameter("lambda_short", rclcpp::ParameterValue(0.1));
+  add_parameter("laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
+  add_parameter("laser_max_range", rclcpp::ParameterValue(100.0));
+  add_parameter("laser_min_range", rclcpp::ParameterValue(-1.0));
+  add_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
+
+  add_parameter("max_beams", rclcpp::ParameterValue(60),
+    "How many evenly-spaced beams in each scan to be used when updating the filter");
+
+  add_parameter("max_particles", rclcpp::ParameterValue(2000),
+    "Minimum allowed number of particles");
+
+  add_parameter("min_particles", rclcpp::ParameterValue(500),
+    "Maximum allowed number of particles");
+
+  add_parameter("odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
+    "Which frame to use for odometry");
+
+  add_parameter("pf_err", rclcpp::ParameterValue(0.05));
+  add_parameter("pf_z", rclcpp::ParameterValue(0.99));
+  add_parameter("recovery_alpha_fast", rclcpp::ParameterValue(0.0));
+  add_parameter("recovery_alpha_slow", rclcpp::ParameterValue(0.0));
+  add_parameter("resample_interval", rclcpp::ParameterValue(1));
+  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  add_parameter("save_pose_rate", rclcpp::ParameterValue(0.5));
+  add_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
+  add_parameter("tf_broadcast", rclcpp::ParameterValue(true));
+  add_parameter("transform_tolerance", rclcpp::ParameterValue(1.0));
+
+  add_parameter("update_min_a", rclcpp::ParameterValue(0.2),
+    "Rotational movement required before performing a filter update");
+
+  add_parameter("update_min_d", rclcpp::ParameterValue(0.25));
+  add_parameter("z_hit", rclcpp::ParameterValue(0.5));
+  add_parameter("z_max", rclcpp::ParameterValue(0.05));
+  add_parameter("z_rand", rclcpp::ParameterValue(0.5));
+  add_parameter("z_short", rclcpp::ParameterValue(0.05));
 }
 
 AmclNode::~AmclNode()
