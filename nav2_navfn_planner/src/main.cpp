@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "nav2_navfn_planner/navfn_planner.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/executors.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -27,7 +27,8 @@ int main(int argc, char ** argv)
   // <FEEDBACK REQUEST> I'm open to suggestions but I'd rather not expose we're using
   // a multithreaded executor due to some implementation detail. Can you think of a better pattern?
   // Also consider we'll have to revist this once we start composing nodes.
-  auto exec = planner->get_executor();
+  auto exec = nav2_util::get_executor(planner->has_nested_service_requests());
+  exec->add_node(planner->get_node_base_interface());
   exec->spin();
 
   rclcpp::shutdown();

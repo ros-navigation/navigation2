@@ -43,8 +43,7 @@ public:
   NavfnPlanner();
   ~NavfnPlanner();
 
-  // Provides the executor (with the node added) for spinning
-  std::unique_ptr<rclcpp::executor::Executor> get_executor();
+  bool has_nested_service_requests() {return has_nested_client_;}
 
 protected:
   // Implement the lifecycle interface
@@ -56,6 +55,12 @@ protected:
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+
+  // Whether this node has one or more clients performing service requests within service callbacks
+  bool has_nested_client_;
+
+  // Callback group of the service clients which are invoked within callbacks
+  std::shared_ptr<rclcpp::callback_group::CallbackGroup> nested_client_group_;
 
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
@@ -137,9 +142,6 @@ protected:
   // Service clients for getting the costmap and robot pose
   std::unique_ptr<nav2_util::CostmapServiceClient> costmap_client_;
   std::unique_ptr<nav2_util::GetRobotPoseClient> get_robot_pose_client_;
-
-  // Callback group of the service clients, these will be asynchronous
-  std::shared_ptr<rclcpp::callback_group::CallbackGroup> async_services_group_;
 
   // Publishers for the path and endpoints
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

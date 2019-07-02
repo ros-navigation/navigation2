@@ -28,7 +28,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <utility>
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -37,6 +36,7 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_util/executors.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -46,7 +46,8 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: nav2_util::LifecycleNode("navfn_planner", "", true)
+: nav2_util::LifecycleNode("navfn_planner", "", true),
+  has_nested_client_(true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -60,31 +61,6 @@ NavfnPlanner::~NavfnPlanner()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-std::unique_ptr<rclcpp::executor::Executor> NavfnPlanner::get_executor()
-{
-  // Some navfn service callbacks, e.g. lifecycle state changes, perform service requests
-  // to other nodes. On a single-threaded executor, waiting for the service response
-  // (while on the callback) would block spinning the node.
-
-  // With a multi-threaded executor, a second thread will process the service response, if the
-  // service client is assigned to a `Reentrant` callback group.
-
-  // TODO(orduno) It is not necessary to have two threads processing executables all the time
-  //              for a single node. Replace the double-threaded executor with a custom
-  //              async service executor.
-
-  const bool yield_before_execute = true;
-  const unsigned number_of_threads = 2;
-
-  auto exec = std::make_unique<rclcpp::executors::MultiThreadedExecutor>(
-    rclcpp::executor::ExecutorArgs(),
-    number_of_threads, yield_before_execute);
-
-  exec->add_node(this->get_node_base_interface());
-
-  return std::move(exec);
-}
-
 nav2_util::CallbackReturn
 NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
@@ -96,13 +72,11 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Initialize services
   auto node = shared_from_this();
-  async_services_group_ = create_callback_group(
-    rclcpp::callback_group::CallbackGroupType::Reentrant);
-
+  nested_client_group_ = nav2_util::create_nested_request_group(this->get_node_base_interface());
   costmap_client_ = std::make_unique<nav2_util::CostmapServiceClient>(node,
-      async_services_group_);
+      nested_client_group_);
   get_robot_pose_client_ = std::make_unique<nav2_util::GetRobotPoseClient>(node,
-      async_services_group_);
+      nested_client_group_);
 
   // Create a planner based on the new costmap size
   getCostmap(costmap_);
