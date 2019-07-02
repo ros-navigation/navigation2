@@ -64,6 +64,14 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
     std::bind(&NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest, this,
     std::placeholders::_1));
 
+  factory_.registerSimpleAction("clearAroundCostmapServiceRequest",
+    std::bind(&NavigateToPoseBehaviorTree::clearAroundCostmapServiceRequest, this,
+    std::placeholders::_1));
+
+  factory_.registerSimpleAction("clearExceptCostmapServiceRequest",
+    std::bind(&NavigateToPoseBehaviorTree::clearExceptCostmapServiceRequest, this,
+    std::placeholders::_1));
+
   global_localization_client_ =
     std::make_unique<nav2_util::GlobalLocalizationServiceClient>("bt_navigator");
 }
@@ -96,6 +104,49 @@ BT::NodeStatus NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest(
   try {
     clear_entirely_costmap.wait_for_service(std::chrono::seconds(3));
     auto result = clear_entirely_costmap.invoke(request, std::chrono::seconds(3));
+    return BT::NodeStatus::SUCCESS;
+  } catch (std::runtime_error & e) {
+    return BT::NodeStatus::FAILURE;
+  }
+}
+
+BT::NodeStatus NavigateToPoseBehaviorTree::clearAroundCostmapServiceRequest(
+  BT::TreeNode & tree_node)
+{
+  std::string service_name = "/local_costmap/clear_around_local_costmap";
+  double window_size_x = 0;
+  double window_size_y = 0;
+  tree_node.getParam<std::string>("service_name", service_name);
+  tree_node.getParam<double>("window_size_x", window_size_x);
+  tree_node.getParam<double>("window_size_y", window_size_y);
+
+  nav2_util::ClearAroundCostmapServiceClient clear_around_costmap(service_name);
+  auto request = std::make_shared<nav2_msgs::srv::ClearCostmapAroundRobot::Request>();
+  request->window_size_x = window_size_x;
+  request->window_size_y = window_size_y;
+  try {
+    clear_around_costmap.wait_for_service(std::chrono::seconds(3));
+    auto result = clear_around_costmap.invoke(request, std::chrono::seconds(3));
+    return BT::NodeStatus::SUCCESS;
+  } catch (std::runtime_error & e) {
+    return BT::NodeStatus::FAILURE;
+  }
+}
+
+BT::NodeStatus NavigateToPoseBehaviorTree::clearExceptCostmapServiceRequest(
+  BT::TreeNode & tree_node)
+{
+  std::string service_name = "/local_costmap/clear_except_local_costmap";
+  double reset_distance = 3;
+  tree_node.getParam<std::string>("service_name", service_name);
+  tree_node.getParam<double>("reset_distance", reset_distance);
+
+  nav2_util::ClearExceptCostmapServiceClient clear_except_costmap(service_name);
+  auto request = std::make_shared<nav2_msgs::srv::ClearCostmapExceptRegion::Request>();
+  request->reset_distance = reset_distance;
+  try {
+    clear_except_costmap.wait_for_service(std::chrono::seconds(3));
+    auto result = clear_except_costmap.invoke(request, std::chrono::seconds(3));
     return BT::NodeStatus::SUCCESS;
   } catch (std::runtime_error & e) {
     return BT::NodeStatus::FAILURE;

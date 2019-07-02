@@ -21,6 +21,8 @@
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/nav2_clients/clear_entirely_costmap_service_client.hpp"
+#include "nav2_util/nav2_clients/clear_around_costmap_service_client.hpp"
+#include "nav2_util/nav2_clients/clear_except_costmap_service_client.hpp"
 #include "nav2_util/nav2_clients/global_localization_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -37,6 +39,8 @@ private:
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
   BT::NodeStatus clearEntirelyCostmapServiceRequest(BT::TreeNode & tree_node);
+  BT::NodeStatus clearAroundCostmapServiceRequest(BT::TreeNode & tree_node);
+  BT::NodeStatus clearExceptCostmapServiceRequest(BT::TreeNode & tree_node);
 
   // Service clients
   std::unique_ptr<nav2_util::GlobalLocalizationServiceClient> global_localization_client_;
