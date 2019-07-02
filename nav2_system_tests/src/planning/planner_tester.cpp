@@ -25,6 +25,7 @@
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 using nav2_util::Costmap;
 using nav2_util::TestCostmap;
 
@@ -35,19 +36,17 @@ PlannerTester::PlannerTester()
 : Node("PlannerTester"), map_publish_rate_(100s), map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), costmap_server_running_(false), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr), spinning_ok_(false)
+  testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr)
 {
   // The client used to invoke the services of the global planner (ComputePathToPose)
-  auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
-  planner_client_ = std::make_unique<nav2_behavior_tree::ComputePathToPoseTaskClient>(temp_node);
+  planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(
+    this->get_node_base_interface(),
+    this->get_node_graph_interface(),
+    this->get_node_logging_interface(),
+    this->get_node_waitables_interface(),
+    "ComputePathToPose");
 
-  if (!planner_client_->waitForServer(nav2_behavior_tree::defaultServerTimeout)) {
-    RCLCPP_ERROR(this->get_logger(), "Planner not running");
-    throw std::runtime_error("Planner not running");
-  }
-
-  // Publisher of the faked current robot pose
-  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose");
+  startRobotPoseServer();
 
   // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
@@ -55,16 +54,15 @@ PlannerTester::PlannerTester()
   // We start with a 10x10 grid with no obstacles
   loadSimpleCostmap(TestCostmap::open_space);
 
-  startCostmapServer("GetCostmap");
+  startCostmapServer();
 
   // Launch a thread to process the messages for this node
-  spinning_ok_ = true;
   spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
 }
 
 PlannerTester::~PlannerTester()
 {
-  spinning_ok_ = false;
+  executor_.cancel();
   spin_thread_->join();
   delete spin_thread_;
   spin_thread_ = nullptr;
@@ -72,10 +70,9 @@ PlannerTester::~PlannerTester()
 
 void PlannerTester::spinThread()
 {
-  while (spinning_ok_) {
-    rclcpp::spin_some(this->get_node_base_interface());
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
+  executor_.add_node(this->get_node_base_interface());
+  executor_.spin();
+  executor_.remove_node(this->get_node_base_interface());
 }
 
 void PlannerTester::loadDefaultMap()
@@ -164,7 +161,31 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   using_fake_costmap_ = true;
 }
 
-void PlannerTester::startCostmapServer(std::string serviceName)
+void PlannerTester::startRobotPoseServer()
+{
+  geometry_msgs::msg::Point robot_position;
+  robot_position.x = 0.0;
+  robot_position.y = 0.0;
+
+  updateRobotPosition(robot_position);
+
+  auto robot_pose_service_callback = [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
+    std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response) -> void
+    {
+      std::lock_guard<std::mutex> lock(update_robot_pose_);
+      RCLCPP_DEBUG(this->get_logger(), "Incoming robot pose request");
+      response->pose = robot_pose_;
+      response->is_pose_valid = true;
+    };
+
+  // Create a service that will use the callback function to handle requests.
+  get_robot_pose_server_ = create_service<nav2_msgs::srv::GetRobotPose>(
+    "GetRobotPose", robot_pose_service_callback);
+}
+
+void PlannerTester::startCostmapServer()
 {
   if (!costmap_set_) {
     RCLCPP_ERROR(this->get_logger(), "Costmap must be set before starting the service");
@@ -177,18 +198,18 @@ void PlannerTester::startCostmapServer(std::string serviceName)
     std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
     {
       RCLCPP_DEBUG(this->get_logger(), "Incoming costmap request");
-      response->map = costmap_->getCostmap(request->specs);
+      response->map = costmap_->get_costmap(request->specs);
     };
 
   // Create a service that will use the callback function to handle requests.
   costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
-    serviceName, costmap_service_callback);
+    "GetCostmap", costmap_service_callback);
 
   costmap_server_running_ = true;
 }
 
 bool PlannerTester::defaultPlannerTest(
-  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path,
+  ComputePathToPoseResult & path,
   const double /*deviation_tolerance*/)
 {
   if (!costmap_set_) {
@@ -196,9 +217,11 @@ bool PlannerTester::defaultPlannerTest(
     return false;
   }
 
+  waitForPlanner();
+
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  auto goal = std::make_shared<nav2_behavior_tree::ComputePathToPoseCommand>();
+  ComputePathToPoseCommand goal;
   auto costmap_properties = costmap_->get_properties();
 
   if (using_fake_costmap_) {
@@ -207,8 +230,8 @@ bool PlannerTester::defaultPlannerTest(
     robot_position.x = 1.0;
     robot_position.y = 1.0;
 
-    goal->pose.position.x = 8.0;
-    goal->pose.position.y = 8.0;
+    goal.pose.position.x = 8.0;
+    goal.pose.position.y = 8.0;
 
   } else {
     RCLCPP_DEBUG(this->get_logger(), "Planning using the provided map");
@@ -218,8 +241,8 @@ bool PlannerTester::defaultPlannerTest(
     robot_position.x = 390.0;
     robot_position.y = 10.0;
 
-    goal->pose.position.x = 10.0;
-    goal->pose.position.y = 390.0;
+    goal.pose.position.x = 10.0;
+    goal.pose.position.y = 390.0;
   }
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
@@ -243,11 +266,15 @@ bool PlannerTester::defaultPlannerRandomTests(
     return false;
   }
 
+  waitForPlanner();
+
   // Initialize random number generator
   std::random_device random_device;
   std::mt19937 generator(random_device());
-  std::uniform_int_distribution<> distribution_x(0, costmap_->get_properties().size_x);
-  std::uniform_int_distribution<> distribution_y(0, costmap_->get_properties().size_y);
+
+  // Obtain random positions within map
+  std::uniform_int_distribution<> distribution_x(1, costmap_->get_properties().size_x - 1 );
+  std::uniform_int_distribution<> distribution_y(1, costmap_->get_properties().size_y - 1);
 
   auto generate_random = [&]() mutable -> std::pair<int, int> {
       bool point_is_free = false;
@@ -255,19 +282,20 @@ bool PlannerTester::defaultPlannerRandomTests(
       while (!point_is_free) {
         x = distribution_x(generator);
         y = distribution_y(generator);
-        point_is_free = costmap_->isFree(x, y);
+        point_is_free = costmap_->is_free(x, y);
       }
       return std::make_pair(x, y);
     };
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  auto goal = std::make_shared<nav2_behavior_tree::ComputePathToPoseCommand>();
-  auto path = std::make_shared<nav2_behavior_tree::ComputePathToPoseResult>();
+  ComputePathToPoseCommand goal;
+  ComputePathToPoseResult path;
 
   unsigned int num_fail = 0;
+  auto start = high_resolution_clock::now();
   for (unsigned int test_num = 0; test_num < number_tests; ++test_num) {
-    RCLCPP_INFO(this->get_logger(), "Running test #%u", test_num + 1);
+    RCLCPP_DEBUG(this->get_logger(), "Running test #%u", test_num + 1);
 
     // Compose the robot start position and goal using random numbers
     // Defined with respect to world coordinate system
@@ -278,18 +306,21 @@ bool PlannerTester::defaultPlannerRandomTests(
     robot_position.y = vals.second;
 
     vals = generate_random();
-    goal->pose.position.x = vals.first;
-    goal->pose.position.y = vals.second;
+    goal.pose.position.x = vals.first;
+    goal.pose.position.y = vals.second;
 
     if (!plannerTest(robot_position, goal, path)) {
       RCLCPP_WARN(this->get_logger(), "Failed with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
-        robot_position.x, robot_position.y, goal->pose.position.x, goal->pose.position.y);
+        robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
       ++num_fail;
     }
   }
+  auto end = high_resolution_clock::now();
+  auto elapsed = duration_cast<milliseconds>(end - start);
 
   RCLCPP_INFO(this->get_logger(),
-    "Tested with %u tests. Planner failed on %u", number_tests, num_fail);
+    "Tested with %u tests. Planner failed on %u. Test time %u ms",
+    number_tests, num_fail, elapsed.count());
 
   if ((num_fail / number_tests) > acceptable_fail_ratio) {
     return false;
@@ -300,13 +331,13 @@ bool PlannerTester::defaultPlannerRandomTests(
 
 bool PlannerTester::plannerTest(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
-  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path)
+  const ComputePathToPoseCommand & goal,
+  ComputePathToPoseResult & path)
 {
   RCLCPP_DEBUG(this->get_logger(), "Getting the path from the planner");
 
   // First make available the current robot position for the planner to take as starting point
-  publishRobotPosition(robot_position);
+  updateRobotPosition(robot_position);
 
   // Then request to compute a path
   TaskStatus status = sendRequest(goal, path);
@@ -319,47 +350,67 @@ bool PlannerTester::plannerTest(
     // TODO(orduno): #443 check why task may report success while planner returns a path of 0 points
     RCLCPP_DEBUG(this->get_logger(), "Got path, checking for possible collisions");
 
-    return isCollisionFree(*path) && isWithinTolerance(robot_position, *goal, *path);
+    return isCollisionFree(path) && isWithinTolerance(robot_position, goal, path);
   }
 
   return false;
 }
 
-void PlannerTester::publishRobotPosition(const geometry_msgs::msg::Point & position) const
+void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
 {
-  geometry_msgs::msg::PoseWithCovarianceStamped p;
-  p.header.frame_id = "map";
-  p.header.stamp = rclcpp::Time();
-  p.pose.pose.position = position;
-  p.pose.pose.orientation.x = 0.0;
-  p.pose.pose.orientation.y = 0.0;
-  p.pose.pose.orientation.z = 0.0;
-  p.pose.pose.orientation.w = 1.0;
+  std::lock_guard<std::mutex> lock(update_robot_pose_);
 
-  for (int i = 0; i < 12; i++) {
-    p.pose.covariance[i] = 0.0;
-  }
+  robot_pose_.header.frame_id = "map";
+  robot_pose_.header.stamp = rclcpp::Time();
 
-  pose_pub_->publish(p);
+  robot_pose_.pose.position = position;
+
+  robot_pose_.pose.orientation.x = 0.0;
+  robot_pose_.pose.orientation.y = 0.0;
+  robot_pose_.pose.orientation.z = 0.0;
+  robot_pose_.pose.orientation.w = 1.0;
 }
 
 TaskStatus PlannerTester::sendRequest(
-  const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
-  nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path)
+  const ComputePathToPoseCommand & goal,
+  ComputePathToPoseResult & path)
 {
-  planner_client_->sendCommand(goal);
+  nav2_msgs::action::ComputePathToPose::Goal action_goal;
+  action_goal.pose = goal;
+  auto future_goal_handle = planner_client_->async_send_goal(action_goal);
 
-  // Loop until the subtask is completed
-  while (true) {
-    TaskStatus status = planner_client_->waitForResult(path, std::chrono::milliseconds(100));
-
-    if (status != TaskStatus::RUNNING) {
-      return status;
-    }
+  RCLCPP_DEBUG(this->get_logger(), "Waiting for goal acceptance");
+  auto status_request = future_goal_handle.wait_for(seconds(1));
+  if (status_request != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(), "Failed sending the goal");
+    return TaskStatus::FAILED;
   }
+
+  auto goal_handle = future_goal_handle.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(this->get_logger(), "Goal rejected");
+    return TaskStatus::FAILED;
+  }
+
+  auto future_result = planner_client_->async_get_result(goal_handle);
+
+  RCLCPP_DEBUG(this->get_logger(), "Wait for the server to be done with the action");
+  auto status_result = future_result.wait_for(seconds(1));
+  if (status_result != std::future_status::ready) {
+    return TaskStatus::FAILED;
+  }
+
+  auto result = future_result.get();
+  if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+    return TaskStatus::FAILED;
+  }
+
+  path = result.result->path;
+
+  return TaskStatus::SUCCEEDED;
 }
 
-bool PlannerTester::isCollisionFree(const nav2_behavior_tree::ComputePathToPoseResult & path)
+bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
 {
   // At each point of the path, check if the corresponding cell is free
 
@@ -373,7 +424,7 @@ bool PlannerTester::isCollisionFree(const nav2_behavior_tree::ComputePathToPoseR
   bool collisionFree = true;
 
   for (auto pose : path.poses) {
-    collisionFree = costmap_->isFree(
+    collisionFree = costmap_->is_free(
       static_cast<unsigned int>(std::round(pose.position.x)),
       static_cast<unsigned int>(std::round(pose.position.y)));
 
@@ -391,19 +442,19 @@ bool PlannerTester::isCollisionFree(const nav2_behavior_tree::ComputePathToPoseR
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_behavior_tree::ComputePathToPoseCommand & goal,
-  const nav2_behavior_tree::ComputePathToPoseResult & path) const
+  const ComputePathToPoseCommand & goal,
+  const ComputePathToPoseResult & path) const
 {
   return isWithinTolerance(
-    robot_position, goal, path, 0.0, nav2_behavior_tree::ComputePathToPoseResult());
+    robot_position, goal, path, 0.0, ComputePathToPoseResult());
 }
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const nav2_behavior_tree::ComputePathToPoseCommand & goal,
-  const nav2_behavior_tree::ComputePathToPoseResult & path,
+  const ComputePathToPoseCommand & goal,
+  const ComputePathToPoseResult & path,
   const double /*deviationTolerance*/,
-  const nav2_behavior_tree::ComputePathToPoseResult & /*reference_path*/) const
+  const ComputePathToPoseResult & /*reference_path*/) const
 {
   // TODO(orduno) #443 Work in progress, for now we only check that the path start matches the
   //              robot start location and that the path end matches the goal.
@@ -440,7 +491,7 @@ bool PlannerTester::sendCancel()
   return false;
 }
 
-void PlannerTester::printPath(const nav2_behavior_tree::ComputePathToPoseResult & path) const
+void PlannerTester::printPath(const ComputePathToPoseResult & path) const
 {
   int index = 0;
   for (auto pose : path.poses) {
@@ -450,4 +501,13 @@ void PlannerTester::printPath(const nav2_behavior_tree::ComputePathToPoseResult 
   }
 }
 
+void PlannerTester::waitForPlanner()
+{
+  RCLCPP_DEBUG(this->get_logger(), "Waiting for ComputePathToPose action server");
+
+  if (!planner_client_ || !planner_client_->wait_for_action_server(4s)) {
+    RCLCPP_ERROR(this->get_logger(), "Planner not running");
+    throw std::runtime_error("Planner not running");
+  }
+}
 }  // namespace nav2_system_tests

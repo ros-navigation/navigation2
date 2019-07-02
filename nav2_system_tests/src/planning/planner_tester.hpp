@@ -21,20 +21,32 @@
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_behavior_tree/compute_path_to_pose_task.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
+#include "nav2_msgs/srv/get_robot_pose.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_system_tests
 {
 
+enum class TaskStatus : int8_t
+{
+  SUCCEEDED = 1,
+  FAILED = 2,
+  RUNNING = 3,
+};
+
 class PlannerTester : public rclcpp::Node, public ::testing::Test
 {
 public:
+  using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
+  using ComputePathToPoseResult = nav2_msgs::msg::Path;
+
   PlannerTester();
   ~PlannerTester();
 
@@ -51,15 +63,15 @@ public:
   // TODO(orduno): #443 Assuming a robot the size of a costmap cell
   bool plannerTest(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
-    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path);
+    const ComputePathToPoseCommand & goal,
+    ComputePathToPoseResult & path);
 
   // Sends the request to the planner and gets the result.
   // Uses the default map or preloaded costmaps.
   // Success criteria is a collision free path and a deviation to a
   // reference path smaller than a tolerance.
   bool defaultPlannerTest(
-    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path,
+    ComputePathToPoseResult & path,
     const double deviation_tolerance = 1.0);
 
   bool defaultPlannerRandomTests(
@@ -72,28 +84,29 @@ public:
 private:
   void setCostmap();
 
-  void startCostmapServer(std::string serviceName);
+  void startRobotPoseServer();
+  void startCostmapServer();
 
-  nav2_behavior_tree::TaskStatus sendRequest(
-    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr & goal,
-    nav2_behavior_tree::ComputePathToPoseResult::SharedPtr & path
+  TaskStatus sendRequest(
+    const ComputePathToPoseCommand & goal,
+    ComputePathToPoseResult & path
   );
 
-  bool isCollisionFree(const nav2_behavior_tree::ComputePathToPoseResult & path);
+  bool isCollisionFree(const ComputePathToPoseResult & path);
 
   bool isWithinTolerance(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_behavior_tree::ComputePathToPoseCommand & goal,
-    const nav2_behavior_tree::ComputePathToPoseResult & path) const;
+    const ComputePathToPoseCommand & goal,
+    const ComputePathToPoseResult & path) const;
 
   bool isWithinTolerance(
     const geometry_msgs::msg::Point & robot_position,
-    const nav2_behavior_tree::ComputePathToPoseCommand & goal,
-    const nav2_behavior_tree::ComputePathToPoseResult & path,
+    const ComputePathToPoseCommand & goal,
+    const ComputePathToPoseResult & path,
     const double deviationTolerance,
-    const nav2_behavior_tree::ComputePathToPoseResult & reference_path) const;
+    const ComputePathToPoseResult & reference_path) const;
 
-  void printPath(const nav2_behavior_tree::ComputePathToPoseResult & path) const;
+  void printPath(const ComputePathToPoseResult & path) const;
 
   // The static map
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
@@ -102,15 +115,17 @@ private:
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
   // The interface to the global planner
-  std::unique_ptr<nav2_behavior_tree::ComputePathToPoseTaskClient> planner_client_;
+  std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::ComputePathToPose>> planner_client_;
   std::string plannerName_;
+  void waitForPlanner();
 
-  // Server for providing a costmap
+  // The tester must provide these services
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
+  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_server_;
 
-  // Publisher of the robot position
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
-  void publishRobotPosition(const geometry_msgs::msg::Point & position) const;
+  geometry_msgs::msg::PoseStamped robot_pose_;
+  mutable std::mutex update_robot_pose_;
+  void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
   // Occupancy grid publisher for visualization
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
@@ -133,7 +148,7 @@ private:
   // A thread for spinning the ROS node
   void spinThread();
   std::thread * spin_thread_;
-  std::atomic<bool> spinning_ok_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
 };
 
 }  // namespace nav2_system_tests
