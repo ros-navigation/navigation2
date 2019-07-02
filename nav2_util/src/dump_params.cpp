@@ -33,6 +33,8 @@
 namespace po = boost::program_options;
 namespace alg = boost::algorithm;
 
+using namespace std::chrono_literals;
+
 static std::vector<std::string>
 get_param_names_for_node(rclcpp::Node::SharedPtr node, std::string node_name)
 {
@@ -41,23 +43,23 @@ get_param_names_for_node(rclcpp::Node::SharedPtr node, std::string node_name)
 
   while (!client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node->get_logger(), "client interrupted while waiting for service to appear.");
-      return std::vector<std::string>();
+      throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
-    RCLCPP_INFO(node->get_logger(), "waiting for service to appear...");
+
+    throw std::runtime_error(std::string("ListParameters service for ") +
+            node_name + " not available");
   }
 
   auto request = std::make_shared<rcl_interfaces::srv::ListParameters::Request>();
   auto result_future = client->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node, result_future) !=
+  if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node->get_logger(), "service call failed :(");
-    return std::vector<std::string>();
+    throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
-  auto result = result_future.get();
-  return result->result.names;
+
+  return result_future.get()->result.names;
 }
 
 static std::vector<rcl_interfaces::msg::ParameterValue>
@@ -70,10 +72,11 @@ get_param_values_for_node(
 
   while (!client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node->get_logger(), "client interrupted while waiting for service to appear.");
-      return std::vector<rcl_interfaces::msg::ParameterValue>();
+      throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
-    RCLCPP_INFO(node->get_logger(), "waiting for service to appear...");
+
+    throw std::runtime_error(std::string("GetParameters service for ") +
+            node_name + " not available");
   }
 
   auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
@@ -81,14 +84,13 @@ get_param_values_for_node(
 
   auto result_future = client->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node, result_future) !=
+  if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node->get_logger(), "service call failed :(");
-    return std::vector<rcl_interfaces::msg::ParameterValue>();
+    throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
-  auto result = result_future.get();
-  return result->values;
+
+  return result_future.get()->values;
 }
 
 static std::vector<rcl_interfaces::msg::ParameterDescriptor>
@@ -101,10 +103,11 @@ get_param_descriptors_for_node(
 
   while (!client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node->get_logger(), "client interrupted while waiting for service to appear.");
-      return std::vector<rcl_interfaces::msg::ParameterDescriptor>();
+      throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
-    RCLCPP_INFO(node->get_logger(), "waiting for service to appear...");
+
+    throw std::runtime_error(std::string("DescribeParameters service for ") +
+            node_name + " not available");
   }
 
   auto request = std::make_shared<rcl_interfaces::srv::DescribeParameters::Request>();
@@ -112,14 +115,13 @@ get_param_descriptors_for_node(
 
   auto result_future = client->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node, result_future) !=
+  if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node->get_logger(), "service call failed :(");
-    return std::vector<rcl_interfaces::msg::ParameterDescriptor>();
+    throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
-  auto result = result_future.get();
-  return result->descriptors;
+
+  return result_future.get()->descriptors;
 }
 
 // A local version to avoid trailing zeros
@@ -393,7 +395,6 @@ int main(int argc, char * argv[])
 
     /* *INDENT-OFF* */
     desc.add_options()("help,h", "Print help message")
-      // TODO(mjeronimo): ("all,a", "Dump parameters for all nodes")
       ("node_names,n", po::value<option_sequence<std::string>>(),
         "A list of comma-separated node names")
       ("format,f", po::value<std::string>(), "The format to dump ('yaml' or 'markdown')")
@@ -405,39 +406,55 @@ int main(int argc, char * argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help") || !vm.count("node_names")) {
+    if (vm.count("help")) {
       std::cout << "Usage: " << basename(argv[0]) << "\n";
       std::cout << desc << "\n";
       return 1;
     }
 
-    auto node_names = vm["node_names"].as<option_sequence<std::string>>().values;
+    std::vector<std::string> node_names;
+
+    if (vm.count("node_names")) {
+      node_names = vm["node_names"].as<option_sequence<std::string>>().values;
+    } else {
+      node_names = dump_params_node->get_node_names();
+    }
+
     bool verbose = vm.count("verbose");
 
     for (std::string target_node_name : node_names) {
-      auto param_names = get_param_names_for_node(dump_params_node, target_node_name);
-      auto param_values =
-        get_param_values_for_node(dump_params_node, target_node_name, param_names);
-      auto param_descriptors = get_param_descriptors_for_node(dump_params_node, target_node_name,
-          param_names);
+      // Skip hidden nodes
+      if (target_node_name[1] == '_') {
+        continue;
+      }
 
-      if (!vm.count("format")) {
-        // Default to YAML if the format hasn't been specified
-        print_yaml(target_node_name, param_names, param_values, param_descriptors, verbose);
-      } else {
-        auto format = vm["format"].as<std::string>();
-        if (format == "md" || format == "markdown") {
-          print_markdown(target_node_name, param_names, param_values, param_descriptors, verbose);
-        } else {
-          if (format != "yaml") {
-            std::cerr << "Unknown output format specified, defaulting to 'yaml'" << std::endl;
-          }
+      try {
+        auto param_names = get_param_names_for_node(dump_params_node, target_node_name);
+        auto param_values =
+          get_param_values_for_node(dump_params_node, target_node_name, param_names);
+        auto param_descriptors = get_param_descriptors_for_node(dump_params_node, target_node_name,
+            param_names);
+
+        if (!vm.count("format")) {
+          // Default to YAML if the format hasn't been specified
           print_yaml(target_node_name, param_names, param_values, param_descriptors, verbose);
+        } else {
+          auto format = vm["format"].as<std::string>();
+          if (format == "md" || format == "markdown") {
+            print_markdown(target_node_name, param_names, param_values, param_descriptors, verbose);
+          } else {
+            if (format != "yaml") {
+              std::cerr << "Unknown output format specified, defaulting to 'yaml'" << std::endl;
+            }
+            print_yaml(target_node_name, param_names, param_values, param_descriptors, verbose);
+          }
         }
+      } catch (std::exception & e) {
+        std::cerr << "Error: " << e.what() << "\n" << std::endl;
       }
     }
-  } catch (po::error &) {
-    // TODO(mjeronimo): output message
+  } catch (po::error & e) {
+    std::cerr << "Error: " << e.what() << std::endl;
   }
 
   rclcpp::shutdown();
