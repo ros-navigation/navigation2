@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
-#define NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__NAV2_CLIENTS__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__NAV2_CLIENTS__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
 
 #include <string>
 #include "nav2_util/service_client.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
-namespace nav2_behavior_tree
+namespace nav2_util
 {
 
 class ClearEntirelyCostmapServiceClient
-  : public nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>
+  : public ServiceClient<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
   explicit ClearEntirelyCostmapServiceClient(const std::string & service_name)
-  : nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>(service_name)
+  : ServiceClient<nav2_msgs::srv::ClearEntireCostmap>(service_name)
   {
   }
 
   using clearEntirelyCostmapServiceRequest =
-    nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>::RequestType;
+    ServiceClient<nav2_msgs::srv::ClearEntireCostmap>::RequestType;
   using clearEntirelyCostmapServiceResponse =
-    nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>::ResponseType;
+    ServiceClient<nav2_msgs::srv::ClearEntireCostmap>::ResponseType;
 };
 
-}  // namespace nav2_behavior_tree
+}  // namespace nav2_util
 
-#endif  // NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__NAV2_CLIENTS__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_

@@ -246,7 +246,6 @@ protected:
   Costmap2DPublisher * costmap_publisher_{nullptr};
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
   // Transform listener
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
-#define NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__NAV2_CLIENTS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__NAV2_CLIENTS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
 
 #include <string>
 
@@ -39,4 +39,4 @@ public:
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__NAV2_CLIENTS__GLOBAL_LOCALIZATION_SERVICE_CLIENT_HPP_

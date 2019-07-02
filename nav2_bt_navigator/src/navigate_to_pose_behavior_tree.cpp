@@ -91,7 +91,7 @@ BT::NodeStatus NavigateToPoseBehaviorTree::clearEntirelyCostmapServiceRequest(
   std::string service_name = "/local_costmap/clear_entirely_local_costmap";
   tree_node.getParam<std::string>("service_name", service_name);
 
-  nav2_behavior_tree::ClearEntirelyCostmapServiceClient clear_entirely_costmap(service_name);
+  nav2_util::ClearEntirelyCostmapServiceClient clear_entirely_costmap(service_name);
   auto request = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
   try {
     clear_entirely_costmap.wait_for_service(std::chrono::seconds(3));

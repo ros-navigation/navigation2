@@ -44,7 +44,7 @@
 #include <string>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
-#include "nav2_util/map_service_client.hpp"
+#include "nav2_util/nav2_clients/map_service_client.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
