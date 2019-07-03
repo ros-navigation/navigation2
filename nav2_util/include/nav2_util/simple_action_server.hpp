@@ -77,6 +77,7 @@ public:
 
             pending_handle_->canceled(empty_result());
             pending_handle_.reset();
+            preempt_requested_ = false;
           }
 
           debug_msg("Setting flag so the action server can grab the preempt request.");
@@ -89,6 +90,7 @@ public:
 
             pending_handle_->canceled(empty_result());
             pending_handle_.reset();
+            preempt_requested_ = false;
           }
 
           debug_msg("Starting a thread to process the goals");
@@ -207,6 +209,7 @@ public:
       warn_msg("Cancelling a pending goal. Should check for pre-empt requests.");
       pending_handle_->canceled(result);
       pending_handle_.reset();
+      preempt_requested_ = false;
     }
   }
 
@@ -224,6 +227,7 @@ public:
       warn_msg("Aborting a pending goal. Should check for pre-empt requests.");
       pending_handle_->abort(empty_result());
       pending_handle_.reset();
+      preempt_requested_ = false;
     }
   }
 
@@ -244,6 +248,7 @@ public:
       warn_msg("A preemption request was available before succeeding on the current goal.");
       pending_handle_->canceled(empty_result());
       pending_handle_.reset();
+      preempt_requested_ = false;
     }
   }
 
