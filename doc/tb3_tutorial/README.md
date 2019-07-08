@@ -543,7 +543,7 @@ Coming Soon!
 
 ## More About Navigation 2
 
-![enter image description here](https://raw.githubusercontent.com/mlherd/ros2/master/img/uml_diagram.jpg)
+![enter image description here](https://raw.githubusercontent.com/mlherd/ros2/master/img/nav2_uml_diagram.jpg)
 **What does each individual module in Navigation 2 do?**
 
 **RVIZ:** RVIZ is ROS's Robot Virtualization tool. As you see in the UML diagram above we use it to generate the Goal Pose messages which is received by the BTNAV node. RVIZ also shows us all the sensor data and the map. You can find more information about RVIZ [here](http://wiki.ros.org/rviz).
