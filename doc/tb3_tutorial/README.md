@@ -114,7 +114,7 @@ If you have never installed Ubuntu before, you can find the instructions here.
 
 After installing Ubuntu 18.04 and connecting it to the Internet, now it is time to install ROS2. You can do it by following the instructions below.
 
-There is a great change that the installation steps for ROS2 will change over time. You want to check the installation steps at [this link](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup) first. If there is any difference, you should follow those steps instead.
+There is a good chance that the installation steps for ROS2 will change over time. You want to check the installation steps at [this link](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup) first. If there is any difference, you should follow those steps instead.
 
 **Set Locale**
 
