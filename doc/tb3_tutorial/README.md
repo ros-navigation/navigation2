@@ -114,6 +114,8 @@ If you have never installed Ubuntu before, you can find the instructions here.
 
 After installing Ubuntu 18.04 and connecting it to the Internet, now it is time to install ROS2. You can do it by following the instructions below.
 
+There is a great change that the installation steps for ROS2 will change over time. You want to check the installation steps at [this link](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup) first. If there is any difference, you should follow those steps instead.
+
 **Set Locale**
 
     sudo locale-gen en_US en_US.UTF-8
@@ -234,21 +236,11 @@ After running both nodes, you should see results similar to this.
 
 ![enter image description here](https://github.com/mlherd/ros2/blob/master/img/ros2_test.PNG?raw=true)
 
-#  ROS2-Gazebo Installation
+#  Gazebo Simulator and ROS2-Gazebo Installation
 
-We will be using Gazebo with ROS 2, so we need to install the Gazebo packages for ROS2. We will test ROS2-Gazebo after installing Gazebo 9. The fallowing command should install all the necessary ros-gazebo packages for ROS Dashing distribution.
+We will be using Gazebo 9 with ROS 2, so we need to install the Gazebo packages for ROS2. The following command is going to install all the necessary ros-gazebo packages for ROS Dashing distribution and Gazebo 9.
 
     sudo apt-get install ros-dashing-gazebo*
-
-# Gazebo Installation
-
-We will use Gazebo as our simulator, so let's install Gazebo 9. You can find more information about Gazebo [**here**](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&ved=2ahUKEwj_wKXW-vniAhXgJTQIHQmGA2EQFjAAegQIABAB&url=http://gazebosim.org/&usg=AOvVaw3bYv0Z_AA1EEyIXg8sGUuF). 
-
-    curl -sSL http://get.gazebosim.org | sh
-
-If for some reason this doesn't work, you can also use `sudo apt-get install gazebo9` to install Gazebo.
-
-If you see a message saying Gazebo is already installed you can skip this step. That means Gazebo is already installed.
 
 ## Test Gazebo
 
@@ -259,11 +251,13 @@ Let's test ROS2-Gazebo and Gazebo together.
 
 If Gazebo prints "plugin can't be found" error message, try running it again
 
-    soruce /opt/ros/dashing/setup.bash
+    source ~/ros2_all_ws/ros2_ws/install/setup.bash
 
-You should see a similar result. Now let's publish to a topic to move our robot.
+Once Gazebo is launched, you should see a similar result. Now let's publish to a topic to move our robot.
 
 ![enter image description here](https://github.com/mlherd/ros2/blob/master/img/Screenshot%20from%202019-06-27%2010-08-56.png?raw=true)
+
+Publishing this message to cmd_demo will move the robot forward.
    
      ros2 topic pub /demo/cmd_demo geometry_msgs/Twist '{linear: {x: 1.0}}' -1
 
@@ -275,7 +269,7 @@ You should see our car moving forward. That means everything is working as expec
 
 Now, it is time to download and build Navigation2 stack. Stack means that Navigation2 consists of many other packages. By building the stack we will build all this necessary packages for Navigation 2 at once. Please note that we are going to test Navigation2 after building the Turtlebot3 stack.
 
-**Install the dependencies for this repository**
+**Install the dependencies for Navigation 2**
 
     sudo apt-get install -y \
         libsdl-image1.2 \
@@ -283,12 +277,29 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
         libsdl1.2debian \
         libsdl1.2-dev
 
-**Clone the Navigation2 Stack in our main workspace.**
+**Create work spaces for Navigation2 and NavStack Dependencies**
 
     cd ~/ros2_all_ws
-    wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
-    chmod a+x initial_ros_setup.sh
-    ./initial_ros_setup.sh
+    mkdir -p /navstack_dependencies_ws/src
+    mkdir -p /nav2_ws/src
+
+**Clone  and build Navigation 2 Dependencies**
+
+    wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/ros2_dependencies.repos
+    vcs import src < ros2_dependencies.repos
+    rosdep install -y -r -q --from-paths src --ignore-src --rosdistro dashing --skip-keys "catkin"
+    source ~/ros2_all_ws/ros2_ws/install/setup.bash
+    colcon build --symlink-install
+
+**Clone  and build Navigation 2**
+
+	cd ~/ros2_all_ws/nav2_ws/src
+	git clone https://github.com/ros-planning/navigation2.git
+    cd ~/ros2_all_ws/nav2_ws
+    rosdep install -y -r -q --from-paths src --ignore-src --rosdistro dashing
+    source ~/ros2_all_ws/ros2_ws/install/setup.bash
+    source ~/ros2_all_ws/navstack_dependencies_ws/install/setup.bash
+    colcon build --symlink-install
 
 ## ROS 2 Turtlebot 3 Installation
 
@@ -417,7 +428,8 @@ Tell Gazebo where to find the world and robot models. We need to set some enviro
 
     echo '# Add gazebo model path' >> ~/.bashrc
     echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_all_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models' >> ~/.bashrc
-    source ~/.bashrcros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+    source ~/.bashrc
+    ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 
 
 ![enter image description here](https://github.com/mlherd/ros2/blob/master/img/gazebo_turlebot1.PNG?raw=true)
