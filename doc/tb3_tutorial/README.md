@@ -455,8 +455,8 @@ Open a new terminal and open your .bashrc file which is located in your home dir
 Add the following lines to the end of the file
 
     source ~/ros2_all_ws/ros2_ws/install/setup.bash  
-    source ~/ros2_all_ws/turtlebot3/install/setup.bash source
-    source ~/ros2_all_ws/navigation2/install/setup.bash source
+    source ~/ros2_all_ws/turtlebot3/install/setup.bash
+    source ~/ros2_all_ws/navigation2/install/setup.bash
     source ~/ros2_all_ws/navstack_dependencies_ws/install/setup.bash
     export TURTLEBOT3_MODEL=waffle
     export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ros2_all_ws/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
