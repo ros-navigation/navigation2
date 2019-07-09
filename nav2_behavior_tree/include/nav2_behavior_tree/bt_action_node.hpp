@@ -165,16 +165,21 @@ new_goal_received:
   {
     // Shut the node down if it is currently running
     if (status() == BT::NodeStatus::RUNNING) {
-      action_client_->async_cancel_goal(goal_handle_);
-      auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
+      rclcpp::spin_some(node_);
+      // Check if the goal is still executing
+      auto status = goal_handle_->get_status();
+      if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+        status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
       {
-        RCLCPP_ERROR(node_->get_logger(),
-          "Failed to cancel action server for %s", action_name_.c_str());
+        auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+        if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
+          rclcpp::executor::FutureReturnCode::SUCCESS)
+        {
+          RCLCPP_ERROR(node_->get_logger(),
+            "Failed to cancel action server for %s", action_name_.c_str());
+        }
       }
     }
-
     setStatus(BT::NodeStatus::IDLE);
     CoroActionNode::halt();
   }
