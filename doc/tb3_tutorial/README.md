@@ -202,7 +202,7 @@ In this tutorial we will be using the **master**.
 
 **Install dependencies using rosdep**
 
-    rosdep install --from-paths src --ignore-src --rosdistro crystal -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
+    rosdep install --from-paths src --ignore-src --rosdistro dashing -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
     
     python3 -m pip install -U lark-parser
 
@@ -572,7 +572,7 @@ During this tutorial we launched many nodes. If you want to see what these nodes
 # Troubleshooting Guide
 -To do: a list of common issues and problems.
 - Gazebo crashes or unable to start server - Address is already in use
-	- `killall gzserver`
+	- killall gzserver
 	- restart Gazebo
 	- repeat this until it successfully starts
 
