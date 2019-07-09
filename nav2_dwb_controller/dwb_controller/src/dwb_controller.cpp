@@ -150,8 +150,8 @@ void DwbController::followPath()
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(get_logger(), "Goal was canceled. Cancelling and stopping.");
-        action_server_->cancel_all();
+        RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
+        action_server_->terminate_goals();
         publishZeroVelocity();
         return;
       }
@@ -170,7 +170,7 @@ void DwbController::followPath()
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   }
 
@@ -213,7 +213,7 @@ void DwbController::computeAndPublishVelocity()
 
 void DwbController::updateGlobalPath()
 {
-  if (action_server_->preempt_requested()) {
+  if (action_server_->is_preempt_requested()) {
     RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
     setPlannerPath(action_server_->accept_pending_goal()->path);
   }

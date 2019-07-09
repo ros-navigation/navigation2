@@ -167,11 +167,11 @@ NavfnPlanner::computePathToPose()
 
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
-      action_server_->cancel_all();
+      action_server_->terminate_goals();
       return;
     }
 
-    if (action_server_->preempt_requested()) {
+    if (action_server_->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
     }
@@ -187,7 +187,7 @@ NavfnPlanner::computePathToPose()
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", goal->pose.pose.position.x, goal->pose.pose.position.y);
       // TODO(orduno): define behavior if a preemption is available
-      action_server_->abort_all();
+      action_server_->terminate_goals();
       return;
     }
 
@@ -211,14 +211,14 @@ NavfnPlanner::computePathToPose()
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   }
 }
