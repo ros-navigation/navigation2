@@ -1,0 +1,275 @@
+diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigation/base_local_planner/CMakeLists.txt ./CMakeLists.txt
+--- /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigation/base_local_planner/CMakeLists.txt	2019-03-11 09:29:27.199224035 -0700
++++ ./CMakeLists.txt	2019-07-09 15:48:32.568935429 -0700
+@@ -1,89 +1,49 @@
+-cmake_minimum_required(VERSION 2.8.3)
++cmake_minimum_required(VERSION 3.5)
+ project(base_local_planner)
+ 
+-find_package(catkin REQUIRED
+-        COMPONENTS
+-            angles
+-            cmake_modules
+-            costmap_2d
+-            dynamic_reconfigure
+-            geometry_msgs
+-            message_generation
+-            nav_core
+-            nav_msgs
+-            pluginlib
+-            roscpp
+-            rospy
+-            sensor_msgs
+-            std_msgs
+-            tf2
+-            tf2_geometry_msgs
+-            tf2_ros
+-            voxel_grid
+-        )
+-
+-find_package(Boost REQUIRED
+-    COMPONENTS
+-        thread
+-        )
++find_package(ament_cmake REQUIRED)
++find_package(angles REQUIRED)
++find_package(nav2_costmap_2d REQUIRED)
++find_package(nav2_dynamic_params REQUIRED)
++find_package(geometry_msgs REQUIRED)
++find_package(nav_msgs REQUIRED)
++find_package(pluginlib REQUIRED)
++find_package(rclcpp REQUIRED)
++find_package(sensor_msgs REQUIRED)
++find_package(std_msgs REQUIRED)
++find_package(tf2 REQUIRED)
++find_package(tf2_ros REQUIRED)
++find_package(rosidl_default_generators REQUIRED)
+ 
+ find_package(Eigen3 REQUIRED)
+-remove_definitions(-DDISABLE_LIBUSB-1.0)
++
+ include_directories(
+     include
+-    ${catkin_INCLUDE_DIRS}
+     ${EIGEN3_INCLUDE_DIRS}
+ )
+ add_definitions(${EIGEN3_DEFINITIONS})
+ 
+-catkin_python_setup()
++set(dependencies
++  angles
++  nav2_costmap_2d
++  nav2_dynamic_params
++  geometry_msgs
++  nav_msgs
++  pluginlib
++  rclcpp
++  sensor_msgs
++  std_msgs
++  tf2
++  tf2_ros
++)
+ 
+ # messages
+-add_message_files(
+-    DIRECTORY msg
+-    FILES
+-    Position2DInt.msg
+-)
+-
+-generate_messages(
+-    DEPENDENCIES
+-        std_msgs
+-)
+-
+-# dynamic reconfigure
+-generate_dynamic_reconfigure_options(
+-    cfg/BaseLocalPlanner.cfg
+-)
+-
+-catkin_package(
+-    INCLUDE_DIRS include
+-    LIBRARIES
+-        base_local_planner
+-        trajectory_planner_ros
+-    CATKIN_DEPENDS
+-        angles
+-        costmap_2d
+-        dynamic_reconfigure
+-        geometry_msgs
+-        message_runtime
+-        nav_core
+-        nav_msgs
+-        pluginlib
+-        roscpp
+-        sensor_msgs
+-        std_msgs
+-        tf2
+-        tf2_ros
+-        voxel_grid
+-)
+-
+-#uncomment for profiling
+-#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+-#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
+-#set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
+-#set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
++rosidl_generate_interfaces(base_local_planner
++    "msg/Position2DInt.msg"
++    DEPENDENCIES std_msgs
++)
+ 
+-add_library(base_local_planner
++add_library(base_local_planner_core
+ 	src/footprint_helper.cpp
+ 	src/goal_functions.cpp
+ 	src/map_cell.cpp
+@@ -102,46 +62,38 @@
+ 	src/simple_trajectory_generator.cpp
+ 	src/trajectory.cpp
+ 	src/twirling_cost_function.cpp
+-	src/voxel_grid_model.cpp)
+-add_dependencies(base_local_planner base_local_planner_gencfg)
+-add_dependencies(base_local_planner base_local_planner_generate_messages_cpp)
+-add_dependencies(base_local_planner nav_msgs_generate_messages_cpp)
+-target_link_libraries(base_local_planner
+-    ${catkin_LIBRARIES}
+-    ${Boost_LIBRARIES}
+-    ${Eigen_LIBRARIES}
+-    )
++	src/voxel_grid_model.cpp
++)
++
++ament_target_dependencies(base_local_planner_core
++  ${dependencies}
++  ${Eigen_LIBRARIES}
++)
+ 
+ add_library(trajectory_planner_ros
+ 	src/trajectory_planner.cpp
+ 	src/trajectory_planner_ros.cpp)
+-add_dependencies(trajectory_planner_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ target_link_libraries(trajectory_planner_ros
+-     base_local_planner)
++     base_local_planner_core)
+ 
+ add_executable(point_grid src/point_grid.cpp)
+-add_dependencies(point_grid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+-target_link_libraries(point_grid ${catkin_LIBRARIES})
+ 
+ install(TARGETS
+-            base_local_planner
+-            trajectory_planner_ros
+-       ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+-       LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+-       )
+-
+-install(FILES blp_plugin.xml
+-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
++    base_local_planner_core
++    trajectory_planner_ros
++    ARCHIVE DESTINATION lib
++    LIBRARY DESTINATION lib
++    RUNTIME DESTINATION lib/${PROJECT_NAME}
+ )
+ 
+-install(DIRECTORY include/${PROJECT_NAME}/
+-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+-  PATTERN ".svn" EXCLUDE
++install(DIRECTORY include/
++  DESTINATION include/
+ )
+ 
+-if(CATKIN_ENABLE_TESTING)
+-  find_package(rostest)
+-  catkin_add_gtest(base_local_planner_utest
++if(BUILD_TESTING)
++  find_package(ament_lint_auto REQUIRED)
++  ament_lint_auto_find_test_dependencies()
++  ament_add_gtest(base_local_planner_utest
+     test/gtest_main.cpp
+     test/utest.cpp
+     test/velocity_iterator_test.cpp
+@@ -149,9 +101,14 @@
+     test/trajectory_generator_test.cpp
+     test/map_grid_test.cpp)
+   target_link_libraries(base_local_planner_utest
+-      base_local_planner trajectory_planner_ros
++      base_local_planner_core trajectory_planner_ros
+       )
+ 
+-  catkin_add_gtest(line_iterator
++  ament_add_gtest(line_iterator
+       test/line_iterator_test.cpp)
+ endif()
++
++ament_export_dependencies(rosidl_default_runtime)
++ament_export_libraries(base_local_planner_core)
++
++ament_package()
+diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigation/base_local_planner/package.xml ./package.xml
+--- /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigation/base_local_planner/package.xml	2019-03-11 09:29:27.207224036 -0700
++++ ./package.xml	2019-04-10 17:34:01.773676231 -0700
+@@ -1,11 +1,11 @@
+ <?xml version="1.0"?>
+-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+-<package format="2">
++<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
++<package format="3">
+     <name>base_local_planner</name>
+     <version>1.16.2</version>
+     <description>
+ 
+-        This package provides implementations of the Trajectory Rollout and Dynamic Window approaches to local robot navigation on a plane. Given a plan to follow and a costmap, the controller produces velocity commands to send to a mobile base. This package supports both holonomic and non-holonomic robots, any robot footprint that can be represented as a convex polygon or circle, and exposes its configuration as ROS parameters that can be set in a launch file. This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the <a href="http://wiki.ros.org/nav_core">nav_core</a> package. 
++        This package provides implementations of the Trajectory Rollout and Dynamic Window approaches to local robot navigation on a plane. Given a plan to follow and a costmap, the controller produces velocity commands to send to a mobile base. This package supports both holonomic and non-holonomic robots, any robot footprint that can be represented as a convex polygon or circle, and exposes its configuration as ROS parameters that can be set in a launch file. This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the <a href="http://wiki.ros.org/nav_core">nav_core</a> package.
+ 
+     </description>
+     <author>Eitan Marder-Eppstein</author>
+@@ -17,34 +17,33 @@
+     <license>BSD</license>
+     <url>http://wiki.ros.org/base_local_planner</url>
+ 
+-    <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
+-
+-    <build_depend>cmake_modules</build_depend>
+-    <build_depend>message_generation</build_depend>
+-    <build_depend>tf2_geometry_msgs</build_depend>
++    <buildtool_depend>ament_cmake</buildtool_depend>
+ 
++    <build_export_depend>rosidl_default_runtime</build_export_depend>
++    
++    <depend>rosidl_default_generators</depend>
+     <depend>angles</depend>
+-    <depend>costmap_2d</depend>
+-    <depend>dynamic_reconfigure</depend>
++    <depend>nav2_costmap_2d</depend>
++    <depend>nav2_dynamic_params</depend>
+     <depend>eigen</depend>
+     <depend>geometry_msgs</depend>
+-    <depend>nav_core</depend>
+     <depend>nav_msgs</depend>
+     <depend>pluginlib</depend>
+     <depend>sensor_msgs</depend>
+     <depend>std_msgs</depend>
+-    <depend>rosconsole</depend>
+-    <depend>roscpp</depend>
+-    <depend>rospy</depend>
++    <depend>rclcpp</depend>
+     <depend>tf2</depend>
+     <depend>tf2_ros</depend>
+     <depend>visualization_msgs</depend>
+     <depend>voxel_grid</depend>
+ 
+-    <exec_depend>message_runtime</exec_depend>
++    <test_depend>ament_lint_common</test_depend>
++    <test_depend>ament_lint_auto</test_depend>
++    <test_depend>ament_cmake_gtest</test_depend>
++
++    <member_of_group>rosidl_interface_packages</member_of_group>
+ 
+-    <test_depend>rosunit</test_depend>
+     <export>
+-        <nav_core plugin="${prefix}/blp_plugin.xml" />
++        <build_type>ament_cmake</build_type>
+     </export>
+ </package>
