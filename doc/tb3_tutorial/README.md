@@ -246,7 +246,7 @@ We will be using Gazebo 9 with ROS 2, so we need to install the Gazebo packages 
 
 Let's test ROS2-Gazebo and Gazebo together.
 
-    sudo apt install ros-dashing-ros-core ros-dashing-geometry2
+    sudo apt install ros-dashing-ros-core ros-dashing-geometry*
     gazebo --verbose /opt/ros/dashing/share/gazebo_plugins/worlds/gazebo_ros_diff_drive_demo.world
 
 If Gazebo prints "plugin can't be found" error message, try running it again
@@ -281,7 +281,7 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
 
     cd ~/ros2_all_ws
     mkdir -p /navstack_dependencies_ws/src
-    mkdir -p /nav2_ws/src
+    mkdir -p /navigation2_ws/src
 
 **Clone  and build Navigation 2 Dependencies**
 
@@ -293,9 +293,9 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
 
 **Clone  and build Navigation 2**
 
-	cd ~/ros2_all_ws/nav2_ws/src
+	cd ~/ros2_all_ws/navigation2_ws/src
 	git clone https://github.com/ros-planning/navigation2.git
-    cd ~/ros2_all_ws/nav2_ws
+    cd ~/ros2_all_ws/navigation2_ws
     rosdep install -y -r -q --from-paths src --ignore-src --rosdistro dashing
     source ~/ros2_all_ws/ros2_ws/install/setup.bash
     source ~/ros2_all_ws/navstack_dependencies_ws/install/setup.bash
