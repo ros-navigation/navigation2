@@ -163,28 +163,40 @@ new_goal_received:
   // make sure to cancel the ROS2 action if it is still running.
   void halt() override
   {
-    // Shut the node down if it is currently running
-    if (status() == BT::NodeStatus::RUNNING) {
-      rclcpp::spin_some(node_);
-      // Check if the goal is still executing
-      auto status = goal_handle_->get_status();
-      if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-        status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
+    if (should_cancel_goal()) {
+      auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
+        rclcpp::executor::FutureReturnCode::SUCCESS)
       {
-        auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-        if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-          rclcpp::executor::FutureReturnCode::SUCCESS)
-        {
-          RCLCPP_ERROR(node_->get_logger(),
-            "Failed to cancel action server for %s", action_name_.c_str());
-        }
+        RCLCPP_ERROR(node_->get_logger(),
+          "Failed to cancel action server for %s", action_name_.c_str());
       }
     }
+
     setStatus(BT::NodeStatus::IDLE);
     CoroActionNode::halt();
   }
 
 protected:
+  bool should_cancel_goal()
+  {
+    // Shut the node down if it is currently running
+    if (status() != BT::NodeStatus::RUNNING) {
+        return false;
+    }
+    rclcpp::spin_some(node_);
+    auto status = goal_handle_->get_status();
+
+    // Check if the goal is still executing
+    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
+    {
+        return true;
+    }
+
+    return false;
+  }
+
   const std::string action_name_;
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
