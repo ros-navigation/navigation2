@@ -114,7 +114,12 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  action_client_->wait_for_action_server();
+  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
+
+  if (!is_action_server_ready){
+    RCLCPP_ERROR(client_node_->get_logger(), "Action server is not available");
+    return;
+  }
 
   // Send the goal pose
   goal_.pose = pose;
