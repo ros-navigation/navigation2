@@ -117,8 +117,8 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
 
   if (!is_action_server_ready){
-    RCLCPP_ERROR(client_node_->get_logger(), "Action server is not available");
-    return;
+    RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available. "
+        "Is the initial pose set?");
   }
 
   // Send the goal pose
