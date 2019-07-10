@@ -182,8 +182,9 @@ protected:
   {
     // Shut the node down if it is currently running
     if (status() != BT::NodeStatus::RUNNING) {
-        return false;
+      return false;
     }
+
     rclcpp::spin_some(node_);
     auto status = goal_handle_->get_status();
 
@@ -191,7 +192,7 @@ protected:
     if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
       status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
     {
-        return true;
+      return true;
     }
 
     return false;
