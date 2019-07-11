@@ -44,10 +44,10 @@ public:
   void correctFootprint(){
     MapGrid* mg = new MapGrid (10, 10);
     WavefrontMapAccessor* wa = new WavefrontMapAccessor(mg, .25);
-    const costmap_2d::Costmap2D& map = *wa;
+    const nav2_costmap_2d::Costmap2D& map = *wa;
 
-    std::vector<geometry_msgs::Point> footprint_spec;
-    geometry_msgs::Point pt;
+    std::vector<geometry_msgs::msg::Point> footprint_spec;
+    geometry_msgs::msg::Point pt;
     //create a square footprint
     pt.x = 2;
     pt.y = 2;

@@ -37,7 +37,7 @@
 
 #include <base_local_planner/simple_scored_sampling_planner.h>
 
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace base_local_planner {
   

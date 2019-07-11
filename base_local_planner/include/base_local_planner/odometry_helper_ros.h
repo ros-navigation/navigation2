@@ -38,10 +38,10 @@
 #ifndef ODOMETRY_HELPER_ROS2_H_
 #define ODOMETRY_HELPER_ROS2_H_
 
-#include <nav_msgs/Odometry.h>
+#include <nav_msgs/msg/odometry.h>
 #include <rclcpp/rclcpp.hpp>
 #include <boost/thread.hpp>
-#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 namespace base_local_planner {
 
@@ -59,11 +59,11 @@ public:
    * @brief  Callback for receiving odometry data
    * @param msg An Odometry message
    */
-  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  void odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& msg);
 
   void getOdom(nav_msgs::Odometry& base_odom);
 
-  void getRobotVel(geometry_msgs::PoseStamped& robot_vel);
+  void getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel);
 
   /** @brief Set the odometry topic.  This overrides what was set in the constructor, if anything.
    *

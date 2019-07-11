@@ -83,7 +83,7 @@ public:
   /**
    * set line segments on the grid with distance 0, resets the grid
    */
-  void setTargetPoses(std::vector<geometry_msgs::PoseStamped> target_poses);
+  void setTargetPoses(std::vector<geometry_msgs::msg::PoseStamped> target_poses);
 
   void setXShift(double xshift) {xshift_ = xshift;}
   void setYShift(double yshift) {yshift_ = yshift;}
@@ -119,7 +119,7 @@ public:
   double getCellCosts(unsigned int cx, unsigned int cy);
 
 private:
-  std::vector<geometry_msgs::PoseStamped> target_poses_;
+  std::vector<geometry_msgs::msg::PoseStamped> target_poses_;
   costmap_2d::Costmap2D* costmap_;
 
   base_local_planner::MapGrid map_;

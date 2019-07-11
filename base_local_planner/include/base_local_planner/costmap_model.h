@@ -54,7 +54,7 @@ namespace base_local_planner {
        * @param costmap The costmap that should be used
        * @return
        */
-      CostmapModel(const costmap_2d::Costmap2D& costmap);
+      CostmapModel(const nav2_costmap_2d::Costmap2D& costmap);
 
       /**
        * @brief  Destructor for the world model
@@ -73,7 +73,7 @@ namespace base_local_planner {
        *            -2 if footprint covers at least a no-information cell, or
        *            -3 if footprint is [partially] outside of the map
        */
-      virtual double footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
+      virtual double footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       /**
@@ -95,7 +95,7 @@ namespace base_local_planner {
       double pointCost(int x, int y) const;
 
     private:
-      const costmap_2d::Costmap2D& costmap_; ///< @brief Allows access of costmap obstacle information
+      const nav2_costmap_2d::Costmap2D& costmap_; ///< @brief Allows access of costmap obstacle information
 
   };
 };

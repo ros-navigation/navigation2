@@ -64,8 +64,8 @@ public:
    */
   std::vector<base_local_planner::Position2DInt> getFootprintCells(
       Eigen::Vector3f pos,
-      std::vector<geometry_msgs::Point> footprint_spec,
-      const costmap_2d::Costmap2D&,
+      std::vector<geometry_msgs::msg::Point> footprint_spec,
+      const nav2_costmap_2d::Costmap2D&,
       bool fill);
 
   /**

@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <base_local_planner/map_grid.h>
-#include <costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/cost_values.hpp>
 using namespace std;
 
 namespace base_local_planner{
@@ -42,7 +42,7 @@ namespace base_local_planner{
   {
   }
 
-  MapGrid::MapGrid(unsigned int size_x, unsigned int size_y) 
+  MapGrid::MapGrid(unsigned int size_x, unsigned int size_y)
     : size_x_(size_x), size_y_(size_y)
   {
     commonInit();
@@ -101,14 +101,14 @@ namespace base_local_planner{
 
 
   inline bool MapGrid::updatePathCell(MapCell* current_cell, MapCell* check_cell,
-      const costmap_2d::Costmap2D& costmap){
+      const nav2_costmap_2d::Costmap2D& costmap){
 
     //if the cell is an obstacle set the max path distance
     unsigned char cost = costmap.getCost(check_cell->cx, check_cell->cy);
     if(! getCell(check_cell->cx, check_cell->cy).within_robot &&
-        (cost == costmap_2d::LETHAL_OBSTACLE ||
-         cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-         cost == costmap_2d::NO_INFORMATION)){
+        (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+         cost == nav2_costmap_2d::NO_INFORMATION)){
       check_cell->target_dist = obstacleCosts();
       return false;
     }
@@ -130,8 +130,8 @@ namespace base_local_planner{
     }
   }
 
-  void MapGrid::adjustPlanResolution(const std::vector<geometry_msgs::PoseStamped>& global_plan_in,
-      std::vector<geometry_msgs::PoseStamped>& global_plan_out, double resolution) {
+  void MapGrid::adjustPlanResolution(const std::vector<geometry_msgs::msg::PoseStamped>& global_plan_in,
+      std::vector<geometry_msgs::msg::PoseStamped>& global_plan_out, double resolution) {
     if (global_plan_in.size() == 0) {
       return;
     }
@@ -152,7 +152,7 @@ namespace base_local_planner{
         double deltay = (loop_y - last_y) / steps;
         // TODO: Interpolate orientation
         for (int j = 1; j < steps; ++j) {
-          geometry_msgs::PoseStamped pose;
+          geometry_msgs::msg::PoseStamped pose;
           pose.pose.position.x = last_x + j * deltax;
           pose.pose.position.y = last_y + j * deltay;
           pose.pose.position.z = global_plan_in[i].pose.position.z;
@@ -168,15 +168,15 @@ namespace base_local_planner{
   }
 
   //update what map cells are considered path based on the global_plan
-  void MapGrid::setTargetCells(const costmap_2d::Costmap2D& costmap,
-      const std::vector<geometry_msgs::PoseStamped>& global_plan) {
+  void MapGrid::setTargetCells(const nav2_costmap_2d::Costmap2D& costmap,
+      const std::vector<geometry_msgs::msg::PoseStamped>& global_plan) {
     sizeCheck(costmap.getSizeInCellsX(), costmap.getSizeInCellsY());
 
     bool started_path = false;
 
     queue<MapCell*> path_dist_queue;
 
-    std::vector<geometry_msgs::PoseStamped> adjusted_global_plan;
+    std::vector<geometry_msgs::msg::PoseStamped> adjusted_global_plan;
     adjustPlanResolution(global_plan, adjusted_global_plan, costmap.getResolution());
     if (adjusted_global_plan.size() != global_plan.size()) {
       ROS_DEBUG("Adjusted global plan resolution, added %zu points", adjusted_global_plan.size() - global_plan.size());
@@ -187,7 +187,7 @@ namespace base_local_planner{
       double g_x = adjusted_global_plan[i].pose.position.x;
       double g_y = adjusted_global_plan[i].pose.position.y;
       unsigned int map_x, map_y;
-      if (costmap.worldToMap(g_x, g_y, map_x, map_y) && costmap.getCost(map_x, map_y) != costmap_2d::NO_INFORMATION) {
+      if (costmap.worldToMap(g_x, g_y, map_x, map_y) && costmap.getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION) {
         MapCell& current = getCell(map_x, map_y);
         current.target_dist = 0.0;
         current.target_mark = true;
@@ -207,15 +207,15 @@ namespace base_local_planner{
   }
 
   //mark the point of the costmap as local goal where global_plan first leaves the area (or its last point)
-  void MapGrid::setLocalGoal(const costmap_2d::Costmap2D& costmap,
-      const std::vector<geometry_msgs::PoseStamped>& global_plan) {
+  void MapGrid::setLocalGoal(const nav2_costmap_2d::Costmap2D& costmap,
+      const std::vector<geometry_msgs::msg::PoseStamped>& global_plan) {
     sizeCheck(costmap.getSizeInCellsX(), costmap.getSizeInCellsY());
 
     int local_goal_x = -1;
     int local_goal_y = -1;
     bool started_path = false;
 
-    std::vector<geometry_msgs::PoseStamped> adjusted_global_plan;
+    std::vector<geometry_msgs::msg::PoseStamped> adjusted_global_plan;
     adjustPlanResolution(global_plan, adjusted_global_plan, costmap.getResolution());
 
     // skip global path points until we reach the border of the local map
@@ -223,7 +223,7 @@ namespace base_local_planner{
       double g_x = adjusted_global_plan[i].pose.position.x;
       double g_y = adjusted_global_plan[i].pose.position.y;
       unsigned int map_x, map_y;
-      if (costmap.worldToMap(g_x, g_y, map_x, map_y) && costmap.getCost(map_x, map_y) != costmap_2d::NO_INFORMATION) {
+      if (costmap.worldToMap(g_x, g_y, map_x, map_y) && costmap.getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION) {
         local_goal_x = map_x;
         local_goal_y = map_y;
         started_path = true;
@@ -252,7 +252,7 @@ namespace base_local_planner{
 
 
 
-  void MapGrid::computeTargetDistance(queue<MapCell*>& dist_queue, const costmap_2d::Costmap2D& costmap){
+  void MapGrid::computeTargetDistance(queue<MapCell*>& dist_queue, const nav2_costmap_2d::Costmap2D& costmap){
     MapCell* current_cell;
     MapCell* check_cell;
     unsigned int last_col = size_x_ - 1;

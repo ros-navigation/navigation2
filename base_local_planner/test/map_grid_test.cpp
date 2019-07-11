@@ -103,8 +103,8 @@ TEST(MapGridTest, sizeCheck){
 
 TEST(MapGridTest, adjustPlanEmpty){
   MapGrid mg(10, 10);
-  const std::vector<geometry_msgs::PoseStamped> global_plan_in;
-  std::vector<geometry_msgs::PoseStamped> global_plan_out;
+  const std::vector<geometry_msgs::msg::PoseStamped> global_plan_in;
+  std::vector<geometry_msgs::msg::PoseStamped> global_plan_out;
   double resolution = 0;
   mg.adjustPlanResolution(global_plan_in, global_plan_out, resolution);
   EXPECT_EQ(0, global_plan_out.size());
@@ -112,19 +112,19 @@ TEST(MapGridTest, adjustPlanEmpty){
 
 TEST(MapGridTest, adjustPlan){
   MapGrid mg(10, 10);
-  std::vector<geometry_msgs::PoseStamped> global_plan_in;
-  std::vector<geometry_msgs::PoseStamped> global_plan_out;
+  std::vector<geometry_msgs::msg::PoseStamped> global_plan_in;
+  std::vector<geometry_msgs::msg::PoseStamped> global_plan_out;
   double resolution = 1;
-  geometry_msgs::PoseStamped start;
+  geometry_msgs::msg::PoseStamped start;
   start.pose.position.x = 1;
   start.pose.position.y = 1;
-  geometry_msgs::PoseStamped end;
+  geometry_msgs::msg::PoseStamped end;
   end.pose.position.x = 5;
   end.pose.position.y = 5;
   global_plan_in.push_back(start);
   global_plan_in.push_back(end);
   mg.adjustPlanResolution(global_plan_in, global_plan_out, resolution);
-  
+
   EXPECT_EQ(1, global_plan_out[0].pose.position.x);
   EXPECT_EQ(1, global_plan_out[0].pose.position.y);
   EXPECT_EQ(5, global_plan_out.back().pose.position.x);
@@ -132,19 +132,19 @@ TEST(MapGridTest, adjustPlan){
 
   for (unsigned int i = 1; i < global_plan_out.size(); ++i)
   {
-    geometry_msgs::Point& p0 = global_plan_out[i - 1].pose.position;
-    geometry_msgs::Point& p1 = global_plan_out[i].pose.position;
+    geometry_msgs::msg::Point& p0 = global_plan_out[i - 1].pose.position;
+    geometry_msgs::msg::Point& p1 = global_plan_out[i].pose.position;
     double d = hypot(p0.x - p1.x, p0.y - p1.y);
     EXPECT_LT(d, resolution);
   }
 }
 
 TEST(MapGridTest, adjustPlan2){
-  std::vector<geometry_msgs::PoseStamped> base_plan, result;
+  std::vector<geometry_msgs::msg::PoseStamped> base_plan, result;
 
   // Push two points, at (0,0) and (0,1). Gap is 1 meter
-  base_plan.push_back(geometry_msgs::PoseStamped());
-  base_plan.push_back(geometry_msgs::PoseStamped());
+  base_plan.push_back(geometry_msgs::msg::PoseStamped());
+  base_plan.push_back(geometry_msgs::msg::PoseStamped());
   base_plan.back().pose.position.y = 1.0;
 
   // resolution >= 1, path won't change

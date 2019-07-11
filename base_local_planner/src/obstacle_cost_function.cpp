@@ -38,7 +38,7 @@
 #include <base_local_planner/obstacle_cost_function.h>
 #include <cmath>
 #include <Eigen/Core>
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace base_local_planner {
 
@@ -63,7 +63,7 @@ void ObstacleCostFunction::setParams(double max_trans_vel, double max_scaling_fa
   scaling_speed_ = scaling_speed;
 }
 
-void ObstacleCostFunction::setFootprint(std::vector<geometry_msgs::Point> footprint_spec) {
+void ObstacleCostFunction::setFootprint(std::vector<geometry_msgs::msg::Point> footprint_spec) {
   footprint_spec_ = footprint_spec;
 }
 
@@ -118,7 +118,7 @@ double ObstacleCostFunction::footprintCost (
     const double& y,
     const double& th,
     double scale,
-    std::vector<geometry_msgs::Point> footprint_spec,
+    std::vector<geometry_msgs::msg::Point> footprint_spec,
     costmap_2d::Costmap2D* costmap,
     base_local_planner::WorldModel* world_model) {
 

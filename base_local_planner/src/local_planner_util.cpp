@@ -80,7 +80,7 @@ LocalPlannerLimits LocalPlannerUtil::getCurrentLimits() {
 }
 
 
-bool LocalPlannerUtil::getGoal(geometry_msgs::PoseStamped& goal_pose) {
+bool LocalPlannerUtil::getGoal(geometry_msgs::msg::PoseStamped& goal_pose) {
   //we assume the global goal is the last point in the global plan
   return base_local_planner::getGoalPose(*tf_,
         global_plan_,
@@ -88,7 +88,7 @@ bool LocalPlannerUtil::getGoal(geometry_msgs::PoseStamped& goal_pose) {
         goal_pose);
 }
 
-bool LocalPlannerUtil::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
+bool LocalPlannerUtil::setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan) {
   if(!initialized_){
     ROS_ERROR("Planner utils have not been initialized, please call initialize() first");
     return false;
@@ -102,7 +102,7 @@ bool LocalPlannerUtil::setPlan(const std::vector<geometry_msgs::PoseStamped>& or
   return true;
 }
 
-bool LocalPlannerUtil::getLocalPlan(const geometry_msgs::PoseStamped& global_pose, std::vector<geometry_msgs::PoseStamped>& transformed_plan) {
+bool LocalPlannerUtil::getLocalPlan(const geometry_msgs::msg::PoseStamped& global_pose, std::vector<geometry_msgs::msg::PoseStamped>& transformed_plan) {
   //get the global plan in our frame
   if(!base_local_planner::transformGlobalPlan(
       *tf_,

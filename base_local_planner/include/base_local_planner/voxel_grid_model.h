@@ -40,7 +40,7 @@
 #include <list>
 #include <cfloat>
 #include <geometry_msgs/msg/point.hpp>
-#include <costmap_2d/observation.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 #include <base_local_planner/world_model.h>
 
 //voxel grid stuff
@@ -83,7 +83,7 @@ namespace base_local_planner {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual double footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
+      virtual double footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       using WorldModel::footprintCost;
@@ -91,10 +91,10 @@ namespace base_local_planner {
       /**
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
        * @param footprint The footprint of the robot in its current location
-       * @param observations The observations from various sensors 
+       * @param observations The observations from various sensors
        * @param laser_scan The scans used to clear freespace
        */
-      void updateWorld(const std::vector<geometry_msgs::Point>& footprint,
+      void updateWorld(const std::vector<geometry_msgs::msg::Point>& footprint,
           const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       /**
@@ -116,8 +116,8 @@ namespace base_local_planner {
 
       /**
        * @brief  Checks the cost of a point in the costmap
-       * @param x The x position of the point in cell coordinates 
-       * @param y The y position of the point in cell coordinates 
+       * @param x The x position of the point in cell coordinates
+       * @param y The y position of the point in cell coordinates
        * @return A positive cost for a legal point... negative otherwise
        */
       double pointCost(int x, int y);
@@ -158,7 +158,7 @@ namespace base_local_planner {
         return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
       }
 
-      inline void insert(const geometry_msgs::Point32& pt){
+      inline void insert(const geometry_msgs::msg::Point32& pt){
         unsigned int cell_x, cell_y, cell_z;
         if(!worldToMap3D(pt.x, pt.y, pt.z, cell_x, cell_y, cell_z))
           return;

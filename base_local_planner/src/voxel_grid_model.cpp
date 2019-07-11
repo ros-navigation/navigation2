@@ -38,16 +38,16 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 using namespace std;
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 namespace base_local_planner {
   VoxelGridModel::VoxelGridModel(double size_x, double size_y, double size_z, double xy_resolution, double z_resolution,
           double origin_x, double origin_y, double origin_z, double max_z, double obstacle_range) :
-    obstacle_grid_(size_x, size_y, size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution), 
+    obstacle_grid_(size_x, size_y, size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
     origin_x_(origin_x), origin_y_(origin_y), origin_z_(origin_z),
     max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range) {}
 
-  double VoxelGridModel::footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint, 
+  double VoxelGridModel::footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
       double inscribed_radius, double circumscribed_radius){
     if(footprint.size() < 3)
       return -1.0;
@@ -68,7 +68,7 @@ namespace base_local_planner {
 
       line_cost = lineCost(x0, x1, y0, y1);
 
-      //if there is an obstacle that hits the line... we know that we can return false right away 
+      //if there is an obstacle that hits the line... we know that we can return false right away
       if(line_cost < 0)
         return -1.0;
     }
@@ -92,7 +92,7 @@ namespace base_local_planner {
   }
 
   //calculate the cost of a ray-traced line
-  double VoxelGridModel::lineCost(int x0, int x1, 
+  double VoxelGridModel::lineCost(int x0, int x1,
       int y0, int y1){
     //Bresenham Ray-Tracing
     int deltax = abs(x1 - x0);        // The difference between the x's
@@ -180,7 +180,7 @@ namespace base_local_planner {
     return 1;
   }
 
-  void VoxelGridModel::updateWorld(const std::vector<geometry_msgs::Point>& footprint, 
+  void VoxelGridModel::updateWorld(const std::vector<geometry_msgs::msg::Point>& footprint,
       const vector<Observation>& observations, const vector<PlanarLaserScan>& laser_scans){
 
     //remove points in the laser scan boundry
@@ -190,13 +190,13 @@ namespace base_local_planner {
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
-      const sensor_msgs::PointCloud2& cloud = *(obs.cloud_);
+      const sensor_msgs::msg::PointCloud2& cloud = *(obs.cloud_);
 
       sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
       sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
       sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
-      geometry_msgs::Point32 pt;
+      geometry_msgs::msg::Point32 pt;
 
       for(; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z){
         //filter out points that are too high
@@ -231,7 +231,7 @@ namespace base_local_planner {
     double ox = laser_scan.origin.x;
     double oy = laser_scan.origin.y;
     double oz = laser_scan.origin.z;
-    
+
     if(!worldToMap3D(ox, oy, oz, sensor_x, sensor_y, sensor_z))
       return;
 
@@ -277,7 +277,7 @@ namespace base_local_planner {
     }
   }
 
-  void VoxelGridModel::getPoints(sensor_msgs::PointCloud2& cloud){
+  void VoxelGridModel::getPoints(sensor_msgs::msg::PointCloud2& cloud){
     size_t n = 0;
 
     for(unsigned int i = 0; i < obstacle_grid_.sizeX(); ++i)

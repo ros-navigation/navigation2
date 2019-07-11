@@ -43,12 +43,12 @@
 #include <Eigen/Core>
 #include <cmath>
 
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <pluginlib/class_list_macros.h>
 
 #include <base_local_planner/goal_functions.h>
-#include <nav_msgs/Path.h>
+#include <nav2_msgs/msg/path.hpp>
 
 #include <nav_core/parameter_magic.h>
 #include <tf2/utils.h>
@@ -284,7 +284,7 @@ namespace base_local_planner {
       delete world_model_;
   }
 
-  bool TrajectoryPlannerROS::stopWithAccLimits(const geometry_msgs::PoseStamped& global_pose, const geometry_msgs::PoseStamped& robot_vel, geometry_msgs::Twist& cmd_vel){
+  bool TrajectoryPlannerROS::stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, geometry_msgs::Twist& cmd_vel){
     //slow down with the maximum possible acceleration... we should really use the frequency that we're running at to determine what is feasible
     //but we'll use a tenth of a second to be consistent with the implementation of the local planner.
     double vx = sign(robot_vel.pose.position.x) * std::max(0.0, (fabs(robot_vel.pose.position.x) - acc_lim_x_ * sim_period_));
@@ -313,7 +313,7 @@ namespace base_local_planner {
     return false;
   }
 
-  bool TrajectoryPlannerROS::rotateToGoal(const geometry_msgs::PoseStamped& global_pose, const geometry_msgs::PoseStamped& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel){
+  bool TrajectoryPlannerROS::rotateToGoal(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel){
     double yaw = tf2::getYaw(global_pose.pose.orientation);
     double vel_yaw = tf2::getYaw(robot_vel.pose.orientation);
     cmd_vel.linear.x = 0;
@@ -356,7 +356,7 @@ namespace base_local_planner {
 
   }
 
-  bool TrajectoryPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan){
+  bool TrajectoryPlannerROS::setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan){
     if (! isInitialized()) {
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
@@ -379,13 +379,13 @@ namespace base_local_planner {
       return false;
     }
 
-    std::vector<geometry_msgs::PoseStamped> local_plan;
-    geometry_msgs::PoseStamped global_pose;
+    std::vector<geometry_msgs::msg::PoseStamped> local_plan;
+    geometry_msgs::msg::PoseStamped global_pose;
     if (!costmap_ros_->getRobotPose(global_pose)) {
       return false;
     }
 
-    std::vector<geometry_msgs::PoseStamped> transformed_plan;
+    std::vector<geometry_msgs::msg::PoseStamped> transformed_plan;
     //get the global plan in our frame
     if (!transformGlobalPlan(*tf_, global_plan_, global_pose, *costmap_, global_frame_, transformed_plan)) {
       ROS_WARN("Could not transform the global plan to the frame of the controller");
@@ -396,10 +396,10 @@ namespace base_local_planner {
     if(prune_plan_)
       prunePlan(global_pose, transformed_plan, global_plan_);
 
-    geometry_msgs::PoseStamped drive_cmds;
+    geometry_msgs::msg::PoseStamped drive_cmds;
     drive_cmds.header.frame_id = robot_base_frame_;
 
-    geometry_msgs::PoseStamped robot_vel;
+    geometry_msgs::msg::PoseStamped robot_vel;
     odom_helper_.getRobotVel(robot_vel);
 
     /* For timing uncomment
@@ -412,7 +412,7 @@ namespace base_local_planner {
     if(transformed_plan.empty())
       return false;
 
-    const geometry_msgs::PoseStamped& goal_point = transformed_plan.back();
+    const geometry_msgs::msg::PoseStamped& goal_point = transformed_plan.back();
     //we assume the global goal is the last point in the global plan
     const double goal_x = goal_point.pose.position.x;
     const double goal_y = goal_point.pose.position.y;
@@ -511,7 +511,7 @@ namespace base_local_planner {
     for (unsigned int i = 0; i < path.getPointsSize(); ++i) {
       double p_x, p_y, p_th;
       path.getPoint(i, p_x, p_y, p_th);
-      geometry_msgs::PoseStamped pose;
+      geometry_msgs::msg::PoseStamped pose;
       pose.header.frame_id = global_frame_;
       pose.header.stamp = ros::Time::now();
       pose.pose.position.x = p_x;
@@ -530,12 +530,12 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::checkTrajectory(double vx_samp, double vy_samp, double vtheta_samp, bool update_map){
-    geometry_msgs::PoseStamped global_pose;
+    geometry_msgs::msg::PoseStamped global_pose;
     if(costmap_ros_->getRobotPose(global_pose)){
       if(update_map){
         //we need to give the planne some sort of global plan, since we're only checking for legality
         //we'll just give the robots current position
-        std::vector<geometry_msgs::PoseStamped> plan;
+        std::vector<geometry_msgs::msg::PoseStamped> plan;
         plan.push_back(global_pose);
         tc_->updatePlan(plan, true);
       }
@@ -560,12 +560,12 @@ namespace base_local_planner {
 
   double TrajectoryPlannerROS::scoreTrajectory(double vx_samp, double vy_samp, double vtheta_samp, bool update_map){
     // Copy of checkTrajectory that returns a score instead of True / False
-    geometry_msgs::PoseStamped global_pose;
+    geometry_msgs::msg::PoseStamped global_pose;
     if(costmap_ros_->getRobotPose(global_pose)){
       if(update_map){
         //we need to give the planne some sort of global plan, since we're only checking for legality
         //we'll just give the robots current position
-        std::vector<geometry_msgs::PoseStamped> plan;
+        std::vector<geometry_msgs::msg::PoseStamped> plan;
         plan.push_back(global_pose);
         tc_->updatePlan(plan, true);
       }

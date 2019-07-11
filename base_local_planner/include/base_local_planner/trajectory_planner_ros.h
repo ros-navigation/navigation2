@@ -50,9 +50,9 @@
 
 #include <base_local_planner/planar_laser_scan.h>
 
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
+#include <nav_msgs/msg/Odometry.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/point.hpp>
 
 #include <tf2_ros/buffer.h>
@@ -65,7 +65,7 @@
 
 #include <nav_core/base_local_planner.h>
 
-#include <dynamic_reconfigure/server.h>
+//#include <dynamic_reconfigure/server.h>
 #include <base_local_planner/BaseLocalPlannerConfig.h>
 
 #include <base_local_planner/odometry_helper_ros.h>
@@ -105,7 +105,7 @@ namespace base_local_planner {
        * @brief  Destructor for the wrapper
        */
       ~TrajectoryPlannerROS();
-      
+
       /**
        * @brief  Given the current position, orientation, and velocity of the robot,
        * compute velocity commands to send to the base
@@ -119,7 +119,7 @@ namespace base_local_planner {
        * @param orig_global_plan The plan to pass to the controller
        * @return True if the plan was updated successfully, false otherwise
        */
-      bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
+      bool setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan);
 
       /**
        * @brief  Check if the goal pose has been achieved
@@ -174,7 +174,7 @@ namespace base_local_planner {
        * @param  cmd_vel The velocity commands to be filled
        * @return  True if a valid trajectory was found, false otherwise
        */
-      bool rotateToGoal(const geometry_msgs::PoseStamped& global_pose, const geometry_msgs::PoseStamped& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel);
+      bool rotateToGoal(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel);
 
       /**
        * @brief Stop the robot taking into account acceleration limits
@@ -183,7 +183,7 @@ namespace base_local_planner {
        * @param  cmd_vel The velocity commands to be filled
        * @return  True if a valid trajectory was found, false otherwise
        */
-      bool stopWithAccLimits(const geometry_msgs::PoseStamped& global_pose, const geometry_msgs::PoseStamped& robot_vel, geometry_msgs::Twist& cmd_vel);
+      bool stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, geometry_msgs::Twist& cmd_vel);
 
       std::vector<double> loadYVels(ros::NodeHandle node);
 
@@ -204,7 +204,7 @@ namespace base_local_planner {
       std::string robot_base_frame_; ///< @brief Used as the base frame id of the robot
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
-      std::vector<geometry_msgs::PoseStamped> global_plan_;
+      std::vector<geometry_msgs::msg::PoseStamped> global_plan_;
       bool prune_plan_;
       boost::recursive_mutex odom_lock_;
 
@@ -225,7 +225,7 @@ namespace base_local_planner {
       bool initialized_;
       base_local_planner::OdometryHelperRos odom_helper_;
 
-      std::vector<geometry_msgs::Point> footprint_spec_;
+      std::vector<geometry_msgs::msg::Point> footprint_spec_;
   };
 };
 #endif

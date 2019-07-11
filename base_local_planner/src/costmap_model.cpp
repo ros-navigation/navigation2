@@ -36,15 +36,15 @@
 *********************************************************************/
 #include <base_local_planner/line_iterator.h>
 #include <base_local_planner/costmap_model.h>
-#include <costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/cost_values.hpp>
 
 using namespace std;
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 namespace base_local_planner {
   CostmapModel::CostmapModel(const Costmap2D& ma) : costmap_(ma) {}
 
-  double CostmapModel::footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
+  double CostmapModel::footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
       double inscribed_radius, double circumscribed_radius){
     // returns:
     //  -1 if footprint covers at least a lethal obstacle cell, or

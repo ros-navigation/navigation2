@@ -45,7 +45,7 @@ OdometryHelperRos::OdometryHelperRos(std::string odom_topic) {
   setOdomTopic( odom_topic );
 }
 
-void OdometryHelperRos::odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+void OdometryHelperRos::odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& msg) {
     ROS_INFO_ONCE("odom received!");
 
   //we assume that the odometry is published in the frame of the base
@@ -65,7 +65,7 @@ void OdometryHelperRos::getOdom(nav_msgs::Odometry& base_odom) {
 }
 
 
-void OdometryHelperRos::getRobotVel(geometry_msgs::PoseStamped& robot_vel) {
+void OdometryHelperRos::getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel) {
   // Set current velocities from odometry
   geometry_msgs::Twist global_vel;
   {

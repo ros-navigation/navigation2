@@ -41,10 +41,10 @@
 #include <cfloat>
 #include <geometry_msgs/msg/point.hpp>
 //#include "geometry_msgs/msg/point.hpp"
-#include <costmap_2d/observation.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 #include <base_local_planner/world_model.h>
 
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/msg/point_cloud.h>
 
 namespace base_local_planner {
   /**
@@ -103,7 +103,7 @@ namespace base_local_planner {
        * @param laser_scans The laser scans used to clear freespace (the point grid only uses the first scan which is assumed to be the base laser)
        */
       void updateWorld(const std::vector<geometry_msgs::msg::Point>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
+          const std::vector<nav2_costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       /**
        * @brief  Convert from world coordinates to grid coordinates
@@ -310,7 +310,7 @@ namespace base_local_planner {
        * @brief  Get the points in the point grid
        * @param  cloud The point cloud to insert the points into
        */
-      void getPoints(sensor_msgs::PointCloud2& cloud);
+      void getPoints(sensor_msgs::msg::PointCloud2& cloud);
 
     private:
       double resolution_; ///< @brief The resolution of the grid in meters/cell

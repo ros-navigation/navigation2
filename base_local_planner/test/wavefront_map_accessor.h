@@ -7,7 +7,7 @@
 
 #ifndef WAVEFRONT_MAP_ACCESSOR_H_
 #define WAVEFRONT_MAP_ACCESSOR_H_
-#include <costmap_2d/cost_values.h>
+#include <nav2_costmap_2d/cost_values.hpp>
 namespace base_local_planner {
 
 /**

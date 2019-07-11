@@ -65,7 +65,7 @@ private:
   tf2_ros::Buffer* tf_;
 
 
-  std::vector<geometry_msgs::PoseStamped> global_plan_;
+  std::vector<geometry_msgs::msg::PoseStamped> global_plan_;
 
 
   boost::mutex limits_configuration_mutex_;
@@ -90,11 +90,11 @@ public:
       costmap_2d::Costmap2D* costmap,
       std::string global_frame);
 
-  bool getGoal(geometry_msgs::PoseStamped& goal_pose);
+  bool getGoal(geometry_msgs::msg::PoseStamped& goal_pose);
 
-  bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
+  bool setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan);
 
-  bool getLocalPlan(const geometry_msgs::PoseStamped& global_pose, std::vector<geometry_msgs::PoseStamped>& transformed_plan);
+  bool getLocalPlan(const geometry_msgs::msg::PoseStamped& global_pose, std::vector<geometry_msgs::msg::PoseStamped>& transformed_plan);
 
   costmap_2d::Costmap2D* getCostmap();
 

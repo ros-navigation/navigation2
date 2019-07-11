@@ -44,7 +44,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <math.h>
 
-#include <geometry_msgs/Point.h>
+#include <geometry_msgs/msg/Point.h>
 #include <base_local_planner/Position2DInt.h>
 
 #include "wavefront_map_accessor.h"
@@ -55,7 +55,7 @@ namespace base_local_planner {
 
 class TrajectoryPlannerTest : public testing::Test {
   public:
-    TrajectoryPlannerTest(MapGrid* g, WavefrontMapAccessor* wave, const costmap_2d::Costmap2D& map, std::vector<geometry_msgs::Point> footprint_spec);
+    TrajectoryPlannerTest(MapGrid* g, WavefrontMapAccessor* wave, const nav2_costmap_2d::Costmap2D& map, std::vector<geometry_msgs::msg::Point> footprint_spec);
     void correctFootprint();
     void footprintObstacles();
     void checkGoalDistance();
@@ -68,7 +68,7 @@ class TrajectoryPlannerTest : public testing::Test {
     TrajectoryPlanner tc;
 };
 
-TrajectoryPlannerTest::TrajectoryPlannerTest(MapGrid* g, WavefrontMapAccessor* wave, const costmap_2d::Costmap2D& map, std::vector<geometry_msgs::Point> footprint_spec)
+TrajectoryPlannerTest::TrajectoryPlannerTest(MapGrid* g, WavefrontMapAccessor* wave, const nav2_costmap_2d::Costmap2D& map, std::vector<geometry_msgs::msg::Point> footprint_spec)
 : map_(g), wa(wave), cm(map), tc(cm, map, footprint_spec, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0)
 {}
 
@@ -172,9 +172,9 @@ TrajectoryPlannerTest* setup_testclass_singleton() {
   if (tct == NULL) {
     MapGrid* mg = new MapGrid (10, 10);
     WavefrontMapAccessor* wa = new WavefrontMapAccessor(mg, .25);
-    const costmap_2d::Costmap2D& map = *wa;
-    std::vector<geometry_msgs::Point> footprint_spec;
-    geometry_msgs::Point pt;
+    const nav2_costmap_2d::Costmap2D& map = *wa;
+    std::vector<geometry_msgs::msg::Point> footprint_spec;
+    geometry_msgs::msg::Point pt;
     //create a square footprint
     pt.x = 2;
     pt.y = 2;

@@ -35,8 +35,8 @@
 #include <base_local_planner/map_cell.h>
 #include <vector>
 
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_cloud2_iterator.h>
 
 namespace base_local_planner {
   MapGridVisualizer::MapGridVisualizer() {}
@@ -48,11 +48,11 @@ namespace base_local_planner {
     cost_function_ = cost_function;
 
     ns_nh_ = ros::NodeHandle("~/" + name_);
-    pub_ = ns_nh_.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
+    pub_ = ns_nh_.advertise<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
   }
 
-  void MapGridVisualizer::publishCostCloud(const costmap_2d::Costmap2D* costmap_p_) {
-    sensor_msgs::PointCloud2 cost_cloud;
+  void MapGridVisualizer::publishCostCloud(const nav2_costmap_2d::Costmap2D* costmap_p_) {
+    sensor_msgs::msg::PointCloud2 cost_cloud;
     cost_cloud.header.frame_id = frame_id_;
     cost_cloud.header.stamp = ros::Time::now();
 

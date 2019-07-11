@@ -36,7 +36,7 @@
 *********************************************************************/
 
 #include <base_local_planner/trajectory_planner.h>
-#include <costmap_2d/footprint.h>
+#include <nav2_costmap_2d/footprint.hpp>
 #include <string>
 #include <sstream>
 #include <math.h>
@@ -46,7 +46,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 
 //for computing path distance
 #include <queue>
@@ -54,7 +54,7 @@
 #include <tf2/utils.h>
 
 using namespace std;
-using namespace costmap_2d;
+using namespace nav2_costmap_2d;
 
 namespace base_local_planner{
 
@@ -141,7 +141,7 @@ namespace base_local_planner{
 
   TrajectoryPlanner::TrajectoryPlanner(WorldModel& world_model,
       const Costmap2D& costmap,
-      std::vector<geometry_msgs::Point> footprint_spec,
+      std::vector<geometry_msgs::msg::Point> footprint_spec,
       double acc_lim_x, double acc_lim_y, double acc_lim_theta,
       double sim_time, double sim_granularity,
       int vx_samples, int vtheta_samples,
@@ -473,14 +473,14 @@ namespace base_local_planner{
     return cost;
   }
 
-  void TrajectoryPlanner::updatePlan(const vector<geometry_msgs::PoseStamped>& new_plan, bool compute_dists){
+  void TrajectoryPlanner::updatePlan(const vector<geometry_msgs::msg::PoseStamped>& new_plan, bool compute_dists){
     global_plan_.resize(new_plan.size());
     for(unsigned int i = 0; i < new_plan.size(); ++i){
       global_plan_[i] = new_plan[i];
     }
 
     if( global_plan_.size() > 0 ){
-      geometry_msgs::PoseStamped& final_goal_pose = global_plan_[ global_plan_.size() - 1 ];
+      geometry_msgs::msg::PoseStamped& final_goal_pose = global_plan_[ global_plan_.size() - 1 ];
       final_goal_x_ = final_goal_pose.pose.position.x;
       final_goal_y_ = final_goal_pose.pose.position.y;
       final_goal_position_valid_ = true;
@@ -904,8 +904,8 @@ namespace base_local_planner{
   }
 
   //given the current state of the robot, find a good trajectory
-  Trajectory TrajectoryPlanner::findBestPath(const geometry_msgs::PoseStamped& global_pose,
-      geometry_msgs::PoseStamped& global_vel, geometry_msgs::PoseStamped& drive_velocities) {
+  Trajectory TrajectoryPlanner::findBestPath(const geometry_msgs::msg::PoseStamped& global_pose,
+      geometry_msgs::msg::PoseStamped& global_vel, geometry_msgs::msg::PoseStamped& drive_velocities) {
 
     Eigen::Vector3f pos(global_pose.pose.position.x, global_pose.pose.position.y, tf2::getYaw(global_pose.pose.orientation));
     Eigen::Vector3f vel(global_vel.pose.position.x, global_vel.pose.position.y, tf2::getYaw(global_vel.pose.orientation));
