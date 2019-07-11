@@ -45,7 +45,7 @@ public:
     auto handle_goal =
       [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
-        std::lock_guard<std::mutex> lock(update_mutex_);
+        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
         if (!server_active_) {
           return rclcpp_action::GoalResponse::REJECT;
@@ -58,7 +58,7 @@ public:
     auto handle_cancel =
       [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
       {
-        std::lock_guard<std::mutex> lock(update_mutex_);
+        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
         // TODO(orduno) could goal handle be aborted (and on a terminal state) before reaching here?
         debug_msg("Received request for goal cancellation");
         return rclcpp_action::CancelResponse::ACCEPT;
@@ -67,7 +67,7 @@ public:
     auto handle_accepted =
       [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
       {
-        std::lock_guard<std::mutex> lock(update_mutex_);
+        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
         debug_msg("Receiving a new goal");
 
         if (is_active(current_handle_)) {
@@ -112,12 +112,13 @@ public:
 
   void activate()
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     server_active_ = true;
   }
 
   void deactivate()
   {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     server_active_ = false;
 
     if (is_active(current_handle_)) {
@@ -133,19 +134,19 @@ public:
 
   bool is_server_active()
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     return server_active_;
   }
 
   bool is_preempt_requested() const
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     return preempt_requested_;
   }
 
   const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!pending_handle_ || !pending_handle_->is_active()) {
       error_msg("Attempting to get pending goal when not available");
@@ -168,7 +169,7 @@ public:
 
   const std::shared_ptr<const typename ActionT::Goal> get_current_goal() const
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!is_active(current_handle_)) {
       error_msg("A goal is not available or has reached a final state");
@@ -180,7 +181,7 @@ public:
 
   bool is_cancel_requested() const
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     // A cancel request is assumed if either handle is canceled by the client.
 
@@ -200,7 +201,7 @@ public:
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (is_active(current_handle_)) {
       if (current_handle_->is_canceling()) {
@@ -235,7 +236,7 @@ public:
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
-    std::lock_guard<std::mutex> lock(update_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (is_active(current_handle_)) {
       debug_msg("Setting succeed on current goal.");
@@ -267,7 +268,7 @@ protected:
 
   ExecuteCallback execute_callback_;
 
-  mutable std::mutex update_mutex_;
+  mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
   bool preempt_requested_{false};
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
