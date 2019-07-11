@@ -115,10 +115,9 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose.pose.orientation = orientationAroundZAxis(theta);
 
   auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
-  if (!is_action_server_ready)
-  {
+  if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
-      "Is the initial pose set?");
+      " Is the initial pose set?");
     return;
   }
 
