@@ -18,6 +18,7 @@ from threading import Thread
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
+from rclpy.qos import qos_profile_sensor_data
 
 import numpy as np
 import math
@@ -48,8 +49,8 @@ class TurtlebotEnv():
         self.zero_div_tol = 0.01
         self.range_min = 0.0
 
-        self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel')
-        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback)
+        self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
+        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
 
         self.reset_simulation = self.node_.create_client(Empty, 'reset_simulation')
         self.reset_world = self.node_.create_client(Empty, 'reset_world')
@@ -129,13 +130,15 @@ class TurtlebotEnv():
             return True
         return False
 
-    def reset(self):
-        self.scan_msg_received = False
+    def stop_action(self):
         vel_cmd = Twist()
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
         self.pub_cmd_vel.publish(vel_cmd)
-        
+
+    def reset(self):
+        self.scan_msg_received = False
+        self.stop_action    
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
             print('Reset world service is not available...')
         self.reset_world.call_async(Empty.Request())
