@@ -197,13 +197,6 @@ public:
     return current_handle_->is_canceling();
   }
 
-  // <PR FEEDBACK REQUEST> I'm trying to simplify even further how the user of the action server
-  //                       takes the goals (current and preemption) to a terminal state
-  //                       (and communicates that back to the client).
-  //                       On a simple action server, perhaps there is no need for the user to
-  //                       differentiate between cancelling and aborting. In addition, we are
-  //                       accepting all goal cancellation requests, so those goals
-  //                       should probably terminate with a canceled call (not abort).
   void terminate_goals(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
