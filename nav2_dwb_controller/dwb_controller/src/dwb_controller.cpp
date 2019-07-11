@@ -100,8 +100,10 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  action_server_->deactivate();
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
+  publishZeroVelocity();
   vel_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -149,6 +151,16 @@ void DwbController::followPath()
 
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
+      if (action_server_ == nullptr) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
+        return;
+      }
+
+      if (!action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+        return;
+      }
+
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
         action_server_->terminate_goals();

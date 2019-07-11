@@ -118,7 +118,6 @@ public:
 
   void deactivate()
   {
-    std::lock_guard<std::mutex> lock_goal_handle(update_mutex_);
     server_active_ = false;
 
     if (is_active(current_handle_)) {
