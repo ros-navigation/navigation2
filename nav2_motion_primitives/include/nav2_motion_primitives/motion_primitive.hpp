@@ -129,7 +129,7 @@ protected:
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
       RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
-      action_server_->abort_all();
+      action_server_->terminate_goals();
       return;
     }
 
@@ -142,17 +142,17 @@ protected:
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
-        action_server_->cancel_all();
+        action_server_->terminate_goals();
         return;
       }
 
       // TODO(orduno) #868 Enable preempting a motion primitive on-the-fly without stopping
-      if (action_server_->preempt_requested()) {
+      if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
           primitive_name_.c_str());
         stopRobot();
-        action_server_->abort_all();
+        action_server_->terminate_goals();
         return;
       }
 
@@ -164,7 +164,7 @@ protected:
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
-          action_server_->abort_all();
+          action_server_->terminate_goals();
           return;
 
         case Status::RUNNING:

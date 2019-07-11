@@ -171,7 +171,7 @@ BtNavigator::navigateToPose()
   auto is_canceling = [this]() {return action_server_->is_cancel_requested();};
 
   auto on_loop = [this]() {
-      if (action_server_->preempt_requested()) {
+      if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
@@ -189,12 +189,12 @@ BtNavigator::navigateToPose()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->abort_all();
+      action_server_->terminate_goals();
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->cancel_all();
+      action_server_->terminate_goals();
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;

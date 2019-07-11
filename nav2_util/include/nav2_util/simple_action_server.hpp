@@ -58,6 +58,8 @@ public:
     auto handle_cancel =
       [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
       {
+        std::lock_guard<std::mutex> lock(update_mutex_);
+        // TODO(orduno) could goal handle be aborted (and on a terminal state) before reaching here?
         debug_msg("Received request for goal cancellation");
         return rclcpp_action::CancelResponse::ACCEPT;
       };
@@ -73,9 +75,9 @@ public:
 
           if (is_active(pending_handle_)) {
             debug_msg("The pending slot is occupied."
-              " The pending goal will be canceled and replaced.");
+              " The previous pending goal will be aborted and replaced.");
 
-            pending_handle_->canceled(empty_result());
+            pending_handle_->abort(empty_result());
             pending_handle_.reset();
             preempt_requested_ = false;
           }
@@ -86,9 +88,9 @@ public:
         } else {
           if (is_active(pending_handle_)) {
             // Shouldn't reach a state with a pending goal but no current one.
-            error_msg("Forgot to handle a preemption. Cancelling the pending goal.");
+            error_msg("Forgot to handle a preemption. Aborting the pending goal.");
 
-            pending_handle_->canceled(empty_result());
+            pending_handle_->abort(empty_result());
             pending_handle_.reset();
             preempt_requested_ = false;
           }
@@ -120,23 +122,23 @@ public:
     server_active_ = false;
 
     if (is_active(current_handle_)) {
-      warn_msg("Taking action server to deactive state with an active goal, will be aborted");
+      warn_msg("Taking action server to deactive state with an active goal.");
     }
 
     if (is_active(pending_handle_)) {
-      warn_msg("Taking action server to deactive state with a pending preemption, will be aborted");
+      warn_msg("Taking action server to deactive state with a pending preemption.");
     }
 
-    abort_all();
+    terminate_goals();
   }
 
-  bool serverIsActive()
+  bool is_server_active()
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
     return server_active_;
   }
 
-  bool preempt_requested() const
+  bool is_preempt_requested() const
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
     return preempt_requested_;
@@ -181,6 +183,8 @@ public:
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
+    // A cancel request is assumed if either handle is canceled by the client.
+
     if (current_handle_ == nullptr) {
       error_msg("Checking for cancel but current goal is not available");
       return false;
@@ -193,41 +197,38 @@ public:
     return current_handle_->is_canceling();
   }
 
-  void cancel_all(
+  void terminate_goals(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
     std::lock_guard<std::mutex> lock(update_mutex_);
 
-    if (current_handle_ != nullptr) {
-      debug_msg("Cancelling the current goal.");
-      current_handle_->canceled(result);
-      current_handle_.reset();
+    if (is_active(current_handle_)) {
+      if (current_handle_->is_canceling()) {
+        debug_msg("Client requested to cancel the current goal. Cancelling.");
+        current_handle_->canceled(result);
+        current_handle_.reset();
+      } else {
+        debug_msg("Aborting the current goal.");
+        current_handle_->abort(result);
+        current_handle_.reset();
+      }
     }
 
-    if (pending_handle_ != nullptr) {
-      warn_msg("Cancelling a pending goal. Should check for pre-empt requests.");
-      pending_handle_->canceled(result);
-      pending_handle_.reset();
-      preempt_requested_ = false;
-    }
-  }
-
-  void abort_all()
-  {
-    std::lock_guard<std::mutex> lock(update_mutex_);
-
-    if (current_handle_ != nullptr) {
-      debug_msg("Aborting the current goal.");
-      current_handle_->abort(empty_result());
-      current_handle_.reset();
-    }
-
-    if (pending_handle_ != nullptr) {
-      warn_msg("Aborting a pending goal. Should check for pre-empt requests.");
-      pending_handle_->abort(empty_result());
-      pending_handle_.reset();
-      preempt_requested_ = false;
+    if (is_active(pending_handle_)) {
+      if (pending_handle_->is_canceling()) {
+        warn_msg("Client requested to cancel the pending goal."
+          " Cancelling. Should check for pre-empt requests before terminating the goal.");
+        pending_handle_->canceled(result);
+        pending_handle_.reset();
+        preempt_requested_ = false;
+      } else {
+        warn_msg("Aborting a pending goal. "
+          " Should check for pre-empt requests before terminating the goal.");
+        pending_handle_->abort(result);
+        pending_handle_.reset();
+        preempt_requested_ = false;
+      }
     }
   }
 
@@ -243,10 +244,9 @@ public:
       current_handle_.reset();
     }
 
-    // TODO(orduno) Cancelling any pending goal. Get consensus on policy.
     if (is_active(pending_handle_)) {
       warn_msg("A preemption request was available before succeeding on the current goal.");
-      pending_handle_->canceled(empty_result());
+      pending_handle_->abort(empty_result());
       pending_handle_.reset();
       preempt_requested_ = false;
     }
