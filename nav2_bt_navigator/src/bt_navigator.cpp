@@ -168,7 +168,19 @@ BtNavigator::navigateToPose()
 {
   initializeGoalPose();
 
-  auto is_canceling = [this]() {return action_server_->is_cancel_requested();};
+  auto is_canceling = [this]() {
+      if (action_server_ == nullptr) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
+        return true;
+      }
+
+      if (!action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
+        return true;
+      }
+
+      return action_server_->is_cancel_requested();
+    };
 
   auto on_loop = [this]() {
       if (action_server_->is_preempt_requested()) {

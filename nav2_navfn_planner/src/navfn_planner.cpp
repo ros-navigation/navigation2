@@ -111,6 +111,7 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
+  action_server_->deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -163,6 +164,16 @@ NavfnPlanner::computePathToPose()
       current_costmap_size_[0] = costmap_.metadata.size_x;
       current_costmap_size_[1] = costmap_.metadata.size_y;
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+    }
+
+    if (action_server_ == nullptr) {
+      RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
+      return;
+    }
+
+    if (!action_server_->is_server_active()) {
+      RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+      return;
     }
 
     if (action_server_->is_cancel_requested()) {
