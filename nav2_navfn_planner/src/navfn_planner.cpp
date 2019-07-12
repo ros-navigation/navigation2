@@ -100,6 +100,7 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
+  action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
