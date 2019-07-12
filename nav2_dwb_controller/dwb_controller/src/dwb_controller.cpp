@@ -88,6 +88,7 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  action_server_->activate();
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
