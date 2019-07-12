@@ -46,7 +46,7 @@ OdometryHelperRos::OdometryHelperRos(std::string odom_topic) {
 }
 
 void OdometryHelperRos::odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& msg) {
-    ROS_INFO_ONCE("odom received!");
+    RCLCPP_INFO_ONCE(rclcpp::get_logger("odom received!"));
 
   //we assume that the odometry is published in the frame of the base
   boost::mutex::scoped_lock lock(odom_mutex_);

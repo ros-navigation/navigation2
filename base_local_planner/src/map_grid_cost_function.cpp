@@ -98,7 +98,7 @@ double MapGridCostFunction::scoreTrajectory(Trajectory &traj) {
     //we won't allow trajectories that go off the map... shouldn't happen that often anyways
     if ( ! costmap_->worldToMap(px, py, cell_x, cell_y)) {
       //we're off the map
-      ROS_WARN("Off Map %f, %f", px, py);
+      RCLCPP_WARN(rclcpp::get_logger("Off Map %f, %f", px, py));
       return -4.0;
     }
     grid_dist = getCellCosts(cell_x, cell_y);

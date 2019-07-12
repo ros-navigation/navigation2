@@ -91,7 +91,7 @@ bool LatchedStopRotateController::isGoalReached(LocalPlannerUtil* planner_util,
     //if the user wants to latch goal tolerance, if we ever reach the goal location, we'll
     //just rotate in place
     if (latch_xy_goal_tolerance_ && ! xy_tolerance_latch_) {
-      ROS_DEBUG("Goal position reached (check), stopping and turning in place");
+      RCLCPP_DEBUG("Goal position reached (check), stopping and turning in place");
       xy_tolerance_latch_ = true;
     }
     double goal_th = tf2::getYaw(goal_pose.pose.orientation);
@@ -138,7 +138,7 @@ bool LatchedStopRotateController::stopWithAccLimits(const geometry_msgs::msg::Po
     cmd_vel.angular.z = vth;
     return true;
   }
-  ROS_WARN("Stopping cmd in collision");
+  RCLCPP_WARN(rclcpp::get_logger("Stopping cmd in collision"));
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
@@ -190,7 +190,7 @@ bool LatchedStopRotateController::rotateToGoal(
     cmd_vel.angular.z = v_theta_samp;
     return true;
   }
-  ROS_WARN("Rotation cmd in collision");
+  RCLCPP_WARN(rclcpp::get_logger("Rotation cmd in collision"));
   cmd_vel.angular.z = 0.0;
   return false;
 
@@ -208,7 +208,7 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
   //we assume the global goal is the last point in the global plan
   geometry_msgs::msg::PoseStamped goal_pose;
   if ( ! planner_util->getGoal(goal_pose)) {
-    ROS_ERROR("Could not get goal pose");
+    RCLCPP_ERROR(rclcpp::get_logger("Could not get goal pose"));
     return false;
   }
 
@@ -217,7 +217,7 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
   //if the user wants to latch goal tolerance, if we ever reach the goal location, we'll
   //just rotate in place
   if (latch_xy_goal_tolerance_ && ! xy_tolerance_latch_ ) {
-    ROS_INFO("Goal position reached, stopping and turning in place");
+    RCLCPP_INFO(rclcpp::get_logger("Goal position reached, stopping and turning in place"));
     xy_tolerance_latch_ = true;
   }
   //check to see if the goal orientation has been reached
@@ -230,7 +230,7 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
     cmd_vel.angular.z = 0.0;
     rotating_to_goal_ = false;
   } else {
-    ROS_DEBUG("Angle: %f Tolerance: %f", angle, limits.yaw_goal_tolerance);
+    RCLCPP_DEBUG(rclcpp::get_logger("Angle: %f Tolerance: %f", angle, limits.yaw_goal_tolerance));
     geometry_msgs::msg::PoseStamped robot_vel;
     odom_helper_.getRobotVel(robot_vel);
     nav_msgs::Odometry base_odom;
@@ -245,10 +245,10 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
           acc_lim,
           sim_period,
           obstacle_check)) {
-        ROS_INFO("Error when stopping.");
+        RCLCPP_INFO(rclcpp::get_logger("Error when stopping."));
         return false;
       }
-      ROS_DEBUG("Stopping...");
+      RCLCPP_DEBUG(rclcpp::get_logger("Stopping..."));
     }
     //if we're stopped... then we want to rotate to goal
     else {
@@ -263,10 +263,10 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
           sim_period,
           limits,
           obstacle_check)) {
-        ROS_INFO("Error when rotating.");
+        RCLCPP_INFO(get_logger("Error when rotating."));
         return false;
       }
-      ROS_DEBUG("Rotating...");
+      RCLCPP_DEBUG(rclcpp::get_logger("Rotating..."));
     }
   }
 

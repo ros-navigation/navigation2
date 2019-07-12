@@ -179,7 +179,7 @@ namespace base_local_planner{
     std::vector<geometry_msgs::msg::PoseStamped> adjusted_global_plan;
     adjustPlanResolution(global_plan, adjusted_global_plan, costmap.getResolution());
     if (adjusted_global_plan.size() != global_plan.size()) {
-      ROS_DEBUG("Adjusted global plan resolution, added %zu points", adjusted_global_plan.size() - global_plan.size());
+      RCLCPP_DEBUG(rclcpp::get_logger("Adjusted global plan resolution, added %zu points", adjusted_global_plan.size() - global_plan.size()));
     }
     unsigned int i;
     // put global path points into local map until we reach the border of the local map
@@ -198,7 +198,7 @@ namespace base_local_planner{
       }
     }
     if (!started_path) {
-      ROS_ERROR("None of the %d first of %zu (%zu) points of the global plan were in the local costmap and free",
+      RCLCPP_ERROR(rclcpp::get_logger("None of the %d first of %zu (%zu) points of the global plan were in the local costmap and free"),
           i, adjusted_global_plan.size(), global_plan.size());
       return;
     }
@@ -234,7 +234,7 @@ namespace base_local_planner{
       }
     }
     if (!started_path) {
-      ROS_ERROR("None of the points of the global plan were in the local costmap, global plan points too far from robot");
+      RCLCPP_ERROR(rclcpp::get_logger("None of the points of the global plan were in the local costmap, global plan points too far from robot"));
       return;
     }
 

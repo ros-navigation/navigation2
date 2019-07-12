@@ -42,7 +42,7 @@
 
 namespace base_local_planner {
 
-ObstacleCostFunction::ObstacleCostFunction(costmap_2d::Costmap2D* costmap) 
+ObstacleCostFunction::ObstacleCostFunction(costmap_2d::Costmap2D* costmap)
     : costmap_(costmap), sum_scores_(false) {
   if (costmap != NULL) {
     world_model_ = new base_local_planner::CostmapModel(*costmap_);
@@ -77,7 +77,7 @@ double ObstacleCostFunction::scoreTrajectory(Trajectory &traj) {
   double px, py, pth;
   if (footprint_spec_.size() == 0) {
     // Bug, should never happen
-    ROS_ERROR("Footprint spec is empty, maybe missing call to setFootprint?");
+    ROS_ERROR(rclcpp::get_logger("Footprint spec is empty, maybe missing call to setFootprint?"));
     return -9;
   }
 

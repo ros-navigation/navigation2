@@ -135,7 +135,7 @@ namespace base_local_planner {
       const nav2_costmap_2d::Costmap2D& costmap,
       const std::string& global_frame,
       geometry_msgs::msg::PoseStamped& global_pose,
-      const nav_msgs::Odometry& base_odom,
+      const nav2_msgs::msg::Odometry& base_odom,
       double rot_stopped_vel, double trans_stopped_vel,
       double xy_goal_tolerance, double yaw_goal_tolerance);
 

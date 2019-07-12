@@ -52,7 +52,7 @@ void LocalPlannerUtil::initialize(
     initialized_ = true;
   }
   else{
-    ROS_WARN("Planner utils have already been initialized, doing nothing.");
+    RCLCPP_WARN(rclcpp::get_logger("Planner utils have already been initialized, doing nothing."));
   }
 }
 
@@ -90,7 +90,7 @@ bool LocalPlannerUtil::getGoal(geometry_msgs::msg::PoseStamped& goal_pose) {
 
 bool LocalPlannerUtil::setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan) {
   if(!initialized_){
-    ROS_ERROR("Planner utils have not been initialized, please call initialize() first");
+    RCLCPP_ERROR(rclcpp::get_logger("Planner utils have not been initialized, please call initialize() first"));
     return false;
   }
 
@@ -111,7 +111,7 @@ bool LocalPlannerUtil::getLocalPlan(const geometry_msgs::msg::PoseStamped& globa
       *costmap_,
       global_frame_,
       transformed_plan)) {
-    ROS_WARN("Could not transform the global plan to the frame of the controller");
+    RCLCPP_WARN(rclcpp::get_logger("Could not transform the global plan to the frame of the controller"));
     return false;
   }
 

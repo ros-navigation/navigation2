@@ -5,7 +5,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 -cmake_minimum_required(VERSION 2.8.3)
 +cmake_minimum_required(VERSION 3.5)
  project(base_local_planner)
- 
+
 -find_package(catkin REQUIRED
 -        COMPONENTS
 -            angles
@@ -44,7 +44,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 +find_package(tf2 REQUIRED)
 +find_package(tf2_ros REQUIRED)
 +find_package(rosidl_default_generators REQUIRED)
- 
+
  find_package(Eigen3 REQUIRED)
 -remove_definitions(-DDISABLE_LIBUSB-1.0)
 +
@@ -54,7 +54,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
      ${EIGEN3_INCLUDE_DIRS}
  )
  add_definitions(${EIGEN3_DEFINITIONS})
- 
+
 -catkin_python_setup()
 +set(dependencies
 +  angles
@@ -69,7 +69,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 +  tf2
 +  tf2_ros
 +)
- 
+
  # messages
 -add_message_files(
 -    DIRECTORY msg
@@ -118,7 +118,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 +    "msg/Position2DInt.msg"
 +    DEPENDENCIES std_msgs
 +)
- 
+
 -add_library(base_local_planner
 +add_library(base_local_planner_core
  	src/footprint_helper.cpp
@@ -144,7 +144,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 +  ${dependencies}
 +  ${Eigen_LIBRARIES}
 +)
- 
+
  add_library(trajectory_planner_ros
  	src/trajectory_planner.cpp
  	src/trajectory_planner_ros.cpp)
@@ -152,11 +152,11 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
  target_link_libraries(trajectory_planner_ros
 -     base_local_planner)
 +     base_local_planner_core)
- 
+
  add_executable(point_grid src/point_grid.cpp)
 -add_dependencies(point_grid ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 -target_link_libraries(point_grid ${catkin_LIBRARIES})
- 
+
  install(TARGETS
 -            base_local_planner
 -            trajectory_planner_ros
@@ -172,14 +172,14 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 +    LIBRARY DESTINATION lib
 +    RUNTIME DESTINATION lib/${PROJECT_NAME}
  )
- 
+
 -install(DIRECTORY include/${PROJECT_NAME}/
 -  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 -  PATTERN ".svn" EXCLUDE
 +install(DIRECTORY include/
 +  DESTINATION include/
  )
- 
+
 -if(CATKIN_ENABLE_TESTING)
 -  find_package(rostest)
 -  catkin_add_gtest(base_local_planner_utest
@@ -197,7 +197,7 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
 -      base_local_planner trajectory_planner_ros
 +      base_local_planner_core trajectory_planner_ros
        )
- 
+
 -  catkin_add_gtest(line_iterator
 +  ament_add_gtest(line_iterator
        test/line_iterator_test.cpp)
@@ -219,25 +219,25 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
      <name>base_local_planner</name>
      <version>1.16.2</version>
      <description>
- 
--        This package provides implementations of the Trajectory Rollout and Dynamic Window approaches to local robot navigation on a plane. Given a plan to follow and a costmap, the controller produces velocity commands to send to a mobile base. This package supports both holonomic and non-holonomic robots, any robot footprint that can be represented as a convex polygon or circle, and exposes its configuration as ROS parameters that can be set in a launch file. This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the <a href="http://wiki.ros.org/nav_core">nav_core</a> package. 
+
+-        This package provides implementations of the Trajectory Rollout and Dynamic Window approaches to local robot navigation on a plane. Given a plan to follow and a costmap, the controller produces velocity commands to send to a mobile base. This package supports both holonomic and non-holonomic robots, any robot footprint that can be represented as a convex polygon or circle, and exposes its configuration as ROS parameters that can be set in a launch file. This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the <a href="http://wiki.ros.org/nav_core">nav_core</a> package.
 +        This package provides implementations of the Trajectory Rollout and Dynamic Window approaches to local robot navigation on a plane. Given a plan to follow and a costmap, the controller produces velocity commands to send to a mobile base. This package supports both holonomic and non-holonomic robots, any robot footprint that can be represented as a convex polygon or circle, and exposes its configuration as ROS parameters that can be set in a launch file. This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the <a href="http://wiki.ros.org/nav_core">nav_core</a> package.
- 
+
      </description>
      <author>Eitan Marder-Eppstein</author>
 @@ -17,34 +17,33 @@
      <license>BSD</license>
      <url>http://wiki.ros.org/base_local_planner</url>
- 
+
 -    <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
 -
 -    <build_depend>cmake_modules</build_depend>
 -    <build_depend>message_generation</build_depend>
 -    <build_depend>tf2_geometry_msgs</build_depend>
 +    <buildtool_depend>ament_cmake</buildtool_depend>
- 
+
 +    <build_export_depend>rosidl_default_runtime</build_export_depend>
-+    
++
 +    <depend>rosidl_default_generators</depend>
      <depend>angles</depend>
 -    <depend>costmap_2d</depend>
@@ -259,14 +259,14 @@ diff -ru /home/crdelsey/src/ros_dev_workspace/ros1_dependencies_ws/src/navigatio
      <depend>tf2_ros</depend>
      <depend>visualization_msgs</depend>
      <depend>voxel_grid</depend>
- 
+
 -    <exec_depend>message_runtime</exec_depend>
 +    <test_depend>ament_lint_common</test_depend>
 +    <test_depend>ament_lint_auto</test_depend>
 +    <test_depend>ament_cmake_gtest</test_depend>
 +
 +    <member_of_group>rosidl_interface_packages</member_of_group>
- 
+
 -    <test_depend>rosunit</test_depend>
      <export>
 -        <nav_core plugin="${prefix}/blp_plugin.xml" />

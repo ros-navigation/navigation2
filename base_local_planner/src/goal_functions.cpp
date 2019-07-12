@@ -38,6 +38,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/utils.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace base_local_planner {
 
@@ -80,7 +81,7 @@ namespace base_local_planner {
       double y_diff = global_pose.pose.position.y - w.pose.position.y;
       double distance_sq = x_diff * x_diff + y_diff * y_diff;
       if(distance_sq < 1){
-        ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose.pose.position.x, global_pose.pose.position.y, w.pose.position.x, w.pose.position.y);
+        RCLCPP_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose.pose.position.x, global_pose.pose.position.y, w.pose.position.x, w.pose.position.y);
         break;
       }
       it = plan.erase(it);
@@ -98,14 +99,15 @@ namespace base_local_planner {
     transformed_plan.clear();
 
     if (global_plan.empty()) {
-      ROS_ERROR("Received plan with zero length");
+      //ROS_ERROR("Received plan with zero length");
+      RCLCPP_ERROR(rclcpp::get_logger("Received plan with zero length"));
       return false;
     }
 
     const geometry_msgs::msg::PoseStamped& plan_pose = global_plan[0];
     try {
       // get plan_to_global_transform from plan frame to global_frame
-      geometry_msgs::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, ros::Time(),
+      geometry_msgs::msg::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, ros::Time(),
           plan_pose.header.frame_id, plan_pose.header.stamp, plan_pose.header.frame_id, ros::Duration(0.5));
 
       //let's get the pose of the robot in the frame of the plan
@@ -148,17 +150,17 @@ namespace base_local_planner {
       }
     }
     catch(tf2::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("No Transform available Error: %s\n"), ex.what());
       return false;
     }
     catch(tf2::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("Connectivity Error: %s\n"), ex.what());
       return false;
     }
     catch(tf2::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("Extrapolation Error: %s\n"), ex.what());
       if (!global_plan.empty())
-        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("Global Frame: %s Plan Frame size %d: %s\n"), global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
 
       return false;
     }
@@ -171,30 +173,30 @@ namespace base_local_planner {
       const std::string& global_frame, geometry_msgs::msg::PoseStamped &goal_pose) {
     if (global_plan.empty())
     {
-      ROS_ERROR("Received plan with zero length");
+      RCLCPP_ERROR(rclcpp::get_logger("Received plan with zero length"));
       return false;
     }
 
     const geometry_msgs::msg::PoseStamped& plan_goal_pose = global_plan.back();
     try{
-      geometry_msgs::TransformStamped transform = tf.lookupTransform(global_frame, ros::Time(),
+      geometry_msgs::msg::TransformStamped transform = tf.lookupTransform(global_frame, ros::Time(),
                          plan_goal_pose.header.frame_id, plan_goal_pose.header.stamp,
                          plan_goal_pose.header.frame_id, ros::Duration(0.5));
 
       tf2::doTransform(plan_goal_pose, goal_pose, transform);
     }
     catch(tf2::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("No Transform available Error: %s\n"), ex.what());
       return false;
     }
     catch(tf2::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("Connectivity Error: %s\n"), ex.what());
       return false;
     }
     catch(tf2::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      RCLCPP_ERROR(rclcpp::get_logger("Extrapolation Error: %s\n"), ex.what());
       if (global_plan.size() > 0)
-        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("Global Frame: %s Plan Frame size %d: %s\n"), global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
 
       return false;
     }
@@ -206,7 +208,7 @@ namespace base_local_planner {
       const nav2_costmap_2d::Costmap2D& costmap __attribute__((unused)),
       const std::string& global_frame,
       geometry_msgs::msg::PoseStamped& global_pose,
-      const nav_msgs::Odometry& base_odom,
+      const nav2_msgs::msg::Odometry& base_odom,
       double rot_stopped_vel, double trans_stopped_vel,
       double xy_goal_tolerance, double yaw_goal_tolerance){
 

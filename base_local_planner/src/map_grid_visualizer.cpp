@@ -90,6 +90,6 @@ namespace base_local_planner {
       }
     }
     pub_.publish(cost_cloud);
-    ROS_DEBUG("Cost PointCloud published");
+    RCLCPP_DEBUG(rclcpp::get_logger("Cost PointCloud published"));
   }
 };

@@ -72,7 +72,7 @@ enum CostAggregationType { Last, Sum, Product};
  */
 class MapGridCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-  MapGridCostFunction(costmap_2d::Costmap2D* costmap,
+  MapGridCostFunction(nav2_costmap_2d::Costmap2D* costmap,
       double xshift = 0.0,
       double yshift = 0.0,
       bool is_local_goal_function = false,
@@ -120,7 +120,7 @@ public:
 
 private:
   std::vector<geometry_msgs::msg::PoseStamped> target_poses_;
-  costmap_2d::Costmap2D* costmap_;
+  nav2_costmap_2d::Costmap2D* costmap_;
 
   base_local_planner::MapGrid map_;
   CostAggregationType aggregationType_;

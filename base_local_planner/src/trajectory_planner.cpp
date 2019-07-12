@@ -70,7 +70,7 @@ namespace base_local_planner{
 
       max_vel_x_ = config.max_vel_x;
       min_vel_x_ = config.min_vel_x;
-      
+
       max_vel_th_ = config.max_vel_theta;
       min_vel_th_ = config.min_vel_theta;
       min_in_place_vel_th_ = config.min_in_place_vel_theta;
@@ -100,18 +100,18 @@ namespace base_local_planner{
       if (vx_samples_ <= 0) {
           config.vx_samples = 1;
           vx_samples_ = config.vx_samples;
-          ROS_WARN("You've specified that you don't want any samples in the x dimension. We'll at least assume that you want to sample one value... so we're going to set vx_samples to 1 instead");
+          RCLCPP_WARN(rclcpp::get_logger("You've specified that you don't want any samples in the x dimension. We'll at least assume that you want to sample one value... so we're going to set vx_samples to 1 instead"));
       }
       if(vtheta_samples_ <= 0) {
           config.vtheta_samples = 1;
           vtheta_samples_ = config.vtheta_samples;
-          ROS_WARN("You've specified that you don't want any samples in the theta dimension. We'll at least assume that you want to sample one value... so we're going to set vtheta_samples to 1 instead");
+          RCLCPP_WARN(rclcpp::get_logger("You've specified that you don't want any samples in the theta dimension. We'll at least assume that you want to sample one value... so we're going to set vtheta_samples to 1 instead"));
       }
 
       heading_lookahead_ = config.heading_lookahead;
 
       holonomic_robot_ = config.holonomic_robot;
-      
+
       backup_vel_ = config.escape_vel;
 
       dwa_ = config.dwa;
@@ -136,7 +136,7 @@ namespace base_local_planner{
       }
 
       y_vels_ = y_vels;
-      
+
   }
 
   TrajectoryPlanner::TrajectoryPlanner(WorldModel& world_model,
@@ -185,7 +185,7 @@ namespace base_local_planner{
     final_goal_position_valid_ = false;
 
 
-    costmap_2d::calculateMinAndMaxDistances(footprint_spec_, inscribed_radius_, circumscribed_radius_);
+    nav2_costmap_2d::calculateMinAndMaxDistances(footprint_spec_, inscribed_radius_, circumscribed_radius_);
   }
 
   TrajectoryPlanner::~TrajectoryPlanner(){}
@@ -496,7 +496,7 @@ namespace base_local_planner{
       //make sure that we update our path based on the global plan and compute costs
       path_map_.setTargetCells(costmap_, global_plan_);
       goal_map_.setLocalGoal(costmap_, global_plan_);
-      ROS_DEBUG("Path/Goal distance computed");
+      RCLCPP_DEBUG(rclcpp::get_logger("Path/Goal distance computed"));
     }
   }
 
@@ -510,7 +510,7 @@ namespace base_local_planner{
     if(cost >= 0) {
       return true;
     }
-    ROS_WARN("Invalid Trajectory %f, %f, %f, cost: %f", vx_samp, vy_samp, vtheta_samp, cost);
+    RCLCPP_WARN(rclcpp::get_logger("Invalid Trajectory %f, %f, %f, cost: %f", vx_samp, vy_samp, vtheta_samp, cost));
 
     //otherwise the check fails
     return false;
@@ -930,13 +930,13 @@ namespace base_local_planner{
     //make sure that we update our path based on the global plan and compute costs
     path_map_.setTargetCells(costmap_, global_plan_);
     goal_map_.setLocalGoal(costmap_, global_plan_);
-    ROS_DEBUG("Path/Goal distance computed");
+    RCLCPP_DEBUG(rclcpp::get_logger("Path/Goal distance computed"));
 
     //rollout trajectories and find the minimum cost one
     Trajectory best = createTrajectories(pos[0], pos[1], pos[2],
         vel[0], vel[1], vel[2],
         acc_lim_x_, acc_lim_y_, acc_lim_theta_);
-    ROS_DEBUG("Trajectories created");
+    RCLCPP_DEBUG(rclcpp::get_logger("Trajectories created"));
 
     /*
     //If we want to print a ppm file to draw goal dist
@@ -997,5 +997,3 @@ namespace base_local_planner{
   }
 
 };
-
-

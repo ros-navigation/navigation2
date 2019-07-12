@@ -61,7 +61,7 @@ private:
   std::string name_;
   std::string global_frame_;
 
-  costmap_2d::Costmap2D* costmap_;
+  nav2_costmap_2d::Costmap2D* costmap_;
   tf2_ros::Buffer* tf_;
 
 
@@ -87,7 +87,7 @@ public:
   }
 
   void initialize(tf2_ros::Buffer* tf,
-      costmap_2d::Costmap2D* costmap,
+      nav2_costmap_2d::Costmap2D* costmap,
       std::string global_frame);
 
   bool getGoal(geometry_msgs::msg::PoseStamped& goal_pose);
@@ -96,7 +96,7 @@ public:
 
   bool getLocalPlan(const geometry_msgs::msg::PoseStamped& global_pose, std::vector<geometry_msgs::msg::PoseStamped>& transformed_plan);
 
-  costmap_2d::Costmap2D* getCostmap();
+  nav2_costmap_2d::Costmap2D* getCostmap();
 
   LocalPlannerLimits getCurrentLimits();
 

@@ -129,13 +129,13 @@ namespace base_local_planner {
       //Since I screwed up nicely in my documentation, I'm going to add errors
       //informing the user if they've set one of the wrong parameters
       if(private_nh.hasParam("acc_limit_x"))
-        ROS_ERROR("You are using acc_limit_x where you should be using acc_lim_x. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion.");
+        RCLCPP_ERROR(rclcpp::get_logger("You are using acc_limit_x where you should be using acc_lim_x. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion."));
 
       if(private_nh.hasParam("acc_limit_y"))
-        ROS_ERROR("You are using acc_limit_y where you should be using acc_lim_y. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion.");
+        RCLCPP_ERROR(rclcpp::get_logger("You are using acc_limit_y where you should be using acc_lim_y. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion."));
 
       if(private_nh.hasParam("acc_limit_th"))
-        ROS_ERROR("You are using acc_limit_th where you should be using acc_lim_th. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion.");
+        RCLCPP_ERROR(rclcpp::get_logger("You are using acc_limit_th where you should be using acc_lim_th. Please change your configuration files appropriately. The documentation used to be wrong on this, sorry for any confusion."));
 
       //Assuming this planner is being run within the navigation stack, we can
       //just do an upward search for the frequency at which its being run. This
@@ -151,7 +151,7 @@ namespace base_local_planner {
           sim_period_ = 1.0 / controller_frequency;
         else
         {
-          ROS_WARN("A controller_frequency less than 0 has been set. Ignoring the parameter, assuming a rate of 20Hz");
+          RCLCPP_WARN("A controller_frequency less than 0 has been set. Ignoring the parameter, assuming a rate of 20Hz");
           sim_period_ = 0.05;
         }
       }
@@ -169,7 +169,7 @@ namespace base_local_planner {
 
       bool meter_scoring;
       if ( ! private_nh.hasParam("meter_scoring")) {
-        ROS_WARN("Trajectory Rollout planner initialized with param meter_scoring not set. Set it to true to make your settings robust against changes of costmap resolution.");
+        RCLCPP_WARN(rclcpp::get_logger("Trajectory Rollout planner initialized with param meter_scoring not set. Set it to true to make your settings robust against changes of costmap resolution."));
       } else {
         private_nh.param("meter_scoring", meter_scoring, false);
 
@@ -180,7 +180,7 @@ namespace base_local_planner {
           pdist_scale *= resolution;
           occdist_scale *= resolution;
         } else {
-          ROS_WARN("Trajectory Rollout planner initialized with param meter_scoring set to false. Set it to true to make your settings robust against changes of costmap resolution.");
+          RCLCPP_WARN(rclcpp::get_logger("Trajectory Rollout planner initialized with param meter_scoring set to false. Set it to true to make your settings robust against changes of costmap resolution."));
         }
       }
 
@@ -203,13 +203,13 @@ namespace base_local_planner {
       reached_goal_ = false;
       backup_vel = -0.1;
       if(private_nh.getParam("backup_vel", backup_vel))
-        ROS_WARN("The backup_vel parameter has been deprecated in favor of the escape_vel parameter. To switch, just change the parameter name in your configuration files.");
+        RCLCPP_WARN(rclcpp::get_logger("The backup_vel parameter has been deprecated in favor of the escape_vel parameter. To switch, just change the parameter name in your configuration files."));
 
       //if both backup_vel and escape_vel are set... we'll use escape_vel
       private_nh.getParam("escape_vel", backup_vel);
 
       if(backup_vel >= 0.0)
-        ROS_WARN("You've specified a positive escape velocity. This is probably not what you want and will cause the robot to move forward instead of backward. You should probably change your escape_vel parameter to be negative");
+        RCLCPP_WARN(rclcpp::get_logger("You've specified a positive escape velocity. This is probably not what you want and will cause the robot to move forward instead of backward. You should probably change your escape_vel parameter to be negative"));
 
       private_nh.param("world_model", world_model_type, std::string("costmap"));
       private_nh.param("dwa", dwa, true);
@@ -245,7 +245,7 @@ namespace base_local_planner {
       dsrv_->setCallback(cb);
 
     } else {
-      ROS_WARN("This planner has already been initialized, doing nothing");
+      RCLCPP_WARN(get_logger("This planner has already been initialized, doing nothing"));
     }
   }
 
@@ -300,7 +300,7 @@ namespace base_local_planner {
 
     //if we have a valid command, we'll pass it on, otherwise we'll command all zeros
     if(valid_cmd){
-      ROS_DEBUG("Slowing down... using vx, vy, vth: %.2f, %.2f, %.2f", vx, vy, vth);
+      RCLCPP_DEBUG(rclcpp::get_logger("Slowing down... using vx, vy, vth: %.2f, %.2f, %.2f", vx, vy, vth));
       cmd_vel.linear.x = vx;
       cmd_vel.linear.y = vy;
       cmd_vel.angular.z = vth;
@@ -331,7 +331,7 @@ namespace base_local_planner {
     v_theta_samp = sign(v_theta_samp) * std::min(std::max(fabs(v_theta_samp), min_acc_vel), max_acc_vel);
 
     //we also want to make sure to send a velocity that allows us to stop when we reach the goal given our acceleration limits
-    double max_speed_to_stop = sqrt(2 * acc_lim_theta_ * fabs(ang_diff)); 
+    double max_speed_to_stop = sqrt(2 * acc_lim_theta_ * fabs(ang_diff));
 
     v_theta_samp = sign(v_theta_samp) * std::min(max_speed_to_stop, fabs(v_theta_samp));
 
@@ -344,7 +344,7 @@ namespace base_local_planner {
     bool valid_cmd = tc_->checkTrajectory(global_pose.pose.position.x, global_pose.pose.position.y, yaw,
         robot_vel.pose.position.x, robot_vel.pose.position.y, vel_yaw, 0.0, 0.0, v_theta_samp);
 
-    ROS_DEBUG("Moving to desired goal orientation, th cmd: %.2f, valid_cmd: %d", v_theta_samp, valid_cmd);
+    RCLCPP_DEBUG(rclcpp::get_logger("Moving to desired goal orientation, th cmd: %.2f, valid_cmd: %d", v_theta_samp, valid_cmd));
 
     if(valid_cmd){
       cmd_vel.angular.z = v_theta_samp;
@@ -358,14 +358,14 @@ namespace base_local_planner {
 
   bool TrajectoryPlannerROS::setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan){
     if (! isInitialized()) {
-      ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+      RCLCPP_ERROR(rclcpp::get_logger("This planner has not been initialized, please call initialize() before using this planner"));
       return false;
     }
 
     //reset the global plan
     global_plan_.clear();
     global_plan_ = orig_global_plan;
-    
+
     //when we get a new plan, we also want to clear any latch we may have on goal tolerances
     xy_tolerance_latch_ = false;
     //reset the at goal flag
@@ -375,7 +375,7 @@ namespace base_local_planner {
 
   bool TrajectoryPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel){
     if (! isInitialized()) {
-      ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+      RCLCPP_ERROR(rclcpp::get_logger("This planner has not been initialized, please call initialize() before using this planner"));
       return false;
     }
 
@@ -388,7 +388,7 @@ namespace base_local_planner {
     std::vector<geometry_msgs::msg::PoseStamped> transformed_plan;
     //get the global plan in our frame
     if (!transformGlobalPlan(*tf_, global_plan_, global_pose, *costmap_, global_frame_, transformed_plan)) {
-      ROS_WARN("Could not transform the global plan to the frame of the controller");
+      RCLCPP_WARN(rclcpp::get_logger("Could not transform the global plan to the frame of the controller"));
       return false;
     }
 
@@ -553,7 +553,7 @@ namespace base_local_planner {
           base_odom.twist.twist.angular.z, vx_samp, vy_samp, vtheta_samp);
 
     }
-    ROS_WARN("Failed to get the pose of the robot. No trajectories will pass as legal in this case.");
+    RCLCPP_WARN(get_logger("Failed to get the pose of the robot. No trajectories will pass as legal in this case."));
     return false;
   }
 
@@ -583,16 +583,16 @@ namespace base_local_planner {
           base_odom.twist.twist.angular.z, vx_samp, vy_samp, vtheta_samp);
 
     }
-    ROS_WARN("Failed to get the pose of the robot. No trajectories will pass as legal in this case.");
+    RCLCPP_WARN(get_logger("Failed to get the pose of the robot. No trajectories will pass as legal in this case."));
     return -1.0;
   }
 
   bool TrajectoryPlannerROS::isGoalReached() {
     if (! isInitialized()) {
-      ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+      RCLCPP_ERROR(get_logger("This planner has not been initialized, please call initialize() before using this planner"));
       return false;
     }
     //return flag set in controller
-    return reached_goal_; 
+    return reached_goal_;
   }
 };

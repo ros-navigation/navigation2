@@ -40,7 +40,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 namespace base_local_planner {
-  
+
   SimpleScoredSamplingPlanner::SimpleScoredSamplingPlanner(std::vector<TrajectorySampleGenerator*> gen_list, std::vector<TrajectoryCostFunction*>& critics, int max_samples) {
     max_samples_ = max_samples;
     gen_list_ = gen_list;
@@ -57,7 +57,7 @@ namespace base_local_planner {
       }
       double cost = score_function_p->scoreTrajectory(traj);
       if (cost < 0) {
-        ROS_DEBUG("Velocity %.3lf, %.3lf, %.3lf discarded by cost function  %d with cost: %f", traj.xv_, traj.yv_, traj.thetav_, gen_id, cost);
+        RCLCPP_DEBUG(rclcpp::get_logger("Velocity %.3lf, %.3lf, %.3lf discarded by cost function  %d with cost: %f", traj.xv_, traj.yv_, traj.thetav_, gen_id, cost));
         traj_cost = cost;
         break;
       }
@@ -87,7 +87,7 @@ namespace base_local_planner {
     for (std::vector<TrajectoryCostFunction*>::iterator loop_critic = critics_.begin(); loop_critic != critics_.end(); ++loop_critic) {
       TrajectoryCostFunction* loop_critic_p = *loop_critic;
       if (loop_critic_p->prepare() == false) {
-        ROS_WARN("A scoring function failed to prepare");
+        RCLCPP_WARN(rclcpp::get_logger("A scoring function failed to prepare"));
         return false;
       }
     }
@@ -118,7 +118,7 @@ namespace base_local_planner {
         count++;
         if (max_samples_ > 0 && count >= max_samples_) {
           break;
-        }        
+        }
       }
       if (best_traj_cost >= 0) {
         traj.xv_ = best_traj.xv_;
@@ -132,7 +132,7 @@ namespace base_local_planner {
           traj.addPoint(px, py, pth);
         }
       }
-      ROS_DEBUG("Evaluated %d trajectories, found %d valid", count, count_valid);
+      RCLCPP_DEBUG(rclcpp::get_logger("Evaluated %d trajectories, found %d valid", count, count_valid));
       if (best_traj_cost >= 0) {
         // do not try fallback generators
         break;
@@ -141,5 +141,5 @@ namespace base_local_planner {
     return best_traj_cost >= 0;
   }
 
-  
+
 }// namespace
