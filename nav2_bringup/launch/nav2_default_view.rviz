@@ -148,7 +148,7 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz_default_plugins/Map
       Color Scheme: map
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
       Name: Map
       Topic: /map
@@ -173,11 +173,11 @@ Visualization Manager:
       Value: true
     - Class: rviz_common/Group
       Displays:
-        - Alpha: 0.699999988079071
+        - Alpha: 0.3
           Class: rviz_default_plugins/Map
-          Color Scheme: map
-          Draw Behind: true
-          Enabled: false
+          Color Scheme: costmap
+          Draw Behind: false
+          Enabled: true
           Name: Global Costmap
           Topic: /global_costmap/costmap
           Unreliable: false
