@@ -88,10 +88,10 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  action_server_->activate();
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
+  action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -120,10 +120,10 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_cleanup(state);
 
   // Release any allocated resources
+  action_server_.reset();
   planner_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
-  action_server_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
