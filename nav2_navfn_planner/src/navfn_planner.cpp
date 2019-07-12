@@ -110,9 +110,9 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  action_server_->deactivate();
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
-  action_server_->deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -122,10 +122,9 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  action_server_.reset();
   plan_publisher_.reset();
   plan_marker_publisher_.reset();
-
-  action_server_.reset();
   planner_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -153,20 +152,6 @@ NavfnPlanner::computePathToPose()
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
-    // Get the current costmap
-    getCostmap(costmap_);
-    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
-      costmap_.metadata.size_x, costmap_.metadata.size_y);
-
-    auto start = getRobotPose();
-
-    // Update planner based on the new costmap size
-    if (isPlannerOutOfDate()) {
-      current_costmap_size_[0] = costmap_.metadata.size_x;
-      current_costmap_size_[1] = costmap_.metadata.size_y;
-      planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
-    }
-
     if (action_server_ == nullptr) {
       RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
       return;
@@ -181,6 +166,20 @@ NavfnPlanner::computePathToPose()
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
       action_server_->terminate_goals();
       return;
+    }
+
+    // Get the current costmap
+    getCostmap(costmap_);
+    RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
+      costmap_.metadata.size_x, costmap_.metadata.size_y);
+
+    auto start = getRobotPose();
+
+    // Update planner based on the new costmap size
+    if (isPlannerOutOfDate()) {
+      current_costmap_size_[0] = costmap_.metadata.size_x;
+      current_costmap_size_[1] = costmap_.metadata.size_y;
+      planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
     if (action_server_->is_preempt_requested()) {
