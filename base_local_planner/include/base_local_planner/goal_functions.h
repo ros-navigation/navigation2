@@ -38,7 +38,7 @@
 #define BASE_LOCAL_PLANNER_GOAL_FUNCTIONS_H_
 
 #include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/odometry.h>
+#include <nav_msgs/msg/odometry.hpp>
 #include <nav2_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -135,7 +135,7 @@ namespace base_local_planner {
       const nav2_costmap_2d::Costmap2D& costmap,
       const std::string& global_frame,
       geometry_msgs::msg::PoseStamped& global_pose,
-      const nav2_msgs::msg::Odometry& base_odom,
+      const nav_msgs::msg::Odometry& base_odom,
       double rot_stopped_vel, double trans_stopped_vel,
       double xy_goal_tolerance, double yaw_goal_tolerance);
 
@@ -146,7 +146,7 @@ namespace base_local_planner {
    * @param trans_stopped_velocity The translational velocity below which the robot is considered stopped
    * @return True if the robot is stopped, false otherwise
    */
-  bool stopped(const nav2_msgs::msg::Odometry& base_odom,
+  bool stopped(const nav_msgs::msg::Odometry& base_odom,
       const double& rot_stopped_velocity,
       const double& trans_stopped_velocity);
 };

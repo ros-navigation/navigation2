@@ -75,7 +75,7 @@ namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS() :
       world_model_(NULL), tc_(NULL), costmap_ros_(NULL), tf_(NULL), setup_(false), initialized_(false), odom_helper_("odom") {}
 
-  TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf2_ros::Buffer* tf, costmap_2d::Costmap2DROS* costmap_ros) :
+  TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf2_ros::Buffer* tf, nav2_costmap_2d::Costmap2DROS* costmap_ros) :
       world_model_(NULL), tc_(NULL), costmap_ros_(NULL), tf_(NULL), setup_(false), initialized_(false), odom_helper_("odom") {
 
       //initialize the planner
@@ -85,7 +85,7 @@ namespace base_local_planner {
   void TrajectoryPlannerROS::initialize(
       std::string name,
       tf2_ros::Buffer* tf,
-      costmap_2d::Costmap2DROS* costmap_ros){
+      nav2_costmap_2d::Costmap2DROS* costmap_ros){
     if (! isInitialized()) {
 
       ros::NodeHandle private_nh("~/" + name);
@@ -284,7 +284,7 @@ namespace base_local_planner {
       delete world_model_;
   }
 
-  bool TrajectoryPlannerROS::stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, geometry_msgs::Twist& cmd_vel){
+  bool TrajectoryPlannerROS::stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, geometry_msgs::msg::Twist& cmd_vel){
     //slow down with the maximum possible acceleration... we should really use the frequency that we're running at to determine what is feasible
     //but we'll use a tenth of a second to be consistent with the implementation of the local planner.
     double vx = sign(robot_vel.pose.position.x) * std::max(0.0, (fabs(robot_vel.pose.position.x) - acc_lim_x_ * sim_period_));
@@ -313,7 +313,7 @@ namespace base_local_planner {
     return false;
   }
 
-  bool TrajectoryPlannerROS::rotateToGoal(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel){
+  bool TrajectoryPlannerROS::rotateToGoal(const geometry_msgs::msg::PoseStamped& global_pose, const geometry_msgs::msg::PoseStamped& robot_vel, double goal_th, geometry_msgs::msg::Twist& cmd_vel){
     double yaw = tf2::getYaw(global_pose.pose.orientation);
     double vel_yaw = tf2::getYaw(robot_vel.pose.orientation);
     cmd_vel.linear.x = 0;
@@ -373,7 +373,7 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel){
+  bool TrajectoryPlannerROS::computeVelocityCommands(geometry_msgs::msg::Twist& cmd_vel){
     if (! isInitialized()) {
       RCLCPP_ERROR(rclcpp::get_logger("This planner has not been initialized, please call initialize() before using this planner"));
       return false;
@@ -448,7 +448,7 @@ namespace base_local_planner {
         map_viz_.publishCostCloud(costmap_);
 
         //copy over the odometry information
-        nav_msgs::Odometry base_odom;
+        nav_msgs::msg::Odometry base_odom;
         odom_helper_.getOdom(base_odom);
 
         //if we're not stopped yet... we want to stop... taking into account the acceleration limits of the robot
@@ -513,7 +513,7 @@ namespace base_local_planner {
       path.getPoint(i, p_x, p_y, p_th);
       geometry_msgs::msg::PoseStamped pose;
       pose.header.frame_id = global_frame_;
-      pose.header.stamp = ros::Time::now();
+      pose.header.stamp = rclcpp::Time::now();
       pose.pose.position.x = p_x;
       pose.pose.position.y = p_y;
       pose.pose.position.z = 0.0;
@@ -541,7 +541,7 @@ namespace base_local_planner {
       }
 
       //copy over the odometry information
-      nav_msgs::Odometry base_odom;
+      nav_msgs::msg::Odometry base_odom;
       {
         boost::recursive_mutex::scoped_lock lock(odom_lock_);
         base_odom = base_odom_;
@@ -571,7 +571,7 @@ namespace base_local_planner {
       }
 
       //copy over the odometry information
-      nav_msgs::Odometry base_odom;
+      nav_msgs::msg::Odometry base_odom;
       {
         boost::recursive_mutex::scoped_lock lock(odom_lock_);
         base_odom = base_odom_;

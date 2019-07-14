@@ -71,7 +71,7 @@ bool LatchedStopRotateController::isGoalReached(LocalPlannerUtil* planner_util,
   double trans_stopped_vel = planner_util->getCurrentLimits().trans_stopped_vel;
 
   //copy over the odometry information
-  nav_msgs::Odometry base_odom;
+  nav_msgs::msg::Odometry base_odom;
   odom_helper.getOdom(base_odom);
 
   //we assume the global goal is the last point in the global plan
@@ -109,7 +109,7 @@ bool LatchedStopRotateController::isGoalReached(LocalPlannerUtil* planner_util,
 
 bool LatchedStopRotateController::stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose,
     const geometry_msgs::msg::PoseStamped& robot_vel,
-    geometry_msgs::Twist& cmd_vel,
+    geometry_msgs::msg::Twist& cmd_vel,
     Eigen::Vector3f acc_lim,
     double sim_period,
     boost::function<bool (Eigen::Vector3f pos,
@@ -149,7 +149,7 @@ bool LatchedStopRotateController::rotateToGoal(
     const geometry_msgs::msg::PoseStamped& global_pose,
     const geometry_msgs::msg::PoseStamped& robot_vel,
     double goal_th,
-    geometry_msgs::Twist& cmd_vel,
+    geometry_msgs::msg::Twist& cmd_vel,
     Eigen::Vector3f acc_lim,
     double sim_period,
     base_local_planner::LocalPlannerLimits& limits,
@@ -196,7 +196,7 @@ bool LatchedStopRotateController::rotateToGoal(
 
 }
 
-bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msgs::Twist& cmd_vel,
+bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msgs::msg::Twist& cmd_vel,
     Eigen::Vector3f acc_lim,
     double sim_period,
     LocalPlannerUtil* planner_util,
@@ -233,7 +233,7 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(geometry_msg
     RCLCPP_DEBUG(rclcpp::get_logger("Angle: %f Tolerance: %f", angle, limits.yaw_goal_tolerance));
     geometry_msgs::msg::PoseStamped robot_vel;
     odom_helper_.getRobotVel(robot_vel);
-    nav_msgs::Odometry base_odom;
+    nav_msgs::msg::Odometry base_odom;
     odom_helper_.getOdom(base_odom);
 
     //if we're not stopped yet... we want to stop... taking into account the acceleration limits of the robot

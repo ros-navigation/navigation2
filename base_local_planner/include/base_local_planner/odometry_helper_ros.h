@@ -38,10 +38,12 @@
 #ifndef ODOMETRY_HELPER_ROS2_H_
 #define ODOMETRY_HELPER_ROS2_H_
 
-#include <nav_msgs/msg/odometry.h>
+#include "nav_msgs/msg/odometry.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <boost/thread.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <memory>
+
 
 namespace base_local_planner {
 
@@ -59,9 +61,9 @@ public:
    * @brief  Callback for receiving odometry data
    * @param msg An Odometry message
    */
-  void odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& msg);
+  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
 
-  void getOdom(nav_msgs::Odometry& base_odom);
+  void getOdom(nav_msgs::msg::Odometry& base_odom);
 
   void getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel);
 
@@ -81,7 +83,7 @@ private:
 
   // we listen on odometry on the odom topic
   ros::Subscriber odom_sub_;
-  nav_msgs::Odometry base_odom_;
+  nav_msgs::msg::Odometry base_odom_;
   boost::mutex odom_mutex_;
   // global tf frame id
   std::string frame_id_; ///< The frame_id associated this data

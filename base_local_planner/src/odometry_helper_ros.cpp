@@ -38,6 +38,10 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/convert.h>
+#include "nav_msgs/msg/odometry.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <memory>
+
 
 namespace base_local_planner {
 
@@ -45,8 +49,8 @@ OdometryHelperRos::OdometryHelperRos(std::string odom_topic) {
   setOdomTopic( odom_topic );
 }
 
-void OdometryHelperRos::odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& msg) {
-    RCLCPP_INFO_ONCE(rclcpp::get_logger("odom received!"));
+void OdometryHelperRos::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {//was constptr
+    RCLCPP_INFO_ONCE(rclcpp::get_logger("base_local_planner"), "odom received!");
 
   //we assume that the odometry is published in the frame of the base
   boost::mutex::scoped_lock lock(odom_mutex_);
@@ -59,7 +63,7 @@ void OdometryHelperRos::odomCallback(const nav2_msgs::msg::Odometry::ConstPtr& m
 }
 
 //copy over the odometry information
-void OdometryHelperRos::getOdom(nav_msgs::Odometry& base_odom) {
+void OdometryHelperRos::getOdom(nav_msgs::msg::Odometry& base_odom) {
   boost::mutex::scoped_lock lock(odom_mutex_);
   base_odom = base_odom_;
 }
@@ -67,7 +71,7 @@ void OdometryHelperRos::getOdom(nav_msgs::Odometry& base_odom) {
 
 void OdometryHelperRos::getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel) {
   // Set current velocities from odometry
-  geometry_msgs::Twist global_vel;
+  geometry_msgs::msg::Twist global_vel;
   {
     boost::mutex::scoped_lock lock(odom_mutex_);
     global_vel.linear.x = base_odom_.twist.twist.linear.x;
@@ -82,7 +86,7 @@ void OdometryHelperRos::getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel) 
   tf2::Quaternion q;
   q.setRPY(0, 0, global_vel.angular.z);
   tf2::convert(q, robot_vel.pose.orientation);
-  robot_vel.header.stamp = ros::Time();
+  robot_vel.header.stamp = rclcpp::Time();
 }
 
 void OdometryHelperRos::setOdomTopic(std::string odom_topic)
@@ -94,7 +98,7 @@ void OdometryHelperRos::setOdomTopic(std::string odom_topic)
     if( odom_topic_ != "" )
     {
       ros::NodeHandle gn;
-      odom_sub_ = gn.subscribe<nav_msgs::Odometry>( odom_topic_, 1, boost::bind( &OdometryHelperRos::odomCallback, this, _1 ));
+      odom_sub_ = gn.subscribe<nav_msgs::msg::Odometry>( odom_topic_, 1, boost::bind( &OdometryHelperRos::odomCallback, this, _1 ));
     }
     else
     {

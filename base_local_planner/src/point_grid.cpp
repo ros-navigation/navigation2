@@ -530,7 +530,9 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
       upper_right.y = max(upper_right.y, poly[i].y);
     }
 
+//  RCLCPP_INFO(rclcpp::get_logger("example_dynamic_params"), "bar_C: %d", bar_C); //example
     RCLCPP_DEBUG(rclcpp::get_logger("Lower: (%.2f, %.2f), Upper: (%.2f, %.2f)\n", lower_left.x, lower_left.y, upper_right.x, upper_right.y));
+
     getPointsInRange(lower_left, upper_right, points_);
 
     //if there are no points in the containing square... we don't have to do anything

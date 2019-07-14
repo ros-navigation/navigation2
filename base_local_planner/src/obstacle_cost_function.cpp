@@ -42,7 +42,7 @@
 
 namespace base_local_planner {
 
-ObstacleCostFunction::ObstacleCostFunction(costmap_2d::Costmap2D* costmap)
+ObstacleCostFunction::ObstacleCostFunction(nav2_costmap_2d::Costmap2D * costmap)
     : costmap_(costmap), sum_scores_(false) {
   if (costmap != NULL) {
     world_model_ = new base_local_planner::CostmapModel(*costmap_);
@@ -77,7 +77,7 @@ double ObstacleCostFunction::scoreTrajectory(Trajectory &traj) {
   double px, py, pth;
   if (footprint_spec_.size() == 0) {
     // Bug, should never happen
-    ROS_ERROR(rclcpp::get_logger("Footprint spec is empty, maybe missing call to setFootprint?"));
+    RCLCPP_ERROR(rclcpp::get_logger("base_local_planner"), "Footprint spec is empty, maybe missing call to setFootprint?");
     return -9;
   }
 
@@ -119,7 +119,7 @@ double ObstacleCostFunction::footprintCost (
     const double& th,
     double scale,
     std::vector<geometry_msgs::msg::Point> footprint_spec,
-    costmap_2d::Costmap2D* costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     base_local_planner::WorldModel* world_model) {
 
   //check if the footprint is legal

@@ -54,7 +54,7 @@ namespace base_local_planner {
   void MapGridVisualizer::publishCostCloud(const nav2_costmap_2d::Costmap2D* costmap_p_) {
     sensor_msgs::msg::PointCloud2 cost_cloud;
     cost_cloud.header.frame_id = frame_id_;
-    cost_cloud.header.stamp = ros::Time::now();
+    cost_cloud.header.stamp = rclcpp::Time::now();
 
     sensor_msgs::PointCloud2Modifier cloud_mod(cost_cloud);
     cloud_mod.setPointCloud2Fields(7, "x", 1, sensor_msgs::PointField::FLOAT32,

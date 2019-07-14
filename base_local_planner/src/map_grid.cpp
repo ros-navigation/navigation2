@@ -179,7 +179,8 @@ namespace base_local_planner{
     std::vector<geometry_msgs::msg::PoseStamped> adjusted_global_plan;
     adjustPlanResolution(global_plan, adjusted_global_plan, costmap.getResolution());
     if (adjusted_global_plan.size() != global_plan.size()) {
-      RCLCPP_DEBUG(rclcpp::get_logger("Adjusted global plan resolution, added %zu points", adjusted_global_plan.size() - global_plan.size()));
+      RCLCPP_DEBUG(rclcpp::get_logger(), "Adjusted global plan resolution, added %zu points",
+      adjusted_global_plan.size() - global_plan.size());
     }
     unsigned int i;
     // put global path points into local map until we reach the border of the local map

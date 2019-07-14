@@ -39,7 +39,7 @@
 
 namespace base_local_planner {
 
-MapGridCostFunction::MapGridCostFunction(costmap_2d::Costmap2D* costmap,
+MapGridCostFunction::MapGridCostFunction(nav2_costmap_2d::Costmap2D * costmap,
     double xshift,
     double yshift,
     bool is_local_goal_function,

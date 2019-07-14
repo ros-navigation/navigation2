@@ -42,7 +42,7 @@ public:
    */
   bool stopWithAccLimits(const geometry_msgs::msg::PoseStamped& global_pose,
       const geometry_msgs::msg::PoseStamped& robot_vel,
-      geometry_msgs::Twist& cmd_vel,
+      geometry_msgs::msg::Twist& cmd_vel,
       Eigen::Vector3f acc_lim,
       double sim_period,
       boost::function<bool (Eigen::Vector3f pos,
@@ -60,7 +60,7 @@ public:
   bool rotateToGoal(const geometry_msgs::msg::PoseStamped& global_pose,
       const geometry_msgs::msg::PoseStamped& robot_vel,
       double goal_th,
-      geometry_msgs::Twist& cmd_vel,
+      geometry_msgs::msg::Twist& cmd_vel,
       Eigen::Vector3f acc_lim,
       double sim_period,
       base_local_planner::LocalPlannerLimits& limits,
@@ -68,7 +68,7 @@ public:
                             Eigen::Vector3f vel,
                             Eigen::Vector3f vel_samples)> obstacle_check);
 
-  bool computeVelocityCommandsStopRotate(geometry_msgs::Twist& cmd_vel,
+  bool computeVelocityCommandsStopRotate(geometry_msgs::msg::Twist& cmd_vel,
       Eigen::Vector3f acc_lim,
       double sim_period,
       LocalPlannerUtil* planner_util,

@@ -42,9 +42,10 @@
 #include <geometry_msgs/msg/point.hpp>
 //#include "geometry_msgs/msg/point.hpp"
 #include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/observation.hpp>
 #include <base_local_planner/world_model.h>
 
-#include <sensor_msgs/msg/point_cloud.h>
+#include <sensor_msgs/msg/point_cloud.hpp>
 
 namespace base_local_planner {
   /**

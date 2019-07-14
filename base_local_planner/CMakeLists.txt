@@ -46,43 +46,43 @@ rosidl_generate_interfaces(base_local_planner
 add_library(base_local_planner_core
 	src/footprint_helper.cpp
 	src/goal_functions.cpp
-	src/map_cell.cpp
-	src/map_grid.cpp
-	src/map_grid_visualizer.cpp
-	src/map_grid_cost_function.cpp
-	src/latched_stop_rotate_controller.cpp
+	#src/map_cell.cpp
+	#src/map_grid.cpp
+	#src/map_grid_visualizer.cpp
+	#src/map_grid_cost_function.cpp
+	#src/latched_stop_rotate_controller.cpp
 	src/local_planner_util.cpp
 	src/odometry_helper_ros.cpp
 	src/obstacle_cost_function.cpp
 	src/oscillation_cost_function.cpp
-	src/prefer_forward_cost_function.cpp
-	src/point_grid.cpp
+	#src/prefer_forward_cost_function.cpp
+	#src/point_grid.cpp
 	src/costmap_model.cpp
-	src/simple_scored_sampling_planner.cpp
-	src/simple_trajectory_generator.cpp
-	src/trajectory.cpp
-	src/twirling_cost_function.cpp
-	src/voxel_grid_model.cpp
+	#src/simple_scored_sampling_planner.cpp
+	#src/simple_trajectory_generator.cpp
+	#src/trajectory.cpp
+	#src/twirling_cost_function.cpp
+	#src/voxel_grid_model.cpp
 )
 
 ament_target_dependencies(base_local_planner_core
   ${dependencies}
 )
 
-add_library(trajectory_planner_ros
-	src/trajectory_planner.cpp
-	src/trajectory_planner_ros.cpp)
-target_link_libraries(trajectory_planner_ros
-     base_local_planner_core)
+#add_library(trajectory_planner_ros
+#	src/trajectory_planner.cpp
+#	src/trajectory_planner_ros.cpp)
+#target_link_libraries(trajectory_planner_ros
+#     base_local_planner_core)
 
-add_executable(point_grid src/point_grid.cpp)
-ament_target_dependencies(point_grid
-  ${dependencies}
-)
+#add_executable(point_grid src/point_grid.cpp)
+#ament_target_dependencies(point_grid
+#  ${dependencies}
+#)
 
 install(TARGETS
     base_local_planner_core
-    trajectory_planner_ros
+    #trajectory_planner_ros
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -100,10 +100,11 @@ if(BUILD_TESTING)
     test/utest.cpp
     test/velocity_iterator_test.cpp
     test/footprint_helper_test.cpp
-    test/trajectory_generator_test.cpp
-    test/map_grid_test.cpp)
+    #test/trajectory_generator_test.cpp
+    #test/map_grid_test.cpp
+  )
   target_link_libraries(base_local_planner_utest
-      base_local_planner_core trajectory_planner_ros
+      base_local_planner_core #trajectory_planner_ros
       )
 
   ament_add_gtest(line_iterator
@@ -112,5 +113,6 @@ endif()
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_export_libraries(base_local_planner_core)
+ament_export_dependencies(nav_msgs)
 
 ament_package()
