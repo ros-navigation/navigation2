@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_tasks/behavior_tree_engine.hpp"
+#include "nav2_behavior_tree/behavior_tree_engine.hpp"
 
 #include <memory>
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 BehaviorTreeEngine::BehaviorTreeEngine()
@@ -95,4 +95,4 @@ BehaviorTreeEngine::buildTreeFromText(std::string & xml_string, BT::Blackboard::
 }
 
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree

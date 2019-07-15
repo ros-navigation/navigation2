@@ -91,6 +91,7 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
+  action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -100,8 +101,10 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  action_server_->deactivate();
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
+  publishZeroVelocity();
   vel_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -117,10 +120,10 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_cleanup(state);
 
   // Release any allocated resources
+  action_server_.reset();
   planner_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
-  action_server_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -149,9 +152,19 @@ void DwbController::followPath()
 
     rclcpp::Rate loop_rate(100ms);
     while (rclcpp::ok()) {
+      if (action_server_ == nullptr) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
+        return;
+      }
+
+      if (!action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+        return;
+      }
+
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(get_logger(), "Goal was canceled. Cancelling and stopping.");
-        action_server_->cancel_all();
+        RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
+        action_server_->terminate_goals();
         publishZeroVelocity();
         return;
       }
@@ -170,7 +183,7 @@ void DwbController::followPath()
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   }
 
@@ -213,7 +226,7 @@ void DwbController::computeAndPublishVelocity()
 
 void DwbController::updateGlobalPath()
 {
-  if (action_server_->preempt_requested()) {
+  if (action_server_->is_preempt_requested()) {
     RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
     setPlannerPath(action_server_->accept_pending_goal()->path);
   }

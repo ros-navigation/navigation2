@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__IS_STUCK_CONDITION_HPP_
-#define NAV2_TASKS__IS_STUCK_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_
 
 #include <string>
 #include <chrono>
@@ -28,7 +28,7 @@
 
 using namespace std::chrono_literals; // NOLINT
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 class IsStuckCondition : public BT::ConditionNode
@@ -168,6 +168,6 @@ private:
   double brake_accel_limit_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__IS_STUCK_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_

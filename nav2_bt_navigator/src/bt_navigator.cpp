@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 
-#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -168,10 +168,22 @@ BtNavigator::navigateToPose()
 {
   initializeGoalPose();
 
-  auto is_canceling = [this]() {return action_server_->is_cancel_requested();};
+  auto is_canceling = [this]() {
+      if (action_server_ == nullptr) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
+        return true;
+      }
+
+      if (!action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
+        return true;
+      }
+
+      return action_server_->is_cancel_requested();
+    };
 
   auto on_loop = [this]() {
-      if (action_server_->preempt_requested()) {
+      if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
@@ -179,22 +191,22 @@ BtNavigator::navigateToPose()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_tasks::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
 
   switch (rc) {
-    case nav2_tasks::BtStatus::SUCCEEDED:
+    case nav2_behavior_tree::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
       action_server_->succeeded_current();
       break;
 
-    case nav2_tasks::BtStatus::FAILED:
+    case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->abort_all();
+      action_server_->terminate_goals();
       break;
 
-    case nav2_tasks::BtStatus::CANCELED:
+    case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->cancel_all();
+      action_server_->terminate_goals();
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;

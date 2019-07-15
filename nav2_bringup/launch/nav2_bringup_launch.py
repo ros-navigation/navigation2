@@ -49,7 +49,7 @@ def generate_launch_description():
     configured_params = RewrittenYaml(
         source_file=params_file, rewrites=param_substitutions,
         convert_types=True)
-    
+
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',

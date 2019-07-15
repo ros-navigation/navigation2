@@ -102,7 +102,10 @@ protected:
   void SetUp() override
   {
     node_ = std::make_shared<rclcpp::Node>("MotionPrimitivesTestNode");
-
+    node_->declare_parameter(
+      "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    node_->declare_parameter(
+      "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
     primitive_ = std::make_unique<DummyPrimitive>(node_);
 
     client_ = rclcpp_action::create_client<MotionPrimitiveAction>(node_, "MotionPrimitive");

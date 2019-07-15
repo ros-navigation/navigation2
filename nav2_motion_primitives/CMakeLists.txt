@@ -7,7 +7,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_robot REQUIRED)
@@ -15,6 +15,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
@@ -31,13 +32,14 @@ set(dependencies
   rclcpp_lifecycle
   std_msgs
   nav2_util
-  nav2_tasks
+  nav2_behavior_tree
   nav2_msgs
   nav2_robot
   nav_msgs
   tf2
   tf2_geometry_msgs
   geometry_msgs
+  nav2_costmap_2d
 )
 
 # Library

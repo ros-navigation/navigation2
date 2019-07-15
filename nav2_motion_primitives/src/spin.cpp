@@ -87,6 +87,25 @@ Status Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
+
+  geometry_msgs::msg::Pose current_pose;
+  if (!getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return Status::FAILED;
+  }
+
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.position.x;
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation) +
+    cmd_vel.angular.z * (1 / cycle_frequency_);
+
+  if (!collision_checker_->isCollisionFree(pose2d)) {
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin ");
+    return Status::SUCCEEDED;
+  }
+
   robot_->sendVelocity(cmd_vel);
 
   return Status::RUNNING;

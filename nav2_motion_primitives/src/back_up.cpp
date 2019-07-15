@@ -45,8 +45,8 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
   command_x_ = command->target.x;
 
-  if (!robot_->getOdometry(initial_pose_)) {
-    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
+  if (!getRobotPose(initial_pose_)) {
+    RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -55,15 +55,14 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
 Status BackUp::onCycleUpdate()
 {
-  auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
-
-  if (!robot_->getOdometry(current_odom_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
+  geometry_msgs::msg::Pose current_pose;
+  if (!getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
-  double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
-  double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
+  double diff_x = initial_pose_.position.x - current_pose.position.x;
+  double diff_y = initial_pose_.position.y - current_pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   if (distance >= abs(command_x_)) {
@@ -75,6 +74,18 @@ Status BackUp::onCycleUpdate()
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation);
+
+  if (!collision_checker_->isCollisionFree(pose2d)) {
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
+    return Status::SUCCEEDED;
+  }
+
   robot_->sendVelocity(cmd_vel);
 
   return Status::RUNNING;

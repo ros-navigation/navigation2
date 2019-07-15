@@ -33,9 +33,10 @@
  */
 #include <gtest/gtest.h>
 
-#include <map>
 #include <cmath>
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"

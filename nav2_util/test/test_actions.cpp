@@ -71,12 +71,12 @@ preempted:
       // Check if this action has been canceled
       if (action_server_->is_cancel_requested()) {
         result->sequence = sequence;
-        action_server_->cancel_all(result);
+        action_server_->terminate_goals(result);
         return;
       }
 
       // Check if we've gotten an new goal, pre-empting the current one
-      if (action_server_->preempt_requested()) {
+      if (action_server_->is_preempt_requested()) {
         action_server_->accept_pending_goal();
         goto preempted;
       }

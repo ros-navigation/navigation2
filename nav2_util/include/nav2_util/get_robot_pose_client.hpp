@@ -15,6 +15,8 @@
 #ifndef NAV2_UTIL__GET_ROBOT_POSE_CLIENT_HPP_
 #define NAV2_UTIL__GET_ROBOT_POSE_CLIENT_HPP_
 
+#include <string>
+
 #include "nav2_util/service_client.hpp"
 #include "nav2_msgs/srv/get_robot_pose.hpp"
 
@@ -40,6 +42,6 @@ public:
     ServiceClient<nav2_msgs::srv::GetRobotPose>::ResponseType;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__GET_ROBOT_POSE_CLIENT_HPP_

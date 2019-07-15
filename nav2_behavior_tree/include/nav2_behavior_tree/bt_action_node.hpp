@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TASKS__BT_ACTION_NODE_HPP_
-#define NAV2_TASKS__BT_ACTION_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -22,7 +22,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace nav2_tasks
+namespace nav2_behavior_tree
 {
 
 template<class ActionT>
@@ -163,9 +163,7 @@ new_goal_received:
   // make sure to cancel the ROS2 action if it is still running.
   void halt() override
   {
-    // Shut the node down if it is currently running
-    if (status() == BT::NodeStatus::RUNNING) {
-      action_client_->async_cancel_goal(goal_handle_);
+    if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
       if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
         rclcpp::executor::FutureReturnCode::SUCCESS)
@@ -180,6 +178,26 @@ new_goal_received:
   }
 
 protected:
+  bool should_cancel_goal()
+  {
+    // Shut the node down if it is currently running
+    if (status() != BT::NodeStatus::RUNNING) {
+      return false;
+    }
+
+    rclcpp::spin_some(node_);
+    auto status = goal_handle_->get_status();
+
+    // Check if the goal is still executing
+    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
+    {
+      return true;
+    }
+
+    return false;
+  }
+
   const std::string action_name_;
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
@@ -197,6 +215,6 @@ protected:
   std::chrono::milliseconds node_loop_timeout_;
 };
 
-}  // namespace nav2_tasks
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_TASKS__BT_ACTION_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_

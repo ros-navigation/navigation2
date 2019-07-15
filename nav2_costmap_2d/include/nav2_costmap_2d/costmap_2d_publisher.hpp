@@ -45,6 +45,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include "tf2/transform_datatypes.h"
 #include "nav2_util/lifecycle_node.hpp"
 
@@ -77,11 +78,13 @@ public:
   {
     costmap_pub_->on_activate();
     costmap_update_pub_->on_activate();
+    costmap_raw_pub_->on_activate();
   }
   void on_deactivate()
   {
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
+    costmap_raw_pub_->on_deactivate();
   }
   void on_cleanup() {}
 
@@ -111,6 +114,7 @@ public:
 private:
   /** @brief Prepare grid_ message for publication. */
   void prepareGrid();
+  void prepareCostmap();
 
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
@@ -125,13 +129,19 @@ private:
   bool active_;
   bool always_send_full_costmap_;
 
+  // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
   rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
     costmap_update_pub_;
+  // Publisher for raw costmap values as msg::Costmap from layered costmap
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
+  nav2_msgs::msg::Costmap costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.
   static char * cost_translation_table_;
 };
+
 }  // namespace nav2_costmap_2d
+
 #endif  // NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_

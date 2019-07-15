@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <string>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
@@ -23,6 +24,11 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   auto motion_primitives_node = rclcpp::Node::make_shared("motion_primitives");
+
+  motion_primitives_node->declare_parameter(
+    "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+  motion_primitives_node->declare_parameter(
+    "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
 
   auto spin = std::make_shared<nav2_motion_primitives::Spin>(
     motion_primitives_node);
