@@ -137,7 +137,28 @@ class TurtlebotEnv():
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
         self.pub_cmd_vel.publish(vel_cmd)
-   
+
+    def set_random_robot_pose(self):
+        sleep(1.0)
+        while not self.set_entity_state.wait_for_service(timeout_sec=1.0):
+             print('Set entity state service is not available...')
+
+        req = SetEntityState.Request()
+        req.state.name = 'turtlebot3_waffle'
+        req.state.pose.position.x = -0.6
+        req.state.pose.position.y = -1.0
+        req.state.pose.position.z = 0.0
+        req.state.pose.orientation.x =0.0
+        req.state.pose.orientation.y =0.0
+        req.state.pose.orientation.z = 0.3826834
+        req.state.pose.orientation.w = 0.9238795
+        future = self.set_entity_state.call_async(req)
+
+        while not future.done() and rclpy.ok():            
+            sleep(0.1)
+ 
+        print(future.result().success)
+    
     def get_robot_pose(self):
         while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
             print('get entity state service is not available...')
@@ -155,7 +176,7 @@ class TurtlebotEnv():
         self.current_pose.orientation.y = future.result().state.pose.orientation.y
         self.current_pose.orientation.z = future.result().state.pose.orientation.z
         self.current_pose.orientation.w = future.result().state.pose.orientation.w
-  
+
     def reset(self):
         self.scan_msg_received = False
         self.stop_action    
@@ -167,6 +188,7 @@ class TurtlebotEnv():
             print('Reset simulation service is not available...')
         self.reset_simulation.call_async(Empty.Request())
 
+        self.set_random_robot_pose()
         self.get_robot_pose()
 
         self.laser_scan_range = [0] * 360
