@@ -13,6 +13,9 @@ setup(
         'turtlebot3_env',
         'dqn',
         'parameters',
+        'turtlebot3_env_oa',
+        'navigator',
+        'navigator_train',
          ],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -41,6 +44,8 @@ setup(
             'random_crawl_train = random_crawl_train:main',
             'random_crawl = random_crawl:main',
             'random_crawl_action = random_crawl_action:main',
+            'navigator = navigator:main',
+            'navigator_train = navigator_train:main',
         ],
     },
 )
