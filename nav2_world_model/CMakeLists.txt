@@ -27,6 +27,9 @@ add_library(${library_name} SHARED
   src/world_model.cpp
 )
 
+# prevent pluginlib from using boost
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 set(dependencies
   rclcpp
   nav2_util

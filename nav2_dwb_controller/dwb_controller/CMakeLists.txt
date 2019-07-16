@@ -32,6 +32,8 @@ add_library(${library_name}
   src/progress_checker.cpp
 )
 
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 set(dependencies
   rclcpp
   rclcpp_action

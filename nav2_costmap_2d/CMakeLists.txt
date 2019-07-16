@@ -51,6 +51,9 @@ add_library(nav2_costmap_2d_core SHARED
   src/clear_costmap_service.cpp
 )
 
+# prevent pluginlib from using boost
+target_compile_definitions(nav2_costmap_2d_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 set(dependencies
   geometry_msgs
   laser_geometry

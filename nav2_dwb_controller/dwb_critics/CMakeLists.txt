@@ -36,6 +36,9 @@ add_library(${PROJECT_NAME} SHARED
     src/twirling.cpp
 )
 
+# prevent pluginlib from using boost
+target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 set(dependencies
   angles
   nav2_costmap_2d
