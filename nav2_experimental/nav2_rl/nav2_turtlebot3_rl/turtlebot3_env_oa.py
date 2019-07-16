@@ -22,11 +22,12 @@ from rclpy.qos import qos_profile_sensor_data
 
 import numpy as np
 import math
+import os
 import random
 import pandas
 import parameters
 
-from geometry_msgs.msg import Twist, Pose
+from geometry_msgs.msg import Twist, Pose, Quaternion
 from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Empty
 from std_msgs.msg import String
@@ -142,16 +143,16 @@ class TurtlebotEnv():
         sleep(1.0)
         while not self.set_entity_state.wait_for_service(timeout_sec=1.0):
              print('Set entity state service is not available...')
-
+        random_pose = self.get_random_pose()
         req = SetEntityState.Request()
         req.state.name = 'turtlebot3_waffle'
-        req.state.pose.position.x = -0.6
-        req.state.pose.position.y = -1.0
+        req.state.pose.position.x = random_pose.position.x
+        req.state.pose.position.y = random_pose.position.y
         req.state.pose.position.z = 0.0
-        req.state.pose.orientation.x =0.0
-        req.state.pose.orientation.y =0.0
-        req.state.pose.orientation.z = 0.3826834
-        req.state.pose.orientation.w = 0.9238795
+        req.state.pose.orientation.x = random_pose.orientation.x
+        req.state.pose.orientation.y = random_pose.orientation.y
+        req.state.pose.orientation.z = random_pose.orientation.z
+        req.state.pose.orientation.w = random_pose.orientation.w
         future = self.set_entity_state.call_async(req)
 
         while not future.done() and rclpy.ok():            
@@ -176,6 +177,25 @@ class TurtlebotEnv():
         self.current_pose.orientation.y = future.result().state.pose.orientation.y
         self.current_pose.orientation.z = future.result().state.pose.orientation.z
         self.current_pose.orientation.w = future.result().state.pose.orientation.w
+
+    def get_random_pose(self):
+        random_pose = Pose()
+        validPoseFile = os.getenv('VALID_POSE')
+        df = pandas.read_csv(validPoseFile, header=0, names=['x', 'y'])
+        nrows = df['x'].count()
+
+        rand_index = random.randint(1, nrows)
+        yaw = random.uniform(0,math.pi*2)
+
+        random_pose.position.x = df['x'][rand_index-1]
+        random_pose.position.y = df['y'][rand_index-1]
+        random_pose.position.z = 0.0
+        random_pose.orientation.x = 0.0
+        random_pose.orientation.y = 0.0
+        random_pose.orientation.z = math.sin(yaw*0.5)
+        random_pose.orientation.w = math.cos(yaw*0.5)
+
+        return random_pose
 
     def reset(self):
         self.scan_msg_received = False
