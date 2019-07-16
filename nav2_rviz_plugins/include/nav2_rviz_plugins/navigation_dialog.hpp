@@ -34,7 +34,7 @@ class NavigationDialog : public QDialog
 public:
   explicit NavigationDialog(QWidget * parent = 0);
 
-  void startNavigation(double x, double y, double theta, std::string & frame);
+  bool startNavigation(double x, double y, double theta, std::string & frame);
 
 protected:
   void timerEvent(QTimerEvent * event);

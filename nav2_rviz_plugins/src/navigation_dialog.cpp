@@ -102,7 +102,7 @@ NavigationDialog::orientationAroundZAxis(double angle)
   return tf2::toMsg(q);
 }
 
-void
+bool
 NavigationDialog::startNavigation(double x, double y, double theta, std::string & frame)
 {
   auto pose = geometry_msgs::msg::PoseStamped();
@@ -117,8 +117,8 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
-      " Is the initial pose set?");
-    return;
+      " Check if Gazebo simulator is running and the initial pose is set");
+    return false;
   }
 
   // Send the goal pose
@@ -130,19 +130,22 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   send_goal_options.result_callback = [](auto) {};
 
   auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+  if (rclcpp::spin_until_future_complete(client_node_,
+    future_goal_handle, std::chrono::seconds(5)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
-    return;
+    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed."
+      " Check if Gazebo simulator is running and the initial pose is set");
+    return false;
   }
 
   // Get the goal handle and save so that we can check on completion in the timer callback
   goal_handle_ = future_goal_handle.get();
   if (!goal_handle_) {
     RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
-    return;
+    return false;
   }
 
   timer_.start(100, this);
+  return true;
 }
