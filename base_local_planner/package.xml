@@ -23,6 +23,7 @@
     <build_export_depend>rosidl_default_runtime</build_export_depend>
     <exec_depend>rosidl_default_runtime</exec_depend>
 
+    <build_depend>nav2_common</build_depend>
     <depend>rosidl_default_generators</depend>
     <depend>angles</depend>
     <depend>nav2_costmap_2d</depend>
@@ -30,6 +31,7 @@
     <depend>eigen</depend>
     <depend>geometry_msgs</depend>
     <depend>nav_msgs</depend>
+    <depend>nav2_msgs</depend>
     <depend>pluginlib</depend>
     <depend>sensor_msgs</depend>
     <depend>std_msgs</depend>

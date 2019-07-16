@@ -44,8 +44,7 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <Eigen/Core>
-// #include <base_local_planner/Position2DInt.hpp>
-#include <base_local_planner/msg/position2_d_int.hpp>
+#include <nav2_msgs/msg/position2_d_int.hpp>
 
 namespace base_local_planner {
 

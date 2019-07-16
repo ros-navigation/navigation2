@@ -2,11 +2,13 @@ cmake_minimum_required(VERSION 3.5)
 project(base_local_planner)
 
 find_package(ament_cmake REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_dynamic_params REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -16,7 +18,7 @@ find_package(tf2_ros REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-# nav2_package()
+nav2_package()
 
 include_directories(
   include

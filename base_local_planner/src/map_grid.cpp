@@ -33,6 +33,7 @@
  *********************************************************************/
 #include <base_local_planner/map_grid.h>
 #include <nav2_costmap_2d/cost_values.hpp>
+#include <cassert>
 using namespace std;
 
 namespace base_local_planner{
@@ -56,7 +57,7 @@ namespace base_local_planner{
 
   void MapGrid::commonInit(){
     //don't allow construction of zero size grid
-    ROS_ASSERT(size_y_ != 0 && size_x_ != 0);
+    assert(size_y_ != 0 && size_x_ != 0);
 
     map_.resize(size_y_ * size_x_);
 

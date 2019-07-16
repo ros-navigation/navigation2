@@ -39,7 +39,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <nav2_msgs/msg/path.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/point.hpp>
@@ -77,7 +77,8 @@ namespace base_local_planner {
    * @param  pub The published to use
    * @param  r,g,b,a The color and alpha value to use when publishing
    */
-  void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const ros::Publisher& pub);
+    // void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const ros::Publisher& pub);
+  void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr & pub);
 
   /**
    * @brief  Trim off parts of the global plan that are far enough behind the robot

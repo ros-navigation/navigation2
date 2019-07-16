@@ -40,6 +40,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <rclcpp/rclcpp.hpp>
 #include "nav_msgs/msg/odometry.hpp"
+#include <cassert>
+#include <tf2_ros/buffer.h>
 
 namespace base_local_planner {
 
@@ -52,13 +54,14 @@ namespace base_local_planner {
     return angles::shortest_angular_distance(yaw, goal_th);
   }
 
-  void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const ros::Publisher& pub) {
+  // void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const ros::Publisher& pub) {
+  void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path, const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr & pub) {
     //given an empty path we won't do anything
     if(path.empty())
       return;
 
     //create a path message
-    nav2_msgs::msg::Path gui_path;
+    nav_msgs::msg::Path gui_path;
     gui_path.poses.resize(path.size());
     gui_path.header.frame_id = path[0].header.frame_id;
     gui_path.header.stamp = path[0].header.stamp;
@@ -68,11 +71,11 @@ namespace base_local_planner {
       gui_path.poses[i] = path[i];
     }
 
-    pub.publish(gui_path);
+    pub->publish(gui_path);
   }
 
   void prunePlan(const geometry_msgs::msg::PoseStamped& global_pose, std::vector<geometry_msgs::msg::PoseStamped>& plan, std::vector<geometry_msgs::msg::PoseStamped>& global_plan){
-    ROS_ASSERT(global_plan.size() >= plan.size());
+    assert(global_plan.size() >= plan.size());
     std::vector<geometry_msgs::msg::PoseStamped>::iterator it = plan.begin();
     std::vector<geometry_msgs::msg::PoseStamped>::iterator global_it = global_plan.begin();
     while(it != plan.end()){
@@ -108,8 +111,8 @@ namespace base_local_planner {
     const geometry_msgs::msg::PoseStamped& plan_pose = global_plan[0];
     try {
       // get plan_to_global_transform from plan frame to global_frame
-      geometry_msgs::msg::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, rclcpp::Time(),
-          plan_pose.header.frame_id, plan_pose.header.stamp, plan_pose.header.frame_id, std::chrono::milliseconds(500));
+      geometry_msgs::msg::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, tf2::TimePointZero,
+          plan_pose.header.frame_id, tf2_ros::fromMsg(plan_pose.header.stamp), plan_pose.header.frame_id, std::chrono::milliseconds(500));
 
       //let's get the pose of the robot in the frame of the plan
       geometry_msgs::msg::PoseStamped robot_pose;
@@ -180,8 +183,8 @@ namespace base_local_planner {
 
     const geometry_msgs::msg::PoseStamped& plan_goal_pose = global_plan.back();
     try{
-      geometry_msgs::msg::TransformStamped transform = tf.lookupTransform(global_frame, rclcpp::Time(),
-                         plan_goal_pose.header.frame_id, plan_goal_pose.header.stamp,
+      geometry_msgs::msg::TransformStamped transform = tf.lookupTransform(global_frame, tf2::TimePointZero,
+                         plan_goal_pose.header.frame_id, tf2_ros::fromMsg(plan_goal_pose.header.stamp),
                          plan_goal_pose.header.frame_id, std::chrono::milliseconds(500));
 
       tf2::doTransform(plan_goal_pose, goal_pose, transform);

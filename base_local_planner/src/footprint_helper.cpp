@@ -48,7 +48,7 @@ FootprintHelper::~FootprintHelper() {
   // TODO Auto-generated destructor stub
 }
 
-void FootprintHelper::getLineCells(int x0, int x1, int y0, int y1, std::vector<base_local_planner::Position2DInt>& pts) {
+void FootprintHelper::getLineCells(int x0, int x1, int y0, int y1, std::vector<nav2_msgs::msg::Position2DInt>& pts) {
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
   int deltay = abs(y1 - y0);        // The difference between the y's
@@ -58,7 +58,7 @@ void FootprintHelper::getLineCells(int x0, int x1, int y0, int y1, std::vector<b
   int xinc1, xinc2, yinc1, yinc2;
   int den, num, numadd, numpixels;
 
-  base_local_planner::Position2DInt pt;
+  nav2_msgs::msg::Position2DInt pt;
 
   if (x1 >= x0)                 // The x-values are increasing
   {
@@ -120,9 +120,9 @@ void FootprintHelper::getLineCells(int x0, int x1, int y0, int y1, std::vector<b
 }
 
 
-void FootprintHelper::getFillCells(std::vector<base_local_planner::Position2DInt>& footprint){
+void FootprintHelper::getFillCells(std::vector<base_local_planner::position2_d_int>& footprint){
   //quick bubble sort to sort pts by x
-  base_local_planner::Position2DInt swap, pt;
+  nav2_msgs::msg::Position2DInt swap, pt;
   unsigned int i = 0;
   while (i < footprint.size() - 1) {
     if (footprint[i].x > footprint[i + 1].x) {
@@ -138,8 +138,8 @@ void FootprintHelper::getFillCells(std::vector<base_local_planner::Position2DInt
   }
 
   i = 0;
-  base_local_planner::Position2DInt min_pt;
-  base_local_planner::Position2DInt max_pt;
+  nav2_msgs::msg::Position2DInt min_pt;
+  nav2_msgs::msg::Position2DInt max_pt;
   unsigned int min_x = footprint[0].x;
   unsigned int max_x = footprint[footprint.size() -1].x;
   //walk through each column and mark cells inside the footprint
@@ -177,7 +177,7 @@ void FootprintHelper::getFillCells(std::vector<base_local_planner::Position2DInt
 /**
  * get the cellsof a footprint at a given position
  */
-std::vector<base_local_planner::Position2DInt> FootprintHelper::getFootprintCells(
+std::vector<nav2_msgs::msg::Position2DInt> FootprintHelper::getFootprintCells(
     Eigen::Vector3f pos,
     std::vector<geometry_msgs::msg::Point> footprint_spec,
     const nav2_costmap_2d::Costmap2D& costmap,
@@ -185,7 +185,7 @@ std::vector<base_local_planner::Position2DInt> FootprintHelper::getFootprintCell
   double x_i = pos[0];
   double y_i = pos[1];
   double theta_i = pos[2];
-  std::vector<base_local_planner::Position2DInt> footprint_cells;
+  std::vector<nav2_msgs::msg::Position2DInt> footprint_cells;
 
   //if we have no footprint... do nothing
   if (footprint_spec.size() <= 1) {

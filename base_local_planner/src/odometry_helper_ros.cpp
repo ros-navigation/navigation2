@@ -41,15 +41,19 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <memory>
+#include "rclcpp/create_subscription.hpp"
 
 
 namespace base_local_planner {
 
-OdometryHelperRos::OdometryHelperRos(std::string odom_topic) {
+OdometryHelperRos::OdometryHelperRos(rclcpp::Node::SharedPtr & node_handle, std::string odom_topic)
+{
+  node_ = node_handle;
   setOdomTopic( odom_topic );
+  // node_ = std::shared_ptr<rclcpp::Node>(this, [](rclcpp::Node *) {});
 }
 
-void OdometryHelperRos::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {//was constptr
+void OdometryHelperRos::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {//was constptr
     RCLCPP_INFO_ONCE(rclcpp::get_logger("base_local_planner"), "odom received!");
 
   //we assume that the odometry is published in the frame of the base
@@ -85,7 +89,8 @@ void OdometryHelperRos::getRobotVel(geometry_msgs::msg::PoseStamped& robot_vel) 
   robot_vel.pose.position.z = 0;
   tf2::Quaternion q;
   q.setRPY(0, 0, global_vel.angular.z);
-  tf2::convert(q, robot_vel.pose.orientation);
+  // tf2::convert(q, robot_vel.pose.orientation);
+  robot_vel.pose.orientation = tf2::toMsg(q);
   robot_vel.header.stamp = rclcpp::Time();
 }
 
@@ -97,12 +102,14 @@ void OdometryHelperRos::setOdomTopic(std::string odom_topic)
 
     if( odom_topic_ != "" )
     {
-      ros::NodeHandle gn;
-      odom_sub_ = gn.subscribe<nav_msgs::msg::Odometry>( odom_topic_, 1, boost::bind( &OdometryHelperRos::odomCallback, this, _1 ));
+      odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
+          rclcpp::SystemDefaultsQoS(),
+          std::bind(&OdometryHelperRos::odomCallback, this, std::placeholders::_1));
+
     }
     else
     {
-      odom_sub_.shutdown();
+      odom_sub_.reset();
     }
   }
 }

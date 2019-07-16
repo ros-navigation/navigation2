@@ -36,22 +36,17 @@
 *********************************************************************/
 
 #include <base_local_planner/trajectory_planner_ros.h>
-
 #include <sys/time.h>
 #include <boost/tokenizer.hpp>
-
 #include <Eigen/Core>
 #include <cmath>
-
 #include <rclcpp/rclcpp.hpp>
-
 #include <pluginlib/class_list_macros.h>
-
 #include <base_local_planner/goal_functions.h>
 #include <nav2_msgs/msg/path.hpp>
-
 #include <nav_core/parameter_magic.h>
 #include <tf2/utils.h>
+#include <cassert>
 
 //register this planner as a BaseLocalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(base_local_planner::TrajectoryPlannerROS, nav_core::BaseLocalPlanner)
@@ -225,7 +220,7 @@ namespace base_local_planner {
       private_nh.param("point_grid/max_obstacle_height", max_obstacle_height, 2.0);
       private_nh.param("point_grid/grid_resolution", grid_resolution, 0.2);
 
-      ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
+      assert(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
       world_model_ = new CostmapModel(*costmap_);
       std::vector<double> y_vels = loadYVels(private_nh);
 

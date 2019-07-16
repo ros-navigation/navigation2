@@ -54,14 +54,14 @@ public:
    * @param odom_topic The topic on which to subscribe to Odometry
    *        messages.  If the empty string is given (the default), no
    *        subscription is done. */
-  OdometryHelperRos(std::string odom_topic = "");
+  OdometryHelperRos(rclcpp::Node::SharedPtr & node_handle, std::string odom_topic="odom");
   ~OdometryHelperRos() {}
 
   /**
    * @brief  Callback for receiving odometry data
    * @param msg An Odometry message
    */
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
+  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   void getOdom(nav_msgs::msg::Odometry& base_odom);
 
@@ -77,16 +77,22 @@ public:
   /** @brief Return the current odometry topic. */
   std::string getOdomTopic() const { return odom_topic_; }
 
+
 private:
   //odom topic
   std::string odom_topic_;
 
   // we listen on odometry on the odom topic
-  ros::Subscriber odom_sub_;
+  //std::shared_ptr<geometry_msgs::msg::PoseStamped> odom_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+
   nav_msgs::msg::Odometry base_odom_;
   boost::mutex odom_mutex_;
   // global tf frame id
   std::string frame_id_; ///< The frame_id associated this data
+
+  // rclcpp::Node* node_;
+  rclcpp::Node::SharedPtr node_;
 };
 
 } /* namespace base_local_planner */
