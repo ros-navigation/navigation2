@@ -44,6 +44,10 @@ add_library(dwb_core SHARED
   src/publisher.cpp
   src/illegal_trajectory_tracker.cpp
 )
+
+# prevent pluginlib from using boost
+target_compile_definitions(dwb_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 ament_target_dependencies(dwb_core
   ${dependencies}
 )
