@@ -49,6 +49,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        env.stop_action()
         rclpy.shutdown()
         env.cleanup()
     return

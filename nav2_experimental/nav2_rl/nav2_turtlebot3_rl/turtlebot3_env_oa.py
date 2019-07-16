@@ -27,7 +27,7 @@ import random
 import pandas
 import parameters
 
-from geometry_msgs.msg import Twist, Pose, Quaternion
+from geometry_msgs.msg import Twist, Pose
 from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Empty
 from std_msgs.msg import String
@@ -51,6 +51,7 @@ class TurtlebotEnv():
         self.range_min = 0.0
 
         self.current_pose = Pose()
+        self.goal_pose = Pose()
 
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
         self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
@@ -157,8 +158,6 @@ class TurtlebotEnv():
 
         while not future.done() and rclpy.ok():            
             sleep(0.1)
- 
-        print(future.result().success)
     
     def get_robot_pose(self):
         while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
@@ -210,6 +209,7 @@ class TurtlebotEnv():
 
         self.set_random_robot_pose()
         self.get_robot_pose()
+        self.goal_pose = self.get_random_pose()
 
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8

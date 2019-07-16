@@ -50,7 +50,7 @@ def trainModel(env, action_size):
             if not done: 
                 agent.experience_replay()
             sleep(parameters.LOOP_RATE)
-        agent.model.save('random_crawl_model.h5')
+        agent.model.save('navigator_model.h5')
 
 def main(args=None):
     rclpy.init(args=args)
@@ -64,6 +64,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        env.stop_action()
         rclpy.shutdown()
         env.cleanup()
     return
