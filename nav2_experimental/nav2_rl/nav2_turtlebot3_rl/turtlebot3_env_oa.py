@@ -26,7 +26,7 @@ import random
 import pandas
 import parameters
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Pose
 from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Empty
 from std_msgs.msg import String
@@ -48,6 +48,8 @@ class TurtlebotEnv():
         self.states_input = [3.5] * 8
         self.zero_div_tol = 0.01
         self.range_min = 0.0
+
+        self.current_pose = Pose()
 
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
         self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
@@ -135,7 +137,25 @@ class TurtlebotEnv():
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
         self.pub_cmd_vel.publish(vel_cmd)
+   
+    def get_robot_pose(self):
+        while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
+            print('get entity state service is not available...')
+        req = GetEntityState.Request()
+        req.name = 'turtlebot3_waffle'
+        future = self.get_entity_state.call_async(req)
 
+        while not future.done() and rclpy.ok():            
+            sleep(0.01)
+
+        self.current_pose.position.x = future.result().state.pose.position.x
+        self.current_pose.position.y = future.result().state.pose.position.y
+        self.current_pose.position.z = future.result().state.pose.position.z
+        self.current_pose.orientation.x = future.result().state.pose.orientation.x
+        self.current_pose.orientation.y = future.result().state.pose.orientation.y
+        self.current_pose.orientation.z = future.result().state.pose.orientation.z
+        self.current_pose.orientation.w = future.result().state.pose.orientation.w
+  
     def reset(self):
         self.scan_msg_received = False
         self.stop_action    
@@ -147,9 +167,7 @@ class TurtlebotEnv():
             print('Reset simulation service is not available...')
         self.reset_simulation.call_async(Empty.Request())
 
-        while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
-             print('get_entity_state service is not available...')
-        self.get_entity_state.call_async(GetEntityState.Request())
+        self.get_robot_pose()
 
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
