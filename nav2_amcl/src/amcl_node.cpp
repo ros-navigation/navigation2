@@ -1063,8 +1063,7 @@ AmclNode::initTransforms()
 
   // Initialize transform listener and broadcaster
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
-  tf_buffer_->setUsingDedicatedThread(true);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, rclcpp_node_, false);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(rclcpp_node_);
 
   sent_first_transform_ = false;
