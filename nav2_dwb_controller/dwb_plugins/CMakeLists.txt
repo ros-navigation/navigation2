@@ -10,7 +10,6 @@ find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_dynamic_params REQUIRED)
 
 nav2_package()
 
@@ -22,7 +21,6 @@ set(dependencies
   pluginlib
   rclcpp
   nav2_util
-  nav2_dynamic_params
 )
 
 include_directories(

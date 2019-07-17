@@ -38,30 +38,30 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_costmap_2d/layer.hpp"
+#include "geometry_msgs/msg/polygon.h"
+#include "geometry_msgs/msg/polygon_stamped.h"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_costmap_2d/clear_costmap_service.hpp"
-#include "geometry_msgs/msg/polygon.h"
-#include "geometry_msgs/msg/polygon_stamped.h"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "tf2/convert.h"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
-#include "tf2_ros/buffer.h"
-#include "tf2/convert.h"
-#include "tf2/LinearMath/Transform.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2/time.h"
-#include "rclcpp/parameter_events_filter.hpp"
-#include "nav2_dynamic_params/dynamic_params_validator.hpp"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -69,7 +69,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS : public rclcpp::Node
+class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -77,8 +77,15 @@ public:
    * @param name The name for this costmap
    * @param tf A reference to a TransformListener
    */
-  Costmap2DROS(const std::string & name, tf2_ros::Buffer & tf);
+  explicit Costmap2DROS(const std::string & name);
   ~Costmap2DROS();
+
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief  Subscribes to sensor topics if necessary and starts costmap
@@ -120,7 +127,7 @@ public:
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const;
+  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
 
   /** @brief Returns costmap name */
   std::string getName() const
@@ -134,9 +141,11 @@ public:
     return transform_tolerance_;
   }
 
-  /** @brief Return a pointer to the "master" costmap which receives updates from all the layers.
+  /**
+   * @brief Return a pointer to the "master" costmap which receives updates from all the layers.
    *
-   * Same as calling getLayeredCostmap()->getCostmap(). */
+   * Same as calling getLayeredCostmap()->getCostmap().
+   */
   Costmap2D * getCostmap()
   {
     return layered_costmap_->getCostmap();
@@ -159,6 +168,7 @@ public:
   {
     return robot_base_frame_;
   }
+
   LayeredCostmap * getLayeredCostmap()
   {
     return layered_costmap_;
@@ -199,7 +209,7 @@ public:
    * @brief  Build the oriented footprint of the robot at the robot's current pose
    * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
    */
-  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & oriented_footprint) const;
+  void getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & oriented_footprint);
 
   /** @brief Set the footprint of the robot to be the given set of
    * points, padded by footprint_padding.
@@ -211,7 +221,7 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
-  void setUnpaddedRobotFootprint(const std::vector<geometry_msgs::msg::Point> & points);
+  void setRobotFootprint(const std::vector<geometry_msgs::msg::Point> & points);
 
   /** @brief Set the footprint of the robot to be the given polygon,
    * padded by footprint_padding.
@@ -223,53 +233,66 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
-  void setUnpaddedRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
+  void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
+
+  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
 protected:
-  LayeredCostmap * layered_costmap_;
-  std::string name_;
-  tf2_ros::Buffer & tf_;  ///< @brief Used for transforming point clouds
-  std::string global_frame_;  ///< @brief The global frame for the costmap
-  std::string robot_base_frame_;  ///< @brief The frame_id of the robot base
-  double transform_tolerance_;  ///< timeout before transform errors
-  float footprint_padding_;
+  rclcpp::Node::SharedPtr client_node_;
 
-private:
-  /** @brief Set the footprint from the new_config object.
-   *
-   * If the values of footprint and robot_radius are the same in
-   * new_config and old_config, nothing is changed. */
-  void readFootprintFromConfig();
+  // Publishers and subscribers
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    footprint_pub_;
+  Costmap2DPublisher * costmap_publisher_{nullptr};
 
-  void reconfigureCB();
-
-  void mapUpdateLoop(double frequency);
-  bool map_update_thread_shutdown_;
-  bool stop_updates_, initialized_, stopped_;
-  std::thread * map_update_thread_;  ///< @brief A thread for updating the map
-  rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Time last_publish_;
-  rclcpp::Duration publish_cycle_;
-  pluginlib::ClassLoader<Layer> plugin_loader_;
-  Costmap2DPublisher * publisher_;
-
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsValidator> param_validator_;
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
-
-  std::recursive_mutex configuration_mutex_;
-
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::SyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
+  // Transform listener
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  LayeredCostmap * layered_costmap_{nullptr};
+  std::string name_;
+  void mapUpdateLoop(double frequency);
+  bool map_update_thread_shutdown_{false};
+  bool stop_updates_{false};
+  bool initialized_{false};
+  bool stopped_{true};
+  std::thread * map_update_thread_{nullptr};  ///< @brief A thread for updating the map
+  rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
+  rclcpp::Duration publish_cycle_{1, 0};
+  pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
+
+  // Parameters
+  void getParameters();
+  bool always_send_full_costmap_{false};
+  std::string footprint_;
+  float footprint_padding_{0};
+  std::string global_frame_;       ///< The global frame for the costmap
+  int map_height_meters_{0};
+  double map_publish_frequency_{0};
+  double map_update_frequency_{0};
+  int map_width_meters_{0};
+  double origin_x_{0};
+  double origin_y_{0};
+  std::vector<std::string> plugin_names_;
+  std::vector<std::string> plugin_types_;
+  double resolution_{0};
+  std::string robot_base_frame_;   ///< The frame_id of the robot base
+  double robot_radius_;
+  bool rolling_window_{false};     ///< Whether to use a rolling window version of the costmap
+  bool track_unknown_space_{false};
+  double transform_tolerance_{0};  ///< The timeout before transform errors
+
+  // Derived parameters
+  bool use_radius_{false};
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   std::shared_ptr<ClearCostmapService> clear_costmap_service_;
 };
-// class Costmap2DROS
+
 }  // namespace nav2_costmap_2d
 
 #endif  // NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_

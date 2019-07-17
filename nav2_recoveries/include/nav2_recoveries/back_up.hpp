@@ -19,30 +19,29 @@
 #include <memory>
 
 #include "nav2_recoveries/recovery.hpp"
-#include "nav2_tasks/back_up_task.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 
 namespace nav2_recoveries
 {
+using BackUpAction = nav2_msgs::action::BackUp;
 
-class BackUp : public Recovery<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>
+class BackUp : public Recovery<BackUpAction>
 {
 public:
   explicit BackUp(rclcpp::Node::SharedPtr & node);
   ~BackUp();
 
-  nav2_tasks::TaskStatus onRun(const nav2_tasks::BackUpCommand::SharedPtr command) override;
+  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
 
-  nav2_tasks::TaskStatus onCycleUpdate(nav2_tasks::BackUpResult & result) override;
+  Status onCycleUpdate() override;
 
 protected:
   double min_linear_vel_;
   double max_linear_vel_;
   double linear_acc_lim_;
 
-  nav_msgs::msg::Odometry::SharedPtr initial_pose_;
+  geometry_msgs::msg::Pose initial_pose_;
   double command_x_;
-
-  nav2_tasks::TaskStatus controlledBackup();
 };
 
 }  // namespace nav2_recoveries

@@ -37,10 +37,12 @@
 
 #include <vector>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/trajectory_generator.hpp"
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -53,7 +55,7 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
@@ -67,7 +69,7 @@ protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding
    */
-  virtual void initializeIterator(const std::shared_ptr<rclcpp::Node> & nh);
+  virtual void initializeIterator(const nav2_util::LifecycleNode::SharedPtr & nh);
 
   /**
    * @brief Check if the deprecated use_dwa parameter is set to the functionality that matches this class
@@ -76,7 +78,7 @@ protected:
    * LimitedAccelGenerator. If use_dwa was false, this class should be used. If it was true, then LimitedAccelGenerator.
    * If this is NOT the case, this function will throw an exception.
    */
-  virtual void checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh);
+  virtual void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh);
 
   /**
    * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits

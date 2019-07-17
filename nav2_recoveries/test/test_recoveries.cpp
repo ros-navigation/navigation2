@@ -15,66 +15,59 @@
 #include <string>
 #include <memory>
 #include <chrono>
-#include <atomic>
 #include <iostream>
+#include <future>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "nav2_tasks/task_client.hpp"
-#include "nav2_tasks/task_status.hpp"
-#include "nav2_recoveries/recovery.hpp"
 
-using nav2_tasks::TaskStatus;
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_recoveries/recovery.hpp"
+#include "nav2_msgs/action/dummy_recovery.hpp"
+
 using nav2_recoveries::Recovery;
+using nav2_recoveries::Status;
+using RecoveryAction = nav2_msgs::action::DummyRecovery;
+using ClientGoalHandle = rclcpp_action::ClientGoalHandle<RecoveryAction>;
+
 using namespace std::chrono_literals;
 
-// Let's create a recovery for testing the base class
+// A recovery for testing the base class
 
-using DummyRecoveryCommand = std_msgs::msg::String;
-using DummyRecoveryResult = std_msgs::msg::String;
-
-using DummyRecoveryClient = nav2_tasks::TaskClient<DummyRecoveryCommand, DummyRecoveryResult>;
-
-class DummyRecovery : public Recovery<DummyRecoveryCommand, DummyRecoveryResult>
+class DummyRecovery : public Recovery<RecoveryAction>
 {
 public:
   explicit DummyRecovery(rclcpp::Node::SharedPtr & node)
-  : Recovery<DummyRecoveryCommand, DummyRecoveryResult>(node),
+  : Recovery<RecoveryAction>(node, "Recovery"),
     initialized_(false) {}
 
   ~DummyRecovery() {}
 
-  TaskStatus onRun(const DummyRecoveryCommand::SharedPtr command) override
+  Status onRun(const std::shared_ptr<const RecoveryAction::Goal> goal) override
   {
     // A normal recovery would catch the command and initialize
     initialized_ = false;
-    command_ = command;
+    command_ = goal->command.data;
     start_time_ = std::chrono::system_clock::now();
 
     // onRun method can have various possible outcomes (success, failure, cancelled)
     // The output is defined by the tester class on the command string.
-
-    if (command_->data == "Testing failure on init") {
-      // A real recovery would return failed if initialization failed or command is invalid
-      return TaskStatus::FAILED;
-      // return TaskStatus::SUCCEEDED;
-    } else if (command_->data == "Testing success" || command->data == "Testing failure on run") {
+    if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;
-      return TaskStatus::SUCCEEDED;
-    } else {
-      return TaskStatus::FAILED;
+      return Status::SUCCEEDED;
     }
+
+    return Status::FAILED;
   }
 
-  TaskStatus onCycleUpdate(DummyRecoveryResult & /*result*/) override
+  Status onCycleUpdate() override
   {
     // A normal recovery would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
-    if (command_->data != "Testing success" || !initialized_) {
-      return TaskStatus::FAILED;
+    if (command_ != "Testing success" || !initialized_) {
+      return Status::FAILED;
     }
 
     // Fake getting the robot state, calculate and send control output
@@ -87,134 +80,130 @@ public:
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
-      return TaskStatus::SUCCEEDED;
+      return Status::SUCCEEDED;
     }
 
-    return TaskStatus::RUNNING;
+    return Status::RUNNING;
   }
 
 private:
   bool initialized_;
-  std::shared_ptr<DummyRecoveryCommand> command_;
+  std::string command_;
   std::chrono::system_clock::time_point start_time_;
 };
-
-// The following getTaskName function is required and currently has to be
-// in the nav2_tasks namespace
-
-namespace nav2_tasks
-{
-
-template<>
-inline const char * getTaskName<DummyRecoveryCommand, DummyRecoveryResult>()
-{
-  return "TestRecoveryTask";
-}
-
-}
 
 // Define a test class to hold the context for the tests
 
 class RecoveryTest : public ::testing::Test
 {
 protected:
-  RecoveryTest()
-  : spinning_ok_(false) {}
-
+  RecoveryTest() {}
   ~RecoveryTest() {}
 
   void SetUp() override
   {
     node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
-
+    node_->declare_parameter(
+      "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    node_->declare_parameter(
+      "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
     recovery_ = std::make_unique<DummyRecovery>(node_);
 
-    client_ = std::make_unique<DummyRecoveryClient>(node_);
-
-    // Launch a thread to spin the node
-    spinning_ok_ = true;
-    spin_thread_ = new std::thread(&RecoveryTest::spin, this);
+    client_ = rclcpp_action::create_client<RecoveryAction>(node_, "Recovery");
   }
 
-  void TearDown() override
-  {
-    spinning_ok_ = false;
-    spin_thread_->join();
-    delete spin_thread_;
-  }
+  void TearDown() override {}
 
-  void spin()
+  bool sendCommand(const std::string & command)
   {
-    while (spinning_ok_) {
-      // Spin the node to get messages from the subscriptions
-      rclcpp::spin_some(node_->get_node_base_interface());
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (!client_->wait_for_action_server(4s)) {
+      return false;
     }
-    std::cout << "Exiting node spinning function" << std::endl;
-  }
 
-  void sendStringCommand(const std::string & string_command)
-  {
-    auto command = std::make_shared<DummyRecoveryCommand>();
-    command->data = string_command;
-    client_->sendCommand(command);
-  }
+    auto future_goal = getGoal(command);
 
-  TaskStatus waitForRecovery()
-  {
-    auto result = std::make_shared<DummyRecoveryResult>();
-
-    // Loop until recovery is completed
-    while (true) {
-      TaskStatus status = client_->waitForResult(result, 100ms);
-
-      if (status != TaskStatus::RUNNING) {
-        return status;
-      }
+    if (rclcpp::spin_until_future_complete(node_, future_goal) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      // failed sending the goal
+      return false;
     }
+
+    goal_handle_ = future_goal.get();
+
+    if (!goal_handle_) {
+      // goal was rejected by the action server
+      return false;
+    }
+
+    return true;
+  }
+
+  std::shared_future<ClientGoalHandle::SharedPtr> getGoal(const std::string & command)
+  {
+    auto goal = RecoveryAction::Goal();
+    goal.command.data = command;
+
+    auto goal_options = rclcpp_action::Client<RecoveryAction>::SendGoalOptions();
+    goal_options.result_callback = [](auto) {};
+
+    return client_->async_send_goal(goal, goal_options);
+  }
+
+  Status getOutcome()
+  {
+    if (getResult().code == rclcpp_action::ResultCode::SUCCEEDED) {
+      return Status::SUCCEEDED;
+    }
+
+    return Status::FAILED;
+  }
+
+  ClientGoalHandle::WrappedResult getResult()
+  {
+    auto future_result = goal_handle_->async_result();
+    rclcpp::executor::FutureReturnCode frc;
+
+    do {
+      frc = rclcpp::spin_until_future_complete(node_, future_result);
+    } while (frc != rclcpp::executor::FutureReturnCode::SUCCESS);
+
+    return future_result.get();
   }
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<DummyRecovery> recovery_;
-  std::unique_ptr<DummyRecoveryClient> client_;
-  std::thread * spin_thread_;
-  std::atomic<bool> spinning_ok_;
+  std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;
+  std::shared_ptr<rclcpp_action::ClientGoalHandle<RecoveryAction>> goal_handle_;
 };
 
 // Define the tests
 
 TEST_F(RecoveryTest, testingSuccess)
 {
-  sendStringCommand("Testing success");
-  EXPECT_EQ(waitForRecovery(), TaskStatus::SUCCEEDED);
+  ASSERT_TRUE(sendCommand("Testing success"));
+  EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
 }
 
 TEST_F(RecoveryTest, testingFailureOnRun)
 {
-  sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 TEST_F(RecoveryTest, testingFailureOnInit)
 {
-  sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 TEST_F(RecoveryTest, testingSequentialFailures)
 {
-  sendStringCommand("Testing failure on init");
-  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 
-  sendStringCommand("Testing failure on run");
-  EXPECT_EQ(waitForRecovery(), TaskStatus::FAILED);
-}
-
-TEST_F(RecoveryTest, testCancel)
-{
-  sendStringCommand("Testing success");
-  client_->cancel();
-  EXPECT_EQ(waitForRecovery(), TaskStatus::CANCELED);
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
 int main(int argc, char ** argv)

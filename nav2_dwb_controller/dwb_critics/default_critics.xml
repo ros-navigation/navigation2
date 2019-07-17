@@ -1,5 +1,5 @@
 <class_libraries>
-  <library path="lib/libdwb_critics">
+  <library path="dwb_critics">
     <class type="dwb_critics::PreferForwardCritic" base_class_type="dwb_core::TrajectoryCritic">
       <description>Penalize trajectories with move backwards and/or turn too much</description>
     </class>

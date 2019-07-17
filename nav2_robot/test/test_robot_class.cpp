@@ -15,12 +15,15 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_robot/robot.hpp"
+
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_robot/robot.hpp"
+#include "nav2_util/lifecycle_service_client.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using std::placeholders::_1;
+using lifecycle_msgs::msg::Transition;
 
 class RclCppFixture
 {
@@ -28,35 +31,134 @@ public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
+
 RclCppFixture g_rclcppfixture;
+
+class TestLifecycleNode : public nav2_util::LifecycleNode
+{
+public:
+  TestLifecycleNode()
+  : nav2_util::LifecycleNode("TestLifecycleNode")
+  {
+  }
+
+  nav2_util::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State & state) override
+  {
+    robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
+    robot_->on_configure(state);
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & state) override
+  {
+    robot_->on_activate(state);
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & state) override
+  {
+    robot_->on_deactivate(state);
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State & state) override
+  {
+    robot_->on_cleanup(state);
+    robot_.reset();
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom)
+  {
+    return robot_->getOdometry(robot_odom);
+  }
+
+  std::string getName()
+  {
+    return robot_->getName();
+  }
+
+  bool getCurrentPose(
+    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose)
+  {
+    return robot_->getCurrentPose(robot_pose);
+  }
+
+  void sendVelocity(geometry_msgs::msg::Twist twist)
+  {
+    robot_->sendVelocity(twist);
+  }
+
+protected:
+  std::unique_ptr<nav2_robot::Robot> robot_;
+};
 
 class TestRobotClass : public ::testing::Test
 {
 public:
   TestRobotClass()
   {
-    node_ = rclcpp::Node::make_shared("robot_class_test");
-    robot_ = std::make_unique<nav2_robot::Robot>(node_);
+    // Create a lifecycle node that uses a robot and start a thread to handle its messages
+    lifecycle_node_ = std::make_shared<TestLifecycleNode>();
+
+    lifecycle_thread_ = std::make_unique<std::thread>(
+      [this](nav2_util::LifecycleNode::SharedPtr node) {
+        for (;; ) {
+          rclcpp::spin_some(node->get_node_base_interface());
+          if (shut_down_threads_) {return;}
+        }
+      }, lifecycle_node_
+    );
+
+    client_ = std::make_shared<rclcpp::Node>("test_robot_client_node");
+
+    lifecycle_client_ =
+      std::make_shared<nav2_util::LifecycleServiceClient>("TestLifecycleNode", client_);
+
+    lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE);
+    lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE);
 
     // Initializing Pose and Twist messages
     initTestPose();
     initTestTwist();
 
     // Creating fake publishers
-    pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose");
-    odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("odom");
+    pose_pub_ = client_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "amcl_pose", rclcpp::SystemDefaultsQoS().transient_local());
+
+    odom_pub_ = client_->create_publisher<nav_msgs::msg::Odometry>(
+      "odom", rclcpp::SystemDefaultsQoS());
 
     // Subscribing to cmdVelocity topic to make sure Robot class is publishing velocity
-    vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel",
+    vel_sub_ = client_->create_subscription<geometry_msgs::msg::Twist>("cmd_vel",
+        rclcpp::SystemDefaultsQoS(),
         std::bind(&TestRobotClass::velocityReceived, this, std::placeholders::_1));
 
     velocityCmdReceived_ = false;
   }
+
+  ~TestRobotClass()
+  {
+    lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
+    lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
+
+    shut_down_threads_ = true;
+    lifecycle_thread_->join();
+  }
+
   void velocityReceived(const geometry_msgs::msg::Twist::SharedPtr msg);
 
 protected:
-  std::shared_ptr<rclcpp::Node> node_;
-  std::unique_ptr<nav2_robot::Robot> robot_;
+  std::shared_ptr<rclcpp::Node> client_;
+
+  std::shared_ptr<TestLifecycleNode> lifecycle_node_;
+  std::unique_ptr<std::thread> lifecycle_thread_;
+
+  std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 
   geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   geometry_msgs::msg::Twist testTwist_;
@@ -64,6 +166,7 @@ protected:
   geometry_msgs::msg::Twist velocityReceived_;
 
   bool velocityCmdReceived_;
+  bool shut_down_threads_{false};
 
   void initTestPose();
   void initTestTwist();
@@ -127,16 +230,16 @@ void TestRobotClass::initTestTwist()
 
 TEST_F(TestRobotClass, getNameTest)
 {
-  std::string robotName = robot_->getName();
+  std::string robotName = lifecycle_node_->getName();
   EXPECT_EQ(robotName, "turtlebot");
 }
 
 TEST_F(TestRobotClass, getPoseTest)
 {
   auto currentPose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-  while (!(robot_->getCurrentPose(currentPose))) {
+  while (!(lifecycle_node_->getCurrentPose(currentPose))) {
     publishPose();
-    rclcpp::spin_some(node_);
+    rclcpp::spin_some(client_);
   }
   EXPECT_EQ(*currentPose, testPose_);
 }
@@ -145,9 +248,8 @@ TEST_F(TestRobotClass, getOdometryTest)
 {
   auto currentOdom = std::make_shared<nav_msgs::msg::Odometry>();
   rclcpp::Rate r(10);
-  while (!(robot_->getOdometry(currentOdom))) {
+  while (!(lifecycle_node_->getOdometry(currentOdom))) {
     publishOdom();
-    rclcpp::spin_some(node_);
     r.sleep();
   }
   EXPECT_EQ(*currentOdom, testOdom_);
@@ -157,8 +259,8 @@ TEST_F(TestRobotClass, sendVelocityTest)
 {
   rclcpp::Rate r(10);
   while (!velocityCmdReceived_) {
-    robot_->sendVelocity(testTwist_);
-    rclcpp::spin_some(node_);
+    lifecycle_node_->sendVelocity(testTwist_);
+    rclcpp::spin_some(client_);
     r.sleep();
   }
   EXPECT_EQ(testTwist_, velocityReceived_);

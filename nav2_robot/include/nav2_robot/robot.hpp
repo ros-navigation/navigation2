@@ -16,20 +16,27 @@
 #define NAV2_ROBOT__ROBOT_HPP_
 
 #include <string>
-#include "nav2_robot/robot.hpp"
+
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "urdf/model.h"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav_msgs/msg/odometry.hpp"
 
 namespace nav2_robot
 {
 
-class Robot
+class Robot : public nav2_util::LifecycleHelperInterface
 {
 public:
-  explicit Robot(rclcpp::Node::SharedPtr & node);
+  explicit Robot(nav2_util::LifecycleNode::SharedPtr node);
+  explicit Robot(
+    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    bool auto_start = false);
   Robot() = delete;
+  ~Robot();
 
   bool getGlobalLocalizerPose(
     geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
@@ -39,9 +46,16 @@ public:
   std::string getName();
   void sendVelocity(geometry_msgs::msg::Twist twist);
 
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
 protected:
-  // The ROS node to use to create publishers and subscribers
-  rclcpp::Node::SharedPtr node_;
+  // Interfaces used for logging and creating publishers and subscribers
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
 
   // Publishers and subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
@@ -59,12 +73,17 @@ protected:
   nav_msgs::msg::Odometry::SharedPtr current_odom_;
 
   // Whether the subscriptions have been received
-  bool initial_pose_received_;
-  bool initial_odom_received_;
+  bool initial_pose_received_{false};
+  bool initial_odom_received_{false};
 
   // Information about the robot is contained in the URDF file
   std::string urdf_file_;
   urdf::Model model_;
+
+  // Auto-start feature for non-lifecycle nodes
+  bool auto_start_;
+  void configure();
+  void cleanup();
 };
 
 }  // namespace nav2_robot

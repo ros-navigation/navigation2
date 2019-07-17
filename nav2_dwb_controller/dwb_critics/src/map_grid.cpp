@@ -47,17 +47,8 @@ namespace dwb_critics
 {
 
 // Customization of the CostmapQueue validCellToQueue method
-bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & cell)
+bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & /*cell*/)
 {
-  unsigned char cost = costmap_.getCost(cell.x_, cell.y_);
-  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-    cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-    cost == nav2_costmap_2d::NO_INFORMATION)
-  {
-    parent_.setAsObstacle(cell.index_);
-    return false;
-  }
-
   return true;
 }
 
@@ -69,8 +60,10 @@ void MapGridCritic::onInit()
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
+  nh_->declare_parameter(name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
+
   std::string aggro_str;
-  nh_->get_parameter_or(name_ + ".aggregation_type", aggro_str, std::string("last"));
+  nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;

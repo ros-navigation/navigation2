@@ -16,3 +16,11 @@ find_package(rclcpp_lifecycle REQUIRED)
 ament_add_gtest(test_lifecycle_utils test_lifecycle_utils.cpp)
 ament_target_dependencies(test_lifecycle_utils rclcpp_lifecycle)
 target_link_libraries(test_lifecycle_utils ${library_name})
+
+ament_add_gtest(test_actions test_actions.cpp)
+ament_target_dependencies(test_actions rclcpp_action test_msgs)
+target_link_libraries(test_actions ${library_name})
+
+ament_add_gtest(test_lifecycle_node test_lifecycle_node.cpp)
+ament_target_dependencies(test_lifecycle_node rclcpp_lifecycle)
+target_link_libraries(test_lifecycle_node ${library_name})

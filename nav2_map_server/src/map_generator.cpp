@@ -54,7 +54,8 @@ MapGenerator::MapGenerator(const std::string & mapname, int threshold_occupied, 
 {
   RCLCPP_INFO(get_logger(), "Waiting for the map");
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-    "map", std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
+    "map", rclcpp::SystemDefaultsQoS(),
+    std::bind(&MapGenerator::mapCallback, this, std::placeholders::_1));
 }
 
 void MapGenerator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)

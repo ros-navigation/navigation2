@@ -158,7 +158,7 @@ void testCallback()
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = rclcpp::Node::make_shared("costmap_tester");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
   testing::InitGoogleTest(&argc, argv);
 
   tf_ = new tf2_ros::Buffer(node->get_clock());

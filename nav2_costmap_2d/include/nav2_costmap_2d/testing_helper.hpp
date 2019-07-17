@@ -10,14 +10,15 @@
 #include "nav2_costmap_2d/static_layer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 const double MAX_Z(1.0);
 
 void setValues(nav2_costmap_2d::Costmap2D & costmap, const unsigned char * map)
 {
   int index = 0;
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       costmap.setCost(j, i, map[index]);
     }
   }
@@ -37,8 +38,8 @@ char printableCost(unsigned char cost)
 void printMap(nav2_costmap_2d::Costmap2D & costmap)
 {
   printf("map:\n");
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       printf("%4d", static_cast<int>(costmap.getCost(j, i)));
     }
     printf("\n\n");
@@ -50,8 +51,8 @@ unsigned int countValues(
   unsigned char value, bool equal = true)
 {
   unsigned int count = 0;
-  for (int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (int j = 0; j < costmap.getSizeInCellsX(); j++) {
+  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
+    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
       unsigned char c = costmap.getCost(j, i);
       if ((equal && c == value) || (!equal && c != value)) {
         count += 1;
@@ -61,21 +62,22 @@ unsigned int countValues(
   return count;
 }
 
-void addStaticLayer(
+nav2_costmap_2d::StaticLayer * addStaticLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
-  slayer->initialize(&layers, "static", &tf, node);
+  slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
+  return slayer;
 }
 
 nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
-  olayer->initialize(&layers, "obstacles", &tf, node);
+  olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
   return olayer;
 }
@@ -107,10 +109,10 @@ void addObservation(
 
 nav2_costmap_2d::InflationLayer * addInflationLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, rclcpp::Node::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();
-  ilayer->initialize(&layers, "inflation", &tf, node);
+  ilayer->initialize(&layers, "inflation", &tf, node, nullptr, nullptr /*TODO*/);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
   return ilayer;

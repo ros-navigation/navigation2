@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <string>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_recoveries/spin.hpp"
 #include "nav2_recoveries/back_up.hpp"
-#include "nav2_recoveries/stop.hpp"
+#include "nav2_recoveries/spin.hpp"
 
 int main(int argc, char ** argv)
 {
-  // Force flush of the stdout buffer.
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-
   rclcpp::init(argc, argv);
 
   auto recoveries_node = rclcpp::Node::make_shared("recoveries");
+
+  recoveries_node->declare_parameter(
+    "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+  recoveries_node->declare_parameter(
+    "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
 
   auto spin = std::make_shared<nav2_recoveries::Spin>(
     recoveries_node);
 
   auto back_up = std::make_shared<nav2_recoveries::BackUp>(
-    recoveries_node);
-
-  auto stop = std::make_shared<nav2_recoveries::Stop>(
     recoveries_node);
 
   rclcpp::spin(recoveries_node);

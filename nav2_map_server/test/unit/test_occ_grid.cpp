@@ -35,8 +35,12 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <iostream>
+#include <fstream>
 
+#include "yaml-cpp/yaml.h"
 #include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY
@@ -55,15 +59,43 @@ RclCppFixture g_rclcppfixture;
 
 class TestMapLoader : public nav2_map_server::OccGridLoader
 {
+  FRIEND_TEST(MapLoaderTest, loadValidPNG);
+  FRIEND_TEST(MapLoaderTest, loadValidBMP);
+  FRIEND_TEST(MapLoaderTest, loadInvalidFile);
+
 public:
-  explicit TestMapLoader(rclcpp::Node * node, YAML::Node & doc)
-  : OccGridLoader(node, doc)
+  explicit TestMapLoader(nav2_util::LifecycleNode::SharedPtr node, std::string yaml_filename)
+  : OccGridLoader(node, yaml_filename)
   {
   }
 
   nav_msgs::msg::OccupancyGrid getOccupancyGrid()
   {
-    return msg_;
+    return *msg_;
+  }
+};
+
+class FakeMapServer : public nav2_util::LifecycleNode
+{
+public:
+  FakeMapServer()
+  : nav2_util::LifecycleNode("FakeMapServer") {}
+
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
   }
 };
 
@@ -73,35 +105,53 @@ public:
   MapLoaderTest()
   {
     // Set up a fake YAML document with the required fields
-    doc_["resolution"] = "0.1";
-    doc_["origin"][0] = "2.0";
-    doc_["origin"][1] = "3.0";
-    doc_["origin"][2] = "1.0";
-    doc_["negate"] = "0";
-    doc_["occupied_thresh"] = "0.65";
-    doc_["free_thresh"] = "0.196";
 
-    node_ = std::make_shared<rclcpp::Node>("map_server");
-    map_loader_ = new TestMapLoader(node_.get(), doc_);
+    std::string temp_name("/tmp/map_unit_test.yaml");
+    std::ofstream params_file;
+    params_file.open(temp_name, std::ofstream::out | std::ofstream::trunc);
+
+    params_file << "resolution: 0.1" << std::endl;
+    params_file << "origin: [2.0, 3.0, 1.0]" << std::endl;
+    params_file << "negate: 0" << std::endl;
+    params_file << "occupied_thresh: 0.65" << std::endl;
+    params_file << "free_thresh: 0.196" << std::endl;
+
+    params_file.close();
+
+    node_ = std::make_shared<FakeMapServer>();
+    map_loader_ = std::make_unique<TestMapLoader>(node_, temp_name);
   }
 
 protected:
-  rclcpp::Node::SharedPtr node_;
-  TestMapLoader * map_loader_;
-  YAML::Node doc_;
+  nav2_util::LifecycleNode::SharedPtr node_;
+  std::unique_ptr<TestMapLoader> map_loader_;
 };
 
-/* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
- * the loaded image matches the known dimensions and content of the file.
- *
- * This test can fail on OS X, due to an apparent limitation of the
- * underlying SDL_Image library. */
+// Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
+// the loaded image matches the known dimensions and content of the file.
+//
+// This test can fail on OS X, due to an apparent limitation of the
+// underlying SDL_Image library.
 
 TEST_F(MapLoaderTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
 
-  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string()));
+  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  loadParameters.resolution = g_valid_image_res;
+  loadParameters.origin[0] = 0;
+  loadParameters.origin[1] = 0;
+  loadParameters.origin[2] = 0;
+  loadParameters.free_thresh = 0.196;
+  loadParameters.occupied_thresh = 0.65;
+  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.negate = 0;
+
+  // In order to loadMapFromFile without going through the Configure and Activate states,
+  // the msg_ member must be initialized
+  map_loader_->msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_png.string(), &loadParameters));
   nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
@@ -112,15 +162,28 @@ TEST_F(MapLoaderTest, loadValidPNG)
   }
 }
 
-/* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
- * the loaded image matches the known dimensions and content of the file. */
+// Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
+// the loaded image matches the known dimensions and content of the file.
 
 TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
 
+  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  loadParameters.resolution = g_valid_image_res;
+  loadParameters.origin[0] = 0;
+  loadParameters.origin[1] = 0;
+  loadParameters.origin[2] = 0;
+  loadParameters.free_thresh = 0.196;
+  loadParameters.occupied_thresh = 0.65;
+  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.negate = 0;
 
-  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string()));
+  // In order to loadMapFromFile without going through the Configure and Activate states,
+  // the msg_ member must be initialized
+  map_loader_->msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+
+  ASSERT_NO_THROW(map_loader_->loadMapFromFile(test_bmp.string(), &loadParameters));
   nav_msgs::msg::OccupancyGrid map_msg = map_loader_->getOccupancyGrid();
 
   EXPECT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
@@ -131,10 +194,22 @@ TEST_F(MapLoaderTest, loadValidBMP)
   }
 }
 
-/* Try to load an invalid file.  Succeeds if a std::runtime exception is thrown */
+// Try to load an invalid file.  Succeeds if a std::runtime exception is thrown
 
 TEST_F(MapLoaderTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
-  ASSERT_THROW(map_loader_->loadMapFromFile(test_invalid.string()), std::runtime_error);
+
+  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  loadParameters.resolution = g_valid_image_res;
+  loadParameters.origin[0] = 0;
+  loadParameters.origin[1] = 0;
+  loadParameters.origin[2] = 0;
+  loadParameters.free_thresh = 0.196;
+  loadParameters.occupied_thresh = 0.65;
+  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.negate = 0;
+
+  ASSERT_THROW(map_loader_->loadMapFromFile(
+      test_invalid.string(), &loadParameters), std::runtime_error);
 }

@@ -35,10 +35,11 @@
  * Author: Eitan Marder-Eppstein
  *         David V. Lu!!
  *********************************************************************/
+
 #include "nav2_costmap_2d/voxel_layer.hpp"
 
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
 #include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -58,69 +59,45 @@ void VoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
 
-  node_->set_parameter_if_not_set(name_ + "." + "enabled", true);
-  node_->set_parameter_if_not_set(name_ + "." + "footprint_clearing_enabled", true);
-  node_->set_parameter_if_not_set(name_ + "." + "max_obstacle_height", 2.0);
-  node_->set_parameter_if_not_set(name_ + "." + "z_voxels", 10);
-  node_->set_parameter_if_not_set(name_ + "." + "origin_z", 0.0);
-  node_->set_parameter_if_not_set(name_ + "." + "z_resolution", 0.2);
-  node_->set_parameter_if_not_set(name_ + "." + "unknown_threshold", 15);
-  node_->set_parameter_if_not_set(name_ + "." + "mark_threshold", 0);
-  node_->set_parameter_if_not_set(name_ + "." + "combination_method", 1);
+  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled",
+    rclcpp::ParameterValue(true));
+  node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
+  node_->declare_parameter(name_ + "." + "z_voxels", rclcpp::ParameterValue(10));
+  node_->declare_parameter(name_ + "." + "origin_z", rclcpp::ParameterValue(0.0));
+  node_->declare_parameter(name_ + "." + "z_resolution", rclcpp::ParameterValue(0.2));
+  node_->declare_parameter(name_ + "." + "unknown_threshold", rclcpp::ParameterValue(15));
+  node_->declare_parameter(name_ + "." + "mark_threshold", rclcpp::ParameterValue(0));
+  node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
+  node_->declare_parameter(name_ + "." + "publish_voxel_map", rclcpp::ParameterValue(false));
 
-  node_->get_parameter_or<bool>("publish_voxel_map", publish_voxel_, false);
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
+  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
+  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
+  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+
+  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   if (publish_voxel_) {
     voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", custom_qos_profile);
+      "voxel_grid", custom_qos);
   }
 
   clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
-    "clearing_endpoints", custom_qos_profile);
-}
+    "clearing_endpoints", custom_qos);
 
-void VoxelLayer::setupDynamicReconfigure()
-{
-  dynamic_param_client_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(node_);
-  dynamic_param_client_->add_parameters({
-      name_ + "." + "enabled",
-      name_ + "." + "footprint_clearing_enabled",
-      name_ + "." + "max_obstacle_height",
-      name_ + "." + "z_voxels",
-      name_ + "." + "origin_z",
-      name_ + "." + "z_resolution",
-      name_ + "." + "unknown_threshold",
-      name_ + "." + "mark_threshold",
-      name_ + "." + "combination_method"
-    });
-
-  dynamic_param_client_->set_callback(std::bind(&VoxelLayer::reconfigureCB, this));
+  unknown_threshold_ += (VOXEL_BITS - size_z_);
+  matchSize();
 }
 
 VoxelLayer::~VoxelLayer()
 {
-}
-
-void VoxelLayer::reconfigureCB()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "VoxelLayer:: Event Callback");
-
-  dynamic_param_client_->get_event_param(name_ + "." + "enabled", enabled_);
-  dynamic_param_client_->get_event_param(
-    name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  dynamic_param_client_->get_event_param(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  dynamic_param_client_->get_event_param(name_ + "." + "z_voxels", size_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "origin_z", origin_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "z_resolution", z_resolution_);
-  dynamic_param_client_->get_event_param(name_ + "." + "unknown_threshold", unknown_threshold_);
-  unknown_threshold_ += (VOXEL_BITS - size_z_);
-  dynamic_param_client_->get_event_param(name_ + "." + "mark_threshold", mark_threshold_);
-  dynamic_param_client_->get_event_param(name_ + "." + "combination_method", combination_method_);
-  matchSize();
 }
 
 void VoxelLayer::matchSize()
@@ -136,6 +113,7 @@ void VoxelLayer::reset()
   resetMaps();
   voxel_grid_.reset();
   activate();
+  undeclareAllParameters();
 }
 
 void VoxelLayer::resetMaps()
@@ -187,7 +165,7 @@ void VoxelLayer::updateBounds(
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
-    for (unsigned int i = 0; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
       // if the obstacle is too high or too far away from the robot we won't add it
       if (*iter_z > max_obstacle_height_) {
         continue;

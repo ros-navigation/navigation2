@@ -1,0 +1,50 @@
+# This dockerfile expects proxies to be set via --build-arg if needed
+# It also expects to be contained in the /navigation2 root folder for file copy
+#
+# Example build command:
+# export CMAKE_BUILD_TYPE=Debug
+# export BUILD_SYSTEM_TESTS=False
+# docker build -t nav2:release_branch --build-arg ROS2_BRANCH=dashing \
+#  --build-arg BUILD_SYSTEM_TESTS #   --build-arg CMAKE_BUILD_TYPE \
+#  -f Dockerfile.release_branch ./
+
+ARG ROS2_BRANCH=dashing
+
+FROM ros:$ROS2_BRANCH
+
+# copy ros package repo
+ENV NAV2_WS /opt/nav2_ws
+RUN mkdir -p $NAV2_WS/src
+WORKDIR $NAV2_WS/src
+COPY ./ navigation2/
+
+# delete nav2_system_tests/COLCON_IGNORE before running rosdep, otherwise it
+# doesn't install nav2_system_tests dependencies.
+ARG BUILD_SYSTEM_TESTS=True
+RUN if [ "$BUILD_SYSTEM_TESTS" = "True" ] ; then \
+        rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE ; \
+        echo "Building of system tests enabled" ; \
+    fi
+
+# install navigation2 package dependencies
+WORKDIR $NAV2_WS
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    apt-get update && \
+    rosdep install -q -y \
+      --from-paths \
+        src \
+      --ignore-src \
+    && rm -rf /var/lib/apt/lists/*
+
+# build navigation2 package source
+ARG CMAKE_BUILD_TYPE=Release
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon build \
+      --symlink-install \
+      --cmake-args \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+
+# source navigation2 workspace from entrypoint
+RUN sed --in-place --expression \
+      '$isource "$NAV2_WS/install/setup.bash"' \
+      /ros_entrypoint.sh

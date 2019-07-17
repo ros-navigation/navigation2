@@ -65,11 +65,12 @@ std::string generate_internal_node_name(const std::string & prefix)
 
 rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
 {
-  rclcpp::NodeOptions options;
-  options.use_global_arguments(false);
-  options.start_parameter_services(false);
-  options.start_parameter_event_publisher(false);
-  return rclcpp::Node::make_shared(generate_internal_node_name(prefix));
+  auto options =
+    rclcpp::NodeOptions()
+    .start_parameter_services(false)
+    .start_parameter_event_publisher(false)
+    .arguments({"__node:=" + generate_internal_node_name(prefix)});
+  return rclcpp::Node::make_shared("_", options);
 }
 
 rclcpp::NodeOptions
@@ -77,7 +78,7 @@ get_node_options_default(bool allow_undeclared, bool declare_initial_params)
 {
   rclcpp::NodeOptions options;
   options.allow_undeclared_parameters(allow_undeclared);
-  options.automatically_declare_initial_parameters(declare_initial_params);
+  options.automatically_declare_parameters_from_overrides(declare_initial_params);
   return options;
 }
 

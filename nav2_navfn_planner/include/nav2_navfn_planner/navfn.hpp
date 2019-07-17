@@ -44,6 +44,9 @@
 #include <string.h>
 #include <stdio.h>
 
+namespace nav2_navfn_planner
+{
+
 // cost defs
 #define COST_UNKNOWN_ROS 255  // 255 is unknown cost
 #define COST_OBS 254  // 254 for forbidden regions
@@ -263,5 +266,7 @@ public:
   /**< write out costmap and start/goal states as fname.pgm and fname.txt */
   void savemap(const char * fname);
 };
+
+}  // namespace nav2_navfn_planner
 
 #endif  // NAV2_NAVFN_PLANNER__NAVFN_HPP_

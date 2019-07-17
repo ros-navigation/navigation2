@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>dwb_core</name>
-  <version>0.1.5</version>
+  <version>0.2.1</version>
   <description>TODO</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>BSD</license>
@@ -22,6 +22,7 @@
   <build_depend>nav_2d_utils</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>nav2_util</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
@@ -34,6 +35,7 @@
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>nav2_util</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

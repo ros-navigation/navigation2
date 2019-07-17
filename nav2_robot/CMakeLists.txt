@@ -4,9 +4,11 @@ project(nav2_robot)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(urdf REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 
 nav2_package()
 
@@ -20,9 +22,11 @@ add_library(nav2_robot SHARED
 
 ament_target_dependencies(nav2_robot
   rclcpp
+  rclcpp_lifecycle
   urdf
   geometry_msgs
   nav_msgs
+  nav2_util
 )
 
 install(TARGETS ${PROJECT_NAME}

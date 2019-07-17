@@ -17,36 +17,67 @@
 
 #include <memory>
 #include <string>
-#include "nav2_tasks/follow_path_task.hpp"
-#include "dwb_core/dwb_core.hpp"
+#include <thread>
+
 #include "dwb_core/common_types.hpp"
+#include "dwb_core/dwb_local_planner.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_util/simple_action_server.hpp"
 
 namespace dwb_controller
 {
 
-class DwbController : public rclcpp::Node
+class ProgressChecker;
+
+class DwbController : public nav2_util::LifecycleNode
 {
 public:
-  explicit DwbController(rclcpp::executor::Executor & executor);
+  DwbController();
   ~DwbController();
 
-  nav2_tasks::TaskStatus followPath(const nav2_tasks::FollowPathCommand::SharedPtr path);
-
 protected:
-  bool isGoalReached(const nav_2d_msgs::msg::Pose2DStamped & pose2d);
+  // The lifecycle interface
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
+
+  // Our action server implements the FollowPath action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void followPath();
+
+  void setPlannerPath(const nav2_msgs::msg::Path & path);
+  void computeAndPublishVelocity();
+  void updateGlobalPath();
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
+  bool isGoalReached();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
 
-  std::unique_ptr<nav2_tasks::FollowPathTaskServer> task_server_;
-  dwb_core::CostmapROSPtr cm_;
-  dwb_core::DWBLocalPlanner planner_;
+  // The DWBController contains a costmap node
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::unique_ptr<std::thread> costmap_thread_;
+
+  // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+
+  // The local planner
+  std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
+
+  // An executor used to spin the costmap node
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
+
+  std::unique_ptr<ProgressChecker> progress_checker_;
 };
 
 }  // namespace dwb_controller

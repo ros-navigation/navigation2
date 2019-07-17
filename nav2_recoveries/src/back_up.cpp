@@ -18,14 +18,13 @@
 
 #include "nav2_recoveries/back_up.hpp"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_recoveries
 {
 
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
-: Recovery<nav2_tasks::BackUpCommand, nav2_tasks::BackUpResult>(node)
+: Recovery<BackUpAction>(node, "BackUp")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
@@ -37,60 +36,59 @@ BackUp::~BackUp()
 {
 }
 
-nav2_tasks::TaskStatus BackUp::onRun(const nav2_tasks::BackUpCommand::SharedPtr command)
+Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
-  if (command->y != 0.0 || command->z != 0.0) {
+  if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
-  command_x_ = command->x;
-  if (!robot_->getOdometry(initial_pose_)) {
-    RCLCPP_ERROR(node_->get_logger(), "initial robot odom pose is not available.");
-    return nav2_tasks::TaskStatus::FAILED;
+
+  command_x_ = command->target.x;
+
+  if (!getRobotPose(initial_pose_)) {
+    RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
+    return Status::FAILED;
   }
 
-  return nav2_tasks::TaskStatus::SUCCEEDED;
+  return Status::SUCCEEDED;
 }
 
-nav2_tasks::TaskStatus BackUp::onCycleUpdate(nav2_tasks::BackUpResult & result)
+Status BackUp::onCycleUpdate()
 {
-  TaskStatus status = controlledBackup();
-
-  // For now sending an empty task result
-  nav2_tasks::BackUpResult empty_result;
-  result = empty_result;
-
-  return status;
-}
-
-
-nav2_tasks::TaskStatus BackUp::controlledBackup()
-{
-  auto current_odom_pose = std::shared_ptr<nav_msgs::msg::Odometry>();
-
-  if (!robot_->getOdometry(current_odom_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot odom is not available.");
-    return TaskStatus::FAILED;
+  geometry_msgs::msg::Pose current_pose;
+  if (!getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return Status::FAILED;
   }
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-
-  double diff_x = initial_pose_->pose.pose.position.x - current_odom_pose->pose.pose.position.x;
-  double diff_y = initial_pose_->pose.pose.position.y - current_odom_pose->pose.pose.position.y;
+  double diff_x = initial_pose_.position.x - current_pose.position.x;
+  double diff_y = initial_pose_.position.y - current_pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   if (distance >= abs(command_x_)) {
-    cmd_vel.linear.x = 0;
-    robot_->sendVelocity(cmd_vel);
-    return TaskStatus::SUCCEEDED;
+    stopRobot();
+    return Status::SUCCEEDED;
   }
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.y = 0.0;
+  cmd_vel.angular.z = 0.0;
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation);
+
+  if (!collision_checker_->isCollisionFree(pose2d)) {
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
+    return Status::SUCCEEDED;
+  }
+
   robot_->sendVelocity(cmd_vel);
 
-  return TaskStatus::RUNNING;
+  return Status::RUNNING;
 }
 
 }  // namespace nav2_recoveries

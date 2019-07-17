@@ -4,8 +4,11 @@ project(nav2_bt_navigator)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
@@ -30,12 +33,16 @@ set(library_name ${executable_name}_core)
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
   src/navigate_to_pose_behavior_tree.cpp
+  src/recovery_node.cpp
 )
 
 set(dependencies
   rclcpp
+  rclcpp_action
+  rclcpp_lifecycle
   std_msgs
-  nav2_tasks
+  geometry_msgs
+  nav2_behavior_tree
   nav_msgs
   nav2_msgs
   behaviortree_cpp

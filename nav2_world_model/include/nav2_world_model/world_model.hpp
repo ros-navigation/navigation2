@@ -15,37 +15,58 @@
 #ifndef NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 #define NAV2_WORLD_MODEL__WORLD_MODEL_HPP_
 
-#include <string>
-#include <vector>
 #include <memory>
+#include <thread>
+
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_util/costmap.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "nav2_msgs/srv/get_robot_pose.hpp"
 
 namespace nav2_world_model
 {
 
-class WorldModel : public rclcpp::Node
+class WorldModel : public nav2_util::LifecycleNode
 {
 public:
-  WorldModel(rclcpp::executor::Executor & executor, const std::string & name);
-  explicit WorldModel(rclcpp::executor::Executor & executor);
+  WorldModel();
+  ~WorldModel();
 
-private:
-  void costmap_callback(
+protected:
+  // Implement the lifecycle interface
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+
+  // The WorldModel provides these services
+  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
+  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
+
+  void costmap_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
+  void get_robot_pose_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response);
 
-  // Server for providing a costmap
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmapServer_;
+  // The implementation of the WorldModel uses a Costmap2DROS node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  nav2_costmap_2d::Costmap2D * costmap_;
-  tf2_ros::Buffer tfBuffer_;
-  tf2_ros::TransformListener tfListener_;
+
+  // The thread for the Costmap2DROS node
+  std::unique_ptr<std::thread> costmap_thread_;
+
+  // The frame_id and metadata layer values used in the service response message
+  static constexpr const char * frame_id_{"map"};
+  static constexpr const char * metadata_layer_{"Master"};
+
+  // An executor used to spin the costmap node
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
 };
 
 }  // namespace nav2_world_model

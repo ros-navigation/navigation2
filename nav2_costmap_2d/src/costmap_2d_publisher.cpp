@@ -47,23 +47,22 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  rclcpp::Node::SharedPtr ros_node, Costmap2D * costmap,
+  nav2_util::LifecycleNode::SharedPtr ros_node, Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_(ros_node), costmap_(costmap), global_frame_(global_frame), active_(false),
-  always_send_full_costmap_(always_send_full_costmap), topic_name_(topic_name)
+: node_(ros_node), costmap_(costmap), global_frame_(global_frame), topic_name_(topic_name),
+  active_(false), always_send_full_costmap_(always_send_full_costmap)
 {
-  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
-  custom_qos_profile.depth = 1;
-  custom_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-  custom_qos_profile.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
-  costmap_pub_ = ros_node->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
-      custom_qos_profile);
-  costmap_update_pub_ = ros_node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-    topic_name + "_updates", custom_qos_profile);
+  costmap_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
+      custom_qos);
+  costmap_raw_pub_ = node_->create_publisher<nav2_msgs::msg::Costmap>(topic_name + "_raw",
+      custom_qos);
+  costmap_update_pub_ = node_->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
+    topic_name + "_updates", custom_qos);
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];
@@ -127,13 +126,39 @@ void Costmap2DPublisher::prepareGrid()
   }
 }
 
+void Costmap2DPublisher::prepareCostmap()
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+  double resolution = costmap_->getResolution();
+
+  costmap_raw_.header.frame_id = global_frame_;
+  costmap_raw_.header.stamp = node_->now();
+
+  costmap_raw_.metadata.layer = "master";
+  costmap_raw_.metadata.resolution = resolution;
+
+  costmap_raw_.metadata.size_x = costmap_->getSizeInCellsX();
+  costmap_raw_.metadata.size_y = costmap_->getSizeInCellsY();
+
+  double wx, wy;
+  costmap_->mapToWorld(0, 0, wx, wy);
+  costmap_raw_.metadata.origin.position.x = wx - resolution / 2;
+  costmap_raw_.metadata.origin.position.y = wy - resolution / 2;
+  costmap_raw_.metadata.origin.position.z = 0.0;
+  costmap_raw_.metadata.origin.orientation.w = 1.0;
+
+  costmap_raw_.data.resize(costmap_raw_.metadata.size_x * costmap_raw_.metadata.size_y);
+
+  unsigned char * data = costmap_->getCharMap();
+  for (unsigned int i = 0; i < costmap_raw_.data.size(); i++) {
+    costmap_raw_.data[i] = data[i];
+  }
+}
+
 void Costmap2DPublisher::publishCostmap()
 {
-  if (node_->count_subscribers(topic_name_) == 0) {
-    // No subscribers, so why do any work?
-    return;
-  }
-
+  prepareCostmap();
+  costmap_raw_pub_->publish(costmap_raw_);
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||

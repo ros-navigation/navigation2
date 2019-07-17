@@ -16,35 +16,49 @@
 #ifndef NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
 #define NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
 
-#include <string>
-#include <vector>
-#include <memory>
 #include <chrono>
+#include <string>
+#include <memory>
+#include <vector>
 
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_tasks/costmap_service_client.hpp"
-#include "nav2_navfn_planner/navfn.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "nav2_navfn_planner/navfn.hpp"
+#include "nav2_util/costmap_service_client.hpp"
+#include "nav2_util/get_robot_pose_client.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
-#include "nav2_robot/robot.hpp"
 
 namespace nav2_navfn_planner
 {
 
-class NavfnPlanner : public rclcpp::Node
+class NavfnPlanner : public nav2_util::LifecycleNode
 {
 public:
   NavfnPlanner();
   ~NavfnPlanner();
 
-  nav2_tasks::TaskStatus computePathToPose(
-    const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
+protected:
+  // Implement the lifecycle interface
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-private:
-  std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+
+  // Our action server implements the ComputePathToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void computePathToPose();
 
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(
@@ -96,8 +110,11 @@ private:
 
   // Request costmap from world model
   void getCostmap(
-    nav2_msgs::msg::Costmap & costmap, const std::string layer = "master",
-    const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
+    nav2_msgs::msg::Costmap & costmap,
+    const std::string layer = "master");
+
+  // get latest robot pose from the world model
+  geometry_msgs::msg::Pose getRobotPose();
 
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
@@ -115,29 +132,30 @@ private:
   std::unique_ptr<NavFn> planner_;
 
   // Service client for getting the costmap
-  nav2_tasks::CostmapServiceClient costmap_client_;
+  nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"navfn_planner"};
 
   // Publishers for the path and endpoints
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr plan_marker_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
+    plan_marker_publisher_;
 
-  // The costmap to use
+  // The costmap to use and its size
   nav2_msgs::msg::Costmap costmap_;
   uint current_costmap_size_[2];
 
   // The global frame of the costmap
-  std::string global_frame_;
+  const std::string global_frame_{"map"};
 
   // Whether or not the planner should be allowed to plan through unknown space
-  bool allow_unknown_;
+  const bool allow_unknown_{true};
 
-  // Amount the planner can relax the space constraint
+  // If the goal is obstructed, the tolerance specifies how many meters the planner
+  // can relax the constraint in x and y before failing
   double tolerance_;
 
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
-
-  std::unique_ptr<nav2_robot::Robot> robot_;
 };
 
 }  // namespace nav2_navfn_planner

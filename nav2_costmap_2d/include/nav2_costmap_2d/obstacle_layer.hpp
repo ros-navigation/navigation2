@@ -44,13 +44,15 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "laser_geometry/laser_geometry.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreorder"
 #include "tf2_ros/message_filter.h"
+#pragma GCC diagnostic pop
 #include "message_filters/subscriber.h"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
@@ -114,8 +116,6 @@ public:
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
-  virtual void setupDynamicReconfigure();
-
   /**
    * @brief  Get the observations used to mark space
    * @param marking_observations A reference to a vector that will be populated with the observations
@@ -181,13 +181,7 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
-
   int combination_method_;
-
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dynamic_param_client_;
-
-private:
-  void reconfigureCB();
 };
 
 }  // namespace nav2_costmap_2d

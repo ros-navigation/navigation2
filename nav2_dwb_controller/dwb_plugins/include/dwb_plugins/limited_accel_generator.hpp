@@ -36,7 +36,9 @@
 #define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
 
 #include <memory>
+
 #include "dwb_plugins/standard_traj_generator.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -47,8 +49,8 @@ namespace dwb_plugins
 class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
-  void checkUseDwaParam(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   dwb_msgs::msg::Trajectory2D generateTrajectory(
     const geometry_msgs::msg::Pose2D & start_pose,

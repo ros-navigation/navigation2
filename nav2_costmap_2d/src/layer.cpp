@@ -36,27 +36,63 @@ namespace nav2_costmap_2d
 {
 
 Layer::Layer()
-: layered_costmap_(NULL),
-  current_(false),
-  enabled_(false),
+: layered_costmap_(nullptr),
   name_(),
-  tf_(NULL)
+  tf_(nullptr),
+  current_(false),
+  enabled_(false)
 {}
 
-void Layer::initialize(
-  LayeredCostmap * parent,
-  std::string name, tf2_ros::Buffer * tf, rclcpp::Node::SharedPtr node)
+void
+Layer::initialize(
+  LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf,
+  nav2_util::LifecycleNode::SharedPtr node,
+  rclcpp::Node::SharedPtr client_node,
+  rclcpp::Node::SharedPtr rclcpp_node)
 {
   layered_costmap_ = parent;
   name_ = name;
-  node_ = node;
   tf_ = tf;
+  node_ = node;
+  client_node_ = client_node;
+  rclcpp_node_ = rclcpp_node;
+
   onInitialize();
 }
 
-const std::vector<geometry_msgs::msg::Point> & Layer::getFootprint() const
+const std::vector<geometry_msgs::msg::Point> &
+Layer::getFootprint() const
 {
   return layered_costmap_->getFootprint();
+}
+
+void
+Layer::declareParameter(
+  const std::string & param_name, const rclcpp::ParameterValue & value)
+{
+  local_params_.insert(param_name);
+  node_->declare_parameter(getFullName(param_name), value);
+}
+
+bool
+Layer::hasParameter(const std::string & param_name)
+{
+  return node_->has_parameter(getFullName(param_name));
+}
+
+void
+Layer::undeclareAllParameters()
+{
+  for (auto & param_name : local_params_) {
+    node_->undeclare_parameter(getFullName(param_name));
+  }
+  local_params_.clear();
+}
+
+std::string
+Layer::getFullName(const std::string & param_name)
+{
+  return std::string(name_ + "." + param_name);
 }
 
 }  // end namespace nav2_costmap_2d

@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/common_types.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
@@ -45,6 +46,7 @@
 #include "nav_2d_msgs/msg/path2_d.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_core
 {
@@ -90,14 +92,17 @@ public:
    * @param costmap_ros Pointer to the costmap
    */
   void initialize(
-    const std::shared_ptr<rclcpp::Node> & nh,
+    const nav2_util::LifecycleNode::SharedPtr & nh,
     std::string & name,
     CostmapROSPtr costmap_ros)
   {
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    nh_->get_parameter_or(name_ + ".scale", scale_, 1.0);
+    if (!nh_->has_parameter(name_ + ".scale")) {
+      nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
+    }
+    nh_->get_parameter(name_ + ".scale", scale_);
     onInit();
   }
   virtual void onInit() {}
@@ -171,7 +176,7 @@ protected:
   std::string name_;
   CostmapROSPtr costmap_ros_;
   double scale_;
-  std::shared_ptr<rclcpp::Node> nh_;
+  nav2_util::LifecycleNode::SharedPtr nh_;
 };
 
 }  // namespace dwb_core

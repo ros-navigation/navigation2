@@ -7,7 +7,7 @@ ament_target_dependencies(dummy_planner_node
   rclcpp
   std_msgs
   nav2_util
-  nav2_tasks
+  nav2_behavior_tree
   nav2_msgs
   nav_msgs
 )

@@ -10,3 +10,10 @@ add_library(pf_lib SHARED
   eig3.c
   pf_draw.c
 )
+
+install(TARGETS
+  pf_lib
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)

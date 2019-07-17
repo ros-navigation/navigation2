@@ -4,6 +4,7 @@ project(nav2_map_server)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
@@ -42,6 +43,7 @@ add_library(${library_name} SHARED
 
 set(map_server_dependencies
   rclcpp
+  rclcpp_lifecycle
   nav_msgs
   yaml_cpp_vendor
   std_msgs
