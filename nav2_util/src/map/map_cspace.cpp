@@ -67,7 +67,7 @@ public:
 bool operator<(const CellData & a, const CellData & b)
 {
   return a.map_->cells[MAP_INDEX(a.map_, a.i_,
-         a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
+           a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
 }
 
 CachedDistanceMap *
