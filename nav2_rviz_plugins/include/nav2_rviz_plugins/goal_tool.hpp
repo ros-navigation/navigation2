@@ -19,9 +19,10 @@
 
 #include <memory>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "rclcpp/node.hpp"
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
-#include "nav2_rviz_plugins/navigation_dialog.hpp"
 
 namespace rviz_common
 {
@@ -50,8 +51,12 @@ public:
 protected:
   void onPoseSet(double x, double y, double theta) override;
 
+private Q_SLOTS:
+  void updateTopic();
+
 private:
-  std::unique_ptr<NavigationDialog> navigation_dialog_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_;
+  std::unique_ptr<rviz_common::properties::StringProperty> topic_property_;
 };
 
 }  // namespace nav2_rviz_plugins
