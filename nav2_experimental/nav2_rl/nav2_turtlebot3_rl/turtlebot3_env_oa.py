@@ -38,9 +38,16 @@ class TurtlebotEnv():
         self.node_ = rclpy.create_node('turtlebot3_env_oa')
         self.act = 0
         self.done = False
-        self.actions = [[parameters.LINEAR_FWD_VELOCITY, parameters.ANGULAR_FWD_VELOCITY],
-                        [parameters.LINEAR_STR_VELOCITY, parameters.ANGULAR_VELOCITY],
-                        [parameters.LINEAR_STR_VELOCITY, -parameters.ANGULAR_VELOCITY]]
+        self.actions = [[parameters.ZERO, parameters.ZERO], # Stop
+                        [parameters.ZERO, -parameters.SPIN_VELOCITY], # SR
+                        [parameters.STEER_FWD_VELOCITY, -parameters.STEER_VELOCITY], # SFR
+                        [parameters.FWD_VELOCITY, parameters.ZERO], # FWD
+                        [parameters.STEER_FWD_VELOCITY, parameters.STEER_VELOCITY], # SFL
+                        [parameters.ZERO, parameters.SPIN_VELOCITY], # SL
+                        [-parameters.STEER_FWD_VELOCITY, -parameters.STEER_VELOCITY], # SBL
+                        [-parameters.FWD_VELOCITY, -parameters.ZERO],# BWD 
+                        [-parameters.STEER_FWD_VELOCITY, parameters.STEER_VELOCITY]] # SBR                        
+
         self.bonous_reward = 0
 
         self.collision = False
@@ -195,6 +202,12 @@ class TurtlebotEnv():
         random_pose.orientation.w = math.cos(yaw*0.5)
 
         return random_pose
+    
+    def sq_distance_to_goal(self):
+        self.get_robot_pose()
+        dx = self.goal_pose.position.x - self.current_pose.position.x
+        dy = self.goal_pose.position.y - self.current_pose.position.y
+        return dx * dx + dy * dy
 
     def reset(self):
         self.scan_msg_received = False
