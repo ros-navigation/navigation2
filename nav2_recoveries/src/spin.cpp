@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_motion_primitives/spin.hpp"
+#include "nav2_recoveries/spin.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -29,11 +29,11 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 Spin::Spin(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<SpinAction>(node, "Spin")
+: Recovery<SpinAction>(node, "Spin")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -156,4 +156,4 @@ Status Spin::controlledSpin()
   return Status::RUNNING;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
