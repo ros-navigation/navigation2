@@ -47,8 +47,9 @@
 
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/trajectory.h>
-#include <base_local_planner/Position2DInt.h>
-#include <base_local_planner/BaseLocalPlannerConfig.h>
+#include <nav2_msgs/msg/position2_d_int.hpp>
+
+// #include <base_local_planner/BaseLocalPlannerConfig.h>
 
 //we'll take in a path as a vector of poses
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -130,7 +131,8 @@ namespace base_local_planner {
       /**
        * @brief Reconfigures the trajectory planner
        */
-      void reconfigure(BaseLocalPlannerConfig &cfg);
+
+      //void reconfigure(BaseLocalPlannerConfig &cfg);
 
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, return a trajectory to follow
@@ -204,7 +206,7 @@ namespace base_local_planner {
       void setFootprint( std::vector<geometry_msgs::msg::Point> footprint ) { footprint_spec_ = footprint; }
 
       /** @brief Return the footprint specification of the robot. */
-      geometry_msgs::Polygon getFootprintPolygon() const { return costmap_2d::toPolygon(footprint_spec_); }
+      geometry_msgs::msg::Polygon getFootprintPolygon() const { return nav2_costmap_2d::toPolygon(footprint_spec_); }
       std::vector<geometry_msgs::msg::Point> getFootprint() const { return footprint_spec_; }
 
     private:
@@ -315,7 +317,8 @@ namespace base_local_planner {
 
       double inscribed_radius_, circumscribed_radius_;
 
-      boost::mutex configuration_mutex_;
+      std::mutex configuration_mutex_;
+      // std::lock_guard<boost::mutex_t> configuration_mutex_;
 
       /**
        * @brief  Compute x position based on velocity

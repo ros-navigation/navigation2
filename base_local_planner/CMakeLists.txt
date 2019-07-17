@@ -94,24 +94,24 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-  ament_add_gtest(base_local_planner_utest
-    test/gtest_main.cpp
-    test/utest.cpp
-    test/velocity_iterator_test.cpp
-    test/footprint_helper_test.cpp
+#if(BUILD_TESTING)
+#  find_package(ament_lint_auto REQUIRED)
+#  ament_lint_auto_find_test_dependencies()
+#  ament_add_gtest(base_local_planner_utest
+#    test/gtest_main.cpp
+#    test/utest.cpp
+#    test/velocity_iterator_test.cpp
+#    test/footprint_helper_test.cpp
     #test/trajectory_generator_test.cpp
     #test/map_grid_test.cpp
-  )
-  target_link_libraries(base_local_planner_utest
-      base_local_planner_core #trajectory_planner_ros
-      )
-
-  ament_add_gtest(line_iterator
-      test/line_iterator_test.cpp)
-endif()
+#  )
+#  target_link_libraries(base_local_planner_utest
+#      base_local_planner_core #trajectory_planner_ros
+#      )
+#
+#  ament_add_gtest(line_iterator
+#      test/line_iterator_test.cpp)
+#endif()
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_export_libraries(base_local_planner_core)

@@ -120,7 +120,7 @@ void FootprintHelper::getLineCells(int x0, int x1, int y0, int y1, std::vector<n
 }
 
 
-void FootprintHelper::getFillCells(std::vector<base_local_planner::position2_d_int>& footprint){
+void FootprintHelper::getFillCells(std::vector<nav2_msgs::msg::Position2DInt>& footprint){
   //quick bubble sort to sort pts by x
   nav2_msgs::msg::Position2DInt swap, pt;
   unsigned int i = 0;
@@ -191,7 +191,7 @@ std::vector<nav2_msgs::msg::Position2DInt> FootprintHelper::getFootprintCells(
   if (footprint_spec.size() <= 1) {
     unsigned int mx, my;
     if (costmap.worldToMap(x_i, y_i, mx, my)) {
-      Position2DInt center;
+      nav2_msgs::msg::Position2DInt center;
       center.x = mx;
       center.y = my;
       footprint_cells.push_back(center);

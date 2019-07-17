@@ -13,7 +13,7 @@
 
 #include <base_local_planner/map_grid.h>
 #include <base_local_planner/costmap_model.h>
-#include <costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 
 #include "wavefront_map_accessor.h"
 
@@ -30,9 +30,9 @@ public:
   virtual void TestBody(){}
 
   void correctLineCells() {
-    std::vector<base_local_planner::Position2DInt> footprint;
+    std::vector<nav2_msgs::msg::Position2DInt> footprint;
     fh.getLineCells(0, 10, 0, 10, footprint);
-    EXPECT_EQ(11, footprint.size());
+    EXPECT_EQ((unsigned)11, footprint.size());
     EXPECT_EQ(footprint[0].x, 0);
     EXPECT_EQ(footprint[0].y, 0);
     EXPECT_EQ(footprint[5].x, 5);
@@ -64,9 +64,9 @@ public:
 
     Eigen::Vector3f pos(4.5, 4.5, 0);
     //just create a basic footprint
-    std::vector<base_local_planner::Position2DInt> footprint = fh.getFootprintCells(pos, footprint_spec, map, false);
+    std::vector<nav2_msgs::msg::Position2DInt> footprint = fh.getFootprintCells(pos, footprint_spec, map, false);
 
-    EXPECT_EQ(20, footprint.size());
+    EXPECT_EQ((unsigned)20, footprint.size());
     //we expect the front line to be first
     EXPECT_EQ(footprint[0].x, 6); EXPECT_EQ(footprint[0].y, 6);
     EXPECT_EQ(footprint[1].x, 6); EXPECT_EQ(footprint[1].y, 5);

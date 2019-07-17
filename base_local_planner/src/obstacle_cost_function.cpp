@@ -117,7 +117,7 @@ double ObstacleCostFunction::footprintCost (
     const double& x,
     const double& y,
     const double& th,
-    double scale,
+    double /*scale*/,
     std::vector<geometry_msgs::msg::Point> footprint_spec,
     nav2_costmap_2d::Costmap2D * costmap,
     base_local_planner::WorldModel* world_model) {

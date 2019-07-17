@@ -38,13 +38,13 @@
 #ifndef ABSTRACT_LOCAL_PLANNER_ODOM_H_
 #define ABSTRACT_LOCAL_PLANNER_ODOM_H_
 
-#include <nav_core/base_local_planner.h>
+#include <base_local_planner/base_local_planner.h>
 
 #include <boost/thread.hpp>
 
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <tf2_ros/buffer.h>
-
+#include <mutex>
 #include <base_local_planner/local_planner_limits.h>
 
 
@@ -68,7 +68,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> global_plan_;
 
 
-  boost::mutex limits_configuration_mutex_;
+  std::mutex limits_configuration_mutex_;
   bool setup_;
   LocalPlannerLimits default_limits_;
   LocalPlannerLimits limits_;

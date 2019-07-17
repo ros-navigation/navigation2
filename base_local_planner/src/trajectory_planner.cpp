@@ -915,7 +915,7 @@ namespace base_local_planner{
     goal_map_.resetPathDist();
 
     //temporarily remove obstacles that are within the footprint of the robot
-    std::vector<base_local_planner::Position2DInt> footprint_list =
+    std::vector<nav2_msgs::msg::Position2DInt> footprint_list =
         footprint_helper_.getFootprintCells(
             pos,
             footprint_spec_,

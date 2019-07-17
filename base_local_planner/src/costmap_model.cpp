@@ -45,7 +45,7 @@ namespace base_local_planner {
   CostmapModel::CostmapModel(const Costmap2D& ma) : costmap_(ma) {}
 
   double CostmapModel::footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
-      double inscribed_radius, double circumscribed_radius){
+      double /*inscribed_radius*/, double /*circumscribed_radius*/){
     // returns:
     //  -1 if footprint covers at least a lethal obstacle cell, or
     //  -2 if footprint covers at least a no-information cell, or

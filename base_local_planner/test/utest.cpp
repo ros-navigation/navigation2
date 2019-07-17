@@ -41,11 +41,11 @@
 #include <base_local_planner/trajectory.h>
 #include <base_local_planner/trajectory_planner.h>
 #include <base_local_planner/costmap_model.h>
-#include <costmap_2d/costmap_2d.h>
+#include <nav2_costmap_2d/costmap_2d.hpp>
 #include <math.h>
 
-#include <geometry_msgs/msg/Point.h>
-#include <base_local_planner/Position2DInt.h>
+#include <geometry_msgs/msg/point.hpp>
+#include <nav2_msgs/msg/position2_d_int.hpp>
 
 #include "wavefront_map_accessor.h"
 
@@ -78,7 +78,7 @@ void TrajectoryPlannerTest::footprintObstacles(){
   //place an obstacle
   map_->operator ()(4, 6).target_dist = 1;
   wa->synchronize();
-  EXPECT_EQ(wa->getCost(4,6), costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(wa->getCost(4,6), nav2_costmap_2d::LETHAL_OBSTACLE);
   Trajectory traj(0, 0, 0, 0.1, 30);
   //tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj, 2, 30);
   tc.generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj);

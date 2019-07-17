@@ -39,11 +39,14 @@
 
 #include <base_local_planner/goal_functions.h>
 
+#include <mutex>
+
+
 namespace base_local_planner {
 
 void LocalPlannerUtil::initialize(
     tf2_ros::Buffer* tf,
-    costmap_2d::Costmap2D* costmap,
+    nav2_costmap_2d::Costmap2D* costmap,
     std::string global_frame) {
   if(!initialized_) {
     tf_ = tf;
@@ -52,7 +55,7 @@ void LocalPlannerUtil::initialize(
     initialized_ = true;
   }
   else{
-    RCLCPP_WARN(rclcpp::get_logger("Planner utils have already been initialized, doing nothing."));
+    RCLCPP_WARN(rclcpp::get_logger("base_local_planner"), "Planner utils have already been initialized, doing nothing.");
   }
 }
 
@@ -66,16 +69,16 @@ void LocalPlannerUtil::reconfigureCB(LocalPlannerLimits &config, bool restore_de
     default_limits_ = config;
     setup_ = true;
   }
-  boost::mutex::scoped_lock l(limits_configuration_mutex_);
+  std::lock_guard<std::mutex> l(limits_configuration_mutex_);
   limits_ = LocalPlannerLimits(config);
 }
 
-costmap_2d::Costmap2D* LocalPlannerUtil::getCostmap() {
+nav2_costmap_2d::Costmap2D* LocalPlannerUtil::getCostmap() {
   return costmap_;
 }
 
 LocalPlannerLimits LocalPlannerUtil::getCurrentLimits() {
-  boost::mutex::scoped_lock l(limits_configuration_mutex_);
+  std::lock_guard<std::mutex> l(limits_configuration_mutex_);
   return limits_;
 }
 
@@ -90,7 +93,7 @@ bool LocalPlannerUtil::getGoal(geometry_msgs::msg::PoseStamped& goal_pose) {
 
 bool LocalPlannerUtil::setPlan(const std::vector<geometry_msgs::msg::PoseStamped>& orig_global_plan) {
   if(!initialized_){
-    RCLCPP_ERROR(rclcpp::get_logger("Planner utils have not been initialized, please call initialize() first"));
+    RCLCPP_ERROR(rclcpp::get_logger("base_local_planner"), "Planner utils have not been initialized, please call initialize() first");
     return false;
   }
 
@@ -111,7 +114,7 @@ bool LocalPlannerUtil::getLocalPlan(const geometry_msgs::msg::PoseStamped& globa
       *costmap_,
       global_frame_,
       transformed_plan)) {
-    RCLCPP_WARN(rclcpp::get_logger("Could not transform the global plan to the frame of the controller"));
+    RCLCPP_WARN(rclcpp::get_logger("base_local_planner"), "Could not transform the global plan to the frame of the controller");
     return false;
   }
 

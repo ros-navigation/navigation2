@@ -97,7 +97,7 @@ namespace base_local_planner {
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
       double footprintCost(const geometry_msgs::msg::Point& position, const std::vector<geometry_msgs::msg::Point>& footprint,
-          double inscribed_radius, double circumscribed_radius, double extra) {
+          double inscribed_radius, double circumscribed_radius, double) {
         return footprintCost(position, footprint, inscribed_radius, circumscribed_radius);
       }
 
