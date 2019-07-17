@@ -80,7 +80,7 @@ protected:
   std::unique_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"motion_primitive"};
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"recovery"};
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
 
@@ -101,7 +101,7 @@ protected:
       true);
 
     action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
-        std::bind(&MotionPrimitive::execute, this));
+        std::bind(&Recovery::execute, this));
 
     costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node_, costmap_topic);
@@ -146,7 +146,7 @@ protected:
         return;
       }
 
-      // TODO(orduno) #868 Enable preempting a motion primitive on-the-fly without stopping
+      // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
