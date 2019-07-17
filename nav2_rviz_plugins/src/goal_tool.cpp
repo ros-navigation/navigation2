@@ -19,6 +19,7 @@
 
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
+#include "rviz_common/properties/string_property.hpp"
 
 namespace nav2_rviz_plugins
 {
@@ -28,8 +29,9 @@ GoalTool::GoalTool()
 {
   shortcut_key_ = 'g';
 
-  navigation_dialog_ = std::make_unique<NavigationDialog>();
-  navigation_dialog_->move(0, 0);
+  topic_property_ = std::make_unique<rviz_common::properties::StringProperty>("Topic", "goalpose",
+      "The topic on which to publish goal poses.",
+      getPropertyContainer(), SLOT(updateTopic()), this);
 }
 
 GoalTool::~GoalTool()
@@ -41,17 +43,34 @@ void GoalTool::onInitialize()
   PoseTool::onInitialize();
   setName("Navigation2 Goal");
   setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
+  updateTopic();
+}
+
+void GoalTool::updateTopic()
+{
+  publisher_ = context_->getRosNodeAbstraction().lock()->get_raw_node()->
+    template create_publisher<geometry_msgs::msg::PoseStamped>(
+    topic_property_->getStdString(), rclcpp::SystemDefaultsQoS());
 }
 
 void
 GoalTool::onPoseSet(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
-  if (navigation_dialog_->startNavigation(x, y, theta, fixed_frame)) {
-    navigation_dialog_->show();
-    navigation_dialog_->raise();
-    navigation_dialog_->activateWindow();
-  }
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = fixed_frame;
+  pose.header.stamp = rclcpp::Clock().now();
+
+  pose.pose.position.x = x;
+  pose.pose.position.y = y;
+  pose.pose.position.z = 0.0;
+
+  pose.pose.orientation = orientationAroundZAxis(theta);
+
+  logPose(pose.pose.position, pose.pose.orientation, theta, fixed_frame);
+
+  publisher_->publish(pose);
 }
 
 }  // namespace nav2_rviz_plugins

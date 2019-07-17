@@ -20,8 +20,13 @@
 #include <QPushButton>
 #include <QtConcurrent/QtConcurrent>
 #include <QVBoxLayout>
+#include <QEventTransition>
+
+#include <memory>
 
 #include "rviz_common/display_context.hpp"
+
+using namespace std::chrono_literals;
 
 namespace nav2_rviz_plugins
 {
@@ -37,6 +42,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
   const char * shutdown_msg = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
+  const char * cancel_msg = "Cancel navigation";
 
   initial_ = new QState();
   initial_->setObjectName("initial");
@@ -48,29 +54,101 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   starting_->assignProperty(start_stop_button_, "text", "Shutdown");
   starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
 
+  // State entered after NavigateToPose has been canceled
+  canceled_ = new QState();
+  canceled_->setObjectName("canceled");
+  canceled_->assignProperty(start_stop_button_, "text", "Shutdown");
+  canceled_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+
+  // State entered after the NavigateToPose action has completed
+  completed_ = new QState();
+  completed_->setObjectName("succesful");
+  completed_->assignProperty(start_stop_button_, "text", "Shutdown");
+  completed_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+
+  // State entered while the NavigateToPose action is active
+  running_ = new QState();
+  running_->setObjectName("running");
+  running_->assignProperty(start_stop_button_, "text", "Cancel");
+  running_->assignProperty(start_stop_button_, "toolTip", cancel_msg);
+
   stopping_ = new QState();
   stopping_->setObjectName("stopping");
   stopping_->assignProperty(start_stop_button_, "enabled", false);
 
   QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
   QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
+  QObject::connect(canceled_, SIGNAL(entered()), this, SLOT(onCancel()));
 
   initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
   starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  running_->addTransition(start_stop_button_, SIGNAL(clicked()), canceled_);
+  canceled_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  completed_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+
+  ROSActionTransition * startupTransition = new ROSActionTransition(false);
+  startupTransition->setTargetState(running_);
+  starting_->addTransition(startupTransition);
+
+  ROSActionTransition * canceledTransition = new ROSActionTransition(false);
+  canceledTransition->setTargetState(running_);
+  canceled_->addTransition(canceledTransition);
+
+  ROSActionTransition * runningTransition = new ROSActionTransition(true);
+  runningTransition->setTargetState(completed_);
+  running_->addTransition(runningTransition);
+
+  ROSActionTransition * completedTransition = new ROSActionTransition(false);
+  completedTransition->setTargetState(running_);
+  completed_->addTransition(completedTransition);
 
   machine_.addState(initial_);
   machine_.addState(starting_);
   machine_.addState(stopping_);
+  machine_.addState(running_);
+  machine_.addState(canceled_);
+  machine_.addState(completed_);
 
   machine_.setInitialState(initial_);
   machine_.start();
 
   // Lay out the items in the panel
-
   QVBoxLayout * main_layout = new QVBoxLayout;
   main_layout->addWidget(start_stop_button_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
+
+  auto options = rclcpp::NodeOptions().arguments(
+    {"__node:=navigation_dialog_action_client"});
+  client_node_ = std::make_shared<rclcpp::Node>("_", options);
+
+  action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
+      "NavigateToPose");
+  goal_ = nav2_msgs::action::NavigateToPose::Goal();
+
+  goal_node_ = std::make_shared<rclcpp::Node>("goal_pose_listener");
+  goal_sub_ = goal_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "goalpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&Nav2Panel::startNavigation, this, std::placeholders::_1));
+
+  executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+
+  // Launch a thread to run the node
+  thread_ = std::make_unique<std::thread>(
+    [&](rclcpp::Node::SharedPtr node)
+    {
+      executor_->add_node(node->get_node_base_interface());
+      executor_->spin();
+      executor_->remove_node(node->get_node_base_interface());
+    }, goal_node_);
+
+  timer_ = goal_node_->create_wall_timer(1s, std::bind(&Nav2Panel::timerActionEvent, this));
+}
+
+Nav2Panel::~Nav2Panel()
+{
+  executor_->cancel();
+  thread_->join();
 }
 
 void
@@ -93,6 +171,84 @@ Nav2Panel::onShutdown()
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
       &client_));
+  timer_->cancel();
+}
+
+void
+Nav2Panel::onCancel()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&Nav2Panel::onCancelButtonPressed,
+      this));
+}
+
+void
+Nav2Panel::onCancelButtonPressed()
+{
+  auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+
+  if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
+    return;
+  }
+}
+
+void
+Nav2Panel::timerActionEvent()
+{
+  if (!goal_handle_) {
+    RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
+    machine_.postEvent(new ROSActionEvent(false));
+    return;
+  }
+
+  rclcpp::spin_some(client_node_);
+  auto status = goal_handle_->get_status();
+
+  // Check if the goal is still executing
+  if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+    status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
+  {
+    machine_.postEvent(new ROSActionEvent(true));
+  } else {
+    machine_.postEvent(new ROSActionEvent(false));
+  }
+}
+
+void
+Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped::SharedPtr pose)
+{
+  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
+  if (!is_action_server_ready) {
+    RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
+      " Is the initial pose set?");
+    return;
+  }
+
+  // Send the goal pose
+  goal_.pose = *pose;
+
+  // Enable result awareness by providing an empty lambda function
+  auto send_goal_options =
+    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = [](auto) {};
+
+  auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
+    return;
+  }
+
+  // Get the goal handle and save so that we can check on completion in the timer callback
+  goal_handle_ = future_goal_handle.get();
+  if (!goal_handle_) {
+    RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
+    return;
+  }
 }
 
 void
