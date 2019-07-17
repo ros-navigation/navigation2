@@ -48,7 +48,7 @@ public:
 
   explicit Recovery(rclcpp::Node::SharedPtr & node, const std::string & recovery_name)
   : node_(node),
-    primitive_name_(primitive_name),
+    recovery_name_(recovery_name),
     action_server_(nullptr),
     cycle_frequency_(10)
   {
@@ -69,13 +69,13 @@ public:
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
-  // and provides a status. The primitive will finish once SUCCEEDED is returned
+  // and provides a status. The recovery will finish once SUCCEEDED is returned
   // It's up to the derived class to define the final commanded velocity.
   virtual Status onCycleUpdate() = 0;
 
 protected:
   rclcpp::Node::SharedPtr node_;
-  std::string primitive_name_;
+  std::string recovery_name_;
   std::shared_ptr<nav2_robot::Robot> robot_;
   std::unique_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
@@ -86,7 +86,7 @@ protected:
 
   void configure()
   {
-    RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Configuring %s", recovery_name_.c_str());
 
     std::string costmap_topic;
     std::string footprint_topic;
@@ -100,7 +100,7 @@ protected:
       node_->get_node_logging_interface(),
       true);
 
-    action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
+    action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
 
     costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
@@ -125,23 +125,23 @@ protected:
 
   void execute()
   {
-    RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Attempting %s", recovery_name_.c_str());
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
+      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
       action_server_->terminate_goals();
       return;
     }
 
     // Log a message every second
     auto timer = node_->create_wall_timer(1s,
-        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
+        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
 
     rclcpp::Rate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
         action_server_->terminate_goals();
         return;
       }
@@ -150,7 +150,7 @@ protected:
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
-          primitive_name_.c_str());
+          recovery_name_.c_str());
         stopRobot();
         action_server_->terminate_goals();
         return;
@@ -158,12 +158,12 @@ protected:
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
-          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
+          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", recovery_name_.c_str());
           action_server_->succeeded_current();
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
+          RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
           action_server_->terminate_goals();
           return;
 
