@@ -74,7 +74,6 @@ public:
 
 private:
   void getParameters();
-  void getMap();
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
@@ -102,8 +101,8 @@ private:
   rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
 
   // Parameters
-  bool first_map_only_;      ///< @brief Only use the static map
   std::string map_topic_;
+  bool map_subscribe_transient_local_;
   bool subscribe_to_updates_;
   bool track_unknown_space_;
   bool use_maximum_;

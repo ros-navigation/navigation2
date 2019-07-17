@@ -120,7 +120,10 @@ public:
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
     // Add Static Layer
-    addStaticLayer(*layers_, *tf_buffer_, shared_from_this());
+    auto slayer = addStaticLayer(*layers_, *tf_buffer_, shared_from_this());
+    while (!slayer->isCurrent()) {
+      rclcpp::spin_some(this->get_node_base_interface());
+    }
     // Add Inflation Layer
     addInflationLayer(*layers_, *tf_buffer_, shared_from_this());
 
