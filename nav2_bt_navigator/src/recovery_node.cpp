@@ -23,6 +23,13 @@ RecoveryNode::RecoveryNode(const std::string & name, const BT::NodeParameters & 
   getParam<unsigned int>("number_of_retries", number_of_retries_);
 }
 
+void RecoveryNode::halt()
+{
+  ControlNode::halt();
+  current_child_idx_ = 0;
+  retry_count_ = 0;
+}
+
 BT::NodeStatus RecoveryNode::tick()
 {
   const unsigned children_count = children_nodes_.size();
