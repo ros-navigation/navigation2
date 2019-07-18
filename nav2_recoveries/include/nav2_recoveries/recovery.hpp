@@ -142,6 +142,7 @@ protected:
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
+        stopRobot();
         action_server_->terminate_goals();
         return;
       }
