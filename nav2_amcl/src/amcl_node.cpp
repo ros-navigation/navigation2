@@ -41,6 +41,7 @@
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -1063,6 +1064,10 @@ AmclNode::initTransforms()
 
   // Initialize transform listener and broadcaster
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    rclcpp_node_->get_node_base_interface(),
+    rclcpp_node_->get_node_timers_interface());
+  tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(rclcpp_node_);
 
