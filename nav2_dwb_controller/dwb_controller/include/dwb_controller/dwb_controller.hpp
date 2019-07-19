@@ -70,7 +70,7 @@ protected:
 
   // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
