@@ -7,10 +7,10 @@
 # set at the time we start the last step, the ros1_bridge build.
 
 if [ "$ROS2_DISTRO" = "" ]; then
-	export ROS2_DISTRO=bouncy
+	export ROS2_DISTRO=dashing
 fi
-if [ "$ROS2_DISTRO" != "bouncy" ]; then
-	echo "ROS2_DISTRO variable must be set to bouncy"
+if [ "$ROS2_DISTRO" != "dashing" ]; then
+	echo "ROS2_DISTRO variable must be set to dashing"
 	exit 1
 fi
 
