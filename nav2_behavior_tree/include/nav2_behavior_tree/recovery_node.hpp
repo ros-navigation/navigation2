@@ -18,7 +18,7 @@
 #include <string>
 #include "behaviortree_cpp/control_node.h"
 
-namespace nav2_bt_navigator
+namespace nav2_behavior_tree
 {
 /**
  * @brief The RecoveryNode has only two children and returns SUCCESS if and only if the first child
@@ -53,6 +53,6 @@ private:
   BT::NodeStatus tick() override;
   void halt() override;
 };
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_behavior_tree
 
 #endif  // NAV2_BT_NAVIGATOR__RECOVERY_NODE_HPP_

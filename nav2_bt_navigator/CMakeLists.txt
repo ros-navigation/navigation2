@@ -31,8 +31,6 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
-  src/navigate_to_pose_behavior_tree.cpp
-  src/recovery_node.cpp
 )
 
 set(dependencies
