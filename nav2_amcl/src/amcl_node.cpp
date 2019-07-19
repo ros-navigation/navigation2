@@ -31,7 +31,6 @@
 #include "message_filters/subscriber.h"
 #include "nav2_util/angleutils.hpp"
 #include "nav2_util/duration_conversions.hpp"
-#include "nav2_util/map_service_client.hpp"
 #include "nav2_util/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
@@ -108,9 +107,6 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   initParameters();
-  if (!use_map_topic_) {
-    initMap();
-  }
   initTransforms();
   initMessageFilters();
   initPubSub();
@@ -591,9 +587,9 @@ bool AmclNode::addNewScanner(
     tf_buffer_->transform(ident, laser_pose, base_frame_id_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Couldn't transform from %s to %s, "
-      "even though the message notifier is in use",
+      "even though the message notifier is in use: (%s)",
       laser_scan->header.frame_id.c_str(),
-      base_frame_id_.c_str());
+      base_frame_id_.c_str(), e.what());
     return false;
   }
 
@@ -833,8 +829,8 @@ AmclNode::calculateMaptoOdomTransform(
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
     tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
-  } catch (tf2::TransformException &) {
-    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform");
+  } catch (tf2::TransformException & e) {
+    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform: (%s)", e.what());
     return;
   }
 
@@ -917,7 +913,6 @@ AmclNode::initParameters()
   get_parameter("z_max", z_max_);
   get_parameter("z_rand", z_rand_);
   get_parameter("z_short", z_short_);
-  get_parameter("use_map_topic_", use_map_topic_);
   get_parameter("first_map_only_", first_map_only_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
@@ -1031,37 +1026,6 @@ AmclNode::freeMapDependentMemory()
   lasers_.clear();
 }
 
-void
-AmclNode::initMap()
-{
-  RCLCPP_INFO(get_logger(), "Requesting map from the map service");
-
-  // Get the map from the map server
-  nav_msgs::msg::OccupancyGrid msg;
-  if (!map_client_.getMap(msg)) {
-    throw "Failed to get map from the map server";
-  }
-
-  RCLCPP_INFO(get_logger(), "Received a %dx%d map @ %.3f m/pix",
-    msg.info.width, msg.info.height, msg.info.resolution);
-
-  // Perform a check on the map's frame_id
-  if (msg.header.frame_id != global_frame_id_) {
-    RCLCPP_WARN(get_logger(), "Frame_id of map received:'%s' doesn't match global_frame_id:'%s'."
-      " This could cause issues with reading published topics",
-      msg.header.frame_id.c_str(), global_frame_id_.c_str());
-  }
-
-  first_map_received_ = true;
-
-  // Convert to our own local data structure
-  map_ = convertMap(msg);
-
-#if NEW_UNIFORM_SAMPLING
-  createFreeSpaceVector();
-#endif
-}
-
 // Convert an OccupancyGrid map message into the internal representation. This function
 // allocates a map_t and returns it.
 map_t *
@@ -1136,13 +1100,11 @@ AmclNode::initPubSub()
     "initialpose", rclcpp::SystemDefaultsQoS(),
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
-  if (use_map_topic_) {
-    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>("map",
-        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-        std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+  map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+    "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
 
-    RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
-  }
+  RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
 
 void

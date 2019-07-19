@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_amcl</name>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <description>
     <p>
       amcl is a probabilistic localization system for a robot moving in
@@ -17,8 +17,6 @@
   </description>
   <!-- <author>Brian P. Gerkey</author>
   <author>contradict@gmail.com</author> -->
-  <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
-  <maintainer email="ahoy@fetchrobotics.com">Aaron Hoy</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
   <license>LGPL</license>
 
