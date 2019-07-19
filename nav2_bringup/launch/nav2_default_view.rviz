@@ -287,7 +287,8 @@ Visualization Manager:
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
       Topic: /clicked_point
-    - Class: nav2_rviz_plugins/GoalTool
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal
   Transformation:
     Current:
       Class: rviz_default_plugins/TF

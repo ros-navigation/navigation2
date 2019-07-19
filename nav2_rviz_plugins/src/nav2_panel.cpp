@@ -86,31 +86,31 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   canceled_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
   completed_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
 
-  ROSActionTransition * startupTransition = new ROSActionTransition(false);
+  ROSActionQTransition * startupTransition = new ROSActionQTransition(false);
   startupTransition->setTargetState(running_);
   starting_->addTransition(startupTransition);
 
-  ROSActionTransition * canceledTransition = new ROSActionTransition(false);
+  ROSActionQTransition * canceledTransition = new ROSActionQTransition(false);
   canceledTransition->setTargetState(running_);
   canceled_->addTransition(canceledTransition);
 
-  ROSActionTransition * runningTransition = new ROSActionTransition(true);
+  ROSActionQTransition * runningTransition = new ROSActionQTransition(true);
   runningTransition->setTargetState(completed_);
   running_->addTransition(runningTransition);
 
-  ROSActionTransition * completedTransition = new ROSActionTransition(false);
+  ROSActionQTransition * completedTransition = new ROSActionQTransition(false);
   completedTransition->setTargetState(running_);
   completed_->addTransition(completedTransition);
 
-  machine_.addState(initial_);
-  machine_.addState(starting_);
-  machine_.addState(stopping_);
-  machine_.addState(running_);
-  machine_.addState(canceled_);
-  machine_.addState(completed_);
+  state_machine_.addState(initial_);
+  state_machine_.addState(starting_);
+  state_machine_.addState(stopping_);
+  state_machine_.addState(running_);
+  state_machine_.addState(canceled_);
+  state_machine_.addState(completed_);
 
-  machine_.setInitialState(initial_);
-  machine_.start();
+  state_machine_.setInitialState(initial_);
+  state_machine_.start();
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
@@ -128,18 +128,16 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   goal_node_ = std::make_shared<rclcpp::Node>("goal_pose_listener");
   goal_sub_ = goal_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goalpose", rclcpp::SystemDefaultsQoS(),
+    "goal", rclcpp::SystemDefaultsQoS(),
     std::bind(&Nav2Panel::startNavigation, this, std::placeholders::_1));
-
-  executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
 
   // Launch a thread to run the node
   thread_ = std::make_unique<std::thread>(
     [&](rclcpp::Node::SharedPtr node)
     {
-      executor_->add_node(node->get_node_base_interface());
-      executor_->spin();
-      executor_->remove_node(node->get_node_base_interface());
+      executor_.add_node(node->get_node_base_interface());
+      executor_.spin();
+      executor_.remove_node(node->get_node_base_interface());
     }, goal_node_);
 
   timer_ = goal_node_->create_wall_timer(1s, std::bind(&Nav2Panel::timerActionEvent, this));
@@ -147,7 +145,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
 Nav2Panel::~Nav2Panel()
 {
-  executor_->cancel();
+  executor_.cancel();
   thread_->join();
 }
 
@@ -200,7 +198,7 @@ Nav2Panel::timerActionEvent()
 {
   if (!goal_handle_) {
     RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
-    machine_.postEvent(new ROSActionEvent(false));
+    state_machine_.postEvent(new ROSActionQEvent(false));
     return;
   }
 
@@ -211,9 +209,9 @@ Nav2Panel::timerActionEvent()
   if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
     status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
   {
-    machine_.postEvent(new ROSActionEvent(true));
+    state_machine_.postEvent(new ROSActionQEvent(true));
   } else {
-    machine_.postEvent(new ROSActionEvent(false));
+    state_machine_.postEvent(new ROSActionQEvent(false));
   }
 }
 
