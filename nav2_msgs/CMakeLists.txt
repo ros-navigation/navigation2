@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CostmapMetaData.msg"
   "msg/Path.msg"
   "msg/VoxelGrid.msg"
+  "msg/Position2DInt.msg"
   "srv/GetCostmap.srv"
   "srv/GetRobotPose.srv"
   "srv/ClearCostmapExceptRegion.srv"
