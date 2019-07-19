@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_motion_primitives</name>
-  <version>0.1.5</version>
+  <name>nav2_recoveries</name>
+  <version>0.2.1</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache License 2.0</license>
@@ -20,6 +20,7 @@
   <build_depend>tf2</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav2_costmap_2d</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclcpp_action</exec_depend>
@@ -29,6 +30,7 @@
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav2_costmap_2d</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

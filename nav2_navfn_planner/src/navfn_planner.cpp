@@ -100,6 +100,7 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
+  action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -109,6 +110,7 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  action_server_->deactivate();
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
 
@@ -120,10 +122,9 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  action_server_.reset();
   plan_publisher_.reset();
   plan_marker_publisher_.reset();
-
-  action_server_.reset();
   planner_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -151,6 +152,22 @@ NavfnPlanner::computePathToPose()
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
+    if (action_server_ == nullptr) {
+      RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
+      return;
+    }
+
+    if (!action_server_->is_server_active()) {
+      RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+      return;
+    }
+
+    if (action_server_->is_cancel_requested()) {
+      RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+      action_server_->terminate_goals();
+      return;
+    }
+
     // Get the current costmap
     getCostmap(costmap_);
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
@@ -165,13 +182,7 @@ NavfnPlanner::computePathToPose()
       planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
     }
 
-    if (action_server_->is_cancel_requested()) {
-      RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
-      action_server_->cancel_all();
-      return;
-    }
-
-    if (action_server_->preempt_requested()) {
+    if (action_server_->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
     }
@@ -187,7 +198,7 @@ NavfnPlanner::computePathToPose()
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", goal->pose.pose.position.x, goal->pose.pose.position.y);
       // TODO(orduno): define behavior if a preemption is available
-      action_server_->abort_all();
+      action_server_->terminate_goals();
       return;
     }
 
@@ -211,14 +222,14 @@ NavfnPlanner::computePathToPose()
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
-    action_server_->abort_all();
+    action_server_->terminate_goals();
     return;
   }
 }

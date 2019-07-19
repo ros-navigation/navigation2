@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_motion_primitives/spin.hpp"
+#include "nav2_recoveries/spin.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -29,11 +29,11 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 Spin::Spin(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<SpinAction>(node, "Spin")
+: Recovery<SpinAction>(node, "Spin")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -87,6 +87,25 @@ Status Spin::timedSpin()
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.5;
+
+  geometry_msgs::msg::Pose current_pose;
+  if (!getRobotPose(current_pose)) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return Status::FAILED;
+  }
+
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.position.x;
+  pose2d.y = current_pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.orientation) +
+    cmd_vel.angular.z * (1 / cycle_frequency_);
+
+  if (!collision_checker_->isCollisionFree(pose2d)) {
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin ");
+    return Status::SUCCEEDED;
+  }
+
   vel_publisher_->publishCommand(cmd_vel);
 
   return Status::RUNNING;
@@ -137,4 +156,4 @@ Status Spin::controlledSpin()
   return Status::RUNNING;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries

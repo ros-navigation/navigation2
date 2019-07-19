@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_motion_primitives)
+project(nav2_recoveries)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -14,6 +14,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
@@ -21,7 +22,7 @@ include_directories(
   include
 )
 
-set(library_name motion_primitives)
+set(library_name recoveries)
 set(executable_name ${library_name}_node)
 
 set(dependencies
@@ -36,6 +37,7 @@ set(dependencies
   tf2
   tf2_geometry_msgs
   geometry_msgs
+  nav2_costmap_2d
 )
 
 # Library

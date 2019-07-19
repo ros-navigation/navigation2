@@ -143,18 +143,15 @@ void moveParameter(
 {
   param_t value;
   if (nh->get_parameter(current_name, value)) {
-    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
-    // if (should_delete)
-    //   nh->deleteParam(old_name);
+    if (should_delete) {nh->undeclare_parameter(old_name);}
     return;
   }
   if (nh->get_parameter(old_name, value)) {
-    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
-    // if (should_delete) nh->deleteParam(old_name);
+    if (should_delete) {nh->undeclare_parameter(old_name);}
   } else {
     value = default_value;
   }
-  nh->set_parameters({rclcpp::Parameter(current_name, value)});
+  nh->set_parameter(rclcpp::Parameter(current_name, value));
 }
 
 
