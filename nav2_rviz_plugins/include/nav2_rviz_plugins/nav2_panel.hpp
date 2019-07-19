@@ -25,6 +25,7 @@
 
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_rviz_plugins/ros_action_qevent.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
@@ -34,40 +35,6 @@ class QPushButton;
 
 namespace nav2_rviz_plugins
 {
-
-/// Custom Event to track state of ROS Action
-struct ROSActionEvent : public QEvent
-{
-  explicit ROSActionEvent(const bool & is_active)
-  : QEvent(QEvent::Type(QEvent::User + 1)),
-    is_active_(is_active) {}
-
-  bool is_active_;
-};
-
-/// Custom Transition to check whether ROS Action state has changed
-class ROSActionTransition : public QAbstractTransition
-{
-public:
-  explicit ROSActionTransition(bool initial_status)
-  : status_(initial_status)
-  {}
-
-  ~ROSActionTransition() {}
-
-protected:
-  virtual bool eventTest(QEvent * e)
-  {
-    if (e->type() != QEvent::Type(QEvent::User + 1)) {  // ROSActionEvent
-      return false;
-    }
-    ROSActionEvent * action_event = static_cast<ROSActionEvent *>(e);
-    return status_ != action_event->is_active_;
-  }
-
-  virtual void onTransition(QEvent *) {}
-  bool status_;
-};
 
 /// Panel to interface to the nav2 stack
 class Nav2Panel : public rviz_common::Panel
@@ -104,7 +71,7 @@ private:
   rclcpp::Node::SharedPtr goal_node_;
 
   // Executor needed to spin node in thread
-  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
   std::unique_ptr<std::thread> thread_;
 
   // Subscriber for goal pose updates to action client
@@ -127,7 +94,7 @@ private:
 
   QPushButton * start_stop_button_{nullptr};
 
-  QStateMachine machine_;
+  QStateMachine state_machine_;
 
   QState * initial_{nullptr};
   QState * starting_{nullptr};
