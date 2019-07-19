@@ -26,7 +26,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "nav2_robot/robot.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_recoveries
 {
@@ -76,8 +76,10 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_;
   std::string recovery_name_;
-  std::shared_ptr<nav2_robot::Robot> robot_;
+  std::shared_ptr<nav2_util::RobotStateHelper> robot_state_;
+  std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
   std::unique_ptr<ActionServer> action_server_;
+
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   nav2_util::GetRobotPoseClient get_robot_pose_client_{"recovery"};
@@ -94,11 +96,9 @@ protected:
     node_->get_parameter("costmap_topic", costmap_topic);
     node_->get_parameter("footprint_topic", footprint_topic);
 
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
+
+    vel_publisher_ = std::make_unique<nav2_util::VelocityPublisher>(node_);
 
     action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
@@ -115,9 +115,9 @@ protected:
 
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
     action_server_.reset();
-
+    vel_publisher_.reset();
     footprint_sub_.reset();
     costmap_sub_.reset();
     collision_checker_.reset();
@@ -184,7 +184,7 @@ protected:
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
 
-    robot_->sendVelocity(cmd_vel);
+    vel_publisher_->publishCommand(cmd_vel);
   }
 
   bool getRobotPose(geometry_msgs::msg::Pose & current_pose)

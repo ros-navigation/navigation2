@@ -5,6 +5,7 @@ add_library(${library_name} SHARED
   string_utils.cpp
   lifecycle_utils.cpp
   lifecycle_node.cpp
+  robot_utils.cpp
 )
 
 ament_target_dependencies(${library_name}

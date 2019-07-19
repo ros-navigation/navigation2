@@ -86,7 +86,7 @@ Status BackUp::onCycleUpdate()
     return Status::SUCCEEDED;
   }
 
-  robot_->sendVelocity(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 
   return Status::RUNNING;
 }
