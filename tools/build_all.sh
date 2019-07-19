@@ -16,6 +16,19 @@ fi
 
 set -e
 
+# so youc an call from anywhere in the navigation2_ws, ros2_ws, or deps branches
+while [[ "$PWD" =~ ros2_ws ]]; do
+  cd ../
+done
+
+while [[ "$PWD" =~ navstack_dependencies_ws ]]; do
+  cd ../
+done
+
+while [[ "$PWD" =~ navigation2_ws ]]; do
+  cd ../
+done
+
 CWD=`pwd`
 
 # Determine which repos to build. If ROS 2 base directories are
