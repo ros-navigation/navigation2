@@ -114,10 +114,10 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
+  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(3));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
-      " Check if Gazebo simulator is running and the initial pose is set");
+      " Check if the simulator or the robot is running. Make sure the initial pose is set.");
     return false;
   }
 
@@ -131,11 +131,11 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
 
   auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_,
-    future_goal_handle, std::chrono::seconds(5)) !=
+    future_goal_handle, std::chrono::seconds(3)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed."
-      " Check if Gazebo simulator is running and the initial pose is set");
+      " Check if the simulator or the robot is running. Make sure the initial pose is set.");
     return false;
   }
 
