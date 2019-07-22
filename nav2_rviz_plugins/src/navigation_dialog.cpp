@@ -114,7 +114,7 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(3));
+  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(timeout));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
       " Check if the simulator or the robot is running. Make sure the initial pose is set.");
@@ -131,7 +131,7 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
 
   auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_,
-    future_goal_handle, std::chrono::seconds(3)) !=
+    future_goal_handle, std::chrono::seconds(timeout)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed."
