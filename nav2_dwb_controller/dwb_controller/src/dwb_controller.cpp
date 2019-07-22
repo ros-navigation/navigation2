@@ -76,6 +76,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_->on_configure(state);
 
   get_parameter("controller_frequency", controller_frequency_);
+  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
@@ -187,7 +188,10 @@ void DwbController::followPath()
         break;
       }
 
-      loop_rate.sleep();
+      if (!loop_rate.sleep()) {
+        RCLCPP_WARN(get_logger(), "Control loop missed its desired rate of %.4fHz",
+          controller_frequency_);
+      }
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
