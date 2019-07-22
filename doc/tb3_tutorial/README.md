@@ -2,6 +2,7 @@
 
 
 
+
 ﻿ROS2 Navigation - Turtlebot3 - June, 2019
 
 # ROS 2 NAVIGATION 2 TUTORIAL
@@ -280,11 +281,12 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
 **Create work spaces for Navigation2 and NavStack Dependencies**
 
     cd ~/ros2_all_ws
-    mkdir -p /navstack_dependencies_ws/src
-    mkdir -p /navigation2_ws/src
+    mkdir -p navstack_dependencies_ws/src
+    mkdir -p navigation2_ws/src
 
 **Clone  and build Navigation 2 Dependencies**
 
+    cd ~/ros2_all_ws/navstack_dependencies_ws
     wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/ros2_dependencies.repos
     vcs import src < ros2_dependencies.repos
     rosdep install -y -r -q --from-paths src --ignore-src --rosdistro dashing --skip-keys "catkin"
@@ -293,8 +295,8 @@ Now, it is time to download and build Navigation2 stack. Stack means that Naviga
 
 **Clone  and build Navigation 2**
 
-	cd ~/ros2_all_ws/navigation2_ws/src
-	git clone https://github.com/ros-planning/navigation2.git
+    cd ~/ros2_all_ws/navigation2_ws/src
+    git clone https://github.com/ros-planning/navigation2.git
     cd ~/ros2_all_ws/navigation2_ws
     rosdep install -y -r -q --from-paths src --ignore-src --rosdistro dashing
     source ~/ros2_all_ws/ros2_ws/install/setup.bash
