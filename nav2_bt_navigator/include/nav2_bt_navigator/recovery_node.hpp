@@ -51,6 +51,7 @@ private:
   unsigned int number_of_retries_;
   unsigned int retry_count_;
   BT::NodeStatus tick() override;
+  void halt() override;
 };
 }  // namespace nav2_bt_navigator
 

@@ -93,9 +93,9 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 
         launch_ros.actions.Node(
-            package='nav2_motion_primitives',
-            node_executable='motion_primitives_node',
-            node_name='motion_primitives',
+            package='nav2_recoveries',
+            node_executable='recoveries_node',
+            node_name='recoveries',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}]),
 

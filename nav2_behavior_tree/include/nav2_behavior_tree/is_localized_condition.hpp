@@ -19,9 +19,9 @@
 #include <memory>
 
 #include "behaviortree_cpp/condition_node.h"
+#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_robot/robot.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
@@ -57,11 +57,7 @@ public:
     node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
     node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
     node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
     initialized_ = true;
   }
 
@@ -70,7 +66,7 @@ public:
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     rclcpp::spin_some(node_);
-    if (!robot_->getCurrentPose(current_pose)) {
+    if (!robot_state_->getCurrentPose(current_pose)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
@@ -92,7 +88,7 @@ public:
 protected:
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
   }
 
 private:
@@ -101,7 +97,7 @@ private:
   static const int cov_a_ = 35;
 
   rclcpp::Node::SharedPtr node_;
-  std::unique_ptr<nav2_robot::Robot> robot_;
+  std::unique_ptr<nav2_util::RobotStateHelper> robot_state_;
 
   bool initialized_;
   double x_tol_;

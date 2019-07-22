@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_motion_primitives</name>
+  <name>nav2_recoveries</name>
   <version>0.2.1</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
@@ -17,7 +17,6 @@
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>nav2_robot</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>

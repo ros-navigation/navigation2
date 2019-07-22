@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
-#define NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
+#ifndef NAV2_RECOVERIES__RECOVERY_HPP_
+#define NAV2_RECOVERIES__RECOVERY_HPP_
 
 #include <memory>
 #include <string>
@@ -26,9 +26,9 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "nav2_robot/robot.hpp"
+#include "nav2_util/robot_utils.hpp"
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 enum class Status : int8_t
@@ -41,21 +41,21 @@ enum class Status : int8_t
 using namespace std::chrono_literals;  //NOLINT
 
 template<typename ActionT>
-class MotionPrimitive
+class Recovery
 {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
-  explicit MotionPrimitive(rclcpp::Node::SharedPtr & node, const std::string & primitive_name)
+  explicit Recovery(rclcpp::Node::SharedPtr & node, const std::string & recovery_name)
   : node_(node),
-    primitive_name_(primitive_name),
+    recovery_name_(recovery_name),
     action_server_(nullptr),
     cycle_frequency_(10)
   {
     configure();
   }
 
-  virtual ~MotionPrimitive()
+  virtual ~Recovery()
   {
     cleanup();
   }
@@ -69,24 +69,26 @@ public:
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
-  // and provides a status. The primitive will finish once SUCCEEDED is returned
+  // and provides a status. The recovery will finish once SUCCEEDED is returned
   // It's up to the derived class to define the final commanded velocity.
   virtual Status onCycleUpdate() = 0;
 
 protected:
   rclcpp::Node::SharedPtr node_;
-  std::string primitive_name_;
-  std::shared_ptr<nav2_robot::Robot> robot_;
+  std::string recovery_name_;
+  std::shared_ptr<nav2_util::RobotStateHelper> robot_state_;
+  std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
   std::unique_ptr<ActionServer> action_server_;
+
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"motion_primitive"};
+  nav2_util::GetRobotPoseClient get_robot_pose_client_{"recovery"};
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
 
   void configure()
   {
-    RCLCPP_INFO(node_->get_logger(), "Configuring %s", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Configuring %s", recovery_name_.c_str());
 
     std::string costmap_topic;
     std::string footprint_topic;
@@ -94,14 +96,12 @@ protected:
     node_->get_parameter("costmap_topic", costmap_topic);
     node_->get_parameter("footprint_topic", footprint_topic);
 
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
 
-    action_server_ = std::make_unique<ActionServer>(node_, primitive_name_,
-        std::bind(&MotionPrimitive::execute, this));
+    vel_publisher_ = std::make_unique<nav2_util::VelocityPublisher>(node_);
+
+    action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
+        std::bind(&Recovery::execute, this));
 
     costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node_, costmap_topic);
@@ -115,9 +115,9 @@ protected:
 
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
     action_server_.reset();
-
+    vel_publisher_.reset();
     footprint_sub_.reset();
     costmap_sub_.reset();
     collision_checker_.reset();
@@ -125,32 +125,33 @@ protected:
 
   void execute()
   {
-    RCLCPP_INFO(node_->get_logger(), "Attempting %s", primitive_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "Attempting %s", recovery_name_.c_str());
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", primitive_name_.c_str());
+      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
       action_server_->terminate_goals();
       return;
     }
 
     // Log a message every second
     auto timer = node_->create_wall_timer(1s,
-        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", primitive_name_.c_str());});
+        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
 
     rclcpp::Rate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(node_->get_logger(), "Canceling %s", primitive_name_.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
+        stopRobot();
         action_server_->terminate_goals();
         return;
       }
 
-      // TODO(orduno) #868 Enable preempting a motion primitive on-the-fly without stopping
+      // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
-          primitive_name_.c_str());
+          recovery_name_.c_str());
         stopRobot();
         action_server_->terminate_goals();
         return;
@@ -158,12 +159,12 @@ protected:
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
-          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", primitive_name_.c_str());
+          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", recovery_name_.c_str());
           action_server_->succeeded_current();
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(node_->get_logger(), "%s failed", primitive_name_.c_str());
+          RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
           action_server_->terminate_goals();
           return;
 
@@ -183,7 +184,7 @@ protected:
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
 
-    robot_->sendVelocity(cmd_vel);
+    vel_publisher_->publishCommand(cmd_vel);
   }
 
   bool getRobotPose(geometry_msgs::msg::Pose & current_pose)
@@ -199,6 +200,6 @@ protected:
   }
 };
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries
 
-#endif  // NAV2_MOTION_PRIMITIVES__MOTION_PRIMITIVE_HPP_
+#endif  // NAV2_RECOVERIES__RECOVERY_HPP_
