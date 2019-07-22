@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP
-#define NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP
+#ifndef NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP_
+#define NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP_
 
 #include <QAbstractTransition>
 
@@ -56,4 +56,4 @@ protected:
 
 }  // namespace nav2_rviz_plugins
 
-#endif  //  NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP
+#endif  //  NAV2_RVIZ_PLUGINS__ROS_ACTION_QEVENT_HPP_
