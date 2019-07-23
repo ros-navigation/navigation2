@@ -43,13 +43,9 @@ protected:
   double rotational_acc_lim_;
   double goal_tolerance_angle_;
 
+  geometry_msgs::msg::Pose initial_pose_;
   double start_yaw_;
-
-  std::chrono::system_clock::time_point start_time_;
-
-  Status timedSpin();
-
-  Status controlledSpin();
+  double command_yaw_;
 };
 
 }  // namespace nav2_recoveries
