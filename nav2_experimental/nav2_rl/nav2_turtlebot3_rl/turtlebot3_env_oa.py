@@ -56,6 +56,8 @@ class TurtlebotEnv():
         self.states_input = [3.5] * 8
         self.zero_div_tol = 0.01
         self.range_min = 0.0
+        self.t_penalty = 0.0
+        self.states = []
 
         self.current_pose = Pose()
         self.goal_pose = Pose()
@@ -77,26 +79,24 @@ class TurtlebotEnv():
         self.t.join()
 
     def get_reward(self):
-        reward = 0
+        reward = 0 #should I use the pre_reward?
+        goal_distance_reward = (10/self.sq_distance_to_goal())
+
+        
         if self.collision == True:
-            reward = -10
+            reward = -10 #- self.t_penalty
             self.done = True
+            print('loss reward:  '+ str(reward))
             return reward, self.done
-        elif self.collision == False and self.act == 0:
-            if abs(min(self.states_input)) >= self.zero_div_tol:
-                reward = 0.08 - (1/(min(self.states_input)**2))*0.005
-            else:
-                reward = -10
-            if reward > 0:
-                self.bonous_reward += reward
-                reward = self.bonous_reward
+
+        elif self.sq_distance_to_goal() > 1:
+            reward = goal_distance_reward #- self.t_penalty
+            print('goal_distance: ' + str(self.sq_distance_to_goal())  + ' reward: ' + str(reward))
         else:
-            bonous_discount_factor = 0.6
-            self.bonous_reward *= bonous_discount_factor
-            if abs(min(self.states_input)) >= self.zero_div_tol:
-                reward = 0.02 - (1/min(self.states_input))*0.005
-            else:
-                reward = -10
+            reward = 150
+            print('win reward:  '+ str(reward))
+            self.done = True
+        self.t_penalty += 0.005
         return reward, self.done
 
 
@@ -132,9 +132,22 @@ class TurtlebotEnv():
         self.pub_cmd_vel.publish(vel_cmd)
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
+        sleep(parameters.LOOP_RATE)
         get_reward = self.get_reward()
-        return self.states_input, get_reward[0], self.done
+        return self.observation(), get_reward[0], self.done
     
+    def observation(self):
+        self.get_robot_pose()
+        self.states.clear()
+        self.states = [0]*12
+        self.states[0:7] = self.states_input
+        self.states[8] = float(self.current_pose.position.x)
+        self.states[9] = float(self.current_pose.position.y)        
+        self.states[10] = float(self.goal_pose.position.x)
+        self.states[11] = float(self.goal_pose.position.y)
+        self.states[12] = self.sq_distance_to_goal()
+        return  self.states
+
     def check_collision(self):
         if  min(self.laser_scan_range) < self.range_min + self.collision_tol:
             print("Near collision detected... " + str(min(self.laser_scan_range)))
@@ -165,6 +178,7 @@ class TurtlebotEnv():
 
         while not future.done() and rclpy.ok():            
             sleep(0.1)
+        sleep(1.0)
     
     def get_robot_pose(self):
         while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
@@ -210,6 +224,7 @@ class TurtlebotEnv():
         return dx * dx + dy * dy
 
     def reset(self):
+        self.t_penalty = 0.0
         self.scan_msg_received = False
         self.stop_action    
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
@@ -231,4 +246,5 @@ class TurtlebotEnv():
         self.collision = False
         self.done = False
         self.bonous_reward = 0
-        return self.states_input
+
+        return self.observation()

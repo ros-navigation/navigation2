@@ -36,8 +36,9 @@ def trainModel(env, action_size):
         observation_size = len(state)
         state = np.reshape(state, [1, observation_size])
         done = False
+        agent.step += 1
         while not done and rclpy.ok():
-            agent.step += 1
+            #agent.step += 1
             target_model_update_counter += 1
             if target_model_update_counter%parameters.TARGET_MODEL_UPDATE_STEP == 0:
                 agent.save_load_model_weights()
@@ -47,9 +48,13 @@ def trainModel(env, action_size):
             next_state = np.reshape(next_state, [1, observation_space])
             agent.save_to_memory(state, action, reward, next_state, done)
             state = next_state
-            if not done: 
+            #sleep(parameters.LOOP_RATE)
+            if not done:
+                #print('exp replay') 
+                env.stop_action()
                 agent.experience_replay()
-            sleep(parameters.LOOP_RATE)
+                #print('done exp replay')
+            #sleep(parameters.LOOP_RATE)
         agent.model.save('navigator_model.h5')
 
 def main(args=None):

@@ -36,9 +36,9 @@ class DQN:
             self.model = load_model('random_crawl_model.h5')
         else:
             self.model = Sequential()
-            self.model.add(Dense(8, input_shape=(observation_space,), activation="relu"))
-            self.model.add(Dense(8, activation="relu"))
-            self.model.add(Dense(8, activation="relu"))
+            self.model.add(Dense(13, input_shape=(observation_space,), activation="relu"))
+            self.model.add(Dense(13, activation="relu"))
+            self.model.add(Dense(6, activation="relu"))
             self.model.add(Dense(self.action_size, activation="linear"))
             self.model.compile(loss="mse", optimizer=Adam(lr=parameters.LEARNING_RATE))
 
