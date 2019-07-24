@@ -63,8 +63,8 @@ download_ros2() {
 
 download_ros2_dependencies() {
   echo "Downloading the dependencies workspace"
-  mkdir -p navstack_dependencies_ws/src
-  cd navstack_dependencies_ws
+  mkdir -p ros2_nav_dependencies_ws/src
+  cd ros2_nav_dependencies_ws
   vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
   return_to_root_dir
 }
