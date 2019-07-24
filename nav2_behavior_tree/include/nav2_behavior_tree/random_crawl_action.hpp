@@ -16,8 +16,6 @@
 #define NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_
 
 #include <string>
-#include <memory>
-#include <cmath>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/random_crawl.hpp"
@@ -32,7 +30,6 @@ public:
   : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name)
   {
   }
-  
 };
 
 }  // namespace nav2_behavior_tree

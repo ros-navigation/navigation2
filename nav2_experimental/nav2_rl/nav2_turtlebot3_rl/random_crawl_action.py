@@ -31,11 +31,11 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
 import threading
 
+
 class RandomCrawlActionServer(Node):
 
     def __init__(self):
         super().__init__('action_server')
-        
         self.env = TurtlebotEnv()
         self.action_size = self.env.action_space()
         print(self.action_size)
@@ -43,11 +43,9 @@ class RandomCrawlActionServer(Node):
         self.observation_space = len(self.state)
         self.state = np.reshape(self.state, [1, self.observation_space])
         pkg_share_directory = get_package_share_directory('nav2_turtlebot3_rl')
-        path = os.path.join(pkg_share_directory,"saved_models/random_crawl_waffle.h5")
+        path = os.path.join(pkg_share_directory, "saved_models/random_crawl_waffle.h5")
         self.model = load_model(path)
-        self.cancel_action = False
         q = self.model.predict(self.state)
-        
         self._goal_handle = None
         self._goal_lock = threading.Lock()
         self._action_server = ActionServer(
@@ -67,9 +65,8 @@ class RandomCrawlActionServer(Node):
 
     def goal_callback(self, goal_request):
         self.get_logger().info('Received goal request')
-        self.cancel_action = False
         return GoalResponse.ACCEPT
-    
+
     def handle_accepted_callback(self, goal_handle):
         with self._goal_lock:
             # This server only allows one goal at a time
@@ -83,11 +80,10 @@ class RandomCrawlActionServer(Node):
 
     def cancel_callback(self, goal_handle):
         self.get_logger().info('Received cancel request')
-        self.cancel_action = True
         return CancelResponse.ACCEPT
 
     def execute_callback(self, goal_handle):
-        while not self.cancel_action and rclpy.ok():
+        while not goal_handle.is_cancel_requested and rclpy.ok():
             q_values = self.model.predict(self.state)
             action = np.argmax(q_values)
             next_state, reward, terminal = self.env.step(action)
@@ -99,6 +95,7 @@ class RandomCrawlActionServer(Node):
         result = RandomCrawl.Result()
         return result
 
+
 def main(args=None):
     rclpy.init(args=args)
 
@@ -108,7 +105,6 @@ def main(args=None):
 
     action_server.destroy()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
