@@ -74,7 +74,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+  vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -90,7 +90,8 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
-  vel_pub_->on_activate();
+
+  vel_publisher_->on_activate();
   action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -104,8 +105,9 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   action_server_->deactivate();
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
+
   publishZeroVelocity();
-  vel_pub_->on_deactivate();
+  vel_publisher_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -123,7 +125,10 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   action_server_.reset();
   planner_.reset();
   odom_sub_.reset();
-  vel_pub_.reset();
+
+  vel_publisher_.reset();
+  action_server_.reset();
+
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -235,7 +240,7 @@ void DwbController::updateGlobalPath()
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
-  vel_pub_->publish(cmd_vel);
+  vel_publisher_->publish(cmd_vel);
 }
 
 void DwbController::publishZeroVelocity()

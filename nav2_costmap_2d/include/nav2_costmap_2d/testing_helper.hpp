@@ -62,13 +62,14 @@ unsigned int countValues(
   return count;
 }
 
-void addStaticLayer(
+nav2_costmap_2d::StaticLayer * addStaticLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
 {
   nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
+  return slayer;
 }
 
 nav2_costmap_2d::ObstacleLayer * addObstacleLayer(

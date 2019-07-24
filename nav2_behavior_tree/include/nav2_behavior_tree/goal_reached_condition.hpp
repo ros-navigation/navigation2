@@ -20,7 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
-#include "nav2_robot/robot.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 namespace nav2_behavior_tree
@@ -57,11 +57,7 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    robot_ = std::make_unique<nav2_robot::Robot>(
-      node_->get_node_base_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
-      true);
+    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
     initialized_ = true;
   }
 
@@ -71,7 +67,7 @@ public:
     auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     rclcpp::spin_some(node_);
-    if (!robot_->getCurrentPose(current_pose)) {
+    if (!robot_state_->getCurrentPose(current_pose)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
@@ -90,12 +86,12 @@ public:
 protected:
   void cleanup()
   {
-    robot_.reset();
+    robot_state_.reset();
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
-  std::unique_ptr<nav2_robot::Robot> robot_;
+  std::unique_ptr<nav2_util::RobotStateHelper> robot_state_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;

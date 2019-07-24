@@ -20,31 +20,32 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_motion_primitives/motion_primitive.hpp"
-#include "nav2_msgs/action/dummy_primitive.hpp"
 
-using nav2_motion_primitives::MotionPrimitive;
-using nav2_motion_primitives::Status;
-using MotionPrimitiveAction = nav2_msgs::action::DummyPrimitive;
-using ClientGoalHandle = rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>;
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_recoveries/recovery.hpp"
+#include "nav2_msgs/action/dummy_recovery.hpp"
+
+using nav2_recoveries::Recovery;
+using nav2_recoveries::Status;
+using RecoveryAction = nav2_msgs::action::DummyRecovery;
+using ClientGoalHandle = rclcpp_action::ClientGoalHandle<RecoveryAction>;
 
 using namespace std::chrono_literals;
 
-// A motion primitive for testing the base class
+// A recovery for testing the base class
 
-class DummyPrimitive : public MotionPrimitive<MotionPrimitiveAction>
+class DummyRecovery : public Recovery<RecoveryAction>
 {
 public:
-  explicit DummyPrimitive(rclcpp::Node::SharedPtr & node)
-  : MotionPrimitive<MotionPrimitiveAction>(node, "MotionPrimitive"),
+  explicit DummyRecovery(rclcpp::Node::SharedPtr & node)
+  : Recovery<RecoveryAction>(node, "Recovery"),
     initialized_(false) {}
 
-  ~DummyPrimitive() {}
+  ~DummyRecovery() {}
 
-  Status onRun(const std::shared_ptr<const MotionPrimitiveAction::Goal> goal) override
+  Status onRun(const std::shared_ptr<const RecoveryAction::Goal> goal) override
   {
-    // A normal primitive would catch the command and initialize
+    // A normal recovery would catch the command and initialize
     initialized_ = false;
     command_ = goal->command.data;
     start_time_ = std::chrono::system_clock::now();
@@ -61,7 +62,7 @@ public:
 
   Status onCycleUpdate() override
   {
-    // A normal primitive would set the robot in motion in the first call
+    // A normal recovery would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
@@ -93,22 +94,22 @@ private:
 
 // Define a test class to hold the context for the tests
 
-class MotionPrimitivesTest : public ::testing::Test
+class RecoveryTest : public ::testing::Test
 {
 protected:
-  MotionPrimitivesTest() {}
-  ~MotionPrimitivesTest() {}
+  RecoveryTest() {}
+  ~RecoveryTest() {}
 
   void SetUp() override
   {
-    node_ = std::make_shared<rclcpp::Node>("MotionPrimitivesTestNode");
+    node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
     node_->declare_parameter(
       "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
     node_->declare_parameter(
       "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
-    primitive_ = std::make_unique<DummyPrimitive>(node_);
+    recovery_ = std::make_unique<DummyRecovery>(node_);
 
-    client_ = rclcpp_action::create_client<MotionPrimitiveAction>(node_, "MotionPrimitive");
+    client_ = rclcpp_action::create_client<RecoveryAction>(node_, "Recovery");
   }
 
   void TearDown() override {}
@@ -140,10 +141,10 @@ protected:
 
   std::shared_future<ClientGoalHandle::SharedPtr> getGoal(const std::string & command)
   {
-    auto goal = MotionPrimitiveAction::Goal();
+    auto goal = RecoveryAction::Goal();
     goal.command.data = command;
 
-    auto goal_options = rclcpp_action::Client<MotionPrimitiveAction>::SendGoalOptions();
+    auto goal_options = rclcpp_action::Client<RecoveryAction>::SendGoalOptions();
     goal_options.result_callback = [](auto) {};
 
     return client_->async_send_goal(goal, goal_options);
@@ -171,32 +172,32 @@ protected:
   }
 
   std::shared_ptr<rclcpp::Node> node_;
-  std::unique_ptr<DummyPrimitive> primitive_;
-  std::shared_ptr<rclcpp_action::Client<MotionPrimitiveAction>> client_;
-  std::shared_ptr<rclcpp_action::ClientGoalHandle<MotionPrimitiveAction>> goal_handle_;
+  std::unique_ptr<DummyRecovery> recovery_;
+  std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;
+  std::shared_ptr<rclcpp_action::ClientGoalHandle<RecoveryAction>> goal_handle_;
 };
 
 // Define the tests
 
-TEST_F(MotionPrimitivesTest, testingSuccess)
+TEST_F(RecoveryTest, testingSuccess)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
 }
 
-TEST_F(MotionPrimitivesTest, testingFailureOnRun)
+TEST_F(RecoveryTest, testingFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
-TEST_F(MotionPrimitivesTest, testingFailureOnInit)
+TEST_F(RecoveryTest, testingFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
 }
 
-TEST_F(MotionPrimitivesTest, testingSequentialFailures)
+TEST_F(RecoveryTest, testingSequentialFailures)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
