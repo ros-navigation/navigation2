@@ -77,6 +77,8 @@ public:
 
   void initNode(double inflation_radius);
 
+  void waitForMap(nav2_costmap_2d::StaticLayer * slayer);
+
 protected:
   nav2_util::LifecycleNode::SharedPtr node_;
 };
@@ -102,6 +104,13 @@ std::vector<Point> TestNode::setRadii(
   layers.setFootprint(polygon);
 
   return polygon;
+}
+
+void TestNode::waitForMap(nav2_costmap_2d::StaticLayer * slayer)
+{
+  while (!slayer->isCurrent()) {
+    rclcpp::spin_some(node_->get_node_base_interface());
+  }
 }
 
 // Test that a single point gets inflated properly
@@ -349,12 +358,13 @@ TEST_F(TestNode, testInflation)
   // circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
-  addStaticLayer(layers, tf, node_);
+  auto slayer = addStaticLayer(layers, tf, node_);
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+  waitForMap(slayer);
 
   layers.updateMap(0, 0, 0);
   // printMap(*costmap);
@@ -419,10 +429,12 @@ TEST_F(TestNode, testInflation2)
   // circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
-  addStaticLayer(layers, tf, node_);
+  auto slayer = addStaticLayer(layers, tf, node_);
   nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
+
+  waitForMap(slayer);
 
   // Creat a small L-Shape all at once
   addObservation(olayer, 1, 1, MAX_Z);

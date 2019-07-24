@@ -39,7 +39,6 @@
 #include <memory>
 #include <mutex>
 #include <string>
-
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/lifecycle_node.hpp"
