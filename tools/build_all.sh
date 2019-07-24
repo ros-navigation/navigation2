@@ -16,7 +16,7 @@ fi
 
 set -e
 
-# so youc an call from anywhere in the navigation2_ws, ros2_ws, or deps branches
+# so you can call from anywhere in the navigation2_ws, ros2_ws, or deps branches
 while [[ "$PWD" =~ ros2_ws ]]; do
   cd ../
 done
