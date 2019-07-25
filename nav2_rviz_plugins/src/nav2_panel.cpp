@@ -24,12 +24,16 @@
 
 #include <memory>
 
+#include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_rviz_plugins
 {
+
+// Define global GoalPoseUpdater so that the nav2 GoalTool plugin can access to update goal pose
+GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent)
@@ -127,9 +131,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
 
   goal_node_ = std::make_shared<rclcpp::Node>("goal_pose_listener");
-  goal_sub_ = goal_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal", rclcpp::SystemDefaultsQoS(),
-    std::bind(&Nav2Panel::startNavigation, this, std::placeholders::_1));
+
+  QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
+    this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
 
   // Launch a thread to run the node
   thread_ = std::make_unique<std::thread>(
@@ -181,6 +185,30 @@ Nav2Panel::onCancel()
 }
 
 void
+Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
+{
+  auto pose = geometry_msgs::msg::PoseStamped();
+
+  pose.header.stamp = rclcpp::Clock().now();
+  pose.header.frame_id = frame.toStdString();
+  pose.pose.position.x = x;
+  pose.pose.position.y = y;
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation = orientationAroundZAxis(theta);
+
+  startNavigation(pose);
+}
+
+
+geometry_msgs::msg::Quaternion
+Nav2Panel::orientationAroundZAxis(double angle)
+{
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);  // void returning function
+  return tf2::toMsg(q);
+}
+
+void
 Nav2Panel::onCancelButtonPressed()
 {
   auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
@@ -216,7 +244,7 @@ Nav2Panel::timerActionEvent()
 }
 
 void
-Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped::SharedPtr pose)
+Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 {
   auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
@@ -226,7 +254,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped::SharedPtr pose)
   }
 
   // Send the goal pose
-  goal_.pose = *pose;
+  goal_.pose = pose;
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =

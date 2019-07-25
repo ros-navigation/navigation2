@@ -55,14 +55,16 @@ private Q_SLOTS:
   void onStartup();
   void onShutdown();
   void onCancel();
+  void onNewGoal(double x, double y, double theta, QString frame);
 
 private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerActionEvent();
 
-  void startNavigation(geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  void startNavigation(geometry_msgs::msg::PoseStamped pose);
   using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
+  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -73,9 +75,6 @@ private:
   // Executor needed to spin node in thread
   rclcpp::executors::SingleThreadedExecutor executor_;
   std::unique_ptr<std::thread> thread_;
-
-  // Subscriber for goal pose updates to action client
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
   // Timer to check goal status and send ROSActionEvent
   rclcpp::TimerBase::SharedPtr timer_;

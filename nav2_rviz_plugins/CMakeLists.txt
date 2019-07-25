@@ -32,6 +32,9 @@ find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
 set(nav2_rviz_plugins_headers_to_moc
+  include/nav2_rviz_plugins/goal_pose_updater;
+  include/nav2_rviz_plugins/goal_common;
+  include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
 )
 
@@ -42,6 +45,7 @@ include_directories(
 set(library_name ${PROJECT_NAME})
 
 add_library(${library_name} SHARED
+  src/goal_tool.cpp
   src/nav2_panel.cpp
   ${nav2_rviz_plugins_headers_to_moc}
 )
