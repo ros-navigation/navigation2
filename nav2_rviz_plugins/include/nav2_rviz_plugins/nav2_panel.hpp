@@ -62,15 +62,17 @@ private:
   void onCancelButtonPressed();
   void timerActionEvent();
 
+  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
+
+  // Call to send NavigateToPose action request for goal pose
   void startNavigation(geometry_msgs::msg::PoseStamped pose);
   using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
-  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
-  // Node to spin for goal pose and timer
-  rclcpp::Node::SharedPtr goal_node_;
+  // Node to spin for timer
+  rclcpp::Node::SharedPtr timer_node_;
 
   // Executor needed to spin node in thread
   rclcpp::executors::SingleThreadedExecutor executor_;

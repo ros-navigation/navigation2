@@ -130,7 +130,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
       "NavigateToPose");
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
 
-  goal_node_ = std::make_shared<rclcpp::Node>("goal_pose_listener");
+  timer_node_ = std::make_shared<rclcpp::Node>("nav2_panel_timer");
 
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
@@ -142,9 +142,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
       executor_.add_node(node->get_node_base_interface());
       executor_.spin();
       executor_.remove_node(node->get_node_base_interface());
-    }, goal_node_);
+    }, timer_node_);
 
-  timer_ = goal_node_->create_wall_timer(1s, std::bind(&Nav2Panel::timerActionEvent, this));
+  timer_ = timer_node_->create_wall_timer(1s, std::bind(&Nav2Panel::timerActionEvent, this));
 }
 
 Nav2Panel::~Nav2Panel()
