@@ -19,6 +19,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 from rclpy.qos import qos_profile_sensor_data
+from rclpy.executors import SingleThreadedExecutor
 
 import numpy as np
 import math
@@ -36,6 +37,8 @@ from gazebo_msgs.srv import GetEntityState, SetEntityState
 class TurtlebotEnv():
     def __init__(self):
         self.node_ = rclpy.create_node('turtlebot3_env')
+        self.executor = SingleThreadedExecutor()
+        self.executor.add_node(self.node_)
         self.act = 0
         self.done = False
         self.actions = [[parameters.LINEAR_FWD_VELOCITY, parameters.ANGULAR_FWD_VELOCITY],
@@ -61,7 +64,7 @@ class TurtlebotEnv():
         self.get_entity_state = self.node_.create_client(GetEntityState, 'get_entity_state')
         self.set_entity_state = self.node_.create_client(SetEntityState, 'set_entity_state')
         self.scan_msg_received = False
-        self.t = Thread(target=rclpy.spin, args=[self.node_])
+        self.t = Thread(target=self.executor.spin)
         self.t.start()
 
     def cleanup(self):
