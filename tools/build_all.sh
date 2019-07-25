@@ -16,6 +16,19 @@ fi
 
 set -e
 
+# so you can call from anywhere in the navigation2_ws, ros2_ws, or deps branches
+while [[ "$PWD" =~ ros2_ws ]]; do
+  cd ../
+done
+
+while [[ "$PWD" =~ ros2_nav_dependencies_ws ]]; do
+  cd ../
+done
+
+while [[ "$PWD" =~ navigation2_ws ]]; do
+  cd ../
+done
+
 CWD=`pwd`
 
 # Determine which repos to build. If ROS 2 base directories are
@@ -35,7 +48,7 @@ if [ "$ENABLE_ROS2" = true ]; then
 fi
 
 # Build our ROS 2 dependencies
-cd $CWD/navstack_dependencies_ws
+cd $CWD/ros2_nav_dependencies_ws
 export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
 rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
 (. $ROS2_SETUP_FILE &&
@@ -45,7 +58,7 @@ rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO -
 cd $CWD/navigation2_ws
 export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
 rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
-(. $ROS2_SETUP_FILE && . $CWD/navstack_dependencies_ws/install/setup.bash &&
+(. $ROS2_SETUP_FILE && . $CWD/ros2_nav_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 
 # Update the ROS1 bridge
