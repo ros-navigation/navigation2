@@ -58,7 +58,7 @@ set(dependencies
   nav2_msgs
   nav2_msgs
   nav_msgs
-  pluginglib
+  pluginlib
   Qt5
   rclcpp
   rclcpp_lifecycle
