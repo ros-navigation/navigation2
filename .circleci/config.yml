@@ -221,13 +221,47 @@ jobs:
       - setup_upstream
       - build_source
       - test_source
+  test_rmw_connext_cpp:
+    executor: docker_exec
+    environment:
+      RMW_IMPLEMENTATION: "rmw_connext_cpp"
+      COVERAGE_ENABLED: "False"
+    steps:
+      - test_source
+  test_rmw_fastrtps_cpp:
+    executor: docker_exec
+    environment:
+      RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
+      COVERAGE_ENABLED: "False"
+    steps:
+      - test_source
+  test_rmw_opensplice_cpp:
+    executor: docker_exec
+    environment:
+      RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
+      COVERAGE_ENABLED: "False"
+    steps:
+      - test_source
 
 workflows:
   version: 2
   build-test:
     jobs:
       - debug_build
+        filters:
+          branches:
+            only:
+              - master
       - release_build
+        filters:
+          branches:
+            only:
+              - master
+      - release_build
+        filters:
+          branches:
+            only:
+              - master
   # nightly:
   #   triggers:
   #     - schedule:
