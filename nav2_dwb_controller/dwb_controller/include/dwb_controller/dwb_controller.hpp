@@ -79,6 +79,8 @@ protected:
   std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
+
+  double controller_frequency_;
 };
 
 }  // namespace dwb_controller
