@@ -15,6 +15,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_util REQUIRED)
 
 nav2_package()
 
@@ -35,10 +36,11 @@ set(dependencies
   nav_2d_utils
   nav_msgs
   tf2_ros
+  nav2_util
 )
 
 add_library(dwb_core SHARED
-  src/dwb_core.cpp
+  src/dwb_local_planner.cpp
   src/publisher.cpp
   src/illegal_trajectory_tracker.cpp
 )

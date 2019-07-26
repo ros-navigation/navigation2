@@ -89,7 +89,7 @@ geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt)
 geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts)
 {
   geometry_msgs::msg::Polygon polygon;
-  for (int i = 0; i < pts.size(); i++) {
+  for (unsigned int i = 0; i < pts.size(); i++) {
     polygon.points.push_back(toPoint32(pts[i]));
   }
   return polygon;
@@ -98,7 +98,7 @@ geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts
 std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
 {
   std::vector<geometry_msgs::msg::Point> pts;
-  for (int i = 0; i < polygon->points.size(); i++) {
+  for (unsigned int i = 0; i < polygon->points.size(); i++) {
     pts.push_back(toPoint(polygon->points[i]));
   }
   return pts;
@@ -208,55 +208,6 @@ bool makeFootprintFromString(
   }
 
   return true;
-}
-
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr node)
-{
-  std::string full_param_name = "footprint";
-  std::string full_radius_param_name = "robot_radius";
-  std::vector<geometry_msgs::msg::Point> points;
-  std::string footprint;
-
-  node->get_parameter_or<std::string>(full_param_name, footprint, "[]");
-  if (footprint != "" && footprint != "[]") {
-    if (makeFootprintFromString(std::string(footprint), points)) {
-      writeFootprintToParam(node, points);
-      return points;
-    }
-  }
-
-  double robot_radius;
-  node->get_parameter_or<double>(full_radius_param_name, robot_radius, 0.1);
-  points = makeFootprintFromRadius(robot_radius);
-
-  auto set_parameters_results = node->set_parameters({
-      rclcpp::Parameter("robot_radius", robot_radius)
-    });
-
-  // Else neither param was found anywhere this knows about, so
-  // defaults will come from dynamic_reconfigure stuff
-  return points;
-}
-
-void writeFootprintToParam(
-  rclcpp::Node::SharedPtr node,
-  const std::vector<geometry_msgs::msg::Point> & footprint)
-{
-  std::ostringstream oss;
-  bool first = true;
-  for (unsigned int i = 0; i < footprint.size(); i++) {
-    geometry_msgs::msg::Point p = footprint[i];
-    if (first) {
-      oss << "[[" << p.x << "," << p.y << "]";
-      first = false;
-    } else {
-      oss << ",[" << p.x << "," << p.y << "]";
-    }
-  }
-  oss << "]";
-  auto set_parameters_results = node->set_parameters({
-      rclcpp::Parameter("footprint", oss.str().c_str())
-    });
 }
 
 }  // end namespace nav2_costmap_2d

@@ -2,78 +2,65 @@
 
 The `nav2_bringup` package is an example bringup system for navigation2 applications.
 
-Notes: (December 2018, Crystal Release)
-* We recommend doing this on a Ubuntu 18.04 installation. We’re currently having build issues on 16.04. (see https://github.com/ros-planning/navigation2/issues/353)
+Notes: (June 2019, Dashing Release)
+* We recommend doing this on a Ubuntu 18.04 installation. We have build issues on 16.04. (see https://github.com/ros-planning/navigation2/issues/353)
 * This stack and ROS2 are still in heavy development and there are some bugs and stability issues being worked on, so please do not try this on a robot without taking *heavy* safety precautions. THE ROBOT MAY CRASH!
 * It is recommended to start with simulation using Gazebo before proceeding to run on a physical robot
 
 Install and build our code by following this guide:
 https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md
 
-## Launch Navigation2 in simulation with Gazebo (first time users)
+## Launch Navigation2 in simulation with Gazebo
 ### Pre-requisites:
 * Gazebo installed on the system
 * gazebo_ros_pkgs for ROS2 installed on the system
 * A Gazebo world for simulating the robot (see Gazebo tutorials)
 * A map of that world saved to a map.pgm and map.yaml (see ROS Navigation tutorials)
 
-### Terminal 1: Launch Gazebo and Rviz2
+### Terminal 1: Launch Gazebo
 
 Example: See [turtlebot3_gazebo models](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo/models) for details
+
 ```
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:<full/path/to/my_robot/models>
-ros2 launch nav2_bringup gazebo_rviz2_launch.py world:=<full/path/to/gazebo.world>
+gazebo --verbose -s libgazebo_ros_init.so <full/path/to/my_gazebo.world>
 ```
 
 ### Terminal 2: Launch your robot specific transforms
 
 Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
 
-`ros2 launch turtlebot3_bringup burger_state_publisher.launch.py`
+```
+source turtlebot3_ws/install/setup.bash
+export TURTLEBOT3_MODEL=waffle
+ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=True
+```
 
-### Terminal 3: Launch map_server and AMCL
+### Terminal 3: Launch navigation2
 
 ```
-# Set the tf publisher node to use simulation time or AMCL won't get the transforms correctly
-ros2 param set /robot_state_publisher use_sim_time True
-# Launch map_server and AMCL, set map_type as "occupancy" by default.
-ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy use_sim_time:=True
+source navigation2_ws/install/setup.bash
+# Launch the nav2 system
+ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=True \
+map:=<full/path/to/map.yaml>
 ```
-In RVIZ:
+
+### Terminal 4: Run RViz with navigation2 config file
+```
+source navigation2_ws/install/setup.bash
+ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz
+```
+In RViz:
+* You should see the map
+* Localize the robot using “2D Pose Estimate” button.
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
-* Localize the robot using “2D Pose Estimate” button.
+* Send the robot a goal using “Navigation2 Goal” button.
+Note: this uses a ROS2 Action to send the goal, and a pop-up window will appear on your screen with a 'cancel' button if you wish to cancel
 
-### Terminal 4:
-Run the rest of the Navigation2 bringup
-
-`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py use_sim_time:=True`
-
-### Terminal 5:
-Set the World Model and the two costmap nodes to use simulation time
-
-```
-ros2 param set /world_model use_sim_time True
-ros2 param set /global_costmap/global_costmap use_sim_time True
-ros2 param set /local_costmap/local_costmap use_sim_time True
-```
-
-Notes:
-* Setting use_sim_time has to be done dynamically after the nodes are up due to this bug:https://github.com/ros2/rclcpp/issues/595
-* Sim time needs to be set in every namespace individually.
-* Sometimes setting use_sim_time a second time is required for all the nodes to get updated
-* IF you continue to see WARN messages like the ones below, retry setting the use_sim_time parameter
-```
-[WARN] [world_model]: Costmap2DROS transform timeout. Current time: 1543616767.1026, global_pose stamp: 758.8040, tolerance: 0.3000, difference: 1543616008.2986
-[WARN] [FollowPathNode]: Costmap2DROS transform timeout. Current time: 1543616767.2787, global_pose stamp: 759.0040, tolerance: 0.3000, difference: 1543616008.2747
-```
-
-In RVIZ:
-* Add "map" to subscribe topic "/map"
+To view the robot model in RViz:
 * Add "RobotModel", set "Description Source" with "File", set "Description File" with the name of the urdf file for your robot (example: turtlebot3_burger.urdf)"
-* Localize the robot using “2D Pose Estimate” button.
-* Send the robot a goal using “2D Nav Goal” button.
 
-## Launch Navigation2 on a Robot (first time users)
+## Launch Navigation2 on a Robot
 
 Pre-requisites:
 * Run SLAM or Cartographer with tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done. If not, it can be done in ROS1 before beginning to install our code.
@@ -81,42 +68,20 @@ Pre-requisites:
 
 Launch the code using this launch file and your map.yaml:
 
-`ros2 launch nav2_bringup nav2_bringup_1st_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
+`ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
 
 In another terminal, run RVIZ:
 
-`ros2 run rviz2 rviz2`
+`ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz`
 
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
 
-Run the rest of the Navigation2 bringup
-
-`ros2 launch nav2_bringup nav2_bringup_2nd_launch.py`
-
 In RVIZ:
 * Localize the robot using “2D Pose Estimate” button.
 * Send the robot a goal using “2D Nav Goal” button.
 
-## Advanced 1-step Launch for experienced users
-Pre-requisites:
-* You've completed bringup of your robot successfully following the 2-step process above
-* You know your transforms are being published correctly and AMCL can localize
-
-Follow directions above *except*
-* Instead of running the `nav2_bringup_1st_launch.py` then the `nav2_bringup_2nd_launch.py`
-* You can do it in one step like this:
-```
-ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml>
-```
-If running in simulation:
-```
-ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> use_sim_time:=True
-ros2 param set /world_model use_sim_time True; ros2 param set /global_costmap/global_costmap use_sim_time True; ros2 param set /local_costmap/local_costmap use_sim_time True
-```
-
 ## Future Work
 
-* adding configuration files for the example bringup
-* a more complete map for system level testing
+* Add instructions for running navigation2 with SLAM

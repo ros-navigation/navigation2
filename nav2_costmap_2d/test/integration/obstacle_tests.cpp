@@ -32,14 +32,24 @@
  * Test harness for ObstacleLayer for Costmap2D
  */
 
-#include <set>
+#include <memory>
+#include <string>
+#include <algorithm>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
-#include "nav2_util/node_utils.hpp"
+
+using std::begin;
+using std::end;
+using std::for_each;
+using std::all_of;
+using std::none_of;
+using std::pair;
+using std::string;
 
 class RclCppFixture
 {
@@ -49,19 +59,66 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+class TestLifecycleNode : public nav2_util::LifecycleNode
+{
+public:
+  explicit TestLifecycleNode(const string & name)
+  : nav2_util::LifecycleNode(name)
+  {
+  }
+
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+};
+
 class TestNode : public ::testing::Test
 {
 public:
   TestNode()
   {
-    node_ = rclcpp::Node::make_shared(
-      "obstacle_test_node", nav2_util::get_node_options_default());
+    node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
+    node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+    node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+    node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+    node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    node_->declare_parameter("unknown_cost_value",
+      rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+    node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+    node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   }
 
   ~TestNode() {}
 
 protected:
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<TestLifecycleNode> node_;
 };
 
 /*
@@ -90,6 +147,7 @@ protected:
  *   upper left is 0,0, lower right is 9,9
  */
 
+#if (0)
 /**
  * Test for ray tracing free space
  */
@@ -173,7 +231,7 @@ TEST_F(TestNode, testRaytracing2) {
  */
 TEST_F(TestNode, testWaveInterference) {
   tf2_ros::Buffer tf(node_->get_clock());
-
+  node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
   // Start with an empty map, no rolling window, tracking unknown
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -260,4 +318,59 @@ TEST_F(TestNode, testMultipleAdditions) {
   // printMap(*costmap);
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20);
+}
+#endif
+/**
+ * Verify correct init/reset cycling of layer
+ */
+TEST_F(TestNode, testRepeatedResets) {
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  addStaticLayer(layers, tf, node_);
+
+  // TODO(orduno) Add obstacle layer
+
+  // Define a node-level parameter
+  pair<string, string> node_dummy = {"node_dummy_param", "node_dummy_val"};
+  node_->declare_parameter(node_dummy.first, rclcpp::ParameterValue(node_dummy.second));
+
+  // Define a layer-level parameter
+  pair<string, string> layer_dummy = {"dummy_param", "dummy_val"};
+
+  // Set parameters
+  auto plugins = layers.getPlugins();
+  for_each(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+
+      // Notice we are using Layer::declareParameter
+      plugin->declareParameter(layer_param, rclcpp::ParameterValue(layer_dummy.second));
+    });
+
+  // Check that all parameters have been set
+  // node-level param
+  ASSERT_TRUE(node_->has_parameter(node_dummy.first));
+
+  // layer-level param
+  ASSERT_TRUE(
+    all_of(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+      return plugin->hasParameter(layer_param);
+    }));
+
+  // Reset all layers. This will un-declare all params and might re-declare internal ones
+  // Should run without throwing exceptions
+  ASSERT_NO_THROW(
+    for_each(begin(*plugins), end(*plugins), [](const auto & plugin) {
+      plugin->reset();
+    }));
+
+  // Check for node-level param
+  ASSERT_TRUE(node_->has_parameter(node_dummy.first));
+
+  // Layer-level parameters shouldn't be found
+  ASSERT_TRUE(
+    none_of(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      string layer_param = layer_dummy.first + "_" + plugin->getName();
+      return plugin->hasParameter(layer_param);
+    }));
 }

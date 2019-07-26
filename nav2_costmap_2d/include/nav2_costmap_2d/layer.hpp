@@ -39,24 +39,35 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
 class LayeredCostmap;
 
-class Layer
+class Layer  // TODO(mjeronimo): public nav2_util::LifecycleHelperInterface
 {
 public:
   Layer();
+  virtual ~Layer() {}
 
+  // TODO(mjeronimo): should the following functions changed to a lifecycle-style interface?
   void initialize(
-    LayeredCostmap * parent, std::string name,
-    tf2_ros::Buffer * tf, rclcpp::Node::SharedPtr node);
+    LayeredCostmap * parent,
+    std::string name,
+    tf2_ros::Buffer * tf,
+    nav2_util::LifecycleNode::SharedPtr node,
+    rclcpp::Node::SharedPtr client_node,
+    rclcpp::Node::SharedPtr rclcpp_node);
+  virtual void deactivate() {} /** @brief Stop publishers. */
+  virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
+  virtual void reset() {}
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -80,15 +91,18 @@ public:
     Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) = 0;
 
-  /** @brief Stop publishers. */
-  virtual void deactivate() {}
+  /** @brief Implement this to make this layer match the size of the parent costmap. */
+  virtual void matchSize() {}
 
-  /** @brief Restart publishers if they've been stopped. */
-  virtual void activate() {}
+  /** @brief LayeredCostmap calls this whenever the footprint there
+   * changes (via LayeredCostmap::setFootprint()).  Override to be
+   * notified of changes to the robot's footprint. */
+  virtual void onFootprintChanged() {}
 
-  virtual void reset() {}
-
-  virtual ~Layer() {}
+  std::string getName() const
+  {
+    return name_;
+  }
 
   /**
    * @brief Check to make sure all the data in the layer is up to date.
@@ -105,37 +119,37 @@ public:
     return current_;
   }
 
-  /** @brief Implement this to make this layer match the size of the parent costmap. */
-  virtual void matchSize() {}
-
-  std::string getName() const
-  {
-    return name_;
-  }
-
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
-  /** @brief LayeredCostmap calls this whenever the footprint there
-   * changes (via LayeredCostmap::setFootprint()).  Override to be
-   * notified of changes to the robot's footprint. */
-  virtual void onFootprintChanged() {}
+  /** @brief Convenience functions for declaring ROS parameters */
+  void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
+  bool hasParameter(const std::string & param_name);
+  void undeclareAllParameters();
+  std::string getFullName(const std::string & param_name);
 
 protected:
+  LayeredCostmap * layered_costmap_;
+  std::string name_;
+  tf2_ros::Buffer * tf_;
+  nav2_util::LifecycleNode::SharedPtr node_;
+  rclcpp::Node::SharedPtr client_node_;
+  rclcpp::Node::SharedPtr rclcpp_node_;
+
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
    *
-   * tf_, name_, and layered_costmap_ will all be set already when this is called. */
+   * tf_, name_, and layered_costmap_ will all be set already when this is called.
+   */
   virtual void onInitialize() {}
 
-  LayeredCostmap * layered_costmap_;
   bool current_;
   // Currently this var is managed by subclasses.
   // TODO(bpwilcox): make this managed by this class and/or container class.
   bool enabled_;
-  std::string name_;
-  tf2_ros::Buffer * tf_;
-  rclcpp::Node::SharedPtr node_;
+
+  // Names of the parameters declared on the ROS node
+  std::unordered_set<std::string> local_params_;
 
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;

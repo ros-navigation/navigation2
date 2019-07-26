@@ -31,6 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <memory>
+#include <string>
+
 #include "gtest/gtest.h"
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "dwb_plugins/stopped_goal_checker.hpp"
@@ -83,10 +87,49 @@ void trueFalse(
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
+class TestLifecycleNode : public nav2_util::LifecycleNode
+{
+public:
+  explicit TestLifecycleNode(const std::string & name)
+  : nav2_util::LifecycleNode(name)
+  {
+  }
+
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
+  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  {
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+};
 
 TEST(VelocityIterator, two_checks)
 {
-  auto x = rclcpp::Node::make_shared("goal_checker");
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
   gc.initialize(x);

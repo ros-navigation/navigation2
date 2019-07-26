@@ -4,6 +4,8 @@ add_library(${library_name} SHARED
   lifecycle_service_client.cpp
   string_utils.cpp
   lifecycle_utils.cpp
+  lifecycle_node.cpp
+  robot_utils.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -14,6 +16,7 @@ ament_target_dependencies(${library_name}
   nav_msgs
   geometry_msgs
   lifecycle_msgs
+  rclcpp_lifecycle
 )
 
 add_subdirectory(pf)
@@ -26,3 +29,11 @@ add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
 target_link_libraries(lifecycle_bringup ${library_name})
+
+install(TARGETS
+  ${library_name}
+  lifecycle_bringup
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)

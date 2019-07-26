@@ -36,8 +36,10 @@
 #define DWB_PLUGINS__SIMPLE_GOAL_CHECKER_HPP_
 
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/goal_checker.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -51,7 +53,7 @@ class SimpleGoalChecker : public dwb_core::GoalChecker
 public:
   SimpleGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
     const nav_2d_msgs::msg::Twist2D & velocity) override;

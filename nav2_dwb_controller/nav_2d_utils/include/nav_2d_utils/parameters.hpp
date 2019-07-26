@@ -37,7 +37,9 @@
 
 #include <string>
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
@@ -58,7 +60,7 @@ namespace nav_2d_utils
  */
 template<class param_t>
 param_t searchAndGetParam(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string & param_name,
+  const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & param_name,
   const param_t & default_value)
 {
   // TODO(crdelsey): Handle searchParam
@@ -84,10 +86,10 @@ param_t searchAndGetParam(
  */
 template<class param_t>
 param_t loadParameterWithDeprecation(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const nav2_util::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
-  param_t value;
+  param_t value = 0;
   if (nh->get_parameter(current_name, value)) {
     return value;
   }
@@ -108,7 +110,7 @@ param_t loadParameterWithDeprecation(
  */
 template<class param_t>
 void moveDeprecatedParameter(
-  const std::shared_ptr<rclcpp::Node> & nh, const std::string current_name,
+  const nav2_util::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name)
 {
   param_t value;
@@ -136,23 +138,20 @@ void moveDeprecatedParameter(
  */
 template<class param_t>
 void moveParameter(
-  const std::shared_ptr<rclcpp::Node> & nh, std::string old_name,
+  const nav2_util::LifecycleNode::SharedPtr & nh, std::string old_name,
   std::string current_name, param_t default_value, bool should_delete = true)
 {
   param_t value;
   if (nh->get_parameter(current_name, value)) {
-    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
-    // if (should_delete)
-    //   nh->deleteParam(old_name);
+    if (should_delete) {nh->undeclare_parameter(old_name);}
     return;
   }
   if (nh->get_parameter(old_name, value)) {
-    // TODO(crdelsey): What's the ROS 2 equivalent of deleteParam?
-    // if (should_delete) nh->deleteParam(old_name);
+    if (should_delete) {nh->undeclare_parameter(old_name);}
   } else {
     value = default_value;
   }
-  nh->set_parameters({rclcpp::Parameter(current_name, value)});
+  nh->set_parameter(rclcpp::Parameter(current_name, value));
 }
 
 

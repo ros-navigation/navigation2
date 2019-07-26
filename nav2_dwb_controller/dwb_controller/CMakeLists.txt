@@ -4,10 +4,9 @@ project(dwb_controller)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_tasks REQUIRED)
-find_package(nav2_robot REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(nav_2d_utils REQUIRED)
@@ -34,9 +33,8 @@ add_library(${library_name}
 
 set(dependencies
   rclcpp
+  rclcpp_action
   std_msgs
-  nav2_tasks
-  nav2_robot
   nav2_msgs
   dwb_core
   nav_2d_utils
@@ -51,6 +49,7 @@ ament_target_dependencies(${library_name}
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
 target_link_libraries(${executable_name} ${library_name})
 
 install(TARGETS ${executable_name} ${library_name}

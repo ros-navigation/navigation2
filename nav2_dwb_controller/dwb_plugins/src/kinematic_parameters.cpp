@@ -33,9 +33,11 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.hpp"
+
 #include <cmath>
 #include <memory>
 #include <string>
+
 #include "nav_2d_utils/parameters.hpp"
 
 using std::fabs;
@@ -44,34 +46,11 @@ using nav_2d_utils::moveDeprecatedParameter;
 namespace dwb_plugins
 {
 
-/**
- * @brief Helper function to set the deceleration to the negative acceleration if it was not already set.
- * @param nh NodeHandle
- * @param dimension String representing the dimension, used in constructing parameter names
- */
-void setDecelerationAsNeeded(const std::shared_ptr<rclcpp::Node> & nh, const std::string dimension)
-{
-  std::string decel_param = "decel_lim_" + dimension;
-  double temp;
-  if (nh->get_parameter(decel_param, temp)) {return;}
-
-  std::string accel_param = "acc_lim_" + dimension;
-  double accel;
-  if (!nh->get_parameter(accel_param, accel)) {return;}
-
-  nh->set_parameters({rclcpp::Parameter(decel_param, -accel)});
-}
-
 KinematicParameters::KinematicParameters()
-: min_vel_x_(0.0), min_vel_y_(0.0), max_vel_x_(0.0), max_vel_y_(0.0), max_vel_theta_(0.0),
-  min_speed_xy_(0.0), max_speed_xy_(0.0), min_speed_theta_(0.0),
-  acc_lim_x_(0.0), acc_lim_y_(0.0), acc_lim_theta_(0.0),
-  decel_lim_x_(0.0), decel_lim_y_(0.0), decel_lim_theta_(0.0),
-  min_speed_xy_sq_(0.0), max_speed_xy_sq_(0.0)
 {
 }
 
-void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
+void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");
@@ -79,53 +58,38 @@ void KinematicParameters::initialize(const std::shared_ptr<rclcpp::Node> & nh)
   moveDeprecatedParameter<double>(nh, "max_speed_xy", "max_trans_vel");
   moveDeprecatedParameter<double>(nh, "min_speed_theta", "min_rot_vel");
 
-  // Set the deceleration parameters to negative the acceleration if the
-  // deceleration not already specified
-  setDecelerationAsNeeded(nh, "x");
-  setDecelerationAsNeeded(nh, "y");
-  setDecelerationAsNeeded(nh, "theta");
+  nh->declare_parameter("min_vel_x", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("min_vel_y", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("max_vel_x", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("max_vel_y", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("max_vel_theta", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("min_speed_xy", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("max_speed_xy", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("min_speed_theta", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("acc_lim_x", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("acc_lim_y", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("acc_lim_theta", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("decel_lim_x", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("decel_lim_y", rclcpp::ParameterValue(0.0));
+  nh->declare_parameter("decel_lim_theta", rclcpp::ParameterValue(0.0));
 
-  dsrv_ = std::make_unique<nav2_dynamic_params::DynamicParamsClient>(nh);
-  dsrv_->add_parameters({
-      "min_vel_x",
-      "min_vel_y",
-      "max_vel_x",
-      "max_vel_y",
-      "max_vel_theta",
-      "min_speed_xy",
-      "max_speed_xy",
-      "min_speed_theta",
-      "acc_lim_x",
-      "acc_lim_y",
-      "acc_lim_theta",
-      "decel_lim_x",
-      "decel_lim_y",
-      "decel_lim_theta"
-    });
-  dsrv_->set_callback([this]() {reconfigureCB();});
-}
+  nh->get_parameter("min_vel_x", min_vel_x_);
+  nh->get_parameter("min_vel_y", min_vel_y_);
+  nh->get_parameter("max_vel_x", max_vel_x_);
+  nh->get_parameter("max_vel_y", max_vel_y_);
+  nh->get_parameter("max_vel_theta", max_vel_theta_);
+  nh->get_parameter("min_speed_xy", min_speed_xy_);
+  nh->get_parameter("max_speed_xy", max_speed_xy_);
+  nh->get_parameter("min_speed_theta", min_speed_theta_);
+  nh->get_parameter("acc_lim_x", acc_lim_x_);
+  nh->get_parameter("acc_lim_y", acc_lim_y_);
+  nh->get_parameter("acc_lim_theta", acc_lim_theta_);
+  nh->get_parameter("decel_lim_x", decel_lim_x_);
+  nh->get_parameter("decel_lim_y", decel_lim_y_);
+  nh->get_parameter("decel_lim_theta", decel_lim_theta_);
 
-#define UPDATE_PARAMETER(name) dsrv_->get_event_param_or(#name, name ## _, 0.0)
-void KinematicParameters::reconfigureCB()
-{
-  UPDATE_PARAMETER(min_vel_x);
-  UPDATE_PARAMETER(min_vel_y);
-  UPDATE_PARAMETER(max_vel_x);
-  UPDATE_PARAMETER(max_vel_y);
-  UPDATE_PARAMETER(max_vel_theta);
-
-  UPDATE_PARAMETER(min_speed_xy);
-  UPDATE_PARAMETER(max_speed_xy);
   min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
   max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
-  UPDATE_PARAMETER(min_speed_theta);
-
-  UPDATE_PARAMETER(acc_lim_x);
-  UPDATE_PARAMETER(acc_lim_y);
-  UPDATE_PARAMETER(acc_lim_theta);
-  UPDATE_PARAMETER(decel_lim_x);
-  UPDATE_PARAMETER(decel_lim_y);
-  UPDATE_PARAMETER(decel_lim_theta);
 }
 
 bool KinematicParameters::isValidSpeed(double x, double y, double theta)

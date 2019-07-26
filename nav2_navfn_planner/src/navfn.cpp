@@ -41,9 +41,13 @@
 // Path calc has sanity check that it succeeded
 //
 
+#include "nav2_navfn_planner/navfn.hpp"
+
 #include <algorithm>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_navfn_planner/navfn.hpp"
+
+namespace nav2_navfn_planner
+{
 
 //
 // function to perform nav fn calculation
@@ -1035,3 +1039,5 @@ NavFn::savemap(const char * fname)
   fwrite(costarr, 1, nx * ny, fp);
   fclose(fp);
 }
+
+}  // namespace nav2_navfn_planner

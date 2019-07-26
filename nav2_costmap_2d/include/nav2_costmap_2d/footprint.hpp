@@ -46,6 +46,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -127,19 +128,6 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius);
 bool makeFootprintFromString(
   const std::string & footprint_string,
   std::vector<geometry_msgs::msg::Point> & footprint);
-
-/**
- * @brief Read the ros-params "footprint" and/or "robot_radius" from
- * the given NodeHandle using searchParam() to go up the tree.
- */
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(rclcpp::Node::SharedPtr node);
-
-/** @brief Write the current unpadded_footprint_ to the "footprint"
- * parameter of the given NodeHandle so that dynamic_reconfigure
- * will see the new value. */
-void writeFootprintToParam(
-  rclcpp::Node::SharedPtr node,
-  const std::vector<geometry_msgs::msg::Point> & footprint);
 
 }  // end namespace nav2_costmap_2d
 

@@ -56,7 +56,7 @@ Most work will be done in the `navigation2` workspace, so just building that wil
 To build just `navigation2`,
 ```sh
 cd <directory_for_workspaces>/navigation2_ws
-source ../navstack_dependencies_ws/install/setup.sh
+source ../ros2_nav_dependencies_ws/install/setup.sh
 colcon build --symlink-install
 ```
 
@@ -75,6 +75,6 @@ Instead, it would be better to do an initial download of all the source and depe
 Then the CI tool can monitor the `navigation2` repo, update it as necessary, and rebuild using either the `<directory_for_workspaces>/navigation2_ws/src/navigation2/tools/build_all.sh` script or by running
 ```sh
 cd <directory_for_workspaces>/navigation2_ws/src/navigation2
-source ../navstack_dependencies_ws/install/setup.sh
+source ../ros2_nav_dependencies_ws/install/setup.sh
 colcon build --symlink-install
 ```

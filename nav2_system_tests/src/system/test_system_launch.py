@@ -19,6 +19,7 @@ import sys
 
 
 from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
 import launch.actions
@@ -30,23 +31,19 @@ def generate_launch_description():
     use_sim_time = True
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
-    params_file = os.getenv('TEST_PARAMS')
+    bringup_package = get_package_share_directory('nav2_bringup')
+    params_file = os.path.join(bringup_package, 'launch/nav2_params.yaml')
     astar = (os.getenv('ASTAR').lower() == 'true')
     bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))
-    navigator_action = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}])
 
     return LaunchDescription([
         # Launch gazebo server for simulation
         launch.actions.ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+                 '--minimal_comms', world],
             output='screen'),
 
         # Launch navigation2 nodes
@@ -80,7 +77,7 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}]),
+            parameters=[params_file]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
@@ -95,7 +92,29 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 
-        navigator_action,
+        launch_ros.actions.Node(
+            package='nav2_recoveries',
+            node_executable='recoveries_node',
+            node_name='recoveries',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}]),
+
+        launch_ros.actions.Node(
+            package='nav2_bt_navigator',
+            node_executable='bt_navigator',
+            node_name='bt_navigator',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}]),
+
+        launch_ros.actions.Node(
+            package='nav2_lifecycle_manager',
+            node_executable='lifecycle_manager',
+            node_name='lifecycle_manager',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time},
+                        {'node_names': ['map_server', 'amcl', 'world_model',
+                         'dwb_controller', 'navfn_planner', 'bt_navigator']},
+                        {'autostart': True}]),
     ])
 
 

@@ -12,6 +12,9 @@ find_package(SDL_image REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(test_msgs REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 
 nav2_package()
 
@@ -19,19 +22,6 @@ include_directories(include)
 
 set(library_name ${PROJECT_NAME}_core)
 add_subdirectory(src)
-
-install(TARGETS
-  ${library_name}
-  map_lib
-  pf_lib
-  sensors_lib
-  motions_lib
-  map_loader
-  lifecycle_bringup
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
 
 install(DIRECTORY include/
   DESTINATION include/

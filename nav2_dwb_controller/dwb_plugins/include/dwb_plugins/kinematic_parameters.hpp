@@ -36,21 +36,22 @@
 #define DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
 
 #include <memory>
+
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_dynamic_params/dynamic_params_client.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
 
 /**
  * @class KinematicParameters
- * @brief A dynamically reconfigurable class containing one representation of the robot's kinematics
+ * @brief A class containing one representation of the robot's kinematics
  */
 class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const std::shared_ptr<rclcpp::Node> & nh);
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh);
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}
@@ -92,20 +93,26 @@ public:
 
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
-  double min_vel_x_, min_vel_y_;
-  double max_vel_x_, max_vel_y_, max_vel_theta_;
-
-  double min_speed_xy_, max_speed_xy_;
-  double min_speed_theta_;
-
-  double acc_lim_x_, acc_lim_y_, acc_lim_theta_;
-  double decel_lim_x_, decel_lim_y_, decel_lim_theta_;
+  double min_vel_x_{0};
+  double min_vel_y_{0};
+  double max_vel_x_{0};
+  double max_vel_y_{0};
+  double max_vel_theta_{0};
+  double min_speed_xy_{0};
+  double max_speed_xy_{0};
+  double min_speed_theta_{0};
+  double acc_lim_x_{0};
+  double acc_lim_y_{0};
+  double acc_lim_theta_{0};
+  double decel_lim_x_{0};
+  double decel_lim_y_{0};
+  double decel_lim_theta_{0};
 
   // Cached square values of min_speed_xy and max_speed_xy
-  double min_speed_xy_sq_, max_speed_xy_sq_;
+  double min_speed_xy_sq_{0};
+  double max_speed_xy_sq_{0};
 
   void reconfigureCB();
-  std::unique_ptr<nav2_dynamic_params::DynamicParamsClient> dsrv_;
 };
 
 }  // namespace dwb_plugins
