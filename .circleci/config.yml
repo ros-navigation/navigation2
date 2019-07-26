@@ -4,7 +4,8 @@ references:
     run:
         name: Pre Checkout
         command: |
-          awk '{print "cache_nonce "$CIRCLE_CACHE_NONCE}' > /opt/ros/$ROS_DISTRO/checksum.txt
+          echo $CIRCLE_CACHE_NONCE | \
+            awk '{print "cache_nonce "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
           stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
             sha256sum | \
             awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
