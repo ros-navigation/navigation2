@@ -129,7 +129,7 @@ references:
   store_build_logs: &store_build_logs
     store_artifacts:
         path: log/build
-  test_build: &test_build
+  source_test: &source_test
     run:
         name: Test Build
         command: |
@@ -180,10 +180,20 @@ commands:
       - *save_build_cache
       - *copy_build_logs
       - *store_build_logs
-  test_source:
-    description: "Test Source"
+  restor_build:
+    description: "Restore Build"
     steps:
-      - *test_build
+      - *pre_checkout
+      - checkout:
+          path: src/navigation2
+      - *post_checkout
+      - *restore_upstream_cache
+      - *install_dependencies
+      - *restore_build_cache
+  test_build:
+    description: "Test Build"
+    steps:
+      - *source_test
       - *copy_test_logs
       - *store_test_logs
   report_coverage:
@@ -209,7 +219,7 @@ jobs:
       - checkout_source
       - setup_upstream
       - build_source
-      - test_source
+      - test_build
       - report_coverage
   release_build:
     executor: docker_exec
@@ -220,45 +230,46 @@ jobs:
       - checkout_source
       - setup_upstream
       - build_source
-      - test_source
   test_rmw_connext_cpp:
     executor: docker_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_connext_cpp"
       COVERAGE_ENABLED: "False"
     steps:
-      - test_source
+      - restore_build
+      - test_build
   test_rmw_fastrtps_cpp:
     executor: docker_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
       COVERAGE_ENABLED: "False"
     steps:
-      - test_source
+      - restore_build
+      - test_build
   test_rmw_opensplice_cpp:
     executor: docker_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
       COVERAGE_ENABLED: "False"
     steps:
-      - test_source
+      - restore_build
+      - test_build
 
 workflows:
   version: 2
   build-test:
     jobs:
+      # - debug_build
+      - release_build
       - test_rmw_connext_cpp:
-          filters:
-            branches:
-              only: master
+          requires:
+            - release_build
       - test_rmw_fastrtps_cpp:
-          filters:
-            branches:
-              only: master
+          requires:
+            - release_build
       - test_rmw_opensplice_cpp:
-          filters:
-            branches:
-              only: master
+          requires:
+            - release_build
   # nightly:
   #   triggers:
   #     - schedule:
