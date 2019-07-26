@@ -187,6 +187,7 @@ commands:
       - checkout:
           path: src/navigation2
       - *post_checkout
+      - *install_upstream
       - *restore_upstream_cache
       - *install_dependencies
       - *restore_build_cache
