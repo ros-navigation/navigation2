@@ -194,7 +194,7 @@ commands:
 executors:
   docker_exec:
     docker:
-      - image: rosplanning/navigation2:master
+      - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
       MAKEFLAGS: "-j 1 -l 1"
