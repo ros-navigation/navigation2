@@ -41,11 +41,10 @@ protected:
   double min_rotational_vel_;
   double max_rotational_vel_;
   double rotational_acc_lim_;
-  double goal_tolerance_angle_;
-
-  geometry_msgs::msg::Pose initial_pose_;
-  double start_yaw_;
-  double command_yaw_;
+  double cmd_yaw_;
+  double prev_yaw_;
+  double delta_yaw_;
+  double relative_yaw_;
 };
 
 }  // namespace nav2_recoveries

@@ -38,11 +38,7 @@ public:
 
   void on_init() override
   {
-    // TODO(orduno) #423 Fixed spin angle
-    // Rotate 90deg CCW
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, M_PI / 2);  // yaw, pitch and roll are rotation in z, y, x respectively
-    goal_.target.quaternion = tf2::toMsg(quaternion);
+    goal_.target_yaw = M_PI / 2;
   }
 };
 
