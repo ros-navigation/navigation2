@@ -247,21 +247,18 @@ workflows:
   version: 2
   build-test:
     jobs:
-      - debug_build
-        filters:
-          branches:
-            only:
-              - master
-      - release_build
-        filters:
-          branches:
-            only:
-              - master
-      - release_build
-        filters:
-          branches:
-            only:
-              - master
+      - test_rmw_connext_cpp
+          filters:
+            branches:
+              only: master
+      - test_rmw_fastrtps_cpp
+          filters:
+            branches:
+              only: master
+      - test_rmw_opensplice_cpp
+          filters:
+            branches:
+              only: master
   # nightly:
   #   triggers:
   #     - schedule:
