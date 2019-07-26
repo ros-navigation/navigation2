@@ -247,15 +247,15 @@ workflows:
   version: 2
   build-test:
     jobs:
-      - test_rmw_connext_cpp
+      - test_rmw_connext_cpp:
           filters:
             branches:
               only: master
-      - test_rmw_fastrtps_cpp
+      - test_rmw_fastrtps_cpp:
           filters:
             branches:
               only: master
-      - test_rmw_opensplice_cpp
+      - test_rmw_opensplice_cpp:
           filters:
             branches:
               only: master
