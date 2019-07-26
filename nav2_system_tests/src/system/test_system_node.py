@@ -30,11 +30,11 @@ class NavTester(Node):
     def __init__(self):
         super().__init__('nav2_tester')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      '/initialpose')
-        self.goal_pub = self.create_publisher(PoseStamped, '/move_base_simple/goal')
+                                                      '/initialpose', 10)
+        self.goal_pub = self.create_publisher(PoseStamped, '/move_base_simple/goal', 10)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       '/amcl_pose', self.poseCallback)
+                                                       '/amcl_pose', self.poseCallback, 10)
         self.initial_pose_received = False
 
     def setInitialPose(self, pose):
