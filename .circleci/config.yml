@@ -4,9 +4,10 @@ references:
     run:
         name: Pre Checkout
         command: |
+          awk '{print "cache_nonce "$CIRCLE_CACHE_NONCE}' > /opt/ros/$ROS_DISTRO/checksum.txt
           stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
             sha256sum | \
-            awk '{print "distro "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
+            awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
           cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
           rm -rf $NAV2_WS/*
   post_checkout: &post_checkout
@@ -203,19 +204,28 @@ commands:
       - *report_code_coverage
 
 executors:
-  docker_exec:
+  debug_exec:
+    docker:
+      - image: rosplanning/navigation2:master
+    working_directory: /opt/nav2_ws
+    environment:
+      CIRCLE_CACHE_NONCE: "Debug"
+      CMAKE_BUILD_TYPE: "Debug"
+      COVERAGE_ENABLED: "True"
+      MAKEFLAGS: "-j 1 -l 2"
+  release_exec:
     docker:
       - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
+      CIRCLE_CACHE_NONCE: "Release"
+      CMAKE_BUILD_TYPE: "Release"
+      COVERAGE_ENABLED: "False"
       MAKEFLAGS: "-j 1 -l 2"
 
 jobs:
   debug_build:
-    executor: docker_exec
-    environment:
-      CMAKE_BUILD_TYPE: "Debug"
-      COVERAGE_ENABLED: "True"
+    executor: debug_exec
     steps:
       - checkout_source
       - setup_upstream
@@ -223,35 +233,29 @@ jobs:
       - test_build
       - report_coverage
   release_build:
-    executor: docker_exec
-    environment:
-      CMAKE_BUILD_TYPE: "Release"
-      COVERAGE_ENABLED: "False"
+    executor: release_exec
     steps:
       - checkout_source
       - setup_upstream
       - build_source
   test_rmw_connext_cpp:
-    executor: docker_exec
+    executor: release_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_connext_cpp"
-      COVERAGE_ENABLED: "False"
     steps:
       - restore_build
       - test_build
   test_rmw_fastrtps_cpp:
-    executor: docker_exec
+    executor: release_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-      COVERAGE_ENABLED: "False"
     steps:
       - restore_build
       - test_build
   test_rmw_opensplice_cpp:
-    executor: docker_exec
+    executor: release_exec
     environment:
       RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
-      COVERAGE_ENABLED: "False"
     steps:
       - restore_build
       - test_build
@@ -260,7 +264,7 @@ workflows:
   version: 2
   build-test:
     jobs:
-      # - debug_build
+      - debug_build
       - release_build
       - test_rmw_connext_cpp:
           requires:
