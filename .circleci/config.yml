@@ -180,7 +180,7 @@ commands:
       - *save_build_cache
       - *copy_build_logs
       - *store_build_logs
-  restor_build:
+  restore_build:
     description: "Restore Build"
     steps:
       - *pre_checkout
