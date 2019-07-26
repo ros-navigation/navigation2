@@ -207,7 +207,7 @@ executors:
       - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
-      MAKEFLAGS: "-j 1 -l 1"
+      # MAKEFLAGS: "-j 1 -l 1"
 
 jobs:
   debug_build:
