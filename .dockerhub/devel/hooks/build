@@ -1,0 +1,7 @@
+#!/bin/bash
+ROS_DISTRO=${SOURCE_BRANCH%"-devel"}
+FROM_IMAGE=ros:${ROS_DISTRO}
+docker build \
+    --tag ${DOCKER_REPO}:${SOURCE_BRANCH} \
+    --build-arg FROM_IMAGE \
+    --file ${DOCKERFILE_PATH} ../../.

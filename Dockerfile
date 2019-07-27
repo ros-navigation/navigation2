@@ -3,7 +3,8 @@
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
 # docker build -t nav2:latest --build-arg CMAKE_BUILD_TYPE ./
-FROM osrf/ros2:nightly
+ARG FROM_IMAGE=osrf/ros2:nightly
+FROM $FROM_IMAGE
 
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
