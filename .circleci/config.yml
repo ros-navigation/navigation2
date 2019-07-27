@@ -207,7 +207,7 @@ commands:
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:master
+      - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
       CIRCLE_CACHE_NONCE: "Debug"
@@ -216,7 +216,7 @@ executors:
       MAKEFLAGS: "-j 1 -l 2"
   release_exec:
     docker:
-      - image: ruffsl/navigation2:master
+      - image: ruffsl/navigation2:master-rmw
     working_directory: /opt/nav2_ws
     environment:
       CIRCLE_CACHE_NONCE: "Release"
