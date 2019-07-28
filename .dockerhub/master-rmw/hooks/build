@@ -1,7 +1,0 @@
-#!/bin/bash
-FROM_TAG=nightly-rmw
-FROM_IMAGE=osrf/ros2:$FROM_TAG
-docker build \
-    --tag ${DOCKER_REPO}:${SOURCE_BRANCH} \
-    --build-arg FROM_IMAGE \
-    --file ${DOCKERFILE_PATH} ../../.

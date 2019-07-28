@@ -1,6 +1,5 @@
 #!/bin/bash
-ROS_DISTRO=${SOURCE_BRANCH%"-devel"}
-FROM_IMAGE=ros:${ROS_DISTRO}
+FROM_IMAGE=osrf/ros2:nightly-rmw
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
