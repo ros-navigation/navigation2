@@ -50,14 +50,12 @@ fi
 # Build our ROS 2 dependencies
 cd $CWD/ros2_nav_dependencies_ws
 export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
-rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
 (. $ROS2_SETUP_FILE &&
  colcon build --symlink-install)
 
 # Build our code
 cd $CWD/navigation2_ws
 export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
-rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO
 (. $ROS2_SETUP_FILE && . $CWD/ros2_nav_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
 

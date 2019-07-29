@@ -48,7 +48,9 @@ download_navstack() {
   else
     cd src
     git clone https://github.com/ros-planning/navigation2.git
+    cd ../
   fi
+  rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
   return_to_root_dir
 }
 
@@ -58,6 +60,7 @@ download_ros2() {
   cd ros2_ws
   wget https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
   vcs import src < ros2.repos
+  rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
   return_to_root_dir
 }
 
@@ -66,6 +69,7 @@ download_ros2_dependencies() {
   mkdir -p ros2_nav_dependencies_ws/src
   cd ros2_nav_dependencies_ws
   vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+  rosdep install -y -r -q --from-paths src --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
   return_to_root_dir
 }
 
@@ -81,11 +85,11 @@ checkpoint() {
 }
 
 download_all() {
-  checkpoint download_navstack
-  checkpoint download_ros2_dependencies
   if [ "$ENABLE_ROS2" = true ]; then
     checkpoint download_ros2
   fi
+  checkpoint download_ros2_dependencies
+  checkpoint download_navstack
 }
 
 echo "This script will download the ROS 2 latest release workspace, the"
