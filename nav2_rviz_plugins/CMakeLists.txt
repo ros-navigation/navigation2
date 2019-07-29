@@ -19,7 +19,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
@@ -56,9 +55,8 @@ set(dependencies
   nav2_util
   nav2_lifecycle_manager
   nav2_msgs
-  nav2_msgs
   nav_msgs
-  pluginglib
+  pluginlib
   Qt5
   rclcpp
   rclcpp_lifecycle

@@ -34,7 +34,7 @@ class NavigationDialog : public QDialog
 public:
   explicit NavigationDialog(QWidget * parent = 0);
 
-  void startNavigation(double x, double y, double theta, std::string & frame);
+  bool startNavigation(double x, double y, double theta, std::string & frame);
 
 protected:
   void timerEvent(QTimerEvent * event);
@@ -46,6 +46,8 @@ private slots:
 private:
   using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
 
+  // time out for wait_for_action_server and send goal (seconds)
+  int timeout = 3;
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
