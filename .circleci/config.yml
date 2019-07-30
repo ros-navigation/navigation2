@@ -187,17 +187,17 @@ commands:
       - checkout:
           path: src/navigation2
       - *post_checkout
-  setup_underlay:
-    description: "Setup Underlay"
+  setup_dependencies:
+    description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
       - *restore_underlay_cache
       - *build_underlay
       - *save_underlay_cache
+      - *install_overlay_dependencies
   build_source:
     description: "Build Source"
     steps:
-      - *install_overlay_dependencies
       - *store_overlay_checksum
       - *restore_overlay_ccache
       - *restore_overlay_cache
@@ -217,6 +217,7 @@ commands:
       - *install_underlay_dependencies
       - *restore_underlay_cache
       - *install_overlay_dependencies
+      - *store_overlay_checksum
       - *restore_overlay_cache
   test_build:
     description: "Test Build"
@@ -256,7 +257,7 @@ jobs:
     executor: debug_exec
     steps:
       - checkout_source
-      - setup_underlay
+      - setup_dependencies
       - build_source
       - test_build
       - report_coverage
@@ -264,7 +265,7 @@ jobs:
     executor: release_exec
     steps:
       - checkout_source
-      - setup_underlay
+      - setup_dependencies
       - build_source
   test_rmw_connext_cpp:
     executor: release_exec
