@@ -39,7 +39,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
       --cmake-args \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+        -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
 # install overlay package dependencies
 WORKDIR $NAV2_WS

@@ -48,6 +48,10 @@ references:
           dpkg -s $dependencies | \
             sha256sum | \
             awk '{print "underlay dependencies "$1}' >> $ROS_WS/checksum.txt
+  restore_ccache: &restore_ccache
+    restore_cache:
+      name: Restore CCache
+      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
   restore_underlay_cache: &restore_underlay_cache
     restore_cache:
       name: Restore Underlay Cache
@@ -65,7 +69,9 @@ references:
             colcon build \
               --symlink-install \
               --cmake-args \
-                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         fi
   save_underlay_cache: &save_underlay_cache
     save_cache:
@@ -100,10 +106,6 @@ references:
   store_overlay_checksum: &store_overlay_checksum
     store_artifacts:
         path: checksum.txt
-  restore_overlay_ccache: &restore_overlay_ccache
-    restore_cache:
-      name: Restore Overlay CCache
-      key: overlay-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
   restore_overlay_cache: &restore_overlay_cache
     restore_cache:
       name: Restore Overlay Cache
@@ -126,10 +128,10 @@ references:
                 -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
             touch build_failed
         fi
-  save_overlay_ccache: &save_overlay_ccache
+  save_ccache: &save_ccache
     save_cache:
-      name: Save Overlay CCache
-      key: overlay-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      name: Save CCache
+      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /root/.ccache
   check_overlay_build: &check_overlay_build
@@ -191,6 +193,7 @@ commands:
     description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
+      - *restore_ccache
       - *restore_underlay_cache
       - *build_underlay
       - *save_underlay_cache
@@ -199,10 +202,9 @@ commands:
     description: "Build Source"
     steps:
       - *store_overlay_checksum
-      - *restore_overlay_ccache
       - *restore_overlay_cache
       - *build_overlay
-      - *save_overlay_ccache
+      - *save_ccache
       - *check_overlay_build
       - *save_overlay_cache
       - *copy_build_logs
