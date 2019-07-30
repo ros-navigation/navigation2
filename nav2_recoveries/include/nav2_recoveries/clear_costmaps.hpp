@@ -57,12 +57,3 @@ protected:
 }  // namespace nav2_recoveries
 
 #endif  // NAV2_RECOVERIES__CLEAR_COSTMAPS_HPP_
-
-// 1 clear costmaps recovery - inprog
-// 1.5 bt service nodes- inprog
-// 2 clear costmaps service- inprog
-// 2.5 remove clearcostmaps client from behaviortree- inprog
-// 3 kill clearcostmapsclient- inprog
-
-// 4 pluginlib service/action nodes so no *_action.hpp templates
-//   - in BT define parameters for type, name, extra params sp to each
