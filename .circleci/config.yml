@@ -125,8 +125,7 @@ references:
                 -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
-            touch build_failed
+                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
         fi
   save_ccache: &save_ccache
     save_cache:
@@ -134,13 +133,7 @@ references:
       key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /root/.ccache
-  check_overlay_build: &check_overlay_build
-    run:
-      name: Check Overlay Build
-      command: |
-        if [ -f build_failed ]; then
-          exit 1
-        fi
+      when: always
   save_overlay_cache: &save_overlay_cache
     save_cache:
       name: Save Overlay Cache
@@ -205,7 +198,6 @@ commands:
       - *restore_overlay_cache
       - *build_overlay
       - *save_ccache
-      - *check_overlay_build
       - *save_overlay_cache
       - *copy_build_logs
       - *store_build_logs
