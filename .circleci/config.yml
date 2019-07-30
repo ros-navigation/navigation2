@@ -100,6 +100,10 @@ references:
   store_build_checksum: &store_build_checksum
     store_artifacts:
         path: checksum.txt
+  restore_build_ccache: &restore_build_ccache
+    restore_cache:
+      name: Restore Build CCache
+      key: build-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
   restore_build_cache: &restore_build_cache
     restore_cache:
       name: Restore Build Cache
@@ -117,7 +121,23 @@ references:
               --symlink-install \
               --cmake-args \
                 -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
+            touch build_failed
+        fi
+  save_build_ccache: &save_build_ccache
+    save_cache:
+      name: Save Build CCache
+      key: build-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      paths:
+        - /root/.ccache
+  source_build_check: &source_build_check
+    run:
+      name: Source Build Check
+      command: |
+        if [ -f build_failed ]; then
+          exit 1
         fi
   save_build_cache: &save_build_cache
     save_cache:
@@ -179,8 +199,11 @@ commands:
     steps:
       - *install_dependencies
       - *store_build_checksum
+      - *restore_build_ccache
       - *restore_build_cache
       - *source_build
+      - *save_build_ccache
+      - *source_build_check
       - *save_build_cache
       - *copy_build_logs
       - *store_build_logs
@@ -212,6 +235,7 @@ executors:
       - image: ruffsl/navigation2:master
     working_directory: /opt/nav2_ws
     environment:
+      CCACHE_MAXSIZE: "200M"
       CIRCLE_CACHE_NONCE: "Debug"
       CMAKE_BUILD_TYPE: "Debug"
       COVERAGE_ENABLED: "True"
@@ -221,6 +245,7 @@ executors:
       - image: ruffsl/navigation2:master-rmw
     working_directory: /opt/nav2_ws
     environment:
+      CCACHE_MAXSIZE: "200M"
       CIRCLE_CACHE_NONCE: "Release"
       CMAKE_BUILD_TYPE: "Release"
       COVERAGE_ENABLED: "False"
