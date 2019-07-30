@@ -20,21 +20,21 @@ references:
             $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos \
             $ROS_WS/ros2_dependencies.repos >/dev/null 2>&1
           then
-            echo "Cleaning Upstream"
+            echo "Cleaning Underlay"
             rm -rf $ROS_WS/*
             mkdir -p $ROS_WS/src
             vcs import $ROS_WS/src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
           fi
-  install_upstream: &install_upstream
+  install_underlay_dependencies: &install_underlay_dependencies
     run:
-        name: Install Upstream
+        name: Install Underlay Dependencies
         command: |
           cat /opt/ros/$ROS_DISTRO/checksum.txt > $ROS_WS/checksum.txt
           find $ROS_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
             sort -k 2 | \
             cut -d" " -f1 | \
             sha256sum | \
-            awk '{print "upstream source "$1}' >> $ROS_WS/checksum.txt
+            awk '{print "underlay source "$1}' >> $ROS_WS/checksum.txt
           apt-get update
           dependencies=$(
             rosdep install -q -y \
@@ -47,19 +47,19 @@ references:
             tr -d \, | xargs -n1 | sort -u | xargs)
           dpkg -s $dependencies | \
             sha256sum | \
-            awk '{print "upstream dependencies "$1}' >> $ROS_WS/checksum.txt
-  restore_upstream_cache: &restore_upstream_cache
+            awk '{print "underlay dependencies "$1}' >> $ROS_WS/checksum.txt
+  restore_underlay_cache: &restore_underlay_cache
     restore_cache:
-      name: Restore Upstream Cache
-      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
-  build_upstream: &build_upstream
+      name: Restore Underlay Cache
+      key: underlay-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+  build_underlay: &build_underlay
     run:
-      name: Build Upstream
+      name: Build Underlay
       command: |
         cd $ROS_WS
         if [ -d install ]
         then
-            echo "Skipping Build Upstream"
+            echo "Skipping Underlay Build"
         else
             . /opt/ros/$ROS_DISTRO/setup.sh
             colcon build \
@@ -67,15 +67,15 @@ references:
               --cmake-args \
                 -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
         fi
-  save_upstream_cache: &save_upstream_cache
+  save_underlay_cache: &save_underlay_cache
     save_cache:
-      name: Save Upstream Cache
-      key: upstream-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      name: Save Underlay Cache
+      key: underlay-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /opt/ros_ws
-  install_dependencies: &install_dependencies
+  install_overlay_dependencies: &install_overlay_dependencies
     run:
-        name: Install Dependencies
+        name: Install Overlay Dependencies
         command: |
           cat $ROS_WS/checksum.txt > $NAV2_WS/checksum.txt
           find $NAV2_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
@@ -97,24 +97,24 @@ references:
           dpkg -s $dependencies | \
             sha256sum | \
             awk '{print "dependencies "$1}' >> $NAV2_WS/checksum.txt
-  store_build_checksum: &store_build_checksum
+  store_overlay_checksum: &store_overlay_checksum
     store_artifacts:
         path: checksum.txt
-  restore_build_ccache: &restore_build_ccache
+  restore_overlay_ccache: &restore_overlay_ccache
     restore_cache:
-      name: Restore Build CCache
-      key: build-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
-  restore_build_cache: &restore_build_cache
+      name: Restore Overlay CCache
+      key: overlay-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+  restore_overlay_cache: &restore_overlay_cache
     restore_cache:
-      name: Restore Build Cache
-      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
-  source_build: &source_build
+      name: Restore Overlay Cache
+      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+  build_overlay: &build_overlay
     run:
-      name: Source Build
+      name: Build Overlay
       command: |
         if [ -d install ]
         then
-            echo "Skipping Source Build"
+            echo "Skipping Overlay Build"
         else
             . $ROS_WS/install/setup.sh
             colcon build \
@@ -126,23 +126,23 @@ references:
                 -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
             touch build_failed
         fi
-  save_build_ccache: &save_build_ccache
+  save_overlay_ccache: &save_overlay_ccache
     save_cache:
-      name: Save Build CCache
-      key: build-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      name: Save Overlay CCache
+      key: overlay-ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /root/.ccache
-  source_build_check: &source_build_check
+  check_overlay_build: &check_overlay_build
     run:
-      name: Source Build Check
+      name: Check Overlay Build
       command: |
         if [ -f build_failed ]; then
           exit 1
         fi
-  save_build_cache: &save_build_cache
+  save_overlay_cache: &save_overlay_cache
     save_cache:
-      name: Save Build Cache
-      key: build-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      name: Save Overlay Cache
+      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
       paths:
         - /opt/nav2_ws
   copy_build_logs: &copy_build_logs
@@ -153,9 +153,9 @@ references:
   store_build_logs: &store_build_logs
     store_artifacts:
         path: log/build
-  source_test: &source_test
+  test_overlay: &test_overlay
     run:
-        name: Test Build
+        name: Test Overlay
         command: |
           . install/setup.sh
           src/navigation2/tools/run_test_suite.bash
@@ -187,24 +187,24 @@ commands:
       - checkout:
           path: src/navigation2
       - *post_checkout
-  setup_upstream:
-    description: "Setup Upstream"
+  setup_underlay:
+    description: "Setup Underlay"
     steps:
-      - *install_upstream
-      - *restore_upstream_cache
-      - *build_upstream
-      - *save_upstream_cache
+      - *install_underlay_dependencies
+      - *restore_underlay_cache
+      - *build_underlay
+      - *save_underlay_cache
   build_source:
     description: "Build Source"
     steps:
-      - *install_dependencies
-      - *store_build_checksum
-      - *restore_build_ccache
-      - *restore_build_cache
-      - *source_build
-      - *save_build_ccache
-      - *source_build_check
-      - *save_build_cache
+      - *install_overlay_dependencies
+      - *store_overlay_checksum
+      - *restore_overlay_ccache
+      - *restore_overlay_cache
+      - *build_overlay
+      - *save_overlay_ccache
+      - *check_overlay_build
+      - *save_overlay_cache
       - *copy_build_logs
       - *store_build_logs
   restore_build:
@@ -214,14 +214,14 @@ commands:
       - checkout:
           path: src/navigation2
       - *post_checkout
-      - *install_upstream
-      - *restore_upstream_cache
-      - *install_dependencies
-      - *restore_build_cache
+      - *install_underlay_dependencies
+      - *restore_underlay_cache
+      - *install_overlay_dependencies
+      - *restore_overlay_cache
   test_build:
     description: "Test Build"
     steps:
-      - *source_test
+      - *test_overlay
       - *copy_test_logs
       - *store_test_logs
   report_coverage:
@@ -256,7 +256,7 @@ jobs:
     executor: debug_exec
     steps:
       - checkout_source
-      - setup_upstream
+      - setup_underlay
       - build_source
       - test_build
       - report_coverage
@@ -264,7 +264,7 @@ jobs:
     executor: release_exec
     steps:
       - checkout_source
-      - setup_upstream
+      - setup_underlay
       - build_source
   test_rmw_connext_cpp:
     executor: release_exec
