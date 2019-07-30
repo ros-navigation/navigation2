@@ -24,6 +24,7 @@ from rclpy.node import Node
 from time import sleep
 import parameters
 
+
 def trainModel(env, action_size):
     state = env.reset()
     observation_space = len(state)
@@ -38,9 +39,9 @@ def trainModel(env, action_size):
         done = False
         agent.step += 1
         while not done and rclpy.ok():
-            #agent.step += 1
+            #  agent.step += 1
             target_model_update_counter += 1
-            if target_model_update_counter%parameters.TARGET_MODEL_UPDATE_STEP == 0:
+            if target_model_update_counter % parameters.TARGET_MODEL_UPDATE_STEP == 0:
                 agent.save_load_model_weights()
                 target_model_update_counter = 0
             action = agent.get_action(state)
@@ -48,20 +49,19 @@ def trainModel(env, action_size):
             next_state = np.reshape(next_state, [1, observation_space])
             agent.save_to_memory(state, action, reward, next_state, done)
             state = next_state
-            #sleep(parameters.LOOP_RATE)
+            #  sleep(parameters.LOOP_RATE)
             if not done:
-                #print('exp replay') 
                 env.stop_action()
                 agent.experience_replay()
-                #print('done exp replay')
-            #sleep(parameters.LOOP_RATE)
+            #  sleep(parameters.LOOP_RATE)
         agent.model.save('navigator_model.h5')
+
 
 def main(args=None):
     rclpy.init(args=args)
     env = TurtlebotEnv()
     action_size = env.action_space()
-    
+
     # Ctrl-C doesn't make rclpy.ok() to return false. Thus, we catch the exception with
     # `finally` to shutdown ros and terminate the background thread cleanly.
     try:
@@ -76,4 +76,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-

@@ -22,12 +22,13 @@ import parameters
 from time import sleep
 from keras.models import load_model
 
+
 def loadModel(env):
     state = env.reset()
     observation_space = len(state)
     state = np.reshape(state, [1, observation_space])
     pkg_share_directory = get_package_share_directory('nav2_turtlebot3_rl')
-    path = os.path.join(pkg_share_directory,"saved_models/navigator_model.h5")
+    path = os.path.join(pkg_share_directory, "saved_models/navigator_model.h5")
     model = load_model(path)
     while rclpy.ok():
         q_values = model.predict(state)
@@ -35,13 +36,14 @@ def loadModel(env):
         next_state, reward, terminal = env.step(action)
         next_state = np.reshape(next_state, [1, observation_space])
         state = next_state
-        sleep(parameters.LOOP_RATE)
+        #  sleep(parameters.LOOP_RATE)
+
 
 def main(args=None):
     rclpy.init(args=args)
     env = TurtlebotEnv()
     action_size = env.action_space()
-    
+
     # Ctrl-C doesn't make rclpy.ok() to return false. Thus, we catch the exception with
     # `finally` to shutdown ros and terminate the background thread cleanly.
     try:

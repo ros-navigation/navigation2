@@ -23,6 +23,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.models import load_model
 
+
 class DQN:
     def __init__(self, observation_space, action_size):
         self.action_size = action_size
@@ -41,16 +42,17 @@ class DQN:
             self.model.add(Dense(6, activation="relu"))
             self.model.add(Dense(self.action_size, activation="linear"))
             self.model.compile(loss="mse", optimizer=Adam(lr=parameters.LEARNING_RATE))
+            print(self.model.summary())
 
     def save_to_memory(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-   
+
     def get_linear_decay_epsilon(self, step):
         if step <= parameters.EXPLORATION_TARGET_STEP:
-            epsilon = parameters.EXPLORATION_MAX - step * ((parameters.EXPLORATION_MAX -\
-                parameters.EXPLORATION_MIN)/parameters.EXPLORATION_TARGET_STEP)
+            epsilon = parameters.EXPLORATION_MAX - step * ((parameters.EXPLORATION_MAX -
+                      parameters.EXPLORATION_MIN) / parameters.EXPLORATION_TARGET_STEP)
         else:
-           epsilon = parameters.EXPLORATION_MIN
+            epsilon = parameters.EXPLORATION_MIN
         return epsilon
 
     def get_action(self, state):
@@ -60,7 +62,7 @@ class DQN:
             action = random.randrange(self.action_size)
             return action
         # Exploit
-        q_values = self.model.predict(state,batch_size=1)
+        q_values = self.model.predict(state, batch_size=1)
         action = np.argmax(q_values)
         return action
 
@@ -71,11 +73,11 @@ class DQN:
         mini_batch = random.sample(self.memory, parameters.BATCH_SIZE)
         for state, action, reward, next_state, done in mini_batch:
             q_target = reward if done else reward +\
-                parameters.GAMMA * np.amax(self.target_model.predict(next_state,batch_size=1))
-            
-            q_values = self.model.predict(state,batch_size=1)
+                parameters.GAMMA * np.amax(self.target_model.predict(next_state, batch_size=1))
+
+            q_values = self.model.predict(state, batch_size=1)
             q_values[0][action] = q_target
-            
+
             self.model.fit(state, q_values, verbose=0)
 
     # update target model every TARGET_MODEL_UPDATE_STEP steps
