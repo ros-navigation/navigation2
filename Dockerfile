@@ -6,6 +6,11 @@
 ARG FROM_IMAGE=osrf/ros2:nightly
 FROM $FROM_IMAGE
 
+# install CI dependencies	
+RUN apt-get update && apt-get install -q -y \	
+      ccache \	
+    && rm -rf /var/lib/apt/lists/*
+
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
@@ -55,6 +60,8 @@ RUN . $ROS_WS/install/setup.sh && \
        --symlink-install \
        --cmake-args \
          -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+         -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
          -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
 
 # source navigation2 workspace from entrypoint
