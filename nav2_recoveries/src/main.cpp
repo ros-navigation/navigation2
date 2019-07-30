@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_recoveries/clear_costmaps.hpp"
 #include "nav2_recoveries/back_up.hpp"
 #include "nav2_recoveries/spin.hpp"
 
@@ -35,6 +36,9 @@ int main(int argc, char ** argv)
 
   auto back_up = std::make_shared<nav2_recoveries::BackUp>(
     recoveries_node);
+
+  auto clear_costmaps = std::make_shared<nav2_recoveries::ClearCostmaps>(
+    recoveries_node, "ClearCostmaps");
 
   rclcpp::spin(recoveries_node);
   rclcpp::shutdown();

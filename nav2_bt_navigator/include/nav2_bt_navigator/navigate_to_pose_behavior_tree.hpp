@@ -20,7 +20,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
-#include "nav2_behavior_tree/clear_entirely_costmap_service_client.hpp"
 #include "nav2_util/global_localization_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -36,7 +35,6 @@ private:
   // Methods used to register as (simple action) BT nodes
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
-  BT::NodeStatus clearEntirelyCostmapServiceRequest(BT::TreeNode & tree_node);
 
   // Service clients
   std::unique_ptr<nav2_util::GlobalLocalizationServiceClient> global_localization_client_;
