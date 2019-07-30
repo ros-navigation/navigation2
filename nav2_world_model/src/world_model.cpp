@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_world_model/world_model.hpp"
+#include "nav2_util/node_utils.hpp"
 
 #include <memory>
 
@@ -24,10 +25,11 @@ namespace nav2_world_model
 WorldModel::WorldModel()
 : nav2_util::LifecycleNode("world_model")
 {
-  RCLCPP_INFO(get_logger(), "Creating");
+  RCLCPP_INFO(get_logger(), "Creating World Model");
 
   // The costmap node is used in the implementation of the world model
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()}, "global_costmap"));
 
   // Create an executor that will be used to spin the costmap node
   costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
