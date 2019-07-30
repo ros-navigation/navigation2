@@ -38,6 +38,8 @@ from gazebo_msgs.srv import GetEntityState, SetEntityState
 class TurtlebotEnv():
     def __init__(self):
         self.node_ = rclpy.create_node('turtlebot3_env_oa')
+        self.executor = SingleThreadedExecutor()
+        self.executor.add_node(self.node_)
         self.act = 0
         self.done = False
         self.actions = [[parameters.ZERO, parameters.ZERO],  # Stop
