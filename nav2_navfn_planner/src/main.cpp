@@ -20,7 +20,8 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
+  auto  tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>(tf_buffer);
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

@@ -24,7 +24,7 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
-#include "nav2_msgs/srv/get_robot_pose.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
@@ -99,7 +99,6 @@ public:
   {
     RCLCPP_INFO(get_logger(), "Configuring");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -113,10 +112,7 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, get_robot_pose_client_, get_name());
-
-    get_robot_pose_service_ = rclcpp_node_->create_service<nav2_msgs::srv::GetRobotPose>(
-      "GetRobotPose", std::bind(&TestCollisionChecker::get_robot_pose_callback, this, _1, _2, _3));
+      *costmap_sub_, *footprint_sub_, tf_buffer_, get_name());
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
     // Add Static Layer
@@ -152,7 +148,6 @@ public:
     layers_ = nullptr;
 
     tf_buffer_.reset();
-    tf_listener_.reset();
 
     footprint_sub_.reset();
     costmap_sub_.reset();
@@ -246,20 +241,7 @@ protected:
     return costmap_msg;
   }
 
-  void get_robot_pose_callback(
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
-    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response)
-  {
-    response->is_pose_valid = true;
-    response->pose = current_pose_;
-  }
-
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"test_collision_checker"};
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;

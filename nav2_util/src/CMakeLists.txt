@@ -17,6 +17,7 @@ ament_target_dependencies(${library_name}
   geometry_msgs
   lifecycle_msgs
   rclcpp_lifecycle
+  tf2_geometry_msgs
 )
 
 add_subdirectory(pf)

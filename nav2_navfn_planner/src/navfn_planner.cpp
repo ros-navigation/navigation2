@@ -44,8 +44,8 @@ using namespace std::chrono_literals;
 namespace nav2_navfn_planner
 {
 
-NavfnPlanner::NavfnPlanner()
-: nav2_util::LifecycleNode("navfn_planner", "", true)
+NavfnPlanner::NavfnPlanner(std::shared_ptr<tf2_ros::Buffer> tf)
+: nav2_util::LifecycleNode("navfn_planner", "", true), tf_(tf)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -173,7 +173,10 @@ NavfnPlanner::computePathToPose()
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-    auto start = getRobotPose();
+    geometry_msgs::msg::PoseStamped start;
+    if(!nav2_util::getCurrentPose(start, tf_)) {
+      return;
+    }
 
     // Update planner based on the new costmap size
     if (isPlannerOutOfDate()) {
@@ -188,11 +191,11 @@ NavfnPlanner::computePathToPose()
     }
 
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start.position.x, start.position.y,
+      "(%.2f, %.2f).", start->pose.position.x, start->pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start, goal->pose.pose, tolerance_, result->path);
+    bool foundPath = makePlan(start->pose, goal->pose.pose, tolerance_, result->path);
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
@@ -207,7 +210,7 @@ NavfnPlanner::computePathToPose()
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
-    publishEndpoints(start, goal->pose.pose);
+    publishEndpoints(start->pose, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 
@@ -669,18 +672,6 @@ NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
   }
 
   plan_publisher_->publish(rviz_path);
-}
-
-geometry_msgs::msg::Pose
-NavfnPlanner::getRobotPose()
-{
-  auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
-
-  auto result = get_robot_pose_client_.invoke(request, 5s);
-  if (!result.get()->is_pose_valid) {
-    throw std::runtime_error("Current robot pose is not available.");
-  }
-  return result.get()->pose.pose;
 }
 
 }  // namespace nav2_navfn_planner

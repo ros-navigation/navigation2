@@ -27,15 +27,18 @@ namespace nav2_costmap_2d
 CollisionChecker::CollisionChecker(
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
-  nav2_util::GetRobotPoseClient & get_robot_pose_client,
+  std::shared_ptr<tf2_ros::Buffer> tf,
   std::string name)
 : name_(name),
-  get_robot_pose_client_(get_robot_pose_client),
+  tf_(tf),  
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
-{}
+{
+}
 
-CollisionChecker::~CollisionChecker() {}
+CollisionChecker::~CollisionChecker()
+{
+}
 
 bool CollisionChecker::isCollisionFree(
   const geometry_msgs::msg::Pose2D & pose)
@@ -155,31 +158,18 @@ double CollisionChecker::pointCost(int x, int y) const
   return cost;
 }
 
-bool
-CollisionChecker::getRobotPose(geometry_msgs::msg::Pose & current_pose)
-{
-  auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
-
-  auto result = get_robot_pose_client_.invoke(request, 1s);
-  if (!result->is_pose_valid) {
-    return false;
-  }
-  current_pose = result->pose.pose;
-  return true;
-}
-
 void CollisionChecker::unorientFootprint(
   const std::vector<geometry_msgs::msg::Point> & oriented_footprint,
   std::vector<geometry_msgs::msg::Point> & reset_footprint)
 {
-  geometry_msgs::msg::Pose current_pose;
-  if (!getRobotPose(current_pose)) {
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(current_pose, tf_)) {
     throw CollisionCheckerException("Robot pose unavailable.");
   }
 
-  double x = current_pose.position.x;
-  double y = current_pose.position.y;
-  double theta = tf2::getYaw(current_pose.orientation);
+  double x = current_pose->pose.position.x;
+  double y = current_pose->pose.position.y;
+  double theta = tf2::getYaw(current_pose->pose.orientation);
 
   Footprint temp;
   transformFootprint(-x, -y, 0, oriented_footprint, temp);

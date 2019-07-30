@@ -1,5 +1,6 @@
 // Copyright (c) 2018 Intel Corporation
 // Copyright (c) 2019 Steven Macenski
+// Copyright (c) 2019 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,60 +18,19 @@
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
 #include <string>
-#include <shared_mutex>
-#include <mutex>
-#include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <geometry_msgs/msg/twist.hpp>
-#include <nav_msgs/msg/odometry.hpp>
+#include "tf2_ros/buffer.h"
+#include "tf2/time.h"
+#include "tf2/transform_datatypes.h"
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace nav2_util
 {
 
-class VelocityPublisher
-{
-public:
-  VelocityPublisher(
-    rclcpp::Node::SharedPtr & node,
-    const std::string topic = std::string("/cmd_vel"));
-
-  void publishCommand(const geometry_msgs::msg::Twist & cmd_vel);
-
-private:
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-};
-
-class RobotStateHelper
-{
-public:
-  RobotStateHelper(
-    rclcpp::Node::SharedPtr & node,
-    const std::string odom_topic = std::string("/odom"));
-
-  bool getOdometry(nav_msgs::msg::Odometry::SharedPtr & robot_odom);
-
-  bool getCurrentPose(
-    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose,
-    const bool use_topic = true);
-
-private:
-  void onPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr robot_pose);
-  void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr msg);
-
-  bool getGlobalLocalizerPose(
-    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
-  bool getTfPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & robot_pose);
-
-private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  std::shared_timed_mutex state_mutex_;
-  bool initial_pose_received_, initial_odom_received_;
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr current_pose_;
-  nav_msgs::msg::Odometry::SharedPtr current_odom_;
-};
+bool getCurrentPose(
+  geometry_msgs::msg::PoseStamped & robot_pose,
+  std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string & global_frame, const std::string & robot_frame, const double & transform_timeout);
 
 } // end namespace nav2_util
 
-#endif
+#endif // end NAV2_UTIL__ROBOT_UTILS_HPP_

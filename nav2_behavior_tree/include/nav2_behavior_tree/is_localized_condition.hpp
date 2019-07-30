@@ -57,25 +57,25 @@ public:
     node_->get_parameter_or<double>("is_localized_condition.x_tol", x_tol_, 0.25);
     node_->get_parameter_or<double>("is_localized_condition.y_tol", y_tol_, 0.25);
     node_->get_parameter_or<double>("is_localized_condition.rot_tol", rot_tol_, M_PI / 4);
-    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
     initialized_ = true;
   }
 
   bool isLocalized()
   {
-    auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+    tf_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
+    geometry_msgs::msg::PoseStamped current_pose;
 
     rclcpp::spin_some(node_);
-    if (!robot_state_->getCurrentPose(current_pose)) {
+    if (!nav2_util::getCurrentPose(current_pose, tf_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
 
     // Naive way to check if the robot has been localized
     // TODO(mhpanah): come up with a method to properly check particles convergence
-    if (current_pose->pose.covariance[cov_x_] < x_tol_ &&
-      current_pose->pose.covariance[cov_y_] < y_tol_ &&
-      current_pose->pose.covariance[cov_a_] < rot_tol_)
+    if (current_pose.pose.covariance[cov_x_] < x_tol_ &&
+      current_pose.pose.covariance[cov_y_] < y_tol_ &&
+      current_pose.pose.covariance[cov_a_] < rot_tol_)
     {
       RCLCPP_INFO(node_->get_logger(), "AutoLocalization Passed!");
       blackboard()->set<bool>("initial_pose_received", true);  // NOLINT
@@ -88,7 +88,6 @@ public:
 protected:
   void cleanup()
   {
-    robot_state_.reset();
   }
 
 private:
@@ -97,7 +96,7 @@ private:
   static const int cov_a_ = 35;
 
   rclcpp::Node::SharedPtr node_;
-  std::unique_ptr<nav2_util::RobotStateHelper> robot_state_;
+  std::unique_ptr<tf2_ros::Buffer> tf_;
 
   bool initialized_;
   double x_tol_;
