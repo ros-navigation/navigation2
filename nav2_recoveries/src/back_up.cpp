@@ -81,7 +81,7 @@ Status BackUp::onCycleUpdate()
   pose2d.y = current_pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.orientation);
 
-  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments 
+  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
   int cycle_count = 0;
   double sim_position_change;
   double diff_dist = abs(command_x_) - distance;
