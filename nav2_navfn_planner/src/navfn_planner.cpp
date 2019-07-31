@@ -191,11 +191,11 @@ NavfnPlanner::computePathToPose()
     }
 
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start->pose.position.x, start->pose.position.y,
+      "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start->pose, goal->pose.pose, tolerance_, result->path);
+    bool foundPath = makePlan(start.pose, goal->pose.pose, tolerance_, result->path);
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
@@ -210,7 +210,7 @@ NavfnPlanner::computePathToPose()
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
-    publishEndpoints(start->pose, goal->pose.pose);
+    publishEndpoints(start.pose, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 

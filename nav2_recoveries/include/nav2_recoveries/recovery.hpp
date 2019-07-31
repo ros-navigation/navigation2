@@ -51,9 +51,9 @@ public:
     std::shared_ptr<tf2_ros::Buffer> tf)
   : node_(node),
     recovery_name_(recovery_name),
+    tf_(tf),
     action_server_(nullptr),
-    cycle_frequency_(10),
-    tf_(tf)
+    cycle_frequency_(10)
   {
     configure();
   }
@@ -80,8 +80,8 @@ protected:
   rclcpp::Node::SharedPtr node_;
   std::string recovery_name_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  std::unique_ptr<ActionServer> action_server_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::unique_ptr<ActionServer> action_server_;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
@@ -110,7 +110,7 @@ protected:
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
       *costmap_sub_, *footprint_sub_, tf_);
 
-    vel_pub_ = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
   }
 
   void cleanup()

@@ -24,7 +24,7 @@ namespace nav2_recoveries
 {
 
 BackUp::BackUp(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
-: Recovery<BackUpAction>(node, "BackUp", tf), tf_(tf)
+: Recovery<BackUpAction>(node, "BackUp", tf)
 {
   // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
@@ -61,8 +61,8 @@ Status BackUp::onCycleUpdate()
     return Status::FAILED;
   }
 
-  double diff_x = initial_pose_->pose.position.x - current_pose->pose.position.x;
-  double diff_y = initial_pose_->pose.position.y - current_pose->pose.position.y;
+  double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
+  double diff_y = initial_pose_.pose.position.y - current_pose.pose.position.y;
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   if (distance >= abs(command_x_)) {
@@ -76,9 +76,9 @@ Status BackUp::onCycleUpdate()
   command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
 
   geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose->pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
-  pose2d.y = current_pose->pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose->pose.orientation);
+  pose2d.x = current_pose.pose.position.x + cmd_vel.linear.x * (1 / cycle_frequency_);
+  pose2d.y = current_pose.pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
   if (!collision_checker_->isCollisionFree(pose2d)) {
     stopRobot();
@@ -86,7 +86,7 @@ Status BackUp::onCycleUpdate()
     return Status::SUCCEEDED;
   }
 
-  vel_publisher_->publishCommand(cmd_vel);
+  vel_pub_->publish(cmd_vel);
 
   return Status::RUNNING;
 }

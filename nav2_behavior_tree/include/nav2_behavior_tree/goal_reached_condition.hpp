@@ -57,7 +57,7 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    tf_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
 
     initialized_ = true;
   }
@@ -74,8 +74,8 @@ public:
     }
     // TODO(mhpanah): replace this with a function
     blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
-    double dx = goal_->pose.position.x - current_pose.pose.pose.position.x;
-    double dy = goal_->pose.position.y - current_pose.pose.pose.position.y;
+    double dx = goal_->pose.position.x - current_pose.pose.position.x;
+    double dy = goal_->pose.position.y - current_pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
@@ -87,12 +87,11 @@ public:
 protected:
   void cleanup()
   {
-    robot_state_.reset();
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
-  std::unique_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;

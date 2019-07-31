@@ -167,9 +167,9 @@ void CollisionChecker::unorientFootprint(
     throw CollisionCheckerException("Robot pose unavailable.");
   }
 
-  double x = current_pose->pose.position.x;
-  double y = current_pose->pose.position.y;
-  double theta = tf2::getYaw(current_pose->pose.orientation);
+  double x = current_pose.pose.position.x;
+  double y = current_pose.pose.position.y;
+  double theta = tf2::getYaw(current_pose.pose.orientation);
 
   Footprint temp;
   transformFootprint(-x, -y, 0, oriented_footprint, temp);

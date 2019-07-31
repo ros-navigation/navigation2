@@ -22,7 +22,6 @@
 #include "nav2_behavior_tree/compute_path_to_pose_action.hpp"
 #include "nav2_behavior_tree/follow_path_action.hpp"
 #include "nav2_behavior_tree/goal_reached_condition.hpp"
-#include "nav2_behavior_tree/is_localized_condition.hpp"
 #include "nav2_behavior_tree/is_stuck_condition.hpp"
 #include "nav2_behavior_tree/rate_controller_node.hpp"
 #include "nav2_behavior_tree/spin_action.hpp"
@@ -43,7 +42,6 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");
-  factory_.registerNodeType<nav2_behavior_tree::IsLocalizedCondition>("IsLocalized");
   factory_.registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");
 
   // Register our simple condition nodes

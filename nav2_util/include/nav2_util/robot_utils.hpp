@@ -18,18 +18,23 @@
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
 #include <string>
-#include "tf2_ros/buffer.h"
-#include "tf2/time.h"
-#include "tf2/transform_datatypes.h"
+#include <memory>
+#include <algorithm>
+#include <mutex>
+#include <thread>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include "tf2_ros/buffer.h"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
 
 bool getCurrentPose(
-  geometry_msgs::msg::PoseStamped & robot_pose,
-  std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string & global_frame, const std::string & robot_frame, const double & transform_timeout);
+  geometry_msgs::msg::PoseStamped & global_pose,
+  std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string global_frame = "map",
+  const std::string robot_frame = "base_link", const double transform_timeout = 0.1);
 
 } // end namespace nav2_util
 
