@@ -5,4 +5,4 @@
 .git/*
 .dockerignore
 .gitignore
-Dockerfile
+**Dockerfile
