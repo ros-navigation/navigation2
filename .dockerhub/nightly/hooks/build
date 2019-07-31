@@ -3,4 +3,5 @@ FROM_IMAGE=osrf/ros2:nightly
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
+    --build-arg FAIL_ON_BUILD_FAILURE="" \
     --file ./Dockerfile ../../.

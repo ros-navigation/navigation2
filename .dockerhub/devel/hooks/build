@@ -4,4 +4,5 @@ FROM_IMAGE=ros:${ROS_DISTRO}
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
+    --build-arg FAIL_ON_BUILD_FAILURE="" \
     --file ./Dockerfile ../../.

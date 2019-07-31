@@ -34,6 +34,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # build underlay package source
 ARG CMAKE_BUILD_TYPE=Release
+ARG FAIL_ON_BUILD_FAILURE=True
 
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
@@ -41,7 +42,11 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --cmake-args \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
         -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache || \
+    touch build_failed && \
+    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+      exit 1; \
+    fi
 
 # install overlay package dependencies
 WORKDIR $NAV2_WS
@@ -64,7 +69,11 @@ RUN . $ROS_WS/install/setup.sh && \
          -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
+         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
+    touch build_failed && \
+    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+      exit 1; \
+    fi
 
 # source overlay workspace from entrypoint
 RUN sed --in-place \
