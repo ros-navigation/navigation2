@@ -51,7 +51,7 @@ references:
   restore_ccache: &restore_ccache
     restore_cache:
       name: Restore CCache
-      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
   restore_underlay_cache: &restore_underlay_cache
     restore_cache:
       name: Restore Underlay Cache
@@ -109,7 +109,7 @@ references:
   restore_overlay_cache: &restore_overlay_cache
     restore_cache:
       name: Restore Overlay Cache
-      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
   build_overlay: &build_overlay
     run:
       name: Build Overlay
@@ -130,14 +130,14 @@ references:
   save_ccache: &save_ccache
     save_cache:
       name: Save CCache
-      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: ccache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
       paths:
         - /root/.ccache
       when: always
   save_overlay_cache: &save_overlay_cache
     save_cache:
       name: Save Overlay Cache
-      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
+      key: overlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum "/opt/nav2_ws/checksum.txt" }}
       paths:
         - /opt/nav2_ws
   copy_build_logs: &copy_build_logs
