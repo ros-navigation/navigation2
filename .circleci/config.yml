@@ -61,7 +61,7 @@ references:
       name: Build Underlay
       command: |
         cd $ROS_WS
-        if [ -d install ]
+        if [ -d install ] && [ ! -f build_failed ]
         then
             echo "Skipping Underlay Build"
         else
@@ -72,6 +72,7 @@ references:
                 -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            rm -f build_failed
         fi
   save_underlay_cache: &save_underlay_cache
     save_cache:
@@ -114,7 +115,7 @@ references:
     run:
       name: Build Overlay
       command: |
-        if [ -d install ]
+        if [ -d install ] && [ ! -f build_failed ]
         then
             echo "Skipping Overlay Build"
         else
@@ -126,6 +127,7 @@ references:
                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
+            rm -f build_failed
         fi
   save_ccache: &save_ccache
     save_cache:
