@@ -26,7 +26,6 @@ int main(int argc, char ** argv)
 
   auto recoveries_node = rclcpp::Node::make_shared("recoveries");
 
-  // TODO make TF buffer
   auto tf_buffer = std::make_shared<tf2_ros::Buffer>(recoveries_node->get_clock());
 
   recoveries_node->declare_parameter(
