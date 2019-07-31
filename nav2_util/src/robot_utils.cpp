@@ -25,7 +25,7 @@ bool getCurrentPose(
   std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string global_frame,
   const std::string robot_frame, const double transform_timeout)
 {
-  //static rclcpp::Logger logger = rclcpp::get_logger("getCurrentPose");
+  static rclcpp::Logger logger = rclcpp::get_logger("getCurrentPose");
   geometry_msgs::msg::PoseStamped robot_pose;
 
   tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
