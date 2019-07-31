@@ -42,6 +42,7 @@ protected:
 
   geometry_msgs::msg::Pose initial_pose_;
   double command_x_;
+  double simulate_ahead_time_;
 };
 
 }  // namespace nav2_recoveries

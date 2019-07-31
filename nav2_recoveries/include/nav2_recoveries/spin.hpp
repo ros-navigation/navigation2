@@ -45,6 +45,7 @@ protected:
   double prev_yaw_;
   double delta_yaw_;
   double relative_yaw_;
+  double simulate_ahead_time_;
 };
 
 }  // namespace nav2_recoveries
