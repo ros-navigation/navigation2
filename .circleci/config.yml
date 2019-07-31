@@ -55,7 +55,7 @@ references:
   restore_underlay_cache: &restore_underlay_cache
     restore_cache:
       name: Restore Underlay Cache
-      key: underlay-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: underlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum  "/opt/ros_ws/checksum.txt" }}
   build_underlay: &build_underlay
     run:
       name: Build Underlay
@@ -76,7 +76,7 @@ references:
   save_underlay_cache: &save_underlay_cache
     save_cache:
       name: Save Underlay Cache
-      key: underlay-cache-v1-{{ arch }}-{{ checksum "/opt/ros_ws/checksum.txt" }}
+      key: underlay-cache-v1-{{ arch }}-{{ .Branch }}-{{ .Environment.CIRCLE_PR_NUMBER }}-{{ checksum  "/opt/ros_ws/checksum.txt" }}
       paths:
         - /opt/ros_ws
   install_overlay_dependencies: &install_overlay_dependencies
