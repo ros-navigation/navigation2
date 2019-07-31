@@ -298,13 +298,22 @@ workflows:
       - test_rmw_opensplice_cpp:
           requires:
             - release_build
-  # nightly:
-  #   triggers:
-  #     - schedule:
-  #         cron: "0 0 * * *"
-  #         filters:
-  #           branches:
-  #             only:
-  #               - master
-  #   jobs:
-  #     - build
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - release_build
+      - test_rmw_connext_cpp:
+          requires:
+            - release_build
+      - test_rmw_fastrtps_cpp:
+          requires:
+            - release_build
+      - test_rmw_opensplice_cpp:
+          requires:
+            - release_build
