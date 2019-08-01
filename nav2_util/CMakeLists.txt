@@ -18,19 +18,19 @@ find_package(test_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 
 set(dependencies
-	nav2_msgs
-	tf2_ros
-	tf2
-	tf2_geometry_msgs
-	geometry_msgs
-	SDL
-	SDL_image
-	nav_msgs
-	rclcpp
-	lifecycle_msgs
-	rclcpp_action
-	test_msgs
-	rclcpp_lifecycle
+    nav2_msgs
+    tf2_ros
+    tf2
+    tf2_geometry_msgs
+    geometry_msgs
+    SDL
+    SDL_image
+    nav_msgs
+    rclcpp
+    lifecycle_msgs
+    rclcpp_action
+    test_msgs
+    rclcpp_lifecycle
 )
 
 nav2_package()
