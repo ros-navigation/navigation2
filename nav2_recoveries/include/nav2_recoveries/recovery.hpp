@@ -52,7 +52,7 @@ public:
     std::shared_ptr<tf2_ros::Buffer> tf)
   : node_(node),
     recovery_name_(recovery_name),
-    tf_(tf.get()),
+    tf_(*tf),
     action_server_(nullptr),
     cycle_frequency_(10)
   {
