@@ -73,6 +73,7 @@ references:
         then
             echo "Skipping Underlay Build"
         else
+            rm -rf build install log
             . /opt/ros/$ROS_DISTRO/setup.sh
             colcon build \
               --symlink-install \
@@ -136,6 +137,7 @@ references:
         then
             echo "Skipping Overlay Build"
         else
+            rm -rf build install log
             . $ROS_WS/install/setup.sh
             colcon build \
               --symlink-install \
