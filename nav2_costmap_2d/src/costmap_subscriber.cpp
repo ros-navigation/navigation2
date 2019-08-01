@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <string>
+#include <memory>
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 

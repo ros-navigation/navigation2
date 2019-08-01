@@ -174,7 +174,7 @@ NavfnPlanner::computePathToPose()
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     geometry_msgs::msg::PoseStamped start;
-    if(!nav2_util::getCurrentPose(start, tf_)) {
+    if (!nav2_util::getCurrentPose(start, tf_)) {
       return;
     }
 

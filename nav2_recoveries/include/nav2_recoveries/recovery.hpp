@@ -47,7 +47,8 @@ class Recovery
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
-  explicit Recovery(rclcpp::Node::SharedPtr & node, const std::string & recovery_name,
+  explicit Recovery(
+    rclcpp::Node::SharedPtr & node, const std::string & recovery_name,
     std::shared_ptr<tf2_ros::Buffer> tf)
   : node_(node),
     recovery_name_(recovery_name),

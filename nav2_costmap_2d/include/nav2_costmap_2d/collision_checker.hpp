@@ -16,6 +16,9 @@
 #define NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
 
 #include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"

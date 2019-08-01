@@ -16,6 +16,7 @@
 #define NAV2_COSTMAP_2D__FOOTPRINT_SUBSCRIBER_HPP_
 
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"

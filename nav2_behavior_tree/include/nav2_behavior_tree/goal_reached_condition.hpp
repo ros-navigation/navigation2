@@ -20,7 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
-#include <nav2_util/robot_utils.hpp>
+#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_behavior_tree

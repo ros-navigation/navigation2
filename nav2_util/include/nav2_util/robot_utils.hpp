@@ -23,9 +23,9 @@
 #include <mutex>
 #include <thread>
 
-#include <geometry_msgs/msg/pose_stamped.hpp>
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
@@ -36,6 +36,6 @@ bool getCurrentPose(
   std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string global_frame = "map",
   const std::string robot_frame = "base_link", const double transform_timeout = 0.1);
 
-} // end namespace nav2_util
+}  // end namespace nav2_util
 
-#endif // end NAV2_UTIL__ROBOT_UTILS_HPP_
+#endif  // NAV2_UTIL__ROBOT_UTILS_HPP_

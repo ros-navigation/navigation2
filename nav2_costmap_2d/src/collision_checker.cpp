@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+#include <string>
+#include <vector>
+#include <algorithm>
+
 #include "nav2_costmap_2d/collision_checker.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -30,7 +35,7 @@ CollisionChecker::CollisionChecker(
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::string name)
 : name_(name),
-  tf_(tf),  
+  tf_(tf),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
 {

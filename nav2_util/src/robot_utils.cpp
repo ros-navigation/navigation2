@@ -14,6 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+#include <memory>
+
 #include "nav2_util/robot_utils.hpp"
 #include "rclcpp/logger.hpp"
 
@@ -35,7 +38,7 @@ bool getCurrentPose(
 
   try {
     global_pose = tf_buffer->transform(robot_pose, global_frame,
-      tf2::durationFromSec(transform_timeout));
+        tf2::durationFromSec(transform_timeout));
     return true;
   } catch (tf2::LookupException & ex) {
     RCLCPP_ERROR(logger,
@@ -54,4 +57,4 @@ bool getCurrentPose(
   return false;
 }
 
-} // end namespace nav2_util
+}  // end namespace nav2_util

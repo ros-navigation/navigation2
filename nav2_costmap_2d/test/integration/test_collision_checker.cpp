@@ -252,7 +252,6 @@ protected:
   double x_, y_, yaw_;
   geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
-
 };
 
 

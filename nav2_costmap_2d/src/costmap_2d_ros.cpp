@@ -511,7 +511,7 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
   tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
 
   robot_pose.header.frame_id = robot_base_frame_;
-  robot_pose.header.stamp = rclcpp::Time();  
+  robot_pose.header.stamp = rclcpp::Time();
 
   // Get the global pose of the robot
   try {
