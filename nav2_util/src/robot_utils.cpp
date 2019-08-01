@@ -25,7 +25,7 @@ namespace nav2_util
 
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
-  std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string global_frame,
+  tf2_ros::Buffer & tf_buffer, const std::string global_frame,
   const std::string robot_frame, const double transform_timeout)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("getCurrentPose");
@@ -37,7 +37,7 @@ bool getCurrentPose(
   robot_pose.header.stamp = rclcpp::Time();
 
   try {
-    global_pose = tf_buffer->transform(robot_pose, global_frame,
+    global_pose = tf_buffer.transform(robot_pose, global_frame,
         tf2::durationFromSec(transform_timeout));
     return true;
   } catch (tf2::LookupException & ex) {

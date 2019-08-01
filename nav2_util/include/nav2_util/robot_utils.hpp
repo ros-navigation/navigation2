@@ -33,7 +33,7 @@ namespace nav2_util
 
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
-  std::shared_ptr<tf2_ros::Buffer> & tf_buffer, const std::string global_frame = "map",
+  tf2_ros::Buffer & tf_buffer, const std::string global_frame = "map",
   const std::string robot_frame = "base_link", const double transform_timeout = 0.1);
 
 }  // end namespace nav2_util

@@ -32,7 +32,7 @@ namespace nav2_costmap_2d
 CollisionChecker::CollisionChecker(
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
-  std::shared_ptr<tf2_ros::Buffer> tf,
+  tf2_ros::Buffer & tf,
   std::string name)
 : name_(name),
   tf_(tf),

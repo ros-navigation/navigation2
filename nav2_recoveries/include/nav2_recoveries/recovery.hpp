@@ -52,7 +52,7 @@ public:
     std::shared_ptr<tf2_ros::Buffer> tf)
   : node_(node),
     recovery_name_(recovery_name),
-    tf_(tf),
+    tf_(tf.get()),
     action_server_(nullptr),
     cycle_frequency_(10)
   {
@@ -81,7 +81,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
   std::string recovery_name_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  tf2_ros::Buffer & tf_;
   std::unique_ptr<ActionServer> action_server_;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;

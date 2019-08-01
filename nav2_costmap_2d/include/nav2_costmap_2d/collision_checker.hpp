@@ -42,7 +42,7 @@ public:
   CollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
-    std::shared_ptr<tf2_ros::Buffer> tf,
+    tf2_ros::Buffer & tf,
     std::string name = "collision_checker");
 
   ~CollisionChecker();
@@ -63,7 +63,7 @@ protected:
 
   // Name used for logging
   std::string name_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
 };

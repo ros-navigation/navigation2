@@ -16,14 +16,11 @@
 
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include <rclcpp/clock.hpp>
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
-  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(clock);
-  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>(tf_buffer);
+  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

@@ -41,7 +41,7 @@ namespace nav2_navfn_planner
 class NavfnPlanner : public nav2_util::LifecycleNode
 {
 public:
-  NavfnPlanner(std::shared_ptr<tf2_ros::Buffer> tf);
+  NavfnPlanner();
   ~NavfnPlanner();
 
 protected:

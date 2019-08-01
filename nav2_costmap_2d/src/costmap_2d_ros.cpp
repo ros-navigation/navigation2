@@ -47,6 +47,7 @@
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "nav2_util/robot_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -126,7 +127,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
-    plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
+    plugin->initialize(layered_costmap_, plugin_names_[i], *tf_buffer_,
       shared_from_this(), client_node_, rclcpp_node_);
   }
 
@@ -505,35 +506,8 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-
-  tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
-  tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
-
-  robot_pose.header.frame_id = robot_base_frame_;
-  robot_pose.header.stamp = rclcpp::Time();
-
-  // Get the global pose of the robot
-  try {
-    tf_buffer_->transform(robot_pose, global_pose, global_frame_,
-      tf2::durationFromSec(transform_tolerance_));
-    return true;
-  } catch (tf2::LookupException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "No Transform available Error looking up robot pose: %s\n", ex.what());
-  } catch (tf2::ConnectivityException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Connectivity Error looking up robot pose: %s\n", ex.what());
-  } catch (tf2::ExtrapolationException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Extrapolation Error looking up robot pose: %s\n", ex.what());
-  } catch (tf2::TimeoutException & ex) {
-    rclcpp::Time current_time = now();
-    RCLCPP_ERROR(get_logger(),
-      "Transform timeout with tolerance: %.4f.", transform_tolerance_);
-  }
-
-  return false;
+  return nav2_util::getCurrentPose(global_pose, tf_buffer_.get(),
+    global_frame_, robot_base_frame_, transform_tolerance_);
 }
 
 }  // namespace nav2_costmap_2d

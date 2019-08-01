@@ -44,14 +44,16 @@ using namespace std::chrono_literals;
 namespace nav2_navfn_planner
 {
 
-NavfnPlanner::NavfnPlanner(std::shared_ptr<tf2_ros::Buffer> tf)
-: nav2_util::LifecycleNode("navfn_planner", "", true), tf_(tf)
+NavfnPlanner::NavfnPlanner()
+: nav2_util::LifecycleNode("navfn_planner", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
+
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
 }
 
 NavfnPlanner::~NavfnPlanner()
@@ -174,7 +176,7 @@ NavfnPlanner::computePathToPose()
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, tf_)) {
+    if (!nav2_util::getCurrentPose(start, *tf_)) {
       return;
     }
 
