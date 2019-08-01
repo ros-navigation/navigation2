@@ -506,7 +506,7 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  return nav2_util::getCurrentPose(global_pose, tf_buffer_.get(),
+  return nav2_util::getCurrentPose(global_pose, *tf_buffer_,
     global_frame_, robot_base_frame_, transform_tolerance_);
 }
 
