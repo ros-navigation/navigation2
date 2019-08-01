@@ -26,6 +26,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace dwb_controller
 {
@@ -69,7 +70,7 @@ protected:
 
   // Publishers and subscribers
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
@@ -78,6 +79,8 @@ protected:
   std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
+
+  double controller_frequency_;
 };
 
 }  // namespace dwb_controller

@@ -16,15 +16,15 @@
 #include <ctime>
 #include <memory>
 
-#include "nav2_motion_primitives/back_up.hpp"
+#include "nav2_recoveries/back_up.hpp"
 
 using namespace std::chrono_literals;
 
-namespace nav2_motion_primitives
+namespace nav2_recoveries
 {
 
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
-: MotionPrimitive<BackUpAction>(node, "BackUp")
+: Recovery<BackUpAction>(node, "BackUp")
 {
   // TODO(orduno) #378 Pull values from the robot
   max_linear_vel_ = 0.0;
@@ -86,9 +86,9 @@ Status BackUp::onCycleUpdate()
     return Status::SUCCEEDED;
   }
 
-  robot_->sendVelocity(cmd_vel);
+  vel_publisher_->publishCommand(cmd_vel);
 
   return Status::RUNNING;
 }
 
-}  // namespace nav2_motion_primitives
+}  // namespace nav2_recoveries

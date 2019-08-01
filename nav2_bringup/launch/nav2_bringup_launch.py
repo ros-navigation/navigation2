@@ -109,10 +109,10 @@ def generate_launch_description():
         output='screen',
         parameters=[configured_params])
 
-    start_primitive_cmd = launch_ros.actions.Node(
-        package='nav2_motion_primitives',
-        node_executable='motion_primitives_node',
-        node_name='motion_primitives',
+    start_recovery_cmd = launch_ros.actions.Node(
+        package='nav2_recoveries',
+        node_executable='recoveries_node',
+        node_name='recoveries',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}])
 
@@ -150,7 +150,7 @@ def generate_launch_description():
     ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
-    ld.add_action(start_primitive_cmd)
+    ld.add_action(start_recovery_cmd)
     ld.add_action(start_navigator_cmd)
 
     return ld

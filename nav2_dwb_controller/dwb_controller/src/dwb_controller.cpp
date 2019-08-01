@@ -33,6 +33,8 @@ DwbController::DwbController()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  declare_parameter("controller_frequency", 20.0);
+
   // The costmap node is used in the implementation of the DWB controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
 
@@ -73,8 +75,11 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
     node, costmap_ros_->getTfBuffer(), costmap_ros_);
   planner_->on_configure(state);
 
+  get_parameter("controller_frequency", controller_frequency_);
+  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
+
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
-  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+  vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -90,7 +95,8 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
-  vel_pub_->on_activate();
+
+  vel_publisher_->on_activate();
   action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -104,8 +110,9 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   action_server_->deactivate();
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
+
   publishZeroVelocity();
-  vel_pub_->on_deactivate();
+  vel_publisher_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -123,7 +130,10 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   action_server_.reset();
   planner_.reset();
   odom_sub_.reset();
-  vel_pub_.reset();
+
+  vel_publisher_.reset();
+  action_server_.reset();
+
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -150,7 +160,7 @@ void DwbController::followPath()
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
 
-    rclcpp::Rate loop_rate(100ms);
+    rclcpp::Rate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
@@ -178,7 +188,10 @@ void DwbController::followPath()
         break;
       }
 
-      loop_rate.sleep();
+      if (!loop_rate.sleep()) {
+        RCLCPP_WARN(get_logger(), "Control loop missed its desired rate of %.4fHz",
+          controller_frequency_);
+      }
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
@@ -235,7 +248,7 @@ void DwbController::updateGlobalPath()
 void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity)
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
-  vel_pub_->publish(cmd_vel);
+  vel_publisher_->publish(cmd_vel);
 }
 
 void DwbController::publishZeroVelocity()

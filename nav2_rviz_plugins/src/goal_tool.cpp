@@ -47,11 +47,11 @@ void
 GoalTool::onPoseSet(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
-
-  navigation_dialog_->startNavigation(x, y, theta, fixed_frame);
-  navigation_dialog_->show();
-  navigation_dialog_->raise();
-  navigation_dialog_->activateWindow();
+  if (navigation_dialog_->startNavigation(x, y, theta, fixed_frame)) {
+    navigation_dialog_->show();
+    navigation_dialog_->raise();
+    navigation_dialog_->activateWindow();
+  }
 }
 
 }  // namespace nav2_rviz_plugins
