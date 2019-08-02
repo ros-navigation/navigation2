@@ -58,6 +58,7 @@ public:
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
     tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
     initialized_ = true;
   }
@@ -92,6 +93,7 @@ protected:
 private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;

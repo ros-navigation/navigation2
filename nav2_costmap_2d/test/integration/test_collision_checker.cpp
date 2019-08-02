@@ -99,6 +99,7 @@ public:
   {
     RCLCPP_INFO(get_logger(), "Configuring");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -242,6 +243,7 @@ protected:
   }
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;

@@ -104,6 +104,7 @@ protected:
   {
     node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
     auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
     node_->declare_parameter(
       "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
     node_->declare_parameter(

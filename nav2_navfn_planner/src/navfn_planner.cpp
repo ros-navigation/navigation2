@@ -54,6 +54,7 @@ NavfnPlanner::NavfnPlanner()
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 }
 
 NavfnPlanner::~NavfnPlanner()
@@ -128,6 +129,8 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_.reset();
   plan_marker_publisher_.reset();
   planner_.reset();
+  tf_listener_.reset();
+  tf_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

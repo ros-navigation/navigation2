@@ -131,6 +131,7 @@ protected:
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   // Service client for getting the costmap
   nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
