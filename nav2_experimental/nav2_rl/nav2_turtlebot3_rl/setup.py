@@ -9,6 +9,7 @@ setup(
     py_modules=[
         'random_crawl_train',
         'random_crawl',
+        'random_crawl_action',
         'turtlebot3_env',
         'dqn',
         'parameters',
@@ -39,6 +40,7 @@ setup(
         'console_scripts': [
             'random_crawl_train = random_crawl_train:main',
             'random_crawl = random_crawl:main',
+            'random_crawl_action = random_crawl_action:main',
         ],
     },
 )
