@@ -25,6 +25,7 @@
 #include "nav2_behavior_tree/is_stuck_condition.hpp"
 #include "nav2_behavior_tree/rate_controller_node.hpp"
 #include "nav2_behavior_tree/spin_action.hpp"
+#include "nav2_behavior_tree/random_crawl_action.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
@@ -39,6 +40,7 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
   factory_.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
   factory_.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_behavior_tree::SpinAction>("Spin");
+  factory_.registerNodeType<nav2_behavior_tree::RandomCrawlAction>("RandomCrawl");
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");
