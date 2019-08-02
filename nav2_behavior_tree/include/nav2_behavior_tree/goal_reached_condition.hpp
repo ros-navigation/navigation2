@@ -22,6 +22,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2_ros/transform_listener.h"
 
 namespace nav2_behavior_tree
 {
