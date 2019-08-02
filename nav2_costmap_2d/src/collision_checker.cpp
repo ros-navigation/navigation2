@@ -59,6 +59,9 @@ bool CollisionChecker::isCollisionFree(
   } catch (const CollisionCheckerException & e) {
     RCLCPP_ERROR(rclcpp::get_logger(name_), "%s", e.what());
     return false;
+  } catch (...) {
+    RCLCPP_ERROR(rclcpp::get_logger(name_), "Failed to check pose score!");
+    return false;
   }
 }
 
@@ -168,8 +171,9 @@ void CollisionChecker::unorientFootprint(
   std::vector<geometry_msgs::msg::Point> & reset_footprint)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_)) {
-    throw CollisionCheckerException("Robot pose unavailable.");
+  if (!nav2_util::getCurrentPose(current_pose, tf_)) { //TODO no one's publishing the position
+    std::cout << "Robot Pose Unavailable" << std::endl;
+    return; //throw CollisionCheckerException("Robot pose unavailable.");
   }
 
   double x = current_pose.pose.position.x;

@@ -296,7 +296,7 @@ TEST_F(TestNode, FreeSpace)
   collision_checker_->setFootprint(0, 1);
 
   // In complete free space
-  ASSERT_EQ(collision_checker_->testPose(0.6, 0.6, 0), true);
+  ASSERT_EQ(collision_checker_->testPose(2, 8.5, 0), true);
 
   // Partially in inscribed space
   ASSERT_EQ(collision_checker_->testPose(2.5, 7, 0), true);
