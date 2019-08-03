@@ -29,6 +29,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -100,6 +101,7 @@ public:
     RCLCPP_INFO(get_logger(), "Configuring");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -160,6 +162,7 @@ public:
 
   bool testPose(double x, double y, double theta)
   {
+    publishPose(0., 0., theta);
     geometry_msgs::msg::Pose2D pose;
     pose.x = x;
     pose.y = y;
@@ -212,6 +215,18 @@ protected:
       std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
   }
 
+  void publishPose(double x, double y, double /*theta*/)
+  {
+    geometry_msgs::msg::TransformStamped tf_stamped;
+    tf_stamped.header.frame_id = "map";
+    tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
+    tf_stamped.child_frame_id = "base_link";
+    tf_stamped.transform.translation.x = x;
+    tf_stamped.transform.translation.y = y;
+    tf_stamped.transform.rotation.w = 1.0;
+    tf_broadcaster_->sendTransform(tf_stamped);
+  }
+
   nav2_msgs::msg::Costmap
   toCostmapMsg(nav2_costmap_2d::Costmap2D * costmap)
   {
@@ -244,6 +259,7 @@ protected:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
