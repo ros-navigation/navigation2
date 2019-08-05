@@ -108,7 +108,7 @@ Status Spin::onCycleUpdate()
     if (!collision_checker_->isCollisionFree(pose2d)) {
       stopRobot();
       RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
-      return Status::SUCCEEDED;
+      return Status::FAILED;
     }
   }
 
