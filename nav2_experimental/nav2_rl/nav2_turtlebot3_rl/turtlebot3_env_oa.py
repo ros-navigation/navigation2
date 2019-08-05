@@ -20,6 +20,7 @@ from rclpy.node import Node
 from rclpy.duration import Duration
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.parameter import Parameter
 
 import numpy as np
 import math
@@ -40,6 +41,8 @@ class TurtlebotEnv():
         self.node_ = rclpy.create_node('turtlebot3_env_oa')
         self.executor = SingleThreadedExecutor()
         self.executor.add_node(self.node_)
+        self.node_.declare_parameter('use_sim_time', True)
+        self.node_.set_parameters([Parameter('use_sim_time', Parameter.Type.BOOL, True)])
         self.act = 0
         self.done = False
         self.actions = [[parameters.ZERO, parameters.ZERO],  # Stop
@@ -66,8 +69,6 @@ class TurtlebotEnv():
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
         self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback,
                                                        qos_profile_sensor_data)
-        self.sub_clock = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback,
-                                                        qos_profile_sensor_data)
 
         self.reset_simulation = self.node_.create_client(Empty, 'reset_simulation')
         self.reset_world = self.node_.create_client(Empty, 'reset_world')
@@ -78,13 +79,26 @@ class TurtlebotEnv():
         self.scan_msg_received = False
         self.t = Thread(target=self.executor.spin)
         self.t.start()
+        self.time_factor = 1.0
+        self.time_to_sample = 0.5
 
     def cleanup(self):
         self.t.join()
 
+    # Rate object is not yet available in rclpy. Thus, we created this method to calculate the
+    # difference between simulation time and system time
+    def get_time_factor(self):
+        sim_time_start = self.node_._clock.now()
+        sleep(self.time_to_sample)
+        sim_time_end = self.node_._clock.now()
+        sim_time_dif = (sim_time_end.nanoseconds - sim_time_start.nanoseconds )/1e9
+        return sim_time_dif/self.time_to_sample
+
     def get_reward(self):
-        reward = 0
         # TODO: (mhpanah)
+        reward = 0.0
+        self.done = False
+        return reward, self.done
 
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
@@ -119,7 +133,7 @@ class TurtlebotEnv():
         self.pub_cmd_vel.publish(vel_cmd)
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
-        sleep(parameters.LOOP_RATE)
+        sleep(parameters.LOOP_RATE/self.time_factor)
         get_reward = self.get_reward()
         return self.observation(), get_reward[0], self.done
 
@@ -137,7 +151,7 @@ class TurtlebotEnv():
         return self.states
 
     def check_collision(self):
-        if min(self.laser_scan_range) < self.range_min + self.collision_tol:
+        if min(self.states_input) < self.range_min + self.collision_tol:
             print("Colistion proximity... " + str(min(self.laser_scan_range)))
             return True
         return False
@@ -176,7 +190,7 @@ class TurtlebotEnv():
         future = self.get_entity_state.call_async(req)
 
         while not future.done() and rclpy.ok():
-            sleep(0.01)
+            sleep(0.01/self.time_factor)
 
         self.current_pose.position.x = future.result().state.pose.position.x
         self.current_pose.position.y = future.result().state.pose.position.y
@@ -216,6 +230,13 @@ class TurtlebotEnv():
                           self.goal_pose.position.x - self.current_pose.position.x)
 
     def reset(self):
+        while not self.reset_world.wait_for_service(timeout_sec=1.0):
+            print('Reset world service is not available...')
+        self.reset_world.call_async(Empty.Request())
+
+        self.time_factor = self.get_time_factor()
+        print('Time factor is: ' + "%f" % self.time_factor)
+
         self.scan_msg_received = False
         self.stop_action
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
@@ -233,7 +254,7 @@ class TurtlebotEnv():
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
         while not self.scan_msg_received and rclpy.ok():
-            sleep(0.1)
+            sleep(0.1/self.time_factor)
         self.collision = False
         self.done = False
 
