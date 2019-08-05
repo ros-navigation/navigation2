@@ -169,7 +169,7 @@ Visualization Manager:
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
       Topic: /particlecloud
-      Unreliable: false
+      Unreliable: true
       Value: true
     - Class: rviz_common/Group
       Displays:
