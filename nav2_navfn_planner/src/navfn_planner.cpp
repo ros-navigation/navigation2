@@ -54,6 +54,10 @@ NavfnPlanner::NavfnPlanner()
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    rclcpp_node_->get_node_base_interface(),
+    rclcpp_node_->get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 }
 

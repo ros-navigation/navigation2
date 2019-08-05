@@ -23,6 +23,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 
 namespace nav2_behavior_tree
 {
@@ -59,6 +60,10 @@ public:
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
     tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      node_->get_node_base_interface(),
+      node_->get_node_timers_interface());
+    tf_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
     initialized_ = true;
