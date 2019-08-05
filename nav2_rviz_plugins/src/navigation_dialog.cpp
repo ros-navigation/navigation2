@@ -114,7 +114,8 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(timeout));
+  auto is_action_server_ready = action_client_
+    ->wait_for_action_server(std::chrono::seconds(timeout));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
       " Check if the simulator or the robot is running. Make sure the initial pose is set.");

@@ -19,7 +19,6 @@ import numpy as np
 import rclpy
 import parameters
 
-from rclpy.node import Node
 from time import sleep
 from keras.models import load_model
 

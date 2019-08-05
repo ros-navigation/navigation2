@@ -110,11 +110,13 @@ public:
 
   void wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
+    auto sleep_dur = std::chrono::milliseconds(10);
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
                 service_name_ + " service client: interrupted while waiting for service");
       }
+      rclcpp::sleep_for(sleep_dur);
     }
   }
 

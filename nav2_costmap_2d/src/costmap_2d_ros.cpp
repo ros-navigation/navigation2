@@ -171,6 +171,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking transform");
+  auto sleep_dur = std::chrono::milliseconds(100);
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(1.0), &tf_error))
@@ -182,6 +183,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
+    rclcpp::sleep_for(sleep_dur);
   }
 
   // Create a thread to handle updating the map
@@ -444,7 +446,7 @@ Costmap2DROS::start()
   stop_updates_ = false;
 
   // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(100.0);
+  rclcpp::Rate r(20.0);
   while (rclcpp::ok() && !initialized_) {
     RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
     r.sleep();

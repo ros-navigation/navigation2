@@ -12,36 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__SPIN_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__SPIN_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_
 
 #include <string>
-#include <memory>
-#include <cmath>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_msgs/action/spin.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_msgs/action/random_crawl.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
+class RandomCrawlAction : public BtActionNode<nav2_msgs::action::RandomCrawl>
 {
 public:
-  explicit SpinAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::Spin>(action_name)
+  explicit RandomCrawlAction(const std::string & action_name)
+  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name)
   {
-  }
-
-  void on_init() override
-  {
-    goal_.target_yaw = M_PI / 2;
   }
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__SPIN_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_

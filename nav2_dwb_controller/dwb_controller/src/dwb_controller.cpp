@@ -33,6 +33,8 @@ DwbController::DwbController()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  declare_parameter("controller_frequency", 20.0);
+
   // The costmap node is used in the implementation of the DWB controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
 
@@ -72,6 +74,9 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
     node, costmap_ros_->getTfBuffer(), costmap_ros_);
   planner_->on_configure(state);
+
+  get_parameter("controller_frequency", controller_frequency_);
+  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
@@ -155,7 +160,7 @@ void DwbController::followPath()
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
 
-    rclcpp::Rate loop_rate(100ms);
+    rclcpp::Rate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
@@ -183,7 +188,10 @@ void DwbController::followPath()
         break;
       }
 
-      loop_rate.sleep();
+      if (!loop_rate.sleep()) {
+        RCLCPP_WARN(get_logger(), "Control loop missed its desired rate of %.4fHz",
+          controller_frequency_);
+      }
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());

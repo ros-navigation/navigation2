@@ -41,15 +41,10 @@ protected:
   double min_rotational_vel_;
   double max_rotational_vel_;
   double rotational_acc_lim_;
-  double goal_tolerance_angle_;
-
-  double start_yaw_;
-
-  std::chrono::system_clock::time_point start_time_;
-
-  Status timedSpin();
-
-  Status controlledSpin();
+  double cmd_yaw_;
+  double prev_yaw_;
+  double delta_yaw_;
+  double relative_yaw_;
 };
 
 }  // namespace nav2_recoveries
