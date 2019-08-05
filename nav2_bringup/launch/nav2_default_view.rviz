@@ -52,7 +52,7 @@ Visualization Manager:
       Description File: ""
       Description Source: Topic
       Description Topic: /robot_description
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
