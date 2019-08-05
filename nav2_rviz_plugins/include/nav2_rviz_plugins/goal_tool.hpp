@@ -18,6 +18,7 @@
 #include <QObject>
 
 #include <memory>
+#include <thread>
 
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
@@ -49,9 +50,11 @@ public:
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
+  void onPoseSetImpl(double x, double y, double theta);
 
 private:
   std::unique_ptr<NavigationDialog> navigation_dialog_;
+  std::unique_ptr<std::thread> execution_thread_;
 };
 
 }  // namespace nav2_rviz_plugins

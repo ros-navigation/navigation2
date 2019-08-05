@@ -24,7 +24,7 @@ namespace nav2_rviz_plugins
 {
 
 GoalTool::GoalTool()
-: rviz_default_plugins::tools::PoseTool()
+: rviz_default_plugins::tools::PoseTool(), execution_thread_(nullptr)
 {
   shortcut_key_ = 'g';
 
@@ -34,6 +34,7 @@ GoalTool::GoalTool()
 
 GoalTool::~GoalTool()
 {
+  execution_thread_->join();
 }
 
 void GoalTool::onInitialize()
@@ -45,6 +46,14 @@ void GoalTool::onInitialize()
 
 void
 GoalTool::onPoseSet(double x, double y, double theta)
+{
+  execution_thread_ = std::make_unique<std::thread>(&GoalTool::onPoseSetImpl, this,
+    x, y, theta);
+  execution_thread_->detach();
+}
+
+void
+GoalTool::onPoseSetImpl(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
   if (navigation_dialog_->startNavigation(x, y, theta, fixed_frame)) {
