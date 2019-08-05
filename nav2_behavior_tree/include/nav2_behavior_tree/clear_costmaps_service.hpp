@@ -39,7 +39,6 @@ public:
   void on_init() override
   {
   }
-
 };
 
 }  // namespace nav2_behavior_tree

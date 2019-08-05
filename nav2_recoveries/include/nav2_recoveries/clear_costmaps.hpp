@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
@@ -32,7 +33,7 @@ using nav2_msgs::srv::ClearEntireCostmap;
 class ClearCostmaps
 {
 public:
-  explicit ClearCostmaps(rclcpp::Node::SharedPtr & node, const std::string & srv_name = "ClearCostmaps");
+  explicit ClearCostmaps(rclcpp::Node::SharedPtr & node, const std::string & srv_name = "ClearCostmaps");  // NOLINT
   ~ClearCostmaps();
 
 

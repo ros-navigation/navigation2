@@ -17,6 +17,7 @@
 #define NAV2_BEHAVIOR_TREE__BT_SERVICE_NODE_HPP_
 
 #include <string>
+#include <memory>
 
 #include "behaviortree_cpp/action_node.h"
 #include "nav2_util/node_utils.hpp"
@@ -76,7 +77,7 @@ public:
     auto future_result = service_client_->async_send_request(request_);
 
     rclcpp::executor::FutureReturnCode rc;
-    rc = rclcpp::spin_until_future_complete(node_, 
+    rc = rclcpp::spin_until_future_complete(node_,
       future_result, node_loop_timeout_);
     if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::FAILURE;
@@ -97,7 +98,6 @@ public:
   }
 
 protected:
-
   const std::string service_name_;
   typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;

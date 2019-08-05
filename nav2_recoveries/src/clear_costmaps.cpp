@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+#include <memory>
+
 #include "nav2_recoveries/clear_costmaps.hpp"
 
 namespace nav2_recoveries
