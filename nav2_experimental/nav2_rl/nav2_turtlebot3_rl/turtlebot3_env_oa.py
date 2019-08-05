@@ -102,25 +102,27 @@ class TurtlebotEnv():
 
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
+        self.laser_scan_range.clear()
         self.laser_scan_range = []
         self.range_min = LaserScan.range_min
         range_max = LaserScan.range_max
-
         for i in range(len(LaserScan.ranges)):
             if LaserScan.ranges[i] == float('Inf'):
                 self.laser_scan_range.append(range_max)
-            elif LaserScan.ranges[i] < self.range_min:
+            elif LaserScan.ranges[i] < self.range_min + self.collision_tol-0.05:
                 self.laser_scan_range.append(self.range_min + self.collision_tol)
             else:
                 self.laser_scan_range.append(LaserScan.ranges[i])
-        if self.check_collision():
-            self.collision = True
-            self.done = True
+
+        self.states_input.clear()
         self.states_input = []
         for i in range(8):
             step = int(len(LaserScan.ranges) / 8)
             self.states_input.append(min(self.laser_scan_range[i * step:(i + 1) * step],
                                      default=0))
+        if self.check_collision():
+            self.collision = True
+            self.done = True
 
     def action_space(self):
         return len(self.actions)
@@ -147,7 +149,7 @@ class TurtlebotEnv():
         self.states[10] = float(self.goal_pose.position.x)
         self.states[11] = float(self.goal_pose.position.y)
         self.states[12] = self.sq_distance_to_goal()
-        self.states[13] = self.angle_to_goal()
+        self.states[13] = self.get_heading()    
         return self.states
 
     def check_collision(self):
@@ -225,9 +227,26 @@ class TurtlebotEnv():
         dy = self.goal_pose.position.y - self.current_pose.position.y
         return dx * dx + dy * dy
 
-    def angle_to_goal(self):
-        return math.atan2(self.goal_pose.position.y - self.current_pose.position.y,
-                          self.goal_pose.position.x - self.current_pose.position.x)
+    def get_heading(self):
+        goal_angle = math.atan2(self.goal_pose.position.y - self.current_pose.position.y,
+                                self.goal_pose.position.x - self.current_pose.position.x)
+                                
+        current_yaw = self.get_yaw(self.current_pose)
+        heading = goal_angle - current_yaw
+
+        if heading > math.pi:
+            heading -= 2 * math.pi
+
+        elif heading < -math.pi:
+            heading += 2 * math.pi
+
+        return heading
+
+    def get_yaw(self,q):
+        yaw = math.atan2(2.0*(q.orientation.x*q.orientation.y + q.orientation.w*q.orientation.z),
+                              q.orientation.w*q.orientation.w + q.orientation.x*q.orientation.x -
+                              q.orientation.y*q.orientation.y - q.orientation.z*q.orientation.z)
+        return yaw
 
     def reset(self):
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
