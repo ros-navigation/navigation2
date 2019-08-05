@@ -167,7 +167,7 @@ public:
 
   bool testPose(double x, double y, double theta)
   {
-    publishPose(0., 0., theta);
+    publishPose(x, y, theta);
     geometry_msgs::msg::Pose2D pose;
     pose.x = x;
     pose.y = y;
