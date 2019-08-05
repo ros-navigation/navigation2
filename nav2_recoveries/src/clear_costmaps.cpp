@@ -56,7 +56,7 @@ ClearCostmaps::ClearCostmaps(rclcpp::Node::SharedPtr & node, const std::string &
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   RCLCPP_INFO(node_->get_logger(), "Registered potential costmaps to clear: %s",
-    services_string_list_);
+    services_string_list_.c_str());
 }
 
 ClearCostmaps::~ClearCostmaps()
