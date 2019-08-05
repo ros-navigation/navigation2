@@ -90,8 +90,21 @@ Status Spin::onCycleUpdate()
   pose2d.y = current_pose.position.y;
   pose2d.theta = current_yaw;
 
-  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
+  if (!isCollisionFree(yaw_diff, cmd_vel, pose2d)) {
+    return Status::FAILED;
+  }
 
+  prev_yaw_ = current_yaw;
+  vel_publisher_->publishCommand(cmd_vel);
+
+  return Status::RUNNING;
+}
+
+bool Spin::isCollisionFree(const double & yaw_diff,
+  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Pose2D & pose2d)
+{
+  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
   int cycle_count = 0;
   double sim_position_change;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
@@ -108,14 +121,10 @@ Status Spin::onCycleUpdate()
     if (!collision_checker_->isCollisionFree(pose2d)) {
       stopRobot();
       RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
-      return Status::FAILED;
+      return false;
     }
   }
-
-  prev_yaw_ = current_yaw;
-  vel_publisher_->publishCommand(cmd_vel);
-
-  return Status::RUNNING;
+  return true;
 }
 
 }  // namespace nav2_recoveries

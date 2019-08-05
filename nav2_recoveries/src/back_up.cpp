@@ -81,10 +81,23 @@ Status BackUp::onCycleUpdate()
   pose2d.y = current_pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.orientation);
 
+  if (!isCollisionFree(distance, cmd_vel, pose2d)) {
+    return Status::FAILED;
+  }
+
+  vel_publisher_->publishCommand(cmd_vel);
+
+  return Status::RUNNING;
+}
+
+bool BackUp::isCollisionFree(const double & distance,
+  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Pose2D & pose2d)
+{
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
   int cycle_count = 0;
   double sim_position_change;
-  double diff_dist = abs(command_x_) - distance;
+  const double diff_dist = abs(command_x_) - distance;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
 
   while (cycle_count < max_cycle_count) {
@@ -99,13 +112,10 @@ Status BackUp::onCycleUpdate()
     if (!collision_checker_->isCollisionFree(pose2d)) {
       stopRobot();
       RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
-      return Status::FAILED;
+      return false;
     }
   }
-
-  vel_publisher_->publishCommand(cmd_vel);
-
-  return Status::RUNNING;
+  return true;
 }
 
 }  // namespace nav2_recoveries
