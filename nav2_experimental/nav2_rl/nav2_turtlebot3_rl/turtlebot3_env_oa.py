@@ -23,6 +23,7 @@ from rclpy.executors import SingleThreadedExecutor
 from rclpy.parameter import Parameter
 
 import numpy as np
+from math import pi, atan2, sin, cos
 import math
 import os
 import random
@@ -91,8 +92,8 @@ class TurtlebotEnv():
         sim_time_start = self.node_._clock.now()
         sleep(self.time_to_sample)
         sim_time_end = self.node_._clock.now()
-        sim_time_dif = (sim_time_end.nanoseconds - sim_time_start.nanoseconds )/1e9
-        return sim_time_dif/self.time_to_sample
+        sim_time_dif = (sim_time_end.nanoseconds - sim_time_start.nanoseconds) / 1e9
+        return sim_time_dif / self.time_to_sample
 
     def get_reward(self):
         # TODO: (mhpanah)
@@ -109,7 +110,7 @@ class TurtlebotEnv():
         for i in range(len(LaserScan.ranges)):
             if LaserScan.ranges[i] == float('Inf'):
                 self.laser_scan_range.append(range_max)
-            elif LaserScan.ranges[i] < self.range_min + self.collision_tol-0.05:
+            elif LaserScan.ranges[i] < self.range_min + self.collision_tol - 0.05:
                 self.laser_scan_range.append(self.range_min + self.collision_tol)
             else:
                 self.laser_scan_range.append(LaserScan.ranges[i])
@@ -127,6 +128,9 @@ class TurtlebotEnv():
     def action_space(self):
         return len(self.actions)
 
+    def observation_space(self):
+        return len(self.states)
+
     def step(self, action):
         vel_cmd = Twist()
         self.act = action
@@ -135,7 +139,7 @@ class TurtlebotEnv():
         self.pub_cmd_vel.publish(vel_cmd)
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
-        sleep(parameters.LOOP_RATE/self.time_factor)
+        sleep(parameters.LOOP_RATE / self.time_factor)
         get_reward = self.get_reward()
         return self.observation(), get_reward[0], self.done
 
@@ -149,7 +153,7 @@ class TurtlebotEnv():
         self.states[10] = float(self.goal_pose.position.x)
         self.states[11] = float(self.goal_pose.position.y)
         self.states[12] = self.sq_distance_to_goal()
-        self.states[13] = self.get_heading()    
+        self.states[13] = self.get_heading()
         return self.states
 
     def check_collision(self):
@@ -192,7 +196,7 @@ class TurtlebotEnv():
         future = self.get_entity_state.call_async(req)
 
         while not future.done() and rclpy.ok():
-            sleep(0.01/self.time_factor)
+            sleep(0.01 / self.time_factor)
 
         self.current_pose.position.x = future.result().state.pose.position.x
         self.current_pose.position.y = future.result().state.pose.position.y
@@ -209,15 +213,15 @@ class TurtlebotEnv():
         nrows = df['x'].count()
 
         rand_index = random.randint(1, nrows)
-        yaw = random.uniform(0, math.pi * 2)
+        yaw = random.uniform(0, pi * 2)
 
         random_pose.position.x = df['x'][rand_index - 1]
         random_pose.position.y = df['y'][rand_index - 1]
         random_pose.position.z = 0.0
         random_pose.orientation.x = 0.0
         random_pose.orientation.y = 0.0
-        random_pose.orientation.z = math.sin(yaw * 0.5)
-        random_pose.orientation.w = math.cos(yaw * 0.5)
+        random_pose.orientation.z = sin(yaw * 0.5)
+        random_pose.orientation.w = cos(yaw * 0.5)
 
         return random_pose
 
@@ -230,22 +234,22 @@ class TurtlebotEnv():
     def get_heading(self):
         goal_angle = math.atan2(self.goal_pose.position.y - self.current_pose.position.y,
                                 self.goal_pose.position.x - self.current_pose.position.x)
-                                
+
         current_yaw = self.get_yaw(self.current_pose)
         heading = goal_angle - current_yaw
 
-        if heading > math.pi:
-            heading -= 2 * math.pi
+        if heading > pi:
+            heading -= 2 * pi
 
-        elif heading < -math.pi:
-            heading += 2 * math.pi
+        elif heading < -pi:
+            heading += 2 * pi
 
         return heading
 
-    def get_yaw(self,q):
-        yaw = math.atan2(2.0*(q.orientation.x*q.orientation.y + q.orientation.w*q.orientation.z),
-                              q.orientation.w*q.orientation.w + q.orientation.x*q.orientation.x -
-                              q.orientation.y*q.orientation.y - q.orientation.z*q.orientation.z)
+    def get_yaw(self, q):
+        yaw = atan2(2.0 * (q.orientation.x * q.orientation.y + q.orientation.w * q.orientation.z),
+                    q.orientation.w * q.orientation.w + q.orientation.x * q.orientation.x -
+                    q.orientation.y * q.orientation.y - q.orientation.z * q.orientation.z)
         return yaw
 
     def reset(self):
@@ -273,7 +277,7 @@ class TurtlebotEnv():
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
         while not self.scan_msg_received and rclpy.ok():
-            sleep(0.1/self.time_factor)
+            sleep(0.1 / self.time_factor)
         self.collision = False
         self.done = False
 
