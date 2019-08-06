@@ -135,9 +135,9 @@ static std::string to_string(const T a_value)
 
 static void
 print_yaml(
-  std::string node_name, std::vector<std::string> & param_names,
-  std::vector<rcl_interfaces::msg::ParameterValue> & param_values,
-  std::vector<rcl_interfaces::msg::ParameterDescriptor> & param_descriptors, bool verbose)
+  const std::string node_name, std::vector<std::string> & param_names,
+  const std::vector<rcl_interfaces::msg::ParameterValue> & param_values,
+  const std::vector<rcl_interfaces::msg::ParameterDescriptor> & param_descriptors, bool verbose)
 {
   std::cout << node_name << ":" << std::endl;
   std::cout << "  ros__parameters:" << std::endl;
@@ -247,9 +247,9 @@ print_yaml(
 
 static void
 print_markdown(
-  std::string node_name, std::vector<std::string> & param_names,
-  std::vector<rcl_interfaces::msg::ParameterValue> & param_values,
-  std::vector<rcl_interfaces::msg::ParameterDescriptor> & param_descriptors,
+  const std::string node_name, std::vector<std::string> & param_names,
+  const std::vector<rcl_interfaces::msg::ParameterValue> & param_values,
+  const std::vector<rcl_interfaces::msg::ParameterDescriptor> & param_descriptors,
   bool verbose)
 {
   std::cout << "## " << node_name << " Parameters" << "\n";
