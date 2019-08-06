@@ -252,7 +252,7 @@ Visualization Manager:
           Unreliable: false
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Trajectories
           Namespaces:
             {}
