@@ -1,5 +1,4 @@
 // Copyright (c) 2019 Samsung Research America
-// Author: Steve Macenski
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -78,7 +77,7 @@ public:
 
     rclcpp::executor::FutureReturnCode rc;
     rc = rclcpp::spin_until_future_complete(node_,
-      future_result, node_loop_timeout_);
+        future_result, node_loop_timeout_);
     if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::FAILURE;
     } else {

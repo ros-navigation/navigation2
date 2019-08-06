@@ -1,5 +1,4 @@
 // Copyright (c) 2019 Samsung Research America
-// Author: Steve Macenski
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,14 +32,15 @@ using nav2_msgs::srv::ClearEntireCostmap;
 class ClearCostmaps
 {
 public:
-  explicit ClearCostmaps(rclcpp::Node::SharedPtr & node, const std::string & srv_name = "ClearCostmaps");  // NOLINT
+  explicit ClearCostmaps(
+    rclcpp::Node::SharedPtr & node,
+    const std::string & srv_name = "ClearCostmaps");
   ~ClearCostmaps();
 
-
   void onCall(
-    const std::shared_ptr<rmw_request_id_t> /*request_header*/,
-    const std::shared_ptr<ClearEntireCostmap::Request> /*request*/,
-    const std::shared_ptr<ClearEntireCostmap::Response> /*response*/);
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<ClearEntireCostmap::Request>/*request*/,
+    const std::shared_ptr<ClearEntireCostmap::Response>/*response*/);
 
 protected:
   rclcpp::Node::SharedPtr node_;
@@ -51,7 +51,7 @@ protected:
   rclcpp::Service<ClearEntireCostmap>::SharedPtr bt_clear_costmap_servicer_;
 
   std::chrono::system_clock::time_point last_clear_time_;
-  std::chrono::milliseconds service_timeout_in_ms_;
+  std::chrono::milliseconds service_timeout_in_s_;
   std::chrono::seconds frequency_timeout_in_s_;
 };
 
