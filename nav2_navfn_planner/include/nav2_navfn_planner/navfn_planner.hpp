@@ -121,9 +121,6 @@ protected:
 
   // Publish a path for visualization purposes
   void publishPlan(const nav2_msgs::msg::Path & path);
-  void publishEndpoints(
-    const geometry_msgs::msg::Pose & start,
-    const geometry_msgs::msg::Pose & goal);
 
   // Determine if a new planner object should be made
   bool isPlannerOutOfDate();
@@ -135,10 +132,8 @@ protected:
   nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
   nav2_util::GetRobotPoseClient get_robot_pose_client_{"navfn_planner"};
 
-  // Publishers for the path and endpoints
+  // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
-    plan_marker_publisher_;
 
   // The costmap to use and its size
   nav2_msgs::msg::Costmap costmap_;

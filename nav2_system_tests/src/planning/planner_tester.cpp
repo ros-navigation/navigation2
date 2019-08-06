@@ -49,7 +49,7 @@ PlannerTester::PlannerTester()
   // Publisher of the faked current robot pose
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose");
 
-  // For visualization, we'll publish the map and the path endpoints
+  // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
 
   // We start with a 10x10 grid with no obstacles
@@ -289,7 +289,7 @@ bool PlannerTester::defaultPlannerRandomTests(
   }
 
   RCLCPP_INFO(this->get_logger(),
-    "Tested with %u endpoints. Planner failed on %u", number_tests, num_fail);
+    "Tested with %u tests. Planner failed on %u", number_tests, num_fail);
 
   if ((num_fail / number_tests) > acceptable_fail_ratio) {
     return false;
@@ -317,7 +317,7 @@ bool PlannerTester::plannerTest(
     return false;
   } else if (status == TaskStatus::SUCCEEDED) {
     // TODO(orduno): #443 check why task may report success while planner returns a path of 0 points
-    RCLCPP_DEBUG(this->get_logger(), "Got path, checking endpoints and possible collisions");
+    RCLCPP_DEBUG(this->get_logger(), "Got path, checking for possible collisions");
 
     return isCollisionFree(*path) && isWithinTolerance(robot_position, *goal, *path);
   }
@@ -417,11 +417,11 @@ bool PlannerTester::isWithinTolerance(
     path_end.position.x == goal.pose.position.x &&
     path_end.position.y == goal.pose.position.y)
   {
-    RCLCPP_DEBUG(this->get_logger(), "Path endpoints have correct start and end points");
+    RCLCPP_DEBUG(this->get_logger(), "Path has correct start and end points");
 
     return true;
   }
-  RCLCPP_WARN(this->get_logger(), "Path endpoints deviate from requested start and end points");
+  RCLCPP_WARN(this->get_logger(), "Path deviates from requested start and end points");
 
   RCLCPP_DEBUG(this->get_logger(), "Requested path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
     robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
