@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__RECOVERY_NODE_HPP_
-#define NAV2_BT_NAVIGATOR__RECOVERY_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__RECOVERY_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__RECOVERY_NODE_HPP_
 
 #include <string>
 #include "behaviortree_cpp/control_node.h"
@@ -55,4 +55,4 @@ private:
 };
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BT_NAVIGATOR__RECOVERY_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__RECOVERY_NODE_HPP_

@@ -152,7 +152,7 @@ BehaviorTreeEngine::initialPoseReceived(BT::TreeNode & tree_node)
   return initPoseReceived ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
-BT::NodeStatus 
+BT::NodeStatus
 BehaviorTreeEngine::clearEntirelyCostmapServiceRequest(
   BT::TreeNode & tree_node)
 {
