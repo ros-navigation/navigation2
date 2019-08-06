@@ -36,7 +36,8 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-  bool isCollisionFree(const double & distance,
+  bool isCollisionFree(
+    const double & distance,
     const geometry_msgs::msg::Twist & cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
 

@@ -100,7 +100,8 @@ Status Spin::onCycleUpdate()
   return Status::RUNNING;
 }
 
-bool Spin::isCollisionFree(const double & yaw_diff,
+bool Spin::isCollisionFree(
+  const double & yaw_diff,
   const geometry_msgs::msg::Twist & cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
