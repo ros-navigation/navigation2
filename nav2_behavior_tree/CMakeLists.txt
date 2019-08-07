@@ -5,10 +5,12 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -27,13 +29,16 @@ set(library_name ${PROJECT_NAME})
 
 add_library(${library_name} SHARED
   src/behavior_tree_engine.cpp
+  src/recovery_node.cpp
 )
 
 set(dependencies
   rclcpp
   rclcpp_action
+  rclcpp_lifecycle
   geometry_msgs
   nav2_msgs
+  nav_msgs
   behaviortree_cpp
   tf2
   tf2_geometry_msgs
