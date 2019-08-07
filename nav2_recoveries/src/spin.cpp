@@ -91,7 +91,9 @@ Status Spin::onCycleUpdate()
   pose2d.theta = current_yaw;
 
   if (!isCollisionFree(yaw_diff, cmd_vel, pose2d)) {
-    return Status::FAILED;
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
+    return Status::SUCCEEDED;
   }
 
   prev_yaw_ = current_yaw;
@@ -115,13 +117,11 @@ bool Spin::isCollisionFree(
     pose2d.theta += sim_position_change;
     cycle_count++;
 
-    if (abs(yaw_diff) - abs(sim_position_change) < 0.) {
+    if (abs(yaw_diff) - abs(sim_position_change) <= 0.) {
       break;
     }
 
     if (!collision_checker_->isCollisionFree(pose2d)) {
-      stopRobot();
-      RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
       return false;
     }
   }

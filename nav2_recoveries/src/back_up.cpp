@@ -26,11 +26,9 @@ namespace nav2_recoveries
 BackUp::BackUp(rclcpp::Node::SharedPtr & node)
 : Recovery<BackUpAction>(node, "BackUp")
 {
-  // TODO(orduno) #378 Pull values from the robot
-  max_linear_vel_ = 0.0;
-  min_linear_vel_ = 0.0;
-  linear_acc_lim_ = 0.0;
   simulate_ahead_time_ = 2.0;
+  node_->declare_parameter("simulate_ahead_time");
+  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 BackUp::~BackUp()
@@ -82,7 +80,9 @@ Status BackUp::onCycleUpdate()
   pose2d.theta = tf2::getYaw(current_pose.orientation);
 
   if (!isCollisionFree(distance, cmd_vel, pose2d)) {
-    return Status::FAILED;
+    stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
+    return Status::SUCCEEDED;
   }
 
   vel_publisher_->publishCommand(cmd_vel);
@@ -106,13 +106,11 @@ bool BackUp::isCollisionFree(
     pose2d.x += sim_position_change;
     cycle_count++;
 
-    if (diff_dist - abs(sim_position_change) < 0.) {
+    if (diff_dist - abs(sim_position_change) <= 0.) {
       break;
     }
 
     if (!collision_checker_->isCollisionFree(pose2d)) {
-      stopRobot();
-      RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
       return false;
     }
   }
