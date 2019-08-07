@@ -243,7 +243,8 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     msg->pose.pose.position.x = initial_pose_x_;
     msg->pose.pose.position.y = initial_pose_y_;
     msg->pose.pose.position.z = initial_pose_z_;
-    msg->pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_angle_);
+    msg->pose.pose.orientation =
+      nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_angle_);
 
     initialPoseReceived(msg);
   } else if (init_pose_received_on_inactive) {
@@ -990,7 +991,6 @@ AmclNode::initParameters()
   get_parameter("initial_pose.y", initial_pose_y_);
   get_parameter("initial_pose.z", initial_pose_z_);
   get_parameter("initial_pose.angle", initial_pose_angle_);
-  get_parameter("locate_at_origin", locate_at_origin_);
   get_parameter("max_beams", max_beams_);
   get_parameter("max_particles", max_particles_);
   get_parameter("min_particles", min_particles_);
