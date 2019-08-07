@@ -101,7 +101,10 @@ AmclNode::AmclNode()
 
   add_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")),
     "Which model to use, either beam, likelihood_field, or likelihood_field_prob",
-    "Ssame as likelihood_field but incorporates the beamskip feature, if enabled");
+    "Same as likelihood_field but incorporates the beamskip feature, if enabled");
+
+  add_parameter("locate_at_origin", rclcpp::ParameterValue(false),
+    "Causes AMCL to assume the initial pose is 0,0,0 in the map frame");
 
   add_parameter("max_beams", rclcpp::ParameterValue(60),
     "How many evenly-spaced beams in each scan to be used when updating the filter");
@@ -204,6 +207,14 @@ AmclNode::waitForTransforms()
   }
 }
 
+geometry_msgs::msg::Quaternion
+AmclNode::orientationAroundZAxis(double angle)
+{
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);  // void returning function
+  return tf2::toMsg(q);
+}
+
 nav2_util::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
@@ -219,8 +230,20 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // process incoming callbacks until we are
   active_ = true;
 
-  if (init_pose_received_on_inactive) {
-    handleInitialPose(last_published_pose_);
+  if (locate_at_origin_) {
+    auto msg = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+
+    msg->header.stamp = now();
+    msg->header.frame_id = global_frame_id_;
+    msg->pose.pose.position.x = 0.0;
+    msg->pose.pose.position.y = 0.0;
+    msg->pose.pose.position.z = 0.0;
+    msg->pose.pose.orientation = orientationAroundZAxis(0.0);
+
+    initialPoseReceived(msg);
+  } else if (init_pose_received_on_inactive) {
+    handleInitialPose(
+      std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -957,6 +980,7 @@ AmclNode::initParameters()
   get_parameter("laser_max_range", laser_max_range_);
   get_parameter("laser_min_range", laser_min_range_);
   get_parameter("laser_model_type", sensor_model_type_);
+  get_parameter("locate_at_origin", locate_at_origin_);
   get_parameter("max_beams", max_beams_);
   get_parameter("max_particles", max_particles_);
   get_parameter("min_particles", min_particles_);
