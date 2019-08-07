@@ -143,6 +143,7 @@ protected:
   std::unique_ptr<nav2_util::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
+  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
   double init_pose_[3];  // Initial robot pose
   double init_cov_[3];
   bool getOdomPose(
@@ -151,6 +152,7 @@ protected:
     double & x, double & y, double & yaw,
     const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
+  bool locate_at_origin_;
 
   // Particle filter
   void initParticleFilter();
