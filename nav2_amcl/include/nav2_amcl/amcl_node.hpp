@@ -151,7 +151,6 @@ protected:
     double & x, double & y, double & yaw,
     const rclcpp::Time & sensor_timestamp, const std::string & frame_id);
   std::atomic<bool> first_pose_sent_;
-  bool locate_at_origin_;
 
   // Particle filter
   void initParticleFilter();
