@@ -30,6 +30,7 @@
 
 #include "message_filters/subscriber.h"
 #include "nav2_util/angleutils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
@@ -102,8 +103,21 @@ AmclNode::AmclNode()
     "Which model to use, either beam, likelihood_field, or likelihood_field_prob",
     "Same as likelihood_field but incorporates the beamskip feature, if enabled");
 
-  add_parameter("locate_at_origin", rclcpp::ParameterValue(false),
-    "Causes AMCL to assume the initial pose is 0,0,0 in the map frame");
+  add_parameter("set_initial_pose", rclcpp::ParameterValue(false),
+    "Causes AMCL to set initial pose from the initial_pose* parameters instead of "
+    "waiting for the initial_pose message");
+
+  add_parameter("initial_pose.x", rclcpp::ParameterValue(0.0),
+    "X coordinate of the initial robot pose in the map frame");
+
+  add_parameter("initial_pose.y", rclcpp::ParameterValue(0.0),
+    "Y coordinate of the initial robot pose in the map frame");
+
+  add_parameter("initial_pose.z", rclcpp::ParameterValue(0.0),
+    "Z coordinate of the initial robot pose in the map frame");
+
+  add_parameter("initial_pose.angle", rclcpp::ParameterValue(0.0),
+    "Yaw of the initial robot pose in the map frame");
 
   add_parameter("max_beams", rclcpp::ParameterValue(60),
     "How many evenly-spaced beams in each scan to be used when updating the filter");
@@ -206,14 +220,6 @@ AmclNode::waitForTransforms()
   }
 }
 
-geometry_msgs::msg::Quaternion
-AmclNode::orientationAroundZAxis(double angle)
-{
-  tf2::Quaternion q;
-  q.setRPY(0, 0, angle);  // void returning function
-  return tf2::toMsg(q);
-}
-
 nav2_util::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
@@ -229,15 +235,15 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // process incoming callbacks until we are
   active_ = true;
 
-  if (locate_at_origin_) {
+  if (set_initial_pose_) {
     auto msg = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     msg->header.stamp = now();
     msg->header.frame_id = global_frame_id_;
-    msg->pose.pose.position.x = 0.0;
-    msg->pose.pose.position.y = 0.0;
-    msg->pose.pose.position.z = 0.0;
-    msg->pose.pose.orientation = orientationAroundZAxis(0.0);
+    msg->pose.pose.position.x = initial_pose_x_;
+    msg->pose.pose.position.y = initial_pose_y_;
+    msg->pose.pose.position.z = initial_pose_z_;
+    msg->pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_angle_);
 
     initialPoseReceived(msg);
   } else if (init_pose_received_on_inactive) {
@@ -979,6 +985,11 @@ AmclNode::initParameters()
   get_parameter("laser_max_range", laser_max_range_);
   get_parameter("laser_min_range", laser_min_range_);
   get_parameter("laser_model_type", sensor_model_type_);
+  get_parameter("set_initial_pose", set_initial_pose_);
+  get_parameter("initial_pose.x", initial_pose_x_);
+  get_parameter("initial_pose.y", initial_pose_y_);
+  get_parameter("initial_pose.z", initial_pose_z_);
+  get_parameter("initial_pose.angle", initial_pose_angle_);
   get_parameter("locate_at_origin", locate_at_origin_);
   get_parameter("max_beams", max_beams_);
   get_parameter("max_particles", max_particles_);
@@ -1038,7 +1049,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
 
-  RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix\n",
+  RCLCPP_INFO(get_logger(), "Received a %d X %d map @ %.3f m/pix",
     msg.info.width,
     msg.info.height,
     msg.info.resolution);

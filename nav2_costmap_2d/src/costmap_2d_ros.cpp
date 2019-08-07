@@ -232,8 +232,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   delete layered_costmap_;
   layered_costmap_ = nullptr;
 
-  tf_buffer_.reset();
   tf_listener_.reset();
+  tf_buffer_.reset();
 
   footprint_sub_.reset();
   footprint_pub_.reset();
