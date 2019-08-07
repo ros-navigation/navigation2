@@ -204,6 +204,7 @@ OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Deactivating");
 
   occ_pub_->on_deactivate();
+  timer_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

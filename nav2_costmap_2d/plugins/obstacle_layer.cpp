@@ -65,6 +65,8 @@ ObstacleLayer::~ObstacleLayer()
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
+
+  connection_.disconnect();
 }
 
 void ObstacleLayer::onInitialize()
@@ -199,12 +201,12 @@ void ObstacleLayer::onInitialize()
           *sub, *tf_, global_frame_, 50, rclcpp_node_));
 
       if (inf_is_valid) {
-        filter->registerCallback(std::bind(
+        connection_ = filter->registerCallback(std::bind(
             &ObstacleLayer::laserScanValidInfCallback, this, std::placeholders::_1,
             observation_buffers_.back()));
 
       } else {
-        filter->registerCallback(std::bind(
+        connection_ = filter->registerCallback(std::bind(
             &ObstacleLayer::laserScanCallback, this, std::placeholders::_1,
             observation_buffers_.back()));
       }
@@ -228,7 +230,7 @@ void ObstacleLayer::onInitialize()
         new tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>(
           *sub, *tf_, global_frame_, 50, rclcpp_node_));
 
-      filter->registerCallback(std::bind(
+      connection_ = filter->registerCallback(std::bind(
           &ObstacleLayer::pointCloud2Callback, this, std::placeholders::_1,
           observation_buffers_.back()));
 

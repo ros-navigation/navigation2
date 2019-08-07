@@ -17,7 +17,11 @@ amcl:
     laser_max_range: 100.0
     laser_min_range: -1.0
     laser_model_type: "likelihood_field"
-    locate_at_origin: true
+    set_initial_pose: true
+    initial_pose.x: -2.0
+    initial_pose.y: -0.5
+    initial_pose.z: 0.0
+    initial_pose.angle: 0.0
     max_beams: 60
     max_particles: 2000
     min_particles: 500

@@ -143,7 +143,6 @@ protected:
   std::unique_ptr<nav2_util::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
-  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
   double init_pose_[3];  // Initial robot pose
   double init_cov_[3];
   bool getOdomPose(
@@ -203,6 +202,11 @@ protected:
   void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   bool init_pose_received_on_inactive{false};
   bool initial_pose_is_known_{false};
+  bool set_initial_pose_{false};
+  double initial_pose_x_;
+  double initial_pose_y_;
+  double initial_pose_z_;
+  double initial_pose_angle_;
 
   // Node parameters (initialized via initParameters)
   void initParameters();
