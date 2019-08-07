@@ -121,7 +121,8 @@ def generate_launch_description():
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_system_tests'),
-                'lib/nav2_system_tests/test_updown')],
+                'lib/nav2_system_tests/test_updown'),
+            ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     startup_exit_event_handler = launch.actions.RegisterEventHandler(

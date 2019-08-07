@@ -16,6 +16,7 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(test_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 set(dependencies
     nav2_msgs
