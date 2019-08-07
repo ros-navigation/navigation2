@@ -28,9 +28,3 @@
 * I see alot of redundancy in this package, we might want to add a function `bool XYZ()` to reduce clutter
 * I tested on a differential drive robot, but there might be issues turning near corners on an omnidirectional platform
 -->
-
----
-
-<!-- OPTIONAL -->
-
-I'd like to request maintainer: <blank> to review this PR.
