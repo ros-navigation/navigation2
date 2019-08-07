@@ -27,7 +27,7 @@ import parameters
 
 def trainModel(env, action_size):
     state = env.reset()
-    observation_space = len(state)
+    observation_space = env.observation_space()
     agent = DQN(observation_space, action_size)
     target_model_update_counter = 0
     agent.step = 0
@@ -38,6 +38,7 @@ def trainModel(env, action_size):
         state = np.reshape(state, [1, observation_size])
         done = False
         agent.step += 1
+        train_count = 0
         while not done and rclpy.ok():
             #  agent.step += 1
             target_model_update_counter += 1
@@ -49,8 +50,11 @@ def trainModel(env, action_size):
             next_state = np.reshape(next_state, [1, observation_space])
             agent.save_to_memory(state, action, reward, next_state, done)
             state = next_state
+            points = points + reward
             #  sleep(parameters.LOOP_RATE)
-            if not done:
+            train_count += 1
+            if done or train_count > 500:
+                train_count = 0
                 env.stop_action()
                 agent.experience_replay()
             #  sleep(parameters.LOOP_RATE)

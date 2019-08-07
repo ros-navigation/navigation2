@@ -81,7 +81,7 @@ class TurtlebotEnv():
         self.t = Thread(target=self.executor.spin)
         self.t.start()
         self.time_factor = 1.0
-        self.time_to_sample = 0.5
+        self.time_to_sample = 1.0
 
     def cleanup(self):
         self.t.join()
