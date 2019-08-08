@@ -110,9 +110,9 @@ protected:
     tf_buffer->setCreateTimerInterface(timer_interface);
     auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
     node_->declare_parameter(
-      "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+      "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
     node_->declare_parameter(
-      "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+      "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
     recovery_ = std::make_unique<DummyRecovery>(node_, tf_buffer);
 
     client_ = rclcpp_action::create_client<RecoveryAction>(node_, "Recovery");
