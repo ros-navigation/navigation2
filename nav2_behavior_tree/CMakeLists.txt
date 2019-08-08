@@ -41,6 +41,7 @@ set(dependencies
   nav_msgs
   behaviortree_cpp
   tf2
+  tf2_ros
   tf2_geometry_msgs
   rosidl_default_generators
   std_msgs
@@ -71,7 +72,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-#  This package publishes messages from tf2_geometry_msgs
-ament_export_dependencies(tf2_geometry_msgs nav2_util)
+ament_export_dependencies(${dependencies})
 
 ament_package()

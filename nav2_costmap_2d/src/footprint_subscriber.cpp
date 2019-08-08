@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <string>
+#include <vector>
+#include <memory>
 
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 

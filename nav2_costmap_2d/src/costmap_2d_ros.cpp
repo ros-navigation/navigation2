@@ -47,6 +47,7 @@
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "nav2_util/robot_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -505,52 +506,8 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-
-  tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
-  tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
-
-  robot_pose.header.frame_id = robot_base_frame_;
-  robot_pose.header.stamp = rclcpp::Time();
-
-  // Save time for checking tf delay later
-  rclcpp::Time current_time = now();
-
-  // Get the global pose of the robot
-  try {
-    tf_buffer_->transform(robot_pose, global_pose, global_frame_);
-  } catch (tf2::LookupException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "No Transform available Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ConnectivityException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Connectivity Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ExtrapolationException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Extrapolation Error looking up robot pose: %s\n", ex.what());
-    return false;
-  }
-
-  // Check global_pose timeout
-  // TODO(bpwilcox): use toSec() function in more recent rclcpp branch
-  if (current_time - global_pose.header.stamp >
-    nav2_util::duration_from_seconds(transform_tolerance_))
-  {
-    RCLCPP_WARN(
-      get_logger(),
-      "Transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f, difference: %.4f", //NOLINT
-      tf2::timeToSec(tf2_ros::fromMsg(current_time)),
-      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)),
-      transform_tolerance_,
-      tf2::timeToSec(tf2_ros::fromMsg(current_time)) -
-      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)));
-
-    return false;
-  }
-
-  return true;
+  return nav2_util::getCurrentPose(global_pose, *tf_buffer_,
+           global_frame_, robot_base_frame_, transform_tolerance_);
 }
 
 }  // namespace nav2_costmap_2d
