@@ -90,19 +90,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   canceled_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
   completed_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
 
-  ROSActionQTransition * startupTransition = new ROSActionQTransition(false);
+  ROSActionQTransition * startupTransition = new ROSActionQTransition(QActionState::INACTIVE);
   startupTransition->setTargetState(running_);
   starting_->addTransition(startupTransition);
 
-  ROSActionQTransition * canceledTransition = new ROSActionQTransition(false);
+  ROSActionQTransition * canceledTransition = new ROSActionQTransition(QActionState::INACTIVE);
   canceledTransition->setTargetState(running_);
   canceled_->addTransition(canceledTransition);
 
-  ROSActionQTransition * runningTransition = new ROSActionQTransition(true);
+  ROSActionQTransition * runningTransition = new ROSActionQTransition(QActionState::ACTIVE);
   runningTransition->setTargetState(completed_);
   running_->addTransition(runningTransition);
 
-  ROSActionQTransition * completedTransition = new ROSActionQTransition(false);
+  ROSActionQTransition * completedTransition = new ROSActionQTransition(QActionState::INACTIVE);
   completedTransition->setTargetState(running_);
   completed_->addTransition(completedTransition);
 
@@ -226,7 +226,7 @@ Nav2Panel::timerActionEvent()
 {
   if (!goal_handle_) {
     RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
-    state_machine_.postEvent(new ROSActionQEvent(false));
+    state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     return;
   }
 
@@ -237,9 +237,9 @@ Nav2Panel::timerActionEvent()
   if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
     status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
   {
-    state_machine_.postEvent(new ROSActionQEvent(true));
+    state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
   } else {
-    state_machine_.postEvent(new ROSActionQEvent(false));
+    state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
   }
 }
 
