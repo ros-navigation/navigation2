@@ -58,7 +58,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name)
 {
   RCLCPP_INFO(get_logger(), "Creating");
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", std::string("__node:=") + get_name() + "_client","--"});
+    {"--ros-args", std::string("__node:=") + get_name() + "_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
