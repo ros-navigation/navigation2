@@ -1,106 +1,84 @@
-# Nav2 Tasks
+# nav2_behavior_tree
 
-A *task* is an abstraction roughly modeled after ROS1's SimpleActionClient/Server (which is not yet available in ROS2). A *task client* issues a command to *task server*, which receives the command, performs a (typically long-running) task, and asynchronously returns a result to the client. The task client may cancel the task during its execution. After cancellation or completion, the task client may issue another task to the task server.  
+The nav2_behavior_tree module provides a C++ template class for integrating ROS2 actions into Behavior Trees, navigation-specific behavior tree nodes, and a generic BehaviorTreeEngine class that simplifies the integration of BT processing into ROS2 nodes. This module is used by the nav2_bt_navigator to implement a ROS2 node that executes navigation Behavior Trees. The nav2_behavior_tree module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) for the core Behavior Tree processing. 
 
-The **nav2_behavior_tree** library defines:
+## The bt_action_node Template
 
-* [TaskServer](include/nav2_behavior_tree/task_server.hpp) and [TaskClient](include/nav2_behavior_tree/task_client.hpp) templates which are used as base classes to implement task servers and their associated task clients
-* A few derived classes, such as [ComputePathToPoseTask](include/nav2_behavior_tree/compute_path_to_pose_task.hpp), that define specific task clients and servers
-
-For convenience the nav_tasks library also provides:
-* A [ServiceClient](include/nav2_behavior_tree/service_client.hpp) template used to define clients for ROS2 services
-* A couple specific service client classes, such as [MapServiceClient](include/nav2_behavior_tree/map_service_client.hpp) that use the ServiceClient template
-
-## Overview
-
-The Navigation2 architecture implements a *task hierarchy* where commands are sent to modules which are organized in a hierarchy. Each module implements a task and can utilize sub-tasks, which are themselves modules that implement tasks.
-
-For example, the Navigation2 software currently implements four tasks: **ExecuteMission**, **NavigateToPose**, **ComputePathToPose**, and **FollowPath**, which are organized as follows:
-
-<img src="./doc/hierarchy.svg" width="400" title="Navigation Task Hiearchy">
-
-This approach allows for easily replacing any task with an alternative implementation. The replacement module must simply implement the correct task interface. 
-
-One can define additional tasks using the TaskClient and TaskSever templates. To do so, one specifies the command message that the task is to receive as well as the result message (similar in spirit to ROS1's .action file). 
-
-For example, to define a new task, named *DoSomething*, that takes a String as input and an Empty message as a result, 
+The [bt_action_node template](include/nav2_behavior_tree/bt_action_node.hpp) allows one to easily integrate a ROS2 action into a BehaviorTree. To do so, one derives from the BTActionNode template, providing the action message type. For example,
 
 ```C++
-namespace nav2_behavior_tree
+#include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_behavior_tree/bt_action_node.hpp"
+
+class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
-
-using DoSomethingCommand = std_msgs::msg::String;
-using DoSomethingResult = std_msgs::msg::Empty;
-
-using DoSomethingTaskClient = TaskClient<DoSomethingCommand, DoSomethingResult>;
-using DoSomethingTaskServer = TaskServer<DoSomethingCommand, DoSomethingResult>;
-
-template<>
-inline const char * getTaskName<DoSomethingCommand, DoSomethingResult>()
-{
-  return "DoSomethingTask";
-}
-```
-
-**Note**: The getTaskName template is required (it's used to name the topics used by the implementation).
-
-Then, to implement the task server, a derived class inherits from this newly-defined task type and overrides the execute() method. For example,
-
-```C++
-class DoSomethingImplementation : public nav2_behavior_tree::DoSomethingTaskServer
-{
-public:
-  DoSomethingImplementation();
-  ~DoSomethingImplementation();
-
-  nav2_behavior_tree::TaskStatus execute(
-    const nav2_behavior_tree::DoSomethingCommand::SharedPtr command) override;
+    ...
 };
+```
+The resulting nodes must be registered in the Behavior Tree engine in order to be used in Behavior Trees executed by this engine.
 
-TaskStatus
-DoSomethingImplementation::execute(const nav2_behavior_tree::DoSomethingCommand::SharedPtr command)
-{  
-  for (;;) {
-    
-    // TODO: Do a bit of the task        
+```C++
+BehaviorTreeEngine::BehaviorTreeEngine()
+{
+    ...
 
-    // Before we loop again to do more work, check if we've been canceled
-    if (cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "DwaController::execute: task has been canceled");
-      setCanceled();
-      return TaskStatus::CANCELED;
-    }
-    
-    // If we've successfully completed the task, return the result
-    if (done) {
-      nav2_behavior_tree::DoSomethingResult result; 
-      
-      // TODO: Set fields in the result message, if any
-      
-      setResult(result);
-      return TaskStatus::SUCCEEDED;
-    }
-  }  
+  factory_.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
+
+    ...
 }
 ```
 
-## Implementation
+Once a new node is registered in this way, it is now available to the BehaviorTreeEngine and can be used in Behavior Trees. For example,
 
-The implementation of TaskClient and TaskServer is intentionally simplistic as it is a temporary stand-in for missing ActionLib functionality. The current implementation uses four ROS topics for task client/server communication. Associated with these topics are four message types: **Command**, **Cancel**, **Result**, and **Status**. The Command and Result messages are provided by the user of the TaskClient and TaskServer classes and are the input and output of the task from the client's point of view. The Cancel and Status messages are internal to the implementation; the Status message is used to communicate from the task server to the task client, indicating whether a task has succeeded, failed, or has been canceled, and the Cancel message is sent from the task client to the task server when the client invokes the cancel() method. To keep things simple, the task library does not implement a feedback mechanism to provide task updates.
+```XML
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <ComputePathToPose goal="${goal}"/>
+      <FollowPath path="${path}"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
+```
 
-## Open Issues
+## The Behavior Tree Engine
 
-* __TaskServer *is a Node* versus *receives a Node*__
+The BT Navigator package has two sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
 
-  + The currently implementation makes the TaskServer itself a Node. Instead, it should receive the Node to use. This would allow a Node to have multiple TaskServers. 
+## Navigation-Specific Behavior Tree Nodes
 
-* **Override virtual method versus registering a callback**
-  
-  + The implementation currently requires a derived class to override a virtual method. Instead, this could be more like ActionLib where a callback is registered.
+A Behavior Tree consists of control flow nodes, such as fallback, sequence, parallel, and decorator, as well as two execution nodes: condition and action nodes. Execution nodes are the leaf nodes of the tree. When a leaf node is ticked, the node does some work and it returns either SUCCESS, FAILURE or RUNNING.  The current Navigation2 software implements a few custom nodes, including Conditions and Actions. The user can also define and register additional node types that can then be used in BTs and the corresponding XML descriptions.
 
-## Plans
+#### Decorator Nodes
+* **RateController**: A custom control flow node, which throttles down the tick rate.  This custom node has only one child and its tick rate is defined with a pre-defined frequency that the user can set.  This node returns RUNNING when it is not ticking its child. Currently, in the navigation, the `RateController` is used to tick the  `ComputePathToPose` and `GoalReached` node at 1 Hz.
 
-* **Automatic task cancelation**
+#### Condition Nodes
+* **GoalReached**: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked. 
 
-  + For convenience, upon receiving a new command before the previous command has completed, the task server could automatically cancel the current command and take up the new command.
+#### Action Nodes
+* **ComputePathToPose**: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard.
 
+#### Recovery Node
+In this section, the recovery node is being introduced to the navigation package.
+
+Recovery node is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
+
+<img src="./doc/recovery_node.png" title="" width="40%" align="middle">
+<br/>
+
+## Example Behavior Tree
+
+The graphical version of this Behavior Tree:
+
+<img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
+<br/>
+
+<img src="./doc/proposed_recovery.png" title="" width="95%" align="middle">
+<br/>
+
+The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal.
+
+## Future Work
+* **Schema definition and XML document validation** - Currently, there is no dynamic validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator. Instead, we can create a schema for the Mission Planning-level XML and use build-time validation of the XML input to ensure that it is well-formed and valid.
+* **Port to BT 3.0**
+* ** Use plug-ins to simplify integration of user BT nodes**
