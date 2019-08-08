@@ -57,7 +57,7 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 Status Spin::onCycleUpdate()
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_)) {
+  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
