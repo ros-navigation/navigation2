@@ -20,21 +20,27 @@
 namespace nav2_rviz_plugins
 {
 
+enum class QActionState
+{
+  ACTIVE,
+  INACTIVE
+};
+
 /// Custom Event to track state of ROS Action
 struct ROSActionQEvent : public QEvent
 {
-  explicit ROSActionQEvent(const bool & is_active)
+  explicit ROSActionQEvent(QActionState state)
   : QEvent(QEvent::Type(QEvent::User + 1)),
-    is_active_(is_active) {}
+    state_(state) {}
 
-  bool is_active_;
+  QActionState state_;
 };
 
 /// Custom Transition to check whether ROS Action state has changed
 class ROSActionQTransition : public QAbstractTransition
 {
 public:
-  explicit ROSActionQTransition(bool initial_status)
+  explicit ROSActionQTransition(QActionState initial_status)
   : status_(initial_status)
   {}
 
@@ -47,11 +53,11 @@ protected:
       return false;
     }
     ROSActionQEvent * action_event = static_cast<ROSActionQEvent *>(e);
-    return status_ != action_event->is_active_;
+    return status_ != action_event->state_;
   }
 
   virtual void onTransition(QEvent *) {}
-  bool status_;
+  QActionState status_;
 };
 
 }  // namespace nav2_rviz_plugins

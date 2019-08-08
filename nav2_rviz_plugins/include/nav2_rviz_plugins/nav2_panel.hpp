@@ -103,8 +103,8 @@ private:
   // The following states are added to allow for the state of the button to only expose shutdown
   // while the NavigateToPose action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
-  // and the button state to change automatically. The additional states is_canceled and
-  // is_succesful support the transitions from running into states that can transition to shutdown
+  // and the button state to change automatically. The additional states canceled_ and
+  // completed_ support the transitions from running into states that can transition to shutdown
   // but do nothing upon entrance.
   QState * running_{nullptr};
   QState * canceled_{nullptr};
