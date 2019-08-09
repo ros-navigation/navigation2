@@ -153,7 +153,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Add cleaning service
-  clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
+  clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

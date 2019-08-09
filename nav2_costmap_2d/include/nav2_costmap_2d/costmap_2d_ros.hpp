@@ -290,7 +290,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
-  std::shared_ptr<ClearCostmapService> clear_costmap_service_;
+  std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 };
 
 }  // namespace nav2_costmap_2d
