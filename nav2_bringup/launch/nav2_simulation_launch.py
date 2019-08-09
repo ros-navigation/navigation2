@@ -47,6 +47,7 @@ def generate_launch_description():
         'use_sim_time': use_sim_time,
         'yaml_filename': map_yaml_file
     }
+
     configured_params = RewrittenYaml(
         source_file=params_file, rewrites=param_substitutions, convert_types=True)
 
@@ -65,7 +66,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
-        default_value='turtlebot3_world.yaml',
+        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
@@ -75,7 +76,7 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
-        default_value='nav2_default_view.rviz',
+        default_value=os.path.join(launch_dir, 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
@@ -108,19 +109,20 @@ def generate_launch_description():
         cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
         cwd=[launch_dir], output='screen')
 
-    start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('robot_state_publisher'),
-                'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_waffle.urdf'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    urdf = os.path.join(
+        get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
+
+    start_robot_state_publisher_cmd = launch_ros.actions.Node(
+            package='robot_state_publisher',
+            node_executable='robot_state_publisher',
+            node_name='robot_state_publisher',
+            output='screen',
+            parameters=[configured_params],
+            arguments=[urdf])
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            [ "__log_level:=fatal"],
             ['-d', rviz_config_file]],
         cwd=[launch_dir], output='screen')
 
@@ -129,69 +131,66 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    start_map_server_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_map_server'),
-                'lib/nav2_map_server/map_server'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_map_server_cmd = launch_ros.actions.Node(
+        package='nav2_map_server',
+        node_executable='map_server',
+        node_name='map_server',
+        output='screen',
+        parameters=[configured_params])
 
-    start_localizer_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_amcl'),
-                'lib/nav2_amcl/amcl'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_localizer_cmd = launch_ros.actions.Node(
+        package='nav2_amcl',
+        node_executable='amcl',
+        node_name='amcl',
+        output='screen',
+        parameters=[configured_params])
 
-    start_world_model_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_world_model'),
-                'lib/nav2_world_model/world_model'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_world_model_cmd = launch_ros.actions.Node(
+        package='nav2_world_model',
+        node_executable='world_model',
+        output='screen',
+        parameters=[configured_params])
 
-    start_dwb_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('dwb_controller'),
-                'lib/dwb_controller/dwb_controller'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_dwb_cmd  = launch_ros.actions.Node(
+        package='dwb_controller',
+        node_executable='dwb_controller',
+        output='screen',
+        parameters=[configured_params])
 
-    start_planner_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_navfn_planner'),
-                'lib/nav2_navfn_planner/navfn_planner'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_planner_cmd = launch_ros.actions.Node(
+        package='nav2_navfn_planner',
+        node_executable='navfn_planner',
+        node_name='navfn_planner',
+        output='screen',
+        parameters=[configured_params])
 
-    start_navigator_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_bt_navigator'),
-                'lib/nav2_bt_navigator/bt_navigator'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_navigator_cmd = launch_ros.actions.Node(
+        package='nav2_bt_navigator',
+        node_executable='bt_navigator',
+        node_name='bt_navigator',
+        output='screen',
+        parameters=[configured_params])
 
-    start_recovery_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_recoveries'),
-                'lib/nav2_recoveries/recoveries_node'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_recovery_cmd = launch_ros.actions.Node(
+        package='nav2_recoveries',
+        node_executable='recoveries_node',
+        node_name='recoveries',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}])
 
-    start_lifecycle_manager_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_lifecycle_manager'),
-                'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_lifecycle_manager_cmd = launch_ros.actions.Node(
+        package='nav2_lifecycle_manager',
+        node_executable='lifecycle_manager',
+        node_name='lifecycle_manager_control',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time},
+                    {'autostart': autostart},
+                    {'node_names': [robot_id + '/map_server',
+                                    robot_id + '/amcl',
+                                    robot_id + '/world_model',
+                                    robot_id + '/dwb_controller',
+                                    robot_id + '/navfn_planner',
+                                    robot_id + '/bt_navigator']}])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
