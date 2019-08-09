@@ -116,7 +116,7 @@ AmclNode::AmclNode()
   add_parameter("initial_pose.z", rclcpp::ParameterValue(0.0),
     "Z coordinate of the initial robot pose in the map frame");
 
-  add_parameter("initial_pose.angle", rclcpp::ParameterValue(0.0),
+  add_parameter("initial_pose.yaw", rclcpp::ParameterValue(0.0),
     "Yaw of the initial robot pose in the map frame");
 
   add_parameter("max_beams", rclcpp::ParameterValue(60),
@@ -244,7 +244,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     msg->pose.pose.position.y = initial_pose_y_;
     msg->pose.pose.position.z = initial_pose_z_;
     msg->pose.pose.orientation =
-      nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_angle_);
+      nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_yaw_);
 
     initialPoseReceived(msg);
   } else if (init_pose_received_on_inactive) {
@@ -990,7 +990,7 @@ AmclNode::initParameters()
   get_parameter("initial_pose.x", initial_pose_x_);
   get_parameter("initial_pose.y", initial_pose_y_);
   get_parameter("initial_pose.z", initial_pose_z_);
-  get_parameter("initial_pose.angle", initial_pose_angle_);
+  get_parameter("initial_pose.yaw", initial_pose_yaw_);
   get_parameter("max_beams", max_beams_);
   get_parameter("max_particles", max_particles_);
   get_parameter("min_particles", min_particles_);

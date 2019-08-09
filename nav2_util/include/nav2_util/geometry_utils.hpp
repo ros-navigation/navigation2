@@ -16,16 +16,21 @@
 #define NAV2_UTIL__GEOMETRY_UTILS_HPP_
 
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace nav2_util
 {
-
-class geometry_utils
+namespace geometry_utils
 {
-public:
-  static geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
-};
 
+inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
+{
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);  // void returning function
+  return tf2::toMsg(q);
+}
+
+}  // namespace geometry_utils
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__GEOMETRY_UTILS_HPP_
