@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is all-in-one launch script intended for use by nav2 developers.
+""" This is all-in-one launch script intended for use by nav2 developers. """
 
 import os
 

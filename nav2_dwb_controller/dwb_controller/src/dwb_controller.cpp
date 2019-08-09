@@ -36,7 +36,8 @@ DwbController::DwbController()
   declare_parameter("controller_frequency", 20.0);
 
   // The costmap node is used in the implementation of the DWB controller
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "local_costmap", nav2_util::add_namespaces(std::string{get_namespace()}, "local_costmap"));
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
