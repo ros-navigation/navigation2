@@ -156,8 +156,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   active_ = true;
 
   if (init_pose_received_on_inactive) {
-    handleInitialPose(
-      std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+    handleInitialPose(last_published_pose_);
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -392,11 +391,11 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(msg);
+  handleInitialPose(*msg);
 }
 
 void
-AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
@@ -406,7 +405,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
 
     // Check if the transform is available
-    tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg->header.stamp),
+    tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
         base_frame_id_, tf2_time, odom_frame_id_);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
@@ -423,7 +422,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   tf2::impl::Converter<true, false>::convert(tx_odom.transform, tx_odom_tf2);
 
   tf2::Transform pose_old;
-  tf2::impl::Converter<true, false>::convert(msg->pose.pose, pose_old);
+  tf2::impl::Converter<true, false>::convert(msg.pose.pose, pose_old);
 
   tf2::Transform pose_new = pose_old * tx_odom_tf2;
 
@@ -445,11 +444,11 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   // Copy in the covariance, converting from 6-D to 3-D
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
-      pf_init_pose_cov.m[i][j] = msg->pose.covariance[6 * i + j];
+      pf_init_pose_cov.m[i][j] = msg.pose.covariance[6 * i + j];
     }
   }
 
-  pf_init_pose_cov.m[2][2] = msg->pose.covariance[6 * 5 + 5];
+  pf_init_pose_cov.m[2][2] = msg.pose.covariance[6 * 5 + 5];
 
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;
@@ -988,8 +987,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Laser
   lasers_.clear();
 
-  handleInitialPose(
-    std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+  handleInitialPose(last_published_pose_);
 }
 
 void
