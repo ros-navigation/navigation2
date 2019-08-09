@@ -205,7 +205,7 @@ protected:
   double initial_pose_x_;
   double initial_pose_y_;
   double initial_pose_z_;
-  double initial_pose_angle_;
+  double initial_pose_yaw_;
 
   // Node parameters (initialized via initParameters)
   void initParameters();
