@@ -73,11 +73,19 @@ class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief  Constructor for the wrapper
-   * @param name The name for this costmap
-   * @param tf A reference to a TransformListener
+   * @brief  Constructor for the wrapper, the node will
+   * be placed in a namespace equal to the node's name
+   * @param name Name of the costmap ROS node
    */
   explicit Costmap2DROS(const std::string & name);
+
+  /**
+   * @brief  Constructor for the wrapper
+   * @param name Name of the costmap ROS node
+   * @param absolute_namespace Namespace of the costmap ROS node starting with "/"
+   */
+  explicit Costmap2DROS(const std::string & name, const std::string & absolute_namespace);
+
   ~Costmap2DROS();
 
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;

@@ -53,11 +53,17 @@ using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
-
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: nav2_util::LifecycleNode(name, name, true), name_(name)
+: Costmap2DROS(name, name) {}
+
+Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolute_namespace)
+: nav2_util::LifecycleNode(name, "", true,
+    // NodeOption arguments take precedence over the ones provided on the command line
+    // use this to make sure the node is placed on the provided namespace
+    rclcpp::NodeOptions().arguments({std::string("__ns:=") + absolute_namespace})),
+  name_(name)
 {
-  RCLCPP_INFO(get_logger(), "Creating");
+  RCLCPP_INFO(get_logger(), "Creating Costmap");
   auto options = rclcpp::NodeOptions().arguments(
     {std::string("__node:=") + get_name() + "_client"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);

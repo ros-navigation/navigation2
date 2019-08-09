@@ -38,6 +38,19 @@ string sanitize_node_name(const string & potential_node_name)
   return node_name;
 }
 
+string add_namespaces(const string & top_ns, const string & sub_ns)
+{
+  if (!top_ns.empty() && top_ns.back() == '/') {
+    if (top_ns.front() == '/') {
+      return top_ns + sub_ns;
+    } else {
+      return "/" + top_ns + sub_ns;
+    }
+  }
+
+  return top_ns + "/" + sub_ns;
+}
+
 std::string time_to_string(size_t len)
 {
   string output(len, '0');  // prefill the string with zeros
