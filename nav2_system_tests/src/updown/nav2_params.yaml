@@ -21,7 +21,7 @@ amcl:
     initial_pose.x: -2.0
     initial_pose.y: -0.5
     initial_pose.z: 0.0
-    initial_pose.angle: 0.0
+    initial_pose.yaw: 0.0
     max_beams: 60
     max_particles: 2000
     min_particles: 500
