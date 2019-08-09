@@ -52,7 +52,7 @@ Visualization Manager:
       Description File: ""
       Description Source: Topic
       Description Topic: /robot_description
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -169,7 +169,7 @@ Visualization Manager:
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
       Topic: /particlecloud
-      Unreliable: false
+      Unreliable: true
       Value: true
     - Class: rviz_common/Group
       Displays:
@@ -261,7 +261,7 @@ Visualization Manager:
           Unreliable: false
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: true
+          Enabled: false
           Name: Trajectories
           Namespaces:
             {}

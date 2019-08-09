@@ -17,7 +17,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Path.msg"
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
-  "srv/GetRobotPose.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
@@ -27,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/NavigateToPose.action"
   "action/Spin.action"
   "action/DummyRecovery.action"
+  "action/RandomCrawl.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs
 )
 

@@ -51,7 +51,7 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<std::thread> rclcpp_thread_;
-  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> rclcpp_exec_;
+  rclcpp::executors::SingleThreadedExecutor rclcpp_exec_;
 };
 
 }  // namespace nav2_util

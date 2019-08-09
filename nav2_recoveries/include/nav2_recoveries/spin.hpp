@@ -30,7 +30,7 @@ using SpinAction = nav2_msgs::action::Spin;
 class Spin : public Recovery<SpinAction>
 {
 public:
-  explicit Spin(rclcpp::Node::SharedPtr & node);
+  explicit Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
   ~Spin();
 
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;

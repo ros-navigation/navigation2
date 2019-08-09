@@ -32,8 +32,8 @@ using namespace std::chrono_literals;
 namespace nav2_recoveries
 {
 
-Spin::Spin(rclcpp::Node::SharedPtr & node)
-: Recovery<SpinAction>(node, "Spin")
+Spin::Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
+: Recovery<SpinAction>(node, "Spin", tf)
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -57,13 +57,13 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 
 Status Spin::onCycleUpdate()
 {
-  geometry_msgs::msg::Pose current_pose;
-  if (!getRobotPose(current_pose)) {
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(current_pose, tf_)) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
-  const double current_yaw = tf2::getYaw(current_pose.orientation);
+  const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
   delta_yaw_ = abs(abs(current_yaw) - abs(prev_yaw_));
   relative_yaw_ += delta_yaw_;
   const double yaw_diff = relative_yaw_ - cmd_yaw_;
@@ -86,9 +86,9 @@ Status Spin::onCycleUpdate()
   cmd_yaw_ < 0 ? cmd_vel.angular.z = -vel : cmd_vel.angular.z = vel;
 
   geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose.position.x;
-  pose2d.y = current_pose.position.y;
-  pose2d.theta = current_yaw;
+  pose2d.x = current_pose.pose.position.x;
+  pose2d.y = current_pose.pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
   if (!isCollisionFree(yaw_diff, cmd_vel, pose2d)) {
     stopRobot();
@@ -97,7 +97,7 @@ Status Spin::onCycleUpdate()
   }
 
   prev_yaw_ = current_yaw;
-  vel_publisher_->publishCommand(cmd_vel);
+  vel_pub_->publish(cmd_vel);
 
   return Status::RUNNING;
 }

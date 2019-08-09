@@ -28,7 +28,7 @@ using BackUpAction = nav2_msgs::action::BackUp;
 class BackUp : public Recovery<BackUpAction>
 {
 public:
-  explicit BackUp(rclcpp::Node::SharedPtr & node);
+  explicit BackUp(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
   ~BackUp();
 
   Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
@@ -45,7 +45,7 @@ protected:
   double max_linear_vel_;
   double linear_acc_lim_;
 
-  geometry_msgs::msg::Pose initial_pose_;
+  geometry_msgs::msg::PoseStamped initial_pose_;
   double command_x_;
   double simulate_ahead_time_;
 };

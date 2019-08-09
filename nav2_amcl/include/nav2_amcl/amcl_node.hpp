@@ -198,7 +198,7 @@ protected:
     const std::vector<amcl_hyp_t> & hyps,
     const int & max_weight_hyp);
   void sendMapToOdomTransform(const tf2::TimePoint & transform_expiration);
-  void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   bool init_pose_received_on_inactive{false};
   bool initial_pose_is_known_{false};
 
