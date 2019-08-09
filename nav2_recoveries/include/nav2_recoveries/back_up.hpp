@@ -36,12 +36,18 @@ public:
   Status onCycleUpdate() override;
 
 protected:
+  bool isCollisionFree(
+    const double & distance,
+    const geometry_msgs::msg::Twist & cmd_vel,
+    geometry_msgs::msg::Pose2D & pose2d);
+
   double min_linear_vel_;
   double max_linear_vel_;
   double linear_acc_lim_;
 
   geometry_msgs::msg::PoseStamped initial_pose_;
   double command_x_;
+  double simulate_ahead_time_;
 };
 
 }  // namespace nav2_recoveries
