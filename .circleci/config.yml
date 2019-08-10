@@ -305,7 +305,7 @@ jobs:
       - checkout_source
       - setup_dependencies
       - build_source
-  debug_test: &debug_test
+  debug_test:
     executor: debug_exec
     steps:
       - restore_build
@@ -316,38 +316,39 @@ jobs:
     steps:
       - restore_build
       - test_build
-  release_test_rmw_connext_cpp:
+  test_rmw_connext_cpp:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_connext_cpp"
-  release_test_rmw_fastrtps_cpp:
+  test_rmw_fastrtps_cpp:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-  release_test_rmw_opensplice_cpp:
+  test_rmw_opensplice_cpp:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
 
 workflows:
   version: 2
-  build-test:
-    jobs:
+  build_and_test: &build_and_test
+    jobs: &ci_jobs
       - debug_build
       - debug_test:
           requires:
             - debug_build
       - release_build
-      - release_test_rmw_connext_cpp:
+      - test_rmw_connext_cpp:
           requires:
             - release_build
-      - release_test_rmw_fastrtps_cpp:
+      - test_rmw_fastrtps_cpp:
           requires:
             - release_build
-      - release_test_rmw_opensplice_cpp:
+      - test_rmw_opensplice_cpp:
           requires:
             - release_build
   nightly:
+    <<: *build_and_test
     triggers:
       - schedule:
           cron: "0 0 * * *"
@@ -355,14 +356,3 @@ workflows:
             branches:
               only:
                 - master
-    jobs:
-      - release_build
-      - release_test_rmw_connext_cpp:
-          requires:
-            - release_build
-      - release_test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
-      - release_test_rmw_opensplice_cpp:
-          requires:
-            - release_build
