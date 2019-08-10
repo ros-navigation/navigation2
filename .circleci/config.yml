@@ -5,55 +5,55 @@ orbs:
 references:
   pre_checkout: &pre_checkout
     run:
-        name: Pre Checkout
-        command: |
-          echo $CIRCLE_CACHE_NONCE | \
-            awk '{print "cache_nonce "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
-          stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
-            sha256sum | \
-            awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
-          rm -rf $OVERLAY_WS/*
+      name: Pre Checkout
+      command: |
+        echo $CIRCLE_CACHE_NONCE | \
+          awk '{print "cache_nonce "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
+        stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
+          sha256sum | \
+          awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
+        rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
   post_checkout: &post_checkout
     run:
-        name: Post Checkout
-        command: |
-          rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
-          if ! cmp \
-            $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-            $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
-          then
-            echo "Cleaning Underlay"
-            rm -rf $UNDERLAY_WS/*
-            mkdir -p $UNDERLAY_WS/src
-            vcs import $UNDERLAY_WS/src \
-              < $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos
-          fi
+      name: Post Checkout
+      command: |
+        rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+        if ! cmp \
+          $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
+          $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
+        then
+          echo "Cleaning Underlay"
+          rm -rf $UNDERLAY_WS/*
+          mkdir -p $UNDERLAY_WS/src
+          vcs import $UNDERLAY_WS/src \
+            < $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos
+        fi
   install_underlay_dependencies: &install_underlay_dependencies
     run:
-        name: Install Underlay Dependencies
-        command: |
-          cat /opt/ros/$ROS_DISTRO/checksum.txt > $UNDERLAY_WS/checksum.txt
-          find $UNDERLAY_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
-            sort -k 2 | \
-            cut -d" " -f1 | \
-            sha256sum | \
-            awk '{print "underlay source "$1}' >> $UNDERLAY_WS/checksum.txt
-          apt-get update
-          dependencies=$(
-            rosdep install -q -y \
-              --from-paths \
-                $UNDERLAY_WS/src \
-              --ignore-src \
-              --verbose | \
-            awk '$1 ~ /^resolution\:/' | \
-            awk -F'[][]' '{print $2}' | \
-            tr -d \, | xargs -n1 | sort -u | xargs)
-          dpkg -s $dependencies | \
-            sha256sum | \
-            awk '{print "underlay dependencies "$1}' >> $UNDERLAY_WS/checksum.txt
+      name: Install Underlay Dependencies
+      command: |
+        cat /opt/ros/$ROS_DISTRO/checksum.txt > $UNDERLAY_WS/checksum.txt
+        find $UNDERLAY_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+          sort -k 2 | \
+          cut -d" " -f1 | \
+          sha256sum | \
+          awk '{print "underlay source "$1}' >> $UNDERLAY_WS/checksum.txt
+        apt-get update
+        dependencies=$(
+          rosdep install -q -y \
+            --from-paths \
+              $UNDERLAY_WS/src \
+            --ignore-src \
+            --verbose | \
+          awk '$1 ~ /^resolution\:/' | \
+          awk -F'[][]' '{print $2}' | \
+          tr -d \, | xargs -n1 | sort -u | xargs)
+        dpkg -s $dependencies | \
+          sha256sum | \
+          awk '{print "underlay dependencies "$1}' >> $UNDERLAY_WS/checksum.txt
   restore_ccache: &restore_ccache
     restore_cache:
       name: Restore CCache
@@ -66,10 +66,10 @@ references:
     run:
       name: CCache Stats
       command: |
-          ccache -s # show stats
-          ccache -z # zero stats
-          ccache -V # show version
-          ccache -p # show config
+        ccache -s # show stats
+        ccache -z # zero stats
+        ccache -V # show version
+        ccache -p # show config
   restore_underlay_cache: &restore_underlay_cache
     restore_cache:
       name: Restore Underlay Cache
@@ -110,31 +110,31 @@ references:
         - /opt/underlay_ws
   install_overlay_dependencies: &install_overlay_dependencies
     run:
-        name: Install Overlay Dependencies
-        command: |
-          cat $UNDERLAY_WS/checksum.txt > $OVERLAY_WS/checksum.txt
-          find $OVERLAY_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
-            sort -k 2 | \
-            cut -d" " -f1 | \
-            sha256sum | \
-            awk '{print "overlay source "$1}' >> $OVERLAY_WS/checksum.txt
-          apt-get update
-          dependencies=$(
-            rosdep install -q -y \
-              --from-paths \
-                $UNDERLAY_WS/src \
-                src \
-              --ignore-src \
-              --verbose | \
-            awk '$1 ~ /^resolution\:/' | \
-            awk -F'[][]' '{print $2}' | \
-            tr -d \, | xargs -n1 | sort -u | xargs)
-          dpkg -s $dependencies | \
-            sha256sum | \
-            awk '{print "overlay dependencies "$1}' >> $OVERLAY_WS/checksum.txt
+      name: Install Overlay Dependencies
+      command: |
+        cat $UNDERLAY_WS/checksum.txt > $OVERLAY_WS/checksum.txt
+        find $OVERLAY_WS/src -not -iwholename '*.git/*' -type f -exec sha256sum {} \; | \
+          sort -k 2 | \
+          cut -d" " -f1 | \
+          sha256sum | \
+          awk '{print "overlay source "$1}' >> $OVERLAY_WS/checksum.txt
+        apt-get update
+        dependencies=$(
+          rosdep install -q -y \
+            --from-paths \
+              $UNDERLAY_WS/src \
+              src \
+            --ignore-src \
+            --verbose | \
+          awk '$1 ~ /^resolution\:/' | \
+          awk -F'[][]' '{print $2}' | \
+          tr -d \, | xargs -n1 | sort -u | xargs)
+        dpkg -s $dependencies | \
+          sha256sum | \
+          awk '{print "overlay dependencies "$1}' >> $OVERLAY_WS/checksum.txt
   store_overlay_checksum: &store_overlay_checksum
     store_artifacts:
-        path: checksum.txt
+      path: checksum.txt
   restore_overlay_cache: &restore_overlay_cache
     restore_cache:
       name: Restore Overlay Cache
@@ -187,26 +187,26 @@ references:
         - /opt/overlay_ws
   copy_build_logs: &copy_build_logs
     run:
-        name: Copy Build Logs
-        when: always
-        command: cp -rH log/latest_build log/build
+      name: Copy Build Logs
+      when: always
+      command: cp -rH log/latest_build log/build
   store_build_logs: &store_build_logs
     store_artifacts:
         path: log/build
   test_overlay: &test_overlay
     run:
-        name: Test Overlay
-        command: |
-          . install/setup.sh
-          src/navigation2/tools/run_test_suite.bash
+      name: Test Overlay
+      command: |
+        . install/setup.sh
+        src/navigation2/tools/run_test_suite.bash
   copy_test_logs: &copy_test_logs
     run:
-        name: Copy Test Logs
-        when: always
-        command: cp -rH log/latest_test log/test
+      name: Copy Test Logs
+      when: always
+      command: cp -rH log/latest_test log/test
   store_test_logs: &store_test_logs
     store_artifacts:
-        path: log/test
+      path: log/test
   generate_code_coverage: &generate_code_coverage
     run:
       name: Generate Code Coverage
