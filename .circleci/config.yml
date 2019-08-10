@@ -1,4 +1,7 @@
 version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
+
 references:
   pre_checkout: &pre_checkout
     run:
@@ -204,17 +207,16 @@ references:
   store_test_logs: &store_test_logs
     store_artifacts:
         path: log/test
-  report_code_coverage: &report_code_coverage
+  generate_code_coverage: &generate_code_coverage
     run:
-        name: Report Code Coverage
-        command: |
-          if [ "$COVERAGE_ENABLED" = "True" ]
-          then
-            . install/setup.sh
-            src/navigation2/tools/code_coverage_report.bash codecovio
-          else
-            echo "Skipping Code Coverage Report"
-          fi
+      name: Generate Code Coverage
+      when: always
+      command: src/navigation2/tools/code_coverage_report.bash
+  upload_code_coverage: &upload_code_coverage
+    codecov/upload:
+      when: always
+      file: lcov/project_coverage.info
+      flags: project
 
 commands:
   checkout_source:
@@ -265,7 +267,8 @@ commands:
   report_coverage:
     description: "Report Coverage"
     steps:
-      - *report_code_coverage
+      - *generate_code_coverage
+      - *upload_code_coverage
 
 executors:
   debug_exec:
