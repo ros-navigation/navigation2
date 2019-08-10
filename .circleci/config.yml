@@ -4,6 +4,7 @@ orbs:
 
 references:
   common_environment: &common_environment
+    CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
   pre_checkout: &pre_checkout
@@ -165,6 +166,9 @@ references:
                 -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
             rm -f build_failed
         fi
+  store_ccache_logs: &store_ccache_logs
+    store_artifacts:
+        path: /tmp/ccache.log
   save_ccache: &save_ccache
     save_cache:
       name: Save CCache
@@ -245,6 +249,7 @@ commands:
       - *store_overlay_checksum
       - *restore_overlay_cache
       - *build_overlay
+      - *store_ccache_logs
       - *ccache_stats
       - *save_ccache
       - *save_overlay_cache
