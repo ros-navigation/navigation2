@@ -7,21 +7,17 @@ ARG FROM_IMAGE=osrf/ros2:nightly
 FROM $FROM_IMAGE
 
 # install CI dependencies	
-RUN apt-get update && apt-get install -q -y \	
-      ccache \	
+RUN apt-get update && \
+    apt-get install -q -y \	
+      ccache \
     && rm -rf /var/lib/apt/lists/*
-
-# copy ros package repo
-ENV NAV2_WS /opt/nav2_ws
-RUN mkdir -p $NAV2_WS/src
-WORKDIR $NAV2_WS/src
-COPY ./ navigation2/
 
 # clone underlay package repos
 ENV ROS_WS /opt/ros_ws
 RUN mkdir -p $ROS_WS/src
 WORKDIR $ROS_WS
-RUN vcs import src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+COPY ./tools/ros2_dependencies.repos ./
+RUN vcs import src < ros2_dependencies.repos
 
 # install underlay package dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -35,7 +31,6 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # build underlay package source
 ARG CMAKE_BUILD_TYPE=Release
 ARG FAIL_ON_BUILD_FAILURE=True
-
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
@@ -48,8 +43,13 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       exit 1; \
     fi
 
-# install overlay package dependencies
+# copy ros package repo
+ENV NAV2_WS /opt/nav2_ws
+RUN mkdir -p $NAV2_WS/src
 WORKDIR $NAV2_WS
+COPY ./ src/navigation2/
+
+# install overlay package dependencies
 RUN . $ROS_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
@@ -60,8 +60,8 @@ RUN . $ROS_WS/install/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build overlay package source
-RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 ARG COVERAGE_ENABLED=False
+RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . $ROS_WS/install/setup.sh && \
      colcon build \
        --symlink-install \
