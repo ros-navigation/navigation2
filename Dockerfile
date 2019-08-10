@@ -12,14 +12,14 @@ RUN apt-get update && \
       ccache \
     && rm -rf /var/lib/apt/lists/*
 
-# clone underlay package repos
-ENV ROS_WS /opt/ros_ws
-RUN mkdir -p $ROS_WS/src
-WORKDIR $ROS_WS
+# clone underlay source
+ENV UNDERLAY_WS /opt/underlay_ws
+RUN mkdir -p $UNDERLAY_WS/src
+WORKDIR $UNDERLAY_WS
 COPY ./tools/ros2_dependencies.repos ./
 RUN vcs import src < ros2_dependencies.repos
 
-# install underlay package dependencies
+# install underlay dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
@@ -28,7 +28,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# build underlay package source
+# build underlay source
 ARG CMAKE_BUILD_TYPE=Release
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -43,26 +43,26 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       exit 1; \
     fi
 
-# copy ros package repo
-ENV NAV2_WS /opt/nav2_ws
-RUN mkdir -p $NAV2_WS/src
-WORKDIR $NAV2_WS
+# copy overlay source
+ENV OVERLAY_WS /opt/overlay_ws
+RUN mkdir -p $OVERLAY_WS/src
+WORKDIR $OVERLAY_WS
 COPY ./ src/navigation2/
 
-# install overlay package dependencies
-RUN . $ROS_WS/install/setup.sh && \
+# install overlay dependencies
+RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
       --from-paths \
-        $ROS_WS/src \
+        $UNDERLAY_WS/src \
         src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# build overlay package source
+# build overlay source
 ARG COVERAGE_ENABLED=False
-RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
-RUN . $ROS_WS/install/setup.sh && \
+RUN rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+RUN . $UNDERLAY_WS/install/setup.sh && \
      colcon build \
        --symlink-install \
        --cmake-args \
@@ -75,7 +75,7 @@ RUN . $ROS_WS/install/setup.sh && \
       exit 1; \
     fi
 
-# source overlay workspace from entrypoint
+# source overlay from entrypoint
 RUN sed --in-place \
-      's|^source .*|source "$NAV2_WS/install/setup.bash"|' \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
