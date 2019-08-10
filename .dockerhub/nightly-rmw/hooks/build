@@ -1,5 +1,5 @@
 #!/bin/bash
-FROM_IMAGE=osrf/ros2:nightly-rmw
+FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
