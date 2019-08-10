@@ -59,6 +59,14 @@ references:
         -{{ .Branch }}\
         -{{ .Environment.CIRCLE_PR_NUMBER }}\
         -{{ checksum \"/opt/underlay_ws/checksum.txt\" }}"
+  ccache_stats: &ccache_stats
+    run:
+      name: CCache Stats
+      command: |
+          ccache -s # show stats
+          ccache -z # zero stats
+          ccache -V # show version
+          ccache -p # show config
   restore_underlay_cache: &restore_underlay_cache
     restore_cache:
       name: Restore Underlay Cache
@@ -220,8 +228,10 @@ commands:
     steps:
       - *install_underlay_dependencies
       - *restore_ccache
+      - *ccache_stats
       - *restore_underlay_cache
       - *build_underlay
+      - *ccache_stats
       - *save_underlay_cache
       - *install_overlay_dependencies
   build_source:
@@ -230,6 +240,7 @@ commands:
       - *store_overlay_checksum
       - *restore_overlay_cache
       - *build_overlay
+      - *ccache_stats
       - *save_ccache
       - *save_overlay_cache
       - *copy_build_logs
