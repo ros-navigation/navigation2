@@ -299,49 +299,52 @@ jobs:
       - checkout_source
       - setup_dependencies
       - build_source
-      - test_build
-      - report_coverage
   release_build:
     executor: release_exec
     steps:
       - checkout_source
       - setup_dependencies
       - build_source
-  test_rmw_connext_cpp:
+  debug_test: &debug_test
+    executor: debug_exec
+    steps:
+      - restore_build
+      - test_build
+      - report_coverage
+  release_test: &release_test
     executor: release_exec
+    steps:
+      - restore_build
+      - test_build
+  release_test_rmw_connext_cpp:
+    <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_connext_cpp"
-    steps:
-      - restore_build
-      - test_build
-  test_rmw_fastrtps_cpp:
-    executor: release_exec
+  release_test_rmw_fastrtps_cpp:
+    <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-    steps:
-      - restore_build
-      - test_build
-  test_rmw_opensplice_cpp:
-    executor: release_exec
+  release_test_rmw_opensplice_cpp:
+    <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
-    steps:
-      - restore_build
-      - test_build
 
 workflows:
   version: 2
   build-test:
     jobs:
       - debug_build
+      - debug_test:
+          requires:
+            - debug_build
       - release_build
-      - test_rmw_connext_cpp:
+      - release_test_rmw_connext_cpp:
           requires:
             - release_build
-      - test_rmw_fastrtps_cpp:
+      - release_test_rmw_fastrtps_cpp:
           requires:
             - release_build
-      - test_rmw_opensplice_cpp:
+      - release_test_rmw_opensplice_cpp:
           requires:
             - release_build
   nightly:
@@ -354,12 +357,12 @@ workflows:
                 - master
     jobs:
       - release_build
-      - test_rmw_connext_cpp:
+      - release_test_rmw_connext_cpp:
           requires:
             - release_build
-      - test_rmw_fastrtps_cpp:
+      - release_test_rmw_fastrtps_cpp:
           requires:
             - release_build
-      - test_rmw_opensplice_cpp:
+      - release_test_rmw_opensplice_cpp:
           requires:
             - release_build
