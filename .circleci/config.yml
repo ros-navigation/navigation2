@@ -10,6 +10,9 @@ references:
             sha256sum | \
             awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
           rm -rf $OVERLAY_WS/*
+  on_checkout: &on_checkout
+    checkout:
+      path: src/navigation2
   post_checkout: &post_checkout
     run:
         name: Post Checkout
@@ -210,8 +213,7 @@ commands:
     description: "Checkout Source"
     steps:
       - *pre_checkout
-      - checkout:
-          path: src/navigation2
+      - *on_checkout
       - *post_checkout
   setup_dependencies:
     description: "Setup Dependencies"
@@ -236,8 +238,7 @@ commands:
     description: "Restore Build"
     steps:
       - *pre_checkout
-      - checkout:
-          path: src/navigation2
+      - *on_checkout
       - *post_checkout
       - *install_underlay_dependencies
       - *restore_underlay_cache
