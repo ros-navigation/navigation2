@@ -9,7 +9,6 @@ references:
           stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
             sha256sum | \
             awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
-          cp $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos $ROS_WS/
           rm -rf $NAV2_WS/*
   post_checkout: &post_checkout
     run:
