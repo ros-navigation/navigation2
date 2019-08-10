@@ -3,6 +3,9 @@ orbs:
   codecov: codecov/codecov@1.0.5
 
 references:
+  common_environment: &common_environment
+    CCACHE_MAXSIZE: "200M"
+    MAKEFLAGS: "-j 1 -l 2"
   pre_checkout: &pre_checkout
     run:
       name: Pre Checkout
@@ -276,24 +279,22 @@ executors:
       - image: ruffsl/navigation2:master
     working_directory: /opt/overlay_ws
     environment:
-      CCACHE_MAXSIZE: "200M"
+      <<: *common_environment
       CIRCLE_CACHE_NONCE: "Debug"
       CMAKE_BUILD_TYPE: "Debug"
       COVERAGE_ENABLED: "True"
-      MAKEFLAGS: "-j 1 -l 2"
   release_exec:
     docker:
       - image: ruffsl/navigation2:master-rmw
     working_directory: /opt/overlay_ws
     environment:
-      CCACHE_MAXSIZE: "200M"
+      <<: *common_environment
       CIRCLE_CACHE_NONCE: "Release"
       CMAKE_BUILD_TYPE: "Release"
       COVERAGE_ENABLED: "False"
-      MAKEFLAGS: "-j 1 -l 2"
 
 jobs:
-  debug_build:
+  debug_build: &debug_build
     executor: debug_exec
     steps:
       - checkout_source
@@ -301,10 +302,7 @@ jobs:
       - build_source
   release_build:
     executor: release_exec
-    steps:
-      - checkout_source
-      - setup_dependencies
-      - build_source
+    <<: *debug_build
   debug_test:
     executor: debug_exec
     steps:
