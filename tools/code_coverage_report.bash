@@ -36,7 +36,7 @@ mkdir -p $LCOVDIR
 # This is disabled by default in the latest version of LCOV
 lcov () {
   set -o xtrace
-  lcov $@ --rc lcov_branch_coverage=1
+  command lcov $@ --rc lcov_branch_coverage=1
   set +o xtrace
 }
 
