@@ -11,11 +11,11 @@ references:
     run:
       name: Pre Checkout
       command: |
-        echo $CIRCLE_CACHE_NONCE | \
+        echo $CACHE_NONCE | \
           awk '{print "cache_nonce "$1}' > /opt/ros/$ROS_DISTRO/checksum.txt
         stat -c '%y' /opt/ros/$ROS_DISTRO/setup.sh | \
           sha256sum | \
-          awk '{print "distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
+          awk '{print "ros_distro "$1}' >> /opt/ros/$ROS_DISTRO/checksum.txt
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
@@ -44,7 +44,7 @@ references:
           sort -k 2 | \
           cut -d" " -f1 | \
           sha256sum | \
-          awk '{print "underlay source "$1}' >> $UNDERLAY_WS/checksum.txt
+          awk '{print "underlay_source "$1}' >> $UNDERLAY_WS/checksum.txt
         apt-get update
         dependencies=$(
           rosdep install -q -y \
@@ -57,7 +57,7 @@ references:
           tr -d \, | xargs -n1 | sort -u | xargs)
         dpkg -s $dependencies | \
           sha256sum | \
-          awk '{print "underlay dependencies "$1}' >> $UNDERLAY_WS/checksum.txt
+          awk '{print "underlay_dependencies "$1}' >> $UNDERLAY_WS/checksum.txt
   restore_ccache: &restore_ccache
     restore_cache:
       name: Restore CCache
@@ -121,7 +121,7 @@ references:
           sort -k 2 | \
           cut -d" " -f1 | \
           sha256sum | \
-          awk '{print "overlay source "$1}' >> $OVERLAY_WS/checksum.txt
+          awk '{print "overlay_source "$1}' >> $OVERLAY_WS/checksum.txt
         apt-get update
         dependencies=$(
           rosdep install -q -y \
@@ -135,7 +135,7 @@ references:
           tr -d \, | xargs -n1 | sort -u | xargs)
         dpkg -s $dependencies | \
           sha256sum | \
-          awk '{print "overlay dependencies "$1}' >> $OVERLAY_WS/checksum.txt
+          awk '{print "overlay_dependencies "$1}' >> $OVERLAY_WS/checksum.txt
   store_overlay_checksum: &store_overlay_checksum
     store_artifacts:
       path: checksum.txt
@@ -285,7 +285,7 @@ executors:
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
-      CIRCLE_CACHE_NONCE: "Debug"
+      CACHE_NONCE: "Debug"
       CMAKE_BUILD_TYPE: "Debug"
       COVERAGE_ENABLED: "True"
   release_exec:
@@ -294,7 +294,7 @@ executors:
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
-      CIRCLE_CACHE_NONCE: "Release"
+      CACHE_NONCE: "Release"
       CMAKE_BUILD_TYPE: "Release"
       COVERAGE_ENABLED: "False"
 
