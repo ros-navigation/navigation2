@@ -221,6 +221,9 @@ references:
       command: |
         mkdir test_results/
         cp -rH build/*/test_results/* test_results/
+  store_test_artifacts: &store_test_artifacts
+    store_artifacts:
+      path: test_results/
   upload_test_results: &upload_test_results
     store_test_results:
       path: test_results/
@@ -283,6 +286,7 @@ commands:
       - *copy_test_logs
       - *store_test_logs
       - *copy_test_results
+      - *store_test_artifacts
       - *upload_test_results
   report_coverage:
     description: "Report Coverage"
