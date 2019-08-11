@@ -214,6 +214,9 @@ references:
   store_test_logs: &store_test_logs
     store_artifacts:
       path: log/test
+  store_test_result: &store_test_result
+    store_test_results:
+      path: build/
   generate_code_coverage: &generate_code_coverage
     run:
       name: Generate Code Coverage
@@ -272,6 +275,7 @@ commands:
       - *test_overlay
       - *copy_test_logs
       - *store_test_logs
+      - *store_test_result
   report_coverage:
     description: "Report Coverage"
     steps:
