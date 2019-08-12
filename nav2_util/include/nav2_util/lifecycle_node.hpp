@@ -41,20 +41,23 @@ public:
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   virtual ~LifecycleNode();
 
-  typedef struct {
+  typedef struct
+  {
     double from_value;
     double to_value;
     double step;
   } floating_point_range;
 
-  typedef struct {
+  typedef struct
+  {
     int from_value;
     int to_value;
     int step;
   } integer_range;
 
   // Declare a parameter that has no integer or floating point range constraints
-  void add_parameter(const std::string & name, const rclcpp::ParameterValue & default_value,
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
     const std::string & description = "", const std::string & additional_constraints = "",
     bool read_only = false)
   {
@@ -69,7 +72,8 @@ public:
   }
 
   // Declare a parameter that has a floating point range constraint
-  void add_parameter(const std::string & name, const rclcpp::ParameterValue & default_value,
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
     const floating_point_range fp_range,
     const std::string & description = "", const std::string & additional_constraints = "",
     bool read_only = false)
@@ -89,7 +93,8 @@ public:
   }
 
   // Declare a parameter that has an integer range constraint
-  void add_parameter(const std::string & name, const rclcpp::ParameterValue & default_value,
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
     const integer_range int_range,
     const std::string & description = "", const std::string & additional_constraints = "",
     bool read_only = false)
