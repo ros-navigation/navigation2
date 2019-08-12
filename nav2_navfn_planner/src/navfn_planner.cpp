@@ -88,8 +88,6 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
-  plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
-    "endpoints", 1);
 
   auto node = shared_from_this();
 
@@ -106,7 +104,6 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
-  plan_marker_publisher_->on_activate();
   action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -119,7 +116,6 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_->deactivate();
   plan_publisher_->on_deactivate();
-  plan_marker_publisher_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -131,7 +127,6 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plan_publisher_.reset();
-  plan_marker_publisher_.reset();
   planner_.reset();
   tf_listener_.reset();
   tf_.reset();
@@ -219,7 +214,6 @@ NavfnPlanner::computePathToPose()
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
-    publishEndpoints(start.pose, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 
@@ -594,75 +588,6 @@ NavfnPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
     std::cout << std::endl << "    ";
   }
   std::cout << std::endl;
-}
-
-void
-NavfnPlanner::publishEndpoints(
-  const geometry_msgs::msg::Pose & start,
-  const geometry_msgs::msg::Pose & goal)
-{
-  visualization_msgs::msg::Marker marker;
-
-  builtin_interfaces::msg::Time time;
-  time.sec = 0;
-  time.nanosec = 0;
-  marker.header.stamp = time;
-  marker.header.frame_id = "map";
-
-  // Set the namespace and id for this marker.  This serves to create a unique ID
-  // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "endpoints";
-  static int index;
-  marker.id = index++;
-
-  marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-
-  // Set the marker action.
-  marker.action = visualization_msgs::msg::Marker::ADD;
-
-  // Set the pose of the marker.
-  // This is a full 6DOF pose relative to the frame/time specified in the header
-  geometry_msgs::msg::Pose pose;
-  pose.orientation.w = 1.0;
-
-  marker.pose.orientation = pose.orientation;
-
-  // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 0.1;
-  marker.scale.y = 0.1;
-  marker.scale.z = 0.1;
-
-  builtin_interfaces::msg::Duration duration;
-  duration.sec = 10;
-  duration.nanosec = 0;
-
-  // 0 indicates the object should last forever
-  marker.lifetime = duration;
-
-  marker.frame_locked = false;
-
-  marker.points.resize(2);
-  marker.points[0] = start.position;
-  marker.points[1] = goal.position;
-
-  // Set the color -- be sure to set alpha to something non-zero!
-  std_msgs::msg::ColorRGBA start_color;
-  start_color.r = 0.0;
-  start_color.g = 0.0;
-  start_color.b = 1.0;
-  start_color.a = 1.0;
-
-  std_msgs::msg::ColorRGBA goal_color;
-  goal_color.r = 0.0;
-  goal_color.g = 1.0;
-  goal_color.b = 0.0;
-  goal_color.a = 1.0;
-
-  marker.colors.resize(2);
-  marker.colors[0] = start_color;
-  marker.colors[1] = goal_color;
-
-  plan_marker_publisher_->publish(marker);
 }
 
 void
