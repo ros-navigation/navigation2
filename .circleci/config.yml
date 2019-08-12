@@ -314,8 +314,8 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "debug ccache"
-      UNDERLAY_MIXINS: "debug ccache coverage-gcc"
+      OVERLAY_MIXINS: "debug ccache coverage-gcc"
+      UNDERLAY_MIXINS: "debug ccache"
   release_exec:
     docker:
       - image: ruffsl/navigation2:master-release
