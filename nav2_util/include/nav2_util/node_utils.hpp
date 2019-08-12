@@ -33,6 +33,14 @@ namespace nav2_util
  */
 std::string sanitize_node_name(const std::string & potential_node_name);
 
+/// Concatenate two namespaces to produce an absolute namespace
+/**
+ * \param[in] top_ns The namespace to place first
+ * \param[in] sub_ns The namespace to place after top_ns
+ * \return An absolute namespace starting with "/"
+*/
+std::string add_namespaces(const std::string & top_ns, const std::string & sub_ns = "");
+
 /// Add some random characters to a node name to ensure it is unique in the system
 /**
  * There are utility classes that create an internal private node to interact

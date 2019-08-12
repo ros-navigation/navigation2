@@ -22,6 +22,7 @@
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
+#include "nav2_util/global_localization_service_client.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -69,6 +70,14 @@ public:
   }
 
 protected:
+  // Methods used to register as (simple action) BT nodes
+  BT::NodeStatus globalLocalizationServiceRequest();
+  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
+  BT::NodeStatus clearEntirelyCostmapServiceRequest(BT::TreeNode & tree_node);
+
+  // Service clients
+  std::unique_ptr<nav2_util::GlobalLocalizationServiceClient> global_localization_client_;
+
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };

@@ -41,6 +41,78 @@ public:
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   virtual ~LifecycleNode();
 
+  typedef struct
+  {
+    double from_value;
+    double to_value;
+    double step;
+  } floating_point_range;
+
+  typedef struct
+  {
+    int from_value;
+    int to_value;
+    int step;
+  } integer_range;
+
+  // Declare a parameter that has no integer or floating point range constraints
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
+    const std::string & description = "", const std::string & additional_constraints = "",
+    bool read_only = false)
+  {
+    auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+
+    descriptor.name = name;
+    descriptor.description = description;
+    descriptor.additional_constraints = additional_constraints;
+    descriptor.read_only = read_only;
+
+    declare_parameter(descriptor.name, default_value, descriptor);
+  }
+
+  // Declare a parameter that has a floating point range constraint
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
+    const floating_point_range fp_range,
+    const std::string & description = "", const std::string & additional_constraints = "",
+    bool read_only = false)
+  {
+    auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+
+    descriptor.name = name;
+    descriptor.description = description;
+    descriptor.additional_constraints = additional_constraints;
+    descriptor.read_only = read_only;
+    descriptor.floating_point_range.resize(1);
+    descriptor.floating_point_range[0].from_value = fp_range.from_value;
+    descriptor.floating_point_range[0].to_value = fp_range.to_value;
+    descriptor.floating_point_range[0].step = fp_range.step;
+
+    declare_parameter(descriptor.name, default_value, descriptor);
+  }
+
+  // Declare a parameter that has an integer range constraint
+  void add_parameter(
+    const std::string & name, const rclcpp::ParameterValue & default_value,
+    const integer_range int_range,
+    const std::string & description = "", const std::string & additional_constraints = "",
+    bool read_only = false)
+  {
+    auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+
+    descriptor.name = name;
+    descriptor.description = description;
+    descriptor.additional_constraints = additional_constraints;
+    descriptor.read_only = read_only;
+    descriptor.integer_range.resize(1);
+    descriptor.integer_range[0].from_value = int_range.from_value;
+    descriptor.integer_range[0].to_value = int_range.to_value;
+    descriptor.integer_range[0].step = int_range.step;
+
+    declare_parameter(descriptor.name, default_value, descriptor);
+  }
+
 protected:
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
@@ -51,7 +123,7 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<std::thread> rclcpp_thread_;
-  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> rclcpp_exec_;
+  rclcpp::executors::SingleThreadedExecutor rclcpp_exec_;
 };
 
 }  // namespace nav2_util

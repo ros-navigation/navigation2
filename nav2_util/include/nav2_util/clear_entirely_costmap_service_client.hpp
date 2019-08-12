@@ -20,7 +20,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
-namespace nav2_behavior_tree
+namespace nav2_util
 {
 
 class ClearEntirelyCostmapServiceClient
@@ -38,6 +38,6 @@ public:
     nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>::ResponseType;
 };
 
-}  // namespace nav2_behavior_tree
+}  // namespace nav2_util
 
 #endif  // NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_

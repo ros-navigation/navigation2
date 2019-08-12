@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include <string>
-#include "nav2_bt_navigator/recovery_node.hpp"
+#include "nav2_behavior_tree/recovery_node.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_behavior_tree
 {
 RecoveryNode::RecoveryNode(const std::string & name, const BT::NodeParameters & params)
 : BT::ControlNode::ControlNode(name, params), current_child_idx_(0), retry_count_(0)
@@ -111,4 +111,4 @@ BT::NodeStatus RecoveryNode::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_behavior_tree
