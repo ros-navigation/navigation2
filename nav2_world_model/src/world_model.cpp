@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "nav2_world_model/world_model.hpp"
+#include <memory>
+#include <string>
 #include "nav2_util/node_utils.hpp"
 
-#include <memory>
 
 using namespace std::placeholders;
 
