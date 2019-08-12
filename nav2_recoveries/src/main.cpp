@@ -35,9 +35,9 @@ int main(int argc, char ** argv)
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 
   recoveries_node->declare_parameter(
-    "costmap_topic", rclcpp::ParameterValue(std::string("costmap_raw")));
+    "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
   recoveries_node->declare_parameter(
-    "footprint_topic", rclcpp::ParameterValue(std::string("published_footprint")));
+    "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
   auto spin = std::make_shared<nav2_recoveries::Spin>(
     recoveries_node, tf_buffer);

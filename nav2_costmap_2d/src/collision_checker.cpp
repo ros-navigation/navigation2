@@ -33,8 +33,10 @@ CollisionChecker::CollisionChecker(
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
   tf2_ros::Buffer & tf,
-  std::string name)
+  std::string name,
+  std::string global_frame)
 : name_(name),
+  global_frame_(global_frame),
   tf_(tf),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
@@ -171,7 +173,7 @@ void CollisionChecker::unorientFootprint(
   std::vector<geometry_msgs::msg::Point> & reset_footprint)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_)) {
+  if (!nav2_util::getCurrentPose(current_pose, tf_, global_frame_)) {
     throw CollisionCheckerException("Robot pose unavailable.");
   }
 
