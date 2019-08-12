@@ -212,8 +212,11 @@ references:
       command: |
         . install/setup.sh
         TEST_PACKAGES=$(
-          colcon list --names-only | xargs | \
-          circleci tests split --split-by=timings)
+          colcon list --names-only | \
+            xargs -n 1 | \
+            circleci tests split \
+              --split-by=timings | \
+            xargs)
         set -o xtrace
         colcon test --packages-select ${TEST_PACKAGES}
   copy_test_logs: &copy_test_logs
