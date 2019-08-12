@@ -309,16 +309,16 @@ commands:
 executors:
   debug_exec:
     docker:
-      - image: ruffsl/navigation2:master
+      - image: ruffsl/navigation2:master-debug
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "release ccache"
+      OVERLAY_MIXINS: "debug ccache"
       UNDERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
-      - image: ruffsl/navigation2:master-rmw
+      - image: ruffsl/navigation2:master-release
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
