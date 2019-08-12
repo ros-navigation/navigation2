@@ -120,7 +120,7 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, *tf_buffer_, get_name());
+      *costmap_sub_, *footprint_sub_, *tf_buffer_, get_name(), "map");
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
     // Add Static Layer

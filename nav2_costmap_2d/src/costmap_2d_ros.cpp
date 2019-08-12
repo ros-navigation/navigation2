@@ -143,11 +143,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
       std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    name_ + "/published_footprint", rclcpp::SystemDefaultsQoS());
+    "published_footprint", rclcpp::SystemDefaultsQoS());
 
   costmap_publisher_ = new Costmap2DPublisher(shared_from_this(),
       layered_costmap_->getCostmap(), global_frame_,
-      name_ + "/costmap", always_send_full_costmap_);
+      "costmap", always_send_full_costmap_);
 
   // Set the footprint
   if (use_radius_) {
