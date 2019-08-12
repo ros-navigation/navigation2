@@ -48,7 +48,6 @@ download_navstack() {
   else
     cd src
     git clone https://github.com/ros-planning/navigation2.git
-    cd ../
   fi
   return_to_root_dir
 }
