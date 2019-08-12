@@ -73,7 +73,7 @@ Status Spin::onCycleUpdate()
   const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
   double relative_yaw = abs(current_yaw - initial_yaw_);
   if (relative_yaw > M_PI) {
-    relative_yaw -= 2.0*M_PI;
+    relative_yaw -= 2.0 * M_PI;
   }
   relative_yaw = abs(relative_yaw);
 
