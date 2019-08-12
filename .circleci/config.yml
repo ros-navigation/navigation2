@@ -200,12 +200,22 @@ references:
   store_build_logs: &store_build_logs
     store_artifacts:
         path: log/build
+  # test_overlay: &test_overlay
+  #   run:
+  #     name: Test Overlay
+  #     command: |
+  #       . install/setup.sh
+  #       src/navigation2/tools/run_test_suite.bash
   test_overlay: &test_overlay
     run:
       name: Test Overlay
       command: |
         . install/setup.sh
-        src/navigation2/tools/run_test_suite.bash
+        TEST_PACKAGES=$(
+          colcon list --names-only | xargs | \
+          circleci tests split --split-by=timings)
+        set -o xtrace
+        colcon test --packages-select ${TEST_PACKAGES}
   copy_test_logs: &copy_test_logs
     run:
       name: Copy Test Logs
@@ -326,12 +336,14 @@ jobs:
     <<: *debug_build
   debug_test:
     executor: debug_exec
+    parallelism: 1
     steps:
       - restore_build
       - test_build
       - report_coverage
   release_test: &release_test
     executor: release_exec
+    parallelism: 1
     steps:
       - restore_build
       - test_build
