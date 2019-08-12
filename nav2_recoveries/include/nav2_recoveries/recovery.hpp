@@ -110,7 +110,7 @@ protected:
       node_, footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, tf_, "odom");
+      *costmap_sub_, *footprint_sub_, tf_, node_->get_name(), "odom");
 
     vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
   }
