@@ -1,7 +1,12 @@
 #!/bin/bash
 FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
+FAIL_ON_BUILD_FAILURE=""
+UNDERLAY_MIXINS="release ccache"
+OVERLAY_MIXINS="release ccache"
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
-    --build-arg FAIL_ON_BUILD_FAILURE="" \
+    --build-arg FAIL_ON_BUILD_FAILURE \
+    --build-arg UNDERLAY_MIXINS \
+    --build-arg OVERLAY_MIXINS \
     --file ./Dockerfile ../../.
