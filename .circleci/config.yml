@@ -213,10 +213,10 @@ references:
         . install/setup.sh
         TEST_PACKAGES=$(
           colcon list --names-only | \
-            xargs -n 1 | \
             circleci tests split \
               --split-by=timings \
-              --timings-type=classname | \
+              --timings-type=classname \
+              --show-counts | \
             xargs)
         set -o xtrace
         colcon test \
