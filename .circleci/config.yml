@@ -215,7 +215,8 @@ references:
           colcon list --names-only | \
             xargs -n 1 | \
             circleci tests split \
-              --split-by=timings | \
+              --split-by=timings \
+              --timings-type=classname | \
             xargs)
         set -o xtrace
         colcon test \
