@@ -1,8 +1,11 @@
-# This dockerfile expects proxies to be set via --build-arg if needed
-# It also expects to be contained in the /navigation2 root folder for file copy
+# This dockerfile can be configured via --build-arg
+# Build context must be the /navigation2 root folder for COPY.
 # Example build command:
-# export CMAKE_BUILD_TYPE=Debug
-# docker build -t nav2:latest --build-arg CMAKE_BUILD_TYPE ./
+# export UNDERLAY_MIXINS="debug ccache"
+# export OVERLAY_MIXINS="debug ccache coverage"
+# docker build -t nav2:latest \
+#   --build-arg UNDERLAY_MIXINS \
+#   --build-arg OVERLAY_MIXINS ./
 ARG FROM_IMAGE=osrf/ros2:nightly
 FROM $FROM_IMAGE
 
@@ -10,7 +13,16 @@ FROM $FROM_IMAGE
 RUN apt-get update && \
     apt-get install -q -y \	
       ccache \
+      python3-colcon-mixin \
     && rm -rf /var/lib/apt/lists/*
+
+# setup colcon mixin / meta
+RUN colcon mixin add upstream \
+      https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
+    colcon mixin update && \
+    colcon metadata add upstream \
+      https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml && \
+    colcon metadata update
 
 # clone underlay source
 ENV UNDERLAY_WS /opt/underlay_ws
@@ -29,16 +41,14 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build underlay source
-ARG CMAKE_BUILD_TYPE=Release
+ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
-      --cmake-args \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-        -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache || \
-    touch build_failed && \
+      --mixin \
+        $UNDERLAY_MIXINS \
+    || touch build_failed && \
     if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
       exit 1; \
     fi
@@ -60,17 +70,14 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build overlay source
-ARG COVERAGE_ENABLED=False
+ARG OVERLAY_MIXINS="release ccache"
 RUN rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . $UNDERLAY_WS/install/setup.sh && \
-     colcon build \
-       --symlink-install \
-       --cmake-args \
-         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-         -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED || \
-    touch build_failed && \
+    colcon build \
+      --symlink-install \
+      --mixin \
+        $OVERLAY_MIXINS \
+    || touch build_failed && \
     if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
       exit 1; \
     fi

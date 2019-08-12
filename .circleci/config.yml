@@ -95,10 +95,8 @@ references:
             . /opt/ros/$ROS_DISTRO/setup.sh
             colcon build \
               --symlink-install \
-              --cmake-args \
-                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+              --mixin \
+                $UNDERLAY_MIXINS
             rm -f build_failed
         fi
   save_underlay_cache: &save_underlay_cache
@@ -159,11 +157,8 @@ references:
             . $UNDERLAY_WS/install/setup.sh
             colcon build \
               --symlink-install \
-              --cmake-args \
-                -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
+              --mixin \
+                $OVERLAY_MIXINS
             rm -f build_failed
         fi
   store_ccache_logs: &store_ccache_logs
@@ -319,8 +314,8 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      CMAKE_BUILD_TYPE: "Debug"
-      COVERAGE_ENABLED: "True"
+      OVERLAY_MIXINS: "release ccache"
+      UNDERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
       - image: ruffsl/navigation2:master-rmw
@@ -328,8 +323,8 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      CMAKE_BUILD_TYPE: "Release"
-      COVERAGE_ENABLED: "False"
+      OVERLAY_MIXINS: "release ccache"
+      UNDERLAY_MIXINS: "release ccache"
 
 jobs:
   debug_build: &debug_build
