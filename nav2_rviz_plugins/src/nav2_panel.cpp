@@ -14,7 +14,6 @@
 
 #include "nav2_rviz_plugins/nav2_panel.hpp"
 
-#include <QPushButton>
 #include <QtConcurrent/QtConcurrent>
 #include <QVBoxLayout>
 
