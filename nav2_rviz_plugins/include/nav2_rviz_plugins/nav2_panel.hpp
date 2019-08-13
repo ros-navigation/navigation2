@@ -16,8 +16,6 @@
 #define NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 
 #include <QtWidgets>
-#include <QAbstractTransition>
-#include <QDialog>
 #include <QBasicTimer>
 
 #include <memory>
