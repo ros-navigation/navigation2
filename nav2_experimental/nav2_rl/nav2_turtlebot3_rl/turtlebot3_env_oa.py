@@ -35,6 +35,7 @@ from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Empty
 from std_msgs.msg import String
 from gazebo_msgs.srv import GetEntityState, SetEntityState
+import copy
 
 
 class TurtlebotEnv():
@@ -48,13 +49,9 @@ class TurtlebotEnv():
         self.done = False
         self.actions = [[parameters.ZERO, parameters.ZERO],  # Stop
                         [parameters.ZERO, -parameters.SPIN_VELOCITY],  # SR
-                        [parameters.STEER_FWD_VELOCITY, -parameters.STEER_VELOCITY],  # SFR
                         [parameters.FWD_VELOCITY, parameters.ZERO],  # FWD
-                        [parameters.STEER_FWD_VELOCITY, parameters.STEER_VELOCITY],  # SFL
                         [parameters.ZERO, parameters.SPIN_VELOCITY],  # SL
-                        [-parameters.STEER_FWD_VELOCITY, -parameters.STEER_VELOCITY],  # SBL
-                        [-parameters.FWD_VELOCITY, -parameters.ZERO],  # BWD
-                        [-parameters.STEER_FWD_VELOCITY, parameters.STEER_VELOCITY]]  # SBR
+                        [-parameters.FWD_VELOCITY, -parameters.ZERO]]  # BWD
 
         self.collision = False
         self.collision_tol = 0.125
@@ -96,9 +93,28 @@ class TurtlebotEnv():
         return sim_time_dif / self.time_to_sample
 
     def get_reward(self):
-        # TODO: (mhpanah)
-        reward = 0.0
-        self.done = False
+
+        reward = 0
+        distance_reward = (1.0/(self.sq_distance_to_goal()+0.0067))
+        heading_reward = cos(self.get_heading())
+
+        if self.collision == True:
+            reward = -15
+            self.done = True
+            print('loss reward:  '+ str(reward))
+            return reward, self.done
+
+        if  self.sq_distance_to_goal() > 0.25:
+            reward = heading_reward + distance_reward
+
+        else:
+            reward = 1500
+            self.done = True
+
+        if self.check_collision():
+            self.done = True
+            reward = -15
+
         return reward, self.done
 
     def scan_callback(self, LaserScan):
@@ -147,13 +163,11 @@ class TurtlebotEnv():
         self.get_robot_pose()
         self.states.clear()
         self.states = [0] * (len(self.states_input) + 6)
-        self.states[0] = self.get_heading()
-        self.states[1] = self.sq_distance_to_goal()
-        self.states[2] = float(self.current_pose.position.x)
-        self.states[3] = float(self.current_pose.position.y)
-        self.states[4] = float(self.goal_pose.position.x)
-        self.states[5] = float(self.goal_pose.position.y)
-        self.states[6:14] = self.states_input
+        self.states[0] = float(self.current_pose.position.x)
+        self.states[1] = float(self.current_pose.position.y)
+        self.states[2] = float(self.goal_pose.position.x)
+        self.states[3] = float(self.goal_pose.position.y)
+        self.states[4:12] = self.states_input
         return self.states
 
     def check_collision(self):

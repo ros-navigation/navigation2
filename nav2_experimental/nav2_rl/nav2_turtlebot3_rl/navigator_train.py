@@ -18,6 +18,7 @@ from dqn import DQN
 import random
 import numpy as np
 import tensorflow as tf
+import copy
 
 import rclpy
 from rclpy.node import Node
@@ -31,33 +32,36 @@ def trainModel(env, action_size):
     agent = DQN(observation_space, action_size)
     target_model_update_counter = 0
     agent.step = 0
-    for _ in range(parameters.EPISODES):
-        print("Episode number: " + str(_))
+    for episode in range(parameters.EPISODES):
+        print("Episode number: " + str(episode))
         state = env.reset()
         observation_size = len(state)
         state = np.reshape(state, [1, observation_size])
         done = False
         agent.step += 1
         train_count = 0
-        while not done and rclpy.ok():
-            #  agent.step += 1
-            target_model_update_counter += 1
-            if target_model_update_counter % parameters.TARGET_MODEL_UPDATE_STEP == 0:
-                agent.save_load_model_weights()
-                target_model_update_counter = 0
+        reward = 0
+        game_count = 0
+
+        while not done and game_count < 100 and rclpy.ok():
+            game_count +=1
+            agent.step += 1
             action = agent.get_action(state)
             next_state, reward, done = env.step(action)
             next_state = np.reshape(next_state, [1, observation_space])
             agent.save_to_memory(state, action, reward, next_state, done)
-            state = next_state
-            points = points + reward
-            #  sleep(parameters.LOOP_RATE)
-            train_count += 1
-            if done or train_count > 500:
-                train_count = 0
+            state = copy.deepcopy(next_state)
+            if done:
+                env.stop_action()
+
+        if episode % parameters.EXPERIENCE_REPLAY_STEP == 0:
+            for _ in range(10):
                 env.stop_action()
                 agent.experience_replay()
-            #  sleep(parameters.LOOP_RATE)
+    
+        if episode % parameters.TARGET_MODEL_UPDATE_STEP == 0:
+            agent.save_load_model_weights()
+
         agent.model.save('navigator_model.h5')
 
 

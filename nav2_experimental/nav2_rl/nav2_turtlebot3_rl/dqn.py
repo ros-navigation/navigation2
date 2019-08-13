@@ -16,6 +16,7 @@ import random
 import numpy as np
 import tensorflow as tf
 import parameters
+import copy
 
 from collections import deque
 from keras.models import Sequential
@@ -29,20 +30,19 @@ class DQN:
         self.action_size = action_size
         self.memory = deque(maxlen=parameters.MEMORY_SIZE)
         self.build_model(observation_space, False)
-        self.target_model = self.model
+        self.target_model = copy.deepcopy(self.model)
         self.step = 0
 
     def build_model(self, observation_space, load):
         if load:
             self.model = load_model('random_crawl_model.h5')
-        else:
+        else:           
             self.model = Sequential()
-            self.model.add(Dense(13, input_shape=(observation_space,), activation="relu"))
-            self.model.add(Dense(13, activation="relu"))
-            self.model.add(Dense(6, activation="relu"))
-            self.model.add(Dense(self.action_size, activation="linear"))
-            self.model.compile(loss="mse", optimizer=Adam(lr=parameters.LEARNING_RATE))
-            print(self.model.summary())
+            self.model.add(Dense(48, input_dim=observation_space, activation='relu'))
+            self.model.add(Dense(24, activation='relu'))
+            self.model.add(Dense(24, activation='relu'))
+            self.model.add(Dense(self.action_size, activation='linear'))
+            self.model.compile(loss='mse', optimizer=Adam(lr=parameters.LEARNING_RATE))
 
     def save_to_memory(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -78,7 +78,7 @@ class DQN:
             q_values = self.model.predict(state, batch_size=1)
             q_values[0][action] = q_target
 
-            self.model.fit(state, q_values, verbose=0)
+            self.model.fit(state, q_values, epochs=1, verbose=0)
 
     # update target model every TARGET_MODEL_UPDATE_STEP steps
     def save_load_model_weights(self):
