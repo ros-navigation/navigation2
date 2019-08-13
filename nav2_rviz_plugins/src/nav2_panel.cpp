@@ -14,13 +14,9 @@
 
 #include "nav2_rviz_plugins/nav2_panel.hpp"
 
-#include <dirent.h>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QPushButton>
 #include <QtConcurrent/QtConcurrent>
 #include <QVBoxLayout>
-#include <QEventTransition>
 
 #include <memory>
 
@@ -130,27 +126,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
       "NavigateToPose");
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
 
-  timer_node_ = std::make_shared<rclcpp::Node>("nav2_panel_timer");
-
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
-
-  // Launch a thread to run the node
-  thread_ = std::make_unique<std::thread>(
-    [&](rclcpp::Node::SharedPtr node)
-    {
-      executor_.add_node(node->get_node_base_interface());
-      executor_.spin();
-      executor_.remove_node(node->get_node_base_interface());
-    }, timer_node_);
-
-  timer_ = timer_node_->create_wall_timer(1s, std::bind(&Nav2Panel::timerActionEvent, this));
 }
 
 Nav2Panel::~Nav2Panel()
 {
-  executor_.cancel();
-  thread_->join();
 }
 
 void
@@ -173,7 +154,8 @@ Nav2Panel::onShutdown()
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
       &client_));
-  timer_->cancel();
+
+  timer_.stop();
 }
 
 void
@@ -199,7 +181,6 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   startNavigation(pose);
 }
 
-
 geometry_msgs::msg::Quaternion
 Nav2Panel::orientationAroundZAxis(double angle)
 {
@@ -219,27 +200,32 @@ Nav2Panel::onCancelButtonPressed()
     RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
     return;
   }
+
+  timer_.stop();
 }
 
 void
-Nav2Panel::timerActionEvent()
+Nav2Panel::timerEvent(QTimerEvent * event)
 {
-  if (!goal_handle_) {
-    RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
-    state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
-    return;
-  }
+  if (event->timerId() == timer_.timerId()) {
+    if (!goal_handle_) {
+      RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
+      state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+      return;
+    }
 
-  rclcpp::spin_some(client_node_);
-  auto status = goal_handle_->get_status();
+    rclcpp::spin_some(client_node_);
+    auto status = goal_handle_->get_status();
 
-  // Check if the goal is still executing
-  if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-    status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
-  {
-    state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
-  } else {
-    state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+    // Check if the goal is still executing
+    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
+    {
+      state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
+    } else {
+      state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+      timer_.stop();
+    }
   }
 }
 
@@ -275,6 +261,8 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
     RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
     return;
   }
+
+  timer_.start(200, this);
 }
 
 void

@@ -60,7 +60,7 @@ private Q_SLOTS:
 private:
   void loadLogFiles();
   void onCancelButtonPressed();
-  void timerActionEvent();
+  void timerEvent(QTimerEvent * event);
 
   geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
@@ -71,15 +71,8 @@ private:
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
-  // Node to spin for timer
-  rclcpp::Node::SharedPtr timer_node_;
-
-  // Executor needed to spin node in thread
-  rclcpp::executors::SingleThreadedExecutor executor_;
-  std::unique_ptr<std::thread> thread_;
-
-  // Timer to check goal status and send ROSActionEvent
-  rclcpp::TimerBase::SharedPtr timer_;
+  // A timer used to check on the completion status of the action
+  QBasicTimer timer_;
 
   // The NavigateToPose action client
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr action_client_;
