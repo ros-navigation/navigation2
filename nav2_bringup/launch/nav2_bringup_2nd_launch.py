@@ -8,7 +8,8 @@ def generate_launch_description():
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='false')
     params_file = launch.substitutions.LaunchConfiguration('params', default=
         [launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
-   
+    robot_params_file = launch.substitutions.LaunchConfiguration('robot_params', default=
+        [launch.substitutions.ThisLaunchFileDir(), '/turtlebot3_waffle_params.yaml'])  
     bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
                                     'behavior_trees',
@@ -22,13 +23,13 @@ def generate_launch_description():
             package='nav2_world_model',
             node_executable='world_model',
             output='screen',
-            parameters=[params_file]),
+            parameters=[params_file, robot_params_file]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
-            parameters=[params_file]),
+            parameters=[params_file, robot_params_file]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',

@@ -32,6 +32,7 @@ def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    robot_params_file = launch.substitutions.LaunchConfiguration('robot_params')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
 
@@ -66,6 +67,11 @@ def generate_launch_description():
         default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
+    declare_robot_params_file_cmd = launch.actions.DeclareLaunchArgument(
+        'robot_params',
+        default_value=os.path.join(launch_dir, 'turtlebot3_waffle_params.yaml'),
+        description='Full path to the ROS2 robot parameters file')
+
     declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
@@ -88,19 +94,19 @@ def generate_launch_description():
         node_executable='amcl',
         node_name='amcl',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params, robot_params_file])
 
     start_world_model_cmd = launch_ros.actions.Node(
         package='nav2_world_model',
         node_executable='world_model',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params, robot_params_file])
 
     start_dwb_cmd = launch_ros.actions.Node(
         package='dwb_controller',
         node_executable='dwb_controller',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params, robot_params_file])
 
     start_planner_cmd = launch_ros.actions.Node(
         package='nav2_navfn_planner',
@@ -140,6 +146,7 @@ def generate_launch_description():
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_robot_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_bt_xml_cmd)
 

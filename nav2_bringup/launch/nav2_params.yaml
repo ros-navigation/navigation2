@@ -26,7 +26,6 @@ amcl:
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
     resample_interval: 1
-    robot_model_type: "differential"
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
@@ -55,25 +54,6 @@ dwb_controller:
   ros__parameters:
     use_sim_time: True
     debug_trajectory_details: True
-    min_vel_x: 0.0
-    min_vel_y: 0.0
-    max_vel_x: 0.26
-    max_vel_y: 0.0
-    max_vel_theta: 1.0
-    min_speed_xy: 0.0
-    max_speed_xy: 0.26
-    min_speed_theta: 0.0
-    min_x_velocity_threshold: 0.001
-    # Add high threshold velocity for turtlebot 3 issue.
-    # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-    min_y_velocity_threshold: 0.5
-    min_theta_velocity_threshold: 0.001
-    acc_lim_x: 2.5
-    acc_lim_y: 0.0
-    acc_lim_theta: 3.2
-    decel_lim_x: -2.5
-    decel_lim_y: 0.0
-    decel_lim_theta: -3.2
     vx_samples: 20
     vy_samples: 5
     vtheta_samples: 20
@@ -100,7 +80,6 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.05
-      robot_radius: 0.22
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
         enabled: True
@@ -122,7 +101,6 @@ global_costmap:
   global_costmap:
     ros__parameters:
       use_sim_time: True
-      robot_radius: 0.22
       obstacle_layer:
         enabled: True
       always_send_full_costmap: True

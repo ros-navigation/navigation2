@@ -27,6 +27,8 @@ def generate_launch_description():
                                                             default='false')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    robot_params_file = launch.substitutions.LaunchConfiguration('robot_params')
+
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -59,6 +61,12 @@ def generate_launch_description():
                            '/nav2_params.yaml'],
             description='Full path to the ROS2 parameters file to use'),
 
+        launch.actions.DeclareLaunchArgument(
+            'robot_params',
+            default_value=[launch.substitutions.ThisLaunchFileDir(),
+                            '/turtlebot3_waffle_params.yaml'],
+            description='Full path to the ROS2 robot parameters file'),
+
         launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
@@ -71,7 +79,7 @@ def generate_launch_description():
             node_executable='amcl',
             node_name='amcl',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[configured_params, robot_params_file]),
 
         launch_ros.actions.Node(
             package='nav2_lifecycle_manager',

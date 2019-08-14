@@ -29,8 +29,8 @@ def generate_launch_description():
                                                             default='false')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     params_file = launch.substitutions.LaunchConfiguration('params')
+    robot_params_file = launch.substitutions.LaunchConfiguration('robot_params')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
-
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -63,6 +63,12 @@ def generate_launch_description():
             description='Full path to the ROS2 parameters file to use'),
 
         launch.actions.DeclareLaunchArgument(
+            'robot_params',
+            default_value=[launch.substitutions.ThisLaunchFileDir(), 
+                            '/turtlebot3_waffle_params.yaml'],
+            description='Full path to the ROS2 robot parameters file'),
+
+        launch.actions.DeclareLaunchArgument(
             'bt_xml_file',
             default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
                 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
@@ -72,13 +78,13 @@ def generate_launch_description():
             package='nav2_world_model',
             node_executable='world_model',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[configured_params, robot_params_file]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[configured_params, robot_params_file]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',

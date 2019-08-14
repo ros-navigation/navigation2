@@ -1,0 +1,36 @@
+amcl:
+  ros__parameters:
+    robot_model_type: "differential"
+
+dwb_controller:
+  ros__parameters:
+    min_vel_x: 0.0
+    min_vel_y: 0.0
+    max_vel_x: 0.26
+    max_vel_y: 0.0
+    max_vel_theta: 1.0
+    min_speed_xy: 0.0
+    max_speed_xy: 0.26
+    min_speed_theta: 0.0
+    min_in_place_vel_theta: 0.4
+    min_x_velocity_threshold: 0.001
+    # Add high threshold velocity for turtlebot 3 issue.
+    # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    acc_lim_x: 2.5
+    acc_lim_y: 0.0
+    acc_lim_theta: 3.2
+    decel_lim_x: -2.5
+    decel_lim_y: 0.0
+    decel_lim_theta: -3.2
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      robot_radius: 0.22
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      robot_radius: 0.22
