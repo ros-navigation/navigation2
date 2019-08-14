@@ -59,42 +59,106 @@ AmclNode::AmclNode()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  declare_parameter("alpha1", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha2", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha3", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha4", rclcpp::ParameterValue(0.2));
-  declare_parameter("alpha5", rclcpp::ParameterValue(0.2));
-  declare_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
-  declare_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
-  declare_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
-  declare_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
-  declare_parameter("do_beamskip", rclcpp::ParameterValue(false));
-  declare_parameter("global_frame_id", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("lambda_short", rclcpp::ParameterValue(0.1));
-  declare_parameter("laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
-  declare_parameter("laser_max_range", rclcpp::ParameterValue(100.0));
-  declare_parameter("laser_min_range", rclcpp::ParameterValue(-1.0));
-  declare_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
-  declare_parameter("max_beams", rclcpp::ParameterValue(60));
-  declare_parameter("max_particles", rclcpp::ParameterValue(2000));
-  declare_parameter("min_particles", rclcpp::ParameterValue(500));
-  declare_parameter("odom_frame_id", rclcpp::ParameterValue(std::string("odom")));
-  declare_parameter("pf_err", rclcpp::ParameterValue(0.05));
-  declare_parameter("pf_z", rclcpp::ParameterValue(0.99));
-  declare_parameter("recovery_alpha_fast", rclcpp::ParameterValue(0.0));
-  declare_parameter("recovery_alpha_slow", rclcpp::ParameterValue(0.0));
-  declare_parameter("resample_interval", rclcpp::ParameterValue(1));
-  declare_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
-  declare_parameter("save_pose_rate", rclcpp::ParameterValue(0.5));
-  declare_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
-  declare_parameter("tf_broadcast", rclcpp::ParameterValue(true));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(1.0));
-  declare_parameter("update_min_a", rclcpp::ParameterValue(0.2));
-  declare_parameter("update_min_d", rclcpp::ParameterValue(0.25));
-  declare_parameter("z_hit", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_max", rclcpp::ParameterValue(0.05));
-  declare_parameter("z_rand", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_short", rclcpp::ParameterValue(0.05));
+  add_parameter("alpha1", rclcpp::ParameterValue(0.2),
+    "This is the alpha1 parameter", "These are additional constraints for alpha1");
+
+  add_parameter("alpha2", rclcpp::ParameterValue(0.2),
+    "This is the alpha2 parameter", "These are additional constraints for alpha2");
+
+  add_parameter("alpha3", rclcpp::ParameterValue(0.2),
+    "This is the alpha3 parameter", "These are additional constraints for alpha3");
+
+  add_parameter("alpha4", rclcpp::ParameterValue(0.2),
+    "This is the alpha4 parameter", "These are additional constraints for alpha4");
+
+  add_parameter("alpha5", rclcpp::ParameterValue(0.2),
+    "This is the alpha5 parameter", "These are additional constraints for alpha5");
+
+  add_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")),
+    "Which frame to use for the robot base");
+
+  add_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
+  add_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
+  add_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
+  add_parameter("do_beamskip", rclcpp::ParameterValue(false));
+
+  add_parameter("global_frame_id", rclcpp::ParameterValue(std::string("map")),
+    "The name of the coordinate frame published by the localization system");
+
+  add_parameter("lambda_short", rclcpp::ParameterValue(0.1),
+    "Exponential decay parameter for z_short part of model");
+
+  add_parameter("laser_likelihood_max_dist", rclcpp::ParameterValue(2.0),
+    "Maximum distance to do obstacle inflation on map, for use in likelihood_field model");
+
+  add_parameter("laser_max_range", rclcpp::ParameterValue(100.0),
+    "Maximum scan range to be considered",
+    "-1.0 will cause the laser's reported maximum range to be used");
+
+  add_parameter("laser_min_range", rclcpp::ParameterValue(-1.0),
+    "Minimum scan range to be considered",
+    "-1.0 will cause the laser's reported minimum range to be used");
+
+  add_parameter("laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")),
+    "Which model to use, either beam, likelihood_field, or likelihood_field_prob",
+    "Ssame as likelihood_field but incorporates the beamskip feature, if enabled");
+
+  add_parameter("max_beams", rclcpp::ParameterValue(60),
+    "How many evenly-spaced beams in each scan to be used when updating the filter");
+
+  add_parameter("max_particles", rclcpp::ParameterValue(2000),
+    "Minimum allowed number of particles");
+
+  add_parameter("min_particles", rclcpp::ParameterValue(500),
+    "Maximum allowed number of particles");
+
+  add_parameter("odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
+    "Which frame to use for odometry");
+
+  add_parameter("pf_err", rclcpp::ParameterValue(0.05));
+  add_parameter("pf_z", rclcpp::ParameterValue(0.99));
+
+  add_parameter("recovery_alpha_fast", rclcpp::ParameterValue(0.0),
+    "Exponential decay rate for the fast average weight filter, used in deciding when to recover "
+    "by adding random poses",
+    "A good value might be 0.1");
+
+  add_parameter("recovery_alpha_slow", rclcpp::ParameterValue(0.0),
+    "Exponential decay rate for the slow average weight filter, used in deciding when to recover "
+    "by adding random poses",
+    "A good value might be 0.001");
+
+  add_parameter("resample_interval", rclcpp::ParameterValue(1),
+    "Number of filter updates required before resampling");
+
+  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+
+  add_parameter("save_pose_rate", rclcpp::ParameterValue(0.5),
+    "Maximum rate (Hz) at which to store the last estimated pose and covariance to the parameter "
+    "server, in the variables ~initial_pose_* and ~initial_cov_*. This saved pose will be used "
+    "on subsequent runs to initialize the filter",
+    "-1.0 to disable");
+
+  add_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
+
+  add_parameter("tf_broadcast", rclcpp::ParameterValue(true),
+    "Set this to false to prevent amcl from publishing the transform between the global frame and "
+    "the odometry frame");
+
+  add_parameter("transform_tolerance", rclcpp::ParameterValue(1.0),
+    "Time with which to post-date the transform that is published, to indicate that this transform "
+    "is valid into the future");
+
+  add_parameter("update_min_a", rclcpp::ParameterValue(0.2),
+    "Rotational movement required before performing a filter update");
+
+  add_parameter("update_min_d", rclcpp::ParameterValue(0.25),
+    "Translational movement required before performing a filter update");
+
+  add_parameter("z_hit", rclcpp::ParameterValue(0.5));
+  add_parameter("z_max", rclcpp::ParameterValue(0.05));
+  add_parameter("z_rand", rclcpp::ParameterValue(0.5));
+  add_parameter("z_short", rclcpp::ParameterValue(0.05));
 }
 
 AmclNode::~AmclNode()
@@ -156,8 +220,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   active_ = true;
 
   if (init_pose_received_on_inactive) {
-    handleInitialPose(
-      std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+    handleInitialPose(last_published_pose_);
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -392,11 +455,11 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(msg);
+  handleInitialPose(*msg);
 }
 
 void
-AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
@@ -406,7 +469,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
 
     // Check if the transform is available
-    tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg->header.stamp),
+    tx_odom = tf_buffer_->lookupTransform(base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
         base_frame_id_, tf2_time, odom_frame_id_);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
@@ -423,7 +486,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   tf2::impl::Converter<true, false>::convert(tx_odom.transform, tx_odom_tf2);
 
   tf2::Transform pose_old;
-  tf2::impl::Converter<true, false>::convert(msg->pose.pose, pose_old);
+  tf2::impl::Converter<true, false>::convert(msg.pose.pose, pose_old);
 
   tf2::Transform pose_new = pose_old * tx_odom_tf2;
 
@@ -445,11 +508,11 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped::Share
   // Copy in the covariance, converting from 6-D to 3-D
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
-      pf_init_pose_cov.m[i][j] = msg->pose.covariance[6 * i + j];
+      pf_init_pose_cov.m[i][j] = msg.pose.covariance[6 * i + j];
     }
   }
 
-  pf_init_pose_cov.m[2][2] = msg->pose.covariance[6 * 5 + 5];
+  pf_init_pose_cov.m[2][2] = msg.pose.covariance[6 * 5 + 5];
 
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;
@@ -988,8 +1051,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
   // Laser
   lasers_.clear();
 
-  handleInitialPose(
-    std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+  handleInitialPose(last_published_pose_);
 }
 
 void

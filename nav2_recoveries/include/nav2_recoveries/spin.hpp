@@ -30,7 +30,7 @@ using SpinAction = nav2_msgs::action::Spin;
 class Spin : public Recovery<SpinAction>
 {
 public:
-  explicit Spin(rclcpp::Node::SharedPtr & node);
+  explicit Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
   ~Spin();
 
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
@@ -38,13 +38,17 @@ public:
   Status onCycleUpdate() override;
 
 protected:
+  bool isCollisionFree(
+    const double & distance,
+    const geometry_msgs::msg::Twist & cmd_vel,
+    geometry_msgs::msg::Pose2D & pose2d);
+
   double min_rotational_vel_;
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double cmd_yaw_;
-  double prev_yaw_;
-  double delta_yaw_;
-  double relative_yaw_;
+  double initial_yaw_;
+  double simulate_ahead_time_;
 };
 
 }  // namespace nav2_recoveries
