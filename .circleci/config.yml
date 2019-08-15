@@ -361,8 +361,18 @@ jobs:
 
 workflows:
   version: 2
-  build_and_test: &build_and_test
-    jobs: &ci_jobs
+  build_and_test:
+    jobs:
+      - debug_build
+      - debug_test:
+          requires:
+            - debug_build
+      - release_build
+      - release_test:
+          requires:
+            - release_build
+  nightly:
+    jobs:
       - debug_build
       - debug_test:
           requires:
@@ -377,8 +387,6 @@ workflows:
       - test_rmw_opensplice_cpp:
           requires:
             - release_build
-  nightly:
-    <<: *build_and_test
     triggers:
       - schedule:
           cron: "0 0 * * *"
