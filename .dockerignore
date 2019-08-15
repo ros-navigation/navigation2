@@ -6,3 +6,4 @@
 .dockerignore
 .gitignore
 **Dockerfile
+codecov.yml
