@@ -137,14 +137,14 @@ TEST_F(MapLoaderTest, loadValidPNG)
 {
   auto test_png = path(TEST_DIR) / path(g_valid_png_file);
 
-  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  TestMapLoader::LoadParameters loadParameters;
   loadParameters.resolution = g_valid_image_res;
   loadParameters.origin[0] = 0;
   loadParameters.origin[1] = 0;
   loadParameters.origin[2] = 0;
   loadParameters.free_thresh = 0.196;
   loadParameters.occupied_thresh = 0.65;
-  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.mode = TestMapLoader::TRINARY;
   loadParameters.negate = 0;
 
   // In order to loadMapFromFile without going through the Configure and Activate states,
@@ -169,14 +169,14 @@ TEST_F(MapLoaderTest, loadValidBMP)
 {
   auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
 
-  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  TestMapLoader::LoadParameters loadParameters;
   loadParameters.resolution = g_valid_image_res;
   loadParameters.origin[0] = 0;
   loadParameters.origin[1] = 0;
   loadParameters.origin[2] = 0;
   loadParameters.free_thresh = 0.196;
   loadParameters.occupied_thresh = 0.65;
-  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.mode = TestMapLoader::TRINARY;
   loadParameters.negate = 0;
 
   // In order to loadMapFromFile without going through the Configure and Activate states,
@@ -200,14 +200,14 @@ TEST_F(MapLoaderTest, loadInvalidFile)
 {
   auto test_invalid = path(TEST_DIR) / path("foo");
 
-  nav2_map_server::OccGridLoader::LoadParameters loadParameters;
+  TestMapLoader::LoadParameters loadParameters;
   loadParameters.resolution = g_valid_image_res;
   loadParameters.origin[0] = 0;
   loadParameters.origin[1] = 0;
   loadParameters.origin[2] = 0;
   loadParameters.free_thresh = 0.196;
   loadParameters.occupied_thresh = 0.65;
-  loadParameters.mode = nav2_map_server::OccGridLoader::TRINARY;
+  loadParameters.mode = TestMapLoader::TRINARY;
   loadParameters.negate = 0;
 
   ASSERT_THROW(map_loader_->loadMapFromFile(
