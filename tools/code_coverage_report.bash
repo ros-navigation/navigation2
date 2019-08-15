@@ -15,7 +15,7 @@ set -e
 LCOVDIR=lcov
 PWD=`pwd`
 
-COVERAGE_REPORT_VIEW="none"
+COVERAGE_REPORT_VIEW="genhtml"
 
 for opt in "$@" ; do
   case "$opt" in
@@ -28,6 +28,9 @@ for opt in "$@" ; do
       ;;
     genhtml)
       COVERAGE_REPORT_VIEW=genhtml
+      ;;
+    ci)
+      COVERAGE_REPORT_VIEW=ci
       ;;
   esac
 done

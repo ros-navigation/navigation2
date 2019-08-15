@@ -240,7 +240,7 @@ references:
     run:
       name: Generate Code Coverage
       when: always
-      command: src/navigation2/tools/code_coverage_report.bash
+      command: src/navigation2/tools/code_coverage_report.bash ci
   upload_code_coverage: &upload_code_coverage
     codecov/upload:
       when: always
