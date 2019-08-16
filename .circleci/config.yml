@@ -259,9 +259,9 @@ references:
     test_workspace:
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
-  generate_overlay_coverage: &generate_overlay_coverage
+  collect_overlay_coverage: &collect_overlay_coverage
     run:
-      name: Generate Code Coverage
+      name: Collect Code Coverage
       working_directory: /opt/overlay_ws
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
@@ -310,7 +310,7 @@ commands:
   report_coverage:
     description: "Report Coverage"
     steps:
-      - *generate_overlay_coverage
+      - *collect_overlay_coverage
       - *upload_overlay_coverage
 
 executors:
