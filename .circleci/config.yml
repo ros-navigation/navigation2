@@ -62,7 +62,7 @@ references:
             name: Install Dependencies | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
-              . << parameters.underlay >>/setup.sh
+              . << parameters.underlay >>/install/setup.sh
               cat << parameters.underlay >>/checksum.txt > checksum.txt
               vcs export --exact src | \
                 (echo vcs_export && cat) >> checksum.txt
@@ -109,7 +109,7 @@ references:
                     then
                       echo "Skipping Build"
                     else
-                      . << parameters.underlay >>/setup.sh
+                      . << parameters.underlay >>/install/setup.sh
                       rm -rf build install log
                       colcon build \
                         --symlink-install \
@@ -175,7 +175,8 @@ references:
     run:
       name: Pre Checkout
       command: |
-        ln -s /opt/ros/$ROS_DISTRO $ROS_WS
+        mkdir -p $ROS_WS
+        ln -s /opt/ros/$ROS_DISTRO $ROS_WS/install
         echo $CACHE_NONCE | \
           (echo cache_nonce && cat) >> $ROS_WS/checksum.txt
         sha256sum $ROS_WS/checksum.txt >> $ROS_WS/checksum.txt
