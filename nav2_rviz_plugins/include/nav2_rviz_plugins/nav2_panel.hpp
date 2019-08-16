@@ -58,7 +58,7 @@ private Q_SLOTS:
 private:
   void loadLogFiles();
   void onCancelButtonPressed();
-  void timerEvent(QTimerEvent * event);
+  void timerEvent(QTimerEvent * event) override;
 
   geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
