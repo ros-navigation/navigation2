@@ -207,7 +207,7 @@ references:
     install_dependencies:
       underlay: /opt/ros_ws
       workspace: /opt/underlay_ws
-  restore_underlay_ccache: &restore_underlay_ccache
+  restore_ccache: &restore_ccache
     restore_from_cache:
       key: ccache
       workspace: /opt/underlay_ws
@@ -244,7 +244,7 @@ references:
   store_ccache_logs: &store_ccache_logs
     store_artifacts:
         path: /tmp/ccache.log
-  save_underlay_ccache: &save_underlay_ccache
+  save_ccache: &save_ccache
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
@@ -278,7 +278,7 @@ commands:
     description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
-      - *restore_underlay_ccache
+      - *restore_ccache
       - *ccache_stats
       - *setup_underlay_workspace
       - *ccache_stats
@@ -289,7 +289,7 @@ commands:
       - *setup_overlay_workspace
       - *store_ccache_logs
       - *ccache_stats
-      - *save_underlay_ccache
+      - *save_ccache
   restore_build:
     description: "Restore Build"
     steps:
