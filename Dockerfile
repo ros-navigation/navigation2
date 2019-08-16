@@ -13,6 +13,7 @@ FROM $FROM_IMAGE
 RUN apt-get update && \
     apt-get install -q -y \	
       ccache \
+      lcov \
       python3-colcon-mixin \
     && rm -rf /var/lib/apt/lists/*
 
