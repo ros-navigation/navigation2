@@ -85,6 +85,8 @@ references:
       parameters:
         underlay:
           type: string
+        key:
+          type: string
         workspace:
           type: string
         mixins:
@@ -96,7 +98,7 @@ references:
         - store_artifacts:
             path: << parameters.workspace >>/checksum.txt
         - restore_from_cache:
-            key: << parameters.workspace >>
+            key: << parameters.key >>
             workspace: << parameters.workspace >>
         - when:
             condition: << parameters.build >>
@@ -117,7 +119,7 @@ references:
                       rm -f build_failed
                     fi
               - save_to_cache:
-                  key: << parameters.workspace >>
+                  key: << parameters.key >>
                   path: << parameters.workspace >>
                   workspace: << parameters.workspace >>
               - run:
@@ -222,6 +224,7 @@ references:
         ccache -p # show config
   setup_underlay_workspace: &setup_underlay_workspace
     setup_workspace: &setup_workspace_underlay
+      key: underlay_ws
       underlay: /opt/ros_ws
       workspace: /opt/underlay_ws
       mixins: ${UNDERLAY_MIXINS}
@@ -235,6 +238,7 @@ references:
       workspace: /opt/overlay_ws
   setup_overlay_workspace: &setup_overlay_workspace
     setup_workspace: &setup_workspace_overlay
+      key: overlay_ws
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
