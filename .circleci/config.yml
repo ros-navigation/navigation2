@@ -205,12 +205,12 @@ references:
         fi
   install_underlay_dependencies: &install_underlay_dependencies
     install_dependencies:
-      underlay: ${ROS_WS}
-      workspace: ${UNDERLAY_WS}
+      underlay: /opt/ros_ws
+      workspace: /opt/underlay_ws
   restore_underlay_ccache: &restore_underlay_ccache
     restore_from_cache:
       key: ccache
-      workspace: ${UNDERLAY_WS}
+      workspace: /opt/underlay_ws
   ccache_stats: &ccache_stats
     run:
       name: CCache Stats
@@ -221,8 +221,8 @@ references:
         ccache -p # show config
   setup_underlay_workspace: &setup_underlay_workspace
     setup_workspace: &setup_workspace_underlay
-      underlay: ${ROS_WS}
-      workspace: ${UNDERLAY_WS}
+      underlay: /opt/ros_ws
+      workspace: /opt/underlay_ws
       mixins: ${UNDERLAY_MIXINS}
   restore_underlay_workspace: &restore_underlay_workspace
     setup_workspace:
@@ -230,12 +230,12 @@ references:
       build: false
   install_overlay_dependencies: &install_overlay_dependencies
     install_dependencies:
-      underlay: ${ROS_WS}
-      workspace: ${OVERLAY_WS}
+      underlay: /opt/ros_ws
+      workspace: /opt/overlay_ws
   setup_overlay_workspace: &setup_overlay_workspace
     setup_workspace: &setup_workspace_overlay
-      underlay: ${UNDERLAY_WS}
-      workspace: ${OVERLAY_WS}
+      underlay: /opt/underlay_ws
+      workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
@@ -243,21 +243,21 @@ references:
       build: false
   store_ccache_logs: &store_ccache_logs
     store_artifacts:
-        path: ${CCACHE_LOGFILE}
+        path: /tmp/ccache.log
   save_underlay_ccache: &save_underlay_ccache
     save_to_cache:
       key: ccache
-      workspace: ${UNDERLAY_WS}
+      workspace: /opt/underlay_ws
       path: ~/.ccache
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
-      workspace: ${OVERLAY_WS}
+      workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
   generate_overlay_coverage: &generate_overlay_coverage
     run:
       name: Generate Code Coverage
-      working_directory: ${OVERLAY_WS}
+      working_directory: /opt/overlay_ws
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
   upload_overlay_coverage: &upload_overlay_coverage
