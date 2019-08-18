@@ -1,4 +1,6 @@
 #!/bin/bash
+set -ex
+
 FROM_IMAGE=osrf/ros2:nightly
 FAIL_ON_BUILD_FAILURE=""
 UNDERLAY_MIXINS="debug ccache"
