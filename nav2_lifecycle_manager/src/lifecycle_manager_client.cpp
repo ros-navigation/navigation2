@@ -18,9 +18,11 @@
 #include <memory>
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_lifecycle_manager
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 LifecycleManagerClient::LifecycleManagerClient()
 {
@@ -52,14 +54,6 @@ void
 LifecycleManagerClient::shutdown()
 {
   callService(shutdown_client_, "lifecycle_manager/shutdown");
-}
-
-geometry_msgs::msg::Quaternion
-LifecycleManagerClient::orientationAroundZAxis(double angle)
-{
-  tf2::Quaternion q;
-  q.setRPY(0, 0, angle);  // void returning function
-  return tf2::toMsg(q);
 }
 
 void

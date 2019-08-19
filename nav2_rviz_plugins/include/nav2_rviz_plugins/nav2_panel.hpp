@@ -28,6 +28,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_util/geometry_utils.hpp"
 
 class QPushButton;
 
@@ -59,8 +60,6 @@ private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
-
-  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 
   // Call to send NavigateToPose action request for goal pose
   void startNavigation(geometry_msgs::msg::PoseStamped pose);

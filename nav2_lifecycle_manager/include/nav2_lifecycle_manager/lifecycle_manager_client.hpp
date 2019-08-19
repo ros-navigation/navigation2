@@ -63,9 +63,6 @@ protected:
 
   // Also, for convenience, this client supports invoking the NavigateToPose action
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigate_action_client_;
-
-  // A convenience function to convert from an algle to a Quaternion
-  geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle);
 };
 
 }  // namespace nav2_lifecycle_manager
