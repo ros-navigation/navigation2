@@ -37,6 +37,7 @@
 #include <string>
 #include <stdexcept>
 #include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 
 // compute linear index for given map coords
@@ -82,10 +83,7 @@ nav_msgs::msg::OccupancyGrid loadMapFromFile(
   tf2::Quaternion quaternion;
   // yaw, pitch and roll are rotations in z, y, x respectively
   quaternion.setRPY(origin.angular.x, origin.angular.y, origin.angular.z);
-  map.info.origin.orientation.x = quaternion.x();
-  map.info.origin.orientation.y = quaternion.y();
-  map.info.origin.orientation.z = quaternion.z();
-  map.info.origin.orientation.w = quaternion.w();
+  map.info.origin.orientation = tf2::toMsg(quaternion);
 
   // Allocate space to hold the data
   map.data.resize(map.info.width * map.info.height);
