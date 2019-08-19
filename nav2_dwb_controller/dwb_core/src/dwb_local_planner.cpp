@@ -48,7 +48,6 @@
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/duration_conversions.hpp"
 
 namespace dwb_core
 {
@@ -83,7 +82,7 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
 
   double transform_tolerance;
   node_->get_parameter("transform_tolerance", transform_tolerance);
-  transform_tolerance_ = nav2_util::duration_from_seconds(transform_tolerance);
+  transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
   RCLCPP_INFO(node_->get_logger(), "Setting transform_tolerance to %f", transform_tolerance);
 
   node_->get_parameter("prune_plan", prune_plan_);

@@ -341,7 +341,7 @@ StaticLayer::updateCosts(
       RCLCPP_ERROR(node_->get_logger(), "StaticLayer: %s", ex.what());
       return;
     }
-    // Copy map data given proper transformations
+    // Copy map data giv1en proper transformations
     tf2::Transform tf2_transform;
     tf2::fromMsg(transform.transform, tf2_transform);
 
