@@ -26,6 +26,7 @@ using namespace std::chrono_literals;
 
 namespace nav2_rviz_plugins
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // Define global GoalPoseUpdater so that the nav2 GoalTool plugin can access to update goal pose
 GoalPoseUpdater GoalUpdater;
@@ -178,14 +179,6 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.orientation = orientationAroundZAxis(theta);
 
   startNavigation(pose);
-}
-
-geometry_msgs::msg::Quaternion
-Nav2Panel::orientationAroundZAxis(double angle)
-{
-  tf2::Quaternion q;
-  q.setRPY(0, 0, angle);  // void returning function
-  return tf2::toMsg(q);
 }
 
 void

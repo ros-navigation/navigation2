@@ -35,9 +35,11 @@
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 class RclCppFixture
 {
@@ -198,9 +200,7 @@ protected:
     current_pose_.pose.position.x = x_;
     current_pose_.pose.position.y = y_;
     current_pose_.pose.position.z = 0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, yaw_);
-    current_pose_.pose.orientation = tf2::toMsg(q);
+    current_pose_.pose.orientation = orientationAroundZAxis(yaw_);
   }
 
   void publishFootprint()
