@@ -41,11 +41,13 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "SDL/SDL_image.h"
 #include "yaml-cpp/yaml.h"
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_map_server
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 OccGridLoader::OccGridLoader(
   rclcpp_lifecycle::LifecycleNode::SharedPtr node,
@@ -241,12 +243,7 @@ OccGridLoader::loadMapFromFile(const std::string & map_name, LoadParameters * lo
   msg_->info.origin.position.x = loadParameters->origin[0];
   msg_->info.origin.position.y = loadParameters->origin[1];
   msg_->info.origin.position.z = 0.0;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, loadParameters->origin[2]);
-  msg_->info.origin.orientation.x = q.x();
-  msg_->info.origin.orientation.y = q.y();
-  msg_->info.origin.orientation.z = q.z();
-  msg_->info.origin.orientation.w = q.w();
+  msg_->info.origin.orientation = orientationAroundZAxis(loadParameters->origin[2]);
 
   // Allocate space to hold the data
   msg_->data.resize(msg_->info.width * msg_->info.height);

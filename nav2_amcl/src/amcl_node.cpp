@@ -54,6 +54,7 @@ using namespace std::chrono_literals;
 
 namespace nav2_amcl
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 AmclNode::AmclNode()
 : nav2_util::LifecycleNode("amcl", "", true)
@@ -244,8 +245,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     msg->pose.pose.position.x = initial_pose_x_;
     msg->pose.pose.position.y = initial_pose_y_;
     msg->pose.pose.position.z = initial_pose_z_;
-    msg->pose.pose.orientation =
-      nav2_util::geometry_utils::orientationAroundZAxis(initial_pose_yaw_);
+    msg->pose.pose.orientation = orientationAroundZAxis(initial_pose_yaw_);
 
     initialPoseReceived(msg);
   } else if (init_pose_received_on_inactive) {
@@ -724,16 +724,13 @@ bool AmclNode::updateFilter(
   //
   // Construct min and max angles of laser, in the base_link frame.
   // Here we set the roll pich yaw of the lasers.  We assume roll and pich are zero.
-  tf2::Quaternion q;
-  q.setRPY(0.0, 0.0, laser_scan->angle_min);
   geometry_msgs::msg::QuaternionStamped min_q, inc_q;
   min_q.header.stamp = laser_scan->header.stamp;
   min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-  tf2::impl::Converter<false, true>::convert(q, min_q.quaternion);
+  min_q.quaternion = orientationAroundZAxis(laser_scan->angle_min);
 
-  q.setRPY(0.0, 0.0, laser_scan->angle_min + laser_scan->angle_increment);
   inc_q.header = min_q.header;
-  tf2::impl::Converter<false, true>::convert(q, inc_q.quaternion);
+  inc_q.quaternion = orientationAroundZAxis(laser_scan->angle_min + laser_scan->angle_increment);
   try {
     tf_buffer_->transform(min_q, min_q, base_frame_id_);
     tf_buffer_->transform(inc_q, inc_q, base_frame_id_);
@@ -798,9 +795,7 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
     cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
     cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
     cloud_msg.poses[i].position.z = 0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, set->samples[i].pose.v[2]);
-    tf2::impl::Converter<false, true>::convert(q, cloud_msg.poses[i].orientation);
+    cloud_msg.poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
   }
   particlecloud_pub_->publish(cloud_msg);
 }
@@ -868,9 +863,7 @@ AmclNode::publishAmclPose(
   // Copy in the pose
   p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
   p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-  tf2::Quaternion q;
-  q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
-  tf2::impl::Converter<false, true>::convert(q, p.pose.pose.orientation);
+  p.pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
   // Copy in the covariance, converting from 3-D to 6-D
   pf_sample_set_t * set = pf_->sets + pf_->current_set;
   for (int i = 0; i < 2; i++) {
