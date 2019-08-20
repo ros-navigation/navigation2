@@ -50,6 +50,10 @@ public:
   // This frame is assumed to be known out of band, but typically it is "map".
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
+  // Returns an oriented robot footprint.
+  // The second parameter is the time the fooptrint was at this orientation.
+  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp);
+
 protected:
   // Interfaces used for logging and creating publishers and subscribers
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;

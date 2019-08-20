@@ -55,7 +55,7 @@ FootprintSubscriber::FootprintSubscriber(
 }
 
 bool
-FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint)
+FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp)
 {
   if (!footprint_received_) {
     return false;
@@ -63,7 +63,15 @@ FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footp
 
   footprint = toPointVector(
     std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
+  stamp = footprint_->header.stamp;
   return true;
+}
+
+bool
+FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint)
+{
+  rclcpp::Time temp;
+  return getFootprint(footprint, temp);
 }
 
 void
