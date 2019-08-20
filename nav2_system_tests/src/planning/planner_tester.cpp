@@ -18,6 +18,8 @@
 #include <utility>
 #include <memory>
 #include <chrono>
+#include <sstream>
+#include <iomanip>
 
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -25,7 +27,7 @@
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
-using namespace std::chrono;
+using namespace std::chrono;  // NOLINT
 using nav2_util::Costmap;
 using nav2_util::TestCostmap;
 
@@ -273,7 +275,7 @@ bool PlannerTester::defaultPlannerRandomTests(
   std::mt19937 generator(random_device());
 
   // Obtain random positions within map
-  std::uniform_int_distribution<> distribution_x(1, costmap_->get_properties().size_x - 1 );
+  std::uniform_int_distribution<> distribution_x(1, costmap_->get_properties().size_x - 1);
   std::uniform_int_distribution<> distribution_y(1, costmap_->get_properties().size_y - 1);
 
   auto generate_random = [&]() mutable -> std::pair<int, int> {
@@ -493,12 +495,17 @@ bool PlannerTester::sendCancel()
 
 void PlannerTester::printPath(const ComputePathToPoseResult & path) const
 {
-  int index = 0;
+  auto index = 0;
+  auto ss = std::stringstream{};
+
   for (auto pose : path.poses) {
-    RCLCPP_INFO(get_logger(), "  point %u x: %0.2f, y: %0.2f",
-      index, pose.position.x, pose.position.y);
+    ss << "   point #" << index << " with"  <<
+      " x: " << std::setprecision(3)  << pose.position.x <<
+      " y: " << std::setprecision(3)  << pose.position.y << '\n';
     ++index;
   }
+
+  RCLCPP_INFO(get_logger(), ss.str().c_str());
 }
 
 void PlannerTester::waitForPlanner()
