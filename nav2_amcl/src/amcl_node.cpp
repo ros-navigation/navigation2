@@ -248,8 +248,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
     initialPoseReceived(msg);
   } else if (init_pose_received_on_inactive) {
-    handleInitialPose(
-      std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(last_published_pose_));
+    handleInitialPose(last_published_pose_);
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
