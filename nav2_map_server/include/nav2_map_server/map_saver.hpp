@@ -12,32 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_GENERATOR_HPP_
-#define NAV2_MAP_SERVER__MAP_GENERATOR_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SAVER_HPP_
+#define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 
 #include <string>
-#include "rclcpp/rclcpp.hpp"
+#include "map_mode.hpp"
 #include "nav_msgs/srv/get_map.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_map_server
 {
-
-class MapGenerator : public rclcpp::Node
+class MapSaver : public rclcpp::Node
 {
 public:
-  MapGenerator(const std::string & mapname, int threshold_occupied, int threshold_free);
+  explicit MapSaver(const rclcpp::NodeOptions & options);
 
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map);
 
-  bool saved_map_;
+  std::shared_future<void> map_saved_future() {return save_next_map_promise.get_future().share();}
 
-private:
-  std::string mapname_;
+protected:
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
+
+  void try_write_map_to_file(const nav_msgs::msg::OccupancyGrid & map);
+
+  std::promise<void> save_next_map_promise;
+
+  std::string image_format;
+  std::string mapname_;
   int threshold_occupied_;
   int threshold_free_;
+  nav2_map_server::MapMode map_mode;
 };
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAP_GENERATOR_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_SAVER_HPP_

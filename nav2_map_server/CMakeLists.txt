@@ -1,45 +1,40 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_map_server)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules)
+
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(SDL REQUIRED)
-find_package(SDL_image REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(GRAPHICSMAGICKCPP REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-  ${SDL_INCLUDE_DIR}
-  ${SDL_IMAGE_INCLUDE_DIRS}
-)
+include_directories(include)
 
 set(map_server_executable map_server)
 
 set(map_saver_executable map_saver)
 
 add_executable(${map_server_executable}
-  src/main.cpp
-)
+  src/main.cpp)
 
 add_executable(${map_saver_executable}
-  src/map_saver.cpp
-)
+  src/map_saver_cli.cpp)
 
 set(library_name ${map_server_executable}_core)
 
 add_library(${library_name} SHARED
   src/occ_grid_loader.cpp
   src/map_server.cpp
-  src/map_generator.cpp
-)
+  src/map_saver.cpp
+  src/map_mode.cpp)
 
 set(map_server_dependencies
   rclcpp
@@ -48,49 +43,41 @@ set(map_server_dependencies
   yaml_cpp_vendor
   std_msgs
   tf2
-  nav2_util
-)
+  nav2_util)
 
 set(map_saver_dependencies
   rclcpp
   nav_msgs
-  tf2
-)
+  tf2)
 
 ament_target_dependencies(${map_server_executable}
-  ${map_server_dependencies}
-)
+  ${map_server_dependencies})
 
 ament_target_dependencies(${map_saver_executable}
-  ${map_saver_dependencies}
-)
+  ${map_saver_dependencies})
 
 ament_target_dependencies(${library_name}
-  ${map_server_dependencies}
-)
+  ${map_server_dependencies})
 
 target_link_libraries(${map_server_executable}
-  ${library_name}
-)
+  ${library_name})
 
 target_link_libraries(${map_saver_executable}
-  ${library_name}
-)
+  ${library_name})
+
+target_include_directories(${library_name} SYSTEM PRIVATE
+  ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 
 target_link_libraries(${library_name}
-  ${SDL_LIBRARY}
-  ${SDL_IMAGE_LIBRARIES}
-)
+  ${GRAPHICSMAGICKCPP_LIBRARIES})
 
 install(TARGETS ${map_server_executable} ${library_name} ${map_saver_executable}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
-  DESTINATION include/
-)
+  DESTINATION include/)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -15,7 +15,7 @@ set -e
 LCOVDIR=lcov
 PWD=`pwd`
 
-COVERAGE_REPORT=genhtml
+COVERAGE_REPORT_VIEW="genhtml"
 
 for opt in "$@" ; do
   case "$opt" in
@@ -24,30 +24,62 @@ for opt in "$@" ; do
       exit 0
       ;;
     codecovio)
-      COVERAGE_REPORT=codecovio
+      COVERAGE_REPORT_VIEW=codecovio
+      ;;
+    genhtml)
+      COVERAGE_REPORT_VIEW=genhtml
+      ;;
+    ci)
+      COVERAGE_REPORT_VIEW=ci
       ;;
   esac
 done
 
+set -o xtrace
 mkdir -p $LCOVDIR
 
-# Generate initial zero-coverage data. This adds files that were otherwise not run to the report
-lcov -c  --initial --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/initialcoverage.info
+# Generate initial zero-coverage data.
+# This adds files that were otherwise not run to the report
+lcov --capture --initial \
+  --directory build \
+  --output-file ${LCOVDIR}/initial_coverage.info \
+  --rc lcov_branch_coverage=1
 
 # Capture executed code data.
-lcov -c --rc lcov_branch_coverage=1 --directory build --output-file ${LCOVDIR}/testcoverage.info
+lcov --capture \
+  --directory build \
+  --output-file ${LCOVDIR}/test_coverage.info \
+  --rc lcov_branch_coverage=1
 
-# Combine the initial zero-coverage report with the executed lines report
-lcov -a ${LCOVDIR}/initialcoverage.info -a ${LCOVDIR}/testcoverage.info --rc lcov_branch_coverage=1 --o ${LCOVDIR}/fullcoverage.info
+# Combine the initial zero-coverage report with the executed lines report.
+lcov \
+  --add-tracefile ${LCOVDIR}/initial_coverage.info \
+  --add-tracefile ${LCOVDIR}/test_coverage.info \
+  --output-file ${LCOVDIR}/full_coverage.info \
+  --rc lcov_branch_coverage=1
 
-# Only include files that are within this workspace (eg filter out stdio.h etc)
-lcov -e ${LCOVDIR}/fullcoverage.info "${PWD}/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/workspacecoverage.info
+# Only include files that are within this workspace.
+# (eg filter out stdio.h etc)
+lcov \
+  --extract ${LCOVDIR}/full_coverage.info \
+    "${PWD}/*" \
+  --output-file ${LCOVDIR}/workspace_coverage.info \
+  --rc lcov_branch_coverage=1
 
-# Remove files in the build subdirectory because they are generated files (like messages, services, etc)
-lcov -r ${LCOVDIR}/workspacecoverage.info "${PWD}/build/*" --rc lcov_branch_coverage=1 --output-file ${LCOVDIR}/projectcoverage.info
+# Remove files in the build subdirectory.
+# Those are generated files (like messages, services, etc)
+lcov \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/build/*" \
+  --output-file ${LCOVDIR}/project_coverage.info \
+  --rc lcov_branch_coverage=1
 
-if [ $COVERAGE_REPORT = codecovio ]; then
-  bash <(curl -s https://codecov.io/bash) -f ${LCOVDIR}/projectcoverage.info
-else
-  genhtml ${LCOVDIR}/projectcoverage.info --output-directory ${LCOVDIR}/html --branch-coverage -p ${PWD}
+if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
+  bash <(curl -s https://codecov.io/bash) \
+    -f ${LCOVDIR}/project_coverage.info \
+    -R src/navigation2
+elif [ $COVERAGE_REPORT_VIEW = genhtml ]; then
+  genhtml ${LCOVDIR}/project_coverage.info \
+    --output-directory ${LCOVDIR}/html \
+    --branch-coverage -p ${PWD}
 fi
