@@ -26,10 +26,11 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
-#include "nav2_msgs/srv/get_robot_pose.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2_msgs/msg/tf_message.hpp"
 
 namespace nav2_system_tests
 {
@@ -84,7 +85,7 @@ public:
 private:
   void setCostmap();
 
-  void startRobotPoseServer();
+  void startRobotPoseProvider();
   void startCostmapServer();
 
   TaskStatus sendRequest(
@@ -119,12 +120,12 @@ private:
   std::string plannerName_;
   void waitForPlanner();
 
-  // The tester must provide these services
+  // The tester must provide the costmap service
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
-  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_server_;
 
-  geometry_msgs::msg::PoseStamped robot_pose_;
-  mutable std::mutex update_robot_pose_;
+  // The tester must provide the robot pose through a transform
+  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr transform_publisher_;
+
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
   // Occupancy grid publisher for visualization

@@ -56,13 +56,6 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   }
 }
 
-TEST_F(PlannerTester, testWithOneFixedEndpoint)
-{
-  loadDefaultMap();
-  ComputePathToPoseResult result;
-  EXPECT_EQ(true, defaultPlannerTest(result));
-}
-
 TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
   loadDefaultMap();

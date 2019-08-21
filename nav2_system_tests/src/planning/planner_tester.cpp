@@ -48,7 +48,7 @@ PlannerTester::PlannerTester()
     this->get_node_waitables_interface(),
     "ComputePathToPose");
 
-  startRobotPoseServer();
+  startRobotPoseProvider();
 
   // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
@@ -163,28 +163,15 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   using_fake_costmap_ = true;
 }
 
-void PlannerTester::startRobotPoseServer()
+void PlannerTester::startRobotPoseProvider()
 {
+  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
+
   geometry_msgs::msg::Point robot_position;
   robot_position.x = 0.0;
   robot_position.y = 0.0;
 
   updateRobotPosition(robot_position);
-
-  auto robot_pose_service_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
-    std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response) -> void
-    {
-      std::lock_guard<std::mutex> lock(update_robot_pose_);
-      RCLCPP_DEBUG(this->get_logger(), "Incoming robot pose request");
-      response->pose = robot_pose_;
-      response->is_pose_valid = true;
-    };
-
-  // Create a service that will use the callback function to handle requests.
-  get_robot_pose_server_ = create_service<nav2_msgs::srv::GetRobotPose>(
-    "GetRobotPose", robot_pose_service_callback);
 }
 
 void PlannerTester::startCostmapServer()
@@ -360,17 +347,17 @@ bool PlannerTester::plannerTest(
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
 {
-  std::lock_guard<std::mutex> lock(update_robot_pose_);
+  geometry_msgs::msg::TransformStamped tf_stamped;
+  tf_stamped.header.frame_id = "map";
+  tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
+  tf_stamped.child_frame_id = "base_link";
+  tf_stamped.transform.translation.x = position.x;
+  tf_stamped.transform.translation.y = position.y;
+  tf_stamped.transform.rotation.w = 1.0;
 
-  robot_pose_.header.frame_id = "map";
-  robot_pose_.header.stamp = rclcpp::Time();
-
-  robot_pose_.pose.position = position;
-
-  robot_pose_.pose.orientation.x = 0.0;
-  robot_pose_.pose.orientation.y = 0.0;
-  robot_pose_.pose.orientation.z = 0.0;
-  robot_pose_.pose.orientation.w = 1.0;
+  tf2_msgs::msg::TFMessage tf_message;
+  tf_message.transforms.push_back(tf_stamped);
+  transform_publisher_->publish(tf_message);
 }
 
 TaskStatus PlannerTester::sendRequest(
@@ -499,9 +486,9 @@ void PlannerTester::printPath(const ComputePathToPoseResult & path) const
   auto ss = std::stringstream{};
 
   for (auto pose : path.poses) {
-    ss << "   point #" << index << " with"  <<
-      " x: " << std::setprecision(3)  << pose.position.x <<
-      " y: " << std::setprecision(3)  << pose.position.y << '\n';
+    ss << "   point #" << index << " with" <<
+      " x: " << std::setprecision(3) << pose.position.x <<
+      " y: " << std::setprecision(3) << pose.position.y << '\n';
     ++index;
   }
 
