@@ -15,8 +15,8 @@
         <FollowPath path="${path}"/>
       </Sequence>
       <SequenceStar name="RecoveryActions">
-        <clearEntirelyCostmapServiceRequest service_name="/local_costmap/clear_entirely_local_costmap"/>
-        <clearEntirelyCostmapServiceRequest service_name="/global_costmap/clear_entirely_global_costmap"/>
+        <ClearEntireCostmap service_name="/local_costmap/clear_entirely_local_costmap"/>
+        <ClearEntireCostmap service_name="/global_costmap/clear_entirely_global_costmap"/>
         <Spin/>
       </SequenceStar>
     </RecoveryNode>
