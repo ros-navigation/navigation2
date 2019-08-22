@@ -31,12 +31,12 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
 
-
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
         'bt_xml_filename': bt_xml_file,
-        'autostart': autostart
+        'autostart': autostart,
+        'map_subscribe_transient_local': 'False'
     }
 
     configured_params = RewrittenYaml(

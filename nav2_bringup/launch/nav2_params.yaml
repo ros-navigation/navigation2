@@ -104,6 +104,8 @@ local_costmap:
       inflation_layer.cost_scaling_factor: 3.0
       obstacle_layer:
         enabled: True
+      static_layer:
+        map_subscribe_transient_local: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:
@@ -125,6 +127,8 @@ global_costmap:
       robot_radius: 0.22
       obstacle_layer:
         enabled: True
+      static_layer:
+        map_subscribe_transient_local: True
       always_send_full_costmap: True
       observation_sources: scan
       scan:

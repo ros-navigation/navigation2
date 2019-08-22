@@ -72,12 +72,14 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  rclcpp::QoS map_qos(1);
+  rclcpp::QoS map_qos(10); // initialize to default
   if (map_subscribe_transient_local_) {
     map_qos.transient_local();
+    map_qos.reliable();
+    map_qos.keep_last(1);
   }
 
-  RCLCPP_DEBUG(node_->get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
     "Subscribing to the map topic (%s) with %s durability",
     map_topic_.c_str(),
     map_subscribe_transient_local_ ? "transient local" : "volatile");
