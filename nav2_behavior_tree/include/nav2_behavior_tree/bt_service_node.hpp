@@ -29,11 +29,6 @@ template<class ServiceT>
 class BtServiceNode : public BT::CoroActionNode
 {
 public:
-  explicit BtServiceNode(const std::string & service_node_name)
-  : BT::CoroActionNode(service_node_name), service_node_name_(service_node_name)
-  {
-  }
-
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeParameters & params)
@@ -47,6 +42,13 @@ public:
   {
   }
 
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  static const BT::NodeParameters & requiredNodeParameters()
+  {
+    static BT::NodeParameters params = {{"service_name", "random_service_name"}};
+    return params;
+  }
+
   // This is a callback from the BT library invoked after the node
   // is created and after the blackboard has been set for the node
   // by the library. It is the first opportunity for the node to
@@ -54,9 +56,6 @@ public:
   // but override on_init instead.
   void onInit() final
   {
-    // Give user a chance for initialization and get the service name
-    on_init();
-
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
@@ -73,7 +72,9 @@ public:
 
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());
-    return;
+
+    // Give user a chance for initialization and get the service name
+    on_init();
   }
 
   // The main override required by a BT service
@@ -99,8 +100,9 @@ public:
   }
 
   // Perform local initialization such as getting values from the blackboard
-  // MUST be called to set service address name
-  virtual void on_init() = 0;
+  virtual void on_init()
+  {
+  }
 
 protected:
   std::string service_name_, service_node_name_;

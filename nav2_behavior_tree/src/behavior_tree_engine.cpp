@@ -44,7 +44,8 @@ BehaviorTreeEngine::BehaviorTreeEngine()
   factory_.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_behavior_tree::SpinAction>("Spin");
   factory_.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
-  factory_.registerNodeType<nav2_behavior_tree::ReinitializeGlobalLocalizationService>("ReinitializeGlobalLocalization");
+  factory_.registerNodeType<nav2_behavior_tree::ReinitializeGlobalLocalizationService>(
+    "ReinitializeGlobalLocalization");
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");

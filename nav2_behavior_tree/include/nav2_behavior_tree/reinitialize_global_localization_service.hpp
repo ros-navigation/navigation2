@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__GLOBAL_LOCALIZATION_SERVICE_HPP_
-#define NAV2_BEHAVIOR_TREE__GLOBAL_LOCALIZATION_SERVICE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__REINITIALIZE_GLOBAL_LOCALIZATION_SERVICE_HPP_
+#define NAV2_BEHAVIOR_TREE__REINITIALIZE_GLOBAL_LOCALIZATION_SERVICE_HPP_
 
 #include <string>
 #include <memory>
@@ -28,17 +28,19 @@ namespace nav2_behavior_tree
 class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
 {
 public:
-  explicit ReinitializeGlobalLocalizationService(const std::string & service_name)
-  : BtServiceNode<std_srvs::srv::Empty>(service_name)
+  explicit ReinitializeGlobalLocalizationService(
+    const std::string & service_node_name,
+    const BT::NodeParameters & params)
+  : BtServiceNode<std_srvs::srv::Empty>(service_node_name, params)
   {
+    service_name_ = "reinitialize_global_localization";
   }
 
   void on_init() override
   {
-    service_name_ = "reinitialize_global_localization";
   }
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__GLOBAL_LOCALIZATION_SERVICE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__REINITIALIZE_GLOBAL_LOCALIZATION_SERVICE_HPP_
