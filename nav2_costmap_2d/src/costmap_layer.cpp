@@ -83,7 +83,7 @@ void CostmapLayer::updateWithTrueOverwrite(
   int max_i,
   int max_j)
 {
-  if (!enabled_) {
+  if (!enabled_ || costmap_ == nullptr) {
     return;
   }
   unsigned char * master = master_grid.getCharMap();
