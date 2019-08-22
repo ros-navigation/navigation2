@@ -28,7 +28,7 @@
 #include "nav2_behavior_tree/recovery_node.hpp"
 #include "nav2_behavior_tree/spin_action.hpp"
 #include "nav2_behavior_tree/clear_costmap_service.hpp"
-#include "nav2_behavior_tree/global_localization_service.hpp"
+#include "nav2_behavior_tree/reinitialize_global_localization_service.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
@@ -44,7 +44,7 @@ BehaviorTreeEngine::BehaviorTreeEngine()
   factory_.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_behavior_tree::SpinAction>("Spin");
   factory_.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
-  factory_.registerNodeType<nav2_behavior_tree::GlobalLocalizationService>("GlobalLocalization");
+  factory_.registerNodeType<nav2_behavior_tree::ReinitializeGlobalLocalizationService>("ReinitializeGlobalLocalization");
 
   // Register our custom condition nodes
   factory_.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");

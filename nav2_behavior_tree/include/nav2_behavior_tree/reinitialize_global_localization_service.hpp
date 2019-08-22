@@ -25,17 +25,17 @@
 namespace nav2_behavior_tree
 {
 
-class GlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
+class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
 {
 public:
-  explicit GlobalLocalizationService(const std::string & service_name)
+  explicit ReinitializeGlobalLocalizationService(const std::string & service_name)
   : BtServiceNode<std_srvs::srv::Empty>(service_name)
   {
   }
 
   void on_init() override
   {
-  	service_name_ = "global_localization";
+    service_name_ = "reinitialize_global_localization";
   }
 };
 

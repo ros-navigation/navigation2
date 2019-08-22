@@ -1202,7 +1202,7 @@ AmclNode::initPubSub()
 void
 AmclNode::initServices()
 {
-  global_loc_srv_ = create_service<std_srvs::srv::Empty>("global_localization",
+  global_loc_srv_ = create_service<std_srvs::srv::Empty>("reinitialize_global_localization",
       std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>("request_nomotion_update",
