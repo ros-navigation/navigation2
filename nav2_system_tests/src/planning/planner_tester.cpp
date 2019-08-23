@@ -384,7 +384,7 @@ TaskStatus PlannerTester::sendRequest(
   auto future_result = planner_client_->async_get_result(goal_handle);
 
   RCLCPP_DEBUG(this->get_logger(), "Wait for the server to be done with the action");
-  auto status_result = future_result.wait_for(seconds(1));
+  auto status_result = future_result.wait_for(seconds(5));
   if (status_result != std::future_status::ready) {
     return TaskStatus::FAILED;
   }
@@ -499,7 +499,7 @@ void PlannerTester::waitForPlanner()
 {
   RCLCPP_DEBUG(this->get_logger(), "Waiting for ComputePathToPose action server");
 
-  if (!planner_client_ || !planner_client_->wait_for_action_server(4s)) {
+  if (!planner_client_ || !planner_client_->wait_for_action_server(10s)) {
     RCLCPP_ERROR(this->get_logger(), "Planner not running");
     throw std::runtime_error("Planner not running");
   }
