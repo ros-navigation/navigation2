@@ -5,6 +5,7 @@ add_library(map_loader SHARED
 ament_target_dependencies(map_loader
   geometry_msgs
   tf2
+  tf2_geometry_msgs
   tf2_ros
   nav_msgs
   SDL
