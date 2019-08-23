@@ -369,9 +369,9 @@ TaskStatus PlannerTester::sendRequest(
   auto future_goal_handle = planner_client_->async_send_goal(action_goal);
 
   RCLCPP_DEBUG(this->get_logger(), "Waiting for goal acceptance");
-  auto status_request = future_goal_handle.wait_for(seconds(1));
+  auto status_request = future_goal_handle.wait_for(seconds(5));
   if (status_request != std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(), "Failed sending the goal");
+    RCLCPP_ERROR(this->get_logger(), "Failed to send the goal");
     return TaskStatus::FAILED;
   }
 
@@ -384,8 +384,9 @@ TaskStatus PlannerTester::sendRequest(
   auto future_result = planner_client_->async_get_result(goal_handle);
 
   RCLCPP_DEBUG(this->get_logger(), "Wait for the server to be done with the action");
-  auto status_result = future_result.wait_for(seconds(5));
+  auto status_result = future_result.wait_for(seconds(10));
   if (status_result != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to get a plan within the allowed time");
     return TaskStatus::FAILED;
   }
 
