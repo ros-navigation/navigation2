@@ -1,10 +1,11 @@
 #!/bin/bash
 set -ex
 
-FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
-FAIL_ON_BUILD_FAILURE=""
-UNDERLAY_MIXINS="release ccache"
-OVERLAY_MIXINS="release ccache"
+export FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
+export FAIL_ON_BUILD_FAILURE=""
+export UNDERLAY_MIXINS="release ccache"
+export OVERLAY_MIXINS="release ccache"
+
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
