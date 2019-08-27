@@ -56,7 +56,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/move_base_simple/goal",
+    "/goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
