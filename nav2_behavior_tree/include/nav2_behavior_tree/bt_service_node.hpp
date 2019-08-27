@@ -45,7 +45,8 @@ public:
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"service_name", "random_service_name"}};
+    static BT::NodeParameters params = {{"service_name",
+      "please_set_service_name_in_BT_Node"}};
     return params;
   }
 
