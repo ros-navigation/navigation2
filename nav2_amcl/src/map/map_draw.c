@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include <rtk.h>
-#include "nav2_util/map/map.hpp"
+#include "nav2_amcl/map/map.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////

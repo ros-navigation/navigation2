@@ -35,9 +35,9 @@
 
 #include <rtk.h>
 
-#include "nav2_util/pf/pf.hpp"
-#include "nav2_util/pf/pf_pdf.hpp"
-#include "nav2_util/pf/pf_kdtree.hpp"
+#include "nav2_amcl/pf/pf.hpp"
+#include "nav2_amcl/pf/pf_pdf.hpp"
+#include "nav2_amcl/pf/pf_kdtree.hpp"
 
 // Draw the statistics
 void pf_draw_statistics(pf_t * pf, rtk_fig_t * fig);

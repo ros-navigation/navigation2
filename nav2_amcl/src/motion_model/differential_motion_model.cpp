@@ -24,10 +24,10 @@
 #include <math.h>
 #include <algorithm>
 
-#include "nav2_util/motion_model/motion_model.hpp"
-#include "nav2_util/angleutils.hpp"
+#include "nav2_amcl/motion_model/motion_model.hpp"
+#include "nav2_amcl/angleutils.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 DifferentialMotionModel::DifferentialMotionModel(
@@ -102,4 +102,4 @@ DifferentialMotionModel::odometryUpdate(
   }
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl

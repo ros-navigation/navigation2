@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nav2_util/map/map.hpp"
+#include "nav2_amcl/map/map.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////

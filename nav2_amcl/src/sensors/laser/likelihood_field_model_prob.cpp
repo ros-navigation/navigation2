@@ -23,9 +23,9 @@
 #include <math.h>
 #include <assert.h>
 
-#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_amcl/sensors/laser/laser.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 LikelihoodFieldModelProb::LikelihoodFieldModelProb(
@@ -250,4 +250,4 @@ LikelihoodFieldModelProb::sensorUpdate(pf_t * pf, LaserData * data)
   return true;
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl

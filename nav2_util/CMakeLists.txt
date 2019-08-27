@@ -57,7 +57,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib map_loader)
+ament_export_libraries(${library_name} map_loader)
 ament_export_dependencies(${dependencies})
 
 ament_package()

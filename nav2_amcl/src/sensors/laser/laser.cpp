@@ -25,9 +25,9 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_amcl/sensors/laser/laser.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 Laser::Laser(size_t max_beams, map_t * map)
@@ -71,4 +71,4 @@ Laser::SetLaserPose(pf_vector_t & laser_pose)
   laser_pose_ = laser_pose;
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl

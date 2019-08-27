@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__SENSORS__LASER__LASER_HPP_
-#define NAV2_UTIL__SENSORS__LASER__LASER_HPP_
+#ifndef NAV2_AMCL__SENSORS__LASER__LASER_HPP_
+#define NAV2_AMCL__SENSORS__LASER__LASER_HPP_
 
 #include <string>
-#include "nav2_util/pf/pf.hpp"
-#include "nav2_util/pf/pf_pdf.hpp"
-#include "nav2_util/map/map.hpp"
+#include "nav2_amcl/pf/pf.hpp"
+#include "nav2_amcl/pf/pf_pdf.hpp"
+#include "nav2_amcl/map/map.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 // Forward declarations
@@ -108,6 +108,6 @@ private:
   double beam_skip_error_threshold_;
 };
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl
 
-#endif  // NAV2_UTIL__SENSORS__LASER__LASER_HPP_
+#endif  // NAV2_AMCL__SENSORS__LASER__LASER_HPP_

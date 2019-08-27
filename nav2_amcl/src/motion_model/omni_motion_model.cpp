@@ -23,10 +23,10 @@
 #include <math.h>
 #include <algorithm>
 
-#include "nav2_util/motion_model/motion_model.hpp"
-#include "nav2_util/angleutils.hpp"
+#include "nav2_amcl/motion_model/motion_model.hpp"
+#include "nav2_amcl/angleutils.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 OmniMotionModel::OmniMotionModel(
@@ -85,4 +85,4 @@ OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_ve
   }
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl

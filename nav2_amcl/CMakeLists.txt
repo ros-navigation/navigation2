@@ -21,6 +21,11 @@ include_directories(
   include
 )
 
+add_subdirectory(src/pf)
+add_subdirectory(src/map)
+add_subdirectory(src/motion_model)
+add_subdirectory(src/sensors)
+
 set(executable_name amcl)
 
 add_executable(${executable_name}
@@ -59,6 +64,10 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+target_link_libraries(${library_name}
+  map_lib motions_lib sensors_lib
+)
+
 install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -81,7 +90,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib)
 ament_export_dependencies(${dependencies})
 
 ament_package()

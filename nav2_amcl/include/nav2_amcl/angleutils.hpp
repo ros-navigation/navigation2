@@ -19,12 +19,12 @@
  *
  */
 
-#ifndef NAV2_UTIL__ANGLEUTILS_HPP_
-#define NAV2_UTIL__ANGLEUTILS_HPP_
+#ifndef NAV2_AMCL__ANGLEUTILS_HPP_
+#define NAV2_AMCL__ANGLEUTILS_HPP_
 
 #include <math.h>
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 class angleutils
@@ -59,4 +59,4 @@ angleutils::angle_diff(double a, double b)
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__ANGLEUTILS_HPP_
+#endif  // NAV2_AMCL__ANGLEUTILS_HPP_

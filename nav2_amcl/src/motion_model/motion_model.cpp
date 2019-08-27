@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_util/motion_model/motion_model.hpp"
+#include "nav2_amcl/motion_model/motion_model.hpp"
 
 #include <string>
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 MotionModel *
@@ -33,4 +33,4 @@ MotionModel::createMotionModel(
   return nullptr;
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_
-#define NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_
+#ifndef NAV2_AMCL__MOTION_MODEL__MOTION_MODEL_HPP_
+#define NAV2_AMCL__MOTION_MODEL__MOTION_MODEL_HPP_
 
 #include <string>
-#include "nav2_util/pf/pf.hpp"
-#include "nav2_util/pf/pf_pdf.hpp"
+#include "nav2_amcl/pf/pf.hpp"
+#include "nav2_amcl/pf/pf_pdf.hpp"
 
-namespace nav2_util
+namespace nav2_amcl
 {
 
 class MotionModel
@@ -60,6 +60,6 @@ private:
   double alpha4_;
 };
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl
 
-#endif  // NAV2_UTIL__MOTION_MODEL__MOTION_MODEL_HPP_
+#endif  // NAV2_AMCL__MOTION_MODEL__MOTION_MODEL_HPP_

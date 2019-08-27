@@ -29,11 +29,11 @@
 #include <vector>
 
 #include "message_filters/subscriber.h"
-#include "nav2_util/angleutils.hpp"
+#include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/pf/pf.hpp"
+#include "nav2_amcl/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
-#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_amcl/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/LinearMath/Transform.h"
@@ -699,7 +699,7 @@ bool AmclNode::shouldUpdateFilter(const pf_vector_t pose, pf_vector_t & delta)
 {
   delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
   delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
-  delta.v[2] = nav2_util::angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
+  delta.v[2] = angleutils::angle_diff(pose.v[2], pf_odom_pose_.v[2]);
 
   // See if we should update the filter
   bool update = fabs(delta.v[0]) > d_thresh_ ||
@@ -714,7 +714,7 @@ bool AmclNode::updateFilter(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
   const pf_vector_t & pose)
 {
-  nav2_util::LaserData ldata;
+  nav2_amcl::LaserData ldata;
   ldata.laser = lasers_[laser_index];
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
@@ -774,7 +774,7 @@ bool AmclNode::updateFilter(
     ldata.ranges[i][1] = angle_min +
       (i * angle_increment);
   }
-  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<nav2_util::LaserData *>(&ldata));
+  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<nav2_amcl::LaserData *>(&ldata));
   lasers_update_[laser_index] = false;
   pf_odom_pose_ = pose;
   return true;
@@ -936,23 +936,23 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tf_broadcaster_->sendTransform(tmp_tf_stamped);
 }
 
-nav2_util::Laser *
+nav2_amcl::Laser *
 AmclNode::createLaserObject()
 {
   RCLCPP_INFO(get_logger(), "createLaserObject");
 
   if (sensor_model_type_ == "beam") {
-    return new nav2_util::BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
+    return new nav2_amcl::BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
              0.0, max_beams_, map_);
   }
 
   if (sensor_model_type_ == "likelihood_field_prob") {
-    return new nav2_util::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_,
+    return new nav2_amcl::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_,
              laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
              beam_skip_error_threshold_, max_beams_, map_);
   }
 
-  return new nav2_util::LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_,
+  return new nav2_amcl::LikelihoodFieldModel(z_hit_, z_rand_, sigma_hit_,
            laser_likelihood_max_dist_, max_beams_, map_);
 }
 
@@ -1071,7 +1071,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 
   // Instantiate the sensor objects
   motion_model_.reset();
-  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
   // Laser
@@ -1108,7 +1108,7 @@ AmclNode::freeMapDependentMemory()
   }
 
   motion_model_.reset();
-  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
   // Laser
@@ -1224,7 +1224,7 @@ AmclNode::initOdometry()
   init_cov_[1] = 0.5 * 0.5;
   init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
 
-  motion_model_ = std::unique_ptr<nav2_util::MotionModel>(nav2_util::MotionModel::createMotionModel(
+  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
