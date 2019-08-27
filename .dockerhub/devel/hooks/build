@@ -1,8 +1,9 @@
 #!/bin/bash
 set -ex
 
-ROS_DISTRO=${SOURCE_BRANCH%"-devel"}
-FROM_IMAGE=ros:${ROS_DISTRO}
+export ROS_DISTRO=${SOURCE_BRANCH%"-devel"}
+export FROM_IMAGE=ros:${ROS_DISTRO}
+
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \

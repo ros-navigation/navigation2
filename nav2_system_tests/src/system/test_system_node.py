@@ -83,16 +83,6 @@ class NavTester(Node):
         self.get_logger().info('Distance from goal is: ' + str(distance))
         return distance
 
-    def setSimTime(self):
-        self.get_logger().info('Setting transforms to use sim time from gazebo')
-        from subprocess import call
-        # loop through the problematic nodes
-        for nav2_node in ('/static_transform_publisher', '/map_server',
-                          '/global_costmap/global_costmap', '/local_costmap/local_costmap'):
-            while (call(['ros2', 'param', 'set', nav2_node, 'use_sim_time', 'True'])):
-                self.get_logger().error("Error couldn't set use_sim_time param on: " +
-                                        nav2_node + ' retrying...')
-
     def wait_for_node_active(self, node):
         # wait for the bt_navigator to be in active state
         node_service = '/' + node + '/get_state'
@@ -161,7 +151,6 @@ def test_all(test_robot):
         test_robot.wait_for_node_active('amcl')
         result = test_InitialPose(test_robot, timeout=1, retries=10)
     if (result):
-        test_robot.setSimTime()  # needed for nodes to become active
         test_robot.wait_for_node_active('bt_navigator')
     if (result):
         result = test_RobotMovesToGoal(test_robot)

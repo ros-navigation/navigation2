@@ -1,10 +1,11 @@
 #!/bin/bash
 set -ex
 
-FROM_IMAGE=osrf/ros2:nightly
-FAIL_ON_BUILD_FAILURE=""
-UNDERLAY_MIXINS="debug ccache"
-OVERLAY_MIXINS="debug ccache coverage-gcc"
+export FROM_IMAGE=osrf/ros2:nightly
+export FAIL_ON_BUILD_FAILURE=""
+export UNDERLAY_MIXINS="debug ccache"
+export OVERLAY_MIXINS="debug ccache coverage-gcc"
+
 docker build \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
