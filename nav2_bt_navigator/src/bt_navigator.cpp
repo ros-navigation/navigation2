@@ -233,8 +233,6 @@ BtNavigator::initializeGoalPose()
 void
 BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  RCLCPP_WARN(get_logger(), "Depreciation: Topic based navigation will "
-    "not be available in future releases.");
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
   self_client_->async_send_goal(goal);
