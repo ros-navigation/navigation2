@@ -36,6 +36,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -111,11 +112,6 @@ protected:
   // Set the corresponding cell cost to be free space
   void clearRobotCell(unsigned int mx, unsigned int my);
 
-  // Request costmap from world model
-  void getCostmap(
-    nav2_msgs::msg::Costmap & costmap,
-    const std::string layer = "master");
-
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
 
@@ -132,15 +128,14 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  // Service client for getting the costmap
-  nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
+  // Global Costmap
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  nav2_costmap_2d::Costmap2D * costmap_;
+  std::unique_ptr<std::thread> costmap_thread_;
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-
-  // The costmap to use and its size
-  nav2_msgs::msg::Costmap costmap_;
-  uint current_costmap_size_[2];
 
   // The global frame of the costmap
   const std::string global_frame_{"map"};

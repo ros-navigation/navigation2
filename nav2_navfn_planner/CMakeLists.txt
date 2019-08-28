@@ -37,6 +37,7 @@ set(dependencies
   geometry_msgs
   builtin_interfaces
   tf2_ros
+  nav2_costmap_2d
 )
 
 add_library(${library_name} SHARED

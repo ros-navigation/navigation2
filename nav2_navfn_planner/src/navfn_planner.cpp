@@ -37,6 +37,7 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -54,6 +55,23 @@ NavfnPlanner::NavfnPlanner()
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
 
+  // Setup the global costmap
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()},
+    "global_costmap"));
+  costmap_ = costmap_ros_->getCostmap();
+  costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+  // Launch a thread to run the costmap node
+  costmap_thread_ = std::make_unique<std::thread>(
+    [&](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    {
+      // TODO(mjeronimo): Once Brian pushes his change upstream to rlcpp executors, we'll
+      // be able to provide our own executor to spin(), reducing this to a single line
+      costmap_executor_->add_node(node->get_node_base_interface());
+      costmap_executor_->spin();
+      costmap_executor_->remove_node(node->get_node_base_interface());
+    }, costmap_ros_);
+
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     rclcpp_node_->get_node_base_interface(),
@@ -65,10 +83,12 @@ NavfnPlanner::NavfnPlanner()
 NavfnPlanner::~NavfnPlanner()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
+  costmap_executor_->cancel();
+  costmap_thread_->join();
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
+NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -76,15 +96,14 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("tolerance", tolerance_);
   get_parameter("use_astar", use_astar_);
 
-  getCostmap(costmap_);
+  costmap_ros_->on_configure(state);
   RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
-    costmap_.metadata.size_x, costmap_.metadata.size_y);
+    costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   // Create a planner based on the new costmap size
   if (isPlannerOutOfDate()) {
-    current_costmap_size_[0] = costmap_.metadata.size_x;
-    current_costmap_size_[1] = costmap_.metadata.size_y;
-    planner_ = std::make_unique<NavFn>(costmap_.metadata.size_x, costmap_.metadata.size_y);
+    planner_ = std::make_unique<NavFn>(costmap_->getSizeInCellsX(),
+      costmap_->getSizeInCellsY());
   }
 
   // Initialize pubs & subs
@@ -100,29 +119,31 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
+NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
   action_server_->activate();
+  costmap_ros_->on_activate(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
   plan_publisher_->on_deactivate();
+  costmap_ros_->on_deactivate(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -131,6 +152,7 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   planner_.reset();
   tf_listener_.reset();
   tf_.reset();
+  costmap_ros_->on_cleanup(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -174,9 +196,8 @@ NavfnPlanner::computePathToPose()
     }
 
     // Get the current costmap
-    getCostmap(costmap_);
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
-      costmap_.metadata.size_x, costmap_.metadata.size_y);
+      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
     geometry_msgs::msg::PoseStamped start;
     if (!nav2_util::getCurrentPose(start, *tf_)) {
@@ -185,9 +206,8 @@ NavfnPlanner::computePathToPose()
 
     // Update planner based on the new costmap size
     if (isPlannerOutOfDate()) {
-      current_costmap_size_[0] = costmap_.metadata.size_x;
-      current_costmap_size_[1] = costmap_.metadata.size_y;
-      planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+      planner_->setNavArr(costmap_->getSizeInCellsX(),
+        costmap_->getSizeInCellsY());
     }
 
     if (action_server_->is_preempt_requested()) {
@@ -244,8 +264,8 @@ NavfnPlanner::computePathToPose()
 bool
 NavfnPlanner::isPlannerOutOfDate()
 {
-  if (!planner_.get() || current_costmap_size_[0] != costmap_.metadata.size_x ||
-    current_costmap_size_[1] != costmap_.metadata.size_y)
+  if (!planner_.get() || planner_->nx != (int)costmap_->getSizeInCellsX() ||
+    planner_->ny != (int)costmap_->getSizeInCellsY())
   {
     return true;
   }
@@ -283,9 +303,10 @@ NavfnPlanner::makePlan(
   clearRobotCell(mx, my);
 
   // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+  planner_->setNavArr(costmap_->getSizeInCellsX(),
+    costmap_->getSizeInCellsY());
 
-  planner_->setCostmap(&costmap_.data[0], true, allow_unknown_);
+  planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
 
   int map_start[2];
   map_start[0] = mx;
@@ -316,7 +337,7 @@ NavfnPlanner::makePlan(
     planner_->calcNavFnDijkstra(true);
   }
 
-  double resolution = costmap_.metadata.resolution;
+  double resolution = costmap_->getResolution();
   geometry_msgs::msg::Pose p, best_pose;
   p = goal;
 
@@ -380,12 +401,10 @@ bool
 NavfnPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
 {
   // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(costmap_.metadata.size_x, costmap_.metadata.size_y);
+  planner_->setNavArr(costmap_->getSizeInCellsX(),
+    costmap_->getSizeInCellsY());
 
-  std::vector<unsigned char> costmapData = std::vector<unsigned char>(
-    costmap_.data.begin(), costmap_.data.end());
-
-  planner_->setCostmap(&costmapData[0], true, allow_unknown_);
+  planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
 
   unsigned int mx, my;
   if (!worldToMap(world_point.x, world_point.y, mx, my)) {
@@ -438,7 +457,7 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  planner_->calcPath(costmap_.metadata.size_x * 4);
+  planner_->calcPath(costmap_->getSizeInCellsX() * 4);
 
   // extract the plan
   float * x = planner_->getPathX();
@@ -489,7 +508,7 @@ bool
 NavfnPlanner::validPointPotential(
   const geometry_msgs::msg::Point & world_point, double tolerance)
 {
-  double resolution = costmap_.metadata.resolution;
+  const double resolution = costmap_->getResolution();
 
   geometry_msgs::msg::Point p = world_point;
   p.y = world_point.y - tolerance;
@@ -512,23 +531,23 @@ NavfnPlanner::validPointPotential(
 bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
-  if (wx < costmap_.metadata.origin.position.x || wy < costmap_.metadata.origin.position.y) {
+  if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
     RCLCPP_ERROR(get_logger(), "wordToMap failed: wx,wy: %f,%f, size_x,size_y: %d,%d", wx, wy,
-      costmap_.metadata.size_x, costmap_.metadata.size_y);
+      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     return false;
   }
 
   mx = static_cast<int>(
-    std::round((wx - costmap_.metadata.origin.position.x) / costmap_.metadata.resolution));
+    std::round((wx - costmap_->getOriginX()) / costmap_->getResolution()));
   my = static_cast<int>(
-    std::round((wy - costmap_.metadata.origin.position.y) / costmap_.metadata.resolution));
+    std::round((wy - costmap_->getOriginY()) / costmap_->getResolution()));
 
-  if (mx < costmap_.metadata.size_x && my < costmap_.metadata.size_y) {
+  if (mx < costmap_->getSizeInCellsX() && my < costmap_->getSizeInCellsY()) {
     return true;
   }
 
   RCLCPP_ERROR(get_logger(), "wordToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
-    costmap_.metadata.size_x, costmap_.metadata.size_y);
+    costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   return false;
 }
@@ -536,8 +555,8 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
 void
 NavfnPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
 {
-  wx = costmap_.metadata.origin.position.x + mx * costmap_.metadata.resolution;
-  wy = costmap_.metadata.origin.position.y + my * costmap_.metadata.resolution;
+  wx = costmap_->getOriginX() + mx * costmap_->getResolution();
+  wy = costmap_->getOriginY() + my * costmap_->getResolution();
 }
 
 void
@@ -545,23 +564,7 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 {
   // TODO(orduno): check usage of this function, might instead be a request to
   //               world_model / map server
-  unsigned int index = my * costmap_.metadata.size_x + mx;
-  costmap_.data[index] = nav2_util::Costmap::free_space;
-}
-
-void
-NavfnPlanner::getCostmap(
-  nav2_msgs::msg::Costmap & costmap,
-  const std::string /*layer*/)
-{
-  // TODO(orduno): explicitly provide specifications for costmap using the costmap on the request,
-  //               including master (aggregate) layer
-
-  auto request = std::make_shared<nav2_util::CostmapServiceClient::CostmapServiceRequest>();
-  request->specs.resolution = 1.0;
-
-  auto result = costmap_client_.invoke(request, 5s);
-  costmap = result.get()->map;
+  costmap_->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
 }
 
 void
