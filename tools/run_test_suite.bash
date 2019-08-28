@@ -23,5 +23,6 @@ colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "te
 colcon test-result --verbose
 
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization$
+$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner$
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator$
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator_with_dijkstra$
