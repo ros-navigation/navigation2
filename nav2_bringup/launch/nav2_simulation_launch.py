@@ -29,7 +29,8 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Get the launch directory
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
@@ -64,7 +65,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map_yaml_file',
-        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
+        default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
@@ -74,8 +75,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
         'params_file',
-        default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
-        # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
+        default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
@@ -95,7 +95,7 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(launch_dir, 'nav2_default_view.rviz'),
+        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     declare_use_simulator_cmd = launch.actions.DeclareLaunchArgument(

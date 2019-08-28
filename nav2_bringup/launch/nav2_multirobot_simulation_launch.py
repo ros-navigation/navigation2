@@ -35,8 +35,7 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Get the launch directory
-    # TODO(orduno) Switch to ThisLaunchFileDir
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+    bringup_dir = get_package_share_directory('nav2_bringup')
 
     # Names and poses of the robots
     robots = [
@@ -53,7 +52,7 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
-        default_value=[ThisLaunchFileDir(), '/world_only.model'],
+        default_value=os.path.join(bringup_dir, 'world', 'world_only.model'),
         description='Full path to world file to load')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
@@ -63,12 +62,12 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map_yaml_file',
-        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
+        default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
         'params_file',
-        default_value=[ThisLaunchFileDir(), '/nav2_params_namespaced.yaml'],
+        default_value=os.path.join(bringup_dir, 'launch', 'nav2_params_namespaced.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
    # Start Gazebo with plugin providing the robot spawing service
@@ -81,7 +80,7 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             launch.actions.IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(launch_dir, 'spawn_robot_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'spawn_robot_launch.py')),
                 launch_arguments={
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
@@ -104,7 +103,7 @@ def generate_launch_description():
             # Instances use the robot's name for namespace
             PushRosNamespace(robot['name']),
             launch.actions.IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_simulation_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'nav2_simulation_launch.py')),
                 #TODO(orduno) pass the rviz config file
                 launch_arguments={
                                   #TODO(orduno) might not be necessary to pass the robot name

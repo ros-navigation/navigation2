@@ -27,7 +27,8 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Get the launch directory
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
@@ -61,7 +62,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map_yaml_file',
-        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
+        default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
