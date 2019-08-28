@@ -76,6 +76,8 @@ protected:
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
 
+  std::map<std::uint8_t, std::string> transition_label_map_;
+
   // A map of the expected transitions to primary states
   std::unordered_map<std::uint8_t, std::uint8_t> transition_state_map_;
 

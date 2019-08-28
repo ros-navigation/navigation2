@@ -65,6 +65,13 @@ LifecycleManager::LifecycleManager()
   transition_state_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     State::PRIMARY_STATE_FINALIZED;
 
+  transition_label_map_[Transition::TRANSITION_CONFIGURE] = std::string("Configuring ");
+  transition_label_map_[Transition::TRANSITION_CLEANUP] = std::string("Cleaning up ");
+  transition_label_map_[Transition::TRANSITION_ACTIVATE] = std::string("Activating ");
+  transition_label_map_[Transition::TRANSITION_DEACTIVATE] = std::string("Deactivating ");
+  transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] = 
+    std::string("Shutting down ");;
+
   if (autostart_) {
     startup();
   }
@@ -115,6 +122,7 @@ LifecycleManager::destroyLifecycleServiceClients()
 bool
 LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
 {
+  message(transition_label_map_[transition] + node_name);
   if (!node_map_[node_name]->change_state(transition) ||
     !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
   {
@@ -173,12 +181,11 @@ LifecycleManager::startup()
 {
   message("Starting the system bringup...");
   createLifecycleServiceClients();
-  for (auto & node_name : node_names_) {
-    if (!bringupNode(node_name)) {
-      RCLCPP_ERROR(get_logger(), "Failed to bring up node: %s, aborting bringup",
-        node_name.c_str());
-      return;
-    }
+  if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
+    !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to bring up nodes: aborting bringup");
+    return;
   }
   message("The system is active");
 }
