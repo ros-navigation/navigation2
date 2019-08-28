@@ -93,11 +93,9 @@ def generate_launch_description():
         'use_remappings', default_value='false',
         description='Arguments to pass to all nodes launched by the file')
 
-    #TODO(orduno) modify to the default single robot view
-    #TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(launch_dir, 'nav2_multi_robot_view.rviz'),
+        default_value=os.path.join(launch_dir, 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     declare_use_simulator_cmd = launch.actions.DeclareLaunchArgument(
@@ -136,7 +134,7 @@ def generate_launch_description():
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
     #              https://github.com/ros2/launch_ros/issues/56
-    start_robot_state_publisher_cmd = launch_ros.actions.Node(
+    start_robot_state_publisher_remapped_cmd = launch_ros.actions.Node(
         condition=IfCondition(use_remappings),
         package='robot_state_publisher',
         node_executable='robot_state_publisher',
@@ -147,7 +145,17 @@ def generate_launch_description():
         arguments=[urdf])
 
     # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
+    # TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
     start_rviz_cmd = launch.actions.ExecuteProcess(
+        condition=UnlessCondition(use_remappings),
+        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            ['-d', rviz_config_file]],
+        cwd=[launch_dir], output='screen')
+
+    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+    #              https://github.com/ros2/launch_ros/issues/56
+    start_rviz_remapped_cmd = launch.actions.ExecuteProcess(
+        condition=IfCondition(use_remappings),
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             # TODO(orduno) re-enable
             # ['-d', rviz_config_file],
@@ -198,10 +206,12 @@ def generate_launch_description():
 
     # Add other nodes and processes we need
     ld.add_action(start_rviz_cmd)
+    ld.add_action(start_rviz_remapped_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(start_robot_state_publisher_remapped_cmd)
     ld.add_action(bringup_cmd)
 
     return ld

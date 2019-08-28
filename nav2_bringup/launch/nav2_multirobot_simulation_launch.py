@@ -26,6 +26,7 @@ from launch.actions import LogInfo
 from launch.actions import GroupAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
+from launch.substitutions import TextSubstitution
 from launch_ros.actions import PushRosNamespace
 
 import launch.actions
@@ -38,10 +39,9 @@ def generate_launch_description():
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
     # Names and poses of the robots
-    # TODO(orduno) provide pose as a number not text and use text substitution instead
     robots = [
-        {'name': 'Robot1', 'x_pose': '0.0', 'y_pose': '0.5', 'z_pose': '0.01'},
-        {'name': 'Robot2', 'x_pose': '0.0', 'y_pose': '-0.5', 'z_pose': '0.01'}]
+        {'name': 'Robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
+        {'name': 'Robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
 
     # Create the launch configuration variables
     world = launch.substitutions.LaunchConfiguration('world')
@@ -83,21 +83,22 @@ def generate_launch_description():
             launch.actions.IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(launch_dir, 'spawn_robot_launch.py')),
                 launch_arguments={
-                    #TODO(orduno) Use text substitution
-                                  'x_pose': robot['x_pose'],
-                                  'y_pose': robot['y_pose'],
-                                  'z_pose': robot['z_pose'],
+                                  'x_pose': TextSubstitution(text=str(robot['x_pose'])),
+                                  'y_pose': TextSubstitution(text=str(robot['y_pose'])),
+                                  'z_pose': TextSubstitution(text=str(robot['z_pose'])),
                                   'robot_name': robot['name']
                                   }.items()))
 
     simulation_instances_cmds = []
     for robot in robots:
         group = GroupAction([
-            # TODO(orduno) Each action.Node has two versions one with the required remaps and one
-            #              without. The `use_remappings` flag specifies which runs.
+            # TODO(orduno) Each `action.Node` within the `localization` and `navigation` launch
+            #              files has two versions, one with the required remaps and another without.
+            #              The `use_remappings` flag specifies which runs.
             #              A better mechanism would be to have a PushNodeRemapping() action:
             #              https://github.com/ros2/launch_ros/issues/56
-            #              For more on why we're remapping topics, see below
+            #              For more on why we're remapping topics, see the note below
+
             # PushNodeRemapping(remappings)
 
             # Instances use the robot's name for namespace
