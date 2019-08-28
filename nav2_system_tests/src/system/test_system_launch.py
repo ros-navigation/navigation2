@@ -67,12 +67,6 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}, {'yaml_filename': map_yaml_file}]),
 
         launch_ros.actions.Node(
-            package='nav2_world_model',
-            node_executable='world_model',
-            output='screen',
-            parameters=[params_file]),
-
-        launch_ros.actions.Node(
             package='nav2_amcl',
             node_executable='amcl',
             node_name='amcl',
@@ -112,7 +106,7 @@ def generate_launch_description():
             node_name='lifecycle_manager',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
-                        {'node_names': ['map_server', 'amcl', 'world_model',
+                        {'node_names': ['map_server', 'amcl',
                          'dwb_controller', 'navfn_planner', 'bt_navigator']},
                         {'autostart': True}]),
     ])

@@ -79,14 +79,6 @@ def generate_launch_description():
             '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
-    start_world_model_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_world_model'),
-                'lib/nav2_world_model/world_model'),
-            '--ros-args', ['__params:=', params_file]],
-        cwd=[launch_dir], output='screen')
-
     start_dwb_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
@@ -143,7 +135,6 @@ def generate_launch_description():
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
-    ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
