@@ -40,6 +40,8 @@ def generate_launch_description():
                                     os.getenv('BT_NAVIGATOR_XML'))
 
     return LaunchDescription([
+        launch.actions.SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+
         # Launch gazebo server for simulation
         launch.actions.ExecuteProcess(
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
