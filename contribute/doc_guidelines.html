@@ -1,0 +1,701 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Documentation Guidelines &mdash; Navigation 2 0.2.3 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../_static/favicon-48x48.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Contribution Guidelines" href="contribute_guidelines.html" />
+
+<link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Navigation 2
+          
+
+          
+            
+            <img src="../_static/logo_white_200w.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction to the Navigation 2 Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../howtos/index.html">How-Tos</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docbuild.html">Build the template locally</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-overview">Documentation overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#set-up-the-documentation-working-folders">Set up the documentation working folders</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#installing-the-documentation-tools">Installing the documentation tools</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-presentation-theme">Documentation presentation theme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#running-the-documentation-processors">Running the documentation processors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#publishing-content">Publishing content</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#basic-editing-and-making-the-template-your-own">Basic editing and making the template your own</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#deploy-with-github">Deploy with GitHub</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-publish.html">Set up Publish directory and GitHub pages repository</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#create-the-github-pages-repository">Create the GitHub Pages Repository</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#clone-your-github-pages-repository-to-your-local-working-directory">Clone your GitHub pages repository to your local working directory</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-travis-ci.html">Deploying documentation with GitHub and Travis CI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html">Important Sphinx files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#conf-py">conf.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#substitutions-txt">substitutions.txt</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#scope">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#single-file-conversion">Single file Conversion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#contributing">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#sections">Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#introduction">1. Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#id1">2.0 Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/use_cases/README.html">Target Use Cases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#id1">Use Cases</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Contributing to the Project</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="contribute_guidelines.html">Contribution Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute_guidelines.html#licensing">Licensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="contribute_guidelines.html#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#headings">Headings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#this-is-a-collapsible-section">This is a collapsible section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#content-highlighting">Content Highlighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lists">Lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-column-lists">Multi-column lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#file-names-and-commands">File names and Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#non-ascii-characters">Non-ASCII Characters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-and-command-examples">Code and Command Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Navigation 2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Contributing to the Project</a> &raquo;</li>
+        
+      <li>Documentation Guidelines</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="documentation-guidelines">
+<span id="doc-guidelines"></span><h1>Documentation Guidelines<a class="headerlink" href="#documentation-guidelines" title="Permalink to this headline">¶</a></h1>
+<p>The ROS 2 Navigation System content is written using the <a class="reference external" href="http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html">reStructuredText</a> markup
+language (<code class="docutils literal notranslate"><span class="pre">.rst</span></code> file extension) with Sphinx extensions, and processed
+using Sphinx to create a formatted standalone website.  Developers can
+view this content either in its raw form as <code class="docutils literal notranslate"><span class="pre">.rst</span></code> markup files, or (with
+Sphinx installed) they can build the documentation using the Makefile
+(on Linux systems) to generate the HTML content. The HTML content can then
+be viewed using a web browser. This same <code class="docutils literal notranslate"><span class="pre">.rst</span></code> content is also fed into
+the <a class="reference external" href="https://rosplanning.github.io/navigation2/">documentation site</a> website.</p>
+<p>You can read details about <a class="reference external" href="http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html">reStructuredText</a>
+and about <a class="reference external" href="http://www.sphinx-doc.org/en/stable/contents.html">Sphinx extensions</a> from their respective websites.</p>
+<p>This document provides a quick reference for commonly used reST and
+Sphinx-defined directives and roles used to create the documentation
+you’re reading.</p>
+<div class="section" id="headings">
+<h2>Headings<a class="headerlink" href="#headings" title="Permalink to this headline">¶</a></h2>
+<p>Document sections are identified through their heading titles,
+indicated with an underline below the title text.  (While reST allows
+use of both and overline and matching underline to indicate a heading,
+we only use an underline indicator for headings.)  For consistency in
+our documentation, we define the order of characters used to indicated
+the nested table of contents levels:</p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">#</span></code> for the Document title underline character</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">*</span></code> for the First sub-section heading level</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">=</span></code> for the Second sub-section heading level</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">-</span></code> for the Third sub-section heading level</p></li>
+</ul>
+<p>Additional heading level depth is discouraged.</p>
+<p>The heading underline must be at least as long as the title it’s under.</p>
+<p>Here’s an example of nested heading levels and the appropriate
+underlines to use:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="gh">Document Title heading</span>
+<span class="gh">######################</span>
+
+<span class="gh">Section 1.0 heading</span>
+<span class="gh">*******************</span>
+
+<span class="gh">Section 2.0 heading</span>
+<span class="gh">*******************</span>
+
+<span class="gh">Section 2.1 heading</span>
+<span class="gh">===================</span>
+
+<span class="gh">Section 2.1.1 heading</span>
+<span class="gh">---------------------</span>
+
+<span class="gh">Section 2.2 heading</span>
+<span class="gh">===================</span>
+
+<span class="gh">Section 3.0 heading</span>
+<span class="gh">*******************</span>
+</pre></div>
+</div>
+<p>If there is a large amount of content that might not be applicable to all
+users, use collapsible sections to hide information unless needed.</p>
+<div class="content-collapse section" id="this-is-a-collapsible-section">
+<h3>This is a collapsible section<a class="headerlink" href="#this-is-a-collapsible-section" title="Permalink to this headline">¶</a></h3>
+<p>Use the toggle button (+/-) to hide and show the content as needed. Add the
+following directive just before the section header to use this feature.</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">rst-class</span><span class="p">::</span> content-collapse
+
+<span class="gh">This is a collapsible section</span>
+<span class="gh">=============================</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature must only be used before a conventional Sphinx section
+header.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This feature is in active development and may change without warning.</p>
+</div>
+</div>
+</div>
+<div class="section" id="content-highlighting">
+<h2>Content Highlighting<a class="headerlink" href="#content-highlighting" title="Permalink to this headline">¶</a></h2>
+<p>Some common reST inline markup samples:</p>
+<ul class="simple">
+<li><p>one asterisk: <code class="docutils literal notranslate"><span class="pre">*text*</span></code> for emphasis (<em>italics</em>),</p></li>
+<li><p>two asterisks: <code class="docutils literal notranslate"><span class="pre">**text**</span></code> for strong emphasis (<strong>boldface</strong>), and</p></li>
+<li><p>two backquotes: <code class="docutils literal notranslate"><span class="pre">``text``</span></code> for <code class="docutils literal notranslate"><span class="pre">inline</span> <span class="pre">code</span></code> samples.</p></li>
+</ul>
+<p>ReST rules for inline markup try to be forgiving to account for common
+cases of using these marks.  For example using an asterisk to indicate
+multiplication, such as <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">(x</span> <span class="pre">+</span> <span class="pre">y)</span></code> will not be interpreted as an
+unterminated italics section. For inline markup, the characters between
+the beginning and ending characters must not start or end with a space,
+so <code class="docutils literal notranslate"><span class="pre">*this</span> <span class="pre">is</span> <span class="pre">italics*</span></code> ( <em>this is italics</em>) while <code class="docutils literal notranslate"><span class="pre">*</span> <span class="pre">this</span> <span class="pre">isn't*</span></code>
+(* this isn’t*).</p>
+<p>If asterisks or backquotes appear in running text and could be confused with
+inline markup delimiters, you can eliminate the confusion by adding a
+backslash (<code class="docutils literal notranslate"><span class="pre">\</span></code>) before it.</p>
+</div>
+<div class="section" id="lists">
+<h2>Lists<a class="headerlink" href="#lists" title="Permalink to this headline">¶</a></h2>
+<p>For bullet lists, place an asterisk (<code class="docutils literal notranslate"><span class="pre">*</span></code>) or hyphen (<code class="docutils literal notranslate"><span class="pre">-</span></code>) at
+the start of a paragraph and indent continuation lines with two
+spaces.</p>
+<p>The first item in a list (or sublist) must have a blank line before it
+and should be indented at the same level as the preceding paragraph
+(and not indented itself).</p>
+<p>For numbered lists
+start with a <code class="docutils literal notranslate"><span class="pre">1.</span></code> or <code class="docutils literal notranslate"><span class="pre">a)</span></code> for example, and continue with autonumbering by
+using a <code class="docutils literal notranslate"><span class="pre">#</span></code> sign and a <code class="docutils literal notranslate"><span class="pre">.</span></code> or <code class="docutils literal notranslate"><span class="pre">)</span></code> as used in the first list item.
+Indent continuation lines with spaces to align with the text of first
+list item:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="m">*</span> This is a bulleted list.
+<span class="m">*</span> It has two items, the second
+  item and has more than one line of reST text.  Additional lines
+  are indented to the first character of the
+  text of the bullet list.
+
+<span class="m">1.</span> This is a new numbered list. If there wasn&#39;t a blank line before it,
+   it would be a continuation of the previous list (or paragraph).
+<span class="m">#.</span> It has two items too.
+
+a) This is a numbered list using alphabetic list headings
+<span class="m">#)</span> It has three items (and uses autonumbering for the rest of the list)
+<span class="m">#)</span> Here&#39;s the third item.  Use consistent punctuation on the list
+   number.
+
+<span class="m">#.</span> This is an autonumbered list (default is to use numbers starting
+   with 1).
+
+   <span class="m">#.</span> This is a second-level list under the first item (also
+      autonumbered).  Notice the indenting.
+   <span class="m">#.</span> And a second item in the nested list.
+<span class="m">#.</span> And a second item back in the containing list.  No blank line
+   needed, but it wouldn&#39;t hurt for readability.
+</pre></div>
+</div>
+<p>Definition lists (with a term and its definition) are a convenient way
+to document a word or phrase with an explanation.  For example this reST
+content:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span>The Makefile has targets that include:
+
+html
+   Build the HTML output for the project
+
+clean
+   Remove all generated output, restoring the folders to a
+   clean state.
+</pre></div>
+</div>
+<p>Would be rendered as:</p>
+<blockquote>
+<div><p>The Makefile has targets that include:</p>
+<dl class="simple">
+<dt>html</dt><dd><p>Build the HTML output for the project</p>
+</dd>
+<dt>clean</dt><dd><p>Remove all generated output, restoring the folders to a
+clean state.</p>
+</dd>
+</dl>
+</div></blockquote>
+</div>
+<div class="section" id="multi-column-lists">
+<h2>Multi-column lists<a class="headerlink" href="#multi-column-lists" title="Permalink to this headline">¶</a></h2>
+<p>If you have a long bullet list of items, where each item is short,
+you can indicate the list items should be rendered in multiple columns
+with a special <code class="docutils literal notranslate"><span class="pre">hlist</span></code> directive:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">hlist</span><span class="p">::</span>
+   <span class="nc">:columns:</span> <span class="nf">3</span>
+
+   <span class="m">*</span> A list of
+   <span class="m">*</span> short items
+   <span class="m">*</span> that should be
+   <span class="m">*</span> displayed
+   <span class="m">*</span> horizontally
+   <span class="m">*</span> so it doesn&#39;t
+   <span class="m">*</span> use up so much
+   <span class="m">*</span> space on
+   <span class="m">*</span> the page
+</pre></div>
+</div>
+<p>This would be rendered as:</p>
+<table class="hlist"><tr><td><ul class="simple">
+<li><p>A list of</p></li>
+<li><p>short items</p></li>
+<li><p>that should be</p></li>
+</ul>
+</td><td><ul class="simple">
+<li><p>displayed</p></li>
+<li><p>horizontally</p></li>
+<li><p>so it doesn’t</p></li>
+</ul>
+</td><td><ul class="simple">
+<li><p>use up so much</p></li>
+<li><p>space on</p></li>
+<li><p>the page</p></li>
+</ul>
+</td></tr></table>
+<p>Note the optional <code class="docutils literal notranslate"><span class="pre">:columns:</span></code> parameter (default is two columns), and
+all the list items are indented by three spaces.</p>
+</div>
+<div class="section" id="file-names-and-commands">
+<h2>File names and Commands<a class="headerlink" href="#file-names-and-commands" title="Permalink to this headline">¶</a></h2>
+<p>Sphinx extends reST by supporting additional inline markup elements (called
+“roles”) used to tag text with special
+meanings and allow style output formatting. (You can refer to the <a class="reference external" href="http://sphinx-doc.org/markup/inline.html#inline-markup">Sphinx Inline Markup</a>
+documentation for the full list).</p>
+<p>For example, there are roles for marking <code class="file docutils literal notranslate"><span class="pre">filenames</span></code>
+(<code class="docutils literal notranslate"><span class="pre">:file:`name`</span></code>) and command names such as <strong class="command">make</strong>
+(<code class="docutils literal notranslate"><span class="pre">:command:`make`</span></code>).  You can also use the ``inline code``
+markup (double backticks) to indicate a <code class="docutils literal notranslate"><span class="pre">filename</span></code>.</p>
+<p>Don’t use items within a single backtick, for example <code class="docutils literal notranslate"><span class="pre">`word`</span></code>.</p>
+</div>
+<div class="section" id="internal-cross-reference-linking">
+<span id="internal-linking"></span><h2>Internal Cross-Reference Linking<a class="headerlink" href="#internal-cross-reference-linking" title="Permalink to this headline">¶</a></h2>
+<p>ReST links are only supported within the current file using the
+notation:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span>refer to the <span class="s">`internal-linking`_</span> page
+</pre></div>
+</div>
+<p>which renders as,</p>
+<blockquote>
+<div><p>refer to the <a class="reference internal" href="#internal-linking">internal-linking</a> page</p>
+</div></blockquote>
+<p>Note the use of a trailing
+underscore to indicate an outbound link. In this example, the label was
+added immediately before a heading, so the text that’s displayed is the
+heading text itself.</p>
+<p>With Sphinx however, we can create
+link-references to any tagged text within the project documentation.</p>
+<p>Target locations within documents are defined with a label directive:</p>
+<blockquote>
+<div><div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_my label name:</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Note the leading underscore indicating an inbound link.
+The content immediately following
+this label is the target for a <code class="docutils literal notranslate"><span class="pre">:ref:`my</span> <span class="pre">label</span> <span class="pre">name`</span></code>
+reference from anywhere within the documentation set.
+The label should be added immediately before a heading so there’s a
+natural phrase to show when referencing this label (e.g., the heading
+text).</p>
+<p>This is the same directive used to
+define a label that’s a reference to a URL:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_Hypervisor Wikipedia Page:</span>
+   https://en.wikipedia.org/wiki/Hypervisor
+</pre></div>
+</div>
+<p>To enable easy cross-page linking within the site, each file should have
+a reference label before its title so it can
+be referenced from another file. These reference labels must be unique
+across the whole site, so generic names such as “samples” should be
+avoided.  For example the top of this document’s <code class="docutils literal notranslate"><span class="pre">.rst</span></code> file is:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_doc_guidelines:</span>
+
+<span class="gh">Documentation Guidelines</span>
+<span class="gh">########################</span>
+</pre></div>
+</div>
+<p>Other <code class="docutils literal notranslate"><span class="pre">.rst</span></code> documents can link to this document using the
+<code class="docutils literal notranslate"><span class="pre">:ref:`doc_guidelines`</span></code> tag and it will show up as
+<a class="reference internal" href="#doc-guidelines"><span class="std std-ref">Documentation Guidelines</span></a>.  This type of internal cross reference works
+across multiple files, and the link text is obtained from the document
+source so if the title changes, the link text will update as well.</p>
+<p>There may be times where you’d like to change the link text that’s shown
+in the generated document.  In this case, you can add specify alternate
+text using <code class="docutils literal notranslate"><span class="pre">:ref:`alternate</span> <span class="pre">text</span> <span class="pre">&lt;doc_guidelines&gt;`</span></code> (renders as
+<a class="reference internal" href="#doc-guidelines"><span class="std std-ref">alternate text</span></a>).</p>
+</div>
+<div class="section" id="non-ascii-characters">
+<h2>Non-ASCII Characters<a class="headerlink" href="#non-ascii-characters" title="Permalink to this headline">¶</a></h2>
+<p>You can insert non-ASCII characters such as a Trademark symbol
+(™), by using the notation <code class="docutils literal notranslate"><span class="pre">|trade|</span></code>.  (It’s also allowed to use
+the UTF-8 characters directly.) Available replacement names are defined
+in an include file used during the Sphinx processing of the reST files.
+The names of these replacement characters are the same as used in HTML
+entities used to insert characters in HTML, e.g., &amp;trade; and are
+defined in the file <code class="docutils literal notranslate"><span class="pre">sphinx_build/substitutions.txt</span></code> as listed here:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|br|</span>     <span class="ow">raw</span><span class="p">::</span> html        .. force a line break in HTML output (blank lines needed here)
+
+   &lt;br /&gt;
+<span class="p">..</span> <span class="nt">|PN|</span> <span class="ow">replace</span><span class="p">::</span> Navigation 2
+
+<span class="p">..</span> <span class="nt">|LPN|</span> <span class="ow">replace</span><span class="p">::</span> ROS 2 Navigation System
+
+<span class="p">..</span> <span class="nt">_project repo:</span> https://github.com/ros-planning/navigation2
+
+<span class="p">..</span> <span class="nt">_documentation repo:</span> https://github.com/ros-planning/navigation2/doc
+
+<span class="p">..</span> <span class="nt">_documentation site:</span> https://rosplanning.github.io/navigation2/
+
+<span class="p">..</span> <span class="nt">_project website:</span> https://rosplanning.github.io/navigation2/
+
+<span class="p">..</span> <span class="nt">|PP|</span> <span class="ow">replace</span><span class="p">::</span> https://github.com/ros-planning/navigation2/blob/master
+
+<span class="cp">.. These are replacement strings for non-ASCII characters used within the project</span>
+<span class="cp">   using the same name as the html entity names (e.g., &amp;copy;) for that character</span>
+
+<span class="p">..</span> <span class="nt">|copy|</span>   <span class="ow">unicode</span><span class="p">::</span> U+000A9 .. COPYRIGHT SIGN
+   <span class="nc">:ltrim:</span>
+<span class="p">..</span> <span class="nt">|trade|</span>  <span class="ow">unicode</span><span class="p">::</span> U+02122 .. TRADEMARK SIGN
+   <span class="nc">:ltrim:</span>
+<span class="p">..</span> <span class="nt">|reg|</span>    <span class="ow">unicode</span><span class="p">::</span> U+000AE .. REGISTERED TRADEMARK SIGN
+   <span class="nc">:ltrim:</span>
+<span class="p">..</span> <span class="nt">|deg|</span>    <span class="ow">unicode</span><span class="p">::</span> U+000B0 .. DEGREE SIGN
+   <span class="nc">:ltrim:</span>
+<span class="p">..</span> <span class="nt">|plusminus|</span>  <span class="ow">unicode</span><span class="p">::</span> U+000B1 .. PLUS-MINUS SIGN
+   <span class="nc">:rtrim:</span>
+<span class="p">..</span> <span class="nt">|micro|</span>  <span class="ow">unicode</span><span class="p">::</span> U+000B5 .. MICRO SIGN
+   <span class="nc">:rtrim:</span>
+</pre></div>
+</div>
+<p>We’ve kept the substitutions list small but others can be added as
+needed by submitting a change to the <code class="docutils literal notranslate"><span class="pre">substitutions.txt</span></code> file.</p>
+</div>
+<div class="section" id="code-and-command-examples">
+<h2>Code and Command Examples<a class="headerlink" href="#code-and-command-examples" title="Permalink to this headline">¶</a></h2>
+<p>Use the reST <code class="docutils literal notranslate"><span class="pre">code-block</span></code> directive to create a highlighted block of
+fixed-width text, typically used for showing formatted code or console
+commands and output.  Smart syntax highlighting is also supported (using the
+Pygments package). You can also directly specify the highlighting language.
+For example:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">code-block</span><span class="p">::</span> <span class="k">c</span>
+
+   <span class="k">struct</span> <span class="n">_k_object</span> <span class="p">{</span>
+      <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+      <span class="n">u8_t</span> <span class="n">perms</span><span class="p">[</span><span class="n">CONFIG_MAX_THREAD_BYTES</span><span class="p">];</span>
+      <span class="n">u8_t</span> <span class="n">type</span><span class="p">;</span>
+      <span class="n">u8_t</span> <span class="n">flags</span><span class="p">;</span>
+      <span class="n">u32_t</span> <span class="n">data</span><span class="p">;</span>
+   <span class="p">}</span> <span class="n">__packed</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Note the blank line between the <code class="docutils literal notranslate"><span class="pre">code-block</span></code> directive and the first
+line of the code-block body, and the body content is indented three
+spaces (to the first non-white space of the directive name).</p>
+<p>This would be rendered as:</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span> <span class="n">_k_object</span> <span class="p">{</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+   <span class="n">u8_t</span> <span class="n">perms</span><span class="p">[</span><span class="n">CONFIG_MAX_THREAD_BYTES</span><span class="p">];</span>
+   <span class="n">u8_t</span> <span class="n">type</span><span class="p">;</span>
+   <span class="n">u8_t</span> <span class="n">flags</span><span class="p">;</span>
+   <span class="n">u32_t</span> <span class="n">data</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">__packed</span><span class="p">;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>You can specify other languages for the <code class="docutils literal notranslate"><span class="pre">code-block</span></code> directive,
+including <code class="docutils literal notranslate"><span class="pre">c</span></code>, <code class="docutils literal notranslate"><span class="pre">python</span></code>, and <code class="docutils literal notranslate"><span class="pre">rst</span></code>, and also <code class="docutils literal notranslate"><span class="pre">console</span></code>,
+<code class="docutils literal notranslate"><span class="pre">bash</span></code>, or <code class="docutils literal notranslate"><span class="pre">shell</span></code>. If you want no syntax highlighting, use the
+language <code class="docutils literal notranslate"><span class="pre">none</span></code>,  for example:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">code-block</span><span class="p">::</span> <span class="k">none</span>
+
+<span class="s">   This would be a block of text styled with a background</span>
+<span class="s">   and box, but with no syntax highlighting.</span>
+</pre></div>
+</div>
+<p>Would display as:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>This would be a block of text styled with a background
+and box, but with no syntax highlighting.
+</pre></div>
+</div>
+</div></blockquote>
+<p>There’s a shorthand for writing code blocks too: end the introductory
+paragraph with a double colon (<code class="docutils literal notranslate"><span class="pre">::</span></code>) and indent the code block content
+by three spaces.  On output, only one colon will be shown.  The
+highlighting package makes a best guess at the type of content in the
+block and highlighting purposes.  This can lead to some odd
+highlighting in the generated output.</p>
+</div>
+<div class="section" id="tabs-spaces-and-indenting">
+<h2>Tabs, spaces, and indenting<a class="headerlink" href="#tabs-spaces-and-indenting" title="Permalink to this headline">¶</a></h2>
+<p>Indenting is significant in reST file content, and using spaces is
+preferred.  Extra indenting can (unintentionally) change the way content
+is rendered too.  For lists and directives, indent the content text to
+the first non-white space in the preceding line.  For example:</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="m">*</span> List item that spans multiple lines of text
+  showing where to indent the continuation line.
+
+<span class="m">1.</span> And for numbered list items, the continuation
+   line should align with the text of the line above.
+
+<span class="p">..</span> <span class="ow">code-block</span><span class="p">::</span>
+
+   The text within a directive block should align with the
+   first character of the directive name.
+</pre></div>
+</div>
+<p>Keep the line length for documentation less than 80 characters to make
+it easier for reviewing in GitHub. Long lines because of URL references
+are an allowed exception.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019
+      <span class="lastupdated">
+        Last updated on Aug 29, 2019.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+  
+
+<script type="text/javascript" src="../_static/tcs_theme.js"></script>
+
+
+
+</body>
+</html>

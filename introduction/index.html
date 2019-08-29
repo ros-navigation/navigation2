@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction to the Navigation 2 Project &mdash; Navigation 2 0.2.3 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../_static/favicon-48x48.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Getting Started Guide" href="../getting_started/index.html" />
+    <link rel="prev" title="ROS 2 Navigation System" href="../index.html" />
+
+<link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Navigation 2
+          
+
+          
+            
+            <img src="../_static/logo_white_200w.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to the Navigation 2 Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../howtos/index.html">How-Tos</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docbuild.html">Build the template locally</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-overview">Documentation overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#set-up-the-documentation-working-folders">Set up the documentation working folders</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#installing-the-documentation-tools">Installing the documentation tools</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-presentation-theme">Documentation presentation theme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#running-the-documentation-processors">Running the documentation processors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#publishing-content">Publishing content</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#basic-editing-and-making-the-template-your-own">Basic editing and making the template your own</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#deploy-with-github">Deploy with GitHub</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-publish.html">Set up Publish directory and GitHub pages repository</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#create-the-github-pages-repository">Create the GitHub Pages Repository</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#clone-your-github-pages-repository-to-your-local-working-directory">Clone your GitHub pages repository to your local working directory</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-travis-ci.html">Deploying documentation with GitHub and Travis CI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html">Important Sphinx files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#conf-py">conf.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#substitutions-txt">substitutions.txt</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#scope">Scope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#single-file-conversion">Single file Conversion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#contributing">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#sections">Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#introduction">1. Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#id1">2.0 Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/use_cases/README.html">Target Use Cases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#id1">Use Cases</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute/index.html">Contributing to the Project</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/contribute_guidelines.html#licensing">Licensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../contribute/contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/contribute_guidelines.html#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contribute/doc_guidelines.html">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#headings">Headings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../contribute/doc_guidelines.html#this-is-a-collapsible-section">This is a collapsible section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#content-highlighting">Content Highlighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#lists">Lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#multi-column-lists">Multi-column lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#file-names-and-commands">File names and Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#non-ascii-characters">Non-ASCII Characters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#code-and-command-examples">Code and Command Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contribute/doc_guidelines.html#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Navigation 2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Introduction to the Navigation 2 Project</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="introduction-to-the-pn-project">
+<span id="introduction"></span><h1>Introduction to the Navigation 2 Project<a class="headerlink" href="#introduction-to-the-pn-project" title="Permalink to this headline">¶</a></h1>
+<p>Test graphviz drawing from mft.dot</p>
+<div class="graphviz"><img src="../_images/graphviz-e4d76e5ca08a67debc35de03b354ad2fb928296e.png" alt="digraph G {
+  bgcolor=&quot;transparent&quot;;
+  node [fontsize=10 shape=record]
+  node [fontsize=10]
+  rankdir=LR
+
+  bin_complete [label=&quot;&lt;ext&gt;Extended Manifest\n(unsigned)
+                  |&lt;mft&gt;Manifest\n(signed)|&lt;bins&gt;Binaries&quot;]
+
+  mft [label=&quot;&lt;hdr&gt;CSE Header
+        |CSS Header (Type 4)\nmodule_type = 4\n...
+        |&lt;mcb&gt;ManifestCryptoBlock
+        |PlatformFirmware\nAuthenticationExtension
+        |...other extensions...
+        |AdspMetadataFileExtension
+        |...alignment...
+        |AdspFwBinaryDesc&quot;]
+
+  mcb [label=&quot;ManifestRSAKey\nmodulus\nexponent
+        |Signature&quot;]
+
+  bin_complete:mft -&gt; mft:hdr
+  mft:mcb -&gt; mcb
+
+}" class="graphviz" /></div>
+<p>Test another graphviz drawing from repo_sync.dot</p>
+<div class="graphviz"><img src="../_images/graphviz-f15c9c486a9fecff58a2d68f275f61477317b327.png" alt="digraph repo_sync {
+   bgcolor=&quot;transparent&quot;;
+   rankdir=LR
+	compound=true;
+	node [fontsize=10, shape=record, style=rounded];
+	edge [fontsize=10];
+
+
+	subgraph clusterPublic {
+		label=&quot;cool-project&quot;; fontsize=10;
+
+		subgraph clusterPubMaster {
+			label=&quot;master\n(RW)&quot;; fontsize=11;
+			style=&quot;filled,rounded&quot;; color=&quot;#F0F0F0&quot;
+
+			c1 -&gt; c2 -&gt; c3 -&gt; c4;
+
+		}
+
+		subgraph clusterPubabcProd {
+			label=&quot;abc_prod\n(RO replica)&quot;; fontsize=11;
+			style=&quot;filled,rounded&quot;; color=&quot;#F0F0FF&quot;
+
+			node [style=&quot;rounded,dashed&quot;];
+
+			abc_c4 [label=&quot;c4 [REL1]&quot;];
+			abc_c1 -&gt; abc_c2 -&gt; abc_c3 -&gt; abc_c4;
+		}
+	}
+}" class="graphviz" /></div>
+<p>And a test of plantuml from ssp.pu</p>
+<p class="plantuml">
+<img src="../_images/plantuml-44b793ab3124621da934144afb774b0e73dd9d03.png" alt="&#64;startuml
+skinparam backgroundcolor transparent
+component dai
+package drivers {
+  component &quot;apl-ssp&quot; as ssp
+}
+database &quot;.data&quot; {
+  component &quot;struct dai ssp[3]&quot; as d_ssp
+}
+database &quot;.rodata&quot; {
+  component ssp_ops
+}
+
+dai ..&gt; d_ssp : expose via dai_get()
+d_ssp -&gt; ssp_ops : links to
+ssp ..&gt; ssp_ops : provide
+&#64;enduml
+"/>
+</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019
+      <span class="lastupdated">
+        Last updated on Aug 29, 2019.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+  
+
+<script type="text/javascript" src="../_static/tcs_theme.js"></script>
+
+
+
+</body>
+</html>
