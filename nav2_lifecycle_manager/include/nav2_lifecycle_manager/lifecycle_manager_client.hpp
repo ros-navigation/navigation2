@@ -23,6 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "nav2_msgs/srv/manage_nodes.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -41,20 +42,15 @@ public:
   bool navigate_to_pose(double x, double y, double theta);
 
 protected:
-  using Empty = std_srvs::srv::Empty;
+  using ManageNodes = nav2_msgs::srv::ManageNodes;
 
   // A generic method used to call startup, shutdown, etc.
-  void callService(rclcpp::Client<Empty>::SharedPtr service_client, const char * service_name);
+  void callService(uint8_t command);
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
 
-  // The same (empty) request for all of the services
-  std::shared_ptr<Empty::Request> request_;
-
-  // The service clients
-  rclcpp::Client<Empty>::SharedPtr startup_client_;
-  rclcpp::Client<Empty>::SharedPtr shutdown_client_;
+  rclcpp::Client<ManageNodes>::SharedPtr manager_client_;
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
 

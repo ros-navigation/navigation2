@@ -1,0 +1,4 @@
+Command command
+---
+bool success
+string reason
