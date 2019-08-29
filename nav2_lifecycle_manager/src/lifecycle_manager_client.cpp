@@ -41,16 +41,34 @@ LifecycleManagerClient::LifecycleManagerClient()
     "initialpose", rclcpp::SystemDefaultsQoS());
 }
 
-void
+bool
 LifecycleManagerClient::startup()
 {
-  callService(Command::STARTUP);
+  return callService(Command::STARTUP);
 }
 
-void
+bool
 LifecycleManagerClient::shutdown()
 {
-  callService(Command::SHUTDOWN);
+  return callService(Command::SHUTDOWN);
+}
+
+bool
+LifecycleManagerClient::pause()
+{
+  return callService(Command::PAUSE);
+}
+
+bool
+LifecycleManagerClient::resume()
+{
+  return callService(Command::RESUME);
+}
+
+bool
+LifecycleManagerClient::reset()
+{
+  return callService(Command::RESET);
 }
 
 void
@@ -122,7 +140,7 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
   return wrapped_result.code == rclcpp_action::ResultCode::SUCCEEDED;
 }
 
-void
+bool
 LifecycleManagerClient::callService(uint8_t command)
 {
   std::string service_name = "lifecycle_manager/manage_nodes";
@@ -135,7 +153,7 @@ LifecycleManagerClient::callService(uint8_t command)
   while (!manager_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
-      return;
+      return false;
     }
     RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
   }
@@ -144,6 +162,7 @@ LifecycleManagerClient::callService(uint8_t command)
     service_name);
   auto future_result = manager_client_->async_send_request(request);
   rclcpp::spin_until_future_complete(node_, future_result);
+  return future_result.get()->success;
 }
 
 }  // namespace nav2_lifecycle_manager

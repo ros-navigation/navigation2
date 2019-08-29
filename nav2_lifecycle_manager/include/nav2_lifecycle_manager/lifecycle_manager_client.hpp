@@ -34,8 +34,11 @@ public:
   LifecycleManagerClient();
 
   // Client-side interface to the Nav2 lifecycle manager
-  void startup();
-  void shutdown();
+  bool startup();
+  bool shutdown();
+  bool pause();
+  bool resume();
+  bool reset();
 
   // A couple convenience methods to facilitate scripting tests
   void set_initial_pose(double x, double y, double theta);
@@ -45,7 +48,7 @@ protected:
   using ManageNodes = nav2_msgs::srv::ManageNodes;
 
   // A generic method used to call startup, shutdown, etc.
-  void callService(uint8_t command);
+  bool callService(uint8_t command);
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
