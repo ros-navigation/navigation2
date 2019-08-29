@@ -70,6 +70,8 @@ LifecycleManager::LifecycleManager()
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] = 
     std::string("Shutting down ");;
 
+  createLifecycleServiceClients();
+
   if (autostart_) {
     startup();
   }
@@ -160,19 +162,6 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool reverse_o
   return true;
 }
 
-bool
-LifecycleManager::bringupNode(const std::string & node_name)
-{
-  message(std::string("Configuring and activating ") + node_name);
-  if (!changeStateForNode(node_name, Transition::TRANSITION_CONFIGURE) ||
-    !changeStateForNode(node_name, Transition::TRANSITION_ACTIVATE))
-  {
-    return false;
-  }
-
-  return true;
-}
-
 void
 LifecycleManager::shutdownAllNodes()
 {
@@ -186,7 +175,6 @@ bool
 LifecycleManager::startup()
 {
   message("Starting the system bringup...");
-  createLifecycleServiceClients();
   if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
@@ -211,7 +199,6 @@ bool
 LifecycleManager::reset()
 {
   message("Resetting the system...");
-  createLifecycleServiceClients();
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
     !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
   {
@@ -226,7 +213,6 @@ bool
 LifecycleManager::pause()
 {
   message("Pausing the system...");
-  createLifecycleServiceClients();
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
@@ -240,7 +226,6 @@ bool
 LifecycleManager::resume()
 {
   message("Resuming the system...");
-  createLifecycleServiceClients();
   if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
