@@ -5,7 +5,7 @@
   <version>0.2.2</version>
   <description>Common support functionality used throughout the navigation 2 stack</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake_core</buildtool_depend>
 

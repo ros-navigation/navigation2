@@ -8,7 +8,7 @@
   </description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

@@ -1,0 +1,17 @@
+Portions of this repository are available under one of the following licenses
+
+SPDX-ID:
+* LGPL-2.1-or-later
+* Apache-2.0
+* BSD-3-Clause
+* Apache-2.0 AND BSD-3-Clause
+
+Please see the package.xml file for each package to see the specific license for
+that package.
+
+Contributions to existing files should be made under the license of that file.
+New files should be made under the first license listed in the appropriate
+package.xml file
+
+For files that are not otherwise marked, they are provided under the Apache-2.0
+license.

@@ -5,7 +5,7 @@
   <version>0.2.2</version>
   <description>Basic message types for two dimensional navigation, extending from geometry_msgs::Pose2D.</description>
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
 
   <build_export_depend>rosidl_default_runtime</build_export_depend>
 
