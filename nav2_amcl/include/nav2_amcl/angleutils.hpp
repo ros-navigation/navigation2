@@ -57,6 +57,6 @@ angleutils::angle_diff(double a, double b)
   }
 }
 
-}  // namespace nav2_util
+}  // namespace nav2_amcl
 
 #endif  // NAV2_AMCL__ANGLEUTILS_HPP_

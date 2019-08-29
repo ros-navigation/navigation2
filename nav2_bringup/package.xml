@@ -6,7 +6,7 @@
   <description>Bringup scripts and configurations for the navigation2 stack</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
