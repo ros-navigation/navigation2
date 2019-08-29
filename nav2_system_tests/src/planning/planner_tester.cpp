@@ -35,10 +35,10 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), is_active_(false), map_publish_rate_(100s), map_set_(false),
-  costmap_set_(false), using_fake_costmap_(true), costmap_server_running_(false),
-  trinary_costmap_(true), track_unknown_space_(false), lethal_threshold_(100),
-  unknown_cost_value_(-1), testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr)
+: Node("PlannerTester"), is_active_(false), map_set_(false), costmap_set_(false),
+  using_fake_costmap_(true), costmap_server_running_(false), trinary_costmap_(true),
+  track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
+  testCostmapType_(TestCostmap::open_space), map_publish_rate_(100s)
 {
 }
 
@@ -50,6 +50,8 @@ void PlannerTester::activate()
   }
   is_active_ = true;
 
+  startPoseTransform();
+
   // The client used to invoke the services of the global planner (ComputePathToPose)
   planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(
     this->get_node_base_interface(),
@@ -57,8 +59,6 @@ void PlannerTester::activate()
     this->get_node_logging_interface(),
     this->get_node_waitables_interface(),
     "ComputePathToPose");
-
-  startRobotPoseProvider();
 
   // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
@@ -69,7 +69,13 @@ void PlannerTester::activate()
   startCostmapServer();
 
   // Launch a thread to process the messages for this node
-  spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
+  spin_thread_ = std::make_unique<std::thread>(
+    [&]()
+    {
+      executor_.add_node(this->get_node_base_interface());
+      executor_.spin();
+      executor_.remove_node(this->get_node_base_interface());
+    });
 }
 
 void PlannerTester::deactivate()
@@ -82,8 +88,7 @@ void PlannerTester::deactivate()
 
   executor_.cancel();
   spin_thread_->join();
-  delete spin_thread_;
-  spin_thread_ = nullptr;
+  spin_thread_.reset();
 
   planner_client_.reset();
   map_timer_.reset();
@@ -100,11 +105,66 @@ PlannerTester::~PlannerTester()
   }
 }
 
-void PlannerTester::spinThread()
+void PlannerTester::startPoseTransform()
 {
-  executor_.add_node(this->get_node_base_interface());
-  executor_.spin();
-  executor_.remove_node(this->get_node_base_interface());
+  // Provide the robot pose transform
+  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
+
+  // Set an initial pose
+  geometry_msgs::msg::Point robot_position;
+  robot_position.x = 0.0;
+  robot_position.y = 0.0;
+  updateRobotPosition(robot_position);
+
+  // Publish the transform periodically
+  transform_timer_ = create_wall_timer(
+    10ms, std::bind(&PlannerTester::transformTimerCallback, this));
+}
+
+void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
+{
+  if (!base_transform_) {
+    base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
+    base_transform_->header.frame_id = "map";
+    base_transform_->child_frame_id = "base_link";
+  }
+
+  base_transform_->header.stamp = now() + rclcpp::Duration(1.0);
+  base_transform_->transform.translation.x = position.x;
+  base_transform_->transform.translation.y = position.y;
+  base_transform_->transform.rotation.w = 1.0;
+}
+
+void PlannerTester::transformTimerCallback()
+{
+  if (base_transform_) {
+    tf2_msgs::msg::TFMessage tf_message;
+    tf_message.transforms.push_back(*base_transform_);
+    transform_publisher_->publish(tf_message);
+  }
+}
+
+void PlannerTester::startCostmapServer()
+{
+  if (!costmap_set_) {
+    RCLCPP_ERROR(this->get_logger(), "Costmap must be set before starting the service");
+    return;
+  }
+
+  auto costmap_service_callback = [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
+    {
+      RCLCPP_DEBUG(this->get_logger(), "Incoming costmap request");
+      response->map = costmap_->get_costmap(request->specs);
+    };
+
+  // Create a service that will use the callback function to handle requests.
+  costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
+    "GetCostmap", costmap_service_callback);
+
+  costmap_server_running_ = true;
 }
 
 void PlannerTester::loadDefaultMap()
@@ -163,22 +223,6 @@ void PlannerTester::loadDefaultMap()
   setCostmap();
 }
 
-void PlannerTester::setCostmap()
-{
-  if (!map_set_) {
-    RCLCPP_ERROR(this->get_logger(), "Map has not been provided");
-    return;
-  }
-
-  costmap_ = std::make_unique<Costmap>(
-    this, trinary_costmap_, track_unknown_space_, lethal_threshold_, unknown_cost_value_);
-
-  costmap_->set_static_map(*map_);
-
-  costmap_set_ = true;
-  using_fake_costmap_ = false;
-}
-
 void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 {
   if (costmap_set_) {
@@ -193,38 +237,20 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   using_fake_costmap_ = true;
 }
 
-void PlannerTester::startRobotPoseProvider()
+void PlannerTester::setCostmap()
 {
-  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
-
-  geometry_msgs::msg::Point robot_position;
-  robot_position.x = 0.0;
-  robot_position.y = 0.0;
-
-  updateRobotPosition(robot_position);
-}
-
-void PlannerTester::startCostmapServer()
-{
-  if (!costmap_set_) {
-    RCLCPP_ERROR(this->get_logger(), "Costmap must be set before starting the service");
+  if (!map_set_) {
+    RCLCPP_ERROR(this->get_logger(), "Map has not been provided");
     return;
   }
 
-  auto costmap_service_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
-    std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
-    {
-      RCLCPP_DEBUG(this->get_logger(), "Incoming costmap request");
-      response->map = costmap_->get_costmap(request->specs);
-    };
+  costmap_ = std::make_unique<Costmap>(
+    this, trinary_costmap_, track_unknown_space_, lethal_threshold_, unknown_cost_value_);
 
-  // Create a service that will use the callback function to handle requests.
-  costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
-    "GetCostmap", costmap_service_callback);
+  costmap_->set_static_map(*map_);
 
-  costmap_server_running_ = true;
+  costmap_set_ = true;
+  using_fake_costmap_ = false;
 }
 
 bool PlannerTester::defaultPlannerTest(
@@ -375,21 +401,6 @@ bool PlannerTester::plannerTest(
   return false;
 }
 
-void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
-{
-  geometry_msgs::msg::TransformStamped tf_stamped;
-  tf_stamped.header.frame_id = "map";
-  tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
-  tf_stamped.child_frame_id = "base_link";
-  tf_stamped.transform.translation.x = position.x;
-  tf_stamped.transform.translation.y = position.y;
-  tf_stamped.transform.rotation.w = 1.0;
-
-  tf2_msgs::msg::TFMessage tf_message;
-  tf_message.transforms.push_back(tf_stamped);
-  transform_publisher_->publish(tf_message);
-}
-
 TaskStatus PlannerTester::sendRequest(
   const ComputePathToPoseCommand & goal,
   ComputePathToPoseResult & path)
@@ -500,14 +511,6 @@ bool PlannerTester::isWithinTolerance(
   RCLCPP_DEBUG(this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
     path_start.position.x, path_start.position.y, path_end.position.x, path_end.position.y);
 
-  return false;
-}
-
-bool PlannerTester::sendCancel()
-{
-  RCLCPP_ERROR(this->get_logger(), "Function not implemented yet");
-
-  // TODO(orduno) #443
   return false;
 }
 
