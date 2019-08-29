@@ -72,13 +72,6 @@ NavfnPlanner::NavfnPlanner()
       costmap_executor_->spin();
       costmap_executor_->remove_node(node->get_node_base_interface());
     }, costmap_ros_);
-
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    rclcpp_node_->get_node_base_interface(),
-    rclcpp_node_->get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 }
 
 NavfnPlanner::~NavfnPlanner()
@@ -102,6 +95,9 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 
   RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+
+  tf_ = costmap_ros_->getTfBuffer();
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   // Create a planner based on the new costmap size
   if (isPlannerOutOfDate()) {
