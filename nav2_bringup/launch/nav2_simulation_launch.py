@@ -145,19 +145,19 @@ def generate_launch_description():
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
-    start_dwb_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('dwb_controller'),
-                'lib/dwb_controller/dwb_controller'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
-
     start_planner_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_navfn_planner'),
                 'lib/nav2_navfn_planner/navfn_planner'),
+            ['__params:=', configured_params]],
+        cwd=[launch_dir], output='screen')
+
+    start_dwb_cmd = launch.actions.ExecuteProcess(
+        cmd=[
+            os.path.join(
+                get_package_prefix('dwb_controller'),
+                'lib/dwb_controller/dwb_controller'),
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 

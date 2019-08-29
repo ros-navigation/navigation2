@@ -192,7 +192,7 @@ void PlannerTester::startCostmapServer()
 
   // Create a service that will use the callback function to handle requests.
   costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
-    "GetCostmap", costmap_service_callback);
+    "get_costmap", costmap_service_callback);
 
   costmap_server_running_ = true;
 }

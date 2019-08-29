@@ -59,8 +59,9 @@ NavfnPlanner::NavfnPlanner()
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()},
     "global_costmap"));
-  costmap_ = costmap_ros_->getCostmap();
+  costmap_ = nullptr;
   costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
     [&](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
@@ -97,6 +98,8 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("use_astar", use_astar_);
 
   costmap_ros_->on_configure(state);
+  costmap_ = costmap_ros_->getCostmap();
+
   RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
