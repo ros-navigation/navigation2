@@ -51,6 +51,9 @@ public:
   PlannerTester();
   ~PlannerTester();
 
+  void activate();
+  void deactivate();
+
   // Loads the provided map and and generates a costmap from it.
   void loadDefaultMap();
 
@@ -83,6 +86,8 @@ public:
   bool sendCancel();
 
 private:
+  bool is_active_;
+
   void setCostmap();
 
   void startRobotPoseProvider();

@@ -35,11 +35,21 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), map_publish_rate_(100s), map_set_(false), costmap_set_(false),
-  using_fake_costmap_(true), costmap_server_running_(false), trinary_costmap_(true),
-  track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr)
+: Node("PlannerTester"), is_active_(false), map_publish_rate_(100s), map_set_(false),
+  costmap_set_(false), using_fake_costmap_(true), costmap_server_running_(false),
+  trinary_costmap_(true), track_unknown_space_(false), lethal_threshold_(100),
+  unknown_cost_value_(-1), testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr)
 {
+}
+
+void PlannerTester::activate()
+{
+  if (is_active_) {
+    RCLCPP_WARN(this->get_logger(), "Trying to active while already active");
+    return;
+  }
+  is_active_ = true;
+
   // The client used to invoke the services of the global planner (ComputePathToPose)
   planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(
     this->get_node_base_interface(),
@@ -62,12 +72,32 @@ PlannerTester::PlannerTester()
   spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
 }
 
-PlannerTester::~PlannerTester()
+void PlannerTester::deactivate()
 {
+  if (!is_active_) {
+    RCLCPP_WARN(this->get_logger(), "Trying to deactivate while already inactive");
+    return;
+  }
+  is_active_ = false;
+
   executor_.cancel();
   spin_thread_->join();
   delete spin_thread_;
   spin_thread_ = nullptr;
+
+  planner_client_.reset();
+  map_timer_.reset();
+  map_pub_.reset();
+  map_.reset();
+  costmap_server_.reset();
+  transform_publisher_.reset();
+}
+
+PlannerTester::~PlannerTester()
+{
+  if (is_active_) {
+    deactivate();
+  }
 }
 
 void PlannerTester::spinThread()
