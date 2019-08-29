@@ -2,7 +2,8 @@
 Adaptive Monte Carlo Localization (AMCL) is a probabilistic localization module which estimates the position and orientation (i.e. Pose) of a robot in a given known map.
 
 ## Overview
-Currently, the AMCL module in ROS 2 Navigation System is a direct port from [ROS1 AMCL](http://wiki.ros.org/amcl) package with some minor code re-factoring. The direct port includes all of ROS1 functionalities except running from Bag files.  However, given the way in which these classes are currently written, these codes are highly bounded to AMCL.  Therefore, to make use of code re-usability, these classes need to be substantially modified.
+Currently, the AMCL module in ROS 2 Navigation System is a direct port from [ROS1 AMCL](http://wiki.ros.org/amcl) package with some minor code re-factoring. The direct port includes all of ROS1 functionalities except running from Bag files.
+
 ## Added Feature
 AutoLocalization - is implemented by utilizing AMCL's `global_localization` service request and Behavior Tree (BT).  This enables initial pose estimation capability on differential type robot.
 
