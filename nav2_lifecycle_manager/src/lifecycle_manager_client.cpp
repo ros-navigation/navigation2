@@ -31,7 +31,7 @@ LifecycleManagerClient::LifecycleManagerClient()
   node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
 
   // Create the service clients
-  manager_client_ = node_->create_client<ManageNodes>("lifecycle_manager/manage_nodes");
+  manager_client_ = node_->create_client<ManageNodes>(service_name_);
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -143,12 +143,11 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
 bool
 LifecycleManagerClient::callService(uint8_t command)
 {
-  std::string service_name = "lifecycle_manager/manage_nodes";
   auto request = std::make_shared<ManageNodes::Request>();
   request->command.id = command;
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
-    service_name);
+    service_name_);
 
   while (!manager_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
@@ -159,7 +158,7 @@ LifecycleManagerClient::callService(uint8_t command)
   }
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
-    service_name);
+    service_name_);
   auto future_result = manager_client_->async_send_request(request);
   rclcpp::spin_until_future_complete(node_, future_result);
   return future_result.get()->success;

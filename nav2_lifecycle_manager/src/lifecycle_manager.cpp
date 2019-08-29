@@ -67,8 +67,8 @@ LifecycleManager::LifecycleManager()
   transition_label_map_[Transition::TRANSITION_CLEANUP] = std::string("Cleaning up ");
   transition_label_map_[Transition::TRANSITION_ACTIVATE] = std::string("Activating ");
   transition_label_map_[Transition::TRANSITION_DEACTIVATE] = std::string("Deactivating ");
-  transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] = 
-    std::string("Shutting down ");;
+  transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
+    std::string("Shutting down ");
 
   createLifecycleServiceClients();
 
@@ -88,21 +88,20 @@ LifecycleManager::managerCallback(
   const std::shared_ptr<ManageNodes::Request> request,
   std::shared_ptr<ManageNodes::Response> response)
 {
-  switch (request->command.id)
-  {
-    case Command::STARTUP : 
+  switch (request->command.id) {
+    case Command::STARTUP:
       response->success = startup();
       break;
-    case Command::RESET : 
+    case Command::RESET:
       response->success = reset();
       break;
-    case Command::SHUTDOWN : 
+    case Command::SHUTDOWN:
       response->success = shutdown();
       break;
-    case Command::PAUSE : 
+    case Command::PAUSE:
       response->success = pause();
       break;
-    case Command::RESUME : 
+    case Command::RESUME:
       response->success = resume();
       break;
   }
@@ -213,8 +212,7 @@ bool
 LifecycleManager::pause()
 {
   message("Pausing the system...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE))
-  {
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
     return false;
   }
@@ -226,8 +224,7 @@ bool
 LifecycleManager::resume()
 {
   message("Resuming the system...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
-  {
+  if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
     return false;
   }
