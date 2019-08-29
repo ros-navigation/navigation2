@@ -26,6 +26,7 @@ using namespace std::placeholders;
 
 using lifecycle_msgs::msg::Transition;
 using lifecycle_msgs::msg::State;
+using nav2_msgs::msg::Command;
 using nav2_util::LifecycleServiceClient;
 
 namespace nav2_lifecycle_manager
@@ -48,11 +49,8 @@ LifecycleManager::LifecycleManager()
   get_parameter("node_names", node_names_);
   get_parameter("autostart", autostart_);
 
-  startup_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/startup",
-      std::bind(&LifecycleManager::startupCallback, this, _1, _2, _3));
-
-  shutdown_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/shutdown",
-      std::bind(&LifecycleManager::shutdownCallback, this, _1, _2, _3));
+  manager_srv_ = create_service<ManageNodes>("lifecycle_manager/manage_nodes",
+      std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", std::string("__node:=") + get_name() + "service_client", "--"});
@@ -83,21 +81,29 @@ LifecycleManager::~LifecycleManager()
 }
 
 void
-LifecycleManager::startupCallback(
+LifecycleManager::managerCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
+  const std::shared_ptr<ManageNodes::Request> request,
+  std::shared_ptr<ManageNodes::Response> response)
 {
-  startup();
-}
-
-void
-LifecycleManager::shutdownCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
-{
-  shutdown();
+  switch (request->command.id)
+  {
+    case Command::STARTUP : 
+      response->success = startup();
+      break;
+    case Command::RESET : 
+      response->success = reset();
+      break;
+    case Command::SHUTDOWN : 
+      response->success = shutdown();
+      break;
+    case Command::PAUSE : 
+      response->success = pause();
+      break;
+    case Command::RESUME : 
+      response->success = resume();
+      break;
+  }
 }
 
 void
@@ -176,7 +182,7 @@ LifecycleManager::shutdownAllNodes()
   changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN, true);
 }
 
-void
+bool
 LifecycleManager::startup()
 {
   message("Starting the system bringup...");
@@ -185,18 +191,63 @@ LifecycleManager::startup()
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to bring up nodes: aborting bringup");
-    return;
+    return false;
   }
   message("The system is active");
+  return true;
 }
 
-void
+bool
 LifecycleManager::shutdown()
 {
   message("Shutting down the system...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("The system has been sucessfully shut down");
+  return true;
+}
+
+bool
+LifecycleManager::reset()
+{
+  message("Resetting the system...");
+  createLifecycleServiceClients();
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+    return false;
+  }
+  message("The system is reset");
+  return true;
+}
+
+bool
+LifecycleManager::pause()
+{
+  message("Pausing the system...");
+  createLifecycleServiceClients();
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
+    return false;
+  }
+  message("The system is paused");
+  return true;
+}
+
+bool
+LifecycleManager::resume()
+{
+  message("Resuming the system...");
+  createLifecycleServiceClients();
+  if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
+    return false;
+  }
+  message("The system is active");
+  return true;
 }
 
 // TODO(mjeronimo): This is used to emphasize the major events during system bring-up and
