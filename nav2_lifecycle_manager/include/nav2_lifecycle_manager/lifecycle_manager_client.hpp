@@ -16,6 +16,7 @@
 #define NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_CLIENT_HPP_
 
 #include <memory>
+#include <string>
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -54,6 +55,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   rclcpp::Client<ManageNodes>::SharedPtr manager_client_;
+  std::string service_name_{"lifecycle_manager/manage_nodes"};
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
 
