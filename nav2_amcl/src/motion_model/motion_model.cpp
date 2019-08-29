@@ -14,17 +14,25 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#include <memory>
+#include "nav2_amcl/motion_model/motion_model.hpp"
 
-#include "nav2_amcl/amcl_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include <string>
 
-int main(int argc, char ** argv)
+namespace nav2_amcl
 {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_amcl::AmclNode>();
-  rclcpp::spin(node->get_node_base_interface());
-  rclcpp::shutdown();
 
-  return 0;
+MotionModel *
+MotionModel::createMotionModel(
+  std::string & type, double alpha1, double alpha2,
+  double alpha3, double alpha4, double alpha5)
+{
+  if (type == "differential") {
+    return new DifferentialMotionModel(alpha1, alpha2, alpha3, alpha4);
+  } else if (type == "omnidirectional") {
+    return new OmniMotionModel(alpha1, alpha2, alpha3, alpha4, alpha5);
+  }
+
+  return nullptr;
 }
+
+}  // namespace nav2_amcl

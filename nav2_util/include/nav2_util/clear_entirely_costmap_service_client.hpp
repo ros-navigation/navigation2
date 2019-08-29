@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
-#define NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#ifndef NAV2_UTIL__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#define NAV2_UTIL__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
 
 #include <string>
 #include "nav2_util/service_client.hpp"
@@ -40,4 +40,4 @@ public:
 
 }  // namespace nav2_util
 
-#endif  // NAV2_BEHAVIOR_TREE__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
+#endif  // NAV2_UTIL__CLEAR_ENTIRELY_COSTMAP_SERVICE_CLIENT_HPP_
