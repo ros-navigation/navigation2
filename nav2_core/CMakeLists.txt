@@ -7,10 +7,8 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
-install(DIRECTORY include/${PROJECT_NAME}/
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 ament_package()
