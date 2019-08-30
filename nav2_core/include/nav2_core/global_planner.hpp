@@ -83,6 +83,11 @@ public:
   virtual void deactivate() = 0;
 
   /**
+   * @brief Method to shutdown planner and any threads involved in execution.
+   */
+  virtual void shutdown() = 0;
+
+  /**
    * @brief Method create the plan from a starting and ending goal.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
