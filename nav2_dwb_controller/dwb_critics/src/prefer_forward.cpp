@@ -35,18 +35,21 @@
 #include "dwb_critics/prefer_forward.hpp"
 #include <math.h>
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_util/node_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::PreferForwardCritic, dwb_core::TrajectoryCritic)
+
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace dwb_critics
 {
 
 void PreferForwardCritic::onInit()
 {
-  nh_->declare_parameter(name_ + ".penalty", rclcpp::ParameterValue(1.0));
-  nh_->declare_parameter(name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
-  nh_->declare_parameter(name_ + ".strafe_theta", rclcpp::ParameterValue(0.2));
-  nh_->declare_parameter(name_ + ".theta_scale", rclcpp::ParameterValue(10.0));
+  declare_parameter_if_not_declared(nh_, name_ + ".penalty", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(nh_, name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(nh_, name_ + ".strafe_theta", rclcpp::ParameterValue(0.2));
+  declare_parameter_if_not_declared(nh_, name_ + ".theta_scale", rclcpp::ParameterValue(10.0));
 
   nh_->get_parameter(name_ + ".penalty", penalty_);
   nh_->get_parameter(name_ + ".strafe_x", strafe_x_);

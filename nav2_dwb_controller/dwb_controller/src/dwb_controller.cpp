@@ -76,7 +76,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("controller_frequency", controller_frequency_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
+  odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method

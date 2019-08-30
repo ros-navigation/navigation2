@@ -36,6 +36,7 @@
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/node_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::BaseObstacleCritic, dwb_core::TrajectoryCritic)
 
@@ -46,7 +47,8 @@ void BaseObstacleCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
 
-  nh_->declare_parameter(name_ + ".sum_scores", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(nh_,
+    name_ + ".sum_scores", rclcpp::ParameterValue(false));
   nh_->get_parameter(name_ + ".sum_scores", sum_scores_);
 }
 

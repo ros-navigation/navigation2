@@ -47,7 +47,10 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace dwb_core
 {
@@ -62,16 +65,17 @@ DWBLocalPlanner::DWBLocalPlanner(
   goal_checker_loader_("dwb_core", "dwb_core::GoalChecker"),
   critic_loader_("dwb_core", "dwb_core::TrajectoryCritic")
 {
-  node_->declare_parameter("critics");
-  node_->declare_parameter("prune_plan", rclcpp::ParameterValue(true));
-  node_->declare_parameter("prune_distance", rclcpp::ParameterValue(1.0));
-  node_->declare_parameter("debug_trajectory_details", rclcpp::ParameterValue(false));
-  node_->declare_parameter("trajectory_generator_name",
+  declare_parameter_if_not_declared(node_, "critics");
+  declare_parameter_if_not_declared(node_, "prune_plan", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "prune_distance", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(node_, "debug_trajectory_details",
+    rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(node_, "trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
-  node_->declare_parameter("goal_checker_name",
+  declare_parameter_if_not_declared(node_, "goal_checker_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
-  node_->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
-  node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(node_, "use_dwa", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(node_, "transform_tolerance", rclcpp::ParameterValue(0.1));
 }
 
 nav2_util::CallbackReturn
@@ -173,7 +177,8 @@ DWBLocalPlanner::loadCritics()
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
 
-    node_->declare_parameter(plugin_name + "/class", rclcpp::ParameterValue(plugin_name));
+    declare_parameter_if_not_declared(node_, plugin_name + "/class",
+      rclcpp::ParameterValue(plugin_name));
     node_->get_parameter(plugin_name + "/class", plugin_class);
 
     plugin_class = resolveCriticClassName(plugin_class);
@@ -211,18 +216,18 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
                                                 //   (local) goal, based on wave propagation
   node_->set_parameters({rclcpp::Parameter("critics", critic_names)});
 
-  node_->declare_parameter("path_distance_bias");
-  node_->declare_parameter("goal_distance_bias");
-  node_->declare_parameter("occdist_scale");
-  node_->declare_parameter("max_scaling_factor");
-  node_->declare_parameter("scaling_speed");
-  node_->declare_parameter("PathAlign.scale");
-  node_->declare_parameter("GoalAlign.scale");
-  node_->declare_parameter("PathDist.scale");
-  node_->declare_parameter("GoalDist.scale");
-  node_->declare_parameter("ObstacleFootprint.scale");
-  node_->declare_parameter("ObstacleFootprint.max_scaling_factor");
-  node_->declare_parameter("ObstacleFootprint.scaling_speed");
+  declare_parameter_if_not_declared(node_, "path_distance_bias");
+  declare_parameter_if_not_declared(node_, "goal_distance_bias");
+  declare_parameter_if_not_declared(node_, "occdist_scale");
+  declare_parameter_if_not_declared(node_, "max_scaling_factor");
+  declare_parameter_if_not_declared(node_, "scaling_speed");
+  declare_parameter_if_not_declared(node_, "PathAlign.scale");
+  declare_parameter_if_not_declared(node_, "GoalAlign.scale");
+  declare_parameter_if_not_declared(node_, "PathDist.scale");
+  declare_parameter_if_not_declared(node_, "GoalDist.scale");
+  declare_parameter_if_not_declared(node_, "ObstacleFootprint.scale");
+  declare_parameter_if_not_declared(node_, "ObstacleFootprint.max_scaling_factor");
+  declare_parameter_if_not_declared(node_, "ObstacleFootprint.scaling_speed");
 
   /* *INDENT-OFF* */
   nav_2d_utils::moveParameter(node_, "path_distance_bias", "PathAlign.scale", 32.0, false);
