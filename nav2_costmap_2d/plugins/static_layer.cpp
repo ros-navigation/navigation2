@@ -323,6 +323,10 @@ StaticLayer::updateCosts(
   if (!enabled_) {
     return;
   }
+  if (!map_received_) {
+    RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
+    return;
+  }
 
   if (!layered_costmap_->isRolling()) {
     // if not rolling, the layered costmap (master_grid) has same coordinates as this layer

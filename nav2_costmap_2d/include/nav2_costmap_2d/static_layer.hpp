@@ -109,6 +109,7 @@ private:
   unsigned char lethal_threshold_;
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
+  bool map_received_{false};
 };
 
 }  // namespace nav2_costmap_2d
