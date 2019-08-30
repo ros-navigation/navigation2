@@ -61,7 +61,7 @@ class RewrittenYaml(launch.Substitution):
     yaml_filename = launch.utilities.perform_substitutions(context, self.name)
     rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
     resolved_rewrites = self.resolve_rewrites(context)
-    data = yaml.load(open(yaml_filename, 'r'))
+    data = yaml.safe_load(open(yaml_filename, 'r'))
     self.substitute_values(data, resolved_rewrites)
     yaml.dump(data, rewritten_yaml)
     rewritten_yaml.close()
