@@ -327,7 +327,11 @@ StaticLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
-  if (!enabled_ || !map_received_) {
+  if (!enabled_) {
+    return;
+  }
+  if (!map_received_) {
+    RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
     return;
   }
 
