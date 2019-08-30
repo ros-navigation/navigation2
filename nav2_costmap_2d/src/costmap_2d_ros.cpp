@@ -70,6 +70,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
   std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
+  std::vector<std::string> clearable_layers{"obstacle_layer"};
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
@@ -95,6 +96,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   declare_parameter("width", rclcpp::ParameterValue(10));
+  declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
 }
 
 Costmap2DROS::~Costmap2DROS()

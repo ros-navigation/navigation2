@@ -35,6 +35,7 @@
 #include "dwb_plugins/xy_theta_iterator.hpp"
 #include <memory>
 #include "nav_2d_utils/parameters.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace dwb_plugins
 {
@@ -44,8 +45,8 @@ void XYThetaIterator::initialize(
 {
   kinematics_ = kinematics;
 
-  nh->declare_parameter("vx_samples", rclcpp::ParameterValue(20));
-  nh->declare_parameter("vy_samples", rclcpp::ParameterValue(5));
+  nav2_util::declare_parameter_if_not_declared(nh, "vx_samples", rclcpp::ParameterValue(20));
+  nav2_util::declare_parameter_if_not_declared(nh, "vy_samples", rclcpp::ParameterValue(5));
 
   nh->get_parameter("vx_samples", vx_samples_);
   nh->get_parameter("vy_samples", vy_samples_);

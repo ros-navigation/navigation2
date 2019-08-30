@@ -84,11 +84,11 @@ template<typename NodeT>
 void declare_parameter_if_not_declared(
   NodeT node,
   const std::string & param_name,
-  const rclcpp::ParameterValue & default_value,
+  const rclcpp::ParameterValue & default_value = rclcpp::ParameterValue(),
   const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
   rcl_interfaces::msg::ParameterDescriptor())
 {
-  if(!node->has_parameter(param_name)) {
+  if (!node->has_parameter(param_name)) {
     node->declare_parameter(param_name, default_value, parameter_descriptor);
   }
 }
