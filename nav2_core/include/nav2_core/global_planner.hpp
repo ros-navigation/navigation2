@@ -36,6 +36,9 @@
 #define NAV2_CORE_GLOBAL_PLANNER_H_
 
 #include <string>
+#include "rclcpp/rclcpp.h"
+#include "nav2_costmap_2d/nav2_costmap_2d.hpp"
+#include "tf2_ros/Buffer.h"
 #include "nav2_msgs/msg/path.h"
 #include "geometry_msgs/msg/pose_stamped.h"
 
@@ -60,9 +63,9 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const rclcpp::Node* parent,
-  	const std::string& name, tf2::Buffer * tf,
-  	nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
+  virtual void configure(const rclcpp::Node * parent,
+    const std::string & name, tf2_ros::Buffer * tf,
+    nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

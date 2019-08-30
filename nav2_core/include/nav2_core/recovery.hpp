@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV2_CORE_GLOBAL_PLANNER_H_
-#define NAV2_CORE_GLOBAL_PLANNER_H_
+#ifndef NAV2_CORE_RECOVERY_H_
+#define NAV2_CORE_RECOVERY_H_
 
 #include <string>
-#include "nav2_msgs/msg/path.h"
-#include "geometry_msgs/msg/pose_stamped.h"
+#include "rclcpp/rclcpp.h"
+#include "tf2_ros/Buffer.h"
 
 namespace nav2_core
 {
@@ -60,9 +60,8 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const rclcpp::Node* parent,
-    const std::string& name, tf2::Buffer * tf,
-    nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
+  virtual void configure(const rclcpp::Node * parent,
+    const std::string & name, tf2_ros::Buffer * tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -84,10 +83,9 @@ public:
    * @param  name The name of this planner
    * @return true if successful, false is failed to execute fully
    */
-  virtual bool executeRecovery(
-    const nav2_msgs::RecoveryRequest & req) = 0;
+  virtual bool executeRecovery() = 0;
 };
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE_GLOBAL_PLANNER_H_
+#endif  // NAV2_CORE_RECOVERY_H_
