@@ -373,7 +373,12 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
     // Measure the execution time of the updateMap method
     timer.start();
-    updateMap();
+    try {
+      updateMap();
+    }
+    catch (const char* e) {
+      RCLCPP_ERROR(get_logger(), e);
+    }
     timer.end();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
