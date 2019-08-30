@@ -31,6 +31,7 @@
 
 #include <string>
 #include <vector>
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -71,7 +72,7 @@ Layer::declareParameter(
   const std::string & param_name, const rclcpp::ParameterValue & value)
 {
   local_params_.insert(param_name);
-  node_->declare_parameter(getFullName(param_name), value);
+  nav2_util::declare_parameter_if_not_declared(node_, getFullName(param_name), value);
 }
 
 bool
