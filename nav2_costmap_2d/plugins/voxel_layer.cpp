@@ -59,17 +59,16 @@ void VoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
 
-  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled",
-    rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
-  node_->declare_parameter(name_ + "." + "z_voxels", rclcpp::ParameterValue(10));
-  node_->declare_parameter(name_ + "." + "origin_z", rclcpp::ParameterValue(0.0));
-  node_->declare_parameter(name_ + "." + "z_resolution", rclcpp::ParameterValue(0.2));
-  node_->declare_parameter(name_ + "." + "unknown_threshold", rclcpp::ParameterValue(15));
-  node_->declare_parameter(name_ + "." + "mark_threshold", rclcpp::ParameterValue(0));
-  node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
-  node_->declare_parameter(name_ + "." + "publish_voxel_map", rclcpp::ParameterValue(false));
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
+  declareParameter("z_voxels", rclcpp::ParameterValue(10));
+  declareParameter("origin_z", rclcpp::ParameterValue(0.0));
+  declareParameter("z_resolution", rclcpp::ParameterValue(0.2));
+  declareParameter("unknown_threshold", rclcpp::ParameterValue(15));
+  declareParameter("mark_threshold", rclcpp::ParameterValue(0));
+  declareParameter("combination_method", rclcpp::ParameterValue(1));
+  declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
