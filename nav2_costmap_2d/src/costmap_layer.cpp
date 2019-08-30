@@ -83,9 +83,14 @@ void CostmapLayer::updateWithTrueOverwrite(
   int max_i,
   int max_j)
 {
-  if (!enabled_ || costmap_ == nullptr) {
+  if (!enabled_) {
     return;
   }
+
+  if (costmap_ == nullptr) {
+    throw "Can't update costmap layer. It has't been initilized yet. Check if /map topic is published.";
+  }
+
   unsigned char * master = master_grid.getCharMap();
   unsigned int span = master_grid.getSizeInCellsX();
 
