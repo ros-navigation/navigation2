@@ -85,6 +85,7 @@ OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & y
   if (image_file_name[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
     std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+    fname_copy.push_back('\0');
     image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
   }
   loadParameters.image_file_name = image_file_name;
