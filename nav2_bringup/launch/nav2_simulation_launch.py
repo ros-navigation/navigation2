@@ -144,7 +144,7 @@ def generate_launch_description():
         remappings=remappings,
         arguments=[urdf])
 
-    # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
+    # TODO(orduno) rviz crashing if launched as a node: https://github.com/ros2/rviz/issues/442
     # TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
     start_rviz_cmd = launch.actions.ExecuteProcess(
         condition=UnlessCondition(use_remappings),
@@ -159,6 +159,7 @@ def generate_launch_description():
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             # TODO(orduno) re-enable
             # ['-d', rviz_config_file],
+            ['--ros-args'],
             ['__ns:=/', robot_name],
             ['/move_base_simple/goal:=move_base_simple/goal'],
             ['/tf:=tf'],
