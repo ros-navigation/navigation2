@@ -2,7 +2,8 @@
 Adaptive Monte Carlo Localization (AMCL) is a probabilistic localization module which estimates the position and orientation (i.e. Pose) of a robot in a given known map.
 
 ## Overview
-Currently, the AMCL module in ROS 2 Navigation System is a direct port from [ROS1 AMCL](http://wiki.ros.org/amcl) package with some minor code re-factoring. The direct port includes all of ROS1 functionalities except running from Bag files. The code re-factoring includes moving Sensor, Particle Filter, and Map from nav2_amcl directory to nav2_util directory. The main logic behind this is code re-usability.  However, given the way in which these classes are currently written, these codes are highly bounded to AMCL.  Therefore, to make use of code re-usability, these classes need to be substantially modified.
+Currently, the AMCL module in ROS 2 Navigation System is a direct port from [ROS1 AMCL](http://wiki.ros.org/amcl) package with some minor code re-factoring. The direct port includes all of ROS1 functionalities except running from Bag files.
+
 ## Added Feature
 AutoLocalization - is implemented by utilizing AMCL's `global_localization` service request and Behavior Tree (BT).  This enables initial pose estimation capability on differential type robot.
 
@@ -10,7 +11,7 @@ AutoLocalization - is implemented by utilizing AMCL's `global_localization` serv
 
 With the AutoLocalization branch of BT, first the `global_localization` service of AMCL is called to randomly disperse all particles through the free space in the map. Once particles are dispersed, the robot rotates, backs up, and, if necessary, rotates again to localize itself. The full implementation is described in the AutoLocalization section of [BT Navigator](https://github.com/ros-planning/navigation2/blob/master/nav2_bt_navigator/README.md)
 
-**Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations. 
+**Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
 
 ## Current Plan
 * Polishing AMCL core code, especially the `laserReceived` callback [Issue 211](https://github.com/ros-planning/navigation2/issues/211)
@@ -18,6 +19,6 @@ With the AutoLocalization branch of BT, first the `global_localization` service 
 * Creating a generic library to pull out the algorithms that are from Probabilistic Robotics textbook.  These algorithms could potentially be used on other modules [Issue 207](https://github.com/ros-planning/navigation2/issues/207)
 
 ## Future Plan
-* Running from Ros bag 
+* Running from Ros bag
 * Extending AMCL to work with different type of Sensors
 * Improving overall localization performance with fusing data from different sensors such as IMU, Sonar, Radar, Laser, Depth camera, and etc.

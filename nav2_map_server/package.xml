@@ -7,7 +7,8 @@
     Refactored map server for ROS2 Navigation
   </description>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
-  <license>BSD License 2.0</license>
+  <license>Apache-2.0</license>
+  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

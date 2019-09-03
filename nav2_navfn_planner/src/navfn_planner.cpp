@@ -102,7 +102,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   // Create a planner based on the new costmap size
   if (isPlannerOutOfDate()) {
     planner_ = std::make_unique<NavFn>(costmap_->getSizeInCellsX(),
-      costmap_->getSizeInCellsY());
+        costmap_->getSizeInCellsY());
   }
 
   // Initialize pubs & subs
@@ -263,8 +263,9 @@ NavfnPlanner::computePathToPose()
 bool
 NavfnPlanner::isPlannerOutOfDate()
 {
-  if (!planner_.get() || planner_->nx != (int)costmap_->getSizeInCellsX() ||
-    planner_->ny != (int)costmap_->getSizeInCellsY())
+  if (!planner_.get() ||
+    planner_->nx != static_cast<int>(costmap_->getSizeInCellsX()) ||
+    planner_->ny != static_cast<int>(costmap_->getSizeInCellsY()))
   {
     return true;
   }

@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -31,9 +32,64 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "nav2_navfn_planner/navfn_planner.hpp"
 
 namespace nav2_system_tests
 {
+
+class NavFnPlannerTester : public nav2_navfn_planner::NavfnPlanner
+{
+public:
+  NavFnPlannerTester()
+  : NavfnPlanner()
+  {
+  }
+
+  void setCostmap(nav2_util::Costmap * costmap)
+  {
+    nav2_msgs::msg::CostmapMetaData prop;
+    nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
+    prop = cm.metadata;
+    costmap_ros_->getCostmap()->resizeMap(prop.size_x, prop.size_y,
+      prop.resolution, prop.origin.position.x, prop.origin.position.x);
+    unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
+    delete[] costmap_ptr;
+    costmap_ptr = nullptr;
+    costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
+    std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
+  }
+
+  bool createPath(
+    const geometry_msgs::msg::PoseStamped & goal,
+    nav2_msgs::msg::Path & path)
+  {
+    geometry_msgs::msg::PoseStamped start;
+    if (!nav2_util::getCurrentPose(start, *tf_)) {
+      return false;
+    }
+    if (isPlannerOutOfDate()) {
+      planner_->setNavArr(costmap_->getSizeInCellsX(),
+        costmap_->getSizeInCellsY());
+    }
+
+    return makePlan(start.pose, goal.pose, tolerance_, path);
+  }
+
+  void onCleanup(const rclcpp_lifecycle::State & state)
+  {
+    on_cleanup(state);
+  }
+
+  void onActivate(const rclcpp_lifecycle::State & state)
+  {
+    on_activate(state);
+  }
+
+  void onConfigure(const rclcpp_lifecycle::State & state)
+  {
+    on_configure(state);
+  }
+};
 
 enum class TaskStatus : int8_t
 {
@@ -79,16 +135,12 @@ public:
     const unsigned int number_tests,
     const float acceptable_fail_ratio);
 
-  // Sends a cancel command to the Planner
-  bool sendCancel();
-
 private:
   void setCostmap();
 
   void startRobotPoseProvider();
-  void startCostmapServer();
 
-  TaskStatus sendRequest(
+  TaskStatus createPlan(
     const ComputePathToPoseCommand & goal,
     ComputePathToPoseResult & path
   );
@@ -115,13 +167,8 @@ private:
   // The costmap representation of the static map
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
-  // The interface to the global planner
-  std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::ComputePathToPose>> planner_client_;
-  std::string plannerName_;
-  void waitForPlanner();
-
-  // The tester must provide the costmap service
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
+  // The global planner
+  std::unique_ptr<NavFnPlannerTester> planner_tester_;
 
   // The tester must provide the robot pose through a transform
   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr transform_publisher_;
@@ -137,7 +184,6 @@ private:
   bool map_set_;
   bool costmap_set_;
   bool using_fake_costmap_;
-  bool costmap_server_running_;
 
   // Parameters of the costmap
   bool trinary_costmap_;
