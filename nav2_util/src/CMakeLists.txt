@@ -17,22 +17,29 @@ ament_target_dependencies(${library_name}
   geometry_msgs
   lifecycle_msgs
   rclcpp_lifecycle
+  tf2_geometry_msgs
 )
 
-add_subdirectory(pf)
-add_subdirectory(map)
 add_subdirectory(map_loader)
-add_subdirectory(motion_model)
-add_subdirectory(sensors)
 
 add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
 target_link_libraries(lifecycle_bringup ${library_name})
 
+find_package(Boost REQUIRED COMPONENTS program_options)
+
+add_executable(dump_params dump_params.cpp)
+ament_target_dependencies(dump_params rclcpp)
+
+target_include_directories(dump_params PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(dump_params ${Boost_PROGRAM_OPTIONS_LIBRARY})
+
 install(TARGETS
   ${library_name}
   lifecycle_bringup
+  dump_params
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

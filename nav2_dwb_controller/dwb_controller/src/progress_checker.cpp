@@ -15,7 +15,6 @@
 #include "dwb_controller/progress_checker.hpp"
 #include <cmath>
 #include "dwb_core/exceptions.hpp"
-#include "nav2_util/duration_conversions.hpp"
 
 namespace dwb_controller
 {
@@ -28,7 +27,7 @@ ProgressChecker::ProgressChecker(const rclcpp::Node::SharedPtr & node)
   nh_->get_parameter_or("required_movement_radius", radius_, 0.5);
   double time_allowance_param;
   nh_->get_parameter_or("movement_time_allowance_", time_allowance_param, 10.0);
-  time_allowance_ = nav2_util::duration_from_seconds(time_allowance_param);
+  time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
 }
 
 void ProgressChecker::check(nav_2d_msgs::msg::Pose2DStamped & current_pose)

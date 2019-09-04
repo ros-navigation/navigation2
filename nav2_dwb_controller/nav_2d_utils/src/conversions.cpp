@@ -39,9 +39,11 @@
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav_2d_utils
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_2d)
 {
@@ -87,9 +89,7 @@ geometry_msgs::msg::Pose pose2DToPose(const geometry_msgs::msg::Pose2D & pose2d)
   geometry_msgs::msg::Pose pose;
   pose.position.x = pose2d.x;
   pose.position.y = pose2d.y;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, pose2d.theta);
-  pose.orientation = tf2::toMsg(q);
+  pose.orientation = orientationAroundZAxis(pose2d.theta);
   return pose;
 }
 
@@ -111,9 +111,7 @@ geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
   pose.header.stamp = stamp;
   pose.pose.position.x = pose2d.x;
   pose.pose.position.y = pose2d.y;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, pose2d.theta);
-  pose.pose.orientation = tf2::toMsg(q);
+  pose.pose.orientation = orientationAroundZAxis(pose2d.theta);
   return pose;
 }
 

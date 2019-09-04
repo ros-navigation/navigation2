@@ -21,7 +21,6 @@
 
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
-#include "nav2_rviz_plugins/navigation_dialog.hpp"
 
 namespace rviz_common
 {
@@ -49,9 +48,6 @@ public:
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
-
-private:
-  std::unique_ptr<NavigationDialog> navigation_dialog_;
 };
 
 }  // namespace nav2_rviz_plugins

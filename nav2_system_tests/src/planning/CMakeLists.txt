@@ -7,7 +7,7 @@ ament_target_dependencies(test_planner_node
   ${dependencies}
 )
 
-ament_add_test(test_planner_node
+ament_add_test(test_planner
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

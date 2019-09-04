@@ -76,7 +76,7 @@ protected:
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
 
   // An executor used to spin the costmap node
-  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
+  rclcpp::executors::SingleThreadedExecutor costmap_executor_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
 

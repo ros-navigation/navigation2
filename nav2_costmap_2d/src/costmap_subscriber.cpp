@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <string>
+#include <memory>
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 
@@ -21,7 +22,7 @@ namespace nav2_costmap_2d
 
 CostmapSubscriber::CostmapSubscriber(
   nav2_util::LifecycleNode::SharedPtr node,
-  std::string & topic_name)
+  const std::string & topic_name)
 : CostmapSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),
     node->get_node_logging_interface(),
@@ -30,7 +31,7 @@ CostmapSubscriber::CostmapSubscriber(
 
 CostmapSubscriber::CostmapSubscriber(
   rclcpp::Node::SharedPtr node,
-  std::string & topic_name)
+  const std::string & topic_name)
 : CostmapSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),
     node->get_node_logging_interface(),
@@ -41,7 +42,7 @@ CostmapSubscriber::CostmapSubscriber(
   const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
   const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
   const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-  std::string & topic_name)
+  const std::string & topic_name)
 : node_base_(node_base),
   node_topics_(node_topics),
   node_logging_(node_logging),

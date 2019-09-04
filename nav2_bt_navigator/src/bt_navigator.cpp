@@ -46,7 +46,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
 
   auto options = rclcpp::NodeOptions().arguments(
-    {std::string("__node:=") + get_name() + "_client_node"});
+    {"--ros-args",
+      std::string("__node:=") + get_name() + "_client_node",
+      "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
@@ -54,7 +56,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/move_base_simple/goal",
+    "/goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
@@ -63,7 +65,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       std::bind(&BtNavigator::navigateToPose, this), false);
 
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<NavigateToPoseBehaviorTree>();
+  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();

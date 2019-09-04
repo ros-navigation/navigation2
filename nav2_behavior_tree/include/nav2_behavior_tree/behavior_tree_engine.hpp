@@ -69,6 +69,9 @@ public:
   }
 
 protected:
+  // Methods used to register as (simple action) BT nodes
+  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
+
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };

@@ -30,3 +30,4 @@ Test the integration of several components and subsystems.
 
 ## 3. System Testing
 Test the integration of all subsystems.
+ - [System Test](src/system/README.md)

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018 Intel Corporation, 2019 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,15 +32,15 @@ using namespace std::chrono_literals;
 namespace nav2_recoveries
 {
 
-Spin::Spin(rclcpp::Node::SharedPtr & node)
-: Recovery<SpinAction>(node, "Spin")
+Spin::Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
+: Recovery<SpinAction>(node, "Spin", tf)
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
   min_rotational_vel_ = 0.4;
   rotational_acc_lim_ = 3.2;
-  goal_tolerance_angle_ = 0.10;
-  start_yaw_ = 0.0;
+  initial_yaw_ = 0.0;
+  simulate_ahead_time_ = 2.0;
 }
 
 Spin::~Spin()
@@ -49,111 +49,85 @@ Spin::~Spin()
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
-  double yaw, pitch, roll;
-  tf2::getEulerYPR(command->target.quaternion, yaw, pitch, roll);
-
-  if (roll != 0.0 || pitch != 0.0) {
-    RCLCPP_INFO(node_->get_logger(), "Spinning on Y and X not supported, "
-      "will only spin in Z.");
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    return Status::FAILED;
   }
+  initial_yaw_ = tf2::getYaw(current_pose.pose.orientation);
 
-  RCLCPP_INFO(node_->get_logger(), "Currently only supported spinning by a fixed amount");
-
-  start_time_ = std::chrono::system_clock::now();
-
+  cmd_yaw_ = -command->target_yaw;
+  RCLCPP_INFO(node_->get_logger(), "Turning %0.2f for spin recovery.",
+    cmd_yaw_);
   return Status::SUCCEEDED;
 }
 
 Status Spin::onCycleUpdate()
 {
-  // Currently only an open-loop time-based controller is implemented
-  // The closed-loop version 'controlledSpin()' has not been fully tested
-  return timedSpin();
-}
-
-Status Spin::timedSpin()
-{
-  // Output control command
-  geometry_msgs::msg::Twist cmd_vel;
-
-  // TODO(orduno) #423 fixed time
-  auto current_time = std::chrono::system_clock::now();
-  if (current_time - start_time_ >= 6s) {  // almost 180 degrees
-    stopRobot();
-    return Status::SUCCEEDED;
-  }
-
-  // TODO(orduno) #423 fixed speed
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.5;
-
-  geometry_msgs::msg::Pose current_pose;
-  if (!getRobotPose(current_pose)) {
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
-  geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose.position.x;
-  pose2d.y = current_pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose.orientation) +
-    cmd_vel.angular.z * (1 / cycle_frequency_);
+  const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
+  double relative_yaw = abs(current_yaw - initial_yaw_);
+  if (relative_yaw > M_PI) {
+    relative_yaw -= 2.0 * M_PI;
+  }
+  relative_yaw = abs(relative_yaw);
 
-  if (!collision_checker_->isCollisionFree(pose2d)) {
+  if (relative_yaw >= abs(cmd_yaw_)) {
     stopRobot();
-    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin ");
     return Status::SUCCEEDED;
   }
 
-  vel_publisher_->publishCommand(cmd_vel);
-
-  return Status::RUNNING;
-}
-
-Status Spin::controlledSpin()
-{
-  // TODO(orduno) #423 Test and tune controller
-  //              check it doesn't abruptly start and stop
-  //              or cause massive wheel slippage when accelerating
-
-  // Get current robot orientation
-  auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-  if (!robot_state_->getCurrentPose(current_pose)) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-    return Status::FAILED;
-  }
-
-  double current_yaw = tf2::getYaw(current_pose->pose.pose.orientation);
-
-  double current_angle = current_yaw - start_yaw_;
-
-  double dist_left = M_PI - current_angle;
-
-  // TODO(orduno) #379 forward simulation to check if future position is feasible
-
-  // compute the velocity that will let us stop by the time we reach the goal
-  // v_f^2 == v_i^2 + 2 * a * d
-  // solving for v_i if v_f = 0
-  double vel = sqrt(2 * rotational_acc_lim_ * dist_left);
-
-  // limit velocity
+  double vel = sqrt(2 * rotational_acc_lim_ * relative_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
   geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = vel;
+  cmd_yaw_ < 0 ? cmd_vel.angular.z = -vel : cmd_vel.angular.z = vel;
 
-  vel_publisher_->publishCommand(cmd_vel);
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = current_pose.pose.position.x;
+  pose2d.y = current_pose.pose.position.y;
+  pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  // check if we are done
-  if (dist_left >= (0.0 - goal_tolerance_angle_)) {
+  if (!isCollisionFree(relative_yaw, cmd_vel, pose2d)) {
     stopRobot();
+    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 
+  vel_pub_->publish(cmd_vel);
+
   return Status::RUNNING;
+}
+
+bool Spin::isCollisionFree(
+  const double & relative_yaw,
+  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Pose2D & pose2d)
+{
+  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
+  int cycle_count = 0;
+  double sim_position_change;
+  const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
+
+  while (cycle_count < max_cycle_count) {
+    sim_position_change = cmd_vel.angular.z * (cycle_count / cycle_frequency_);
+    pose2d.theta += sim_position_change;
+    cycle_count++;
+
+    if (abs(relative_yaw) - abs(sim_position_change) <= 0.) {
+      break;
+    }
+
+    if (!collision_checker_->isCollisionFree(pose2d)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace nav2_recoveries

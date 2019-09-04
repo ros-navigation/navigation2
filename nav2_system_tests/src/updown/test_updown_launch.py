@@ -50,7 +50,8 @@ def generate_launch_description():
 
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-             world, ['__params:=', params_file]],
+             world,
+             '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
@@ -58,7 +59,8 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('robot_state_publisher'),
                 'lib/robot_state_publisher/robot_state_publisher'),
-            urdf, ['__params:=', params_file]],
+            urdf,
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_map_server_cmd = launch.actions.ExecuteProcess(
@@ -66,7 +68,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_map_server'),
                 'lib/nav2_map_server/map_server'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_localizer_cmd = launch.actions.ExecuteProcess(
@@ -74,7 +76,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_amcl'),
                 'lib/nav2_amcl/amcl'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_world_model_cmd = launch.actions.ExecuteProcess(
@@ -82,7 +84,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_world_model'),
                 'lib/nav2_world_model/world_model'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_dwb_cmd = launch.actions.ExecuteProcess(
@@ -90,7 +92,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('dwb_controller'),
                 'lib/dwb_controller/dwb_controller'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_planner_cmd = launch.actions.ExecuteProcess(
@@ -98,7 +100,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_navfn_planner'),
                 'lib/nav2_navfn_planner/navfn_planner'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_navigator_cmd = launch.actions.ExecuteProcess(
@@ -106,7 +108,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_bt_navigator'),
                 'lib/nav2_bt_navigator/bt_navigator'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_controller_cmd = launch.actions.ExecuteProcess(
@@ -114,14 +116,15 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_lifecycle_manager'),
                 'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            ['__params:=', params_file]],
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     startup_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_system_tests'),
-                'lib/nav2_system_tests/test_updown')],
+                'lib/nav2_system_tests/test_updown'),
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     startup_exit_event_handler = launch.actions.RegisterEventHandler(

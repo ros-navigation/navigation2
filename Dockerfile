@@ -1,23 +1,38 @@
-# This dockerfile expects proxies to be set via --build-arg if needed
-# It also expects to be contained in the /navigation2 root folder for file copy
+# This dockerfile can be configured via --build-arg
+# Build context must be the /navigation2 root folder for COPY.
 # Example build command:
-# export CMAKE_BUILD_TYPE=Debug
-# docker build -t nav2:latest --build-arg CMAKE_BUILD_TYPE ./
-FROM osrf/ros2:nightly
+# export UNDERLAY_MIXINS="debug ccache"
+# export OVERLAY_MIXINS="debug ccache coverage"
+# docker build -t nav2:latest \
+#   --build-arg UNDERLAY_MIXINS \
+#   --build-arg OVERLAY_MIXINS ./
+ARG FROM_IMAGE=osrf/ros2:nightly
+FROM $FROM_IMAGE
 
-# copy ros package repo
-ENV NAV2_WS /opt/nav2_ws
-RUN mkdir -p $NAV2_WS/src
-WORKDIR $NAV2_WS/src
-COPY ./ navigation2/
+# install CI dependencies	
+RUN apt-get update && \
+    apt-get install -q -y \	
+      ccache \
+      lcov \
+      python3-colcon-mixin \
+    && rm -rf /var/lib/apt/lists/*
 
-# clone dependency package repos
-ENV ROS_WS /opt/ros_ws
-RUN mkdir -p $ROS_WS/src
-WORKDIR $ROS_WS
-RUN vcs import src < $NAV2_WS/src/navigation2/tools/ros2_dependencies.repos
+# setup colcon mixin / meta
+RUN colcon mixin add upstream \
+      https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
+    colcon mixin update && \
+    colcon metadata add upstream \
+      https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml && \
+    colcon metadata update
 
-# install dependency package dependencies
+# clone underlay source
+ENV UNDERLAY_WS /opt/underlay_ws
+RUN mkdir -p $UNDERLAY_WS/src
+WORKDIR $UNDERLAY_WS
+COPY ./tools/ros2_dependencies.repos ./
+RUN vcs import src < ros2_dependencies.repos
+
+# install underlay dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
@@ -26,37 +41,49 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# build dependency package source
-ARG CMAKE_BUILD_TYPE=Release
-
+# build underlay source
+ARG UNDERLAY_MIXINS="release ccache"
+ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
-      --cmake-args \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+      --mixin \
+        $UNDERLAY_MIXINS \
+    || touch build_failed && \
+    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+      exit 1; \
+    fi
 
-# install navigation2 package dependencies
-WORKDIR $NAV2_WS
-RUN . $ROS_WS/install/setup.sh && \
+# copy overlay source
+ENV OVERLAY_WS /opt/overlay_ws
+RUN mkdir -p $OVERLAY_WS/src
+WORKDIR $OVERLAY_WS
+COPY ./ src/navigation2/
+
+# install overlay dependencies
+RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
       --from-paths \
-        $ROS_WS/src \
+        $UNDERLAY_WS/src \
         src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# build navigation2 package source
-RUN rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
-ARG COVERAGE_ENABLED=False
-RUN . $ROS_WS/install/setup.sh && \
-     colcon build \
-       --symlink-install \
-       --cmake-args \
-         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-         -DCOVERAGE_ENABLED=$COVERAGE_ENABLED
+# build overlay source
+ARG OVERLAY_MIXINS="release ccache"
+RUN rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
+RUN . $UNDERLAY_WS/install/setup.sh && \
+    colcon build \
+      --symlink-install \
+      --mixin \
+        $OVERLAY_MIXINS \
+    || touch build_failed && \
+    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+      exit 1; \
+    fi
 
-# source navigation2 workspace from entrypoint
+# source overlay from entrypoint
 RUN sed --in-place \
-      's|^source .*|source "$NAV2_WS/install/setup.bash"|' \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh

@@ -30,9 +30,7 @@ nav2_package()
 
 include_directories(
   include
-  ${ament_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
-  ${laser_geometry_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})

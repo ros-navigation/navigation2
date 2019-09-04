@@ -88,6 +88,10 @@ download_all() {
   fi
 }
 
+rosdep_install() {
+  rosdep install -y -r -q --from-paths . --ignore-src --rosdistro $ROS2_DISTRO --skip-keys "catkin"
+}
+
 echo "This script will download the ROS 2 latest release workspace, the"
 echo "dependencies workspace and the ros_navstack_port workspace to the"
 echo "current directory and then build them all. There should be no ROS"
@@ -100,6 +104,7 @@ read -r REPLY
 echo
 if [ "$REPLY" = "y" ]; then
   download_all
+  rosdep_install
   if [ "$ENABLE_BUILD" = true ]; then
     $CWD/navigation2_ws/src/navigation2/tools/build_all.sh
   fi
