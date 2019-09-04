@@ -63,7 +63,7 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const rclcpp::Node * parent,
+  virtual void configure(const rclcpp::LifecycleNode * parent,
     const std::string & name, tf2_ros::Buffer * tf,
     nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
 
