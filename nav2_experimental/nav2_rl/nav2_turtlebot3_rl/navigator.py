@@ -21,7 +21,7 @@ import parameters
 
 from time import sleep
 from keras.models import load_model
-
+import copy
 
 def loadModel(env):
     terminal = False
@@ -36,7 +36,7 @@ def loadModel(env):
         action = np.argmax(q_values)
         next_state, reward, terminal = env.step(action)
         next_state = np.reshape(next_state, [1, observation_space])
-        state = next_state
+        state = copy.deepcopy(next_state)
         #  sleep(parameters.LOOP_RATE)
 
 

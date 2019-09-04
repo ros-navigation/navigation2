@@ -55,7 +55,7 @@ def trainModel(env, action_size):
                 env.stop_action()
 
         if episode % parameters.EXPERIENCE_REPLAY_STEP == 0:
-            for _ in range(10):
+            for _ in range(50):
                 env.stop_action()
                 agent.experience_replay()
     

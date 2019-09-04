@@ -162,12 +162,13 @@ class TurtlebotEnv():
     def observation(self):
         self.get_robot_pose()
         self.states.clear()
-        self.states = [0] * (len(self.states_input) + 6)
-        self.states[0] = float(self.current_pose.position.x)
-        self.states[1] = float(self.current_pose.position.y)
+        self.states = [0] * (len(self.states_input) + 5)
+        self.states[0] =   float(self.current_pose.position.x)
+        self.states[1] =  float(self.current_pose.position.y)
         self.states[2] = float(self.goal_pose.position.x)
         self.states[3] = float(self.goal_pose.position.y)
-        self.states[4:12] = self.states_input
+        self.states[4] = float(self.get_heading())
+        self.states[5:13] = self.states_input
         return self.states
 
     def check_collision(self):
