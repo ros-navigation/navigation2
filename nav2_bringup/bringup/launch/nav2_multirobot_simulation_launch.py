@@ -30,6 +30,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 from launch.substitutions import TextSubstitution
 from launch_ros.actions import PushRosNamespace
+from nav2_common.launch import ReplaceString
 
 import launch.actions
 import launch_ros.actions
@@ -52,6 +53,7 @@ def generate_launch_description():
     map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
+    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
     log_settings = launch.substitutions.LaunchConfiguration('log_settings',
                                                              default='true')
 
@@ -83,6 +85,11 @@ def generate_launch_description():
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
+    declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
+        'rviz_config',
+        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
+        description='Full path to the RVIZ config file to use')
+
    # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
@@ -104,6 +111,10 @@ def generate_launch_description():
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
+        namespaced_rviz_config_file = ReplaceString(
+                source_file=rviz_config_file,
+                replacements={'<robot_namespace>': robot['name']})
+
         group = GroupAction([
             # TODO(orduno) Each `action.Node` within the `localization` and `navigation` launch
             #              files has two versions, one with the required remaps and another without.
@@ -129,6 +140,7 @@ def generate_launch_description():
                                   'bt_xml_file': bt_xml_file,
                                   'autostart': 'False',
                                   'use_remappings': 'True',
+                                  'rviz_config_file': namespaced_rviz_config_file,
                                   'use_simulator': 'False'}.items()),
 
             LogInfo(
@@ -142,7 +154,10 @@ def generate_launch_description():
                 msg=[robot['name'], ' params yaml: ', params_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' behavior tree xml: ', bt_xml_file])
+                msg=[robot['name'], ' behavior tree xml: ', bt_xml_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file])
         ])
 
         nav_instances_cmds.append(group)
@@ -164,6 +179,7 @@ def generate_launch_description():
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
+    ld.add_action(declare_rviz_config_file_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)

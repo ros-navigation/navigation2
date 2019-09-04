@@ -21,7 +21,6 @@ from ament_index_python.packages import get_package_share_directory
 from launch.conditions import IfCondition
 from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from nav2_common.launch import RewrittenYaml
 
 import launch.actions
 import launch_ros.actions
