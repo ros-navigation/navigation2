@@ -18,12 +18,14 @@
 
 import os
 
+from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.actions import LogInfo
 from launch.actions import GroupAction
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 from launch.substitutions import TextSubstitution
@@ -39,15 +41,19 @@ def generate_launch_description():
 
     # Names and poses of the robots
     robots = [
-        {'name': 'Robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
-        {'name': 'Robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
+        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
+        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
 
-    # Create the launch configuration variables
+    # Simulation settings
     world = launch.substitutions.LaunchConfiguration('world')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
 
+    # On this example all robots are launched with the same settings
     map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
     params_file = launch.substitutions.LaunchConfiguration('params_file')
+    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
+    log_settings = launch.substitutions.LaunchConfiguration('log_settings',
+                                                             default='true')
 
     # Declare the launch arguments
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
@@ -70,12 +76,19 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'launch', 'nav2_params_namespaced.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
+    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
+        'bt_xml_file',
+        default_value=os.path.join(
+            get_package_prefix('nav2_bt_navigator'),
+            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
+        description='Full path to the behavior tree xml file to use')
+
    # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
 
-    # Spawn two robots into Gazebo
+    # Define commands for spawing the robots into Gazebo
     spawn_robots_cmds = []
     for robot in robots:
         spawn_robots_cmds.append(
@@ -88,7 +101,8 @@ def generate_launch_description():
                                   'robot_name': robot['name']
                                   }.items()))
 
-    simulation_instances_cmds = []
+    # Define commands for launching the navigation instances
+    nav_instances_cmds = []
     for robot in robots:
         group = GroupAction([
             # TODO(orduno) Each `action.Node` within the `localization` and `navigation` launch
@@ -102,19 +116,36 @@ def generate_launch_description():
 
             # Instances use the robot's name for namespace
             PushRosNamespace(robot['name']),
+
             launch.actions.IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'nav2_simulation_launch.py')),
                 #TODO(orduno) pass the rviz config file
                 launch_arguments={
                                   #TODO(orduno) might not be necessary to pass the robot name
                                   'robot_name': robot['name'],
-                                  'use_simulator': 'False',
                                   'map_yaml_file': map_yaml_file,
+                                  'use_sim_time': 'True',
                                   'params_file': params_file,
-                                  'use_remappings': 'True'}.items())
+                                  'bt_xml_file': bt_xml_file,
+                                  'autostart': 'False',
+                                  'use_remappings': 'True',
+                                  'use_simulator': 'False'}.items()),
+
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=['Launching ', robot['name']]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' map yaml: ', map_yaml_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' params yaml: ', params_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' behavior tree xml: ', bt_xml_file])
         ])
 
-        simulation_instances_cmds.append(group)
+        nav_instances_cmds.append(group)
 
     # A note on the `remappings` variable defined above and the fact it's passed as a node arg.
     # A few topics have fully qualified names (have a leading '/'), these need to be remapped
@@ -128,10 +159,11 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_bt_xml_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)
@@ -139,7 +171,7 @@ def generate_launch_description():
     for spawn_robot_cmd in spawn_robots_cmds:
         ld.add_action(spawn_robot_cmd)
 
-    for simulation_instance_cmd in simulation_instances_cmds:
+    for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)
 
     return ld

@@ -1,0 +1,9 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="recovery">
+        <BackUp/>
+        <Spin/>
+        <clearEntirelyCostmapServiceRequest/>
+    </Sequence>
+  </BehaviorTree>
+</root>

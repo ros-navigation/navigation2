@@ -38,8 +38,6 @@ def generate_launch_description():
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     use_remappings = launch.substitutions.LaunchConfiguration('use_remappings')
-    log_settings = launch.substitutions.LaunchConfiguration('log_settings',
-                                                             default='true')
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
     #              https://github.com/ros2/launch_ros/issues/56
@@ -119,26 +117,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart}])
 
-    log_robot_name_cmd = launch.actions.LogInfo(
-        condition=IfCondition(log_settings),
-        msg=['Robot name: ', robot_name])
-
-    log_autostart_cmd = launch.actions.LogInfo(
-        condition=IfCondition(log_settings),
-        msg=['Autostart: ', autostart])
-
-    log_use_sim_time_cmd = launch.actions.LogInfo(
-        condition=IfCondition(log_settings),
-        msg=['Use sim time: ', use_sim_time])
-
-    log_map_yaml_cmd = launch.actions.LogInfo(
-        condition=IfCondition(log_settings),
-        msg=['Map yaml: ', map_yaml_file])
-
-    log_params_yaml_cmd = launch.actions.LogInfo(
-        condition=IfCondition(log_settings),
-        msg=['Params yaml: ', params_file])
-
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
@@ -158,11 +136,5 @@ def generate_launch_description():
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_localization_cmd)
     ld.add_action(start_navigation_cmd)
-
-    ld.add_action(log_robot_name_cmd)
-    ld.add_action(log_autostart_cmd)
-    ld.add_action(log_use_sim_time_cmd)
-    ld.add_action(log_map_yaml_cmd)
-    ld.add_action(log_params_yaml_cmd)
 
     return ld
