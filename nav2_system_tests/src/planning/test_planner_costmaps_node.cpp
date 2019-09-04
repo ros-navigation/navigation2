@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
@@ -54,10 +55,4 @@ TEST_F(PlannerTester, testSimpleCostmaps)
     loadSimpleCostmap(costmap);
     EXPECT_EQ(true, defaultPlannerTest(result));
   }
-}
-
-TEST_F(PlannerTester, testWithHundredRandomEndPoints)
-{
-  loadDefaultMap();
-  EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 }

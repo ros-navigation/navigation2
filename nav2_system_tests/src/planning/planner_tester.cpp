@@ -17,6 +17,7 @@
 #include <tuple>
 #include <utility>
 #include <memory>
+#include <iostream>
 #include <chrono>
 #include <sstream>
 #include <iomanip>
@@ -35,27 +36,36 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), map_publish_rate_(100s), map_set_(false), costmap_set_(false),
+: Node("PlannerTester"), base_transform_(nullptr),
+  map_publish_rate_(100s), map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
   testCostmapType_(TestCostmap::open_space), spin_thread_(nullptr)
 {
+  // Launch a thread to process the messages for this node
+  spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
+
+  // Setup transform for map to base link
+  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
+  base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
+  base_transform_->header.frame_id = "map";
+  base_transform_->child_frame_id = "base_link";
+  base_transform_->header.stamp = now() + rclcpp::Duration(1.0);
+  base_transform_->transform.translation.x = 1.0;
+  base_transform_->transform.translation.y = 1.0;
+  base_transform_->transform.rotation.w = 1.0;
+  tf2_msgs::msg::TFMessage tf_message;
+  tf_message.transforms.push_back(*base_transform_);
+
   // The navfn wrapper
   auto state = rclcpp_lifecycle::State();
   planner_tester_ = std::make_unique<NavFnPlannerTester>();
   planner_tester_->onConfigure(state);
+  transform_publisher_->publish(tf_message);
   planner_tester_->onActivate(state);
-
-  startRobotPoseProvider();
 
   // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-
-  // We start with a 10x10 grid with no obstacles
-  loadSimpleCostmap(TestCostmap::open_space);
-
-  // Launch a thread to process the messages for this node
-  spin_thread_ = new std::thread(&PlannerTester::spinThread, this);
 }
 
 PlannerTester::~PlannerTester()
@@ -149,6 +159,7 @@ void PlannerTester::setCostmap()
 
 void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 {
+  RCLCPP_INFO(get_logger(), "loadSimpleCostmap called.");
   if (costmap_set_) {
     RCLCPP_DEBUG(this->get_logger(), "Setting a new costmap with fake values");
   }
@@ -159,17 +170,6 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 
   costmap_set_ = true;
   using_fake_costmap_ = true;
-}
-
-void PlannerTester::startRobotPoseProvider()
-{
-  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
-
-  geometry_msgs::msg::Point robot_position;
-  robot_position.x = 0.0;
-  robot_position.y = 0.0;
-
-  updateRobotPosition(robot_position);
 }
 
 bool PlannerTester::defaultPlannerTest(
@@ -209,7 +209,6 @@ bool PlannerTester::defaultPlannerTest(
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
   //               result.
-
   return plannerTest(robot_position, goal, path);
 }
 
@@ -309,7 +308,6 @@ bool PlannerTester::plannerTest(
   } else if (status == TaskStatus::SUCCEEDED) {
     // TODO(orduno): #443 check why task may report success while planner returns a path of 0 points
     RCLCPP_DEBUG(this->get_logger(), "Got path, checking for possible collisions");
-
     return isCollisionFree(path) && isWithinTolerance(robot_position, goal, path);
   }
 
@@ -318,16 +316,12 @@ bool PlannerTester::plannerTest(
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
 {
-  geometry_msgs::msg::TransformStamped tf_stamped;
-  tf_stamped.header.frame_id = "map";
-  tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
-  tf_stamped.child_frame_id = "base_link";
-  tf_stamped.transform.translation.x = position.x;
-  tf_stamped.transform.translation.y = position.y;
-  tf_stamped.transform.rotation.w = 1.0;
-
+  base_transform_->header.stamp = now() + rclcpp::Duration(1.0);
+  base_transform_->transform.translation.x = position.x;
+  base_transform_->transform.translation.y = position.y;
+  base_transform_->transform.rotation.w = 1.0;
   tf2_msgs::msg::TFMessage tf_message;
-  tf_message.transforms.push_back(tf_stamped);
+  tf_message.transforms.push_back(*base_transform_);
   transform_publisher_->publish(tf_message);
 }
 

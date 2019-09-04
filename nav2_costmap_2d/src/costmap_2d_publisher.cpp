@@ -39,6 +39,7 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 
 #include <string>
+#include <memory>
 
 #include "nav2_costmap_2d/cost_values.hpp"
 

@@ -108,8 +108,6 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
-  auto node = shared_from_this();
-
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
       std::bind(&NavfnPlanner::computePathToPose, this));
@@ -152,6 +150,7 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
   tf_listener_.reset();
   tf_.reset();
   costmap_ros_->on_cleanup(state);
+  costmap_ros_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

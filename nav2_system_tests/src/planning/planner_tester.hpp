@@ -45,6 +45,18 @@ public:
   {
   }
 
+  void printCostmap()
+  {
+    // print costmap for debug
+    for (uint i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
+      if (i % costmap_->getSizeInCellsX() == 0) {
+        std::cout << "" << std::endl;
+      }
+      std::cout << costmap_ros_->getCostmap()->getCharMap()[i] << " ";
+    }
+    std::cout << "" << std::endl;
+  }
+
   void setCostmap(nav2_util::Costmap * costmap)
   {
     nav2_msgs::msg::CostmapMetaData prop;
@@ -54,7 +66,6 @@ public:
       prop.resolution, prop.origin.position.x, prop.origin.position.x);
     unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
     delete[] costmap_ptr;
-    costmap_ptr = nullptr;
     costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
     std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
   }
@@ -64,9 +75,10 @@ public:
     nav2_msgs::msg::Path & path)
   {
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, *tf_)) {
+    if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 1.0)) {
       return false;
     }
+
     if (isPlannerOutOfDate()) {
       planner_->setNavArr(costmap_->getSizeInCellsX(),
         costmap_->getSizeInCellsY());
@@ -138,8 +150,6 @@ public:
 private:
   void setCostmap();
 
-  void startRobotPoseProvider();
-
   TaskStatus createPlan(
     const ComputePathToPoseCommand & goal,
     ComputePathToPoseResult & path
@@ -172,6 +182,7 @@ private:
 
   // The tester must provide the robot pose through a transform
   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr transform_publisher_;
+  std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
 
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
