@@ -5,7 +5,7 @@
   <version>0.2.2</version>
   <description>A set of headers for plugins core to the navigation2 stack</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
-  <license>BSD-3-Clause</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
