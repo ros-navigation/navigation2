@@ -45,7 +45,6 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/robot_utils.hpp"
 
 using namespace std::chrono_literals;
@@ -118,10 +117,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the transform-related objects
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    rclcpp_node_->get_node_base_interface(),
-    rclcpp_node_->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   // Then load and add the plug-ins to the costmap

@@ -17,7 +17,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
 #include "nav2_recoveries/back_up.hpp"
 #include "nav2_recoveries/spin.hpp"
 
@@ -28,10 +27,6 @@ int main(int argc, char ** argv)
   auto recoveries_node = rclcpp::Node::make_shared("recoveries");
 
   auto tf_buffer = std::make_shared<tf2_ros::Buffer>(recoveries_node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    recoveries_node->get_node_base_interface(),
-    recoveries_node->get_node_timers_interface());
-  tf_buffer->setCreateTimerInterface(timer_interface);
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 
   recoveries_node->declare_parameter(
