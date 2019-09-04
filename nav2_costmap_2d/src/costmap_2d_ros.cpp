@@ -43,6 +43,7 @@
 #include <vector>
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_util/duration_conversions.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_util/robot_utils.hpp"
@@ -293,7 +294,7 @@ Costmap2DROS::getParameters()
 
   // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
   if (map_publish_frequency_ > 0) {
-    publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
+    publish_cycle_ = nav2_util::duration_from_seconds(1 / map_publish_frequency_);
   } else {
     publish_cycle_ = rclcpp::Duration(-1);
   }
