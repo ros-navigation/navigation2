@@ -88,7 +88,7 @@ private:
   QStateMachine state_machine_;
 
   QState * initial_{nullptr};
-  QState * starting_{nullptr};
+  QState * idle_{nullptr};
   QState * stopping_{nullptr};
   // The following states are added to allow for the state of the button to only expose shutdown
   // while the NavigateToPose action is not active. While running, the user will be allowed to
@@ -98,7 +98,6 @@ private:
   // but do nothing upon entrance.
   QState * running_{nullptr};
   QState * canceled_{nullptr};
-  QState * completed_{nullptr};
 };
 
 }  // namespace nav2_rviz_plugins

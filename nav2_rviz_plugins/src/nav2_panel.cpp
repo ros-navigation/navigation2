@@ -49,22 +49,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(start_stop_button_, "text", "Startup");
   initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
 
-  starting_ = new QState();
-  starting_->setObjectName("starting");
-  starting_->assignProperty(start_stop_button_, "text", "Shutdown");
-  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+  // State entered when NavigateToPose is not active
+  idle_ = new QState();
+  idle_->setObjectName("idle");
+  idle_->assignProperty(start_stop_button_, "text", "Shutdown");
+  idle_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
 
   // State entered after NavigateToPose has been canceled
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
-  canceled_->assignProperty(start_stop_button_, "text", "Shutdown");
-  canceled_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
-
-  // State entered after the NavigateToPose action has completed
-  completed_ = new QState();
-  completed_->setObjectName("succesful");
-  completed_->assignProperty(start_stop_button_, "text", "Shutdown");
-  completed_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
 
   // State entered while the NavigateToPose action is active
   running_ = new QState();
@@ -72,42 +65,33 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   running_->assignProperty(start_stop_button_, "text", "Cancel");
   running_->assignProperty(start_stop_button_, "toolTip", cancel_msg);
 
+  // State entered when shutdown is requested
   stopping_ = new QState();
   stopping_->setObjectName("stopping");
   stopping_->assignProperty(start_stop_button_, "enabled", false);
 
-  QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
+  QObject::connect(initial_, SIGNAL(exited()), this, SLOT(onStartup()));
   QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
-  QObject::connect(canceled_, SIGNAL(entered()), this, SLOT(onCancel()));
+  QObject::connect(canceled_, SIGNAL(exited()), this, SLOT(onCancel()));
 
-  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
-  starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), idle_);
+  idle_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
   running_->addTransition(start_stop_button_, SIGNAL(clicked()), canceled_);
-  canceled_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
-  completed_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
 
-  ROSActionQTransition * startupTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  startupTransition->setTargetState(running_);
-  starting_->addTransition(startupTransition);
-
-  ROSActionQTransition * canceledTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  canceledTransition->setTargetState(running_);
-  canceled_->addTransition(canceledTransition);
+  ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
+  idleTransition->setTargetState(running_);
+  idle_->addTransition(idleTransition);
 
   ROSActionQTransition * runningTransition = new ROSActionQTransition(QActionState::ACTIVE);
-  runningTransition->setTargetState(completed_);
+  runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  ROSActionQTransition * completedTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  completedTransition->setTargetState(running_);
-  completed_->addTransition(completedTransition);
-
   state_machine_.addState(initial_);
-  state_machine_.addState(starting_);
+  state_machine_.addState(idle_);
   state_machine_.addState(stopping_);
   state_machine_.addState(running_);
   state_machine_.addState(canceled_);
-  state_machine_.addState(completed_);
 
   state_machine_.setInitialState(initial_);
   state_machine_.start();
