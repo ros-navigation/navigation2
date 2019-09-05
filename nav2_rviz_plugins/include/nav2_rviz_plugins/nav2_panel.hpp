@@ -78,8 +78,6 @@ private:
   nav2_msgs::action::NavigateToPose::Goal goal_;
   GoalHandle::SharedPtr goal_handle_;
 
-  // A timer used to check on the completion status of the action
-
   // The client used to control the nav2 stack
   nav2_lifecycle_manager::LifecycleManagerClient client_;
 
@@ -104,12 +102,14 @@ private:
 class InitialThread : public QThread
 {
   Q_OBJECT
+
 public:
-  InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client)
+  explicit InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client)
   : client_(client)
   {}
 
-  void run() override {
+  void run() override
+  {
     auto response = client_.is_active();
     if (response) {
       emit activeSystem();
@@ -125,7 +125,6 @@ signals:
 private:
   nav2_lifecycle_manager::LifecycleManagerClient client_;
 };
-
 
 }  // namespace nav2_rviz_plugins
 

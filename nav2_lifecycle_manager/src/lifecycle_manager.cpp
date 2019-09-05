@@ -52,7 +52,7 @@ LifecycleManager::LifecycleManager()
       std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>("lifecycle_manager/is_active",
-      std::bind(&LifecycleManager::activeCallback, this, _1, _2, _3));
+      std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "service_client", "--"});
@@ -110,9 +110,9 @@ LifecycleManager::managerCallback(
 }
 
 void
-LifecycleManager::activeCallback(
+LifecycleManager::isActiveCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+  const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Trigger::Response> response)
 {
   response->success = system_active_;
