@@ -45,7 +45,7 @@ PlannerTester::PlannerTester()
 void PlannerTester::activate()
 {
   if (is_active_) {
-    RCLCPP_WARN(this->get_logger(), "Trying to active while already active");
+    RCLCPP_WARN(this->get_logger(), "Trying to activate while already active");
     return;
   }
   is_active_ = true;
