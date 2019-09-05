@@ -106,8 +106,8 @@ private:
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr transform_publisher_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
-  void transformTimerCallback();
-  void startPoseTransform();
+  void publishRobotTransform();
+  void startRobotTransform();
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
   // The interface to the global planner

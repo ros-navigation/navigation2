@@ -50,7 +50,7 @@ void PlannerTester::activate()
   }
   is_active_ = true;
 
-  startPoseTransform();
+  startRobotTransform();
 
   // The client used to invoke the services of the global planner (ComputePathToPose)
   planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(
@@ -105,7 +105,7 @@ PlannerTester::~PlannerTester()
   }
 }
 
-void PlannerTester::startPoseTransform()
+void PlannerTester::startRobotTransform()
 {
   // Provide the robot pose transform
   transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
@@ -118,7 +118,7 @@ void PlannerTester::startPoseTransform()
 
   // Publish the transform periodically
   transform_timer_ = create_wall_timer(
-    10ms, std::bind(&PlannerTester::transformTimerCallback, this));
+    10ms, std::bind(&PlannerTester::publishRobotTransform, this));
 }
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
@@ -133,9 +133,11 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
+
+  publishRobotTransform();
 }
 
-void PlannerTester::transformTimerCallback()
+void PlannerTester::publishRobotTransform()
 {
   if (base_transform_) {
     tf2_msgs::msg::TFMessage tf_message;
