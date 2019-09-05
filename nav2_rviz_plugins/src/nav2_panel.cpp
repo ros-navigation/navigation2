@@ -96,11 +96,13 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   InitialThread * initialThread = new InitialThread(client_);
   connect(initialThread, &InitialThread::finished, initialThread, &QObject::deleteLater);
 
-  QSignalTransition * activeSignal = new QSignalTransition(initialThread, &InitialThread::activeSystem);
+  QSignalTransition * activeSignal = new QSignalTransition(initialThread,
+      &InitialThread::activeSystem);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
 
-  QSignalTransition * inactiveSignal = new QSignalTransition(initialThread, &InitialThread::inactiveSystem);
+  QSignalTransition * inactiveSignal = new QSignalTransition(initialThread,
+      &InitialThread::inactiveSystem);
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
 
