@@ -41,7 +41,7 @@ def generate_launch_description():
     use_remappings = launch.substitutions.LaunchConfiguration('use_remappings')
 
     # Launch configuration variables specific to simulation
-    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
+    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config_file')
     use_simulator = launch.substitutions.LaunchConfiguration('use_simulator')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
@@ -93,7 +93,7 @@ def generate_launch_description():
         description='Arguments to pass to all nodes launched by the file')
 
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
-        'rviz_config',
+        'rviz_config_file',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
@@ -143,31 +143,35 @@ def generate_launch_description():
         remappings=remappings,
         arguments=[urdf])
 
-    # TODO(orduno) rviz crashing if launched as a node: https://github.com/ros2/rviz/issues/442
-    # TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
-    start_rviz_cmd = launch.actions.ExecuteProcess(
+    # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
+    #              Launching as node works after applying the change described on the github issue.
+    start_rviz_cmd = launch_ros.actions.Node(
         condition=UnlessCondition(use_remappings),
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            ['-d', rviz_config_file]],
-        cwd=[launch_dir], output='screen')
+        package='rviz2',
+        node_executable='rviz2',
+        node_name='rviz2',
+        arguments=['-d', rviz_config_file],
+        output='screen')
 
-    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
-    #              https://github.com/ros2/launch_ros/issues/56
-    start_rviz_remapped_cmd = launch.actions.ExecuteProcess(
+    rviz_remappings = [('/move_base_simple/goal', 'move_base_simple/goal'),
+                       ('/tf', 'tf'),
+                       ('/tf_static', 'tf_static'),
+                       ('/clicked_point', 'clicked_point'),
+                       ('/initialpose', 'initialpose'),
+                       ('/parameter_events', 'parameter_events'),
+                       ('/rosout', 'rosout')]
+
+    # Currently there is no option to conditionalize the remappings
+    # So as you can see, I (orduno) decided to duplicate the launch action
+    # with opposite condition and different remappings.
+    start_rviz_remapped_cmd = launch_ros.actions.Node(
         condition=IfCondition(use_remappings),
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            # TODO(orduno) re-enable
-            # ['-d', rviz_config_file],
-            ['--ros-args'],
-            ['__ns:=/', robot_name],
-            ['/move_base_simple/goal:=move_base_simple/goal'],
-            ['/tf:=tf'],
-            ['/tf_static:=tf_static'],
-            ['/clicked_point:=clicked_point'],
-            ['/initialpose:=initialpose'],
-            ['/parameter_events:=parameter_events'],
-            ['/rosout:=rosout']],
-        cwd=[launch_dir], output='screen')
+        package='rviz2',
+        node_executable='rviz2',
+        node_name='rviz2',
+        arguments=['-d', rviz_config_file],
+        output='screen',
+        remappings=rviz_remappings)
 
     exit_event_handler = launch.actions.RegisterEventHandler(
         event_handler=launch.event_handlers.OnProcessExit(

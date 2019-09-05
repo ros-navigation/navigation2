@@ -113,7 +113,7 @@ def generate_launch_description():
     for robot in robots:
         namespaced_rviz_config_file = ReplaceString(
                 source_file=rviz_config_file,
-                replacements={'<robot_namespace>': robot['name']})
+                replacements={'<robot_namespace>': ('/' + robot['name'])})
 
         group = GroupAction([
             # TODO(orduno) Each `action.Node` within the `localization` and `navigation` launch

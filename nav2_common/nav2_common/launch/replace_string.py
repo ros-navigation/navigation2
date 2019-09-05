@@ -64,10 +64,10 @@ class ReplaceString(launch.Substitution):
 
   def replace(self, input_file, output_file, replacements):
     for line in input_file:
-      for key, value in replacements:
+      for key, value in replacements.items():
         if isinstance(key, str) and isinstance(value, str):
           if key in line:
             line = line.replace(key, value)
         else:
-          raise TypeError('the provided key or value provided is not a string')
+          raise TypeError('A provided replacement pair is not a string. Both key and value should be strings.')
       output_file.write(line)
