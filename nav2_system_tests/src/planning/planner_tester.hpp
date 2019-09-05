@@ -31,6 +31,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 
 namespace nav2_system_tests
 {
@@ -104,7 +105,7 @@ private:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr transform_publisher_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
   void publishRobotTransform();
   void startRobotTransform();

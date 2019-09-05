@@ -95,7 +95,7 @@ void PlannerTester::deactivate()
   map_pub_.reset();
   map_.reset();
   costmap_server_.reset();
-  transform_publisher_.reset();
+  tf_broadcaster_.reset();
 }
 
 PlannerTester::~PlannerTester()
@@ -108,7 +108,7 @@ PlannerTester::~PlannerTester()
 void PlannerTester::startRobotTransform()
 {
   // Provide the robot pose transform
-  transform_publisher_ = create_publisher<tf2_msgs::msg::TFMessage>("/tf", rclcpp::QoS(100));
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
@@ -140,9 +140,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
 void PlannerTester::publishRobotTransform()
 {
   if (base_transform_) {
-    tf2_msgs::msg::TFMessage tf_message;
-    tf_message.transforms.push_back(*base_transform_);
-    transform_publisher_->publish(tf_message);
+    tf_broadcaster_->sendTransform(*base_transform_);
   }
 }
 
