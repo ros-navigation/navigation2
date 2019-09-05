@@ -24,7 +24,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "nav2_msgs/srv/manage_nodes.hpp"
+#include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -46,7 +46,7 @@ public:
   bool navigate_to_pose(double x, double y, double theta);
 
 protected:
-  using ManageNodes = nav2_msgs::srv::ManageNodes;
+  using ManageLifecycleNodes = nav2_msgs::srv::ManageLifecycleNodes;
 
   // A generic method used to call startup, shutdown, etc.
   bool callService(uint8_t command);
@@ -54,7 +54,7 @@ protected:
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
 
-  rclcpp::Client<ManageNodes>::SharedPtr manager_client_;
+  rclcpp::Client<ManageLifecycleNodes>::SharedPtr manager_client_;
   std::string service_name_{"lifecycle_manager/manage_nodes"};
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;

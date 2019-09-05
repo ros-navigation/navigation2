@@ -26,7 +26,6 @@ using namespace std::placeholders;
 
 using lifecycle_msgs::msg::Transition;
 using lifecycle_msgs::msg::State;
-using nav2_msgs::msg::Command;
 using nav2_util::LifecycleServiceClient;
 
 namespace nav2_lifecycle_manager
@@ -49,7 +48,7 @@ LifecycleManager::LifecycleManager()
   get_parameter("node_names", node_names_);
   get_parameter("autostart", autostart_);
 
-  manager_srv_ = create_service<ManageNodes>("lifecycle_manager/manage_nodes",
+  manager_srv_ = create_service<ManageLifecycleNodes>("lifecycle_manager/manage_nodes",
       std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
@@ -85,23 +84,23 @@ LifecycleManager::~LifecycleManager()
 void
 LifecycleManager::managerCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<ManageNodes::Request> request,
-  std::shared_ptr<ManageNodes::Response> response)
+  const std::shared_ptr<ManageLifecycleNodes::Request> request,
+  std::shared_ptr<ManageLifecycleNodes::Response> response)
 {
-  switch (request->command.id) {
-    case Command::STARTUP:
+  switch (request->command) {
+    case ManageLifecycleNodes::Request::STARTUP:
       response->success = startup();
       break;
-    case Command::RESET:
+    case ManageLifecycleNodes::Request::RESET:
       response->success = reset();
       break;
-    case Command::SHUTDOWN:
+    case ManageLifecycleNodes::Request::SHUTDOWN:
       response->success = shutdown();
       break;
-    case Command::PAUSE:
+    case ManageLifecycleNodes::Request::PAUSE:
       response->success = pause();
       break;
-    case Command::RESUME:
+    case ManageLifecycleNodes::Request::RESUME:
       response->success = resume();
       break;
   }

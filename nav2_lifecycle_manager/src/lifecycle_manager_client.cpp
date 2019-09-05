@@ -23,7 +23,6 @@
 namespace nav2_lifecycle_manager
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
-using nav2_msgs::msg::Command;
 
 LifecycleManagerClient::LifecycleManagerClient()
 {
@@ -31,7 +30,7 @@ LifecycleManagerClient::LifecycleManagerClient()
   node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
 
   // Create the service clients
-  manager_client_ = node_->create_client<ManageNodes>(service_name_);
+  manager_client_ = node_->create_client<ManageLifecycleNodes>(service_name_);
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -44,31 +43,31 @@ LifecycleManagerClient::LifecycleManagerClient()
 bool
 LifecycleManagerClient::startup()
 {
-  return callService(Command::STARTUP);
+  return callService(ManageLifecycleNodes::Request::STARTUP);
 }
 
 bool
 LifecycleManagerClient::shutdown()
 {
-  return callService(Command::SHUTDOWN);
+  return callService(ManageLifecycleNodes::Request::SHUTDOWN);
 }
 
 bool
 LifecycleManagerClient::pause()
 {
-  return callService(Command::PAUSE);
+  return callService(ManageLifecycleNodes::Request::PAUSE);
 }
 
 bool
 LifecycleManagerClient::resume()
 {
-  return callService(Command::RESUME);
+  return callService(ManageLifecycleNodes::Request::RESUME);
 }
 
 bool
 LifecycleManagerClient::reset()
 {
-  return callService(Command::RESET);
+  return callService(ManageLifecycleNodes::Request::RESET);
 }
 
 void
@@ -143,8 +142,8 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
 bool
 LifecycleManagerClient::callService(uint8_t command)
 {
-  auto request = std::make_shared<ManageNodes::Request>();
-  request->command.id = command;
+  auto request = std::make_shared<ManageLifecycleNodes::Request>();
+  request->command = command;
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
     service_name_);

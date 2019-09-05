@@ -24,12 +24,12 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "nav2_msgs/srv/manage_nodes.hpp"
+#include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 
 namespace nav2_lifecycle_manager
 {
 
-using nav2_msgs::srv::ManageNodes;
+using nav2_msgs::srv::ManageLifecycleNodes;
 
 class LifecycleManager : public rclcpp::Node
 {
@@ -42,12 +42,12 @@ protected:
   rclcpp::Node::SharedPtr service_client_node_;
 
   // The services provided by this node
-  rclcpp::Service<ManageNodes>::SharedPtr manager_srv_;
+  rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
 
   void managerCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<ManageNodes::Request> request,
-    std::shared_ptr<ManageNodes::Response> response);
+    const std::shared_ptr<ManageLifecycleNodes::Request> request,
+    std::shared_ptr<ManageLifecycleNodes::Response> response);
 
   // Support functions for the service calls
   bool startup();
@@ -56,9 +56,8 @@ protected:
   bool pause();
   bool resume();
 
-  // Support functions for bring-up
+  // Support function for creating service clients
   void createLifecycleServiceClients();
-  bool bringupNode(const std::string & node_name);
 
   // Support functions for shutdown
   void shutdownAllNodes();
