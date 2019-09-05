@@ -45,7 +45,7 @@ PlannerTester::PlannerTester()
 void PlannerTester::activate()
 {
   if (is_active_) {
-    RCLCPP_WARN(this->get_logger(), "Trying to activate while already active");
+    throw std::runtime_error("Trying to activate while already active");
     return;
   }
   is_active_ = true;
@@ -81,7 +81,7 @@ void PlannerTester::activate()
 void PlannerTester::deactivate()
 {
   if (!is_active_) {
-    RCLCPP_WARN(this->get_logger(), "Trying to deactivate while already inactive");
+    throw std::runtime_error("Trying to deactivate while already inactive");
     return;
   }
   is_active_ = false;

@@ -38,18 +38,8 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
-// #TODO(orduno) This test throws a fastrtps error most of the time when bringing down navfn
-// TEST_F(PlannerTester, testPlannerTransitions)
-// {
-//   EXPECT_NO_THROW(
-//     activate();
-//     nav2_util::bringup_lifecycle_nodes("/navfn_planner");
-//     nav2_util::bringdown_lifecycle_nodes("/navfn_planner");
-//     deactivate();
-//   );
-// }
-
-// #TODO(orduno) Once testing with random points stabilizes, re-enable this
+// #TODO(orduno) Multiple startups and shutdowns of navfn kills the navfn process #1100
+//               Re-enable after this is resolved
 // TEST_F(PlannerTester, testSimpleCostmaps)
 // {
 //   activate();
@@ -86,8 +76,7 @@ TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 
   EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 
-  // #TODO(orduno) Bringing down navfn throws a fastrtps error most of the time
-  // nav2_util::bringdown_lifecycle_nodes("/navfn_planner");
+  nav2_util::bringdown_lifecycle_nodes("/navfn_planner");
 
   deactivate();
 }
