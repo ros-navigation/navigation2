@@ -10,6 +10,7 @@
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>libboost-program-options-dev</build_depend>
   <depend>nav2_common</depend>
 
   <depend>geometry_msgs</depend>
@@ -25,6 +26,8 @@
   <depend>rclcpp_action</depend>
   <depend>test_msgs</depend>
   <depend>rclcpp_lifecycle</depend>
+
+  <exec_depend>libboost-program-options</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
