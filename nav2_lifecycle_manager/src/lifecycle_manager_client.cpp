@@ -31,6 +31,7 @@ LifecycleManagerClient::LifecycleManagerClient()
 
   // Create the service clients
   manager_client_ = node_->create_client<ManageLifecycleNodes>(service_name_);
+  is_active_client_ = node_->create_client<std_srvs::srv::Trigger>("lifecycle_manager/is_active");
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -68,6 +69,29 @@ bool
 LifecycleManagerClient::reset()
 {
   return callService(ManageLifecycleNodes::Request::RESET);
+}
+
+bool LifecycleManagerClient::is_active()
+{
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto service_name = "lifecycle_manager/is_active";
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
+    service_name);
+
+  while (!is_active_client_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
+      return false;
+    }
+    RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
+  }
+
+  RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
+    service_name);
+  auto future_result = is_active_client_->async_send_request(request);
+  rclcpp::spin_until_future_complete(node_, future_result);
+  return future_result.get()->success;
 }
 
 void
