@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -43,11 +44,17 @@ protected:
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
 
   void managerCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<ManageLifecycleNodes::Request> request,
     std::shared_ptr<ManageLifecycleNodes::Response> response);
+
+  void activeCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response);
 
   // Support functions for the service calls
   bool startup();
@@ -85,6 +92,8 @@ protected:
 
   // Whether to automatically start up the system
   bool autostart_;
+
+  bool system_active_{false};
 };
 
 }  // namespace nav2_lifecycle_manager

@@ -87,6 +87,7 @@ private:
 
   QStateMachine state_machine_;
 
+  QState * pre_initial_{nullptr};
   QState * initial_{nullptr};
   QState * idle_{nullptr};
   QState * stopping_{nullptr};
@@ -99,6 +100,32 @@ private:
   QState * running_{nullptr};
   QState * canceled_{nullptr};
 };
+
+class InitialThread : public QThread
+{
+  Q_OBJECT
+public:
+  InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client)
+  : client_(client)
+  {}
+
+  void run() override {
+    auto response = client_.is_active();
+    if (response) {
+      emit activeSystem();
+    } else {
+      emit inactiveSystem();
+    }
+  }
+
+signals:
+  void activeSystem();
+  void inactiveSystem();
+
+private:
+  nav2_lifecycle_manager::LifecycleManagerClient client_;
+};
+
 
 }  // namespace nav2_rviz_plugins
 
