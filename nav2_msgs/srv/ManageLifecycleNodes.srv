@@ -4,4 +4,6 @@ uint8 RESUME = 2
 uint8 RESET = 3
 uint8 SHUTDOWN = 4
 
-uint8 id
+uint8 command
+---
+bool success
