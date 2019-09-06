@@ -16,7 +16,7 @@ BUILDDIR      = _build
 
 DOC_TAG      ?= development
 RELEASE      ?= latest
-PUBLISHDIR    = ../website/docs
+PUBLISHDIR    = /tmp/navigation2
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -44,13 +44,12 @@ clean:
 # along with a README
 
 publish:
-	mkdir -p $(PUBLISHDIR)
+	#cd /tmp; git clone git@github.com:ros-planning/navigation2.git
+	cd $(PUBLISHDIR) && git checkout gh-pages
 	rm -fr $(PUBLISHDIR)/*
 	cp -r $(BUILDDIR)/html/* $(PUBLISHDIR)
-	cp scripts/publish-README.md $(PUBLISHDIR)/../README.md
-	cp scripts/publish-index.html $(PUBLISHDIR)/../index.html
-	cp scripts/.nojekyll $(PUBLISHDIR)/../.nojekyll
-	cd $(PUBLISHDIR)/..; git add -A; git commit -s -m "publish $(RELEASE)"; git push origin master;
+	cp scripts/.nojekyll $(PUBLISHDIR)/.nojekyll
+	cd $(PUBLISHDIR); git add -A; git commit -s -m "publish $(RELEASE)"; git push origin;
 
 
 # Catch-all target: route all unknown targets to Sphinx using the new
