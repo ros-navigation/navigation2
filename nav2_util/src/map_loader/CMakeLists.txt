@@ -12,6 +12,11 @@ ament_target_dependencies(map_loader
   SDL_image
 )
 
+target_include_directories(map_loader PRIVATE
+    ${SDL_INCLUDE_DIR}
+    ${SDL_IMAGE_INCLUDE_DIRS}
+)
+
 target_link_libraries(map_loader
     ${SDL_LIBRARY}
     ${SDL_IMAGE_LIBRARIES}
