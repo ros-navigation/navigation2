@@ -41,7 +41,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
