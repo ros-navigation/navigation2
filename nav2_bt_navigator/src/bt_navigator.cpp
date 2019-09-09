@@ -47,7 +47,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      std::string("__node:=") + get_name() + "_client_node",
+      "-r", std::string("__node:=") + get_name() + "_client_node",
       "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);

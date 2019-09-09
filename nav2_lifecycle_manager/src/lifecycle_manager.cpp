@@ -52,7 +52,7 @@ LifecycleManager::LifecycleManager()
       std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", std::string("__node:=") + get_name() + "service_client", "--"});
+    {"--ros-args", "-r", std::string("__node:=") + get_name() + "service_client", "--"});
   service_client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
