@@ -36,7 +36,6 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_costmap_2d/cost_values.hpp"
 
 namespace nav2_navfn_planner
 {

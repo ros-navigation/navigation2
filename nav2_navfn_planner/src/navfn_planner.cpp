@@ -40,6 +40,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
 
