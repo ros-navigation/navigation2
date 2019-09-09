@@ -17,6 +17,11 @@ amcl:
     laser_max_range: 100.0
     laser_min_range: -1.0
     laser_model_type: "likelihood_field"
+    set_initial_pose: true
+    initial_pose.x: -2.0
+    initial_pose.y: -0.5
+    initial_pose.z: 0.0
+    initial_pose.yaw: 0.0
     max_beams: 60
     max_particles: 2000
     min_particles: 500
@@ -87,6 +92,10 @@ dwb_controller:
     GoalDist.scale: 24.0
     RotateToGoal.scale: 32.0
 
+dwb_controller_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -101,12 +110,11 @@ local_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
+  local_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: True
 
 local_costmap_client:
-  ros__parameters:
-    use_sim_time: True
-
-local_costmap_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
@@ -145,10 +153,6 @@ robot_state_publisher:
   ros__parameters:
     use_sim_time: True
 
-simple_navigator:
-  ros__parameters:
-    use_sim_time: True
-
 world_model:
   ros__parameters:
     use_sim_time: True
@@ -166,11 +170,14 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: True
         marking: True
+  global_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: True
 
 global_costmap_client:
   ros__parameters:
     use_sim_time: True
 
-global_costmap_rclcpp_node:
+transform_listener_impl:
   ros__parameters:
     use_sim_time: True

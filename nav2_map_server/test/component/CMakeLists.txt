@@ -9,12 +9,13 @@ target_link_libraries(test_occ_grid_node
   ${library_name}
 )
 
-ament_add_test(test_occ_grid_cpp
-  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_occ_grid_launch.py"
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  ENV
-    TEST_DIR=${TEST_DIR}
-    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
-    TEST_EXECUTABLE=$<TARGET_FILE:test_occ_grid_node>
-)
+# Flaky test
+#ament_add_test(test_occ_grid_cpp
+#  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+#  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_occ_grid_launch.py"
+#  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+#  ENV
+#    TEST_DIR=${TEST_DIR}
+#    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
+#    TEST_EXECUTABLE=$<TARGET_FILE:test_occ_grid_node>
+#)

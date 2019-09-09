@@ -29,10 +29,11 @@
 #include "nav2_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap_service_client.hpp"
-#include "nav2_util/get_robot_pose_client.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
+#include "tf2_ros/transform_listener.h"
 
 namespace nav2_navfn_planner
 {
@@ -113,17 +114,11 @@ protected:
     nav2_msgs::msg::Costmap & costmap,
     const std::string layer = "master");
 
-  // get latest robot pose from the world model
-  geometry_msgs::msg::Pose getRobotPose();
-
   // Print costmap to terminal
   void printCostmap(const nav2_msgs::msg::Costmap & costmap);
 
   // Publish a path for visualization purposes
   void publishPlan(const nav2_msgs::msg::Path & path);
-  void publishEndpoints(
-    const geometry_msgs::msg::Pose & start,
-    const geometry_msgs::msg::Pose & goal);
 
   // Determine if a new planner object should be made
   bool isPlannerOutOfDate();
@@ -131,14 +126,15 @@ protected:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
+  // TF buffer
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
   // Service client for getting the costmap
   nav2_util::CostmapServiceClient costmap_client_{"navfn_planner"};
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"navfn_planner"};
 
-  // Publishers for the path and endpoints
+  // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
-    plan_marker_publisher_;
 
   // The costmap to use and its size
   nav2_msgs::msg::Costmap costmap_;

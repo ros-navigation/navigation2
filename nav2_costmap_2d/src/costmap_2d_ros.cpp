@@ -46,18 +46,25 @@
 #include "nav2_util/duration_conversions.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_util/robot_utils.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
-
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: nav2_util::LifecycleNode(name, name, true), name_(name)
+: Costmap2DROS(name, name) {}
+
+Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolute_namespace)
+: nav2_util::LifecycleNode(name, "", true,
+    // NodeOption arguments take precedence over the ones provided on the command line
+    // use this to make sure the node is placed on the provided namespace
+    rclcpp::NodeOptions().arguments({std::string("__ns:=") + absolute_namespace})),
+  name_(name)
 {
-  RCLCPP_INFO(get_logger(), "Creating");
+  RCLCPP_INFO(get_logger(), "Creating Costmap");
   auto options = rclcpp::NodeOptions().arguments(
-    {std::string("__node:=") + get_name() + "_client"});
+    {"--ros-args", std::string("__node:=") + get_name() + "_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
@@ -147,7 +154,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Add cleaning service
-  clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
+  clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -166,6 +173,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking transform");
+  auto sleep_dur = std::chrono::milliseconds(100);
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(1.0), &tf_error))
@@ -177,6 +185,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
+    rclcpp::sleep_for(sleep_dur);
   }
 
   // Create a thread to handle updating the map
@@ -219,8 +228,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   delete layered_costmap_;
   layered_costmap_ = nullptr;
 
-  tf_buffer_.reset();
   tf_listener_.reset();
+  tf_buffer_.reset();
 
   footprint_sub_.reset();
   footprint_pub_.reset();
@@ -370,7 +379,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
         (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
       {
-        RCLCPP_DEBUG(get_logger(), "Publish costmap");
+        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
         costmap_publisher_->publishCostmap();
         last_publish_ = current_time;
       }
@@ -439,7 +448,7 @@ Costmap2DROS::start()
   stop_updates_ = false;
 
   // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(100.0);
+  rclcpp::Rate r(20.0);
   while (rclcpp::ok() && !initialized_) {
     RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
     r.sleep();
@@ -498,52 +507,8 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-
-  tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
-  tf2::toMsg(tf2::Transform::getIdentity(), robot_pose.pose);
-
-  robot_pose.header.frame_id = robot_base_frame_;
-  robot_pose.header.stamp = rclcpp::Time();
-
-  // Save time for checking tf delay later
-  rclcpp::Time current_time = now();
-
-  // Get the global pose of the robot
-  try {
-    tf_buffer_->transform(robot_pose, global_pose, global_frame_);
-  } catch (tf2::LookupException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "No Transform available Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ConnectivityException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Connectivity Error looking up robot pose: %s\n", ex.what());
-    return false;
-  } catch (tf2::ExtrapolationException & ex) {
-    RCLCPP_ERROR(get_logger(),
-      "Extrapolation Error looking up robot pose: %s\n", ex.what());
-    return false;
-  }
-
-  // Check global_pose timeout
-  // TODO(bpwilcox): use toSec() function in more recent rclcpp branch
-  if (current_time - global_pose.header.stamp >
-    nav2_util::duration_from_seconds(transform_tolerance_))
-  {
-    RCLCPP_WARN(
-      get_logger(),
-      "Transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f, difference: %.4f", //NOLINT
-      tf2::timeToSec(tf2_ros::fromMsg(current_time)),
-      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)),
-      transform_tolerance_,
-      tf2::timeToSec(tf2_ros::fromMsg(current_time)) -
-      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)));
-
-    return false;
-  }
-
-  return true;
+  return nav2_util::getCurrentPose(global_pose, *tf_buffer_,
+           global_frame_, robot_base_frame_, transform_tolerance_);
 }
 
 }  // namespace nav2_costmap_2d

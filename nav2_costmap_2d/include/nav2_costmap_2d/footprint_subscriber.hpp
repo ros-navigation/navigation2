@@ -16,6 +16,7 @@
 #define NAV2_COSTMAP_2D__FOOTPRINT_SUBSCRIBER_HPP_
 
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -29,17 +30,17 @@ class FootprintSubscriber
 public:
   FootprintSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   FootprintSubscriber(
     rclcpp::Node::SharedPtr node,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   FootprintSubscriber(
     const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
     const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
     const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   ~FootprintSubscriber() {}
 

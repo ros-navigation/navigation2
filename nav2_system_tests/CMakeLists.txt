@@ -11,6 +11,7 @@ find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(gazebo_ros_pkgs REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
@@ -30,6 +31,7 @@ set(dependencies
   gazebo_ros_pkgs
   geometry_msgs
   std_msgs
+  tf2_geometry_msgs
   rclpy
 )
 
@@ -40,7 +42,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
 
-  # add_subdirectory(src/planning)
+  add_subdirectory(src/planning)
   add_subdirectory(src/localization)
   add_subdirectory(src/system)
   add_subdirectory(src/updown)

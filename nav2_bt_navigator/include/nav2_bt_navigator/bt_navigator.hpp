@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
+#include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/msg/path.hpp"
@@ -73,7 +73,7 @@ protected:
   std::string xml_string_;
 
   // The wrapper class for the BT functionality
-  std::unique_ptr<NavigateToPoseBehaviorTree> bt_;
+  std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
 
   // The complete behavior tree that results from parsing the incoming XML
   std::unique_ptr<BT::Tree> tree_;

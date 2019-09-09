@@ -2,14 +2,14 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_dynamic_params</name>
-  <version>0.2.3</version>
+  <version>0.2.2</version>
   <description>
     This package provides a validation class for ROS2 parameters with validation based on parameter
     type and defined bounds. Support for custom validation callbacks is also provided. Some useful
     convenience functions for event callbacks are also provided
   </description>
   <maintainer email="brian.wilcox@intel.com">Brian Wilcox</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>

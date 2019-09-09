@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__COSTMAP_2D_SUBSCRIBER_HPP_
-#define NAV2_COSTMAP_2D__COSTMAP_2D_SUBSCRIBER_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
 
 #include <string>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -30,17 +31,17 @@ class CostmapSubscriber
 public:
   CostmapSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   CostmapSubscriber(
     rclcpp::Node::SharedPtr node,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   CostmapSubscriber(
     const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
     const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
     const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-    std::string & topic_name);
+    const std::string & topic_name);
 
   ~CostmapSubscriber() {}
 
@@ -64,4 +65,4 @@ protected:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_2D_SUBSCRIBER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_

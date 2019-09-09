@@ -43,10 +43,7 @@ public:
   ServiceClient(const std::string & service_name, const std::string & parent_name)
   : service_name_(service_name)
   {
-    auto options = rclcpp::NodeOptions().arguments(
-      {"__node:=" + parent_name + std::string("_") + service_name +
-        "_client"});
-    node_ = rclcpp::Node::make_shared("_", options);
+    node_ = generate_internal_node(parent_name + std::string("_") + service_name + "_client");
     client_ = node_->create_client<ServiceT>(service_name);
   }
 
@@ -110,11 +107,13 @@ public:
 
   void wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
+    auto sleep_dur = std::chrono::milliseconds(10);
     while (!client_->wait_for_service(timeout)) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
                 service_name_ + " service client: interrupted while waiting for service");
       }
+      rclcpp::sleep_for(sleep_dur);
     }
   }
 

@@ -23,6 +23,7 @@
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_listener.h"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -46,9 +47,12 @@ class Recovery
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
-  explicit Recovery(rclcpp::Node::SharedPtr & node, const std::string & recovery_name)
+  explicit Recovery(
+    rclcpp::Node::SharedPtr & node, const std::string & recovery_name,
+    std::shared_ptr<tf2_ros::Buffer> tf)
   : node_(node),
     recovery_name_(recovery_name),
+    tf_(*tf),
     action_server_(nullptr),
     cycle_frequency_(10)
   {
@@ -76,13 +80,12 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_;
   std::string recovery_name_;
-  std::shared_ptr<nav2_util::RobotStateHelper> robot_state_;
-  std::shared_ptr<nav2_util::VelocityPublisher> vel_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  tf2_ros::Buffer & tf_;
   std::unique_ptr<ActionServer> action_server_;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"recovery"};
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
 
@@ -96,10 +99,6 @@ protected:
     node_->get_parameter("costmap_topic", costmap_topic);
     node_->get_parameter("footprint_topic", footprint_topic);
 
-    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
-
-    vel_publisher_ = std::make_unique<nav2_util::VelocityPublisher>(node_);
-
     action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
 
@@ -110,14 +109,15 @@ protected:
       node_, footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, get_robot_pose_client_);
+      *costmap_sub_, *footprint_sub_, tf_, node_->get_name(), "odom");
+
+    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
   }
 
   void cleanup()
   {
-    robot_state_.reset();
     action_server_.reset();
-    vel_publisher_.reset();
+    vel_pub_.reset();
     footprint_sub_.reset();
     costmap_sub_.reset();
     collision_checker_.reset();
@@ -184,19 +184,7 @@ protected:
     cmd_vel.linear.y = 0.0;
     cmd_vel.angular.z = 0.0;
 
-    vel_publisher_->publishCommand(cmd_vel);
-  }
-
-  bool getRobotPose(geometry_msgs::msg::Pose & current_pose)
-  {
-    auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
-
-    auto result = get_robot_pose_client_.invoke(request, 1s);
-    if (!result->is_pose_valid) {
-      return false;
-    }
-    current_pose = result->pose.pose;
-    return true;
+    vel_pub_->publish(cmd_vel);
   }
 };
 

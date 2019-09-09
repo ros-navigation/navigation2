@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "nav2_world_model/world_model.hpp"
-
 #include <memory>
+#include <string>
+#include "nav2_util/node_utils.hpp"
+
 
 using namespace std::placeholders;
 
@@ -24,10 +26,11 @@ namespace nav2_world_model
 WorldModel::WorldModel()
 : nav2_util::LifecycleNode("world_model")
 {
-  RCLCPP_INFO(get_logger(), "Creating");
+  RCLCPP_INFO(get_logger(), "Creating World Model");
 
   // The costmap node is used in the implementation of the world model
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()}, "global_costmap"));
 
   // Create an executor that will be used to spin the costmap node
   costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
@@ -61,8 +64,6 @@ WorldModel::on_configure(const rclcpp_lifecycle::State & state)
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = create_service<nav2_msgs::srv::GetCostmap>("GetCostmap",
       std::bind(&WorldModel::costmap_service_callback, this, _1, _2, _3));
-  get_robot_pose_service_ = create_service<nav2_msgs::srv::GetRobotPose>("GetRobotPose",
-      std::bind(&WorldModel::get_robot_pose_callback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -146,14 +147,6 @@ WorldModel::costmap_service_callback(
   response->map.metadata.origin.orientation = tf2::toMsg(quaternion);
   response->map.data.resize(data_length);
   response->map.data.assign(data, data + data_length);
-}
-
-void WorldModel::get_robot_pose_callback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
-  const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response)
-{
-  response->is_pose_valid = costmap_ros_->getRobotPose(response->pose);
 }
 
 }  // namespace nav2_world_model

@@ -453,9 +453,10 @@ protected:
   unsigned char * costmap_;
   unsigned char default_value_;
 
+  // *INDENT-OFF* Uncrustify doesn't handle indented public/private labels
   class MarkCell
   {
-public:
+  public:
     MarkCell(unsigned char * costmap, unsigned char value)
     : costmap_(costmap), value_(value)
     {
@@ -465,14 +466,14 @@ public:
       costmap_[offset] = value_;
     }
 
-private:
+  private:
     unsigned char * costmap_;
     unsigned char value_;
   };
 
   class PolygonOutlineCells
   {
-public:
+  public:
     PolygonOutlineCells(
       const Costmap2D & costmap, const unsigned char * /*char_map*/,
       std::vector<MapLocation> & cells)
@@ -488,10 +489,11 @@ public:
       cells_.push_back(loc);
     }
 
-private:
+  private:
     const Costmap2D & costmap_;
     std::vector<MapLocation> & cells_;
   };
+  // *INDENT-ON*
 };
 }  // namespace nav2_costmap_2d
 

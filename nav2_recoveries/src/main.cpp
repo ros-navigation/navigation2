@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_listener.h"
 #include "nav2_recoveries/back_up.hpp"
 #include "nav2_recoveries/spin.hpp"
 
@@ -25,16 +26,19 @@ int main(int argc, char ** argv)
 
   auto recoveries_node = rclcpp::Node::make_shared("recoveries");
 
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(recoveries_node->get_clock());
+  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+
   recoveries_node->declare_parameter(
-    "costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
   recoveries_node->declare_parameter(
-    "footprint_topic", rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+    "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
   auto spin = std::make_shared<nav2_recoveries::Spin>(
-    recoveries_node);
+    recoveries_node, tf_buffer);
 
   auto back_up = std::make_shared<nav2_recoveries::BackUp>(
-    recoveries_node);
+    recoveries_node, tf_buffer);
 
   rclcpp::spin(recoveries_node);
   rclcpp::shutdown();

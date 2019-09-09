@@ -53,7 +53,7 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
-        default_value='test_map.yaml',
+        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(

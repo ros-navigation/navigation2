@@ -24,18 +24,21 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/testing_helper.hpp"
-#include "nav2_msgs/srv/get_robot_pose.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 class RclCppFixture
 {
@@ -100,6 +103,7 @@ public:
     RCLCPP_INFO(get_logger(), "Configuring");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -113,12 +117,9 @@ public:
       footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, get_robot_pose_client_, get_name());
+      *costmap_sub_, *footprint_sub_, *tf_buffer_, get_name(), "map");
 
-    get_robot_pose_service_ = rclcpp_node_->create_service<nav2_msgs::srv::GetRobotPose>(
-      "GetRobotPose", std::bind(&TestCollisionChecker::get_robot_pose_callback, this, _1, _2, _3));
-
-    layers_ = new nav2_costmap_2d::LayeredCostmap("frame", false, false);
+    layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
     // Add Static Layer
     auto slayer = addStaticLayer(*layers_, *tf_buffer_, shared_from_this());
     while (!slayer->isCurrent()) {
@@ -152,7 +153,6 @@ public:
     layers_ = nullptr;
 
     tf_buffer_.reset();
-    tf_listener_.reset();
 
     footprint_sub_.reset();
     costmap_sub_.reset();
@@ -164,6 +164,7 @@ public:
 
   bool testPose(double x, double y, double theta)
   {
+    publishPose(x, y, theta);
     geometry_msgs::msg::Pose2D pose;
     pose.x = x;
     pose.y = y;
@@ -194,9 +195,7 @@ protected:
     current_pose_.pose.position.x = x_;
     current_pose_.pose.position.y = y_;
     current_pose_.pose.position.z = 0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, yaw_);
-    current_pose_.pose.orientation = tf2::toMsg(q);
+    current_pose_.pose.orientation = orientationAroundZAxis(yaw_);
   }
 
   void publishFootprint()
@@ -214,6 +213,18 @@ protected:
     layers_->updateMap(x_, y_, yaw_);
     costmap_sub_->setCostmap(
       std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+  }
+
+  void publishPose(double x, double y, double /*theta*/)
+  {
+    geometry_msgs::msg::TransformStamped tf_stamped;
+    tf_stamped.header.frame_id = "map";
+    tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
+    tf_stamped.child_frame_id = "base_link";
+    tf_stamped.transform.translation.x = x;
+    tf_stamped.transform.translation.y = y;
+    tf_stamped.transform.rotation.w = 1.0;
+    tf_broadcaster_->sendTransform(tf_stamped);
   }
 
   nav2_msgs::msg::Costmap
@@ -246,20 +257,9 @@ protected:
     return costmap_msg;
   }
 
-  void get_robot_pose_callback(
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Request>/*request*/,
-    const std::shared_ptr<nav2_msgs::srv::GetRobotPose::Response> response)
-  {
-    response->is_pose_valid = true;
-    response->pose = current_pose_;
-  }
-
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  rclcpp::Service<nav2_msgs::srv::GetRobotPose>::SharedPtr get_robot_pose_service_;
-  nav2_util::GetRobotPoseClient get_robot_pose_client_{"test_collision_checker"};
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
@@ -270,7 +270,6 @@ protected:
   double x_, y_, yaw_;
   geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
-
 };
 
 

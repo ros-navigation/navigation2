@@ -20,8 +20,12 @@
 #include "planner_tester.hpp"
 
 using namespace std::chrono_literals;
+
 using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
+
+using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
+using ComputePathToPoseResult = nav2_msgs::msg::Path;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
 class RclCppFixture
@@ -44,7 +48,7 @@ TEST_F(PlannerTester, testSimpleCostmaps)
     TestCostmap::maze2
   };
 
-  auto result = std::make_shared<nav2_behavior_tree::ComputePathToPoseResult>();
+  ComputePathToPoseResult result;
 
   for (auto costmap : costmaps) {
     loadSimpleCostmap(costmap);
@@ -52,16 +56,8 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   }
 }
 
-TEST_F(PlannerTester, testWithOneFixedEndpoint)
-{
-  loadDefaultMap();
-  auto result = std::make_shared<nav2_behavior_tree::ComputePathToPoseResult>();
-  EXPECT_EQ(true, defaultPlannerTest(result));
-}
-
 TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
   loadDefaultMap();
-  auto result = std::make_shared<nav2_behavior_tree::ComputePathToPoseResult>();
   EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 }

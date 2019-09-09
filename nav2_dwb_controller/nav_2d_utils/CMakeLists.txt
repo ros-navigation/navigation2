@@ -10,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 
 nav2_package()
 
@@ -21,6 +22,7 @@ set(dependencies
   tf2
   tf2_geometry_msgs
   nav2_msgs
+  nav2_util
 )
 
 include_directories(

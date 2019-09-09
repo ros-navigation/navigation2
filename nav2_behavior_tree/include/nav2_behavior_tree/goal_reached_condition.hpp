@@ -21,7 +21,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2_ros/transform_listener.h"
 
 namespace nav2_behavior_tree
 {
@@ -47,7 +48,7 @@ public:
       initialize();
     }
 
-    if (goalReached()) {
+    if (isGoalReached()) {
       return BT::NodeStatus::SUCCESS;
     }
     return BT::NodeStatus::FAILURE;
@@ -57,24 +58,26 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    robot_state_ = std::make_unique<nav2_util::RobotStateHelper>(node_);
+    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+
     initialized_ = true;
   }
 
   bool
-  goalReached()
+  isGoalReached()
   {
-    auto current_pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+    geometry_msgs::msg::PoseStamped current_pose;
 
     rclcpp::spin_some(node_);
-    if (!robot_state_->getCurrentPose(current_pose)) {
+    if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
     // TODO(mhpanah): replace this with a function
     blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
-    double dx = goal_->pose.position.x - current_pose->pose.pose.position.x;
-    double dy = goal_->pose.position.y - current_pose->pose.pose.position.y;
+    double dx = goal_->pose.position.x - current_pose.pose.position.x;
+    double dy = goal_->pose.position.y - current_pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
@@ -86,12 +89,12 @@ public:
 protected:
   void cleanup()
   {
-    robot_state_.reset();
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
-  std::unique_ptr<nav2_util::RobotStateHelper> robot_state_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;

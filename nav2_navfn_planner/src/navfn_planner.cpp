@@ -52,6 +52,9 @@ NavfnPlanner::NavfnPlanner()
   // Declare this node's parameters
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
+
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 }
 
 NavfnPlanner::~NavfnPlanner()
@@ -81,8 +84,6 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
-  plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
-    "endpoints", 1);
 
   auto node = shared_from_this();
 
@@ -99,7 +100,6 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
-  plan_marker_publisher_->on_activate();
   action_server_->activate();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -112,7 +112,6 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_->deactivate();
   plan_publisher_->on_deactivate();
-  plan_marker_publisher_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -124,8 +123,9 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plan_publisher_.reset();
-  plan_marker_publisher_.reset();
   planner_.reset();
+  tf_listener_.reset();
+  tf_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -173,7 +173,10 @@ NavfnPlanner::computePathToPose()
     RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
       costmap_.metadata.size_x, costmap_.metadata.size_y);
 
-    auto start = getRobotPose();
+    geometry_msgs::msg::PoseStamped start;
+    if (!nav2_util::getCurrentPose(start, *tf_)) {
+      return;
+    }
 
     // Update planner based on the new costmap size
     if (isPlannerOutOfDate()) {
@@ -188,11 +191,11 @@ NavfnPlanner::computePathToPose()
     }
 
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start.position.x, start.position.y,
+      "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start, goal->pose.pose, tolerance_, result->path);
+    bool foundPath = makePlan(start.pose, goal->pose.pose, tolerance_, result->path);
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
@@ -207,7 +210,6 @@ NavfnPlanner::computePathToPose()
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
-    publishEndpoints(start, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 
@@ -585,75 +587,6 @@ NavfnPlanner::printCostmap(const nav2_msgs::msg::Costmap & costmap)
 }
 
 void
-NavfnPlanner::publishEndpoints(
-  const geometry_msgs::msg::Pose & start,
-  const geometry_msgs::msg::Pose & goal)
-{
-  visualization_msgs::msg::Marker marker;
-
-  builtin_interfaces::msg::Time time;
-  time.sec = 0;
-  time.nanosec = 0;
-  marker.header.stamp = time;
-  marker.header.frame_id = "map";
-
-  // Set the namespace and id for this marker.  This serves to create a unique ID
-  // Any marker sent with the same namespace and id will overwrite the old one
-  marker.ns = "endpoints";
-  static int index;
-  marker.id = index++;
-
-  marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-
-  // Set the marker action.
-  marker.action = visualization_msgs::msg::Marker::ADD;
-
-  // Set the pose of the marker.
-  // This is a full 6DOF pose relative to the frame/time specified in the header
-  geometry_msgs::msg::Pose pose;
-  pose.orientation.w = 1.0;
-
-  marker.pose.orientation = pose.orientation;
-
-  // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 0.1;
-  marker.scale.y = 0.1;
-  marker.scale.z = 0.1;
-
-  builtin_interfaces::msg::Duration duration;
-  duration.sec = 10;
-  duration.nanosec = 0;
-
-  // 0 indicates the object should last forever
-  marker.lifetime = duration;
-
-  marker.frame_locked = false;
-
-  marker.points.resize(2);
-  marker.points[0] = start.position;
-  marker.points[1] = goal.position;
-
-  // Set the color -- be sure to set alpha to something non-zero!
-  std_msgs::msg::ColorRGBA start_color;
-  start_color.r = 0.0;
-  start_color.g = 0.0;
-  start_color.b = 1.0;
-  start_color.a = 1.0;
-
-  std_msgs::msg::ColorRGBA goal_color;
-  goal_color.r = 0.0;
-  goal_color.g = 1.0;
-  goal_color.b = 0.0;
-  goal_color.a = 1.0;
-
-  marker.colors.resize(2);
-  marker.colors[0] = start_color;
-  marker.colors[1] = goal_color;
-
-  plan_marker_publisher_->publish(marker);
-}
-
-void
 NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
 {
   // Publish as a nav1 path msg
@@ -669,18 +602,6 @@ NavfnPlanner::publishPlan(const nav2_msgs::msg::Path & path)
   }
 
   plan_publisher_->publish(rviz_path);
-}
-
-geometry_msgs::msg::Pose
-NavfnPlanner::getRobotPose()
-{
-  auto request = std::make_shared<nav2_util::GetRobotPoseClient::GetRobotPoseRequest>();
-
-  auto result = get_robot_pose_client_.invoke(request, 5s);
-  if (!result.get()->is_pose_valid) {
-    throw std::runtime_error("Current robot pose is not available.");
-  }
-  return result.get()->pose.pose;
 }
 
 }  // namespace nav2_navfn_planner

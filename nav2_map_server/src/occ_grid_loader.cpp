@@ -1,5 +1,7 @@
-/*
+/* Copyright 2019 Rover Robotics
+ * Copyright 2018 Brian Gerkey
  * Copyright (c) 2008, Willow Garage, Inc.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file contains helper functions for loading images as maps.
-// Author: Brian Gerkey
-
 #include "nav2_map_server/occ_grid_loader.hpp"
 
 #include <libgen.h>
@@ -38,117 +37,81 @@
 #include <string>
 #include <vector>
 
+#include "Magick++.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include "SDL/SDL_image.h"
 #include "yaml-cpp/yaml.h"
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_map_server
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 OccGridLoader::OccGridLoader(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-  std::string & yaml_filename)
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename)
 : node_(node), yaml_filename_(yaml_filename)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Creating");
 }
 
-OccGridLoader::~OccGridLoader()
+OccGridLoader::~OccGridLoader() {RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Destroying");}
+
+/// Get the given subnode value.
+/// The only reason this function exists is to wrap the exceptions in slightly nicer error messages,
+/// including the name of the failed key
+/// @throw YAML::Exception
+template<typename T>
+T yaml_get_value(const YAML::Node & node, const std::string & key)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Destroying");
+  try {
+    return node[key].as<T>();
+  } catch (YAML::Exception & e) {
+    std::stringstream ss;
+    ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
+    throw YAML::Exception(e.mark, ss.str());
+  }
 }
 
-nav2_util::CallbackReturn
-OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & yaml_filename)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
-
-  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
-
-  // The YAML document from which to get the conversion parameters
-  YAML::Node doc = YAML::LoadFile(yaml_filename_);
+  YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters loadParameters;
 
-  // Get the name of the map file
-  std::string map_filename;
-  try {
-    map_filename = doc["image"].as<std::string>();
-    if (map_filename.size() == 0) {
-      throw std::runtime_error("The image tag cannot be an empty string");
-    }
-    if (map_filename[0] != '/') {
-      // dirname can modify what you pass it
-      char * fname_copy = strdup(yaml_filename_.c_str());
-      map_filename = std::string(dirname(fname_copy)) + '/' + map_filename;
-      free(fname_copy);
-    }
-  } catch (YAML::Exception & e) {
-    std::string err("'" + yaml_filename_ +
-      "' does not contain an image tag or it is invalid: " + e.what());
-    throw std::runtime_error(err);
+  auto image_file_name = yaml_get_value<std::string>(doc, "image");
+  if (image_file_name.empty()) {
+    throw YAML::Exception(doc["image"].Mark(), "The image tag was empty.");
+  }
+  if (image_file_name[0] != '/') {
+    // dirname takes a mutable char *, so we copy into a vector
+    std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+    fname_copy.push_back('\0');
+    image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
+  }
+  loadParameters.image_file_name = image_file_name;
+
+  loadParameters.resolution = yaml_get_value<double>(doc, "resolution");
+  loadParameters.origin = yaml_get_value<std::vector<double>>(doc, "origin");
+  if (loadParameters.origin.size() != 3) {
+    throw YAML::Exception(
+            doc["origin"].Mark(), "value of the 'origin' tag should have 3 elements, not " +
+            std::to_string(loadParameters.origin.size()));
+  }
+
+  loadParameters.free_thresh = yaml_get_value<double>(doc, "free_thresh");
+  loadParameters.occupied_thresh = yaml_get_value<double>(doc, "occupied_thresh");
+
+  auto map_mode_node = doc["mode"];
+  if (!map_mode_node.IsDefined()) {
+    loadParameters.mode = MapMode::Trinary;
+  } else {
+    loadParameters.mode = map_mode_from_string(map_mode_node.as<std::string>());
   }
 
   try {
-    loadParameters.resolution = doc["resolution"].as<double>();
-  } catch (YAML::Exception & e) {
-    std::string err("The map does not contain a resolution tag or it is invalid: %s", e.what());
-    throw std::runtime_error(err);
-  }
-
-  try {
-    loadParameters.origin[0] = doc["origin"][0].as<double>();
-    loadParameters.origin[1] = doc["origin"][1].as<double>();
-    loadParameters.origin[2] = doc["origin"][2].as<double>();
-  } catch (YAML::Exception & e) {
-    std::string err("The map does not contain an origin tag or it is invalid: %s", e.what());
-    throw std::runtime_error(err);
-  }
-
-  try {
-    loadParameters.free_thresh = doc["free_thresh"].as<double>();
-  } catch (YAML::Exception & e) {
-    std::string err("The map does not contain a free_thresh tag or it is invalid: %s", e.what());
-    throw std::runtime_error(err);
-  }
-
-  try {
-    loadParameters.occupied_thresh = doc["occupied_thresh"].as<double>();
-  } catch (YAML::Exception & e) {
-    std::string err("The map does not contain an "
-      "occupied_thresh tag or it is invalid: %s", e.what());
-    throw std::runtime_error(err);
-  }
-
-  std::string mode_str;
-  try {
-    mode_str = doc["mode"].as<std::string>();
-
-    // Convert the string version of the mode name to one of the enumeration values
-    if (mode_str == "trinary") {
-      loadParameters.mode = TRINARY;
-    } else if (mode_str == "scale") {
-      loadParameters.mode = SCALE;
-    } else if (mode_str == "raw") {
-      loadParameters.mode = RAW;
-    } else {
-      RCLCPP_WARN(node_->get_logger(),
-        "Mode parameter not recognized: '%s', using default value (trinary)",
-        mode_str.c_str());
-      loadParameters.mode = TRINARY;
-    }
-  } catch (YAML::Exception & e) {
-    RCLCPP_WARN(node_->get_logger(),
-      "Mode parameter not set, using default value (trinary): %s", e.what());
-    loadParameters.mode = TRINARY;
-  }
-
-  try {
-    loadParameters.negate = doc["negate"].as<int>();
-  } catch (YAML::Exception & e) {
-    std::string err("The map does not contain a negate tag or it is invalid: %s", e.what());
-    throw std::runtime_error(err);
+    loadParameters.negate = yaml_get_value<int>(doc, "negate");
+  } catch (YAML::Exception &) {
+    loadParameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "resolution: %f", loadParameters.resolution);
@@ -157,11 +120,41 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_DEBUG(node_->get_logger(), "origin[2]: %f", loadParameters.origin[2]);
   RCLCPP_DEBUG(node_->get_logger(), "free_thresh: %f", loadParameters.free_thresh);
   RCLCPP_DEBUG(node_->get_logger(), "occupied_thresh: %f", loadParameters.occupied_thresh);
-  RCLCPP_DEBUG(node_->get_logger(), "mode_str: %s", mode_str.c_str());
-  RCLCPP_DEBUG(node_->get_logger(), "mode: %d", loadParameters.mode);
+  RCLCPP_DEBUG(node_->get_logger(), "mode: %s", map_mode_to_string(loadParameters.mode));
   RCLCPP_DEBUG(node_->get_logger(), "negate: %d", loadParameters.negate);
 
-  loadMapFromFile(map_filename, &loadParameters);
+  return loadParameters;
+}
+
+nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
+
+  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  LoadParameters loadParameters;
+  try {
+    loadParameters = load_map_yaml(yaml_filename_);
+  } catch (YAML::Exception & e) {
+    RCLCPP_ERROR(
+      node_->get_logger(), "Failed processing YAML file %s at position (%d:%d) for reason: %s",
+      yaml_filename_.c_str(), e.mark.line, e.mark.column, e.what());
+    throw std::runtime_error("Failed to load map yaml file.");
+  } catch (std::exception & e) {
+    RCLCPP_ERROR(
+      node_->get_logger(), "Failed to parse map YAML loaded from file %s for reason: %s",
+      yaml_filename_.c_str(), e.what());
+    throw std::runtime_error("Failed to load map yaml file.");
+  }
+
+  try {
+    loadMapFromFile(loadParameters);
+  } catch (std::exception & e) {
+    RCLCPP_ERROR(
+      node_->get_logger(), "Failed to load image file %s for reason: %s",
+      loadParameters.image_file_name.c_str(), e.what());
+
+    throw std::runtime_error("Failed to load map image file.");
+  }
 
   // Create a service callback handle
   auto handle_occ_callback = [this](
@@ -182,8 +175,7 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
-OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
+nav2_util::CallbackReturn OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Activating");
 
@@ -198,18 +190,17 @@ OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
-OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+nav2_util::CallbackReturn OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Deactivating");
 
   occ_pub_->on_deactivate();
+  timer_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
-OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+nav2_util::CallbackReturn OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Cleaning up");
 
@@ -220,116 +211,98 @@ OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-OccGridLoader::loadMapFromFile(const std::string & map_name, LoadParameters * loadParameters)
+void OccGridLoader::loadMapFromFile(const LoadParameters & loadParameters)
 {
-  RCLCPP_DEBUG(node_->get_logger(), "OccGridLoader: loadMapFromFile");
+  Magick::InitializeMagick(nullptr);
+  nav_msgs::msg::OccupancyGrid msg;
 
-  // Load the image using SDL.  If we get NULL back, the image load failed.
-  SDL_Surface * img;
-  if (!(img = IMG_Load(map_name.c_str()))) {
-    std::string errmsg = std::string("failed to open image file \"") +
-      map_name + std::string("\": ") + IMG_GetError();
-    throw std::runtime_error(errmsg);
-  }
+  Magick::Image img(loadParameters.image_file_name);
 
   // Copy the image data into the map structure
-  msg_->info.width = img->w;
-  msg_->info.height = img->h;
-  msg_->info.resolution = loadParameters->resolution;
-  msg_->info.origin.position.x = loadParameters->origin[0];
-  msg_->info.origin.position.y = loadParameters->origin[1];
-  msg_->info.origin.position.z = 0.0;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, loadParameters->origin[2]);
-  msg_->info.origin.orientation.x = q.x();
-  msg_->info.origin.orientation.y = q.y();
-  msg_->info.origin.orientation.z = q.z();
-  msg_->info.origin.orientation.w = q.w();
+  msg.info.width = img.size().width();
+  msg.info.height = img.size().height();
+  msg.info.resolution = loadParameters.resolution;
+  msg.info.origin.position.x = loadParameters.origin[0];
+  msg.info.origin.position.y = loadParameters.origin[1];
+  msg.info.origin.position.z = 0.0;
+  msg.info.origin.orientation = orientationAroundZAxis(loadParameters.origin[2]);
 
   // Allocate space to hold the data
-  msg_->data.resize(msg_->info.width * msg_->info.height);
-
-  // Get values that we'll need to iterate through the pixels
-  int rowstride = img->pitch;
-  int n_channels = img->format->BytesPerPixel;
-
-  // NOTE: Trinary mode still overrides here to preserve existing behavior.
-  // Alpha will be averaged in with color channels when using trinary mode.
-  int avg_channels;
-  if (loadParameters->mode == TRINARY || !img->format->Amask) {
-    avg_channels = n_channels;
-  } else {
-    avg_channels = n_channels - 1;
-  }
+  msg.data.resize(msg.info.width * msg.info.height);
 
   // Copy pixel data into the map structure
-  unsigned char * pixels = (unsigned char *)(img->pixels);
-  int color_sum;
-  for (unsigned int j = 0; j < msg_->info.height; j++) {
-    for (unsigned int i = 0; i < msg_->info.width; i++) {
-      // Compute mean of RGB for this pixel
-      unsigned char * p = pixels + j * rowstride + i * n_channels;
-      color_sum = 0;
-      for (int k = 0; k < avg_channels; k++) {
-        color_sum += *(p + (k));
-      }
-      double color_avg = color_sum / static_cast<double>(avg_channels);
+  for (size_t y = 0; y < msg.info.height; y++) {
+    for (size_t x = 0; x < msg.info.width; x++) {
+      auto pixel = img.pixelColor(x, y);
 
-      int alpha;
-      if (n_channels == 1) {
-        alpha = 1;
-      } else {
-        alpha = *(p + n_channels - 1);
+      std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
+        pixel.blueQuantum()};
+      if (loadParameters.mode == MapMode::Trinary && img.matte()) {
+        // To preserve existing behavior, average in alpha with color channels in Trinary mode.
+        // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
+        channels.push_back(MaxRGB - pixel.alphaQuantum());
       }
-
-      if (loadParameters->negate) {
-        color_avg = 255 - color_avg;
+      double sum = 0;
+      for (auto c : channels) {
+        sum += c;
       }
-
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
-
-      unsigned char value;
-      if (loadParameters->mode == RAW) {
-        value = color_avg;
-        msg_->data[MAP_IDX(msg_->info.width, i, msg_->info.height - j - 1)] = value;
-        continue;
-      }
+      /// on a scale from 0.0 to 1.0 how bright is the pixel?
+      double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
 
       // If negate is true, we consider blacker pixels free, and whiter
-      // pixels free.  Otherwise, it's vice versa.
-      double occ = (255 - color_avg) / 255.0;
+      // pixels occupied. Otherwise, it's vice versa.
+      /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
+      double occ = (loadParameters.negate ? shade : 1.0 - shade);
 
-      // Apply thresholds to RGB means to determine occupancy values for
-      // map.  Note that we invert the graphics-ordering of the pixels to
-      // produce a map with cell (0,0) in the lower-left corner.
-      if (occ > loadParameters->occupied_thresh) {
-        value = +100;
-      } else if (occ < loadParameters->free_thresh) {
-        value = 0;
-      } else if (loadParameters->mode == TRINARY || alpha < 1.0) {
-        value = -1;
-      } else {
-        double ratio = (occ - loadParameters->free_thresh) /
-          (loadParameters->occupied_thresh - loadParameters->free_thresh);
-        value = 99 * ratio;
+      int8_t map_cell;
+      switch (loadParameters.mode) {
+        case MapMode::Trinary:
+          if (loadParameters.occupied_thresh < occ) {
+            map_cell = 100;
+          } else if (occ < loadParameters.free_thresh) {
+            map_cell = 0;
+          } else {
+            map_cell = -1;
+          }
+          break;
+        case MapMode::Scale:
+          if (pixel.alphaQuantum() != OpaqueOpacity) {
+            map_cell = -1;
+          } else if (loadParameters.occupied_thresh < occ) {
+            map_cell = 100;
+          } else if (occ < loadParameters.free_thresh) {
+            map_cell = 0;
+          } else {
+            map_cell = std::rint(
+              (occ - loadParameters.free_thresh) /
+              (loadParameters.occupied_thresh - loadParameters.free_thresh) * 100.0);
+          }
+          break;
+        case MapMode::Raw: {
+            double occ_percent = std::round(shade * 255);
+            if (0 <= occ_percent && occ_percent <= 100) {
+              map_cell = static_cast<int8_t>(occ_percent);
+            } else {
+              map_cell = -1;
+            }
+            break;
+          }
+        default:
+          throw std::runtime_error("Invalid map mode");
       }
-
-      msg_->data[MAP_IDX(msg_->info.width, i, msg_->info.height - j - 1)] = value;
+      msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
     }
   }
 
-  SDL_FreeSurface(img);
+  msg.info.map_load_time = node_->now();
+  msg.header.frame_id = frame_id_;
+  msg.header.stamp = node_->now();
 
-  msg_->info.map_load_time = node_->now();
-  msg_->header.frame_id = frame_id_;
-  msg_->header.stamp = node_->now();
+  RCLCPP_DEBUG(
+    node_->get_logger(), "Read map %s: %d X %d map @ %.3lf m/cell",
+    loadParameters.image_file_name.c_str(), msg.info.width, msg.info.height, msg.info.resolution);
 
-  RCLCPP_DEBUG(node_->get_logger(), "Read map %s: %d X %d map @ %.3lf m/cell",
-    map_name.c_str(),
-    msg_->info.width,
-    msg_->info.height,
-    msg_->info.resolution);
+  *msg_ = msg;
 }
 
 }  // namespace nav2_map_server

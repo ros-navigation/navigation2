@@ -1,6 +1,0 @@
-# Get the latest robot pose in the frame of the costmap
-
-std_msgs/Empty request
----
-geometry_msgs/PoseStamped pose
-bool is_pose_valid

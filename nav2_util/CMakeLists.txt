@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
@@ -15,6 +16,23 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(test_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
+set(dependencies
+    nav2_msgs
+    tf2_ros
+    tf2
+    tf2_geometry_msgs
+    geometry_msgs
+    SDL
+    SDL_image
+    nav_msgs
+    rclcpp
+    lifecycle_msgs
+    rclcpp_action
+    test_msgs
+    rclcpp_lifecycle
+)
 
 nav2_package()
 
@@ -29,9 +47,6 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
@@ -39,6 +54,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib map_loader)
+ament_export_libraries(${library_name} map_loader)
+ament_export_dependencies(${dependencies})
 
 ament_package()

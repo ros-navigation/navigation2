@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is all-in-one launch script intended for use by nav2 developers.
+""" This is all-in-one launch script intended for use by nav2 developers. """
 
 import os
 
@@ -60,7 +60,7 @@ def generate_launch_description():
         'bt',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
-            'behavior_trees/navigate_w_replanning.xml'),
+            'behavior_trees/navigate_w_replanning_and_recovery.xml'),
         description='Full path to the Behavior Tree XML file to use for the BT navigator')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(

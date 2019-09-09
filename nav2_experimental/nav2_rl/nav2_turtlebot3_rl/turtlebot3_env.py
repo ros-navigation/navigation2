@@ -18,6 +18,8 @@ from threading import Thread
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.executors import SingleThreadedExecutor
 
 import numpy as np
 import math
@@ -31,9 +33,12 @@ from std_srvs.srv import Empty
 from std_msgs.msg import String
 from gazebo_msgs.srv import GetEntityState, SetEntityState
 
+
 class TurtlebotEnv():
     def __init__(self):
         self.node_ = rclpy.create_node('turtlebot3_env')
+        self.executor = SingleThreadedExecutor()
+        self.executor.add_node(self.node_)
         self.act = 0
         self.done = False
         self.actions = [[parameters.LINEAR_FWD_VELOCITY, parameters.ANGULAR_FWD_VELOCITY],
@@ -48,8 +53,9 @@ class TurtlebotEnv():
         self.zero_div_tol = 0.01
         self.range_min = 0.0
 
-        self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel')
-        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback)
+        self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
+        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback,
+                                                       qos_profile_sensor_data)
 
         self.reset_simulation = self.node_.create_client(Empty, 'reset_simulation')
         self.reset_world = self.node_.create_client(Empty, 'reset_world')
@@ -58,21 +64,21 @@ class TurtlebotEnv():
         self.get_entity_state = self.node_.create_client(GetEntityState, 'get_entity_state')
         self.set_entity_state = self.node_.create_client(SetEntityState, 'set_entity_state')
         self.scan_msg_received = False
-        self.t = Thread(target=rclpy.spin, args=[self.node_])
+        self.t = Thread(target=self.executor.spin)
         self.t.start()
-    
+
     def cleanup(self):
         self.t.join()
 
     def get_reward(self):
         reward = 0
-        if self.collision == True:
+        if self.collision is True:
             reward = -10
             self.done = True
             return reward, self.done
-        elif self.collision == False and self.act == 0:
+        elif self.collision is False and self.act is 0:
             if abs(min(self.states_input)) >= self.zero_div_tol:
-                reward = 0.08 - (1/(min(self.states_input)**2))*0.005
+                reward = 0.08 - (1 / (min(self.states_input)**2)) * 0.005
             else:
                 reward = -10
             if reward > 0:
@@ -82,11 +88,10 @@ class TurtlebotEnv():
             bonous_discount_factor = 0.6
             self.bonous_reward *= bonous_discount_factor
             if abs(min(self.states_input)) >= self.zero_div_tol:
-                reward = 0.02 - (1/min(self.states_input))*0.005
+                reward = 0.02 - (1 / min(self.states_input)) * 0.005
             else:
                 reward = -10
         return reward, self.done
-
 
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
@@ -106,8 +111,9 @@ class TurtlebotEnv():
             self.done = True
         self.states_input = []
         for i in range(8):
-            step = int(len(LaserScan.ranges)/8)
-            self.states_input.append(min(self.laser_scan_range[i*step:(i+1)*step], default=0))
+            step = int(len(LaserScan.ranges) / 8)
+            self.states_input.append(min(self.laser_scan_range[i * step:(i + 1) * step],
+                                     default=0))
 
     def action_space(self):
         return len(self.actions)
@@ -122,20 +128,22 @@ class TurtlebotEnv():
         vel_cmd.angular.z = 0.0
         get_reward = self.get_reward()
         return self.states_input, get_reward[0], self.done
-    
+
     def check_collision(self):
-        if  min(self.laser_scan_range) < self.range_min + self.collision_tol:
+        if min(self.laser_scan_range) < self.range_min + self.collision_tol:
             print("Near collision detected... " + str(min(self.laser_scan_range)))
             return True
         return False
 
-    def reset(self):
-        self.scan_msg_received = False
+    def stop_action(self):
         vel_cmd = Twist()
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
         self.pub_cmd_vel.publish(vel_cmd)
-        
+
+    def reset(self):
+        self.scan_msg_received = False
+        self.stop_action
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
             print('Reset world service is not available...')
         self.reset_world.call_async(Empty.Request())

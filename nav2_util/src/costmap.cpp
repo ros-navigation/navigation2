@@ -16,11 +16,13 @@
 #include <algorithm>
 #include "nav2_util/costmap.hpp"
 #include "tf2/LinearMath/Quaternion.h"
+#include "nav2_util/geometry_utils.hpp"
 
 using std::vector;
 
 namespace nav2_util
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 const Costmap::CostValue Costmap::no_information = 255;
 const Costmap::CostValue Costmap::lethal_obstacle = 254;
@@ -95,13 +97,7 @@ void Costmap::set_test_costmap(const TestCostmap & testCostmapType)
 
   // Define map rotation
   // Provided as yaw with counterclockwise rotation, with yaw = 0 meaning no rotation
-
-  tf2::Quaternion quaternion;
-  quaternion.setRPY(0.0, 0.0, 0.0);  // set roll, pitch, yaw
-  costmap_properties_.origin.orientation.x = quaternion.x();
-  costmap_properties_.origin.orientation.y = quaternion.y();
-  costmap_properties_.origin.orientation.z = quaternion.z();
-  costmap_properties_.origin.orientation.w = quaternion.w();
+  costmap_properties_.origin.orientation = orientationAroundZAxis(0.0);
 
   costs_ = get_test_data(testCostmapType);
 
