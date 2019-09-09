@@ -32,7 +32,7 @@ public:
   RclCppFixture()
   {
     rclcpp::init(0, nullptr);
-    nav2_util::bringup_lifecycle_nodes("/test_node:/test_namespace/test_node", 5s);
+    nav2_util::startup_lifecycle_nodes("/test_node:/test_namespace/test_node", 5s);
   }
   ~RclCppFixture() {rclcpp::shutdown();}
 };

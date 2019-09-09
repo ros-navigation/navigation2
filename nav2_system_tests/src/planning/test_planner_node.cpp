@@ -44,7 +44,7 @@ RclCppFixture g_rclcppfixture;
 // {
 //   activate();
 
-//   nav2_util::bringup_lifecycle_nodes("/navfn_planner");
+//   nav2_util::startup_lifecycle_nodes("/navfn_planner");
 
 //   std::vector<TestCostmap> costmaps = {
 //     TestCostmap::open_space,
@@ -62,7 +62,7 @@ RclCppFixture g_rclcppfixture;
 //     EXPECT_EQ(true, defaultPlannerTest(result));
 //   }
 
-//   nav2_util::bringdown_lifecycle_nodes("/navfn_planner");
+//   nav2_util::reset_lifecycle_nodes("/navfn_planner");
 
 //   deactivate();
 // }
@@ -72,11 +72,11 @@ TEST_F(PlannerTester, testWithHundredRandomEndPoints)
   activate();
   loadDefaultMap();
 
-  nav2_util::bringup_lifecycle_nodes("/navfn_planner");
+  nav2_util::startup_lifecycle_nodes("/navfn_planner");
 
   EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 
-  nav2_util::bringdown_lifecycle_nodes("/navfn_planner");
+  nav2_util::reset_lifecycle_nodes("/navfn_planner");
 
   deactivate();
 }
