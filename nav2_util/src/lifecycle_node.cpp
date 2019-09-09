@@ -50,6 +50,7 @@ LifecycleNode::LifecycleNode(
   if (use_rclcpp_node_) {
     std::vector<std::string> new_args = options.arguments();
     new_args.push_back("--ros-args");
+    new_args.push_back("-r");
     new_args.push_back(std::string("__node:=") + this->get_name() + "_rclcpp_node");
     new_args.push_back("--");
     rclcpp_node_ = std::make_shared<rclcpp::Node>(
