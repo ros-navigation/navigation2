@@ -395,6 +395,9 @@ jobs:
       - install_doc_dependencies
       - *on_checkout
       - build_docs
+  docs_publish:
+    steps:
+      - run: echo 'TODO: This is where we would publish the docs.'
 
 workflows:
   version: 2
@@ -409,6 +412,12 @@ workflows:
           requires:
             - release_build
       - docs_build
+      - docs_publish:
+          requires:
+            - docs_build
+          filters:
+            branches:
+              only: master
   nightly:
     jobs:
       - debug_build
