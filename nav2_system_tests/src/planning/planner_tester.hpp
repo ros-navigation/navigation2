@@ -150,20 +150,6 @@ private:
     ComputePathToPoseResult & path
   );
 
-  bool isCollisionFree(const ComputePathToPoseResult & path);
-
-  bool isWithinTolerance(
-    const geometry_msgs::msg::Point & robot_position,
-    const ComputePathToPoseCommand & goal,
-    const ComputePathToPoseResult & path) const;
-
-  bool isWithinTolerance(
-    const geometry_msgs::msg::Point & robot_position,
-    const ComputePathToPoseCommand & goal,
-    const ComputePathToPoseResult & path,
-    const double deviationTolerance,
-    const ComputePathToPoseResult & reference_path) const;
-
   bool is_active_;
   bool map_set_;
   bool costmap_set_;

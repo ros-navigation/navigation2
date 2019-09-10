@@ -36,11 +36,12 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), base_transform_(nullptr), is_active_(false),
+: Node("PlannerTester"), is_active_(false),
   map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), map_publish_rate_(100s)
+  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr),
+  map_publish_rate_(100s)
 {
 }
 
@@ -95,7 +96,6 @@ void PlannerTester::deactivate()
   map_timer_.reset();
   map_pub_.reset();
   map_.reset();
-  costmap_server_.reset();
   tf_broadcaster_.reset();
 }
 
