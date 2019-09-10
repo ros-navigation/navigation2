@@ -113,8 +113,8 @@ void PlannerTester::startRobotTransform()
 
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
-  robot_position.x = 0.0;
-  robot_position.y = 0.0;
+  robot_position.x = 1.0;
+  robot_position.y = 1.0;
   updateRobotPosition(robot_position);
 
   // Publish the transform periodically
@@ -357,6 +357,7 @@ bool PlannerTester::plannerTest(
 
   // First make available the current robot position for the planner to take as starting point
   updateRobotPosition(robot_position);
+  sleep(0.05);
 
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);

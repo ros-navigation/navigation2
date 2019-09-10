@@ -42,5 +42,15 @@ TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
   activate();
   loadDefaultMap();
-  EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
+
+  bool success = false;
+  int num_tries = 3;
+  for (int i = 0; i != num_tries; i++) {
+    success = success || defaultPlannerRandomTests(100, 0.1);
+    if (success) {
+      break;
+    }
+  }
+
+  EXPECT_EQ(true, success);
 }

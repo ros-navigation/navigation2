@@ -76,7 +76,7 @@ public:
     nav2_msgs::msg::Path & path)
   {
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 1.0)) {
+    if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
 
