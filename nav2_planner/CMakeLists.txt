@@ -24,7 +24,7 @@ include_directories(
   include
 )
 
-set(executable_name nav2_planner)
+set(executable_name planner_server)
 set(library_name ${executable_name}_core)
 
 set(dependencies

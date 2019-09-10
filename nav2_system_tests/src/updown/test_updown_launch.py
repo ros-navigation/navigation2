@@ -90,8 +90,8 @@ def generate_launch_description():
     start_planner_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_navfn_planner'),
-                'lib/nav2_navfn_planner/navfn_planner'),
+                get_package_prefix('nav2_planner'),
+                'lib/nav2_planner/planner_server'),
             '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
