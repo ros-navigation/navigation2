@@ -88,7 +88,7 @@ void CostmapLayer::updateWithTrueOverwrite(
   }
 
   if (costmap_ == nullptr) {
-    throw std::runtime_error("Can't update costmap layer: It has't been initilized yet!");
+    throw std::runtime_error("Can't update costmap layer: It has't been initialized yet!");
   }
 
   unsigned char * master = master_grid.getCharMap();
