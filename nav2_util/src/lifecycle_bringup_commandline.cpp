@@ -30,7 +30,7 @@ void usage()
   cerr << "CONFIGURED to the ACTIVATED state\n";
   cerr << "The nodes are brought up in the order listed on the command line\n\n";
   cerr << "Usage:\n";
-  cerr << " > lifecycle_bringup <node name> ...\n";
+  cerr << " > lifecycle_startup <node name> ...\n";
   std::exit(1);
 }
 
@@ -40,7 +40,7 @@ int main(int argc, char * argv[])
     usage();
   }
   rclcpp::init(0, nullptr);
-  nav2_util::bringup_lifecycle_nodes(
+  nav2_util::startup_lifecycle_nodes(
     std::vector<std::string>(argv + 1, argv + argc),
     10s);
   rclcpp::shutdown();

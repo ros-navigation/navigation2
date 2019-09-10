@@ -48,11 +48,8 @@ LifecycleManager::LifecycleManager()
   get_parameter("node_names", node_names_);
   get_parameter("autostart", autostart_);
 
-  startup_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/startup",
-      std::bind(&LifecycleManager::startupCallback, this, _1, _2, _3));
-
-  shutdown_srv_ = create_service<std_srvs::srv::Empty>("lifecycle_manager/shutdown",
-      std::bind(&LifecycleManager::shutdownCallback, this, _1, _2, _3));
+  manager_srv_ = create_service<ManageLifecycleNodes>("lifecycle_manager/manage_nodes",
+      std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", std::string("__node:=") + get_name() + "service_client", "--"});
@@ -65,6 +62,15 @@ LifecycleManager::LifecycleManager()
   transition_state_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     State::PRIMARY_STATE_FINALIZED;
 
+  transition_label_map_[Transition::TRANSITION_CONFIGURE] = std::string("Configuring ");
+  transition_label_map_[Transition::TRANSITION_CLEANUP] = std::string("Cleaning up ");
+  transition_label_map_[Transition::TRANSITION_ACTIVATE] = std::string("Activating ");
+  transition_label_map_[Transition::TRANSITION_DEACTIVATE] = std::string("Deactivating ");
+  transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
+    std::string("Shutting down ");
+
+  createLifecycleServiceClients();
+
   if (autostart_) {
     startup();
   }
@@ -76,21 +82,28 @@ LifecycleManager::~LifecycleManager()
 }
 
 void
-LifecycleManager::startupCallback(
+LifecycleManager::managerCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
+  const std::shared_ptr<ManageLifecycleNodes::Request> request,
+  std::shared_ptr<ManageLifecycleNodes::Response> response)
 {
-  startup();
-}
-
-void
-LifecycleManager::shutdownCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request>/*request*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response>/*response*/)
-{
-  shutdown();
+  switch (request->command) {
+    case ManageLifecycleNodes::Request::STARTUP:
+      response->success = startup();
+      break;
+    case ManageLifecycleNodes::Request::RESET:
+      response->success = reset();
+      break;
+    case ManageLifecycleNodes::Request::SHUTDOWN:
+      response->success = shutdown();
+      break;
+    case ManageLifecycleNodes::Request::PAUSE:
+      response->success = pause();
+      break;
+    case ManageLifecycleNodes::Request::RESUME:
+      response->success = resume();
+      break;
+  }
 }
 
 void
@@ -115,6 +128,7 @@ LifecycleManager::destroyLifecycleServiceClients()
 bool
 LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
 {
+  message(transition_label_map_[transition] + node_name);
   if (!node_map_[node_name]->change_state(transition) ||
     !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
   {
@@ -146,19 +160,6 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool reverse_o
   return true;
 }
 
-bool
-LifecycleManager::bringupNode(const std::string & node_name)
-{
-  message(std::string("Configuring and activating ") + node_name);
-  if (!changeStateForNode(node_name, Transition::TRANSITION_CONFIGURE) ||
-    !changeStateForNode(node_name, Transition::TRANSITION_ACTIVATE))
-  {
-    return false;
-  }
-
-  return true;
-}
-
 void
 LifecycleManager::shutdownAllNodes()
 {
@@ -168,28 +169,66 @@ LifecycleManager::shutdownAllNodes()
   changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN, true);
 }
 
-void
+bool
 LifecycleManager::startup()
 {
   message("Starting the system bringup...");
-  createLifecycleServiceClients();
-  for (auto & node_name : node_names_) {
-    if (!bringupNode(node_name)) {
-      RCLCPP_ERROR(get_logger(), "Failed to bring up node: %s, aborting bringup",
-        node_name.c_str());
-      return;
-    }
+  if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
+    !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to bring up nodes: aborting bringup");
+    return false;
   }
   message("The system is active");
+  return true;
 }
 
-void
+bool
 LifecycleManager::shutdown()
 {
   message("Shutting down the system...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("The system has been sucessfully shut down");
+  return true;
+}
+
+bool
+LifecycleManager::reset()
+{
+  message("Resetting the system...");
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+    return false;
+  }
+  message("The system is reset");
+  return true;
+}
+
+bool
+LifecycleManager::pause()
+{
+  message("Pausing the system...");
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
+    RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
+    return false;
+  }
+  message("The system is paused");
+  return true;
+}
+
+bool
+LifecycleManager::resume()
+{
+  message("Resuming the system...");
+  if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE)) {
+    RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
+    return false;
+  }
+  message("The system is active");
+  return true;
 }
 
 // TODO(mjeronimo): This is used to emphasize the major events during system bring-up and

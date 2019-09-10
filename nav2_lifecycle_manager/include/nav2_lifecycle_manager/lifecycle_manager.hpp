@@ -24,9 +24,12 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 
 namespace nav2_lifecycle_manager
 {
+
+using nav2_msgs::srv::ManageLifecycleNodes;
 
 class LifecycleManager : public rclcpp::Node
 {
@@ -39,26 +42,22 @@ protected:
   rclcpp::Node::SharedPtr service_client_node_;
 
   // The services provided by this node
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startup_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr shutdown_srv_;
+  rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
 
-  void startupCallback(
+  void managerCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request,
-    std::shared_ptr<std_srvs::srv::Empty::Response> response);
-
-  void shutdownCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request,
-    std::shared_ptr<std_srvs::srv::Empty::Response> response);
+    const std::shared_ptr<ManageLifecycleNodes::Request> request,
+    std::shared_ptr<ManageLifecycleNodes::Response> response);
 
   // Support functions for the service calls
-  void startup();
-  void shutdown();
+  bool startup();
+  bool shutdown();
+  bool reset();
+  bool pause();
+  bool resume();
 
-  // Support functions for bring-up
+  // Support function for creating service clients
   void createLifecycleServiceClients();
-  bool bringupNode(const std::string & node_name);
 
   // Support functions for shutdown
   void shutdownAllNodes();
@@ -75,6 +74,8 @@ protected:
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
+
+  std::map<std::uint8_t, std::string> transition_label_map_;
 
   // A map of the expected transitions to primary states
   std::unordered_map<std::uint8_t, std::uint8_t> transition_state_map_;

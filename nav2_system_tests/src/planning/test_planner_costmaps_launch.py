@@ -28,7 +28,6 @@ def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([])
-
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
         name='test_planner_costmaps_node',
