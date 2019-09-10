@@ -19,8 +19,10 @@ Licensing is very important to open source projects. It helps ensure the
 software continues to be available under the terms that the author
 desired.
 
-The |PN| uses a Creative Commons license, as found in the
-`documentation repo`_.
+Because much of the source code is ported from other ROS 1 projects, each
+package has it's own license. Contributions should be made under the predominant
+license of that package. Entirely new packages should be made available under
+the `Apache 2.0 license <https://www.apache.org/licenses/LICENSE-2.0>`_.
 
 A license tells you what rights you have as a developer, as provided by
 the copyright holder. It is important that the contributor fully
