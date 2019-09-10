@@ -216,7 +216,7 @@ void DwbController::setPlannerPath(const nav_msgs::msg::Path & path)
   auto end_pose = *(path.poses.end() - 1);
 
   RCLCPP_DEBUG(get_logger(), "Path end point is (%.2f, %.2f)",
-    end_pose.position.x, end_pose.position.y);
+    end_pose.pose.position.x, end_pose.pose.position.y);
 }
 
 void DwbController::computeAndPublishVelocity()
