@@ -73,7 +73,7 @@ public:
 
   bool createPath(
     const geometry_msgs::msg::PoseStamped & goal,
-    nav2_msgs::msg::Path & path)
+    nav_msgs::msg::Path & path)
   {
     geometry_msgs::msg::PoseStamped start;
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
@@ -115,7 +115,7 @@ class PlannerTester : public rclcpp::Node, public ::testing::Test
 {
 public:
   using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-  using ComputePathToPoseResult = nav2_msgs::msg::Path;
+  using ComputePathToPoseResult = nav_msgs::msg::Path;
 
   PlannerTester();
   ~PlannerTester();

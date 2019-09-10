@@ -59,11 +59,6 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Method to shutdown recovery and any threads involved in execution.
-   */
-  virtual void shutdown() = 0;
-
-  /**
    * @brief Method Execute recovery behavior
    * @param  name The name of this planner
    * @return true if successful, false is failed to execute fully

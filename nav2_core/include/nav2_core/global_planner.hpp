@@ -19,7 +19,7 @@
 #include "rclcpp/rclcpp.h"
 #include "nav2_costmap_2d/nav2_costmap_2d.hpp"
 #include "tf2_ros/Buffer.h"
-#include "nav2_msgs/msg/path.h"
+#include "nav_msgs/msg/path.h"
 #include "geometry_msgs/msg/pose_stamped.h"
 
 namespace nav2_core
@@ -63,17 +63,12 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Method to shutdown planner and any threads involved in execution.
-   */
-  virtual void shutdown() = 0;
-
-  /**
    * @brief Method create the plan from a starting and ending goal.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
    * @return      The sequence of poses to get from start to goal, if any
    */
-  virtual nav2_msgs::Path createPlan(
+  virtual nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) = 0;
 };

@@ -56,7 +56,7 @@ protected:
   // The action server callback
   void followPath();
 
-  void setPlannerPath(const nav2_msgs::msg::Path & path);
+  void setPlannerPath(const nav_msgs::msg::Path & path);
   void computeAndPublishVelocity();
   void updateGlobalPath();
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);

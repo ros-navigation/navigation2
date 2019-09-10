@@ -26,7 +26,7 @@ using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
 using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-using ComputePathToPoseResult = nav2_msgs::msg::Path;
+using ComputePathToPoseResult = nav_msgs::msg::Path;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
 class RclCppFixture

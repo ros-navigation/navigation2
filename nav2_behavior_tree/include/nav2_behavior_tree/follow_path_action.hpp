@@ -39,7 +39,7 @@ public:
 
   void on_tick() override
   {
-    goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+    goal_.path = *(blackboard()->get<nav_msgs::msg::Path::SharedPtr>("path"));
   }
 
   void on_loop_timeout() override
@@ -51,7 +51,7 @@ public:
 
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration
-      goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+      goal_.path = *(blackboard()->get<nav_msgs::msg::Path::SharedPtr>("path"));
       goal_updated_ = true;
     }
   }

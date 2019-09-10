@@ -206,7 +206,7 @@ void DwbController::followPath()
   action_server_->succeeded_current();
 }
 
-void DwbController::setPlannerPath(const nav2_msgs::msg::Path & path)
+void DwbController::setPlannerPath(const nav_msgs::msg::Path & path)
 {
   auto path2d = nav_2d_utils::pathToPath2D(path);
 
