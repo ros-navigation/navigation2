@@ -14,6 +14,7 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
@@ -36,6 +37,7 @@ set(dependencies
   geometry_msgs
   builtin_interfaces
   tf2_ros
+  nav2_costmap_2d
 )
 
 add_library(${library_name} SHARED
@@ -74,5 +76,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-
+ament_export_dependencies(${dependencies})
 ament_package()

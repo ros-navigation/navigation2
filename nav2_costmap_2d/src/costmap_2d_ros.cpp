@@ -201,6 +201,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
         &Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 
   start();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -229,6 +230,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  resetLayers();
   delete layered_costmap_;
   layered_costmap_ = nullptr;
 
@@ -373,7 +375,6 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     timer.end();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-
     if (publish_cycle_ > rclcpp::Duration(0) && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
@@ -383,7 +384,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
         (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
       {
-        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
+        RCLCPP_INFO(get_logger(), "Publish costmap at %s", name_.c_str());
         costmap_publisher_->publishCostmap();
         last_publish_ = current_time;
       }
@@ -415,13 +416,11 @@ Costmap2DROS::updateMap()
       double x = pose.pose.position.x;
       double y = pose.pose.position.y;
       double yaw = tf2::getYaw(pose.pose.orientation);
-
       layered_costmap_->updateMap(x, y, yaw);
 
       geometry_msgs::msg::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
       footprint.header.stamp = now();
-
       transformFootprint(x, y, yaw, padded_footprint_, footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
@@ -435,7 +434,6 @@ void
 Costmap2DROS::start()
 {
   RCLCPP_INFO(get_logger(), "start");
-
   std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
 
   // check if we're stopped or just paused

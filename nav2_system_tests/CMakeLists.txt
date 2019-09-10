@@ -16,6 +16,7 @@ find_package(gazebo_ros_pkgs REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(nav2_navfn_planner REQUIRED)
 find_package(navigation2)
 
 nav2_package()
@@ -33,6 +34,7 @@ set(dependencies
   std_msgs
   tf2_geometry_msgs
   rclpy
+  nav2_navfn_planner
 )
 
 if(BUILD_TESTING)

@@ -69,12 +69,6 @@ def generate_launch_description():
             description='Full path to the behavior tree xml file to use'),
 
         launch_ros.actions.Node(
-            package='nav2_world_model',
-            node_executable='world_model',
-            output='screen',
-            parameters=[configured_params]),
-
-        launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
@@ -108,8 +102,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['world_model',
-                                        'dwb_controller',
+                        {'node_names': ['dwb_controller',
                                         'navfn_planner',
                                         'bt_navigator']}]),
 

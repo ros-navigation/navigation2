@@ -145,11 +145,11 @@ def generate_launch_description():
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
-    start_world_model_cmd = launch.actions.ExecuteProcess(
+    start_planner_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_world_model'),
-                'lib/nav2_world_model/world_model'),
+                get_package_prefix('nav2_navfn_planner'),
+                'lib/nav2_navfn_planner/navfn_planner'),
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
@@ -158,14 +158,6 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('dwb_controller'),
                 'lib/dwb_controller/dwb_controller'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
-
-    start_planner_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_navfn_planner'),
-                'lib/nav2_navfn_planner/navfn_planner'),
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
 
@@ -222,7 +214,6 @@ def generate_launch_description():
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
-    ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)

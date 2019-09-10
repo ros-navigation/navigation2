@@ -17,6 +17,7 @@
 #include <tuple>
 #include <utility>
 #include <memory>
+#include <iostream>
 #include <chrono>
 #include <sstream>
 #include <iomanip>
@@ -35,10 +36,12 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), is_active_(false), map_set_(false), costmap_set_(false),
-  using_fake_costmap_(true), costmap_server_running_(false), trinary_costmap_(true),
+: Node("PlannerTester"), is_active_(false),
+  map_set_(false), costmap_set_(false),
+  using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), map_publish_rate_(100s)
+  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr),
+  map_publish_rate_(100s)
 {
 }
 
@@ -50,24 +53,6 @@ void PlannerTester::activate()
   }
   is_active_ = true;
 
-  startRobotTransform();
-
-  // The client used to invoke the services of the global planner (ComputePathToPose)
-  planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(
-    this->get_node_base_interface(),
-    this->get_node_graph_interface(),
-    this->get_node_logging_interface(),
-    this->get_node_waitables_interface(),
-    "ComputePathToPose");
-
-  // For visualization, we'll publish the map
-  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-
-  // We start with a 10x10 grid with no obstacles
-  loadSimpleCostmap(TestCostmap::open_space);
-
-  startCostmapServer();
-
   // Launch a thread to process the messages for this node
   spin_thread_ = std::make_unique<std::thread>(
     [&]()
@@ -76,6 +61,21 @@ void PlannerTester::activate()
       executor_.spin();
       executor_.remove_node(this->get_node_base_interface());
     });
+
+  // We start with a 10x10 grid with no obstacles
+  loadSimpleCostmap(TestCostmap::open_space);
+
+  startRobotTransform();
+
+  // The navfn wrapper
+  auto state = rclcpp_lifecycle::State();
+  planner_tester_ = std::make_unique<NavFnPlannerTester>();
+  planner_tester_->onConfigure(state);
+  publishRobotTransform();
+  planner_tester_->onActivate(state);
+
+  // For visualization, we'll publish the map
+  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
 }
 
 void PlannerTester::deactivate()
@@ -90,11 +90,12 @@ void PlannerTester::deactivate()
   spin_thread_->join();
   spin_thread_.reset();
 
-  planner_client_.reset();
+  auto state = rclcpp_lifecycle::State();
+  planner_tester_->onCleanup(state);
+
   map_timer_.reset();
   map_pub_.reset();
   map_.reset();
-  costmap_server_.reset();
   tf_broadcaster_.reset();
 }
 
@@ -112,8 +113,8 @@ void PlannerTester::startRobotTransform()
 
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
-  robot_position.x = 0.0;
-  robot_position.y = 0.0;
+  robot_position.x = 1.0;
+  robot_position.y = 1.0;
   updateRobotPosition(robot_position);
 
   // Publish the transform periodically
@@ -142,29 +143,6 @@ void PlannerTester::publishRobotTransform()
   if (base_transform_) {
     tf_broadcaster_->sendTransform(*base_transform_);
   }
-}
-
-void PlannerTester::startCostmapServer()
-{
-  if (!costmap_set_) {
-    RCLCPP_ERROR(this->get_logger(), "Costmap must be set before starting the service");
-    return;
-  }
-
-  auto costmap_service_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
-    std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response) -> void
-    {
-      RCLCPP_DEBUG(this->get_logger(), "Incoming costmap request");
-      response->map = costmap_->get_costmap(request->specs);
-    };
-
-  // Create a service that will use the callback function to handle requests.
-  costmap_server_ = create_service<nav2_msgs::srv::GetCostmap>(
-    "GetCostmap", costmap_service_callback);
-
-  costmap_server_running_ = true;
 }
 
 void PlannerTester::loadDefaultMap()
@@ -225,6 +203,7 @@ void PlannerTester::loadDefaultMap()
 
 void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 {
+  RCLCPP_INFO(get_logger(), "loadSimpleCostmap called.");
   if (costmap_set_) {
     RCLCPP_DEBUG(this->get_logger(), "Setting a new costmap with fake values");
   }
@@ -262,8 +241,6 @@ bool PlannerTester::defaultPlannerTest(
     return false;
   }
 
-  waitForPlanner();
-
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
   ComputePathToPoseCommand goal;
@@ -292,7 +269,6 @@ bool PlannerTester::defaultPlannerTest(
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
   //               result.
-
   return plannerTest(robot_position, goal, path);
 }
 
@@ -310,8 +286,6 @@ bool PlannerTester::defaultPlannerRandomTests(
       "Randomized testing with hardcoded costmaps not implemented yet");
     return false;
   }
-
-  waitForPlanner();
 
   // Initialize random number generator
   std::random_device random_device;
@@ -383,9 +357,10 @@ bool PlannerTester::plannerTest(
 
   // First make available the current robot position for the planner to take as starting point
   updateRobotPosition(robot_position);
+  sleep(0.05);
 
   // Then request to compute a path
-  TaskStatus status = sendRequest(goal, path);
+  TaskStatus status = createPlan(goal, path);
 
   RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", status);
 
@@ -394,51 +369,25 @@ bool PlannerTester::plannerTest(
   } else if (status == TaskStatus::SUCCEEDED) {
     // TODO(orduno): #443 check why task may report success while planner returns a path of 0 points
     RCLCPP_DEBUG(this->get_logger(), "Got path, checking for possible collisions");
-
     return isCollisionFree(path) && isWithinTolerance(robot_position, goal, path);
   }
 
   return false;
 }
 
-TaskStatus PlannerTester::sendRequest(
+TaskStatus PlannerTester::createPlan(
   const ComputePathToPoseCommand & goal,
   ComputePathToPoseResult & path)
 {
-  nav2_msgs::action::ComputePathToPose::Goal action_goal;
-  action_goal.pose = goal;
-  auto future_goal_handle = planner_client_->async_send_goal(action_goal);
+  // Update the costmap of the planner to the set data
+  planner_tester_->setCostmap(costmap_.get());
 
-  RCLCPP_DEBUG(this->get_logger(), "Waiting for goal acceptance");
-  auto status_request = future_goal_handle.wait_for(seconds(5));
-  if (status_request != std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to send the goal");
-    return TaskStatus::FAILED;
+  // Call planning algorithm
+  if (planner_tester_->createPath(goal, path)) {
+    return TaskStatus::SUCCEEDED;
   }
 
-  auto goal_handle = future_goal_handle.get();
-  if (!goal_handle) {
-    RCLCPP_ERROR(this->get_logger(), "Goal rejected");
-    return TaskStatus::FAILED;
-  }
-
-  auto future_result = planner_client_->async_get_result(goal_handle);
-
-  RCLCPP_DEBUG(this->get_logger(), "Wait for the server to be done with the action");
-  auto status_result = future_result.wait_for(seconds(10));
-  if (status_result != std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to get a plan within the allowed time");
-    return TaskStatus::FAILED;
-  }
-
-  auto result = future_result.get();
-  if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
-    return TaskStatus::FAILED;
-  }
-
-  path = result.result->path;
-
-  return TaskStatus::SUCCEEDED;
+  return TaskStatus::FAILED;
 }
 
 bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
@@ -529,13 +478,4 @@ void PlannerTester::printPath(const ComputePathToPoseResult & path) const
   RCLCPP_INFO(get_logger(), ss.str().c_str());
 }
 
-void PlannerTester::waitForPlanner()
-{
-  RCLCPP_DEBUG(this->get_logger(), "Waiting for ComputePathToPose action server");
-
-  if (!planner_client_ || !planner_client_->wait_for_action_server(10s)) {
-    RCLCPP_ERROR(this->get_logger(), "Planner not running");
-    throw std::runtime_error("Planner not running");
-  }
-}
 }  // namespace nav2_system_tests

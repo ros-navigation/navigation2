@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -31,10 +32,77 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "nav2_navfn_planner/navfn_planner.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
 namespace nav2_system_tests
 {
+
+class NavFnPlannerTester : public nav2_navfn_planner::NavfnPlanner
+{
+public:
+  NavFnPlannerTester()
+  : NavfnPlanner()
+  {
+  }
+
+  void printCostmap()
+  {
+    // print costmap for debug
+    for (uint i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
+      if (i % costmap_->getSizeInCellsX() == 0) {
+        std::cout << "" << std::endl;
+      }
+      std::cout << costmap_ros_->getCostmap()->getCharMap()[i] << " ";
+    }
+    std::cout << "" << std::endl;
+  }
+
+  void setCostmap(nav2_util::Costmap * costmap)
+  {
+    nav2_msgs::msg::CostmapMetaData prop;
+    nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
+    prop = cm.metadata;
+    costmap_ros_->getCostmap()->resizeMap(prop.size_x, prop.size_y,
+      prop.resolution, prop.origin.position.x, prop.origin.position.x);
+    unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
+    delete[] costmap_ptr;
+    costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
+    std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
+  }
+
+  bool createPath(
+    const geometry_msgs::msg::PoseStamped & goal,
+    nav2_msgs::msg::Path & path)
+  {
+    geometry_msgs::msg::PoseStamped start;
+    if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
+      return false;
+    }
+
+    if (isPlannerOutOfDate()) {
+      planner_->setNavArr(costmap_->getSizeInCellsX(),
+        costmap_->getSizeInCellsY());
+    }
+
+    return makePlan(start.pose, goal.pose, tolerance_, path);
+  }
+
+  void onCleanup(const rclcpp_lifecycle::State & state)
+  {
+    on_cleanup(state);
+  }
+
+  void onActivate(const rclcpp_lifecycle::State & state)
+  {
+    on_activate(state);
+  }
+
+  void onConfigure(const rclcpp_lifecycle::State & state)
+  {
+    on_configure(state);
+  }
+};
 
 enum class TaskStatus : int8_t
 {
@@ -75,11 +143,17 @@ public:
     const float acceptable_fail_ratio);
 
 private:
+  void setCostmap();
+
+  TaskStatus createPlan(
+    const ComputePathToPoseCommand & goal,
+    ComputePathToPoseResult & path
+  );
+
   bool is_active_;
   bool map_set_;
   bool costmap_set_;
   bool using_fake_costmap_;
-  bool costmap_server_running_;
 
   // Parameters of the costmap
   bool trinary_costmap_;
@@ -94,14 +168,12 @@ private:
   // The costmap representation of the static map
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
+  // The global planner
+  std::unique_ptr<NavFnPlannerTester> planner_tester_;
+
   // A thread for spinning the ROS node and the executor used
   std::unique_ptr<std::thread> spin_thread_;
   rclcpp::executors::SingleThreadedExecutor executor_;
-
-  // The tester must provide the costmap service
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_server_;
-  void setCostmap();
-  void startCostmapServer();
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
@@ -110,10 +182,6 @@ private:
   void publishRobotTransform();
   void startRobotTransform();
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
-
-  // The interface to the global planner
-  std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::ComputePathToPose>> planner_client_;
-  void waitForPlanner();
 
   // Occupancy grid publisher for visualization
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
@@ -128,12 +196,6 @@ private:
     const geometry_msgs::msg::Point & robot_position,
     const ComputePathToPoseCommand & goal,
     ComputePathToPoseResult & path);
-
-  // Sends the request to the planner and gets the result.
-  TaskStatus sendRequest(
-    const ComputePathToPoseCommand & goal,
-    ComputePathToPoseResult & path
-  );
 
   bool isCollisionFree(const ComputePathToPoseResult & path);
 

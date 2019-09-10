@@ -148,8 +148,7 @@ lifecycle_manager:
   ros__parameters:
     use_sim_time: True
     autostart: True
-    node_names: ['map_server', 'amcl',
-                 'world_model', 'dwb_controller',
+    node_names: ['map_server', 'amcl', 'dwb_controller',
                  'navfn_planner', 'bt_navigator']
 
 lifecycle_manager_service_client:
@@ -171,9 +170,5 @@ navfn_planner_GetCostmap_client:
     use_sim_time: True
 
 robot_state_publisher:
-  ros__parameters:
-    use_sim_time: True
-
-world_model:
   ros__parameters:
     use_sim_time: True
