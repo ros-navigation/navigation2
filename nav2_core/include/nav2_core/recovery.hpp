@@ -16,8 +16,9 @@
 #define NAV2_CORE_RECOVERY_H_
 
 #include <string>
-#include "rclcpp/rclcpp.h"
-#include "tf2_ros/Buffer.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "tf2_ros/buffer.h"
 
 namespace nav2_core
 {
@@ -40,7 +41,7 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const rclcpp::LifecycleNode * parent,
+  virtual void configure(const nav2_util::LifecycleNode * parent,
     const std::string & name, tf2_ros::Buffer * tf) = 0;
 
   /**
