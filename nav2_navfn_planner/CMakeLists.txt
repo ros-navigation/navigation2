@@ -23,8 +23,7 @@ include_directories(
   include
 )
 
-set(executable_name navfn_planner)
-set(library_name ${executable_name}_core)
+set(library_name navfn_planner_core)
 
 set(dependencies
   rclcpp
@@ -39,6 +38,7 @@ set(dependencies
   builtin_interfaces
   tf2_ros
   nav2_costmap_2d
+  nav2_core
 )
 
 add_library(${library_name} SHARED
@@ -50,17 +50,7 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-add_executable(${executable_name}
-  src/main.cpp
-)
-
-target_link_libraries(${executable_name} ${library_name})
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -68,6 +58,10 @@ install(TARGETS ${executable_name} ${library_name}
 
 install(DIRECTORY include/
   DESTINATION include/
+)
+
+install(FILES global_planner_plugin.xml
+  DESTINATION share
 )
 
 if(BUILD_TESTING)
