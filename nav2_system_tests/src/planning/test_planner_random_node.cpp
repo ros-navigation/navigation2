@@ -40,6 +40,7 @@ RclCppFixture g_rclcppfixture;
 
 TEST_F(PlannerTester, testWithHundredRandomEndPoints)
 {
+  activate();
   loadDefaultMap();
   EXPECT_EQ(true, defaultPlannerRandomTests(100, 0.1));
 }

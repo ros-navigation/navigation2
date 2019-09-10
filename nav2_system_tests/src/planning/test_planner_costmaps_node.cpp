@@ -40,6 +40,8 @@ RclCppFixture g_rclcppfixture;
 
 TEST_F(PlannerTester, testSimpleCostmaps)
 {
+  activate();
+
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,

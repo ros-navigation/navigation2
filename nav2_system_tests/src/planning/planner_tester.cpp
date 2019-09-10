@@ -61,6 +61,9 @@ void PlannerTester::activate()
       executor_.remove_node(this->get_node_base_interface());
     });
 
+  // We start with a 10x10 grid with no obstacles
+  loadSimpleCostmap(TestCostmap::open_space);
+
   startRobotTransform();
 
   // The navfn wrapper
@@ -72,9 +75,6 @@ void PlannerTester::activate()
 
   // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-
-  // We start with a 10x10 grid with no obstacles
-  loadSimpleCostmap(TestCostmap::open_space);
 }
 
 void PlannerTester::deactivate()
