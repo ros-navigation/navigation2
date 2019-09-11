@@ -103,7 +103,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': ['dwb_controller',
-                                        'navfn_planner',
+                                        'planner_server',
                                         'bt_navigator']}]),
 
     ])

@@ -109,7 +109,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'node_names': ['map_server', 'amcl',
-                         'dwb_controller', 'navfn_planner', 'bt_navigator']},
+                         'dwb_controller', 'planner_server', 'bt_navigator']},
                         {'autostart': True}]),
     ])
 

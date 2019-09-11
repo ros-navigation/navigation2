@@ -204,7 +204,6 @@ void PlannerTester::loadDefaultMap()
 
 void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 {
-  std::cout << "loadSimpleCOstmap called" << std::endl;
   RCLCPP_INFO(get_logger(), "loadSimpleCostmap called.");
   if (costmap_set_) {
     RCLCPP_DEBUG(this->get_logger(), "Setting a new costmap with fake values");
