@@ -59,7 +59,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
 : nav2_util::LifecycleNode(name, "", true,
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
-    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string("__ns:=") + absolute_namespace})),
+    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string(
+        "__ns:=") + absolute_namespace})),
   name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
