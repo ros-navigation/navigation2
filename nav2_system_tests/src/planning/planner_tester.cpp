@@ -405,12 +405,12 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
 
   for (auto pose : path.poses) {
     collisionFree = costmap_->is_free(
-      static_cast<unsigned int>(std::round(pose.position.x)),
-      static_cast<unsigned int>(std::round(pose.position.y)));
+      static_cast<unsigned int>(std::round(pose.pose.position.x)),
+      static_cast<unsigned int>(std::round(pose.pose.position.y)));
 
     if (!collisionFree) {
       RCLCPP_WARN(this->get_logger(), "Path has collision at (%.2f, %.2f)",
-        pose.position.x, pose.position.y);
+        pose.pose.position.x, pose.pose.position.y);
       printPath(path);
       return false;
     }
@@ -443,10 +443,10 @@ bool PlannerTester::isWithinTolerance(
   auto path_end = path.poses.end()[-1];
 
   if (
-    path_start.position.x == robot_position.x &&
-    path_start.position.y == robot_position.y &&
-    path_end.position.x == goal.pose.position.x &&
-    path_end.position.y == goal.pose.position.y)
+    path_start.pose.position.x == robot_position.x &&
+    path_start.pose.position.y == robot_position.y &&
+    path_end.pose.position.x == goal.pose.position.x &&
+    path_end.pose.position.y == goal.pose.position.y)
   {
     RCLCPP_DEBUG(this->get_logger(), "Path has correct start and end points");
 
@@ -458,7 +458,8 @@ bool PlannerTester::isWithinTolerance(
     robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
 
   RCLCPP_DEBUG(this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
-    path_start.position.x, path_start.position.y, path_end.position.x, path_end.position.y);
+    path_start.pose.position.x, path_start.pose.position.y,
+    path_end.pose.position.x, path_end.pose.position.y);
 
   return false;
 }
@@ -470,8 +471,8 @@ void PlannerTester::printPath(const ComputePathToPoseResult & path) const
 
   for (auto pose : path.poses) {
     ss << "   point #" << index << " with" <<
-      " x: " << std::setprecision(3) << pose.position.x <<
-      " y: " << std::setprecision(3) << pose.position.y << '\n';
+      " x: " << std::setprecision(3) << pose.pose.position.x <<
+      " y: " << std::setprecision(3) << pose.pose.position.y << '\n';
     ++index;
   }
 

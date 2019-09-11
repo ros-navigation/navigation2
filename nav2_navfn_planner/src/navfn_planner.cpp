@@ -74,35 +74,27 @@ NavfnPlanner::configure(
   node_->declare_parameter("allow_unknown", rclcpp::ParameterValue(true));
   node_->get_parameter("allow_unknown", allow_unknown_);
 
-  costmap_ = costmap_ros->getCostmap();
-  global_frame_ = costmap_ros->getGlobalFrameID();
-  tf_ = tf;
-  name_ = name;
-  node_ = parent;
-
   // Create a planner based on the new costmap size
-  if (isPlannerOutOfDate()) {
-    planner_ = std::make_unique<NavFn>(costmap_->getSizeInCellsX(),
-        costmap_->getSizeInCellsY());
-  }
+  planner_ = std::make_unique<NavFn>(costmap_->getSizeInCellsX(),
+      costmap_->getSizeInCellsY());
 }
 
 void
 NavfnPlanner::activate()
 {
-  RCLCPP_INFO(node_->get_logger(), "Activating");
+  RCLCPP_INFO(node_->get_logger(), "Activating plugin %s", name_.c_str());
 }
 
 void
 NavfnPlanner::deactivate()
 {
-  RCLCPP_INFO(node_->get_logger(), "Deactivating");
+  RCLCPP_INFO(node_->get_logger(), "Deactivating plugin %s", name_.c_str());
 }
 
 void
 NavfnPlanner::cleanup()
 {
-  RCLCPP_INFO(node_->get_logger(), "Cleaning up");
+  RCLCPP_INFO(node_->get_logger(), "Cleaning up plugin %s", name_.c_str());
   planner_.reset();
 }
 

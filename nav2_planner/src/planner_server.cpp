@@ -82,14 +82,14 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   get_parameter("planner_plugin", planner_plugin_name_);
+  auto node = shared_from_this();
 
   try {
-    planner_ = gp_loader_.createSharedInstance(planner_plugin_name_);
-    RCLCPP_INFO(get_logger(), "Created global planner %s",
+    planner_ = gp_loader_.createUniqueInstance(planner_plugin_name_);
+    RCLCPP_INFO(get_logger(), "Created global planner plugin %s",
       planner_plugin_name_.c_str());
-    std::string name = gp_loader_.getName(planner_plugin_name_);
-    planner_->configure(shared_from_this().get(), name,
-      tf_.get(), costmap_ros_.get());
+    planner_->configure(node,
+      gp_loader_.getName(planner_plugin_name_), tf_.get(), costmap_ros_.get());
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_INFO(get_logger(), "Failed to create global planner. Exception: %s",
       ex.what());

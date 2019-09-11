@@ -32,17 +32,17 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "nav2_navfn_planner/navfn_planner.hpp"
+#include "nav2_planner/planner_server.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
 namespace nav2_system_tests
 {
 
-class NavFnPlannerTester : public nav2_navfn_planner::NavfnPlanner
+class NavFnPlannerTester : public nav2_planner::PlannerServer
 {
 public:
   NavFnPlannerTester()
-  : NavfnPlanner()
+  : PlannerServer()
   {
   }
 
@@ -79,13 +79,8 @@ public:
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
-
-    if (isPlannerOutOfDate()) {
-      planner_->setNavArr(costmap_->getSizeInCellsX(),
-        costmap_->getSizeInCellsY());
-    }
-
-    return makePlan(start.pose, goal.pose, tolerance_, path);
+    path = planner_->createPlan(start, goal);
+    return true;
   }
 
   void onCleanup(const rclcpp_lifecycle::State & state)
