@@ -36,17 +36,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   // Create the control button and its tooltip
 
-  start_stop_button_ = new QPushButton;
+  start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
-  const char * shutdown_msg = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
+  const char * shutdown_msg = "Deactivate and cleanup all nav2 lifecycle nodes";
   const char * cancel_msg = "Cancel navigation";
   const char * pause_msg = "Deactivate all nav2 lifecycle nodes";
   const char * resume_msg = "Activate all nav2 lifecycle nodes";
 
+<<<<<<< HEAD
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
   pre_initial_->assignProperty(start_stop_button_, "text", "Startup");
@@ -57,43 +58,86 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(start_stop_button_, "text", "Startup");
   initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
   initial_->assignProperty(start_stop_button_, "enabled", true);
+=======
+  // Initial state before system is activated
+  initial_ = new QState();
+  initial_->setObjectName("initial");
+  initial_->assignProperty(start_reset_button_, "text", "Startup");
+  initial_->assignProperty(start_reset_button_, "toolTip", startup_msg);
+
+  initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  initial_->assignProperty(pause_resume_button_, "enabled", false);
+>>>>>>> 5176099e... add pause, resume, and repeat button transitions
 
   // State entered when NavigateToPose is not active
   idle_ = new QState();
   idle_->setObjectName("idle");
+<<<<<<< HEAD
   idle_->assignProperty(start_stop_button_, "text", "Shutdown");
   idle_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
   idle_->assignProperty(start_stop_button_, "enabled", true);
+=======
+  idle_->assignProperty(start_reset_button_, "text", "Reset");
+  idle_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
 
-  // State entered after NavigateToPose has been canceled
+  idle_->assignProperty(pause_resume_button_, "text", "Pause");
+  idle_->assignProperty(pause_resume_button_, "enabled", true);
+  idle_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
+>>>>>>> 5176099e... add pause, resume, and repeat button transitions
+
+  // State entered to cancel the NavigateToPose action
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
+
+  // State entered to reset the nav2 lifecycle nodes
+  reset_ = new QState();
+  reset_->setObjectName("reset");
 
   // State entered while the NavigateToPose action is active
   running_ = new QState();
   running_->setObjectName("running");
-  running_->assignProperty(start_stop_button_, "text", "Cancel");
-  running_->assignProperty(start_stop_button_, "toolTip", cancel_msg);
+  running_->assignProperty(start_reset_button_, "text", "Cancel");
+  running_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
 
-  // State entered when shutdown is requested
-  stopping_ = new QState();
-  stopping_->setObjectName("stopping");
-  stopping_->assignProperty(start_stop_button_, "enabled", false);
+  running_->assignProperty(pause_resume_button_, "text", "Pause");
+  running_->assignProperty(pause_resume_button_, "enabled", false);
+
+  // State entered when pause is requested
+  paused_ = new QState();
+  paused_->setObjectName("pausing");
+  paused_->assignProperty(start_reset_button_, "text", "Reset");
+  paused_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
+
+  paused_->assignProperty(pause_resume_button_, "text", "Resume");
+  paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
+  paused_->assignProperty(pause_resume_button_, "enabled", true);
+
+  // State entered to resume the nav2 lifecycle nodes
+  resumed_ = new QState();
+  resumed_->setObjectName("resuming");
 
   QObject::connect(initial_, SIGNAL(exited()), this, SLOT(onStartup()));
-  QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
   QObject::connect(canceled_, SIGNAL(exited()), this, SLOT(onCancel()));
+  QObject::connect(reset_, SIGNAL(exited()), this, SLOT(onShutdown()));
+  QObject::connect(paused_, SIGNAL(entered()), this, SLOT(onPause()));
+  QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
 
-  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), idle_);
-  idle_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
-  running_->addTransition(start_stop_button_, SIGNAL(clicked()), canceled_);
+  // Start/Reset button click transitions
+  initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
+  idle_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
+  running_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
+  paused_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
+
+  // Internal state transitions
   canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
-  QObject::connect(pausing_, SIGNAL(entered()), this, SLOT(onPause()));
-  QObject::connect(resuming_, SIGNAL(entered()), this, SLOT(onResume()));
+  reset_->addTransition(reset_, SIGNAL(entered()), initial_);
+  resumed_->addTransition(resumed_, SIGNAL(entered()), idle_);
 
-  pausing_->addTransition(pause_resume_button_, SIGNAL(clicked()), resuming_);
-  resuming_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
+  // Pause/Resume button click transitions
+  idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
+  paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), resumed_);
 
+  // ROSAction Transitions
   ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleTransition->setTargetState(running_);
   idle_->addTransition(idleTransition);
@@ -118,18 +162,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(pre_initial_);
   state_machine_.addState(initial_);
   state_machine_.addState(idle_);
-  state_machine_.addState(stopping_);
   state_machine_.addState(running_);
   state_machine_.addState(canceled_);
-  state_machine_.addState(pausing_);
-  state_machine_.addState(resuming_);
+  state_machine_.addState(reset_);
+  state_machine_.addState(paused_);
+  state_machine_.addState(resumed_);
 
   state_machine_.setInitialState(pre_initial_);
   state_machine_.start();
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->addWidget(start_stop_button_);
+  main_layout->addWidget(pause_resume_button_);
+  main_layout->addWidget(start_reset_button_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 
