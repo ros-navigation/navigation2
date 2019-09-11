@@ -72,7 +72,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 
 # build overlay source
 ARG OVERLAY_MIXINS="release ccache"
-RUN rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
       --symlink-install \

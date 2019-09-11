@@ -3,28 +3,19 @@
 #
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
-# export BUILD_SYSTEM_TESTS=False
-# docker build -t nav2:release_branch --build-arg ROS2_BRANCH=dashing \
-#  --build-arg BUILD_SYSTEM_TESTS #   --build-arg CMAKE_BUILD_TYPE \
-#  -f Dockerfile.release_branch ./
+# docker build -t nav2:release_branch \
+#   --build-arg FROM_IMAGE=dashing \
+#   --build-arg CMAKE_BUILD_TYPE \
+#   -f Dockerfile.release_branch ./
 
-ARG ROS2_BRANCH=dashing
-
-FROM ros:$ROS2_BRANCH
+ARG FROM_IMAGE=dashing
+FROM ros:$FROM_IMAGE
 
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
 WORKDIR $NAV2_WS/src
 COPY ./ navigation2/
-
-# delete nav2_system_tests/COLCON_IGNORE before running rosdep, otherwise it
-# doesn't install nav2_system_tests dependencies.
-ARG BUILD_SYSTEM_TESTS=True
-RUN if [ "$BUILD_SYSTEM_TESTS" = "True" ] ; then \
-        rm $NAV2_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE ; \
-        echo "Building of system tests enabled" ; \
-    fi
 
 # install navigation2 package dependencies
 WORKDIR $NAV2_WS

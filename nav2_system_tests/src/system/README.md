@@ -3,11 +3,7 @@
 This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose. 
 
 ## To run the test
-First, remove the COLCON_IGNORE; this exists so the system tests won't be in the debian release package
-```
-rm nav2_system_tests/COLCON_IGNORE
-```
-Then, you must build navigation2 including this package:
+First, you must build navigation2 including this package:
 ```
 colcon build --symlink-install
 ```
