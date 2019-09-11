@@ -120,9 +120,6 @@ creating drawings:
    syntax into an image. You'll need to have a Java runtime environment
    (JRE) installed when generating documentation.
 
-If you use Windows, you may be able to :ref:`set_up_ubuntu_on_windows` and
-skip to the next section.
-
 Depending on your Linux version, install the needed tools:
 
 * For Ubuntu use:
