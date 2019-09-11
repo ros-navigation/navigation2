@@ -44,3 +44,5 @@ install
 # Python artifacts
 __pycache__/
 *.py[cod]
+
+doc/_build
