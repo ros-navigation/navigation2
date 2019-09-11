@@ -335,7 +335,7 @@ StaticLayer::updateCosts(
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
       RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
-      count=0;
+      count = 0;
     }
     return;
   }
