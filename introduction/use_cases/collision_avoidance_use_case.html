@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Collision Avoidance &mdash; Navigation 2 0.2.3 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/favicon-48x48.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Indoor Localization" href="indoor_localization_use_case.html" />
+    <link rel="prev" title="Target Use Cases" href="README.html" />
+
+<link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Navigation 2
+          
+
+          
+            
+            <img src="../../_static/logo_white_200w.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Navigation 2 Introduction</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../process/PreReleaseChecklist.html#ensure-all-dependencies-are-listed-in-the-package-xml-files">Ensure all dependencies are listed in the package.xml files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../process/PreReleaseChecklist.html#ensure-all-dependencies-are-released">Ensure all dependencies are released.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../process/PreReleaseChecklist.html#ensure-the-test-suite-passes">Ensure the test suite passes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../requirements/requirements.html#introduction">1. Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#requirement-fields">1.1 Requirement Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#requirement-language-keywords">1.2 Requirement Language Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#terminology">1.3 Terminology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#use-cases">1.4 Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#mapping-use-cases">1.4.1 Mapping Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#mission-planning-use-cases">1.4.2 Mission Planning Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#mission-execution-use-cases">1.4.3 Mission Execution Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#architectural-components">1.5 Architectural Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#command-chain">1.5.1 Command Chain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#support-modules">1.5.2 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#design-goals">1.6 Design Goals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../requirements/requirements.html#id1">2.0 Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#implementation-constraints">2.1 Implementation Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#target-platforms">2.2 Target Platforms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#command-chain-modules">2.3 Command Chain Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#id2">2.4 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../requirements/requirements.html#open-issues">2.5 Open Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="README.html">Target Use Cases</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="README.html#id1">Use Cases</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Collision Avoidance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="indoor_localization_use_case.html">Indoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="indoor_navigation_use_case.html">Indoor Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="keep_out_zones_use_case.html">Keep Out Zones</a></li>
+<li class="toctree-l4"><a class="reference internal" href="multi-story-building_use_case.html">Multi-story Building Navigation (2D+)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="outdoor_localization_use_case.html">Outdoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="outdoor_navigation_use_case.html">Outdoor Navigation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting Started Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#build-instructions">Build Instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started/index.html#quickstart">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting_started/index.html#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting_started/index.html#summary-of-what-s-being-done">Summary of what’s being done</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting_started/index.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started/index.html#use-case-recommendations">Use Case Recommendations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting_started/index.html#developer">Developer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting_started/index.html#build-system">Build System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../howtos/index.html">How-Tos</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../howtos/docs/index.html">Documentation How-Tos</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../howtos/docs/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../howtos/docs/process/docbuild.html">Build the template locally</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../howtos/docs/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../howtos/docs/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../howtos/docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../howtos/docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../howtos/docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/index.html">Contributing to the Project</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#licensing">Licensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contribute/contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contribute/doc_guidelines.html">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#headings">Headings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contribute/doc_guidelines.html#this-is-a-collapsible-section">This is a collapsible section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#content-highlighting">Content Highlighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#lists">Lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#multi-column-lists">Multi-column lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#file-names-and-commands">File names and Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#non-ascii-characters">Non-ASCII Characters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#code-and-command-examples">Code and Command Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Navigation 2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Navigation 2 Introduction</a> &raquo;</li>
+        
+          <li><a href="README.html">Target Use Cases</a> &raquo;</li>
+        
+      <li>Collision Avoidance</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="collision-avoidance">
+<h1>Collision Avoidance<a class="headerlink" href="#collision-avoidance" title="Permalink to this headline">¶</a></h1>
+<p>As a Robot user I want to my robot to avoid colliding with people or
+objects so that it won’t damage anything or hurt anyone</p>
+<div class="section" id="more-details">
+<h2>More details<a class="headerlink" href="#more-details" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Why is this needed?</p></li>
+<li><p>This is needed for indoor and outdoor robot navigation in most (all?)
+cases</p></li>
+<li><p>Example: a robot in a warehouse should avoid colliding into the walls
+or shelving, and dynamically avoid people that cross its path</p></li>
+<li><p>What is the expected user interaction?</p></li>
+<li><p>The user should be able to walk in front of a robot and it should
+avoid crashing into that person</p></li>
+<li><p>Are there any non-functional requirements? (build system, tools,
+performance, etc)</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019
+      <span class="lastupdated">
+        Last updated on Sep 11, 2019.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+  
+
+<script type="text/javascript" src="../../_static/tcs_theme.js"></script>
+
+
+
+</body>
+</html>

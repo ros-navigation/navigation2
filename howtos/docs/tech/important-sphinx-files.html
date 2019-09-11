@@ -1,0 +1,409 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Important Sphinx files &mdash; Navigation 2 0.2.3 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon-48x48.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Pandocs Conversion Tutorial" href="pandocs-conversion.html" />
+    <link rel="prev" title="Examples of Generated Images" href="GeneratedImagesExamples.html" />
+
+<link rel="stylesheet" href="../../../_static/tcs_theme.css" type="text/css" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Navigation 2
+          
+
+          
+            
+            <img src="../../../_static/logo_white_200w.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction/index.html">Navigation 2 Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html#ensure-all-dependencies-are-listed-in-the-package-xml-files">Ensure all dependencies are listed in the package.xml files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html#ensure-all-dependencies-are-released">Ensure all dependencies are released.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/process/PreReleaseChecklist.html#ensure-the-test-suite-passes">Ensure the test suite passes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/requirements/requirements.html#introduction">1. Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#requirement-fields">1.1 Requirement Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#requirement-language-keywords">1.2 Requirement Language Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#terminology">1.3 Terminology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#use-cases">1.4 Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#mapping-use-cases">1.4.1 Mapping Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#mission-planning-use-cases">1.4.2 Mission Planning Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#mission-execution-use-cases">1.4.3 Mission Execution Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#architectural-components">1.5 Architectural Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#command-chain">1.5.1 Command Chain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#support-modules">1.5.2 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#design-goals">1.6 Design Goals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/requirements/requirements.html#id1">2.0 Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#implementation-constraints">2.1 Implementation Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#target-platforms">2.2 Target Platforms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#command-chain-modules">2.3 Command Chain Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#id2">2.4 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/requirements/requirements.html#open-issues">2.5 Open Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/use_cases/README.html">Target Use Cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/use_cases/README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../introduction/use_cases/README.html#id1">Use Cases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/collision_avoidance_use_case.html">Collision Avoidance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/indoor_localization_use_case.html">Indoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/indoor_navigation_use_case.html">Indoor Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/keep_out_zones_use_case.html">Keep Out Zones</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/multi-story-building_use_case.html">Multi-story Building Navigation (2D+)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/outdoor_localization_use_case.html">Outdoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../introduction/use_cases/outdoor_navigation_use_case.html">Outdoor Navigation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/index.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/index.html#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../introduction/index.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started/index.html">Getting Started Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../getting_started/index.html#build-instructions">Build Instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../getting_started/index.html#quickstart">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../getting_started/index.html#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../getting_started/index.html#summary-of-what-s-being-done">Summary of what’s being done</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../getting_started/index.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../getting_started/index.html#use-case-recommendations">Use Case Recommendations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../getting_started/index.html#developer">Developer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../getting_started/index.html#build-system">Build System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">How-Tos</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Documentation How-Tos</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../process/docbuild.html">Build the template locally</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../process/docker-build.html">Use Docker to build this Sphinx project</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#technical-guides">Technical Guides</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="GeneratedImagesExamples.html">Examples of Generated Images</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Important Sphinx files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute/index.html">Contributing to the Project</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/contribute_guidelines.html#licensing">Licensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../contribute/contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/contribute_guidelines.html#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../contribute/doc_guidelines.html">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#headings">Headings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../contribute/doc_guidelines.html#this-is-a-collapsible-section">This is a collapsible section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#content-highlighting">Content Highlighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#lists">Lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#multi-column-lists">Multi-column lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#file-names-and-commands">File names and Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#non-ascii-characters">Non-ASCII Characters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#code-and-command-examples">Code and Command Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute/doc_guidelines.html#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Navigation 2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">How-Tos</a> &raquo;</li>
+        
+          <li><a href="../index.html">Documentation How-Tos</a> &raquo;</li>
+        
+      <li>Important Sphinx files</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="important-sphinx-files">
+<span id="id1"></span><h1>Important Sphinx files<a class="headerlink" href="#important-sphinx-files" title="Permalink to this headline">¶</a></h1>
+<p>These files will appear in most Sphinx projects and are used to extend and define the build behavior.</p>
+<div class="content-collapse section" id="conf-py">
+<h2>conf.py<a class="headerlink" href="#conf-py" title="Permalink to this headline">¶</a></h2>
+<p>Configure Sphinx variables</p>
+<dl>
+<dt>suffix</dt><dd><p>Set the kind of files to process (.rst or .md).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">source_suffix</span> <span class="o">=</span> <span class="s1">&#39;.rst&#39;</span>
+</pre></div>
+</div>
+</dd>
+<dt>master document</dt><dd><p>Set the file to use as the top level document for the project (relative to conf.py).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">master_doc</span> <span class="o">=</span> <span class="s1">&#39;index&#39;</span>
+</pre></div>
+</div>
+</dd>
+<dt>general info</dt><dd><p>General information about the project.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;Open source documentation template&#39;</span>
+<span class="n">copyright</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;2018, TCS Documentation Template&#39;</span>
+<span class="n">author</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;TCS developers&#39;</span>
+</pre></div>
+</div>
+</dd>
+<dt>extensions</dt><dd><p>Add functionality to your Sphinx build.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;breathe&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinx.ext.graphviz&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinxcontrib.plantuml&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+<dt>exclude patterns</dt><dd><p>Exclude directories from Sphinx processing by adding them to a list.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">exclude_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_build&#39;</span><span class="p">,</span><span class="s1">&#39;_themes&#39;</span><span class="p">,</span><span class="s1">&#39;scripts&#39;</span> <span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+<dt>theme</dt><dd><p>Use one of the provided Sphinx themes or a custom one.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_theme_path</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_themes&#39;</span><span class="p">]</span>
+<span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;otc_tcs_sphinx_theme&#39;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="content-collapse section" id="substitutions-txt">
+<h2>substitutions.txt<a class="headerlink" href="#substitutions-txt" title="Permalink to this headline">¶</a></h2>
+<p>Add content to this file when you want it to appear at the end of or be
+accessed by every page of the project. We use it to set global string
+replacements and links.</p>
+<dl>
+<dt>replace string</dt><dd><p>Useful when you want to create a shorthand version of a long string.</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|PN|</span> <span class="ow">replace</span><span class="p">::</span> project name
+</pre></div>
+</div>
+</dd>
+<dt>global link</dt><dd><p>Use these when you will be re-using a link throughout the project.</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_project website:</span> https://rosplanning.github.io/navigation2/
+</pre></div>
+</div>
+</dd>
+<dt>unicode</dt><dd><p>You can also create shortcuts for commonly used unicode characters.</p>
+<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|copy|</span>   <span class="ow">unicode</span><span class="p">::</span> U+000A9 .. COPYRIGHT SIGN
+    <span class="nc">:ltrim:</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We implmented this by using an <code class="docutils literal notranslate"><span class="pre">include</span></code> directive in
+the <code class="docutils literal notranslate"><span class="pre">rst_epilog</span></code> variable in <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code> like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rst_epilog</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">.. include:: /substitutions.txt</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019
+      <span class="lastupdated">
+        Last updated on Sep 11, 2019.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+  
+
+<script type="text/javascript" src="../../../_static/tcs_theme.js"></script>
+
+
+
+</body>
+</html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Introduction to the Navigation 2 Project &mdash; Navigation 2 0.2.3 documentation</title>
+  <title>Navigation 2 Introduction &mdash; Navigation 2 0.2.3 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Getting Started Guide" href="../getting_started/index.html" />
+    <link rel="next" title="Pre Release Checklist" href="process/PreReleaseChecklist.html" />
     <link rel="prev" title="ROS 2 Navigation System" href="../index.html" />
 
 <link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
@@ -95,43 +95,92 @@
             
             
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to the Navigation 2 Project</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Navigation 2 Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="process/PreReleaseChecklist.html#ensure-all-dependencies-are-listed-in-the-package-xml-files">Ensure all dependencies are listed in the package.xml files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="process/PreReleaseChecklist.html#ensure-all-dependencies-are-released">Ensure all dependencies are released.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="process/PreReleaseChecklist.html#ensure-the-test-suite-passes">Ensure the test suite passes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="requirements/requirements.html#introduction">1. Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#requirement-fields">1.1 Requirement Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#requirement-language-keywords">1.2 Requirement Language Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#terminology">1.3 Terminology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#use-cases">1.4 Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#mapping-use-cases">1.4.1 Mapping Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#mission-planning-use-cases">1.4.2 Mission Planning Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#mission-execution-use-cases">1.4.3 Mission Execution Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#architectural-components">1.5 Architectural Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#command-chain">1.5.1 Command Chain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#support-modules">1.5.2 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#design-goals">1.6 Design Goals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="requirements/requirements.html#id1">2.0 Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#implementation-constraints">2.1 Implementation Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#target-platforms">2.2 Target Platforms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#command-chain-modules">2.3 Command Chain Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#id2">2.4 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="requirements/requirements.html#open-issues">2.5 Open Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="use_cases/README.html">Target Use Cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="use_cases/README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="use_cases/README.html#id1">Use Cases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/collision_avoidance_use_case.html">Collision Avoidance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/indoor_localization_use_case.html">Indoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/indoor_navigation_use_case.html">Indoor Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/keep_out_zones_use_case.html">Keep Out Zones</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/multi-story-building_use_case.html">Multi-story Building Navigation (2D+)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/outdoor_localization_use_case.html">Outdoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_cases/outdoor_navigation_use_case.html">Outdoor Navigation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/index.html#build-instructions">Build Instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started/index.html#quickstart">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting_started/index.html#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting_started/index.html#summary-of-what-s-being-done">Summary of what’s being done</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting_started/index.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started/index.html#use-case-recommendations">Use Case Recommendations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting_started/index.html#developer">Developer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting_started/index.html#build-system">Build System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../howtos/index.html">How-Tos</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#build-guide">Build Guide</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docbuild.html">Build the template locally</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-overview">Documentation overview</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#set-up-the-documentation-working-folders">Set up the documentation working folders</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#installing-the-documentation-tools">Installing the documentation tools</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-presentation-theme">Documentation presentation theme</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#running-the-documentation-processors">Running the documentation processors</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#publishing-content">Publishing content</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#basic-editing-and-making-the-template-your-own">Basic editing and making the template your own</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/docs/index.html">Documentation How-Tos</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/docs/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/process/docbuild.html">Build the template locally</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#deploy-with-github">Deploy with GitHub</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-publish.html">Set up Publish directory and GitHub pages repository</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#create-the-github-pages-repository">Create the GitHub Pages Repository</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#clone-your-github-pages-repository-to-your-local-working-directory">Clone your GitHub pages repository to your local working directory</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-travis-ci.html">Deploying documentation with GitHub and Travis CI</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#technical-guides">Technical Guides</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html">Important Sphinx files</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#conf-py">conf.py</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#substitutions-txt">substitutions.txt</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#scope">Scope</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#introduction">Introduction</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#single-file-conversion">Single file Conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/docs/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
 </ul>
 </li>
 </ul>
@@ -139,33 +188,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developers</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#use-cases">Use Cases</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#requirements">Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#design-overview">Design Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#contributing">Contributing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#sections">Sections</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#summary">Summary</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#introduction">1. Introduction</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#id1">2.0 Requirements</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/use_cases/README.html">Target Use Cases</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#stretch-target">Stretch Target</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#id1">Use Cases</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/index.html">Contributing to the Project</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
@@ -239,7 +261,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Introduction to the Navigation 2 Project</li>
+      <li>Navigation 2 Introduction</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -256,86 +278,40 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="introduction-to-the-pn-project">
-<span id="introduction"></span><h1>Introduction to the Navigation 2 Project<a class="headerlink" href="#introduction-to-the-pn-project" title="Permalink to this headline">¶</a></h1>
-<p>Test graphviz drawing from mft.dot</p>
-<div class="graphviz"><img src="../_images/graphviz-e4d76e5ca08a67debc35de03b354ad2fb928296e.png" alt="digraph G {
-  bgcolor=&quot;transparent&quot;;
-  node [fontsize=10 shape=record]
-  node [fontsize=10]
-  rankdir=LR
-
-  bin_complete [label=&quot;&lt;ext&gt;Extended Manifest\n(unsigned)
-                  |&lt;mft&gt;Manifest\n(signed)|&lt;bins&gt;Binaries&quot;]
-
-  mft [label=&quot;&lt;hdr&gt;CSE Header
-        |CSS Header (Type 4)\nmodule_type = 4\n...
-        |&lt;mcb&gt;ManifestCryptoBlock
-        |PlatformFirmware\nAuthenticationExtension
-        |...other extensions...
-        |AdspMetadataFileExtension
-        |...alignment...
-        |AdspFwBinaryDesc&quot;]
-
-  mcb [label=&quot;ManifestRSAKey\nmodulus\nexponent
-        |Signature&quot;]
-
-  bin_complete:mft -&gt; mft:hdr
-  mft:mcb -&gt; mcb
-
-}" class="graphviz" /></div>
-<p>Test another graphviz drawing from repo_sync.dot</p>
-<div class="graphviz"><img src="../_images/graphviz-f15c9c486a9fecff58a2d68f275f61477317b327.png" alt="digraph repo_sync {
-   bgcolor=&quot;transparent&quot;;
-   rankdir=LR
-	compound=true;
-	node [fontsize=10, shape=record, style=rounded];
-	edge [fontsize=10];
-
-
-	subgraph clusterPublic {
-		label=&quot;cool-project&quot;; fontsize=10;
-
-		subgraph clusterPubMaster {
-			label=&quot;master\n(RW)&quot;; fontsize=11;
-			style=&quot;filled,rounded&quot;; color=&quot;#F0F0F0&quot;
-
-			c1 -&gt; c2 -&gt; c3 -&gt; c4;
-
-		}
-
-		subgraph clusterPubabcProd {
-			label=&quot;abc_prod\n(RO replica)&quot;; fontsize=11;
-			style=&quot;filled,rounded&quot;; color=&quot;#F0F0FF&quot;
-
-			node [style=&quot;rounded,dashed&quot;];
-
-			abc_c4 [label=&quot;c4 [REL1]&quot;];
-			abc_c1 -&gt; abc_c2 -&gt; abc_c3 -&gt; abc_c4;
-		}
-	}
-}" class="graphviz" /></div>
-<p>And a test of plantuml from ssp.pu</p>
-<p class="plantuml">
-<img src="../_images/plantuml-44b793ab3124621da934144afb774b0e73dd9d03.png" alt="&#64;startuml
-skinparam backgroundcolor transparent
-component dai
-package drivers {
-  component &quot;apl-ssp&quot; as ssp
-}
-database &quot;.data&quot; {
-  component &quot;struct dai ssp[3]&quot; as d_ssp
-}
-database &quot;.rodata&quot; {
-  component ssp_ops
-}
-
-dai ..&gt; d_ssp : expose via dai_get()
-d_ssp -&gt; ssp_ops : links to
-ssp ..&gt; ssp_ops : provide
-&#64;enduml
-"/>
-</p>
+  <div class="section" id="pn-introduction">
+<span id="introduction"></span><h1>Navigation 2 Introduction<a class="headerlink" href="#pn-introduction" title="Permalink to this headline">¶</a></h1>
+<p>This is where the ROS2 Navigation System documentation is being
+collected and vetted.</p>
+<div class="toctree-wrapper compound">
+</div>
+<div class="section" id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference internal" href="use_cases/README.html#use-cases"><span class="std std-ref">Target Use Cases</span></a> for info on our
+target use cases.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference internal" href="requirements/requirements.html#requirements"><span class="std std-ref">ROS 2 Navigation System Requirements</span></a> for the
+current list of requirements.</p>
+</div>
+<div class="section" id="design-overview">
+<h2>Design Overview<a class="headerlink" href="#design-overview" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference external" href="../_static/Navigation_2_Overview.pdf">Navigation 2 Overview</a>
+file for the current design / architecture</p>
+</div>
+<div class="section" id="differences-from-ros-navigation">
+<h2>Differences from ROS Navigation<a class="headerlink" href="#differences-from-ros-navigation" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference internal" href="design/ROS_COMPARISON.html#ros1-comparison"><span class="std std-ref">Comparison to Move Base in ROS 1</span></a> file for an
+overview of the differences between this design and ROS1 Navigation
+(move_base)</p>
+</div>
+<div class="section" id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>To propose additions or changes to the design or requirements, please
+file an issue to initiate a discussion of the topic. Then, once the
+discussion has completed and the group has agreed to move forward on the
+item, you can submit a pull request and link to the issue.</p>
+</div>
 </div>
 
 
@@ -351,7 +327,7 @@ ssp ..&gt; ssp_ops : provide
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Sep 06, 2019.
+        Last updated on Sep 11, 2019.
       </span>
 
     </p>

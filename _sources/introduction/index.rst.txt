@@ -1,16 +1,49 @@
 .. _introduction:
 
-Introduction to the |PN| Project
-################################
+|PN| Introduction
+#################
 
-Test graphviz drawing from mft.dot
+This is where the ROS2 Navigation System documentation is being
+collected and vetted.
 
-.. graphviz:: images/mft.dot
+.. toctree::
+   :hidden:
+   :maxdepth: 1
 
-Test another graphviz drawing from repo_sync.dot
+   process/PreReleaseChecklist.rst
+   requirements/requirements.rst
+   use_cases/README.rst
+   design/ROS_COMPARISON.rst
 
-.. graphviz:: images/repo_sync.dot
+Use Cases
+*********
 
-And a test of plantuml from ssp.pu
+See the :ref:`use_cases` for info on our
+target use cases.
 
-.. uml:: images/ssp.pu
+Requirements
+************
+
+See the :ref:`requirements` for the
+current list of requirements.
+
+Design Overview
+***************
+
+See the `Navigation 2 Overview <../_static/Navigation_2_Overview.pdf>`__
+file for the current design / architecture
+
+Differences from ROS Navigation
+*******************************
+
+See the :ref:`ros1_comparison` file for an
+overview of the differences between this design and ROS1 Navigation
+(move\_base)
+
+Contributing
+************
+
+To propose additions or changes to the design or requirements, please
+file an issue to initiate a discussion of the topic. Then, once the
+discussion has completed and the group has agreed to move forward on the
+item, you can submit a pull request and link to the issue.

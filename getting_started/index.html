@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="How-Tos" href="../howtos/index.html" />
-    <link rel="prev" title="Introduction to the Navigation 2 Project" href="../introduction/index.html" />
+    <link rel="prev" title="Comparison to Move Base in ROS 1" href="../introduction/design/ROS_COMPARISON.html" />
 
 <link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
 
@@ -95,43 +95,92 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction to the Navigation 2 Project</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Navigation 2 Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html#ensure-all-dependencies-are-listed-in-the-package-xml-files">Ensure all dependencies are listed in the package.xml files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html#ensure-all-dependencies-are-released">Ensure all dependencies are released.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/process/PreReleaseChecklist.html#ensure-the-test-suite-passes">Ensure the test suite passes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/requirements/requirements.html#introduction">1. Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#requirement-fields">1.1 Requirement Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#requirement-language-keywords">1.2 Requirement Language Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#terminology">1.3 Terminology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#use-cases">1.4 Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#mapping-use-cases">1.4.1 Mapping Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#mission-planning-use-cases">1.4.2 Mission Planning Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#mission-execution-use-cases">1.4.3 Mission Execution Use Cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#architectural-components">1.5 Architectural Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#command-chain">1.5.1 Command Chain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#support-modules">1.5.2 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#design-goals">1.6 Design Goals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/requirements/requirements.html#id1">2.0 Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#implementation-constraints">2.1 Implementation Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#target-platforms">2.2 Target Platforms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#command-chain-modules">2.3 Command Chain Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#id2">2.4 Support Modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/requirements/requirements.html#open-issues">2.5 Open Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/use_cases/README.html">Target Use Cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/use_cases/README.html#stretch-target">Stretch Target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../introduction/use_cases/README.html#id1">Use Cases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/collision_avoidance_use_case.html">Collision Avoidance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/indoor_localization_use_case.html">Indoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/indoor_navigation_use_case.html">Indoor Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/keep_out_zones_use_case.html">Keep Out Zones</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/multi-story-building_use_case.html">Multi-story Building Navigation (2D+)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/outdoor_localization_use_case.html">Outdoor Localization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../introduction/use_cases/outdoor_navigation_use_case.html">Outdoor Navigation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/index.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/index.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/index.html#design-overview">Design Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../introduction/index.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#build-instructions">Build Instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#quickstart">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#summary-of-what-s-being-done">Summary of what’s being done</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#use-case-recommendations">Use Case Recommendations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#developer">Developer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#build-system">Build System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../howtos/index.html">How-Tos</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#build-guide">Build Guide</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docbuild.html">Build the template locally</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-overview">Documentation overview</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#set-up-the-documentation-working-folders">Set up the documentation working folders</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#installing-the-documentation-tools">Installing the documentation tools</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#documentation-presentation-theme">Documentation presentation theme</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#running-the-documentation-processors">Running the documentation processors</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#publishing-content">Publishing content</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/docbuild.html#basic-editing-and-making-the-template-your-own">Basic editing and making the template your own</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/docs/index.html">Documentation How-Tos</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/docs/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/process/docbuild.html">Build the template locally</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#deploy-with-github">Deploy with GitHub</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-publish.html">Set up Publish directory and GitHub pages repository</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#create-the-github-pages-repository">Create the GitHub Pages Repository</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/process/github-publish.html#clone-your-github-pages-repository-to-your-local-working-directory">Clone your GitHub pages repository to your local working directory</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/process/github-travis-ci.html">Deploying documentation with GitHub and Travis CI</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../howtos/index.html#technical-guides">Technical Guides</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html">Important Sphinx files</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#conf-py">conf.py</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/important-sphinx-files.html#substitutions-txt">substitutions.txt</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#scope">Scope</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#introduction">Introduction</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../howtos/tech/pandocs-conversion.html#single-file-conversion">Single file Conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/docs/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
 </ul>
 </li>
 </ul>
@@ -139,33 +188,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developers</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#use-cases">Use Cases</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#requirements">Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#design-overview">Design Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#differences-from-ros-navigation">Differences from ROS Navigation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#contributing">Contributing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/index.html#sections">Sections</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html">Pre Release Checklist</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#summary">Summary</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/process/PreReleaseChecklist.html#detailed-steps">Detailed Steps</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/requirements/requirements.html">ROS 2 Navigation System Requirements</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#introduction">1. Introduction</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/requirements/requirements.html#id1">2.0 Requirements</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/use_cases/README.html">Target Use Cases</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#stretch-target">Stretch Target</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../developer/use_cases/README.html#id1">Use Cases</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../developer/design/ROS_COMPARISON.html">Comparison to Move Base in ROS 1</a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/index.html">Contributing to the Project</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
@@ -258,6 +280,100 @@
             
   <div class="section" id="getting-started-guide">
 <span id="getting-started"></span><h1>Getting Started Guide<a class="headerlink" href="#getting-started-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="build-instructions">
+<h2>Build Instructions<a class="headerlink" href="#build-instructions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="quickstart">
+<h3>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="steps">
+<h4>Steps<a class="headerlink" href="#steps" title="Permalink to this headline">¶</a></h4>
+<p>First, install all ROS2 dependencies from the ROS2 Installation page:
+<a class="reference external" href="https://github.com/ros2/ros2/wiki/Linux-Development-Setup">https://github.com/ros2/ros2/wiki/Linux-Development-Setup</a></p>
+<p>Second, install the dependencies for this repository:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>RUN apt-get install -y <span class="se">\</span>
+    libsdl-image1.2 <span class="se">\</span>
+    libsdl-image1.2-dev <span class="se">\</span>
+    libsdl1.2debian <span class="se">\</span>
+    libsdl1.2-dev
+</pre></div>
+</div>
+<p>Third, ensure there are no ROS environment variables set in your
+terminal or <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code> file before taking the steps below.*</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>mkdir &lt;directory_for_workspaces&gt;
+<span class="nb">cd</span> &lt;directory_for_workspaces&gt;
+wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/initial_ros_setup.sh
+chmod a+x initial_ros_setup.sh
+./initial_ros_setup.sh
+</pre></div>
+</div>
+</div>
+<div class="section" id="summary-of-what-s-being-done">
+<h4>Summary of what’s being done<a class="headerlink" href="#summary-of-what-s-being-done" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> script downloads four ROS workspaces and
+then builds them in the correct order. The four workspaces are:</p>
+<ul class="simple">
+<li><p>ROS 2 release - This is the ROS 2 latest release as defined by the
+repos file found on [<a class="reference external" href="https://github.com/ros2/ros2/">https://github.com/ros2/ros2/</a>]</p></li>
+<li><p>ROS 2 Dependencies - This is a set of ROS 2 packages that aren’t
+included in the ROS 2 release yet, but which the navstack depends on.
+This also includes packages which are part of the ROS 2 release where
+we need a different version.</p></li>
+<li><p>Navigation 2 - This repo.</p></li>
+</ul>
+<p>After all the workspaces are downloaded, the
+<code class="docutils literal notranslate"><span class="pre">navigation2/tools/build_all.sh</span></code> script is run which builds each repo
+in the order listed above using the <code class="docutils literal notranslate"><span class="pre">colcon</span> <span class="pre">build</span> <span class="pre">--symlink-install</span></code>
+command.</p>
+</div>
+<div class="section" id="options">
+<h4>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> accepts the following options: *
+<code class="docutils literal notranslate"><span class="pre">--no-ros2</span></code> This skips downloading and building the ROS 2 release.
+Instead it uses the binary packages and setup.sh installed in
+<code class="docutils literal notranslate"><span class="pre">/opt/ros/bouncy</span></code> * <code class="docutils literal notranslate"><span class="pre">--download-only</span></code> This skips the build steps</p>
+</div>
+</div>
+<div class="section" id="use-case-recommendations">
+<h3>Use Case Recommendations<a class="headerlink" href="#use-case-recommendations" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="developer">
+<h4>Developer<a class="headerlink" href="#developer" title="Permalink to this headline">¶</a></h4>
+<p>For developers, running the <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> once makes sense.
+After that, you’ll typically want to maintain each repo manually using
+git.</p>
+<p>Most work will be done in the <code class="docutils literal notranslate"><span class="pre">navigation2</span></code> workspace, so just
+building that will save time.</p>
+<p>To build just <code class="docutils literal notranslate"><span class="pre">navigation2</span></code>,</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> &lt;directory_for_workspaces&gt;/navigation2_ws
+<span class="nb">source</span> ../ros2_nav_dependencies_ws/install/setup.sh
+colcon build --symlink-install
+</pre></div>
+</div>
+<p>In the case that the developer changes any dependencies, they can run
+<code class="docutils literal notranslate"><span class="pre">&lt;directory_for_workspaces&gt;/navigation2_ws/src/navigation2/tools/build_all.sh</span></code>
+in a clean environment to get everything rebuilt easily</p>
+</div>
+<div class="section" id="build-system">
+<h4>Build System<a class="headerlink" href="#build-system" title="Permalink to this headline">¶</a></h4>
+<p>An automated build system could make a clean directory and run the
+<code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> script each time, however that will generate a
+lot of unneccessary load on the upstream repo servers, and result in
+very long builds.</p>
+<p>Instead, it would be better to do an initial download of all the source
+and dependencies</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./initial_ros_setup.sh --download-only
+</pre></div>
+</div>
+<p>Then the CI tool can monitor the <code class="docutils literal notranslate"><span class="pre">navigation2</span></code> repo, update it as
+necessary, and rebuild using either the
+<code class="docutils literal notranslate"><span class="pre">&lt;directory_for_workspaces&gt;/navigation2_ws/src/navigation2/tools/build_all.sh</span></code>
+script or by running</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> &lt;directory_for_workspaces&gt;/navigation2_ws/src/navigation2
+<span class="nb">source</span> ../ros2_nav_dependencies_ws/install/setup.sh
+colcon build --symlink-install
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -273,7 +389,7 @@
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Sep 06, 2019.
+        Last updated on Sep 11, 2019.
       </span>
 
     </p>

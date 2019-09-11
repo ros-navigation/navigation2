@@ -20,6 +20,5 @@ Sections
    getting_started/index.rst
    howtos/index.rst
    reference/index.rst
-   developer/index.rst
    release_notes.rst
    contribute/index.rst
