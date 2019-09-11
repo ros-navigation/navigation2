@@ -429,3 +429,6 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 }
 
 }  // namespace nav2_navfn_planner
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_navfn_planner::NavfnPlanner, nav2_core::GlobalPlanner)

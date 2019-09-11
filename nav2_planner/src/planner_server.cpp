@@ -40,7 +40,7 @@ PlannerServer::PlannerServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("planner_plugin", "nav2_navfn_planner::NavfnPlanner");
+  declare_parameter("planner_plugin", "nav2_navfn_planner/NavfnPlanner");
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(

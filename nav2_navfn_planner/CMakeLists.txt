@@ -23,7 +23,7 @@ include_directories(
   include
 )
 
-set(library_name navfn_planner_core)
+set(library_name nav2_navfn_planner)
 
 set(dependencies
   rclcpp
@@ -49,6 +49,8 @@ add_library(${library_name} SHARED
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+
+pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
