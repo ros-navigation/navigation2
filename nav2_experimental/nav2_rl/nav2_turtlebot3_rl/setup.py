@@ -14,7 +14,6 @@ setup(
         'dqn',
         'parameters',
         'turtlebot3_env_core',
-        'navigator',
         'navigator_ddpg',
          ],
     data_files=[
@@ -44,7 +43,6 @@ setup(
             'random_crawl_train = random_crawl_train:main',
             'random_crawl = random_crawl:main',
             'random_crawl_action = random_crawl_action:main',
-            'navigator = navigator:main',
             'navigator_ddpg = navigator_ddpg:main',
         ],
     },
