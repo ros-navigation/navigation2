@@ -52,7 +52,6 @@ PlannerServer::PlannerServer()
     [&](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
     {
       // TODO(mjeronimo): Once Brian pushes his change upstream to rlcpp executors, we'll
-      // be able to provide our own executor to spin(), reducing this to a single line
       costmap_executor_.add_node(node->get_node_base_interface());
       costmap_executor_.spin();
       costmap_executor_.remove_node(node->get_node_base_interface());
