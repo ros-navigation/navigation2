@@ -82,9 +82,9 @@ def generate_launch_description():
             parameters=[params_file]),
 
         launch_ros.actions.Node(
-            package='nav2_navfn_planner',
-            node_executable='navfn_planner',
-            node_name='navfn_planner',
+            package='nav2_planner',
+            node_executable='planner_server',
+            node_name='planner_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
 

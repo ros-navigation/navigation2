@@ -42,22 +42,28 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: tf_(nullptr), node_(nullptr), costmap_(nullptr)
+: tf_(nullptr), costmap_(nullptr)
 {
 }
 
 NavfnPlanner::~NavfnPlanner()
 {
-  RCLCPP_INFO(node_->get_logger(), "Destroying");
+  RCLCPP_INFO(node_->get_logger(), "Destroying plugin %s", name_.c_str());
 }
 
 void
 NavfnPlanner::configure(
-  rclcpp_lifecycle::LifecycleNode * parent,
-  std::string & name, tf2_ros::Buffer * tf,
+  nav2_util::LifecycleNode::SharedPtr parent,
+  std::string name, tf2_ros::Buffer * tf,
   nav2_costmap_2d::Costmap2DROS * costmap_ros)
 {
-  RCLCPP_INFO(node_->get_logger(), "Configuring");
+  node_ = parent;
+  tf_ = tf;
+  name_ = name;
+  costmap_ = costmap_ros->getCostmap();
+  global_frame_ = costmap_ros->getGlobalFrameID();
+
+  RCLCPP_INFO(node_->get_logger(), "Configuring plugin %s", name_.c_str());
 
   // Initialize parameters
   // Declare this plugin's parameters
@@ -114,7 +120,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     RCLCPP_WARN(node_->get_logger(), "%s: failed to create plan with "
-      "tolerance %.2f.", name_, tolerance_);
+      "tolerance %.2f.", name_.c_str(), tolerance_);
   }
   return path;
 }

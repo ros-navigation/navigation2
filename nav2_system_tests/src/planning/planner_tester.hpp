@@ -169,7 +169,7 @@ private:
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
   // The global planner
-  std::unique_ptr<NavFnPlannerTester> planner_tester_;
+  std::shared_ptr<NavFnPlannerTester> planner_tester_;
 
   // A thread for spinning the ROS node and the executor used
   std::unique_ptr<std::thread> spin_thread_;

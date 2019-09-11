@@ -46,7 +46,6 @@ PlannerServer::PlannerServer()
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()},
     "global_costmap"));
-  costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
@@ -54,16 +53,16 @@ PlannerServer::PlannerServer()
     {
       // TODO(mjeronimo): Once Brian pushes his change upstream to rlcpp executors, we'll
       // be able to provide our own executor to spin(), reducing this to a single line
-      costmap_executor_->add_node(node->get_node_base_interface());
-      costmap_executor_->spin();
-      costmap_executor_->remove_node(node->get_node_base_interface());
+      costmap_executor_.add_node(node->get_node_base_interface());
+      costmap_executor_.spin();
+      costmap_executor_.remove_node(node->get_node_base_interface());
     }, costmap_ros_);
 }
 
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  costmap_executor_->cancel();
+  costmap_executor_.cancel();
   costmap_thread_->join();
   planner_.reset();
 }
@@ -140,12 +139,12 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   action_server_.reset();
   plan_publisher_.reset();
-  planner_.reset();
   tf_listener_.reset();
   tf_.reset();
   costmap_ros_->on_cleanup(state);
   costmap_ros_.reset();
   planner_->cleanup();
+  planner_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

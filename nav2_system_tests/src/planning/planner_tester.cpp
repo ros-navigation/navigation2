@@ -63,13 +63,14 @@ void PlannerTester::activate()
     });
 
   // We start with a 10x10 grid with no obstacles
+  costmap_ = std::make_unique<Costmap>(this);
   loadSimpleCostmap(TestCostmap::open_space);
 
   startRobotTransform();
 
   // The navfn wrapper
   auto state = rclcpp_lifecycle::State();
-  planner_tester_ = std::make_unique<NavFnPlannerTester>();
+  planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->onConfigure(state);
   publishRobotTransform();
   planner_tester_->onActivate(state);
@@ -203,12 +204,11 @@ void PlannerTester::loadDefaultMap()
 
 void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
 {
+  std::cout << "loadSimpleCOstmap called" << std::endl;
   RCLCPP_INFO(get_logger(), "loadSimpleCostmap called.");
   if (costmap_set_) {
     RCLCPP_DEBUG(this->get_logger(), "Setting a new costmap with fake values");
   }
-
-  costmap_ = std::make_unique<Costmap>(this);
 
   costmap_->set_test_costmap(testCostmapType);
 

@@ -40,8 +40,6 @@ RclCppFixture g_rclcppfixture;
 
 TEST_F(PlannerTester, testSimpleCostmaps)
 {
-  activate();
-
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,
@@ -52,6 +50,8 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   };
 
   ComputePathToPoseResult result;
+
+  activate();
 
   for (auto costmap : costmaps) {
     loadSimpleCostmap(costmap);

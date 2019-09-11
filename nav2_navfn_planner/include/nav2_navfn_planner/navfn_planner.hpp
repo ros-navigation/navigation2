@@ -42,8 +42,8 @@ public:
 
   // plugin configure
   void configure(
-    rclcpp_lifecycle::LifecycleNode * parent,
-    std::string & name, tf2_ros::Buffer * tf,
+    nav2_util::LifecycleNode::SharedPtr parent,
+    std::string name, tf2_ros::Buffer * tf,
     nav2_costmap_2d::Costmap2DROS * costmap_ros) override;
 
   // plugin cleanup
@@ -120,7 +120,7 @@ protected:
   tf2_ros::Buffer * tf_;
 
   // node ptr
-  rclcpp_lifecycle::LifecycleNode * node_;
+  nav2_util::LifecycleNode::SharedPtr node_;
 
   // Global Costmap
   nav2_costmap_2d::Costmap2D * costmap_;

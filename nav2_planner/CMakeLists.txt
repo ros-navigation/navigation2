@@ -52,6 +52,8 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 add_executable(${executable_name}
   src/main.cpp
 )
