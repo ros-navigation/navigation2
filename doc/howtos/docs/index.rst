@@ -1,7 +1,7 @@
-.. _howtos:
+.. _docs_howtos:
 
-How-Tos
-#######
+Documentation How-Tos
+#####################
 
 This guide has everything you need to know to begin writing, building, and
 deploying technical documentation using our Git/Sphinx/Read the Docs workflow.
