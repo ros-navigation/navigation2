@@ -54,6 +54,8 @@ private Q_SLOTS:
   void onStartup();
   void onShutdown();
   void onCancel();
+  void onPause();
+  void onResume();
   void onNewGoal(double x, double y, double theta, QString frame);
 
 private:
@@ -82,6 +84,7 @@ private:
   nav2_lifecycle_manager::LifecycleManagerClient client_;
 
   QPushButton * start_stop_button_{nullptr};
+  QPushButton * pause_resume_button_{nullptr};
 
   QStateMachine state_machine_;
 
@@ -97,6 +100,8 @@ private:
   // but do nothing upon entrance.
   QState * running_{nullptr};
   QState * canceled_{nullptr};
+  QState * pausing_{nullptr};
+  QState * resuming_{nullptr};
 };
 
 class InitialThread : public QThread

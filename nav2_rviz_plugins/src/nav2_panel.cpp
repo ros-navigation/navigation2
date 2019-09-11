@@ -37,12 +37,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Create the control button and its tooltip
 
   start_stop_button_ = new QPushButton;
+  pause_resume_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
   const char * shutdown_msg = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
   const char * cancel_msg = "Cancel navigation";
+  const char * pause_msg = "Deactivate all nav2 lifecycle nodes";
+  const char * resume_msg = "Activate all nav2 lifecycle nodes";
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -85,6 +88,11 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
   running_->addTransition(start_stop_button_, SIGNAL(clicked()), canceled_);
   canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
+  QObject::connect(pausing_, SIGNAL(entered()), this, SLOT(onPause()));
+  QObject::connect(resuming_, SIGNAL(entered()), this, SLOT(onResume()));
+
+  pausing_->addTransition(pause_resume_button_, SIGNAL(clicked()), resuming_);
+  resuming_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
 
   ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleTransition->setTargetState(running_);
@@ -113,6 +121,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(stopping_);
   state_machine_.addState(running_);
   state_machine_.addState(canceled_);
+  state_machine_.addState(pausing_);
+  state_machine_.addState(resuming_);
 
   state_machine_.setInitialState(pre_initial_);
   state_machine_.start();
@@ -148,6 +158,20 @@ Nav2Panel::onInitialize()
 }
 
 void
+Nav2Panel::onPause()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause, &client_));
+}
+
+void
+Nav2Panel::onResume()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume, &client_));
+}
+
+void
 Nav2Panel::onStartup()
 {
   QFuture<void> future =
@@ -159,7 +183,7 @@ void
 Nav2Panel::onShutdown()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
       &client_));
 
   timer_.stop();
