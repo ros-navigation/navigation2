@@ -3,7 +3,6 @@
 #
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
-# export BUILD_SYSTEM_TESTS=False
 #
 # This determines which version of the ROS2 code base to pull
 # export ROS2_BRANCH=master
@@ -13,15 +12,16 @@
 # has been removed that an older codebase depends on. In those cases, using
 # ros:DISTRO-ros-core would be a good choice where distro is crystal, dashing, etc.
 # export ROS2_DOCKER_IMAGE=osrf/ros2:nightly
-# docker build -t nav2:full_ros_build --build-arg BUILD_SYSTEM_TESTS
-#   --build-arg CMAKE_BUILD_TYPE -f Dockerfile.full_ros_build ./
+# docker build -t nav2:full_ros_build
+#   --build-arg CMAKE_BUILD_TYPE \
+#   -f Dockerfile.full_ros_build ./
 
 # We're only building on top of a ROS docker image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros dashing packages. Instead we are going to build
 # everything from source in one big workspace.
-ARG ROS2_DOCKER_BRANCH=osrf/ros2:nightly
-FROM $ROS2_DOCKER_BRANCH
+ARG FROM_IMAGE=osrf/ros2:nightly
+FROM $FROM_IMAGE
 
 # install ROS2 dependencies
 RUN apt-get update && apt-get install -q -y \
@@ -48,15 +48,6 @@ COPY ./ src/navigation2/
 ENV NAV2_DEPS_DIR $ROS2_WS/src/navigation2_dependencies
 RUN mkdir -p $NAV2_DEPS_DIR
 RUN vcs import src < $NAV2_DIR/tools/ros2_dependencies.repos
-
-# delete nav2_system_tests/COLCON_IGNORE before running rosdep, otherwise it
-# doesn't install nav2_system_tests dependencies.
-ARG BUILD_SYSTEM_TESTS=True
-RUN if [ "$BUILD_SYSTEM_TESTS" = "True" ] ; then \
-        rm $NAV2_DIR/nav2_system_tests/COLCON_IGNORE ; \
-        echo "Building of system tests enabled" ; \
-    fi
-
 
 # install package dependencies
 RUN apt-get update && \
