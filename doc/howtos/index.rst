@@ -16,16 +16,6 @@ Build Guide
    process/docbuild
    process/docker-build
 
-Deploy with GitHub
-==================
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   process/github-guide
-   process/github-publish
-   process/github-travis-ci
 
 .. _technical-guides:
 
