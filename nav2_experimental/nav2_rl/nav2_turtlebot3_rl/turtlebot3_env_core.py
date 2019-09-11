@@ -38,20 +38,17 @@ from gazebo_msgs.srv import GetEntityState, SetEntityState
 import copy
 
 
-class TurtlebotEnv():
-    def __init__(self):
-        self.node_ = rclpy.create_node('turtlebot3_env_oa')
+class TurtlebotEnv(object):
+    def __init__(self, TurtlebotEnv=None):
+        self.TurtlebotEnv = TurtlebotEnv
+        self.node_ = rclpy.create_node('turtlebot3_env_core')
         self.executor = SingleThreadedExecutor()
         self.executor.add_node(self.node_)
         self.node_.declare_parameter('use_sim_time', True)
         self.node_.set_parameters([Parameter('use_sim_time', Parameter.Type.BOOL, True)])
         self.act = 0
         self.done = False
-        self.actions = [[parameters.ZERO, parameters.ZERO],  # Stop
-                        [parameters.ZERO, -parameters.SPIN_VELOCITY],  # SR
-                        [parameters.FWD_VELOCITY, parameters.ZERO],  # FWD
-                        [parameters.ZERO, parameters.SPIN_VELOCITY],  # SL
-                        [-parameters.FWD_VELOCITY, -parameters.ZERO]]  # BWD
+        self.actions = self.get_actions()
 
         self.collision = False
         self.collision_tol = 0.125
@@ -83,6 +80,22 @@ class TurtlebotEnv():
     def cleanup(self):
         self.t.join()
 
+    def render(self, mode):
+        """This method is not needed.
+        """
+        pass
+
+    def get_actions(self):
+        """Defines the actions that the environment can have
+
+        # Argument
+            None
+
+        # Returns
+            The list of possible actions
+        """
+        raise NotImplementedError()
+
     # Rate object is not yet available in rclpy. Thus, we created this method to calculate the
     # difference between simulation time and system time
     def get_time_factor(self):
@@ -93,29 +106,15 @@ class TurtlebotEnv():
         return sim_time_dif / self.time_to_sample
 
     def get_reward(self):
+        """Takes the observation from the environment and calculates the reward.
 
-        reward = 0
-        distance_reward = (1.0/(self.sq_distance_to_goal()+0.0067))
-        heading_reward = cos(self.get_heading())
+        # Argument
+            None
 
-        if self.collision == True:
-            reward = -15
-            self.done = True
-            print('loss reward:  '+ str(reward))
-            return reward, self.done
-
-        if  self.sq_distance_to_goal() > 0.25:
-            reward = heading_reward + distance_reward
-
-        else:
-            reward = 1500
-            self.done = True
-
-        if self.check_collision():
-            self.done = True
-            reward = -15
-
-        return reward, self.done
+        # Returns
+            The calculated reward after taking action on the environment
+        """
+        raise NotImplementedError()
 
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
@@ -150,25 +149,31 @@ class TurtlebotEnv():
     def step(self, action):
         vel_cmd = Twist()
         self.act = action
-        vel_cmd.linear.x = self.actions[action][0]
-        vel_cmd.angular.z = self.actions[action][1]
+        vel_cmd.linear.x = float(action[0])
+        vel_cmd.angular.z = float(action[1])
         self.pub_cmd_vel.publish(vel_cmd)
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
         sleep(parameters.LOOP_RATE / self.time_factor)
         get_reward = self.get_reward()
-        return self.observation(), get_reward[0], self.done
+        return self.observation(), get_reward[0], self.done, {}
 
     def observation(self):
         self.get_robot_pose()
         self.states.clear()
-        self.states = [0] * (len(self.states_input) + 5)
-        self.states[0] =   float(self.current_pose.position.x)
-        self.states[1] =  float(self.current_pose.position.y)
-        self.states[2] = float(self.goal_pose.position.x)
-        self.states[3] = float(self.goal_pose.position.y)
-        self.states[4] = float(self.get_heading())
-        self.states[5:13] = self.states_input
+        self.states = [0] * (len(self.states_input) + 6)
+        self.states[:8] = self.states_input[:]
+
+        sq_dist = self.sq_distance_to_goal()
+        heading = self.get_heading()
+
+        self.states[8] = sq_dist
+        self.states[9] = heading
+        self.states[10] = float(self.current_pose.position.x)
+        self.states[11] = float(self.current_pose.position.y)
+        self.states[12] = float(self.goal_pose.position.x)
+        self.states[13] = float(self.goal_pose.position.y)
+
         return self.states
 
     def check_collision(self):
@@ -184,24 +189,29 @@ class TurtlebotEnv():
         self.pub_cmd_vel.publish(vel_cmd)
 
     def set_random_robot_pose(self):
-        sleep(1.0)
+        self.set_entity_state_pose('turtlebot3_waffle', self.get_random_pose())
+
+    def set_random_goal_pose(self):
+        self.goal_pose = self.get_random_pose()
+        self.set_entity_state_pose('goal_pose', self.goal_pose)
+
+    def set_entity_state_pose(self, entity_name, entity_pose):
         while not self.set_entity_state.wait_for_service(timeout_sec=1.0):
             print('Set entity state service is not available...')
-        random_pose = self.get_random_pose()
-        req = SetEntityState.Request()
-        req.state.name = 'turtlebot3_waffle'
-        req.state.pose.position.x = random_pose.position.x
-        req.state.pose.position.y = random_pose.position.y
-        req.state.pose.position.z = 0.0
-        req.state.pose.orientation.x = random_pose.orientation.x
-        req.state.pose.orientation.y = random_pose.orientation.y
-        req.state.pose.orientation.z = random_pose.orientation.z
-        req.state.pose.orientation.w = random_pose.orientation.w
-        future = self.set_entity_state.call_async(req)
 
+        req = SetEntityState.Request()
+        req.state.name = entity_name
+        req.state.pose.position.x = entity_pose.position.x
+        req.state.pose.position.y = entity_pose.position.y
+        req.state.pose.position.z = 0.0
+        req.state.pose.orientation.x = entity_pose.orientation.x
+        req.state.pose.orientation.y = entity_pose.orientation.y
+        req.state.pose.orientation.z = entity_pose.orientation.z
+        req.state.pose.orientation.w = entity_pose.orientation.w
+        future = self.set_entity_state.call_async(req)
         while not future.done() and rclpy.ok():
             sleep(0.1)
-        sleep(1.0)
+        sleep(0.5)
 
     def get_robot_pose(self):
         while not self.get_entity_state.wait_for_service(timeout_sec=1.0):
@@ -223,21 +233,15 @@ class TurtlebotEnv():
 
     def get_random_pose(self):
         random_pose = Pose()
-        validPoseFile = os.getenv('VALID_POSE')
-        df = pandas.read_csv(validPoseFile, header=0, names=['x', 'y'])
-        nrows = df['x'].count()
-
-        rand_index = random.randint(1, nrows)
         yaw = random.uniform(0, pi * 2)
 
-        random_pose.position.x = df['x'][rand_index - 1]
-        random_pose.position.y = df['y'][rand_index - 1]
+        random_pose.position.x = random.uniform(-3, 3)
+        random_pose.position.y = random.uniform(-3, 3)
         random_pose.position.z = 0.0
         random_pose.orientation.x = 0.0
         random_pose.orientation.y = 0.0
         random_pose.orientation.z = sin(yaw * 0.5)
         random_pose.orientation.w = cos(yaw * 0.5)
-
         return random_pose
 
     def sq_distance_to_goal(self):
@@ -268,15 +272,15 @@ class TurtlebotEnv():
         return yaw
 
     def reset(self):
+        self.stop_action()
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
             print('Reset world service is not available...')
         self.reset_world.call_async(Empty.Request())
 
         self.time_factor = self.get_time_factor()
-        print('Time factor is: ' + "%f" % self.time_factor)
 
         self.scan_msg_received = False
-        self.stop_action
+
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
             print('Reset world service is not available...')
         self.reset_world.call_async(Empty.Request())
@@ -284,10 +288,9 @@ class TurtlebotEnv():
         while not self.reset_simulation.wait_for_service(timeout_sec=1.0):
             print('Reset simulation service is not available...')
         self.reset_simulation.call_async(Empty.Request())
-
+        self.stop_action()
         self.set_random_robot_pose()
-        self.get_robot_pose()
-        self.goal_pose = self.get_random_pose()
+        self.set_random_goal_pose()
 
         self.laser_scan_range = [0] * 360
         self.states_input = [3.5] * 8
