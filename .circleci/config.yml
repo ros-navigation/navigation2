@@ -396,8 +396,9 @@ jobs:
       - *on_checkout
       - build_docs
   docs_publish:
+    executor: docs_exec
     steps:
-      - run: echo 'TODO: This is where we would publish the docs.'
+      - run: echo 'TODO - This is where we would publish the docs.'
 
 workflows:
   version: 2
