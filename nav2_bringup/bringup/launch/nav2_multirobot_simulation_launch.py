@@ -21,19 +21,20 @@ import os
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 
+from nav2_common.launch import ReplaceString
+
 from launch import LaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.actions import LogInfo
 from launch.actions import GroupAction
+from launch.actions import ExecuteProcess
 from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch.substitutions import ThisLaunchFileDir
 from launch.substitutions import TextSubstitution
 from launch_ros.actions import PushRosNamespace
-from nav2_common.launch import ReplaceString
-
-import launch.actions
-import launch_ros.actions
 
 
 def generate_launch_description():
@@ -46,52 +47,52 @@ def generate_launch_description():
         {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
 
     # Simulation settings
-    world = launch.substitutions.LaunchConfiguration('world')
-    simulator = launch.substitutions.LaunchConfiguration('simulator')
+    world = LaunchConfiguration('world')
+    simulator = LaunchConfiguration('simulator')
 
     # On this example all robots are launched with the same settings
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
-    params_file = launch.substitutions.LaunchConfiguration('params_file')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
-    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
-    log_settings = launch.substitutions.LaunchConfiguration('log_settings',
+    map_yaml_file = LaunchConfiguration('map_yaml_file')
+    params_file = LaunchConfiguration('params_file')
+    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    rviz_config_file = LaunchConfiguration('rviz_config')
+    log_settings = LaunchConfiguration('log_settings',
                                                              default='true')
 
     # Declare the launch arguments
-    declare_world_cmd = launch.actions.DeclareLaunchArgument(
+    declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(bringup_dir, 'world', 'world_only.model'),
         description='Full path to world file to load')
 
-    declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
+    declare_simulator_cmd = DeclareLaunchArgument(
         'simulator',
         default_value='gazebo',
         description='The simulator to use (gazebo or gzserver)')
 
-    declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_map_yaml_cmd = DeclareLaunchArgument(
         'map_yaml_file',
         default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
-    declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
+    declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
         default_value=os.path.join(bringup_dir, 'launch', 'nav2_params_namespaced.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
-    declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
+    declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
    # Start Gazebo with plugin providing the robot spawing service
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
+    start_gazebo_cmd = ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
 
@@ -99,7 +100,7 @@ def generate_launch_description():
     spawn_robots_cmds = []
     for robot in robots:
         spawn_robots_cmds.append(
-            launch.actions.IncludeLaunchDescription(
+            IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'spawn_robot_launch.py')),
                 launch_arguments={
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
@@ -128,7 +129,7 @@ def generate_launch_description():
             # Instances use the robot's name for namespace
             PushRosNamespace(robot['name']),
 
-            launch.actions.IncludeLaunchDescription(
+            IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'nav2_simulation_launch.py')),
                 #TODO(orduno) pass the rviz config file
                 launch_arguments={
@@ -171,7 +172,7 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
 
     # Create the launch description and populate
-    ld = launch.LaunchDescription()
+    ld = LaunchDescription()
 
     # Declare the launch options
     ld.add_action(declare_simulator_cmd)

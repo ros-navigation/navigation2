@@ -16,12 +16,17 @@ import os
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
+
+from nav2_common.launch import Node
+
+from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
-from launch.conditions import UnlessCondition
-
-import launch.actions
-import launch_ros.actions
+from launch.substitutions import LaunchConfiguration
+from launch.substitutions import ThisLaunchFileDir
+from launch.actions import DeclareLaunchArgument
+from launch.actions import SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription
 
 
 def generate_launch_description():
@@ -30,13 +35,13 @@ def generate_launch_description():
     launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
-    robot_name = launch.substitutions.LaunchConfiguration('robot_name')
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    params_file = launch.substitutions.LaunchConfiguration('params_file')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
-    autostart = launch.substitutions.LaunchConfiguration('autostart')
-    use_remappings = launch.substitutions.LaunchConfiguration('use_remappings')
+    robot_name = LaunchConfiguration('robot_name')
+    map_yaml_file = LaunchConfiguration('map_yaml_file')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    params_file = LaunchConfiguration('params_file')
+    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    autostart = LaunchConfiguration('autostart')
+    use_remappings = LaunchConfiguration('use_remappings')
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
     #              https://github.com/ros2/launch_ros/issues/56
@@ -48,47 +53,47 @@ def generate_launch_description():
                   ('/cmd_vel', 'cmd_vel'),
                   ('/map', 'map')]
 
-    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+    stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Declare the launch arguments
-    declare_robot_name_cmd = launch.actions.DeclareLaunchArgument(
+    declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name',
         default_value='',
         description='Identification name for the robot')
 
-    declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_map_yaml_cmd = DeclareLaunchArgument(
         'map_yaml_file',
         default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
-    declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
-    declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
+    declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
+        default_value=[ThisLaunchFileDir(), '/nav2_params.yaml'],
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
-    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
+    declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
 
-    declare_use_remappings_cmd = launch.actions.DeclareLaunchArgument(
+    declare_use_remappings_cmd = DeclareLaunchArgument(
         'use_remappings', default_value='false',
         description='Arguments to pass to all nodes launched by the file')
 
     # Specify the actions
-    start_localization_cmd = launch.actions.IncludeLaunchDescription(
+    start_localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_localization_launch.py')),
         launch_arguments={'robot_name': robot_name,
                           'map_yaml_file': map_yaml_file,
@@ -98,7 +103,7 @@ def generate_launch_description():
                           'use_lifecycle_mgr': 'false',
                           'use_remappings': use_remappings}.items())
 
-    start_navigation_cmd = launch.actions.IncludeLaunchDescription(
+    start_navigation_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
         launch_arguments={'robot_name': robot_name,
                           'use_sim_time': use_sim_time,
@@ -108,7 +113,7 @@ def generate_launch_description():
                           'use_lifecycle_mgr': 'false',
                           'use_remappings': use_remappings}.items())
 
-    start_lifecycle_manager_cmd = launch_ros.actions.Node(
+    start_lifecycle_manager_cmd = Node(
         package='nav2_lifecycle_manager',
         node_executable='lifecycle_manager',
         node_name='lifecycle_manager',
@@ -117,7 +122,7 @@ def generate_launch_description():
                     {'autostart': autostart}])
 
     # Create the launch description and populate
-    ld = launch.LaunchDescription()
+    ld = LaunchDescription()
 
     # Set environment variables
     ld.add_action(stdout_linebuf_envvar)
