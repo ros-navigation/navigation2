@@ -13,7 +13,7 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2_ros</depend>
-  <depend>nav2_utils</depend>
+  <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
 
   <export>
