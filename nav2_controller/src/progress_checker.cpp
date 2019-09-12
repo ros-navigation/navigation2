@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dwb_controller/progress_checker.hpp"
+#include "nav2_controller/progress_checker.hpp"
 #include <cmath>
-#include "dwb_core/exceptions.hpp"
+#include "nav2_core/exceptions.hpp"
+#include "nav_2d_utils/conversions.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
 
-namespace dwb_controller
+namespace nav2_controller
 {
 static double pose_distance(const geometry_msgs::msg::Pose2D &, const geometry_msgs::msg::Pose2D &);
 
@@ -30,16 +33,19 @@ ProgressChecker::ProgressChecker(const rclcpp::Node::SharedPtr & node)
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
 }
 
-void ProgressChecker::check(nav_2d_msgs::msg::Pose2DStamped & current_pose)
+void ProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
-  if ((!baseline_pose_set_) || (is_robot_moved_enough(current_pose.pose))) {
-    reset_baseline_pose(current_pose.pose);
+  geometry_msgs::msg::Pose2D current_pose2d;
+  current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
+
+  if ((!baseline_pose_set_) || (is_robot_moved_enough(current_pose2d))) {
+    reset_baseline_pose(current_pose2d);
     return;
   }
   if ((nh_->now() - baseline_time_) > time_allowance_) {
-    throw nav_core2::PlannerException("Failed to make progress");
+    throw nav2_core::PlannerException("Failed to make progress");
   }
 }
 
@@ -69,4 +75,4 @@ static double pose_distance(
   return std::hypot(dx, dy);
 }
 
-}  // namespace dwb_controller
+}  // namespace nav2_controller

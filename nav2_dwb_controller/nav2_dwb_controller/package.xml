@@ -17,7 +17,6 @@
   <depend>dwb_critics</depend>
   <depend>dwb_msgs</depend>
   <depend>dwb_plugins</depend>
-  <depend>dwb_controller</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav_2d_utils</depend>
 

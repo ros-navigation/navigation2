@@ -80,8 +80,8 @@ def generate_launch_description():
             description='Whether to set the map subscriber QoS to transient local'),
 
         Node(
-            package='dwb_controller',
-            node_executable='dwb_controller',
+            package='nav2_controller',
+            node_executable='controller_server',
             output='screen',
             parameters=[configured_params]),
 
@@ -114,8 +114,8 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['dwb_controller',
-                                        'planner_server',
+                        {'node_names': ['nav2_controller',
+                                        'navfn_planner',
                                         'bt_navigator']}]),
 
     ])
