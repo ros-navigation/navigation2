@@ -36,11 +36,11 @@ class DQN:
     def build_model(self, observation_space, load):
         if load:
             self.model = load_model('random_crawl_model.h5')
-        else:           
+        else:
             self.model = Sequential()
-            self.model.add(Dense(48, input_dim=observation_space, activation='relu'))
-            self.model.add(Dense(24, activation='relu'))
-            self.model.add(Dense(24, activation='relu'))
+            self.model.add(Dense(8, input_dim=observation_space, activation='relu'))
+            self.model.add(Dense(8, activation='relu'))
+            self.model.add(Dense(8, activation='relu'))
             self.model.add(Dense(self.action_size, activation='linear'))
             self.model.compile(loss='mse', optimizer=Adam(lr=parameters.LEARNING_RATE))
 
@@ -50,7 +50,8 @@ class DQN:
     def get_linear_decay_epsilon(self, step):
         if step <= parameters.EXPLORATION_TARGET_STEP:
             epsilon = parameters.EXPLORATION_MAX - step * ((parameters.EXPLORATION_MAX -
-                      parameters.EXPLORATION_MIN) / parameters.EXPLORATION_TARGET_STEP)
+                                                            parameters.EXPLORATION_MIN) /
+                                                           parameters.EXPLORATION_TARGET_STEP)
         else:
             epsilon = parameters.EXPLORATION_MIN
         return epsilon
