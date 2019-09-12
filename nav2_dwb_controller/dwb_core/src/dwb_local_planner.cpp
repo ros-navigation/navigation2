@@ -569,5 +569,6 @@ DWBLocalPlanner::transformGlobalPlan(
 
 }  // namespace dwb_core
 
-// Register this planner as a LocalPlanner plugin
-// PLUGINLIB_EXPORT_CLASS(dwb_core::DWBLocalPlanner, nav_core2::LocalPlanner)
+// Register this planner as a nav2_core plugin
+PLUGINLIB_EXPORT_CLASS(dwb_core::DWBLocalPlanner,
+  nav2_core::LocalPlanner)

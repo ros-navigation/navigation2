@@ -48,5 +48,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <LocalPlanner plugin="${prefix}/dwb_core.xml" />
   </export>
 </package>

@@ -49,6 +49,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "pluginlib/class_list_macros.hpp"
 
 namespace dwb_core
 {
@@ -209,6 +210,7 @@ protected:
   pluginlib::ClassLoader<TrajectoryGenerator> traj_gen_loader_;
   TrajectoryGenerator::Ptr traj_generator_;
 
+  pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
   nav2_core::GoalChecker::Ptr goal_checker_;
 
   pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;

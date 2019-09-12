@@ -75,4 +75,6 @@ ament_export_include_directories(include)
 ament_export_libraries(dwb_core)
 ament_export_dependencies(${dependencies})
 
+pluginlib_export_plugin_description_file(nav2_core dwb_core.xml)
+
 ament_package()
