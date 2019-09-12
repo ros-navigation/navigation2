@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DWB_CONTROLLER__PROGRESS_CHECKER_HPP_
-#define DWB_CONTROLLER__PROGRESS_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
+#define NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
 
-namespace dwb_controller
+namespace nav2_controller
 {
 
 class ProgressChecker
 {
 public:
   explicit ProgressChecker(const rclcpp::Node::SharedPtr & node);
-  void check(nav_2d_msgs::msg::Pose2DStamped & current_pose);
+  void check(geometry_msgs::msg::PoseStamped & current_pose);
   void reset() {baseline_pose_set_ = false;}
 
 protected:
@@ -42,6 +43,6 @@ protected:
 
   bool baseline_pose_set_{false};
 };
-}  // namespace dwb_controller
+}  // namespace nav2_controller
 
-#endif  // DWB_CONTROLLER__PROGRESS_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_

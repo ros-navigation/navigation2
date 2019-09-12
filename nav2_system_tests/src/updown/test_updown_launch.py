@@ -82,9 +82,9 @@ def generate_launch_description():
     start_dwb_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('dwb_controller'),
-                'lib/dwb_controller/dwb_controller'),
-            '--ros-args', '--params-file', params_file],
+                get_package_prefix('nav2_controller'),
+                'lib/nav2_controller/nav2_controller'),
+            '--ros-args', ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_planner_cmd = launch.actions.ExecuteProcess(
