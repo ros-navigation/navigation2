@@ -75,4 +75,4 @@ bool SimpleGoalChecker::isGoalReached(
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, dwb_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, nav2_core::GoalChecker)

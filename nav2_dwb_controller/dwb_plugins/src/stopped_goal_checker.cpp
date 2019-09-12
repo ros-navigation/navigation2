@@ -32,7 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/stopped_goal_checker.hpp"
 #include <cmath>
 #include <memory>
 #include "dwb_plugins/stopped_goal_checker.hpp"
@@ -76,4 +75,4 @@ bool StoppedGoalChecker::isGoalReached(
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::StoppedGoalChecker, dwb_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::StoppedGoalChecker, nav2_core::GoalChecker)
