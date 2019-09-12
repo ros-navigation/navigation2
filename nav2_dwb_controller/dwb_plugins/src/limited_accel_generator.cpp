@@ -69,7 +69,8 @@ void LimitedAccelGenerator::checkUseDwaParam(const nav2_util::LifecycleNode::Sha
   bool use_dwa = false;
   nh->get_parameter("use_dwa", use_dwa);
   if (!use_dwa) {
-    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to false. "
+    throw nav2_core::
+          PlannerException("Deprecated parameter use_dwa set to false. "
             "Please use StandardTrajectoryGenerator for that functionality.");
   }
 }

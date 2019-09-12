@@ -39,13 +39,15 @@
 #include <string>
 #include <vector>
 
-#include "dwb_core/goal_checker.hpp"
+#include "nav2_core/local_planner.hpp"
+#include "nav2_core/goal_checker.hpp"
 #include "dwb_core/publisher.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_core/trajectory_generator.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace dwb_core
@@ -55,30 +57,34 @@ namespace dwb_core
  * @class DWBLocalPlanner
  * @brief Plugin-based flexible local_planner
  */
-class DWBLocalPlanner : public nav2_util::LifecycleHelperInterface
+class DWBLocalPlanner : public nav2_core::LocalPlanner
 {
 public:
   /**
    * @brief Constructor that brings up pluginlib loaders
    */
-  DWBLocalPlanner(
-    nav2_util::LifecycleNode::SharedPtr node, TFBufferPtr tf, CostmapROSPtr costmap_ros);
+  DWBLocalPlanner();
+
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
 
   virtual ~DWBLocalPlanner() {}
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  void activate() override;
+  void deactivate() override;
+  void cleanup() override;
+  void shutdown() override {}
+
 
   /**
-   * @brief nav_core2 setPlan - Sets the global plan
+   * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
    */
-  void setPlan(const nav_2d_msgs::msg::Path2D & path);
+  void setPlan(const nav2_msgs::msg::Path & path) override;
 
   /**
-   * @brief nav_core2 computeVelocityCommands - calculates the best command given the current pose and velocity
+   * @brief nav2_core computeVelocityCommands - calculates the best command given the current pose and velocity
    *
    * It is presumed that the global plan is already set.
    *
@@ -94,7 +100,7 @@ public:
     const nav_2d_msgs::msg::Twist2D & velocity);
 
   /**
-   * @brief nav_core2 isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
+   * @brief nav2_core isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
    *
    * The pose that it checks against is the last pose in the current global plan.
    * The calculation is delegated to the goal_checker plugin.
@@ -192,9 +198,9 @@ protected:
 
   void loadBackwardsCompatibleParameters();
 
-  nav2_util::LifecycleNode::SharedPtr node_;
-  TFBufferPtr tf_;
-  CostmapROSPtr costmap_ros_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
   std::unique_ptr<DWBPublisher> pub_;
   std::vector<std::string> default_critic_namespaces_;
@@ -203,8 +209,7 @@ protected:
   pluginlib::ClassLoader<TrajectoryGenerator> traj_gen_loader_;
   TrajectoryGenerator::Ptr traj_generator_;
 
-  pluginlib::ClassLoader<GoalChecker> goal_checker_loader_;
-  GoalChecker::Ptr goal_checker_;
+  nav2_core::GoalChecker::Ptr goal_checker_;
 
   pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
   std::vector<TrajectoryCritic::Ptr> critics_;

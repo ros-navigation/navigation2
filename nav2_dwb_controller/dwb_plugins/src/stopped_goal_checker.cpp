@@ -35,6 +35,7 @@
 #include "dwb_plugins/stopped_goal_checker.hpp"
 #include <cmath>
 #include <memory>
+#include "dwb_plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -48,7 +49,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   SimpleGoalChecker::initialize(nh);
 

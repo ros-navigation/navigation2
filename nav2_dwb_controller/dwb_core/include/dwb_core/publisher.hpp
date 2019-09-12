@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#include "dwb_core/common_types.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
 #include "nav2_util/lifecycle_helper_interface.hpp"
@@ -66,15 +66,15 @@ namespace dwb_core
  *   5) Markers representing the different trajectories evaluated
  *   6) The CostGrid (in the form of a complex PointCloud2)
  */
-class DWBPublisher : public nav2_util::LifecycleHelperInterface
+class DWBPublisher
 {
 public:
   explicit DWBPublisher(nav2_util::LifecycleNode::SharedPtr node);
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure();
+  nav2_util::CallbackReturn on_activate();
+  nav2_util::CallbackReturn on_deactivate();
+  nav2_util::CallbackReturn on_cleanup();
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved
@@ -90,7 +90,7 @@ public:
     const std_msgs::msg::Header & header,
     const dwb_msgs::msg::Trajectory2D & traj);
   void publishCostGrid(
-    const CostmapROSPtr costmap_ros,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const std::vector<TrajectoryCritic::Ptr> critics);
   void publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan);
   void publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan);
