@@ -32,12 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/simple_goal_checker.hpp"
 #include <memory>
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
 
 namespace dwb_plugins
 {
@@ -61,15 +62,16 @@ void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::Shared
 }
 
 bool SimpleGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-  const nav_2d_msgs::msg::Twist2D &)
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist &)
 {
-  double dx = query_pose.x - goal_pose.x,
-    dy = query_pose.y - goal_pose.y;
+  double dx = query_pose.position.x - goal_pose.position.x,
+    dy = query_pose.position.y - goal_pose.position.y;
   if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
     return false;
   }
-  double dyaw = angles::shortest_angular_distance(query_pose.theta, goal_pose.theta);
+  double dyaw = angles::shortest_angular_distance(tf2::getYaw(query_pose.orientation),
+      tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 

@@ -96,9 +96,9 @@ public:
    * @param velocity Current robot velocity
    * @return The best command for the robot to drive
    */
-  nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
-    const nav_2d_msgs::msg::Pose2DStamped & pose,
-    const nav_2d_msgs::msg::Twist2D & velocity);
+  geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
   /**
    * @brief nav2_core isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
@@ -111,8 +111,8 @@ public:
    * @return True if the robot should be considered as having reached the goal.
    */
   bool isGoalReached(
-    const nav_2d_msgs::msg::Pose2DStamped & pose,
-    const nav_2d_msgs::msg::Twist2D & velocity);
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
   /**
    * @brief Score a given command. Can be used for testing.
