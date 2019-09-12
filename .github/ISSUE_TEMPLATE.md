@@ -13,8 +13,8 @@ For Bug report or feature requests, please fill out the relevant category below
   - <!-- OS and version (e.g. Windows 10, Ubuntu 16.04...) -->
 - Version or commit hash:
   - <!-- from source: output of `git -C navigation2 rev-parse HEAD
-         apt binaries: output of `dpkg-query --show "ros-$ROS_DISTRO-navigation2"`
-                              or `dpkg-query --show "ros-$ROS_DISTRO-nav2-*`" -->
+         apt binaries: output of: dpkg-query --show "ros-$ROS_DISTRO-navigation2"
+                              or: dpkg-query --show "ros-$ROS_DISTRO-nav2-*" -->
 - DDS implementation:
   - <!-- rmw_implementation used (e.g. Fast-RTPS, RTI Connext, etc.) -->
 
