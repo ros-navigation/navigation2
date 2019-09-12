@@ -1,7 +1,9 @@
 /*
  * Software License Agreement (BSD License)
+ * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Locus Robotics
+ *  Copyright (c) 2019, Intel Corporation
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -31,44 +33,25 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CORE__EXCEPTIONS_HPP_
-#define DWB_CORE__EXCEPTIONS_HPP_
+
+#ifndef NAV2_CORE__EXCEPTIONS_HPP_
+#define NAV2_CORE__EXCEPTIONS_HPP_
 
 #include <stdexcept>
 #include <string>
 #include <memory>
 
-#include "nav2_core/exceptions.hpp"
-
-namespace dwb_core
+namespace nav2_core
 {
 
-/**
- * @class PlannerTFException
- * @brief Thrown when the planner cannot complete its operation due to TF errors
- */
-class PlannerTFException : public nav2_core::PlannerException
+class PlannerException : public std::runtime_error
 {
 public:
-  explicit PlannerTFException(const std::string description)
-  : nav2_core::PlannerException(description) {}
+  explicit PlannerException(const std::string description)
+  : std::runtime_error(description) {}
+  using Ptr = std::shared_ptr<PlannerException>;
 };
 
-/**
- * @class IllegalTrajectoryException
- * @brief Thrown when one of the critics encountered a fatal error
- */
-class IllegalTrajectoryException : public nav2_core::PlannerException
-{
-public:
-  IllegalTrajectoryException(const std::string critic_name, const std::string description)
-  : nav2_core::PlannerException(description), critic_name_(critic_name) {}
-  std::string getCriticName() const {return critic_name_;}
+}  // namespace nav2_core
 
-protected:
-  std::string critic_name_;
-};
-
-}  // namespace dwb_core
-
-#endif  // DWB_CORE__EXCEPTIONS_HPP_
+#endif  // NAV2_CORE__EXCEPTIONS_HPP_

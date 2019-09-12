@@ -31,44 +31,54 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef DWB_CORE__EXCEPTIONS_HPP_
-#define DWB_CORE__EXCEPTIONS_HPP_
 
-#include <stdexcept>
-#include <string>
+#ifndef NAV2_CORE__GOAL_CHECKER_HPP_
+#define NAV2_CORE__GOAL_CHECKER_HPP_
+
 #include <memory>
 
-#include "nav2_core/exceptions.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
-namespace dwb_core
+namespace nav2_core
 {
 
 /**
- * @class PlannerTFException
- * @brief Thrown when the planner cannot complete its operation due to TF errors
+ * @class GoalChecker
+ * @brief Function-object for checking whether a goal has been reached
+ *
+ * This class defines the plugin interface for determining whether you have reached
+ * the goal state. This primarily consists of checking the relative positions of two poses
+ * (which are presumed to be in the same frame). It can also check the velocity, as some
+ * applications require that robot be stopped to be considered as having reached the goal.
  */
-class PlannerTFException : public nav2_core::PlannerException
+class GoalChecker
 {
 public:
-  explicit PlannerTFException(const std::string description)
-  : nav2_core::PlannerException(description) {}
+  typedef std::shared_ptr<nav2_core::GoalChecker> Ptr;
+
+  virtual ~GoalChecker() {}
+
+  /**
+   * @brief Initialize any parameters from the NodeHandle
+   * @param nh NodeHandle for grabbing parameters
+   */
+  virtual void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) = 0;
+
+  /**
+   * @brief Check whether the goal should be considered reached
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @return True if goal is reached
+   */
+  virtual bool isGoalReached(
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) = 0;
 };
 
-/**
- * @class IllegalTrajectoryException
- * @brief Thrown when one of the critics encountered a fatal error
- */
-class IllegalTrajectoryException : public nav2_core::PlannerException
-{
-public:
-  IllegalTrajectoryException(const std::string critic_name, const std::string description)
-  : nav2_core::PlannerException(description), critic_name_(critic_name) {}
-  std::string getCriticName() const {return critic_name_;}
+}  // namespace nav2_core
 
-protected:
-  std::string critic_name_;
-};
-
-}  // namespace dwb_core
-
-#endif  // DWB_CORE__EXCEPTIONS_HPP_
+#endif  // NAV2_CORE__GOAL_CHECKER_HPP_

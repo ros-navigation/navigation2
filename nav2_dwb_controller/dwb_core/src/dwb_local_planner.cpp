@@ -55,16 +55,20 @@ using nav2_util::declare_parameter_if_not_declared;
 namespace dwb_core
 {
 
-DWBLocalPlanner::DWBLocalPlanner(
-  nav2_util::LifecycleNode::SharedPtr node, TFBufferPtr tf,
-  CostmapROSPtr costmap_ros)
-: node_(node),
-  tf_(tf),
-  costmap_ros_(costmap_ros),
-  traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
-  goal_checker_loader_("dwb_core", "dwb_core::GoalChecker"),
+DWBLocalPlanner::DWBLocalPlanner()
+: traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
+  goal_checker_loader_("dwb_core", "nav2_core::GoalChecker"),
   critic_loader_("dwb_core", "dwb_core::TrajectoryCritic")
 {
+}
+
+void DWBLocalPlanner::configure(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+{
+  node_ = node;
+  costmap_ros_ = costmap_ros;
+  tf_ = costmap_ros_->getTfBuffer();
   declare_parameter_if_not_declared(node_, "critics");
   declare_parameter_if_not_declared(node_, "prune_plan", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(node_, "prune_distance", rclcpp::ParameterValue(1.0));
@@ -76,11 +80,7 @@ DWBLocalPlanner::DWBLocalPlanner(
     rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
   declare_parameter_if_not_declared(node_, "use_dwa", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(node_, "transform_tolerance", rclcpp::ParameterValue(0.1));
-}
 
-nav2_util::CallbackReturn
-DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
-{
   std::string traj_generator_name;
   std::string goal_checker_name;
 
@@ -96,7 +96,7 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
   node_->get_parameter("goal_checker_name", goal_checker_name);
 
   pub_ = std::make_unique<DWBPublisher>(node_);
-  pub_->on_configure(state);
+  pub_->on_configure();
 
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
   goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
@@ -108,37 +108,29 @@ DWBLocalPlanner::on_configure(const rclcpp_lifecycle::State & state)
     loadCritics();
   } catch (const std::exception & e) {
     RCLCPP_ERROR(node_->get_logger(), "Couldn't load critics! Caught exception: %s", e.what());
-    return nav2_util::CallbackReturn::FAILURE;
+    throw;
   }
-
-  return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
-DWBLocalPlanner::on_activate(const rclcpp_lifecycle::State & state)
+void
+DWBLocalPlanner::activate()
 {
-  pub_->on_activate(state);
-
-  return nav2_util::CallbackReturn::SUCCESS;
+  pub_->on_activate();
 }
 
-nav2_util::CallbackReturn
-DWBLocalPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
+void
+DWBLocalPlanner::deactivate()
 {
-  pub_->on_deactivate(state);
-
-  return nav2_util::CallbackReturn::SUCCESS;
+  pub_->on_deactivate();
 }
 
-nav2_util::CallbackReturn
-DWBLocalPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
+void
+DWBLocalPlanner::cleanup()
 {
-  pub_->on_cleanup(state);
+  pub_->on_cleanup();
 
   traj_generator_.reset();
   goal_checker_.reset();
-
-  return nav2_util::CallbackReturn::SUCCESS;
 }
 
 std::string
@@ -287,7 +279,7 @@ DWBLocalPlanner::computeVelocityCommands(
     nav_2d_msgs::msg::Twist2DStamped cmd_vel = computeVelocityCommands(pose, velocity, results);
     pub_->publishEvaluation(results);
     return cmd_vel;
-  } catch (const nav_core2::PlannerException & e) {
+  } catch (const nav2_core::PlannerException & e) {
     pub_->publishEvaluation(results);
     throw;
   }
@@ -348,7 +340,7 @@ DWBLocalPlanner::computeVelocityCommands(
     pub_->publishCostGrid(costmap_ros_, critics_);
 
     return cmd_vel;
-  } catch (const nav_core2::NoLegalTrajectoriesException & e) {
+  } catch (const dwb_core::NoLegalTrajectoriesException & e) {
     nav_2d_msgs::msg::Twist2D empty_cmd;
     dwb_msgs::msg::Trajectory2D empty_traj;
     // debrief stateful scoring functions
@@ -398,7 +390,7 @@ DWBLocalPlanner::coreScoringAlgorithm(
           results->worst_index = results->twists.size() - 1;
         }
       }
-    } catch (const nav_core2::IllegalTrajectoryException & e) {
+    } catch (const dwb_core::IllegalTrajectoryException & e) {
       if (results) {
         dwb_msgs::msg::TrajectoryScore failed_score;
         failed_score.traj = traj;
@@ -476,7 +468,7 @@ DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
   if (global_plan_.poses.size() == 0) {
-    throw nav_core2::PlannerException("Received plan with zero length");
+    throw nav2_core::PlannerException("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
@@ -484,7 +476,8 @@ DWBLocalPlanner::transformGlobalPlan(
   if (!nav_2d_utils::transformPose(tf_, global_plan_.header.frame_id, pose,
     robot_pose, transform_tolerance_))
   {
-    throw nav_core2::PlannerTFException("Unable to transform robot pose into global plan's frame");
+    throw dwb_core::
+          PlannerTFException("Unable to transform robot pose into global plan's frame");
   }
 
   // we'll discard points on the plan that are outside the local costmap
@@ -569,7 +562,7 @@ DWBLocalPlanner::transformGlobalPlan(
   }
 
   if (transformed_plan.poses.size() == 0) {
-    throw nav_core2::PlannerException("Resulting plan has 0 poses in it.");
+    throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;
 }

@@ -77,11 +77,12 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
 
   // If we're sufficiently close to the goal, any transforming velocity is invalid
   if (fabs(traj.velocity.x) > 0 || fabs(traj.velocity.y) > 0) {
-    throw nav_core2::IllegalTrajectoryException(name_, "Nonrotation command near goal.");
+    throw dwb_core::
+          IllegalTrajectoryException(name_, "Nonrotation command near goal.");
   }
 
   if (traj.poses.empty()) {
-    throw nav_core2::IllegalTrajectoryException(name_, "Empty trajectory.");
+    throw dwb_core::IllegalTrajectoryException(name_, "Empty trajectory.");
   }
 
   double end_yaw = traj.poses.back().theta;

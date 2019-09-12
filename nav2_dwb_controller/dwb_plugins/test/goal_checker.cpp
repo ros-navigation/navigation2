@@ -43,7 +43,7 @@ using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;
 
 void checkMacro(
-  dwb_core::GoalChecker & gc,
+  nav2_core::GoalChecker & gc,
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
   double xv, double yv, double thetav,
@@ -68,7 +68,7 @@ void checkMacro(
 }
 
 void sameResult(
-  dwb_core::GoalChecker & gc0, dwb_core::GoalChecker & gc1,
+  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
   double xv, double yv, double thetav,
@@ -79,7 +79,7 @@ void sameResult(
 }
 
 void trueFalse(
-  dwb_core::GoalChecker & gc0, dwb_core::GoalChecker & gc1,
+  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
   double xv, double yv, double thetav)
