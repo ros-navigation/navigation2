@@ -54,6 +54,15 @@ geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_
   return cmd_vel;
 }
 
+nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel)
+{
+  nav_2d_msgs::msg::Twist2D cmd_vel_2d;
+  cmd_vel_2d.x = cmd_vel.linear.x;
+  cmd_vel_2d.y = cmd_vel.linear.y;
+  cmd_vel_2d.theta = cmd_vel.angular.z;
+  return cmd_vel_2d;
+}
+
 // nav_2d_msgs::msg::Pose2DStamped stampedPoseToPose2D(const tf2::Stamped<tf2::Pose>& pose)
 // {
 //   nav_2d_msgs::msg::Pose2DStamped pose2d;

@@ -49,12 +49,14 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
 
 namespace dwb_core
 {
-
+  
 DWBLocalPlanner::DWBLocalPlanner()
 : traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
   goal_checker_loader_("dwb_core", "nav2_core::GoalChecker"),
@@ -234,41 +236,50 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
 
 bool
 DWBLocalPlanner::isGoalReached(
-  const nav_2d_msgs::msg::Pose2DStamped & pose,
-  const nav_2d_msgs::msg::Twist2D & velocity)
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & velocity)
 {
   if (global_plan_.poses.size() == 0) {
     RCLCPP_WARN(rclcpp::get_logger(
         "DWBLocalPlanner"), "Cannot check if the goal is reached without the goal being set!");
     return false;
   }
+  nav_2d_msgs::msg::Pose2DStamped local_start_pose2d, goal_pose2d, local_goal_pose2d;
 
-  nav_2d_msgs::msg::Pose2DStamped local_start_pose, goal_pose, local_goal_pose;
-  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), pose,
-    local_start_pose, transform_tolerance_);
-  goal_pose.header.frame_id = global_plan_.header.frame_id;
-  goal_pose.pose = global_plan_.poses.back();
-  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose,
-    local_goal_pose, transform_tolerance_);
+  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(),
+    nav_2d_utils::poseStampedToPose2D(pose),
+    local_start_pose2d, transform_tolerance_);
 
-  return goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
+  goal_pose2d.header.frame_id = global_plan_.header.frame_id;
+  goal_pose2d.pose = global_plan_.poses.back();
+
+  nav_2d_utils::transformPose(tf_, costmap_ros_->getGlobalFrameID(), goal_pose2d,
+    local_goal_pose2d, transform_tolerance_);
+
+  geometry_msgs::msg::PoseStamped local_start_pose, local_goal_pose;
+  local_start_pose = nav_2d_utils::pose2DToPoseStamped(local_start_pose2d);
+  local_goal_pose = nav_2d_utils::pose2DToPoseStamped(local_goal_pose2d);
+
+  return goal_checker_->isGoalReached(local_start_pose.pose,
+           local_goal_pose.pose, velocity);
 }
 
 void
-DWBLocalPlanner::setPlan(const nav_2d_msgs::msg::Path2D & path)
+DWBLocalPlanner::setPlan(const nav2_msgs::msg::Path & path)
 {
+  auto path2d = nav_2d_utils::pathToPath2D(path);
   for (TrajectoryCritic::Ptr critic : critics_) {
     critic->reset();
   }
 
-  pub_->publishGlobalPlan(path);
-  global_plan_ = path;
+  pub_->publishGlobalPlan(path2d);
+  global_plan_ = path2d;
 }
 
-nav_2d_msgs::msg::Twist2DStamped
+geometry_msgs::msg::TwistStamped
 DWBLocalPlanner::computeVelocityCommands(
-  const nav_2d_msgs::msg::Pose2DStamped & pose,
-  const nav_2d_msgs::msg::Twist2D & velocity)
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & velocity)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -276,8 +287,12 @@ DWBLocalPlanner::computeVelocityCommands(
   }
 
   try {
-    nav_2d_msgs::msg::Twist2DStamped cmd_vel = computeVelocityCommands(pose, velocity, results);
+    nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
+      nav_2d_utils::poseStampedToPose2D(pose),
+      nav_2d_utils::twist3Dto2D(velocity), results);
     pub_->publishEvaluation(results);
+    geometry_msgs::msg::TwistStamped cmd_vel;
+    cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
     return cmd_vel;
   } catch (const nav2_core::PlannerException & e) {
     pub_->publishEvaluation(results);

@@ -55,8 +55,8 @@ public:
   // Standard GoalChecker Interface
   void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) override;
   bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) override;
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;

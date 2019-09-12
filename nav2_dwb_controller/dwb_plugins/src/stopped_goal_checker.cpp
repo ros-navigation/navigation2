@@ -62,15 +62,16 @@ void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::Share
 }
 
 bool StoppedGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-  const nav_2d_msgs::msg::Twist2D & velocity)
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity)
 {
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
   if (!ret) {
     return ret;
   }
-  return fabs(velocity.theta) <= rot_stopped_velocity_ &&
-         fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
+  return fabs(velocity.angular.z) <= rot_stopped_velocity_ &&
+         fabs(velocity.linear.x) <= trans_stopped_velocity_ &&
+         fabs(velocity.linear.y) <= trans_stopped_velocity_;
 }
 
 }  // namespace dwb_plugins
