@@ -41,6 +41,13 @@ class TB3EnvironmentDDPG(TurtlebotEnv):
     def get_actions(self):
         return [0.0, 0.0]
 
+    def get_velocity_cmd(self, action):
+        self.act = action
+        x_vel = float(action[0])
+        y_vel = 0.0
+        z_vel = float(action[1])
+        return x_vel, y_vel, z_vel
+
     def get_reward(self):
 
         reward = 0.0

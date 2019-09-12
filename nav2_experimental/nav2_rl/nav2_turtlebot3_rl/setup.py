@@ -15,6 +15,7 @@ setup(
         'parameters',
         'turtlebot3_env_core',
         'navigator_ddpg',
+        'navigator_dqn',
          ],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -44,6 +45,7 @@ setup(
             'random_crawl = random_crawl:main',
             'random_crawl_action = random_crawl_action:main',
             'navigator_ddpg = navigator_ddpg:main',
+            'navigator_dqn = navigator_dqn:main',
         ],
     },
 )

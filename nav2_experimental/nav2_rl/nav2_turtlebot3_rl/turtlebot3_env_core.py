@@ -116,6 +116,17 @@ class TurtlebotEnv(object):
         """
         raise NotImplementedError()
 
+    def get_velocity_cmd(self):
+        """gets the velocity cmd from action
+
+        # Argument
+            None
+
+        # Returns
+            Select velocity cmd's from the action list
+        """
+        raise NotImplementedError()
+
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
         self.laser_scan_range.clear()
@@ -149,8 +160,7 @@ class TurtlebotEnv(object):
     def step(self, action):
         vel_cmd = Twist()
         self.act = action
-        vel_cmd.linear.x = float(action[0])
-        vel_cmd.angular.z = float(action[1])
+        vel_cmd.linear.x, vel_cmd.linear.y, vel_cmd.angular.z = self.get_velocity_cmd(action)
         self.pub_cmd_vel.publish(vel_cmd)
         vel_cmd.linear.x = 0.0
         vel_cmd.angular.z = 0.0
