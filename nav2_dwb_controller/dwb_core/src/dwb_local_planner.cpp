@@ -56,7 +56,7 @@ using nav2_util::declare_parameter_if_not_declared;
 
 namespace dwb_core
 {
-  
+
 DWBLocalPlanner::DWBLocalPlanner()
 : traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
   goal_checker_loader_("dwb_core", "nav2_core::GoalChecker"),

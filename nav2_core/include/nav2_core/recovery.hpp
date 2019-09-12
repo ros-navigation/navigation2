@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE_RECOVERY_H_
-#define NAV2_CORE_RECOVERY_H_
+#ifndef NAV2_CORE__RECOVERY_HPP_
+#define NAV2_CORE__RECOVERY_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
@@ -69,4 +69,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE_RECOVERY_H_
+#endif  // NAV2_CORE__RECOVERY_HPP_
