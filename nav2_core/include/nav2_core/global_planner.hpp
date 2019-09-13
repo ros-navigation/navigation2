@@ -46,9 +46,9 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(nav2_util::LifecycleNode::SharedPtr parent,
+  virtual void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     std::string name, tf2_ros::Buffer * tf,
-    nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

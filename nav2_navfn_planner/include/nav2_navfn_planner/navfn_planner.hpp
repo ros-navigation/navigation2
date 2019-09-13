@@ -42,9 +42,9 @@ public:
 
   // plugin configure
   void configure(
-    nav2_util::LifecycleNode::SharedPtr parent,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     std::string name, tf2_ros::Buffer * tf,
-    nav2_costmap_2d::Costmap2DROS * costmap_ros) override;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   // plugin cleanup
   void cleanup() override;
