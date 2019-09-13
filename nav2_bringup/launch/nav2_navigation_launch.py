@@ -20,10 +20,8 @@ from nav2_common.launch import RewrittenYaml
 
 from launch import LaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
-from launch.substitutions import ThisLaunchFileDir
-from launch.actions import DeclareLaunchArgument
-from launch.actions import SetEnvironmentVariable
+from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch_ros.actions import Node
 
 
