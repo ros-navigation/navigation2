@@ -1,5 +1,5 @@
 #include <nav2_costmap_2d/costmap_layer.hpp>
-
+#include <stdexcept>
 #include <algorithm>
 
 namespace nav2_costmap_2d
@@ -86,6 +86,11 @@ void CostmapLayer::updateWithTrueOverwrite(
   if (!enabled_) {
     return;
   }
+
+  if (costmap_ == nullptr) {
+    throw std::runtime_error("Can't update costmap layer: It has't been initialized yet!");
+  }
+
   unsigned char * master = master_grid.getCharMap();
   unsigned int span = master_grid.getSizeInCellsX();
 

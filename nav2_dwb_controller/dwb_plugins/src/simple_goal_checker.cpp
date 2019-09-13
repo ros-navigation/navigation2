@@ -36,6 +36,7 @@
 #include <memory>
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
+#include "nav2_util/node_utils.hpp"
 
 namespace dwb_plugins
 {
@@ -47,8 +48,10 @@ SimpleGoalChecker::SimpleGoalChecker()
 
 void SimpleGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
-  nh->declare_parameter("xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nh->declare_parameter("yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
 
   nh->get_parameter("xy_goal_tolerance", xy_goal_tolerance_);
   nh->get_parameter("yaw_goal_tolerance", yaw_goal_tolerance_);

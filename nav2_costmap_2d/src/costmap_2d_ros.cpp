@@ -59,17 +59,19 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
 : nav2_util::LifecycleNode(name, "", true,
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
-    rclcpp::NodeOptions().arguments({std::string("__ns:=") + absolute_namespace})),
+    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string(
+        "__ns:=") + absolute_namespace})),
   name_(name)
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", std::string("__node:=") + get_name() + "_client", "--"});
+    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
   std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
+  std::vector<std::string> clearable_layers{"obstacle_layer"};
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
@@ -95,6 +97,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   declare_parameter("width", rclcpp::ParameterValue(10));
+  declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -384,7 +387,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
         (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
       {
-        RCLCPP_INFO(get_logger(), "Publish costmap at %s", name_.c_str());
+        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
         costmap_publisher_->publishCostmap();
         last_publish_ = current_time;
       }

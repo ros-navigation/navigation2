@@ -79,7 +79,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   tf_ = costmap_ros_->getTfBuffer();
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   get_parameter("planner_plugin", planner_plugin_name_);
   auto node = shared_from_this();
@@ -91,7 +90,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     planner_->configure(node,
       gp_loader_.getName(planner_plugin_name_), tf_.get(), costmap_ros_.get());
   } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_INFO(get_logger(), "Failed to create global planner. Exception: %s",
+    RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
       ex.what());
     exit(-1);
   }
@@ -139,7 +138,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   action_server_.reset();
   plan_publisher_.reset();
-  tf_listener_.reset();
   tf_.reset();
   costmap_ros_->on_cleanup(state);
   costmap_ros_.reset();
@@ -233,7 +231,9 @@ PlannerServer::computePathToPose()
     action_server_->terminate_goals();
     return;
   } catch (...) {
-    RCLCPP_WARN(get_logger(), "Plan calculation failed");
+    RCLCPP_WARN(get_logger(), "Plan calculation failed, "
+      "An unexpected error has occurred. The planner server"
+      " may not be able to continue operating correctly.");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update

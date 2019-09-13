@@ -39,10 +39,12 @@
 #include <string>
 
 #include "nav_2d_utils/parameters.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using std::fabs;
-
+using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
+
 namespace dwb_plugins
 {
 
@@ -58,20 +60,20 @@ void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr &
   moveDeprecatedParameter<double>(nh, "max_speed_xy", "max_trans_vel");
   moveDeprecatedParameter<double>(nh, "min_speed_theta", "min_rot_vel");
 
-  nh->declare_parameter("min_vel_x", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("min_vel_y", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("max_vel_x", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("max_vel_y", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("max_vel_theta", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("min_speed_xy", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("max_speed_xy", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("min_speed_theta", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("acc_lim_x", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("acc_lim_y", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("acc_lim_theta", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("decel_lim_x", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("decel_lim_y", rclcpp::ParameterValue(0.0));
-  nh->declare_parameter("decel_lim_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "min_vel_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "min_vel_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "max_vel_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "max_vel_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "max_vel_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "min_speed_xy", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "max_speed_xy", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "min_speed_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "acc_lim_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "acc_lim_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "acc_lim_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "decel_lim_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "decel_lim_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, "decel_lim_theta", rclcpp::ParameterValue(0.0));
 
   nh->get_parameter("min_vel_x", min_vel_x_);
   nh->get_parameter("min_vel_y", min_vel_y_);

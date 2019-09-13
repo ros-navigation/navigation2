@@ -36,6 +36,7 @@
 #include <cmath>
 #include <memory>
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using std::fabs;
 
@@ -51,8 +52,10 @@ void StoppedGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & 
 {
   SimpleGoalChecker::initialize(nh);
 
-  nh->declare_parameter("rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nh->declare_parameter("trans_stopped_velocity", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "rot_stopped_velocity", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "trans_stopped_velocity", rclcpp::ParameterValue(0.25));
 
   nh->get_parameter("rot_stopped_velocity", rot_stopped_velocity_);
   nh->get_parameter("trans_stopped_velocity", trans_stopped_velocity_);

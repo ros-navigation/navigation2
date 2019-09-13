@@ -38,6 +38,7 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace dwb_plugins
 {
@@ -46,7 +47,7 @@ void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr
 {
   StandardTrajectoryGenerator::initialize(nh);
 
-  nh->declare_parameter("sim_period");
+  nav2_util::declare_parameter_if_not_declared(nh, "sim_period");
 
   if (nh->get_parameter("sim_period", acceleration_time_)) {
   } else {

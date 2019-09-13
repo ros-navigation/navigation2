@@ -23,6 +23,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
+from rclpy.qos import QoSProfile
 
 
 class NavTester(Node):
@@ -30,11 +32,17 @@ class NavTester(Node):
     def __init__(self):
         super().__init__('nav2_tester')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      '/initialpose')
-        self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose')
+                                                      '/initialpose', 10)
+        self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
+
+        pose_qos = QoSProfile(
+          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       '/amcl_pose', self.poseCallback)
+                                                       '/amcl_pose', self.poseCallback, pose_qos)
         self.initial_pose_received = False
 
     def setInitialPose(self, pose):

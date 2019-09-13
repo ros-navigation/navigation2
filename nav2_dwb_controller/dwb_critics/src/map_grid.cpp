@@ -39,6 +39,7 @@
 #include <memory>
 #include "dwb_core/exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using std::abs;
 using costmap_queue::CellData;
@@ -60,7 +61,8 @@ void MapGridCritic::onInit()
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
-  nh_->declare_parameter(name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
+  nav2_util::declare_parameter_if_not_declared(nh_,
+    name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
 
   std::string aggro_str;
   nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
