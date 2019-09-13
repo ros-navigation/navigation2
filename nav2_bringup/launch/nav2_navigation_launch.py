@@ -80,7 +80,7 @@ def generate_launch_description():
             parameters=[configured_params]),
 
         Node(
-            package='nav2_navfn_planner',
+            package='nav2_planner',
             node_executable='planner_server',
             node_name='planner_server',
             output='screen',
