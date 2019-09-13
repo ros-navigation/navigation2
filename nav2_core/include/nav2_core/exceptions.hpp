@@ -1,6 +1,5 @@
 /*
  * Software License Agreement (BSD License)
- * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Locus Robotics
  *  Copyright (c) 2019, Intel Corporation

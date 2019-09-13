@@ -19,7 +19,7 @@ include_directories(
   include
 )
 
-set(executable_name nav2_controller)
+set(executable_name controller_server)
 
 add_executable(${executable_name}
   src/main.cpp
