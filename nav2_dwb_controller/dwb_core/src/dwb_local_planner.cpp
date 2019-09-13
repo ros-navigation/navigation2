@@ -66,11 +66,12 @@ DWBLocalPlanner::DWBLocalPlanner()
 
 void DWBLocalPlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
   node_ = node;
   costmap_ros_ = costmap_ros;
-  tf_ = costmap_ros_->getTfBuffer();
+  tf_ = tf;
   declare_parameter_if_not_declared(node_, "critics");
   declare_parameter_if_not_declared(node_, "prune_plan", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(node_, "prune_distance", rclcpp::ParameterValue(1.0));

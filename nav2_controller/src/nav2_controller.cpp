@@ -28,10 +28,10 @@ namespace nav2_controller
 {
 
 Nav2Controller::Nav2Controller()
-: LifecycleNode("nav2_controller", "", true),
+: LifecycleNode("controller_server", "", true),
   lp_loader_("nav2_core", "nav2_core::LocalPlanner")
 {
-  RCLCPP_INFO(get_logger(), "Creating local planner");
+  RCLCPP_INFO(get_logger(), "Creating controller");
 
   declare_parameter("controller_frequency", 20.0);
   declare_parameter("local_controller_plugin", "dwb_core::DWBLocalPlanner");
@@ -64,7 +64,7 @@ Nav2Controller::on_configure(const rclcpp_lifecycle::State & state)
 {
   std::string local_planner_name;
 
-  RCLCPP_INFO(get_logger(), "Configuring local planner interface");
+  RCLCPP_INFO(get_logger(), "Configuring local controller interface");
 
   costmap_ros_->on_configure(state);
 
@@ -76,8 +76,8 @@ Nav2Controller::on_configure(const rclcpp_lifecycle::State & state)
     std::string local_controller_plugin;
     get_parameter("local_controller_plugin", local_controller_plugin);
     local_planner_ = lp_loader_.createUniqueInstance(local_controller_plugin);
-    RCLCPP_INFO(get_logger(), "Created local_planner");
-    local_planner_->configure(node, costmap_ros_);
+    RCLCPP_INFO(get_logger(), "Created local controller");
+    local_planner_->configure(node, costmap_ros_->getTfBuffer(), costmap_ros_);
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(get_logger(), "Failed to create local planner. Exception: %s", ex.what());
   }

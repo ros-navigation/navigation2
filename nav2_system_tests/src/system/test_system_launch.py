@@ -77,7 +77,7 @@ def generate_launch_description():
 
         launch_ros.actions.Node(
             package='nav2_controller',
-            node_executable='nav2_controller',
+            node_executable='controller_server',
             output='screen',
             parameters=[params_file]),
 
@@ -109,7 +109,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'node_names': ['map_server', 'amcl',
-                         'nav2_controller', 'planner_server', 'bt_navigator']},
+                         'controller_server', 'planner_server', 'bt_navigator']},
                         {'autostart': True}]),
     ])
 

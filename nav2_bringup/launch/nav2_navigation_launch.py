@@ -114,7 +114,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['nav2_controller',
+                        {'node_names': ['controller_server',
                                         'navfn_planner',
                                         'bt_navigator']}]),
 
