@@ -71,7 +71,7 @@ references:
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths \
-                    $UNDERLAY_WS/src \
+                    $UNDERLAY_WS/src src \
                   --ignore-src \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
