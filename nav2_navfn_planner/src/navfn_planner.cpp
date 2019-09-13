@@ -53,9 +53,9 @@ NavfnPlanner::~NavfnPlanner()
 
 void
 NavfnPlanner::configure(
-  nav2_util::LifecycleNode::SharedPtr parent,
+  rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
   std::string name, tf2_ros::Buffer * tf,
-  nav2_costmap_2d::Costmap2DROS * costmap_ros)
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   node_ = parent;
   tf_ = tf;
