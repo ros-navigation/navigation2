@@ -116,7 +116,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('turtlebot3_description'),
                 'urdf', 'turtlebot3_waffle.urdf'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
@@ -134,7 +134,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_map_server'),
                 'lib/nav2_map_server/map_server'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_localizer_cmd = launch.actions.ExecuteProcess(
@@ -142,7 +142,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_amcl'),
                 'lib/nav2_amcl/amcl'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_planner_cmd = launch.actions.ExecuteProcess(
@@ -150,7 +150,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_navfn_planner'),
                 'lib/nav2_navfn_planner/navfn_planner'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_dwb_cmd = launch.actions.ExecuteProcess(
@@ -158,7 +158,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('dwb_controller'),
                 'lib/dwb_controller/dwb_controller'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_navigator_cmd = launch.actions.ExecuteProcess(
@@ -166,7 +166,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_bt_navigator'),
                 'lib/nav2_bt_navigator/bt_navigator'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_recovery_cmd = launch.actions.ExecuteProcess(
@@ -174,7 +174,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_recoveries'),
                 'lib/nav2_recoveries/recoveries_node'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     start_lifecycle_manager_cmd = launch.actions.ExecuteProcess(
@@ -182,7 +182,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_lifecycle_manager'),
                 'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            ['__params:=', configured_params]],
+            '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
     # Create the launch description and populate
