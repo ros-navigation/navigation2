@@ -1,3 +1,16 @@
+# This dockerfile expects to be contained in the /navigation2 root folder for file copy
+#
+# Example build command:
+# This determines which version of the ROS2 code base to pull
+# export ROS2_BRANCH=master
+# docker build -t nav2:full_ros_build
+#   -f Dockerfile.full_ros_build ./
+#
+# We're only building on top of a ros2 devel image to get the basics
+# prerequisites installed such as the apt source, rosdep, etc. We don't want to
+# actually use any of the ros dashing packages. Instead we are going to build
+# everything from source in one big workspace.
+
 ARG FROM_IMAGE=osrf/ros2:devel
 FROM $FROM_IMAGE
 
@@ -8,17 +21,33 @@ RUN apt-get update && apt-get install -q -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-ARG ROS_DISTRO=dashing
-ENV ROS_DISTRO=$ROS_DISTRO
+ARG ROS2_BRANCH=master
+ENV ROS2_BRANCH=$ROS2_BRANCH
 ENV ROS_VERSION=2 \
     ROS_PYTHON_VERSION=3
 
 WORKDIR $ROS2_WS
 
-RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS_DISTRO-release/ros2.repos \
+RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos \
     && vcs import src < ros2.repos
 
-# install dependencies
+# install ros2 dependencies
+RUN apt-get update && rosdep install -y \
+    --from-paths src \
+    --ignore-src \
+    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers" \
+    && rm -rf /var/lib/apt/lists/*
+
+# copy nav2 source code
+ENV NAV2_DIR $ROS2_WS/src/navigation2
+COPY ./ src/navigation2/
+
+# clone dependency package repos
+ENV NAV2_DEPS_DIR $ROS2_WS/src/navigation2_dependencies
+RUN mkdir -p $NAV2_DEPS_DIR
+RUN vcs import src < $NAV2_DIR/tools/ros2_dependencies.repos
+
+# install nav2 dependencies
 RUN apt-get update && rosdep install -y \
     --from-paths src \
     --ignore-src \
@@ -26,11 +55,14 @@ RUN apt-get update && rosdep install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # build source
-RUN colcon \
-    build \
-    --symlink-install \
-    --mixin build-testing-on release \
-    --cmake-args --no-warn-unused-cli
+ARG MIXINS="build-testing-on release"
+RUN colcon build \
+      --symlink-install \
+      --mixin \
+        $MIXINS \
+      --packages-up-to \
+        nav2_system_tests \
+      --cmake-args --no-warn-unused-cli
 
 ARG RUN_TESTS
 ARG FAIL_ON_TEST_FAILURE
