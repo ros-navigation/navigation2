@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_navfn_planner)
+project(nav2_planner)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -9,13 +9,14 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(nav2_core REQUIRED)
 
 nav2_package()
 
@@ -23,7 +24,8 @@ include_directories(
   include
 )
 
-set(library_name nav2_navfn_planner)
+set(executable_name planner_server)
+set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
@@ -38,21 +40,31 @@ set(dependencies
   builtin_interfaces
   tf2_ros
   nav2_costmap_2d
+  pluginlib
   nav2_core
 )
 
 add_library(${library_name} SHARED
-  src/navfn_planner.cpp
-  src/navfn.cpp
+  src/planner_server.cpp
 )
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-install(TARGETS ${library_name}
+add_executable(${executable_name}
+  src/main.cpp
+)
+
+target_link_libraries(${executable_name} ${library_name})
+
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+
+install(TARGETS ${executable_name} ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -60,10 +72,6 @@ install(TARGETS ${library_name}
 
 install(DIRECTORY include/
   DESTINATION include/
-)
-
-install(FILES global_planner_plugin.xml
-  DESTINATION share
 )
 
 if(BUILD_TESTING)

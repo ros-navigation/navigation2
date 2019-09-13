@@ -69,14 +69,14 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();
-  path_ = std::make_shared<nav2_msgs::msg::Path>();
+  path_ = std::make_shared<nav_msgs::msg::Path>();
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Put items on the blackboard
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
-  blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
+  blackboard_->set<nav_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT

@@ -23,6 +23,7 @@
   <depend>nav2_common</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_costmap_2d</depend>
+  <depend>nav2_core</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -33,5 +34,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/global_planner_plugin.xml" />
   </export>
 </package>

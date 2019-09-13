@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +15,13 @@
 
 #include <memory>
 
-#include "nav2_navfn_planner/navfn_planner.hpp"
+#include "nav2_planner/planner_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
+  auto node = std::make_shared<nav2_planner::PlannerServer>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

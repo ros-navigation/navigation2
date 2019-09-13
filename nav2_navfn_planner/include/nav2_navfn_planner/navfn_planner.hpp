@@ -24,50 +24,49 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_msgs/msg/path.hpp"
+#include "nav2_core/global_planner.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/simple_action_server.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_navfn_planner
 {
 
-class NavfnPlanner : public nav2_util::LifecycleNode
+class NavfnPlanner : public nav2_core::GlobalPlanner
 {
 public:
   NavfnPlanner();
   ~NavfnPlanner();
 
+  // plugin configure
+  void configure(
+    nav2_util::LifecycleNode::SharedPtr parent,
+    std::string name, tf2_ros::Buffer * tf,
+    nav2_costmap_2d::Costmap2DROS * costmap_ros) override;
+
+  // plugin cleanup
+  void cleanup() override;
+
+  // plugin activate
+  void activate() override;
+
+  // plugin deactivate
+  void deactivate() override;
+
+
+  // plugin create path
+  nav_msgs::msg::Path createPlan(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal) override;
+
 protected:
-  // Implement the lifecycle interface
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
-
-  // Our action server implements the ComputePathToPose action
-  std::unique_ptr<ActionServer> action_server_;
-
-  // The action server callback
-  void computePathToPose();
-
   // Compute a plan given start and goal poses, provided in global world frame.
   bool makePlan(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal, double tolerance,
-    nav2_msgs::msg::Path & plan);
+    nav_msgs::msg::Path & plan);
 
   // Compute the navigation function given a seed point in the world to start from
   bool computePotential(const geometry_msgs::msg::Point & world_point);
@@ -75,12 +74,12 @@ protected:
   // Compute a plan to a goal from a potential - must call computePotential first
   bool getPlanFromPotential(
     const geometry_msgs::msg::Pose & goal,
-    nav2_msgs::msg::Path & plan);
+    nav_msgs::msg::Path & plan);
 
   // Remove artifacts at the end of the path - originated from planning on a discretized world
   void smoothApproachToGoal(
     const geometry_msgs::msg::Pose & goal,
-    nav2_msgs::msg::Path & plan);
+    nav_msgs::msg::Path & plan);
 
   // Compute the potential, or navigation cost, at a given point in the world
   // - must call computePotential first
@@ -111,12 +110,6 @@ protected:
   // Set the corresponding cell cost to be free space
   void clearRobotCell(unsigned int mx, unsigned int my);
 
-  // Print costmap to terminal
-  void printCostmap(const nav2_msgs::msg::Costmap & costmap);
-
-  // Publish a path for visualization purposes
-  void publishPlan(const nav2_msgs::msg::Path & path);
-
   // Determine if a new planner object should be made
   bool isPlannerOutOfDate();
 
@@ -124,23 +117,19 @@ protected:
   std::unique_ptr<NavFn> planner_;
 
   // TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  tf2_ros::Buffer * tf_;
+
+  // node ptr
+  nav2_util::LifecycleNode::SharedPtr node_;
 
   // Global Costmap
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
-  std::unique_ptr<std::thread> costmap_thread_;
-  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> costmap_executor_;
-
-  // Publishers for the path
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // The global frame of the costmap
-  const std::string global_frame_{"map"};
+  std::string global_frame_, name_;
 
   // Whether or not the planner should be allowed to plan through unknown space
-  const bool allow_unknown_{true};
+  bool allow_unknown_;
 
   // If the goal is obstructed, the tolerance specifies how many meters the planner
   // can relax the constraint in x and y before failing

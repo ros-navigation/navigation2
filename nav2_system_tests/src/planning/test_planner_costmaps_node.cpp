@@ -26,7 +26,7 @@ using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
 using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-using ComputePathToPoseResult = nav2_msgs::msg::Path;
+using ComputePathToPoseResult = nav_msgs::msg::Path;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
 class RclCppFixture
@@ -40,8 +40,6 @@ RclCppFixture g_rclcppfixture;
 
 TEST_F(PlannerTester, testSimpleCostmaps)
 {
-  activate();
-
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,
@@ -52,6 +50,8 @@ TEST_F(PlannerTester, testSimpleCostmaps)
   };
 
   ComputePathToPoseResult result;
+
+  activate();
 
   for (auto costmap : costmaps) {
     loadSimpleCostmap(costmap);

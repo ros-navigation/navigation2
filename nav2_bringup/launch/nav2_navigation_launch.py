@@ -75,9 +75,9 @@ def generate_launch_description():
             parameters=[configured_params]),
 
         launch_ros.actions.Node(
-            package='nav2_navfn_planner',
-            node_executable='navfn_planner',
-            node_name='navfn_planner',
+            package='nav2_planner',
+            node_executable='planner_server',
+            node_name='planner_server',
             output='screen',
             parameters=[configured_params]),
 
@@ -103,7 +103,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': ['dwb_controller',
-                                        'navfn_planner',
+                                        'planner_server',
                                         'bt_navigator']}]),
 
     ])

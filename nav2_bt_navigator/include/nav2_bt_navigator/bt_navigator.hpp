@@ -23,7 +23,7 @@
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_msgs/msg/path.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -67,7 +67,7 @@ protected:
   std::shared_ptr<geometry_msgs::msg::PoseStamped> goal_;
 
   // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
-  std::shared_ptr<nav2_msgs::msg::Path> path_;
+  std::shared_ptr<nav_msgs::msg::Path> path_;
 
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;

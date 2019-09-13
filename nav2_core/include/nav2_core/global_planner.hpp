@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE_GLOBAL_PLANNER_H_
-#define NAV2_CORE_GLOBAL_PLANNER_H_
+#ifndef NAV2_CORE__GLOBAL_PLANNER_H_
+#define NAV2_CORE__GLOBAL_PLANNER_H_
 
 #include <string>
-#include "rclcpp/rclcpp.h"
-#include "nav2_costmap_2d/nav2_costmap_2d.hpp"
-#include "tf2_ros/Buffer.h"
-#include "nav2_msgs/msg/path.h"
-#include "geometry_msgs/msg/pose_stamped.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "tf2_ros/buffer.h"
+#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_core
 {
@@ -32,6 +33,8 @@ namespace nav2_core
 class GlobalPlanner
 {
 public:
+  using Ptr = std::shared_ptr<GlobalPlanner>;
+
   /**
    * @brief Virtual destructor
    */
@@ -43,8 +46,8 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const rclcpp::LifecycleNode * parent,
-    const std::string & name, tf2_ros::Buffer * tf,
+  virtual void configure(nav2_util::LifecycleNode::SharedPtr parent,
+    std::string name, tf2_ros::Buffer * tf,
     nav2_costmap_2d::Costmap2DROS * costmap_ros) = 0;
 
   /**
@@ -63,21 +66,16 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Method to shutdown planner and any threads involved in execution.
-   */
-  virtual void shutdown() = 0;
-
-  /**
    * @brief Method create the plan from a starting and ending goal.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
    * @return      The sequence of poses to get from start to goal, if any
    */
-  virtual nav2_msgs::Path createPlan(
+  virtual nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) = 0;
 };
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE_GLOBAL_PLANNER_H_
+#endif  // NAV2_CORE__GLOBAL_PLANNER_H_

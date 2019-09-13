@@ -32,17 +32,17 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "nav2_navfn_planner/navfn_planner.hpp"
+#include "nav2_planner/planner_server.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
 namespace nav2_system_tests
 {
 
-class NavFnPlannerTester : public nav2_navfn_planner::NavfnPlanner
+class NavFnPlannerTester : public nav2_planner::PlannerServer
 {
 public:
   NavFnPlannerTester()
-  : NavfnPlanner()
+  : PlannerServer()
   {
   }
 
@@ -73,19 +73,14 @@ public:
 
   bool createPath(
     const geometry_msgs::msg::PoseStamped & goal,
-    nav2_msgs::msg::Path & path)
+    nav_msgs::msg::Path & path)
   {
     geometry_msgs::msg::PoseStamped start;
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
-
-    if (isPlannerOutOfDate()) {
-      planner_->setNavArr(costmap_->getSizeInCellsX(),
-        costmap_->getSizeInCellsY());
-    }
-
-    return makePlan(start.pose, goal.pose, tolerance_, path);
+    path = planner_->createPlan(start, goal);
+    return true;
   }
 
   void onCleanup(const rclcpp_lifecycle::State & state)
@@ -115,7 +110,7 @@ class PlannerTester : public rclcpp::Node, public ::testing::Test
 {
 public:
   using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-  using ComputePathToPoseResult = nav2_msgs::msg::Path;
+  using ComputePathToPoseResult = nav_msgs::msg::Path;
 
   PlannerTester();
   ~PlannerTester();
@@ -169,7 +164,7 @@ private:
   std::unique_ptr<nav2_util::Costmap> costmap_;
 
   // The global planner
-  std::unique_ptr<NavFnPlannerTester> planner_tester_;
+  std::shared_ptr<NavFnPlannerTester> planner_tester_;
 
   // A thread for spinning the ROS node and the executor used
   std::unique_ptr<std::thread> spin_thread_;

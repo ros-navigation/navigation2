@@ -130,12 +130,12 @@ nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStampe
   return path;
 }
 
-nav_2d_msgs::msg::Path2D pathToPath2D(const nav2_msgs::msg::Path & path)
+nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path)
 {
   nav_2d_msgs::msg::Path2D path2d;
   path2d.header = path.header;
   for (auto & pose : path.poses) {
-    path2d.poses.push_back(poseToPose2D(pose));
+    path2d.poses.push_back(poseToPose2D(pose.pose));
   }
   return path2d;
 }
