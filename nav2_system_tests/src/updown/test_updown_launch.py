@@ -84,7 +84,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_controller'),
                 'lib/nav2_controller/controller_server'),
-            '--ros-args', ['__params:=', params_file]],
+            '--ros-args', '--params-file', params_file],
         cwd=[launch_dir], output='screen')
 
     start_planner_cmd = launch.actions.ExecuteProcess(

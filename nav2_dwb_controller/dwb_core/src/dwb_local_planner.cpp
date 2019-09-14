@@ -49,7 +49,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_msgs/msg/path.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
@@ -266,7 +266,7 @@ DWBLocalPlanner::isGoalReached(
 }
 
 void
-DWBLocalPlanner::setPlan(const nav2_msgs::msg::Path & path)
+DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 {
   auto path2d = nav_2d_utils::pathToPath2D(path);
   for (TrajectoryCritic::Ptr critic : critics_) {
