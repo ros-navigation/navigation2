@@ -41,7 +41,8 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const nav2_util::LifecycleNode * parent,
+  virtual void configure(
+    const nav2_util::LifecycleNode * parent,
     const std::string & name, tf2_ros::Buffer * tf) = 0;
 
   /**

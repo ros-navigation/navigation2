@@ -81,7 +81,7 @@ public:
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
    */
-  void setPlan(const nav2_msgs::msg::Path & path) override;
+  void setPlan(const nav_msgs::msg::Path & path) override;
 
   /**
    * @brief nav2_core computeVelocityCommands - calculates the best command given the current pose and velocity
