@@ -16,10 +16,6 @@ find_package(nav_msgs REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(dependencies
   rclcpp
   rclcpp_lifecycle

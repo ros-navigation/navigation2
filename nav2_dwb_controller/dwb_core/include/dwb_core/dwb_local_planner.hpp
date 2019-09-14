@@ -76,8 +76,6 @@ public:
   void activate() override;
   void deactivate() override;
   void cleanup() override;
-  void shutdown() override {}
-
 
   /**
    * @brief nav2_core setPlan - Sets the global plan
