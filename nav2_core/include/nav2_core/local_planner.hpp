@@ -77,7 +77,7 @@ public:
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> &) = 0;
 
   /**
-   * @brief Method to cleanup resources used on shutdown.
+   * @brief Method to cleanup resources.
    */
   virtual void cleanup() = 0;
 
@@ -90,11 +90,6 @@ public:
    * @brief Method to deactive planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
-
-  /**
-   * @brief Method to shutdown planner and any threads involved in execution.
-   */
-  virtual void shutdown() = 0;
 
   /**
    * @brief local setPlan - Sets the global plan

@@ -35,11 +35,11 @@ namespace nav2_controller
 
 class ProgressChecker;
 
-class Nav2Controller : public nav2_util::LifecycleNode
+class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
-  Nav2Controller();
-  ~Nav2Controller();
+  ControllerServer();
+  ~ControllerServer();
 
 protected:
   // The lifecycle interface

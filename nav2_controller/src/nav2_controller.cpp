@@ -27,7 +27,7 @@ using namespace std::chrono_literals;
 namespace nav2_controller
 {
 
-Nav2Controller::Nav2Controller()
+ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
   lp_loader_("nav2_core", "nav2_core::LocalPlanner")
 {
@@ -52,7 +52,7 @@ Nav2Controller::Nav2Controller()
     }, costmap_ros_);
 }
 
-Nav2Controller::~Nav2Controller()
+ControllerServer::~ControllerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
   costmap_executor_.cancel();
@@ -60,7 +60,7 @@ Nav2Controller::~Nav2Controller()
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_configure(const rclcpp_lifecycle::State & state)
+ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   std::string local_planner_name;
 
@@ -76,7 +76,7 @@ Nav2Controller::on_configure(const rclcpp_lifecycle::State & state)
     std::string local_controller_plugin;
     get_parameter("local_controller_plugin", local_controller_plugin);
     local_planner_ = lp_loader_.createUniqueInstance(local_controller_plugin);
-    RCLCPP_INFO(get_logger(), "Created local controller");
+    RCLCPP_INFO(get_logger(), "Created local controller : %s", local_controller_plugin.c_str());
     local_planner_->configure(node, costmap_ros_->getTfBuffer(), costmap_ros_);
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(get_logger(), "Failed to create local planner. Exception: %s", ex.what());
@@ -90,18 +90,18 @@ Nav2Controller::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
-      std::bind(&Nav2Controller::followPath, this));
+      std::bind(&ControllerServer::followPath, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_activate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  local_planner_->activate();
   costmap_ros_->on_activate(state);
+  local_planner_->activate();
   vel_publisher_->on_activate();
   action_server_->activate();
 
@@ -109,7 +109,7 @@ Nav2Controller::on_activate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_deactivate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -124,7 +124,7 @@ Nav2Controller::on_deactivate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_cleanup(const rclcpp_lifecycle::State & state)
+ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -140,25 +140,24 @@ Nav2Controller::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_publisher_.reset();
   action_server_.reset();
 
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_error(const rclcpp_lifecycle::State &)
+ControllerServer::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-Nav2Controller::on_shutdown(const rclcpp_lifecycle::State &)
+ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void Nav2Controller::followPath()
+void ControllerServer::followPath()
 {
   RCLCPP_INFO(get_logger(), "Received a goal, begin following path");
 
@@ -214,7 +213,7 @@ void Nav2Controller::followPath()
   action_server_->succeeded_current();
 }
 
-void Nav2Controller::setPlannerPath(const nav_msgs::msg::Path & path)
+void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 {
   RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
   local_planner_->setPlan(path);
@@ -225,7 +224,7 @@ void Nav2Controller::setPlannerPath(const nav_msgs::msg::Path & path)
     end_pose.pose.position.x, end_pose.pose.position.y);
 }
 
-void Nav2Controller::computeAndPublishVelocity()
+void ControllerServer::computeAndPublishVelocity()
 {
   geometry_msgs::msg::PoseStamped pose;
 
@@ -242,7 +241,7 @@ void Nav2Controller::computeAndPublishVelocity()
   publishVelocity(cmd_vel_2d);
 }
 
-void Nav2Controller::updateGlobalPath()
+void ControllerServer::updateGlobalPath()
 {
   if (action_server_->is_preempt_requested()) {
     RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
@@ -250,13 +249,13 @@ void Nav2Controller::updateGlobalPath()
   }
 }
 
-void Nav2Controller::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
+void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = velocity.twist;
   vel_publisher_->publish(cmd_vel);
 }
 
-void Nav2Controller::publishZeroVelocity()
+void ControllerServer::publishZeroVelocity()
 {
   geometry_msgs::msg::TwistStamped velocity;
   velocity.twist.angular.x = 0;
@@ -268,7 +267,7 @@ void Nav2Controller::publishZeroVelocity()
   publishVelocity(velocity);
 }
 
-bool Nav2Controller::isGoalReached()
+bool ControllerServer::isGoalReached()
 {
   geometry_msgs::msg::PoseStamped pose;
 
@@ -280,7 +279,7 @@ bool Nav2Controller::isGoalReached()
   return local_planner_->isGoalReached(pose, velocity);
 }
 
-bool Nav2Controller::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
+bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!costmap_ros_->getRobotPose(current_pose)) {
