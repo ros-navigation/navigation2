@@ -89,6 +89,8 @@
         <plugin name="turtlebot3_imu" filename="libgazebo_ros_imu_sensor.so">
           <ros>
             <!-- <namespace>/tb3</namespace> -->
+            <argument>--ros-args</argument>
+            <argument>-r </argument>
             <argument>~/out:=imu</argument>
           </ros>
         </plugin>
@@ -157,6 +159,8 @@
         <plugin name="turtlebot3_laserscan" filename="libgazebo_ros_ray_sensor.so">
           <ros>
             <!-- <namespace>/tb3</namespace> -->
+            <argument>--ros-args</argument>
+            <argument>-r </argument>
             <argument>~/out:=scan</argument>
           </ros>
           <output_type>sensor_msgs/LaserScan</output_type>
@@ -475,6 +479,8 @@
     <plugin name="turtlebot3_joint_state" filename="libgazebo_ros_joint_state_publisher.so">
       <ros>
         <!-- <namespace>/tb3</namespace> -->
+        <argument>--ros-args</argument>
+        <argument>-r </argument>
         <argument>~/out:=joint_states</argument>
       </ros>
       <update_rate>30</update_rate>

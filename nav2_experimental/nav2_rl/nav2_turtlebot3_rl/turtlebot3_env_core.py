@@ -44,7 +44,6 @@ class TurtlebotEnv(object):
         self.node_ = rclpy.create_node('turtlebot3_env_core')
         self.executor = SingleThreadedExecutor()
         self.executor.add_node(self.node_)
-        self.node_.declare_parameter('use_sim_time', True)
         self.node_.set_parameters([Parameter('use_sim_time', Parameter.Type.BOOL, True)])
         self.act = 0
         self.done = False
@@ -158,6 +157,10 @@ class TurtlebotEnv(object):
         return len(self.states)
 
     def step(self, action):
+        # Unpause environment
+        while not self.unpause_proxy.wait_for_service(timeout_sec=1.0 / self.time_factor):
+            print('Unpause Environment service is not available...')
+        self.unpause_proxy.call_async(Empty.Request())
         vel_cmd = Twist()
         self.act = action
         vel_cmd.linear.x, vel_cmd.linear.y, vel_cmd.angular.z = self.get_velocity_cmd(action)
@@ -166,6 +169,11 @@ class TurtlebotEnv(object):
         vel_cmd.angular.z = 0.0
         sleep(parameters.LOOP_RATE / self.time_factor)
         get_reward = self.get_reward()
+        # Pause environment
+        while not self.pause_proxy.wait_for_service(timeout_sec=1.0 / self.time_factor):
+            print('Pause Environment service is not available...')
+        self.pause_proxy.call_async(Empty.Request())
+
         return self.observation(), get_reward[0], self.done, {}
 
     def observation(self):
@@ -211,13 +219,9 @@ class TurtlebotEnv(object):
 
         req = SetEntityState.Request()
         req.state.name = entity_name
-        req.state.pose.position.x = entity_pose.position.x
-        req.state.pose.position.y = entity_pose.position.y
+        req.state.pose.position = entity_pose.position
         req.state.pose.position.z = 0.0
-        req.state.pose.orientation.x = entity_pose.orientation.x
-        req.state.pose.orientation.y = entity_pose.orientation.y
-        req.state.pose.orientation.z = entity_pose.orientation.z
-        req.state.pose.orientation.w = entity_pose.orientation.w
+        req.state.pose.orientation = entity_pose.orientation
         future = self.set_entity_state.call_async(req)
         while not future.done() and rclpy.ok():
             sleep(0.1)
@@ -233,13 +237,8 @@ class TurtlebotEnv(object):
         while not future.done() and rclpy.ok():
             sleep(0.01 / self.time_factor)
 
-        self.current_pose.position.x = future.result().state.pose.position.x
-        self.current_pose.position.y = future.result().state.pose.position.y
-        self.current_pose.position.z = future.result().state.pose.position.z
-        self.current_pose.orientation.x = future.result().state.pose.orientation.x
-        self.current_pose.orientation.y = future.result().state.pose.orientation.y
-        self.current_pose.orientation.z = future.result().state.pose.orientation.z
-        self.current_pose.orientation.w = future.result().state.pose.orientation.w
+        self.current_pose.position = future.result().state.pose.position
+        self.current_pose.orientation = future.result().state.pose.orientation
 
     def get_random_pose(self):
         random_pose = Pose()
@@ -282,6 +281,9 @@ class TurtlebotEnv(object):
         return yaw
 
     def reset(self):
+        while not self.unpause_proxy.wait_for_service(timeout_sec=1.0):
+            print('Unpause Environment service is not available...')
+        self.unpause_proxy.call_async(Empty.Request())
         self.stop_action()
         while not self.reset_world.wait_for_service(timeout_sec=1.0):
             print('Reset world service is not available...')
