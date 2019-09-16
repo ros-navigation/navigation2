@@ -76,12 +76,13 @@ RUN apt-get update && rosdep install -y \
 
 # build source
 ARG MIXINS="build-testing-on release"
-RUN colcon build \
+RUN NAV2_PACKAGES=$(cd src/navigation2 && colcon list -n) \
+    colcon build \
       --symlink-install \
       --mixin \
         $MIXINS \
       --packages-up-to \
-        nav2_system_tests \
+        $NAV2_PACKAGES \
       --cmake-args --no-warn-unused-cli
 
 ARG RUN_TESTS
