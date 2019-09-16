@@ -37,8 +37,10 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace dwb_plugins
 {
