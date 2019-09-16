@@ -140,7 +140,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   plan_publisher_.reset();
   tf_.reset();
   costmap_ros_->on_cleanup(state);
-  costmap_ros_.reset();
   planner_->cleanup();
   planner_.reset();
 
