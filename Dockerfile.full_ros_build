@@ -3,9 +3,12 @@
 # Example build command:
 # This determines which version of the ROS2 code base to pull
 # export ROS2_BRANCH=master
-# docker build -t nav2:full_ros_build
-#   -f Dockerfile.full_ros_build ./
+# docker build \
+#   --no-cache \
+#   --tag nav2:full_ros_build \
+#   --file Dockerfile.full_ros_build ./
 #
+# Omit the `--no-cache` if you know you don't need to break the cache.
 # We're only building on top of a ros2 devel image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros dashing packages. Instead we are going to build
@@ -28,30 +31,47 @@ ENV ROS_VERSION=2 \
 
 WORKDIR $ROS2_WS
 
+# get ros2 source code
 RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos \
     && vcs import src < ros2.repos
 
+# get skip keys
+COPY ./tools/skip_keys.txt ./
+
 # install ros2 dependencies
 RUN apt-get update && rosdep install -y \
-    --from-paths src \
-    --ignore-src \
-    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers" \
+      --from-paths src \
+      --ignore-src \
+      --skip-keys \
+        "$(cat skip_keys.txt | xargs)" \
     && rm -rf /var/lib/apt/lists/*
 
-# copy nav2 source code
+# get upstream source code
+COPY ./tools/ros2_dependencies.repos ./
+RUN vcs import src < ros2_dependencies.repos
+
+# install ros2 dependencies
+RUN apt-get update && rosdep install -y \
+      --from-paths src \
+      --ignore-src \
+      --skip-keys \
+        "$(cat skip_keys.txt | xargs)" \
+    && rm -rf /var/lib/apt/lists/*
+
+# get nav2 source code
 ENV NAV2_DIR $ROS2_WS/src/navigation2
 COPY ./ src/navigation2/
 
 # clone dependency package repos
 ENV NAV2_DEPS_DIR $ROS2_WS/src/navigation2_dependencies
 RUN mkdir -p $NAV2_DEPS_DIR
-RUN vcs import src < $NAV2_DIR/tools/ros2_dependencies.repos
 
-# install nav2 dependencies
+# install ros2 dependencies
 RUN apt-get update && rosdep install -y \
-    --from-paths src \
-    --ignore-src \
-    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers" \
+      --from-paths src \
+      --ignore-src \
+      --skip-keys \
+        "$(cat skip_keys.txt | xargs)" \
     && rm -rf /var/lib/apt/lists/*
 
 # build source
