@@ -35,7 +35,7 @@ def generate_launch_description():
     launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
-    map_yaml_file = LaunchConfiguration('map_yaml_file')
+    map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
@@ -49,8 +49,8 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map_yaml_file',
-        default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
+        'map',
+        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -60,7 +60,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_bt_xml_cmd = DeclareLaunchArgument(
@@ -95,8 +95,8 @@ def generate_launch_description():
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
         # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
         #                            'worlds/turtlebot3_worlds/waffle.model'),
-        default_value=os.path.join(bringup_dir, 'world/waffle.model'),
-        description='Full path to world file to load')
+        default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+        description='Full path to world model file to load')
 
     # Specify the actions
     start_gazebo_cmd = ExecuteProcess(
@@ -136,7 +136,7 @@ def generate_launch_description():
 
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
-        launch_arguments={'map_yaml_file': map_yaml_file,
+        launch_arguments={'map': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,

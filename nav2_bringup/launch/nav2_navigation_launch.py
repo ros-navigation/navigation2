@@ -14,7 +14,7 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
 from nav2_common.launch import RewrittenYaml
 
@@ -26,18 +26,22 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    # Get the launch directory
+    bringup_dir = get_package_share_directory('nav2_bringup')
+
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
+    map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
         'bt_xml_filename': bt_xml_file,
         'autostart': autostart,
-        'map_subscribe_transient_local': 'False'}
+        'map_subscribe_transient_local': map_subscribe_transient_local}
 
     configured_params = RewrittenYaml(
             source_file=params_file,
@@ -58,7 +62,7 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'params_file',
-            default_value=[ThisLaunchFileDir(), '/nav2_params.yaml'],
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
         DeclareLaunchArgument(
@@ -70,6 +74,10 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'use_lifecycle_mgr', default_value='true',
             description='Whether to launch the lifecycle manager'),
+
+        DeclareLaunchArgument(
+            'map_subscribe_transient_local', default_value='false',
+            description='Whether to set the map subscriber QoS to transient local'),
 
         Node(
             package='dwb_controller',

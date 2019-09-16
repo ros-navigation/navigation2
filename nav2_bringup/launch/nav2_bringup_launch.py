@@ -18,7 +18,6 @@ from ament_index_python.packages import get_package_prefix, get_package_share_di
 
 from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
 from launch_ros.actions import Node
@@ -30,7 +29,7 @@ def generate_launch_description():
     launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
-    map_yaml_file = LaunchConfiguration('map_yaml_file')
+    map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
@@ -41,9 +40,8 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map_yaml_file',
-        default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
-        description='Full path to map file to load')
+        'map',
+        description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -52,7 +50,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=[ThisLaunchFileDir(), '/nav2_params.yaml'],
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_bt_xml_cmd = DeclareLaunchArgument(
@@ -69,7 +67,7 @@ def generate_launch_description():
     # Specify the actions
     start_localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_localization_launch.py')),
-        launch_arguments={'map_yaml_file': map_yaml_file,
+        launch_arguments={'map': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'autostart': autostart,
                           'params_file': params_file,
@@ -81,7 +79,8 @@ def generate_launch_description():
                           'autostart': autostart,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
-                          'use_lifecycle_mgr': 'false'}.items())
+                          'use_lifecycle_mgr': 'false',
+                          'map_subscribe_transient_local': 'true'}.items())
 
     start_lifecycle_manager_cmd = Node(
         package='nav2_lifecycle_manager',

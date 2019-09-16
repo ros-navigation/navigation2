@@ -20,7 +20,7 @@ from nav2_common.launch import RewrittenYaml
 
 from launch import LaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch_ros.actions import Node
 
@@ -29,7 +29,7 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
 
-    map_yaml_file = LaunchConfiguration('map_yaml_file')
+    map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -50,8 +50,9 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         DeclareLaunchArgument(
-            'map_yaml_file', default_value=os.path.join(bringup_dir, 'map', 'turtlebot3_world.yaml'),
-            description='Full path to map file to load'),
+            'map',
+            default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+            description='Full path to map yaml file to load'),
 
         DeclareLaunchArgument(
             'use_sim_time', default_value='false',
@@ -63,7 +64,7 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'params_file',
-            default_value=[ThisLaunchFileDir(), '/nav2_params.yaml'],
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
         DeclareLaunchArgument(
