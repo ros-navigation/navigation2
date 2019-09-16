@@ -6,7 +6,16 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:nightly
+ARG FROM_IMAGE=osrf/ros2:old-nightly
+FROM $FROM_IMAGE as package_cache
+
+WORKDIR /tmp
+COPY ./ ./src
+RUN mkdir ./cache && \
+    cd ./src && \
+    find ./ -name "package.xml" | \
+    xargs cp --parents -t ../cache
+
 FROM $FROM_IMAGE
 
 # install CI dependencies	
@@ -54,21 +63,25 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       exit 1; \
     fi
 
-# copy overlay source
+# copy overlay packages
 ENV OVERLAY_WS /opt/overlay_ws
 RUN mkdir -p $OVERLAY_WS/src
 WORKDIR $OVERLAY_WS
-COPY ./ src/navigation2/
+COPY --from=package_cache /tmp/cache src/navigation2/
 
 # install overlay dependencies
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
+      --verbose \
       --from-paths \
         $UNDERLAY_WS/src \
         src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
+
+# copy overlay source
+COPY ./ src/navigation2/
 
 # build overlay source
 ARG OVERLAY_MIXINS="release ccache"
