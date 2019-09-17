@@ -44,7 +44,7 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(const nav2_util::LifecycleNode::SharedPtr parent,
-    const std::string & name, tf2_ros::Buffer * tf) = 0;
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

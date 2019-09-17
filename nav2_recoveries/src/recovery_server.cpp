@@ -78,7 +78,7 @@ RecoveryServer::loadRecoveryPlugins()
       RCLCPP_INFO(get_logger(), "Created recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
       recovery->configure(node,
-        plugin_loader_.getName(plugin_names_[i]), tf_.get());
+        plugin_loader_.getName(plugin_names_[i]), tf_);
       recoveries_.push_back(recovery);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."
