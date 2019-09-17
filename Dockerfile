@@ -11,10 +11,11 @@ FROM $FROM_IMAGE as package_cache
 
 WORKDIR /tmp
 COPY ./ ./src
-RUN mkdir ./cache && \
-    cd ./src && \
+RUN mkdir ./cache && cd ./src && \
     find ./ -name "package.xml" | \
-    xargs cp --parents -t ../cache
+      xargs cp --parents -t ../cache && \
+    find ./ -name "COLCON_IGNORE" | \
+      xargs cp --parents -t ../cache
 
 FROM $FROM_IMAGE
 
@@ -73,7 +74,6 @@ COPY --from=package_cache /tmp/cache src/navigation2/
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && \
     rosdep install -q -y \
-      --verbose \
       --from-paths \
         $UNDERLAY_WS/src \
         src \
