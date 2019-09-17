@@ -66,7 +66,7 @@ public:
    * @param  name The name of this planner
    * @return true if successful, false is failed to execute fully
    */
-  virtual bool executeRecovery() = 0;
+  // virtual bool executeRecovery() = 0;
 };
 
 }  // namespace nav2_core
