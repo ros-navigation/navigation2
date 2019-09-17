@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:old-nightly
+ARG FROM_IMAGE=osrf/ros2:nightly
 FROM $FROM_IMAGE as package_cache
 
 WORKDIR /tmp
