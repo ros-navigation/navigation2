@@ -95,6 +95,8 @@ Status Spin::onCycleUpdate()
   double relative_yaw = abs(current_yaw - initial_yaw_);
   if (relative_yaw > M_PI) {
     relative_yaw -= 2.0 * M_PI;
+  } else if (relative_yaw < -1.0*M_PI) {
+    relative_yaw += 2.0 * M_PI;
   }
   relative_yaw = abs(relative_yaw);
 
