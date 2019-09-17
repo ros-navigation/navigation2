@@ -41,7 +41,27 @@ set(dependencies
   geometry_msgs
   nav2_costmap_2d
   nav2_core
+  pluginlib
 )
+
+# plugins
+add_library(nav2_spin_recovery
+  plugin/spin.cpp
+)
+
+ament_target_dependencies(nav2_spin_recovery
+  ${dependencies}
+)
+
+add_library(nav2_backup_recovery
+  plugin/backup.cpp
+)
+
+ament_target_dependencies(nav2_backup_recovery
+  ${dependencies}
+)
+
+pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
 # Library
 add_library(${library_name}
@@ -63,7 +83,10 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${executable_name}
+                ${library_name}
+                nav2_backup_recovery
+                nav2_spin_recovery
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -82,6 +105,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} nav2_backup_recovery nav2_spin_recovery)
 
 ament_package()

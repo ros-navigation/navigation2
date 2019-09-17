@@ -118,3 +118,6 @@ bool BackUp::isCollisionFree(
 }
 
 }  // namespace nav2_recoveries
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Backup, nav2_core::Recovery)

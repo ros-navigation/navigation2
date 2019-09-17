@@ -32,7 +32,7 @@ using namespace std::chrono_literals;
 namespace nav2_recoveries
 {
 
-Spin::Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
+Spin::Spin()
 : Recovery<SpinAction>(node, "Spin", tf)
 {
   // TODO(orduno) #378 Pull values from the robot
@@ -45,6 +45,27 @@ Spin::Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
 
 Spin::~Spin()
 {
+}
+
+void configure(const nav2_util::LifecycleNode::SharedPtr parent,
+  const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf)
+{
+
+}
+
+void cleanup()
+{
+
+}
+
+void activate()
+{
+
+}
+
+void deactivate()
+{
+
 }
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
@@ -131,3 +152,6 @@ bool Spin::isCollisionFree(
 }
 
 }  // namespace nav2_recoveries
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Spin, nav2_core::Recovery)

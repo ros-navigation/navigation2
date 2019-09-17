@@ -22,6 +22,7 @@
 #include "nav2_recoveries/recovery.hpp"
 #include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_core/recovery.hpp"
 
 namespace nav2_recoveries
 {
@@ -36,6 +37,12 @@ public:
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
 
   Status onCycleUpdate() override;
+
+  void configure(const nav2_util::LifecycleNode::SharedPtr parent,
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override;
+  void cleanup() override;
+  void activate() override;
+  void deactivate() override;
 
 protected:
   bool isCollisionFree(

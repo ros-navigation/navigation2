@@ -20,6 +20,7 @@
 
 #include "nav2_recoveries/recovery.hpp"
 #include "nav2_msgs/action/back_up.hpp"
+#include "nav2_core/recovery.hpp"
 
 namespace nav2_recoveries
 {
