@@ -7,9 +7,12 @@
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
 ARG FROM_IMAGE=osrf/ros2:nightly
-FROM $FROM_IMAGE as package_cache
 
+# multi-stage build for caching
+FROM $FROM_IMAGE as cache
 WORKDIR /tmp
+
+# copy package manifests for caching
 COPY ./ ./src
 RUN mkdir ./cache && cd ./src && \
     find ./ -name "package.xml" | \
@@ -17,6 +20,7 @@ RUN mkdir ./cache && cd ./src && \
     find ./ -name "COLCON_IGNORE" | \
       xargs cp --parents -t ../cache
 
+# multi-stage build for compiling
 FROM $FROM_IMAGE
 
 # install CI dependencies	
@@ -68,7 +72,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 ENV OVERLAY_WS /opt/overlay_ws
 RUN mkdir -p $OVERLAY_WS/src
 WORKDIR $OVERLAY_WS
-COPY --from=package_cache /tmp/cache src/navigation2/
+COPY --from=cache /tmp/cache src/navigation2/
 
 # install overlay dependencies
 RUN . $UNDERLAY_WS/install/setup.sh && \
