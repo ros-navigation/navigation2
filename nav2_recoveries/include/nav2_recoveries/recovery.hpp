@@ -49,7 +49,7 @@ class Recovery : public nav2_core::Recovery
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT, rclcpp_lifecycle::LifecycleNode>;
 
-  explicit Recovery()
+  Recovery()
   : action_server_(nullptr),
     cycle_frequency_(10),
     enabled_(false)
@@ -80,8 +80,9 @@ public:
   }
 
 
-  void configure(const nav2_util::LifecycleNode::SharedPtr parent,
-  const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override
+  void configure(
+    const nav2_util::LifecycleNode::SharedPtr parent,
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override
   {
     RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());
 
@@ -108,7 +109,7 @@ public:
       *costmap_sub_, *footprint_sub_, *tf_, node_->get_name(), "odom");
 
     vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
-  
+
     onConfigure();
   }
 

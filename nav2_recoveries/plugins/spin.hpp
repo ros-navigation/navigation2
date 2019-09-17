@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__SPIN_HPP_
-#define NAV2_RECOVERIES__SPIN_HPP_
+#ifndef NAV2_RECOVERIES__PLUGINS__SPIN_HPP_
+#define NAV2_RECOVERIES__PLUGINS__SPIN_HPP_
 
 #include <chrono>
 #include <string>
@@ -30,7 +30,7 @@ using SpinAction = nav2_msgs::action::Spin;
 class Spin : public Recovery<SpinAction>
 {
 public:
-  explicit Spin();
+  Spin();
   ~Spin();
 
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
@@ -53,4 +53,4 @@ protected:
 
 }  // namespace nav2_recoveries
 
-#endif  // NAV2_RECOVERIES__SPIN_HPP_
+#endif  // NAV2_RECOVERIES__PLUGINS__SPIN_HPP_

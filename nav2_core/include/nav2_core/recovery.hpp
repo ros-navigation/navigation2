@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE_RECOVERY_H_
-#define NAV2_CORE_RECOVERY_H_
+#ifndef NAV2_CORE__RECOVERY_HPP_
+#define NAV2_CORE__RECOVERY_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
@@ -43,7 +43,8 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(const nav2_util::LifecycleNode::SharedPtr parent,
+  virtual void configure(
+    const nav2_util::LifecycleNode::SharedPtr parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
@@ -71,4 +72,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE_RECOVERY_H_
+#endif  // NAV2_CORE__RECOVERY_HPP_

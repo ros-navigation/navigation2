@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__GLOBAL_PLANNER_H_
-#define NAV2_CORE__GLOBAL_PLANNER_H_
+#ifndef NAV2_CORE__GLOBAL_PLANNER_HPP_
+#define NAV2_CORE__GLOBAL_PLANNER_HPP_
 
 #include <string>
 #include "rclcpp/rclcpp.hpp"
@@ -46,7 +46,8 @@ public:
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+  virtual void configure(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
@@ -78,4 +79,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE__GLOBAL_PLANNER_H_
+#endif  // NAV2_CORE__GLOBAL_PLANNER_HPP_

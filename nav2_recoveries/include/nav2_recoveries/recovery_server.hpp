@@ -56,6 +56,6 @@ protected:
   std::vector<std::string> plugin_names_, plugin_types_;
 };
 
-}  // end namespace recvery_server
+}  // namespace recovery_server
 
 #endif  // NAV2_RECOVERIES__RECOVERY_SERVER_HPP_

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <memory>
+#include <string>
+#include <vector>
 #include "nav2_recoveries/recovery_server.hpp"
 
 namespace recovery_server
@@ -92,7 +95,7 @@ RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   std::vector<nav2_core::Recovery::Ptr>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++ iter) {
+  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->activate();
   }
 
@@ -103,12 +106,12 @@ nav2_util::CallbackReturn
 RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-  
+
   std::vector<nav2_core::Recovery::Ptr>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++ iter) {
+  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->deactivate();
   }
-  
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -118,7 +121,7 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   std::vector<nav2_core::Recovery::Ptr>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++ iter) {
+  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->cleanup();
   }
 

@@ -37,7 +37,7 @@ using namespace std::chrono_literals;
 class DummyRecovery : public Recovery<RecoveryAction>
 {
 public:
-  explicit DummyRecovery()
+  DummyRecovery()
   : Recovery<RecoveryAction>(),
     initialized_(false) {}
 
@@ -102,7 +102,8 @@ protected:
 
   void SetUp() override
   {
-    node_lifecycle_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("LifecycleRecoveryTestNode");
+    node_lifecycle_ =
+      std::make_shared<rclcpp_lifecycle::LifecycleNode>("LifecycleRecoveryTestNode");
     node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
     auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -113,7 +114,8 @@ protected:
     node_->declare_parameter(
       "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
     node_->declare_parameter(
-      "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+      "footprint_topic",
+      rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
     recovery_ = std::make_unique<DummyRecovery>();
     recovery_->configure(node_lifecycle_, "DummyNode", tf_buffer);
     recovery_->activate();
