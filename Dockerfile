@@ -8,8 +8,8 @@
 #   --build-arg OVERLAY_MIXINS ./
 ARG FROM_IMAGE=osrf/ros2:nightly
 
-# multi-stage build for caching
-FROM $FROM_IMAGE as cache
+# multi-stage for caching
+FROM $FROM_IMAGE AS cache
 WORKDIR /tmp
 
 # copy package manifests for caching
@@ -20,8 +20,8 @@ RUN mkdir ./cache && cd ./src && \
     find ./ -name "COLCON_IGNORE" | \
       xargs cp --parents -t ../cache
 
-# multi-stage build for compiling
-FROM $FROM_IMAGE
+# multi-stage for building
+FROM $FROM_IMAGE AS build
 
 # install CI dependencies	
 RUN apt-get update && \
