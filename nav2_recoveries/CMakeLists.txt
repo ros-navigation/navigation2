@@ -45,16 +45,16 @@ set(dependencies
 )
 
 # plugins
-add_library(nav2_spin_recovery
-  plugin/spin.cpp
+add_library(nav2_spin_recovery SHARED
+  plugins/spin.cpp
 )
 
 ament_target_dependencies(nav2_spin_recovery
   ${dependencies}
 )
 
-add_library(nav2_backup_recovery
-  plugin/backup.cpp
+add_library(nav2_backup_recovery SHARED
+  plugins/back_up.cpp
 )
 
 ament_target_dependencies(nav2_backup_recovery
@@ -94,6 +94,10 @@ install(TARGETS ${executable_name}
 
 install(DIRECTORY include/
   DESTINATION include/
+)
+
+install(FILES recovery_plugin.xml
+  DESTINATION share
 )
 
 if(BUILD_TESTING)

@@ -21,20 +21,17 @@ RecoveryServer::RecoveryServer()
 : nav2_util::LifecycleNode("nav2_recoveries", "", true),
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
-
 }
 
 
 RecoveryServer::~RecoveryServer()
 {
-  return;
 }
 
 nav2_util::CallbackReturn
 RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-
 
   auto tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -48,10 +45,10 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   declare_parameter("footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
-  std::vector<std::string> plugin_names{std::string("default_spin"),
-    std::string("default_backup")};
+  std::vector<std::string> plugin_names{std::string("Spin"),
+    std::string("BackUp")};
   std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/Backup")};
+    std::string("nav2_recoveries/BackUp")};
 
   declare_parameter("plugin_names",
     rclcpp::ParameterValue(plugin_names));
@@ -71,14 +68,14 @@ void
 RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
+
   for (uint i = 0; i != plugin_names_.size(); i++) {
     try {
       nav2_core::Recovery::Ptr recovery =
-        plugin_loader_.createUniqueInstance(plugin_types_[i]);
+        plugin_loader_.createSharedInstance(plugin_types_[i]);
       RCLCPP_INFO(get_logger(), "Created recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
-      recovery->configure(node,
-        plugin_loader_.getName(plugin_names_[i]), tf_);
+      recovery->configure(node, plugin_names_[i], tf_);
       recoveries_.push_back(recovery);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."

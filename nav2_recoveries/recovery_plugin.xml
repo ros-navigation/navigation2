@@ -5,7 +5,7 @@
 </library>
 
 <library path="nav2_backup_recovery">
-  <class name="nav2_recoveries/Backup" type="nav2_recoveries::Backup" base_class_type="nav2_core::Recovery">
+  <class name="nav2_recoveries/BackUp" type="nav2_recoveries::BackUp" base_class_type="nav2_core::Recovery">
     <description></description>
   </class>
 </library>
