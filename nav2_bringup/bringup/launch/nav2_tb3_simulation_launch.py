@@ -18,15 +18,16 @@ import os
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
+from nav2_common.launch import Node
+
 from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.substitutions import LaunchConfiguration
 from launch.actions import (DeclareLaunchArgument, SetEnvironmentVariable,
     IncludeLaunchDescription, ExecuteProcess, RegisterEventHandler, EmitEvent)
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
-from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -35,11 +36,13 @@ def generate_launch_description():
     launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
+    namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
+    use_remappings = LaunchConfiguration('use_remappings')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -47,7 +50,22 @@ def generate_launch_description():
     simulator = LaunchConfiguration('simulator')
     world = LaunchConfiguration('world')
 
+    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+    #              https://github.com/ros2/launch_ros/issues/56
+    remappings = [((namespace, '/tf'), '/tf'),
+                  ((namespace, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map')]
+
     # Declare the launch arguments
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace')
+
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
@@ -73,6 +91,10 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='false',
         description='Automatically startup the nav2 stack')
+
+    declare_use_remappings_cmd = DeclareLaunchArgument(
+        'use_remappings', default_value='false',
+        description='Arguments to pass to all nodes launched by the file')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
@@ -113,20 +135,39 @@ def generate_launch_description():
         node_name='robot_state_publisher',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
+        use_remappings=IfCondition(use_remappings),
+        remappings=remappings,
         arguments=[urdf])
 
     # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
     #              Launching as node works after applying the change described on the github issue.
+    #              Once fixed, launch by providing the remappings:
+    # rviz_remappings = [('/tf', 'tf'),
+    #                    ('/tf_static', 'tf_static'),
+    #                    ('goal_pose', 'goal_pose'),
+    #                    ('/clicked_point', 'clicked_point'),
+    #                    ('/initialpose', 'initialpose'),
+    #                    ('/parameter_events', 'parameter_events'),
+    #                    ('/rosout', 'rosout')]
+
     # start_rviz_cmd = Node(
     #     package='rviz2',
     #     node_executable='rviz2',
     #     node_name='rviz2',
     #     arguments=['-d', rviz_config_file],
-    #     output='screen')
+    #     output='screen',
+    #     use_remappings=IfCondition(use_remappings),
+    #     remappings=rviz_remappings)
 
     start_rviz_cmd = ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            ['-d', rviz_config_file]],
+            ['-d', rviz_config_file],
+            ['__ns:=/', namespace],
+            '/tf:=tf',
+            '/tf_static:=tf_static',
+            '/goal_pose:=goal_pose',
+            '/clicked_point:=clicked_point',
+            '/initialpose:=initialpose'],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(
@@ -136,21 +177,25 @@ def generate_launch_description():
 
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file,
+        launch_arguments={'namespace': namespace,
+                          'map': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
-                          'autostart': autostart}.items())
+                          'autostart': autostart,
+                          'use_remappings': use_remappings}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
 
     # Declare the launch options
+    ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_remappings_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)

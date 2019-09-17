@@ -7,6 +7,12 @@
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache-2.0</license>
 
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>osrf_pycommon</depend>
+  <depend>rclpy</depend>
+  <depend>python3-yaml</depend>
+
   <buildtool_depend>ament_cmake_core</buildtool_depend>
 
   <build_depend>ament_cmake_python</build_depend>
