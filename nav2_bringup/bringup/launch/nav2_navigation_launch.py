@@ -98,14 +98,6 @@ def generate_launch_description():
             description='Arguments to pass to all nodes launched by the file'),
 
         Node(
-            package='nav2_world_model',
-            node_executable='world_model',
-            output='screen',
-            parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
-            remappings=remappings),
-
-        Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
@@ -114,9 +106,9 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
-            package='nav2_navfn_planner',
-            node_executable='navfn_planner',
-            node_name='navfn_planner',
+            package='nav2_planner',
+            node_executable='planner_server',
+            node_name='planner_server',
             output='screen',
             parameters=[configured_params],
             use_remappings=IfCondition(use_remappings),

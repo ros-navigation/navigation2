@@ -153,14 +153,24 @@ def generate_launch_description():
 
     # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
     #              Launching as node works after applying the change described on the github issue.
-    start_rviz_cmd = Node(
-        package='rviz2',
-        node_executable='rviz2',
-        node_name='rviz2',
-        arguments=['-d', rviz_config_file],
-        output='screen',
-        use_remappings=IfCondition(use_remappings),
-        remappings=rviz_remappings)
+    # start_rviz_cmd = Node(
+    #     package='rviz2',
+    #     node_executable='rviz2',
+    #     node_name='rviz2',
+    #     arguments=['-d', rviz_config_file],
+    #     output='screen',
+    #     use_remappings=IfCondition(use_remappings),
+    #     remappings=rviz_remappings)
+
+    start_rviz_cmd = ExecuteProcess(
+        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            ['-d', rviz_config_file],
+            '/move_base_simple/goal:=move_base_simple/goal',
+            '/tf:=tf',
+            '/tf_static:=tf_static',
+            '/clicked_point:=clicked_point',
+            '/initialpose:=initialpose'],
+        cwd=[launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(
         event_handler=OnProcessExit(

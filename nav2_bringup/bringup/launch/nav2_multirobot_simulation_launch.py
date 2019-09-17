@@ -55,8 +55,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     rviz_config_file = LaunchConfiguration('rviz_config')
-    log_settings = LaunchConfiguration('log_settings',
-                                                             default='true')
+    log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
     declare_world_cmd = DeclareLaunchArgument(
