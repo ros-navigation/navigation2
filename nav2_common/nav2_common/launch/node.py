@@ -31,7 +31,8 @@ from launch import Condition
 from launch.action import Action
 from launch.actions import ExecuteProcess
 from launch.frontend import Entity
-from launch.frontend import expose_action
+# TODO(orduno) See comment below
+# from launch.frontend import expose_action
 from launch.frontend import Parser
 from launch.launch_context import LaunchContext
 import launch.logging
@@ -55,7 +56,7 @@ from rclpy.validate_node_name import validate_node_name
 import yaml
 
 
-#TODO(orduno) Figure out how to import this decorator
+#TODO(orduno) Figure out how to import this decorator correctly
 # @expose_action('node')
 class Node(ExecuteProcess):
     """Action that executes a ROS node."""
@@ -136,7 +137,7 @@ class Node(ExecuteProcess):
         # The substitutions will get expanded when the action is executed.
         cmd += ['--ros-args']  # Prepend ros specific arguments with --ros-args flag
         if node_name is not None:
-            cmd += [LocalSubstitution(
+            cmd += ['-r', LocalSubstitution(
                 "ros_specific_arguments['name']", description='node name')]
         if parameters is not None:
             ensure_argument_type(parameters, (list), 'parameters', 'Node')
@@ -144,7 +145,7 @@ class Node(ExecuteProcess):
             # evaluate to paths), or dictionaries of parameters (fields can be substitutions).
             i = 0
             for param in parameters:
-                cmd += [LocalSubstitution(
+                cmd += ['--params-file', LocalSubstitution(
                     "ros_specific_arguments['params'][{}]".format(i),
                     description='parameter {}'.format(i))]
                 i += 1
@@ -153,7 +154,7 @@ class Node(ExecuteProcess):
             i = 0
             for remapping in normalize_remap_rules(remappings):
                 k, v = remapping
-                cmd += [LocalSubstitution(
+                cmd += ['-r', LocalSubstitution(
                     "ros_specific_arguments['remaps'][{}]".format(i),
                     description='remapping {}'.format(i))]
                 i += 1
@@ -296,9 +297,8 @@ class Node(ExecuteProcess):
                 ):
                     self.__expanded_node_namespace = '/' + self.__expanded_node_namespace
             if self.__expanded_node_namespace != '':
-                self.cmd.append(normalize_to_list_of_substitutions([
-                    LocalSubstitution("ros_specific_arguments['ns']")
-                ]))
+                cmd_extension = ['-r', LocalSubstitution("ros_specific_arguments['ns']")]
+                self.cmd.extend([normalize_to_list_of_substitutions(x) for x in cmd_extension])
                 validate_namespace(self.__expanded_node_namespace)
         except Exception:
             self.__logger.error(
@@ -356,10 +356,7 @@ class Node(ExecuteProcess):
         if self.__expanded_node_namespace != '':
             ros_specific_arguments['ns'] = '__ns:={}'.format(self.__expanded_node_namespace)
         if self.__expanded_parameter_files is not None:
-            ros_specific_arguments['params'] = []
-            param_arguments = cast(List[str], ros_specific_arguments['params'])
-            for param_file_path in self.__expanded_parameter_files:
-                param_arguments.append('__params:={}'.format(param_file_path))
+            ros_specific_arguments['params'] = self.__expanded_parameter_files
         if self.__expanded_remappings is not None:
             ros_specific_arguments['remaps'] = []
             for remapping_from, remapping_to in self.__expanded_remappings:

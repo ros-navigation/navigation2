@@ -142,17 +142,17 @@ def generate_launch_description():
         remappings=remappings,
         arguments=[urdf])
 
-
-    rviz_remappings = [('/move_base_simple/goal', 'move_base_simple/goal'),
-                       ('/tf', 'tf'),
-                       ('/tf_static', 'tf_static'),
-                       ('/clicked_point', 'clicked_point'),
-                       ('/initialpose', 'initialpose'),
-                       ('/parameter_events', 'parameter_events'),
-                       ('/rosout', 'rosout')]
-
     # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
     #              Launching as node works after applying the change described on the github issue.
+    #              Once fixed, launch by providing the remappings:
+    # rviz_remappings = [('/tf', 'tf'),
+    #                    ('/tf_static', 'tf_static'),
+    #                    ('goal_pose', 'goal_pose'),
+    #                    ('/clicked_point', 'clicked_point'),
+    #                    ('/initialpose', 'initialpose'),
+    #                    ('/parameter_events', 'parameter_events'),
+    #                    ('/rosout', 'rosout')]
+
     # start_rviz_cmd = Node(
     #     package='rviz2',
     #     node_executable='rviz2',
@@ -165,9 +165,10 @@ def generate_launch_description():
     start_rviz_cmd = ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             ['-d', rviz_config_file],
-            '/move_base_simple/goal:=move_base_simple/goal',
+            ['__ns:=/', robot_name],
             '/tf:=tf',
             '/tf_static:=tf_static',
+            '/goal_pose:=goal_pose',
             '/clicked_point:=clicked_point',
             '/initialpose:=initialpose'],
         cwd=[launch_dir], output='screen')
