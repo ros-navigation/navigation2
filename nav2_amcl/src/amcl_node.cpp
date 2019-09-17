@@ -1073,7 +1073,7 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
       msg.header.frame_id.c_str(),
       global_frame_id_.c_str());
   }
-
+  freeMapDependentMemory();
   map_ = convertMap(msg);
 
 #if NEW_UNIFORM_SAMPLING
