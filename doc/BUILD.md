@@ -66,7 +66,7 @@ After installation of Navigation2 and required dependencies, test navigation2 by
 ## 4. Reporting Issue
 If run into any issue, feel free to submit pull request or report issue in this project.
 
-Quickstart
+Quickstart using initial setup script
 ----------
 
 ### Steps
