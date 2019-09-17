@@ -37,8 +37,8 @@ using namespace std::chrono_literals;
 class DummyRecovery : public Recovery<RecoveryAction>
 {
 public:
-  explicit DummyRecovery(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> & tf)
-  : Recovery<RecoveryAction>(node, "Recovery", tf),
+  explicit DummyRecovery()
+  : Recovery<RecoveryAction>(),
     initialized_(false) {}
 
   ~DummyRecovery() {}
@@ -102,6 +102,7 @@ protected:
 
   void SetUp() override
   {
+    node_lifecycle_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("LifecycleRecoveryTestNode");
     node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
     auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -113,7 +114,9 @@ protected:
       "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
     node_->declare_parameter(
       "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
-    recovery_ = std::make_unique<DummyRecovery>(node_, tf_buffer);
+    recovery_ = std::make_unique<DummyRecovery>();
+    recovery_->configure(node_lifecycle_, "DummyNode", tf_buffer);
+    recovery_->activate();
 
     client_ = rclcpp_action::create_client<RecoveryAction>(node_, "Recovery");
   }
@@ -177,6 +180,7 @@ protected:
     return future_result.get();
   }
 
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<DummyRecovery> recovery_;
   std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;

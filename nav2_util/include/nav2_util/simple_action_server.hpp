@@ -25,14 +25,14 @@
 namespace nav2_util
 {
 
-template<typename ActionT>
+template<typename ActionT, typename nodeT = rclcpp::Node>
 class SimpleActionServer
 {
 public:
   typedef std::function<void ()> ExecuteCallback;
 
   explicit SimpleActionServer(
-    rclcpp::Node::SharedPtr node,
+    typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
     bool autostart = true)
@@ -103,7 +103,10 @@ public:
       };
 
     action_server_ = rclcpp_action::create_server<ActionT>(
-      node_,
+      node_->get_node_base_interface(),
+      node_->get_node_clock_interface(),
+      node_->get_node_logging_interface(),
+      node_->get_node_waitables_interface(),
       action_name_,
       handle_goal,
       handle_cancel,
@@ -263,7 +266,7 @@ public:
 
 protected:
   // The SimpleActionServer isn't itself a node, so needs to know which one to use
-  rclcpp::Node::SharedPtr node_;
+  typename nodeT::SharedPtr node_;
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
