@@ -23,7 +23,7 @@ include_directories(
   include
 )
 
-set(library_name recoveries)
+set(library_name recoveries_server)
 set(executable_name ${library_name}_node)
 
 set(dependencies
@@ -39,12 +39,12 @@ set(dependencies
   tf2_geometry_msgs
   geometry_msgs
   nav2_costmap_2d
+  nav2_core
 )
 
 # Library
 add_library(${library_name}
-  src/spin.cpp
-  src/back_up.cpp
+  src/recovery_server.cpp
 )
 
 ament_target_dependencies(${library_name}
