@@ -48,6 +48,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <LocalPlanner plugin="${prefix}/dwb_core.xml" />
+    <nav2_core plugin="${prefix}/local_planner_plugin.xml" />
   </export>
 </package>
