@@ -105,7 +105,7 @@ def generate_launch_description():
 
     start_recovery_cmd = launch_ros.actions.Node(
         package='nav2_recoveries',
-        node_executable='recoveries_node',
+        node_executable='recoveries_server_node',
         node_name='recoveries',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}])

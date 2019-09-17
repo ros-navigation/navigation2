@@ -173,7 +173,7 @@ def generate_launch_description():
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_recoveries'),
-                'lib/nav2_recoveries/recoveries_node'),
+                'lib/nav2_recoveries/recoveries_server_node'),
             '--ros-args', '--params-file', configured_params],
         cwd=[launch_dir], output='screen')
 
