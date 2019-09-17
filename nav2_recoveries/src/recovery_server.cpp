@@ -36,12 +36,12 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  auto tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(),
     get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
-  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   declare_parameter("costmap_topic",
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));

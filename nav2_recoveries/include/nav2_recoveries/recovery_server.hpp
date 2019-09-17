@@ -49,6 +49,7 @@ protected:
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Plugins
   std::vector<nav2_core::Recovery::Ptr> recoveries_;
