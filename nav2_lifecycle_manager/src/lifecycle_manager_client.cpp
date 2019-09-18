@@ -146,7 +146,7 @@ LifecycleManagerClient::callService(uint8_t command)
   request->command = command;
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
-    service_name_);
+    service_name_.c_str());
 
   while (!manager_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
@@ -157,7 +157,7 @@ LifecycleManagerClient::callService(uint8_t command)
   }
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
-    service_name_);
+    service_name_.c_str());
   auto future_result = manager_client_->async_send_request(request);
   rclcpp::spin_until_future_complete(node_, future_result);
   return future_result.get()->success;
