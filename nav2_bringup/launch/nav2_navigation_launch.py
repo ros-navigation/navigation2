@@ -84,7 +84,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='nav2_recoveries',
             node_executable='recoveries_server_node',
-            node_name='recoveries',
+            node_name='recoveries_server_node',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}]),
 
@@ -104,6 +104,7 @@ def generate_launch_description():
                         {'autostart': autostart},
                         {'node_names': ['dwb_controller',
                                         'planner_server',
+                                        'recoveries_server_node',
                                         'bt_navigator']}]),
 
     ])

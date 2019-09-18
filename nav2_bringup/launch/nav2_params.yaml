@@ -153,7 +153,7 @@ lifecycle_manager:
     use_sim_time: True
     autostart: True
     node_names: ['map_server', 'amcl', 'dwb_controller',
-                 'planner_server', 'bt_navigator']
+                 'planner_server','recoveries_server_node', 'bt_navigator']
 
 lifecycle_manager_service_client:
   ros__parameters:
