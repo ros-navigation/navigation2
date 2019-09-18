@@ -103,24 +103,29 @@ protected:
   void SetUp() override
   {
     node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>("LifecycleRecoveryTestNode");
-    node_ = std::make_shared<rclcpp::Node>("RecoveryTestNode");
-    auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_->get_node_base_interface(),
-      node_->get_node_timers_interface());
-    tf_buffer->setCreateTimerInterface(timer_interface);
-    auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
-    node_->declare_parameter(
-      "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-    node_->declare_parameter(
-      "footprint_topic",
+      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+      "LifecycleRecoveryTestNode", rclcpp::NodeOptions());
+    node_lifecycle_->declare_parameter("costmap_topic",
+      rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+    node_lifecycle_->declare_parameter("footprint_topic",
       rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      node_lifecycle_->get_node_base_interface(),
+      node_lifecycle_->get_node_timers_interface());
+    tf_buffer_->setCreateTimerInterface(timer_interface);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
     recovery_ = std::make_unique<DummyRecovery>();
-    recovery_->configure(node_lifecycle_, "DummyNode", tf_buffer);
+    recovery_->configure(node_lifecycle_, "Recovery", tf_buffer_);
     recovery_->activate();
 
-    client_ = rclcpp_action::create_client<RecoveryAction>(node_, "Recovery");
+    client_ = rclcpp_action::create_client<RecoveryAction>(
+      node_lifecycle_->get_node_base_interface(),
+      node_lifecycle_->get_node_graph_interface(),
+      node_lifecycle_->get_node_logging_interface(),
+      node_lifecycle_->get_node_waitables_interface(), "Recovery");
   }
 
   void TearDown() override {}
@@ -128,14 +133,16 @@ protected:
   bool sendCommand(const std::string & command)
   {
     if (!client_->wait_for_action_server(4s)) {
+      std::cout << "Server not up" << std::endl;
       return false;
     }
 
     auto future_goal = getGoal(command);
 
-    if (rclcpp::spin_until_future_complete(node_, future_goal) !=
+    if (rclcpp::spin_until_future_complete(node_lifecycle_, future_goal) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
+      std::cout << "failed sending goal" << std::endl;
       // failed sending the goal
       return false;
     }
@@ -143,6 +150,7 @@ protected:
     goal_handle_ = future_goal.get();
 
     if (!goal_handle_) {
+      std::cout << "goal was rejected" << std::endl;
       // goal was rejected by the action server
       return false;
     }
@@ -176,17 +184,18 @@ protected:
     rclcpp::executor::FutureReturnCode frc;
 
     do {
-      frc = rclcpp::spin_until_future_complete(node_, future_result);
+      frc = rclcpp::spin_until_future_complete(node_lifecycle_, future_result);
     } while (frc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
     return future_result.get();
   }
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
-  std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<DummyRecovery> recovery_;
   std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<RecoveryAction>> goal_handle_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 // Define the tests
