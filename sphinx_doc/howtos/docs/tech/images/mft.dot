@@ -1,0 +1,25 @@
+digraph G {
+  bgcolor="transparent";
+  node [fontsize=10 shape=record]
+  node [fontsize=10]
+  rankdir=LR
+
+  bin_complete [label="<ext>Extended Manifest\n(unsigned)
+                  |<mft>Manifest\n(signed)|<bins>Binaries"]
+
+  mft [label="<hdr>CSE Header
+        |CSS Header (Type 4)\nmodule_type = 4\n...
+        |<mcb>ManifestCryptoBlock
+        |PlatformFirmware\nAuthenticationExtension
+        |...other extensions...
+        |AdspMetadataFileExtension
+        |...alignment...
+        |AdspFwBinaryDesc"]
+
+  mcb [label="ManifestRSAKey\nmodulus\nexponent
+        |Signature"]
+
+  bin_complete:mft -> mft:hdr
+  mft:mcb -> mcb
+
+}
