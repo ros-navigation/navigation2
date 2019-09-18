@@ -37,6 +37,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace nav2_navfn_planner
 {
@@ -67,11 +68,11 @@ NavfnPlanner::configure(
 
   // Initialize parameters
   // Declare this plugin's parameters
-  node_->declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(node_, "tolerance", rclcpp::ParameterValue(0.0));
   node_->get_parameter("tolerance", tolerance_);
-  node_->declare_parameter("use_astar", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(node_, "use_astar", rclcpp::ParameterValue(false));
   node_->get_parameter("use_astar", use_astar_);
-  node_->declare_parameter("allow_unknown", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "allow_unknown", rclcpp::ParameterValue(true));
   node_->get_parameter("allow_unknown", allow_unknown_);
 
   // Create a planner based on the new costmap size
