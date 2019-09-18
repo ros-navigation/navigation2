@@ -269,6 +269,23 @@ references:
       file: lcov/project_coverage.info
       flags: project
       when: always
+  setup_doc_dependencies: &setup_doc_dependencies
+    run:
+      name: Install Doc Dependencies
+      command: |
+        apk --no-cache add python3
+        python3 -m ensurepip
+        pip3 install sphinx==1.7.5 docutils==0.14 sphinx_rtd_theme breathe==4.9.1 sphinxcontrib-plantuml
+        apk --no-cache add make
+        apk --no-cache add doxygen
+        apk --no-cache add graphviz
+        apk --no-cache add ttf-dejavu
+        apk --no-cache add openjdk8-jre
+  make_docs: &make_docs
+    run:
+      command: |
+        cd src/navigation2/doc
+        make html
 
 commands:
   <<: *common_commands
@@ -314,21 +331,11 @@ commands:
   install_doc_dependencies:
     description: "Install documentation dependencies"
     steps:
-      - run: apk --no-cache add python3
-      - run: python3 -m ensurepip
-      - run: pip3 install sphinx==1.7.5 docutils==0.14 sphinx_rtd_theme breathe==4.9.1 sphinxcontrib-plantuml
-      - run: apk --no-cache add make
-      - run: apk --no-cache add doxygen
-      - run: apk --no-cache add graphviz
-      - run: apk --no-cache add ttf-dejavu
-      - run: apk --no-cache add openjdk8-jre
+      - *setup_doc_dependencies
   build_docs:
     description: "Build docs"
     steps:
-      - run:
-          command: |
-            cd src/navigation2/doc
-            make html
+      - *make_docs
 
 executors:
   debug_exec:
@@ -404,14 +411,14 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
-      - release_build
-      - release_test:
-          requires:
-            - release_build
+      #- debug_build
+      #- debug_test:
+      #    requires:
+      #      - debug_build
+      #- release_build
+      #- release_test:
+      #    requires:
+      #      - release_build
       - docs_build
       - docs_publish:
           requires:
