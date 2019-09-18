@@ -30,8 +30,8 @@ LifecycleManagerClient::LifecycleManagerClient()
   node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
 
   // Create the service clients
-  manager_client_ = node_->create_client<ManageLifecycleNodes>(service_name_);
-  is_active_client_ = node_->create_client<std_srvs::srv::Trigger>("lifecycle_manager/is_active");
+  manager_client_ = node_->create_client<ManageLifecycleNodes>(manage_service_name_);
+  is_active_client_ = node_->create_client<std_srvs::srv::Trigger>(active_service_name_);
 
   navigate_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
@@ -71,27 +71,33 @@ LifecycleManagerClient::reset()
   return callService(ManageLifecycleNodes::Request::RESET);
 }
 
-bool LifecycleManagerClient::is_active()
+SystemStatus
+LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
 {
   auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-  auto service_name = "lifecycle_manager/is_active";
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
-    service_name);
+    active_service_name_.c_str());
 
-  while (!is_active_client_->wait_for_service(std::chrono::seconds(1))) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
-      return false;
-    }
-    RCLCPP_INFO(node_->get_logger(), "Waiting for service to appear...");
+  if (!is_active_client_->wait_for_service(timeout)) {
+    return SystemStatus::TIMEOUT;
   }
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
-    service_name);
+    active_service_name_.c_str());
   auto future_result = is_active_client_->async_send_request(request);
-  rclcpp::spin_until_future_complete(node_, future_result);
-  return future_result.get()->success;
+
+  if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    return SystemStatus::TIMEOUT;
+  }
+
+  if (future_result.get()->success) {
+    return SystemStatus::ACTIVE;
+  } else {
+    return SystemStatus::INACTIVE;
+  }
 }
 
 void
@@ -170,7 +176,7 @@ LifecycleManagerClient::callService(uint8_t command)
   request->command = command;
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for the lifecycle_manager's %s service...",
-    service_name_.c_str());
+    manage_service_name_.c_str());
 
   while (!manager_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
@@ -181,7 +187,7 @@ LifecycleManagerClient::callService(uint8_t command)
   }
 
   RCLCPP_INFO(node_->get_logger(), "send_async_request (%s) to the lifecycle_manager",
-    service_name_.c_str());
+    manage_service_name_.c_str());
   auto future_result = manager_client_->async_send_request(request);
   rclcpp::spin_until_future_complete(node_, future_result);
   return future_result.get()->success;

@@ -104,14 +104,19 @@ class InitialThread : public QThread
   Q_OBJECT
 
 public:
+  using SystemStatus = nav2_lifecycle_manager::SystemStatus;
+
   explicit InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client)
   : client_(client)
   {}
 
   void run() override
   {
-    auto response = client_.is_active();
-    if (response) {
+    SystemStatus status = SystemStatus::TIMEOUT;
+    while (status == SystemStatus::TIMEOUT) {
+      status = client_.is_active(std::chrono::seconds(1));
+    }
+    if (status == SystemStatus::ACTIVE) {
       emit activeSystem();
     } else {
       emit inactiveSystem();
