@@ -30,6 +30,8 @@
 namespace nav2_lifecycle_manager
 {
 
+enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
+
 class LifecycleManagerClient
 {
 public:
@@ -41,7 +43,7 @@ public:
   bool pause();
   bool resume();
   bool reset();
-  bool is_active();
+  SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // A couple convenience methods to facilitate scripting tests
   void set_initial_pose(double x, double y, double theta);
@@ -58,7 +60,8 @@ protected:
 
   rclcpp::Client<ManageLifecycleNodes>::SharedPtr manager_client_;
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
-  std::string service_name_{"lifecycle_manager/manage_nodes"};
+  std::string manage_service_name_{"lifecycle_manager/manage_nodes"};
+  std::string active_service_name_{"lifecycle_manager/is_active"};
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
 
