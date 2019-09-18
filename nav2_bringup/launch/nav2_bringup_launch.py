@@ -14,118 +14,89 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix
-from ament_index_python.packages import get_package_share_directory
-from launch.conditions import IfCondition
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
-import launch.actions
-import launch_ros.actions
-
-from nav2_common.launch import RewrittenYaml
+from launch import LaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
     # Get the launch directory
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Create the launch configuration variables
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    params_file = launch.substitutions.LaunchConfiguration('params')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
-    autostart = launch.substitutions.LaunchConfiguration('autostart')
+    map_yaml_file = LaunchConfiguration('map')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    params_file = LaunchConfiguration('params_file')
+    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    autostart = LaunchConfiguration('autostart')
 
-    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+    stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file,
-        'bt_xml_filename': bt_xml_file,
-        'autostart': autostart
-    }
-
-    configured_params = RewrittenYaml(
-        source_file=params_file, rewrites=param_substitutions,
-        convert_types=True)
-
     # Declare the launch arguments
-    declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
-        description='Full path to map file to load')
+        description='Full path to map yaml file to load')
 
-    declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
-    declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-        'params',
-        default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
-        'autostart', default_value='true',
-        description='Automatically startup the nav2 stack')
-
-    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
+    declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
-        default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
+        default_value=os.path.join(
+            get_package_prefix('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
-    start_map_server_cmd = launch_ros.actions.Node(
-        package='nav2_map_server',
-        node_executable='map_server',
-        node_name='map_server',
-        output='screen',
-        parameters=[configured_params])
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
 
-    start_localizer_cmd = launch_ros.actions.Node(
-        package='nav2_amcl',
-        node_executable='amcl',
-        node_name='amcl',
-        output='screen',
-        parameters=[configured_params])
+    # Specify the actions
+    start_localization_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_localization_launch.py')),
+        launch_arguments={'map': map_yaml_file,
+                          'use_sim_time': use_sim_time,
+                          'autostart': autostart,
+                          'params_file': params_file,
+                          'use_lifecycle_mgr': 'false'}.items())
 
-    start_dwb_cmd = launch_ros.actions.Node(
-        package='dwb_controller',
-        node_executable='dwb_controller',
-        output='screen',
-        parameters=[configured_params])
+    start_navigation_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
+        launch_arguments={'use_sim_time': use_sim_time,
+                          'autostart': autostart,
+                          'params_file': params_file,
+                          'bt_xml_file': bt_xml_file,
+                          'use_lifecycle_mgr': 'false',
+                          'map_subscribe_transient_local': 'true'}.items())
 
-    start_planner_cmd = launch_ros.actions.Node(
-        package='nav2_planner',
-        node_executable='planner_server',
-        node_name='planner_server',
-        output='screen',
-        parameters=[configured_params])
-
-    start_recovery_cmd = launch_ros.actions.Node(
-        package='nav2_recoveries',
-        node_executable='recoveries_node',
-        node_name='recoveries',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}])
-
-    start_navigator_cmd = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[configured_params])
-
-    start_lifecycle_manager_cmd = launch_ros.actions.Node(
+    start_lifecycle_manager_cmd = Node(
         package='nav2_lifecycle_manager',
         node_executable='lifecycle_manager',
         node_name='lifecycle_manager',
         output='screen',
-        parameters=[configured_params])
+        parameters=[{'use_sim_time': use_sim_time},
+                    {'autostart': autostart},
+                    {'node_names': ['map_server',
+                                    'amcl',
+                                    'dwb_controller',
+                                    'planner_server',
+                                    'bt_navigator']}])
 
     # Create the launch description and populate
-    ld = launch.LaunchDescription()
+    ld = LaunchDescription()
 
     # Set environment variables
     ld.add_action(stdout_linebuf_envvar)
@@ -139,11 +110,7 @@ def generate_launch_description():
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_map_server_cmd)
-    ld.add_action(start_localizer_cmd)
-    ld.add_action(start_dwb_cmd)
-    ld.add_action(start_planner_cmd)
-    ld.add_action(start_recovery_cmd)
-    ld.add_action(start_navigator_cmd)
+    ld.add_action(start_localization_cmd)
+    ld.add_action(start_navigation_cmd)
 
     return ld

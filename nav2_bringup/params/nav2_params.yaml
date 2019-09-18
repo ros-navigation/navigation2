@@ -148,21 +148,6 @@ map_server:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
 
-lifecycle_manager:
-  ros__parameters:
-    use_sim_time: True
-    autostart: True
-    node_names: ['map_server', 'amcl', 'dwb_controller',
-                 'planner_server', 'bt_navigator']
-
-lifecycle_manager_service_client:
-  ros__parameters:
-    use_sim_time: True
-
-lifecycle_manager_client_service_client:
-  ros__parameters:
-    use_sim_time: True
-
 navfn_planner:
   ros__parameters:
     use_sim_time: True
