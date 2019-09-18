@@ -269,6 +269,23 @@ references:
       file: lcov/project_coverage.info
       flags: project
       when: always
+  setup_doc_dependencies: &setup_doc_dependencies
+    run:
+      name: Install Doc Dependencies
+      command: |
+        apk --no-cache add python3
+        python3 -m ensurepip
+        pip3 install sphinx==1.7.5 docutils==0.14 sphinx_rtd_theme breathe==4.9.1 sphinxcontrib-plantuml
+        apk --no-cache add make
+        apk --no-cache add doxygen
+        apk --no-cache add graphviz
+        apk --no-cache add ttf-dejavu
+        apk --no-cache add openjdk8-jre
+  make_docs: &make_docs
+    run:
+      command: |
+        cd src/navigation2/sphinx_doc
+        make html
 
 commands:
   <<: *common_commands
@@ -311,6 +328,14 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
+  install_doc_dependencies:
+    description: "Install documentation dependencies"
+    steps:
+      - *setup_doc_dependencies
+  build_docs:
+    description: "Build docs"
+    steps:
+      - *make_docs
 
 executors:
   debug_exec:
@@ -331,6 +356,10 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
+  docs_exec:
+    docker:
+      - image: alpine:latest
+    working_directory: /opt/overlay_ws
 
 jobs:
   debug_build: &debug_build
@@ -367,6 +396,16 @@ jobs:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
+  docs_build:
+    executor: docs_exec
+    steps:
+      - install_doc_dependencies
+      - *on_checkout
+      - build_docs
+  docs_publish:
+    executor: docs_exec
+    steps:
+      - run: echo 'TODO - This is where we would publish the docs.'
 
 workflows:
   version: 2
@@ -380,6 +419,13 @@ workflows:
       - release_test:
           requires:
             - release_build
+      - docs_build
+      - docs_publish:
+          requires:
+            - docs_build
+          filters:
+            branches:
+              only: master
   nightly:
     jobs:
       - debug_build

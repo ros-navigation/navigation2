@@ -44,3 +44,5 @@ install
 # Python artifacts
 __pycache__/
 *.py[cod]
+
+sphinx_doc/_build
