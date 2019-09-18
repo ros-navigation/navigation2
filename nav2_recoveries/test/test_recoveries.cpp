@@ -97,10 +97,10 @@ private:
 class RecoveryTest : public ::testing::Test
 {
 protected:
-  RecoveryTest() {}
+  RecoveryTest() {SetUp();}
   ~RecoveryTest() {}
 
-  void SetUp() override
+  void SetUp()
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
