@@ -203,7 +203,7 @@ LifecycleManager::shutdown()
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("Managed nodes have been shut down");
-  system_active_ = false;  
+  system_active_ = false;
   return true;
 }
 
@@ -231,7 +231,7 @@ LifecycleManager::pause()
     return false;
   }
   message("Managed nodes have been paused");
-  system_active_ = false;  
+  system_active_ = false;
   return true;
 }
 
@@ -244,7 +244,7 @@ LifecycleManager::resume()
     return false;
   }
   message("Managed nodes are active");
-  system_active_ = true;  
+  system_active_ = true;
   return true;
 }
 

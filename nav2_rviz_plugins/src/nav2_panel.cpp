@@ -60,6 +60,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->setObjectName("idle");
   idle_->assignProperty(start_stop_button_, "text", "Shutdown");
   idle_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+  idle_->assignProperty(start_stop_button_, "enabled", true);
 
   // State entered after NavigateToPose has been canceled
   canceled_ = new QState();
