@@ -4,15 +4,21 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="6">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <Sequence name="NavigateWithReplanning">
         <RateController hz="1.0">
-          <Fallback>
+          <Fallback name="GoalReached">
             <GoalReached/>
-             <ComputePathToPose goal="${goal}" path="${path}"/>
+            <RecoveryNode number_of_retries="1" name="ComputePath">
+              <ComputePathToPose goal="${goal}" path="${path}"/>
+              <ClearEntireCostmap service_name="/global_costmap/clear_entirely_global_costmap"/>
+            </RecoveryNode>
           </Fallback>
         </RateController>
-        <FollowPath path="${path}"/>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="${path}"/>
+          <ClearEntireCostmap service_name="/local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
       </Sequence>
       <SequenceStar name="RecoveryActions">
         <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
