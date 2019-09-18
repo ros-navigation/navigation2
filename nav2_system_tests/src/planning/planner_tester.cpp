@@ -76,7 +76,7 @@ void PlannerTester::activate()
   planner_tester_->onActivate(state);
 
   // For visualization, we'll publish the map
-  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
+  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
 }
 
 void PlannerTester::deactivate()
@@ -193,7 +193,7 @@ void PlannerTester::loadDefaultMap()
   map_->info.map_load_time = this->now();
 
   // TODO(orduno): #443 replace with a latched topic
-  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(map_);});
+  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(*map_);});
 
   map_set_ = true;
   costmap_set_ = false;
