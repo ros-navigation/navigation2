@@ -92,7 +92,7 @@ nav2_controller:
     GoalDist.scale: 24.0
     RotateToGoal.scale: 32.0
 
-dwb_controller_rclcpp_node:
+nav2_controller_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
