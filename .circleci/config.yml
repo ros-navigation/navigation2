@@ -70,8 +70,7 @@ references:
               apt-get update
               dependencies=$(
                 rosdep install -q -y \
-                  --from-paths \
-                    $UNDERLAY_WS/src src \
+                  --from-paths src \
                   --ignore-src \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
