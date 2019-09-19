@@ -10,15 +10,26 @@ ARG FROM_IMAGE=osrf/ros2:nightly
 
 # multi-stage for caching
 FROM $FROM_IMAGE AS cache
-WORKDIR /tmp
 
-# copy package manifests for caching
-COPY ./ ./src
-RUN mkdir ./cache && cd ./src && \
-    find ./ -name "package.xml" | \
-      xargs cp --parents -t ../cache && \
+# clone underlay source
+ENV UNDERLAY_WS /opt/underlay_ws
+RUN mkdir -p $UNDERLAY_WS/src
+WORKDIR $UNDERLAY_WS
+COPY ./tools/ros2_dependencies.repos ./
+RUN vcs import src < ros2_dependencies.repos
+
+# copy overlay source
+ENV OVERLAY_WS /opt/overlay_ws
+RUN mkdir -p $OVERLAY_WS/src
+WORKDIR $OVERLAY_WS
+COPY ./ src/navigation2
+
+# copy manifests for caching
+WORKDIR /opt
+RUN find ./ -name "package.xml" | \
+      xargs cp --parents -t /tmp && \
     find ./ -name "COLCON_IGNORE" | \
-      xargs cp --parents -t ../cache
+      xargs cp --parents -t /tmp
 
 # multi-stage for building
 FROM $FROM_IMAGE AS build
@@ -39,12 +50,10 @@ RUN colcon mixin add upstream \
       https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml && \
     colcon metadata update
 
-# clone underlay source
+# copy underlay manifests
 ENV UNDERLAY_WS /opt/underlay_ws
-RUN mkdir -p $UNDERLAY_WS/src
+COPY --from=cache /tmp/underlay_ws $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
-COPY ./tools/ros2_dependencies.repos ./
-RUN vcs import src < ros2_dependencies.repos
 
 # install underlay dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -54,6 +63,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
         src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
+
+# copy underlay source
+COPY --from=cache $UNDERLAY_WS ./
 
 # build underlay source
 ARG UNDERLAY_MIXINS="release ccache"
@@ -68,11 +80,10 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       exit 1; \
     fi
 
-# copy overlay packages
+# copy overlay manifests
 ENV OVERLAY_WS /opt/overlay_ws
-RUN mkdir -p $OVERLAY_WS/src
+COPY --from=cache /tmp/overlay_ws $OVERLAY_WS
 WORKDIR $OVERLAY_WS
-COPY --from=cache /tmp/cache src/navigation2/
 
 # install overlay dependencies
 RUN . $UNDERLAY_WS/install/setup.sh && \
@@ -85,7 +96,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # copy overlay source
-COPY ./ src/navigation2/
+COPY --from=cache $OVERLAY_WS ./
 
 # build overlay source
 ARG OVERLAY_MIXINS="release ccache"
