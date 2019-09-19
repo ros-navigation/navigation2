@@ -91,7 +91,7 @@ def generate_launch_description():
                     {'autostart': autostart},
                     {'node_names': ['map_server',
                                     'amcl',
-                                    'dwb_controller',
+                                    'controller_server',
                                     'planner_server',
                                     'bt_navigator']}])
 
