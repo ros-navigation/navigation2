@@ -4,7 +4,11 @@ Build Instructions
 ## 1. Platform
 * Ubuntu 18.04
 
-## 2. Build Steps
+## 2. Manual Build Steps
+* The instructions are to build **Navigation2** package from `master` branch.
+* To build **Navigation2** package for specific distro (e.g- dashing), checkout **Navigation2** `distro` branch.
+* To build **Navigation2** package from script, kindly refer [QuickStart](BUILD.md#quickstart-using-initial-setup-script).
+
 ### 2.1 ROS2
 * Install ROS2 with dependencies from the ROS2 Installation Page: https://index.ros.org/doc/ros2/Installation/
 * Install the latest distribution of ROS2 to support Navigation2 master.
