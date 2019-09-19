@@ -39,16 +39,7 @@ RUN apt-get update && \
     apt-get install -q -y \	
       ccache \
       lcov \
-      python3-colcon-mixin \
     && rm -rf /var/lib/apt/lists/*
-
-# setup colcon mixin / meta
-RUN colcon mixin add upstream \
-      https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
-    colcon mixin update && \
-    colcon metadata add upstream \
-      https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml && \
-    colcon metadata update
 
 # copy underlay manifests
 ENV UNDERLAY_WS /opt/underlay_ws
