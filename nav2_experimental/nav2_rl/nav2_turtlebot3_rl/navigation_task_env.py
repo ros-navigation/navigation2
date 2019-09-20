@@ -21,6 +21,7 @@ import random
 
 from geometry_msgs.msg import Twist, Pose
 
+
 class NavigationTaskEnv(Turtlebot3Environment):
     def __init__(self):
         super().__init__()

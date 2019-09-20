@@ -46,9 +46,9 @@ class Turtlebot3Environment(GazeboInterface):
         self.goal_pose = Pose()
 
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
-        self.sub_scan = self.node_.create_subscription(LaserScan, '/turtlebot3_laserscan/out', self.scan_callback,
+        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback,
                                                        qos_profile_sensor_data)
-        
+
         self.scan_msg_received = False
 
     def scan_callback(self, LaserScan):
@@ -105,7 +105,7 @@ class Turtlebot3Environment(GazeboInterface):
 
         self.current_pose.position = future.result().state.pose.position
         self.current_pose.orientation = future.result().state.pose.orientation
-    
+
     def reset_tb3_env(self):
 
         self.unpause_gazebo_world()
@@ -126,7 +126,6 @@ class Turtlebot3Environment(GazeboInterface):
             sleep(0.1 / self.time_factor)
         self.collision = False
         self.done = False
-
 
     def get_velocity_cmd(self):
         """gets the velocity cmd from action

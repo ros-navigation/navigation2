@@ -48,6 +48,7 @@ class TB3NavigationEnvironmentDDPG(NavigationTaskEnv):
         z_vel = float(action[1])
         return x_vel, y_vel, z_vel
 
+
 class NavigatorDDPG():
     def __init__(self, env):
         self.state = env.reset()

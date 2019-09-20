@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class Env(object):
     def __init__(self):
         pass
@@ -79,7 +80,7 @@ class Env(object):
             The action space length
         """
         raise NotImplementedError()
-    
+
     def observation(self):
         """Provides environment states
 
