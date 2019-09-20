@@ -1,5 +1,5 @@
 
-**Navigation 2 with Cartogtographer**
+**Navigation 2 with Cartographer**
 
 This document explains how to use Navigation 2 with Cartographer. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
@@ -13,7 +13,7 @@ This document explains how to use Navigation 2 with Cartographer. The following 
 - Setting the ROS Domain ID variable is recommended. Ex:
     - `export ROS_DOMAIN_ID=30`
 
-## Tutotrial Steps
+## Tutorial Steps
 
 **1- (Robot)**  Bring up the robot-related packages on your robot. 
 Make sure /tf and /odom are being published.
