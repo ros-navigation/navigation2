@@ -3,6 +3,8 @@
 
 This document explains how to use Navigation 2 with Cartographer. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
+## Before the Tutorial:
+
 - Install ROS 2
 - Install Navigation 2
 - Install Cartographer
@@ -34,7 +36,7 @@ This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartograp
     
       -  ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
 
-**5- Save the Map**
+**5- (PC)Save the Map**
 
         - ros2 run nav2_map_server map_saver -f ~/map
 
