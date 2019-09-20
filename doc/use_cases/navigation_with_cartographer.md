@@ -1,6 +1,7 @@
+
 **Navigation 2 with Cartogtographer**
 
-This document explains how to use Navigation 2  with Cartographer. This allows ROS 2 users to generate maps and navigate at the same time. In other words, the user can easily navigate their robot in an unknown environment by sending target poses.
+This document explains how to use Navigation 2 with Cartographer. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
 - Install ROS 2
 - Install Navigation 2
@@ -14,7 +15,7 @@ This document explains how to use Navigation 2  with Cartographer. This allows R
 
 **1- (Robot)**  Bring up the robot-related packages on your robot. 
 Make sure /tf and /odom are being published.
-         - Ex: Turtlebot 3
+	- *Ex: Turtlebot 3*
             
        - ros2 launch turtlebot3_bringup robot.launch.py
     
@@ -29,11 +30,11 @@ This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartograp
       -  ros2 launch turtlebot3_cartographer cartographer.launch.py
           
 **4- (PC)** Initialize robot pose and send goal poses using the goal tool in Rviz or via command line. 
-    Ex: move robot 0.2 meters forward 
+	- *Ex: move the robot 0.2 meters forward* 
     
       -  ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
 
-- **Save the Map**
+**5- Save the Map**
 
         - ros2 run nav2_map_server map_saver -f ~/map
 
