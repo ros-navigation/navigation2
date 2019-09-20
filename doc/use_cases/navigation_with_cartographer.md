@@ -13,7 +13,7 @@ This document explains how to use Navigation 2 with SLAM. The following steps sh
 
 ## Tutorial Steps
 
-**1- (Robot)**  Bring up the robot-related packages on your robot. 
+**1- (Robot)**  Launch the robot-related packages on your robot. 
 
 Make sure /tf and /odom are being published.
 
