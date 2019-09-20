@@ -1,14 +1,14 @@
 
 **Navigation 2 with Cartographer**
 
-This document explains how to use Navigation 2 with Cartographer. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
+This document explains how to use Navigation 2 with SLAM. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
 ## Before the Tutorial
 
 - Install ROS 2
 - Install Navigation 2
-- Install Cartographer
-- Install your robot packages. 
+- Install SLAM package
+- Install your robot package
 - Source setup.bash in your ROS2 and Navigation 2 installation/build directory or workspaces
 
 ## Tutorial Steps
@@ -24,8 +24,10 @@ This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartograp
              
       -  ros2 launch nav2_bringup nav2_navigation_launch.py
 
-**3- (PC)** Bring up Cartographer
-   This is going to bring up Cartographer and Rviz.
+**3- (PC)** Bring up SLAM package
+Bring up your choice of SLAM implementation. Make sure it provides the map->odom transform and /map topic.
+-*Ex. Cartographer*
+	   This is going to bring up Cartographer and Rviz.
    
       -  ros2 launch turtlebot3_cartographer cartographer.launch.py
           
