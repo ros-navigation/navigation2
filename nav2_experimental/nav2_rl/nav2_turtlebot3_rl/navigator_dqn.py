@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from turtlebot3_env_core import TurtlebotEnv
+from navigation_task_env import NavigationTaskEnv
 
 import rclpy
 from rclpy.node import Node
@@ -32,7 +32,7 @@ from rl.policy import LinearAnnealedPolicy, BoltzmannQPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 
 
-class TB3EnvironmentDQN(TurtlebotEnv):
+class TB3EnvironmentDQN(NavigationTaskEnv):
     def get_actions(self):
         actions = [[parameters.ZERO, parameters.ZERO],  # Stop
                    [parameters.ZERO, -parameters.SPIN_VELOCITY],  # SR
@@ -48,33 +48,6 @@ class TB3EnvironmentDQN(TurtlebotEnv):
         y_vel = 0.0
         z_vel = self.actions[action][1]
         return x_vel, y_vel, z_vel
-
-    def get_reward(self):
-
-        reward = 0.0
-        goal_dist_sq = self.sq_distance_to_goal()
-
-        obstacle_reward = - (1 / (min(self.states_input)**2)) * 0.05
-
-        if goal_dist_sq > 0.25:
-            distance_reward = -(goal_dist_sq)
-            heading_reward = -0.5 * self.get_heading()**2
-        else:
-            distance_reward = 1000
-            heading_reward = 1000
-            self.done = True
-            print("Goal Reached")
-
-        heading_reward = -0.5 * self.get_heading()**2
-
-        reward += distance_reward
-        reward += heading_reward
-        reward += obstacle_reward
-
-        if self.collision:
-            reward = -500
-            self.done = True
-        return reward, self.done
 
 
 class NavigatorDQN():
