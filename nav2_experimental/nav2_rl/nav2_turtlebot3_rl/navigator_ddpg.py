@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from turtlebot3_env_core import TurtlebotEnv
+from navigation_task_env import NavigationTaskEnv
 
 import rclpy
 from rclpy.node import Node
@@ -37,7 +37,7 @@ class TB3Processor(WhiteningNormalizerProcessor):
         return np.clip(action, -0.2, 0.2)
 
 
-class TB3EnvironmentDDPG(TurtlebotEnv):
+class TB3NavigationEnvironmentDDPG(NavigationTaskEnv):
     def get_actions(self):
         return [0.0, 0.0]
 
@@ -47,34 +47,6 @@ class TB3EnvironmentDDPG(TurtlebotEnv):
         y_vel = 0.0
         z_vel = float(action[1])
         return x_vel, y_vel, z_vel
-
-    def get_reward(self):
-
-        reward = 0.0
-        goal_dist_sq = self.sq_distance_to_goal()
-
-        obstacle_reward = - (1 / (min(self.states_input)**2)) * 0.05
-
-        if goal_dist_sq > 0.25:
-            distance_reward = -(goal_dist_sq)
-            heading_reward = -0.5 * self.get_heading()**2
-        else:
-            distance_reward = 1000
-            heading_reward = 1000
-            self.done = True
-            print("Goal Reached")
-
-        heading_reward = -0.5 * self.get_heading()**2
-
-        reward += distance_reward
-        reward += heading_reward
-        reward += obstacle_reward
-
-        if self.collision:
-            reward = -500
-            self.done = True
-        return reward, self.done
-
 
 class NavigatorDDPG():
     def __init__(self, env):
@@ -145,7 +117,7 @@ class NavigatorDDPG():
 
 def main(args=None):
     rclpy.init(args=args)
-    env = TB3EnvironmentDDPG()
+    env = TB3NavigationEnvironmentDDPG()
     action_size = env.action_space()
     ddpg_agent = NavigatorDDPG(env)
 
