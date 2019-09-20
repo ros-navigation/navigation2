@@ -27,17 +27,17 @@ This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartograp
              
       -  ros2 launch nav2_bringup nav2_navigation_launch.py
 
-**3- (PC)** Bring up SLAM package
+**3- (PC)** Bring up SLAM package and RVIZ
 
-Bring up your choice of SLAM implementation. Make sure it provides the map->odom transform and /map topic.
+Bring up your choice of SLAM implementation. Make sure it provides the map->odom transform and /map topic. Run Rviz and add the topics you want to visualize such as /map, /tf, /laserscan etc.
 
 - *Ex. Cartographer*
 
-This is going to bring up Cartographer and Rviz.
+*This is going to bring up Cartographer and Rviz*
    
       -  ros2 launch turtlebot3_cartographer cartographer.launch.py
           
-**4- (PC)** Initialize robot pose and send goal poses using the goal tool in Rviz or via command line.
+**4- (PC)** Initialize the robot pose. Now, you can start sending goal poses using the goal tool in Rviz or via command line. The robot should start moving towards the goal pose, and the map should start appearing in Rviz.
 
 - *Ex: move the robot 0.2 meters forward* 
     
