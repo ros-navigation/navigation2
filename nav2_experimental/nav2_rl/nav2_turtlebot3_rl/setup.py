@@ -13,7 +13,6 @@ setup(
         'turtlebot3_env',
         'dqn',
         'parameters',
-        'turtlebot3_env_core',
         'navigator_ddpg',
         'navigator_dqn',
         'core_env',
