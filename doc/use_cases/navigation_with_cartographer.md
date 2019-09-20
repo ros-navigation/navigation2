@@ -23,7 +23,7 @@ Make sure /tf and /odom are being published.
     
 **2- (Robot or PC)** Bring up Navigation
 
-This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartographer will publish to /map topic and do localization.
+This will bring up Navigation 2 without nav2_amcl and nav2_map_server. It is assumed that the SLAM node(s) will publish to /map topic and provide the map->odom transform.
              
       -  ros2 launch nav2_bringup nav2_navigation_launch.py
 
