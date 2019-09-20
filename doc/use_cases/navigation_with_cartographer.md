@@ -1,11 +1,11 @@
 
-**Navigation 2 with Cartographer**
+# Navigation 2 with Cartographer
 
 This document explains how to use Navigation 2 with SLAM. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
 ## Before the Tutorial
 
-- Install ROS 2
+- [Install ROS 2](https://index.ros.org/doc/ros2/Installation/)
 - Install Navigation 2
 - Install SLAM package
 - Install your robot package
@@ -21,7 +21,7 @@ Make sure /tf and /odom are being published.
             
        - ros2 launch turtlebot3_bringup robot.launch.py
     
-**2- (Robot or PC)** Bring up Navigation
+**2- (Robot or PC)** [Launch Navigation](https://github.com/ros-planning/navigation2/tree/master/nav2_bringup)
 
 This will bring up Navigation 2 without nav2_amcl and nav2_map_server. It is assumed that the SLAM node(s) will publish to /map topic and provide the map->odom transform.
              
