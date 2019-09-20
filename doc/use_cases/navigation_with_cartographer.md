@@ -10,8 +10,6 @@ This document explains how to use Navigation 2 with Cartographer. The following 
 - Install Cartographer
 - Install your robot packages. 
 - Source setup.bash in your ROS2 and Navigation 2 installation/build directory or workspaces
-- Setting the ROS Domain ID variable is recommended. Ex:
-    - `export ROS_DOMAIN_ID=30`
 
 ## Tutorial Steps
 
