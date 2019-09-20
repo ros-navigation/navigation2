@@ -14,17 +14,20 @@ This document explains how to use Navigation 2 with SLAM. The following steps sh
 ## Tutorial Steps
 
 **1- (Robot)**  Bring up the robot-related packages on your robot. 
+
 Make sure /tf and /odom are being published.
 	- *Ex: Turtlebot 3*
             
        - ros2 launch turtlebot3_bringup robot.launch.py
     
 **2- (Robot or PC)** Bring up Navigation
+
 This will bring up Navigation 2 without nav2_amcl and nav2_map_server. Cartographer will publish to /map topic and do localization.
              
       -  ros2 launch nav2_bringup nav2_navigation_launch.py
 
 **3- (PC)** Bring up SLAM package
+
 Bring up your choice of SLAM implementation. Make sure it provides the map->odom transform and /map topic.
 -*Ex. Cartographer*
 	   This is going to bring up Cartographer and Rviz.
