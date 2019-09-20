@@ -16,6 +16,10 @@ setup(
         'turtlebot3_env_core',
         'navigator_ddpg',
         'navigator_dqn',
+        'core_env',
+        'gazebo_interface',
+        'turtlebot3_environment',
+        'navigation_task_env',
     ],
     data_files=[
         ('share/ament_index/resource_index/packages',
