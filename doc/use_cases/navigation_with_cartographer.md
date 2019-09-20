@@ -3,7 +3,7 @@
 
 This document explains how to use Navigation 2 with Cartographer. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
-## Before the Tutorial:
+## Before the Tutorial
 
 - Install ROS 2
 - Install Navigation 2
