@@ -213,7 +213,7 @@ TEST(VelocityIterator, dwa_gen_exception)
   auto nh = makeTestNode("dwa_gen_exception");
   nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   StandardTrajectoryGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
+  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
 }
 
 TEST(VelocityIterator, no_dwa_gen_exception)
@@ -221,7 +221,7 @@ TEST(VelocityIterator, no_dwa_gen_exception)
   auto nh = makeTestNode("no_dwa_gen_exception");
   nh->set_parameters({rclcpp::Parameter("use_dwa", false)});
   dwb_plugins::LimitedAccelGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav_core2::PlannerException);
+  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
 }
 
 TEST(VelocityIterator, dwa_gen)

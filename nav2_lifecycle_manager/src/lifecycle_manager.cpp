@@ -38,7 +38,7 @@ LifecycleManager::LifecycleManager()
 
   // The default set of node names for the nav2 stack
   std::vector<std::string> default_node_names{"map_server", "amcl",
-    "planner_server", "dwb_controller", "bt_navigator"};
+    "planner_server", "controller_server", "bt_navigator"};
 
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
@@ -172,62 +172,62 @@ LifecycleManager::shutdownAllNodes()
 bool
 LifecycleManager::startup()
 {
-  message("Starting the system bringup...");
+  message("Starting managed nodes bringup...");
   if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to bring up nodes: aborting bringup");
     return false;
   }
-  message("The system is active");
+  message("Managed nodes are active");
   return true;
 }
 
 bool
 LifecycleManager::shutdown()
 {
-  message("Shutting down the system...");
+  message("Shutting down managed nodes...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
-  message("The system has been sucessfully shut down");
+  message("Managed nodes have been shut down");
   return true;
 }
 
 bool
 LifecycleManager::reset()
 {
-  message("Resetting the system...");
+  message("Resetting managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
     !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
   {
     RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
     return false;
   }
-  message("The system is reset");
+  message("Managed nodes have been reset");
   return true;
 }
 
 bool
 LifecycleManager::pause()
 {
-  message("Pausing the system...");
+  message("Pausing managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
     return false;
   }
-  message("The system is paused");
+  message("Managed nodes have been paused");
   return true;
 }
 
 bool
 LifecycleManager::resume()
 {
-  message("Resuming the system...");
+  message("Resuming managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
     return false;
   }
-  message("The system is active");
+  message("Managed nodes are active");
   return true;
 }
 

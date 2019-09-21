@@ -15,6 +15,7 @@
 #ifndef NAV2_CORE__GLOBAL_PLANNER_HPP_
 #define NAV2_CORE__GLOBAL_PLANNER_HPP_
 
+#include <memory>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"

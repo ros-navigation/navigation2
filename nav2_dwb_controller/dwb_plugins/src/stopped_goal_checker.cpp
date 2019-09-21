@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/stopped_goal_checker.hpp"
 #include <cmath>
 #include <memory>
+#include "dwb_plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -48,7 +48,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
 {
   SimpleGoalChecker::initialize(nh);
 
@@ -62,17 +62,18 @@ void StoppedGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & 
 }
 
 bool StoppedGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-  const nav_2d_msgs::msg::Twist2D & velocity)
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity)
 {
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
   if (!ret) {
     return ret;
   }
-  return fabs(velocity.theta) <= rot_stopped_velocity_ &&
-         fabs(velocity.x) <= trans_stopped_velocity_ && fabs(velocity.y) <= trans_stopped_velocity_;
+  return fabs(velocity.angular.z) <= rot_stopped_velocity_ &&
+         fabs(velocity.linear.x) <= trans_stopped_velocity_ &&
+         fabs(velocity.linear.y) <= trans_stopped_velocity_;
 }
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::StoppedGoalChecker, dwb_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::StoppedGoalChecker, nav2_core::GoalChecker)

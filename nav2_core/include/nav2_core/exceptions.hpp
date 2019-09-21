@@ -2,7 +2,7 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Locus Robotics
- *  Copyright (c) 2018 Intel Corporation
+ *  Copyright (c) 2019, Intel Corporation
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,20 +33,24 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__COMMON_TYPES_HPP_
-#define DWB_CORE__COMMON_TYPES_HPP_
+#ifndef NAV2_CORE__EXCEPTIONS_HPP_
+#define NAV2_CORE__EXCEPTIONS_HPP_
 
+#include <stdexcept>
+#include <string>
 #include <memory>
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/transform_listener.h"
 
-
-namespace dwb_core
+namespace nav2_core
 {
 
-typedef std::shared_ptr<tf2_ros::Buffer> TFBufferPtr;
-typedef std::shared_ptr<nav2_costmap_2d::Costmap2DROS> CostmapROSPtr;
+class PlannerException : public std::runtime_error
+{
+public:
+  explicit PlannerException(const std::string description)
+  : std::runtime_error(description) {}
+  using Ptr = std::shared_ptr<PlannerException>;
+};
 
-}
+}  // namespace nav2_core
 
-#endif  // DWB_CORE__COMMON_TYPES_HPP_
+#endif  // NAV2_CORE__EXCEPTIONS_HPP_

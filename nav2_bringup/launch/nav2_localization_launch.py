@@ -12,73 +12,86 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import launch.actions
-from launch import LaunchDescription
+import os
 
-import launch_ros.actions
+from ament_index_python.packages import get_package_share_directory
 
 from nav2_common.launch import RewrittenYaml
 
+from launch import LaunchDescription
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch_ros.actions import Node
+
 
 def generate_launch_description():
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time',
-                                                            default='false')
-    autostart = launch.substitutions.LaunchConfiguration('autostart')
-    params_file = launch.substitutions.LaunchConfiguration('params')
+    # Get the launch directory
+    bringup_dir = get_package_share_directory('nav2_bringup')
+
+    map_yaml_file = LaunchConfiguration('map')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    autostart = LaunchConfiguration('autostart')
+    params_file = LaunchConfiguration('params_file')
+    use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file
-    }
+        'yaml_filename': map_yaml_file}
+
     configured_params = RewrittenYaml(
-        source_file=params_file, rewrites=param_substitutions,
+        source_file=params_file,
+        rewrites=param_substitutions,
         convert_types=True)
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
-        launch.actions.SetEnvironmentVariable(
-            'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
-        launch.actions.DeclareLaunchArgument(
-            'map', description='Full path to map file to load'),
+        DeclareLaunchArgument(
+            'map',
+            default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+            description='Full path to map yaml file to load'),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'use_sim_time', default_value='false',
             description='Use simulation (Gazebo) clock if true'),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'autostart', default_value='true',
             description='Automatically startup the nav2 stack'),
 
-        launch.actions.DeclareLaunchArgument(
-            'params',
-            default_value=[launch.substitutions.ThisLaunchFileDir(),
-                           '/nav2_params.yaml'],
+        DeclareLaunchArgument(
+            'params_file',
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
-        launch_ros.actions.Node(
+        DeclareLaunchArgument(
+            'use_lifecycle_mgr', default_value='true',
+            description='Whether to launch the lifecycle manager'),
+
+        Node(
             package='nav2_map_server',
             node_executable='map_server',
             node_name='map_server',
             output='screen',
             parameters=[configured_params]),
 
-        launch_ros.actions.Node(
+        Node(
             package='nav2_amcl',
             node_executable='amcl',
             node_name='amcl',
             output='screen',
             parameters=[configured_params]),
 
-        launch_ros.actions.Node(
+        Node(
+            condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_localize',
+            node_name='lifecycle_manager_localization',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['map_server', 'amcl']}]),
-
+                        {'node_names': ['map_server', 'amcl']}])
     ])

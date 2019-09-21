@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,32 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DWB_CONTROLLER__DWB_CONTROLLER_HPP_
-#define DWB_CONTROLLER__DWB_CONTROLLER_HPP_
+#ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#define NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
 #include <thread>
 
-#include "dwb_core/common_types.hpp"
-#include "dwb_core/dwb_local_planner.hpp"
-#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
+#include "nav2_core/local_planner.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "nav2_msgs/action/follow_path.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "pluginlib/class_list_macros.hpp"
 
-namespace dwb_controller
+namespace nav2_controller
 {
 
 class ProgressChecker;
 
-class DwbController : public nav2_util::LifecycleNode
+class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
-  DwbController();
-  ~DwbController();
+  ControllerServer();
+  ~ControllerServer();
 
 protected:
   // The lifecycle interface
@@ -59,12 +61,12 @@ protected:
   void setPlannerPath(const nav_msgs::msg::Path & path);
   void computeAndPublishVelocity();
   void updateGlobalPath();
-  void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
+  void publishVelocity(const geometry_msgs::msg::TwistStamped & velocity);
   void publishZeroVelocity();
   bool isGoalReached();
-  bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
+  bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
 
-  // The DWBController contains a costmap node
+  // The local controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<std::thread> costmap_thread_;
 
@@ -72,8 +74,9 @@ protected:
   std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
-  // The local planner
-  std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
+  // Local Planner Plugin
+  pluginlib::ClassLoader<nav2_core::LocalPlanner> lp_loader_;
+  nav2_core::LocalPlanner::Ptr local_planner_;
 
   // An executor used to spin the costmap node
   rclcpp::executors::SingleThreadedExecutor costmap_executor_;
@@ -83,6 +86,6 @@ protected:
   double controller_frequency_;
 };
 
-}  // namespace dwb_controller
+}  // namespace nav2_controller
 
-#endif  // DWB_CONTROLLER__DWB_CONTROLLER_HPP_
+#endif  // NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_

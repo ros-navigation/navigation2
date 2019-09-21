@@ -86,7 +86,7 @@ protected:
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
   bool first_map_only_{true};
-  bool first_map_received_{false};
+  std::atomic<bool> first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
   std::recursive_mutex configuration_mutex_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;

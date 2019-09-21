@@ -32,7 +32,7 @@ def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
     bringup_package = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_package, 'launch/nav2_params.yaml')
+    params_file = os.path.join(bringup_package, 'params/nav2_params.yaml')
     astar = (os.getenv('ASTAR').lower() == 'true')
     bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
@@ -76,8 +76,8 @@ def generate_launch_description():
             parameters=[params_file]),
 
         launch_ros.actions.Node(
-            package='dwb_controller',
-            node_executable='dwb_controller',
+            package='nav2_controller',
+            node_executable='controller_server',
             output='screen',
             parameters=[params_file]),
 
@@ -109,7 +109,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'node_names': ['map_server', 'amcl',
-                         'dwb_controller', 'planner_server',
+                         'controller_server', 'planner_server',
                          'recoveries_server_node', 'bt_navigator']},
                         {'autostart': True}]),
     ])

@@ -211,7 +211,8 @@ double OscillationCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & tr
     y_trend_.isOscillating(traj.velocity.y) ||
     theta_trend_.isOscillating(traj.velocity.theta))
   {
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory is oscillating.");
+    throw dwb_core::
+          IllegalTrajectoryException(name_, "Trajectory is oscillating.");
   }
   return 0.0;
 }

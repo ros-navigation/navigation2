@@ -32,17 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CORE__GOAL_CHECKER_HPP_
-#define DWB_CORE__GOAL_CHECKER_HPP_
+#ifndef NAV2_CORE__GOAL_CHECKER_HPP_
+#define NAV2_CORE__GOAL_CHECKER_HPP_
 
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
-#include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
-namespace dwb_core
+namespace nav2_core
 {
 
 /**
@@ -57,7 +57,7 @@ namespace dwb_core
 class GoalChecker
 {
 public:
-  typedef std::shared_ptr<dwb_core::GoalChecker> Ptr;
+  typedef std::shared_ptr<nav2_core::GoalChecker> Ptr;
 
   virtual ~GoalChecker() {}
 
@@ -65,7 +65,7 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param nh NodeHandle for grabbing parameters
    */
-  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) = 0;
+  virtual void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) = 0;
 
   /**
    * @brief Check whether the goal should be considered reached
@@ -75,10 +75,10 @@ public:
    * @return True if goal is reached
    */
   virtual bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) = 0;
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) = 0;
 };
 
-}  // namespace dwb_core
+}  // namespace nav2_core
 
-#endif  // DWB_CORE__GOAL_CHECKER_HPP_
+#endif  // NAV2_CORE__GOAL_CHECKER_HPP_

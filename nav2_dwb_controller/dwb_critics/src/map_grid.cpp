@@ -119,9 +119,11 @@ double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
     grid_dist = scorePose(traj.poses[i]);
     if (stop_on_failure_) {
       if (grid_dist == obstacle_score_) {
-        throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
+        throw dwb_core::
+              IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
       } else if (grid_dist == unreachable_score_) {
-        throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Unreachable Area.");
+        throw dwb_core::
+              IllegalTrajectoryException(name_, "Trajectory Hits Unreachable Area.");
       }
     }
 
@@ -148,7 +150,8 @@ double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
   unsigned int cell_x, cell_y;
   // we won't allow trajectories that go off the map... shouldn't happen that often anyways
   if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
+    throw dwb_core::
+          IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
   }
   return getScore(cell_x, cell_y);
 }

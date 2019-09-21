@@ -14,95 +14,107 @@
 
 import os
 
-from launch import LaunchDescription
-import launch.actions
-
-import launch_ros.actions
-
-from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
 from nav2_common.launch import RewrittenYaml
 
+from launch import LaunchDescription
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch_ros.actions import Node
+
 
 def generate_launch_description():
-    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', 
-                                                            default='false')
-    autostart = launch.substitutions.LaunchConfiguration('autostart')
-    params_file = launch.substitutions.LaunchConfiguration('params')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
+    # Get the launch directory
+    bringup_dir = get_package_share_directory('nav2_bringup')
+
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    autostart = LaunchConfiguration('autostart')
+    params_file = LaunchConfiguration('params_file')
+    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
+    map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
         'bt_xml_filename': bt_xml_file,
         'autostart': autostart,
-        'map_subscribe_transient_local': 'False'
-    }
+        'map_subscribe_transient_local': map_subscribe_transient_local}
 
     configured_params = RewrittenYaml(
-        source_file=params_file, rewrites=param_substitutions,
-        convert_types=True)
+            source_file=params_file,
+            rewrites=param_substitutions,
+            convert_types=True)
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
-        launch.actions.SetEnvironmentVariable(
-            'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'use_sim_time', default_value='false',
             description='Use simulation (Gazebo) clock if true'),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'autostart', default_value='true',
             description='Automatically startup the nav2 stack'),
 
-        launch.actions.DeclareLaunchArgument(
-            'params',
-            default_value=[launch.substitutions.ThisLaunchFileDir(), 
-                           '/nav2_params.yaml'],
+        DeclareLaunchArgument(
+            'params_file',
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'bt_xml_file',
             default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
                 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
             description='Full path to the behavior tree xml file to use'),
 
-        launch_ros.actions.Node(
-            package='dwb_controller',
-            node_executable='dwb_controller',
+        DeclareLaunchArgument(
+            'use_lifecycle_mgr', default_value='true',
+            description='Whether to launch the lifecycle manager'),
+
+        DeclareLaunchArgument(
+            'map_subscribe_transient_local', default_value='false',
+            description='Whether to set the map subscriber QoS to transient local'),
+
+        Node(
+            package='nav2_controller',
+            node_executable='controller_server',
             output='screen',
             parameters=[configured_params]),
 
-        launch_ros.actions.Node(
+        Node(
             package='nav2_planner',
             node_executable='planner_server',
             node_name='planner_server',
             output='screen',
             parameters=[configured_params]),
 
-        launch_ros.actions.Node(
+        Node(
             package='nav2_recoveries',
             node_executable='recoveries_server_node',
             node_name='recoveries_server_node',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}]),
 
-        launch_ros.actions.Node(
+        Node(
             package='nav2_bt_navigator',
             node_executable='bt_navigator',
             node_name='bt_navigator',
             output='screen',
             parameters=[configured_params]),
 
-        launch_ros.actions.Node(
+        Node(
+            condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_control',
+            node_name='lifecycle_manager_navigation',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['dwb_controller',
+                        {'node_names': ['controller_server',
                                         'planner_server',
                                         'recoveries_server_node',
                                         'bt_navigator']}]),

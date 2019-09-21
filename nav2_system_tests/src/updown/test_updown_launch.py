@@ -82,8 +82,8 @@ def generate_launch_description():
     start_dwb_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('dwb_controller'),
-                'lib/dwb_controller/dwb_controller'),
+                get_package_prefix('nav2_controller'),
+                'lib/nav2_controller/controller_server'),
             '--ros-args', '--params-file', params_file],
         cwd=[launch_dir], output='screen')
 

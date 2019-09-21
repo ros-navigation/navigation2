@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 
 #include <memory>
 
-#include "dwb_controller/dwb_controller.hpp"
+#include "nav2_controller/nav2_controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<dwb_controller::DwbController>();
+  auto node = std::make_shared<nav2_controller::ControllerServer>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

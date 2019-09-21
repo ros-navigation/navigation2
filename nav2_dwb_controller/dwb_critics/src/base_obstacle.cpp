@@ -68,11 +68,13 @@ double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 {
   unsigned int cell_x, cell_y;
   if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
+    throw dwb_core::
+          IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
   }
   unsigned char cost = costmap_->getCost(cell_x, cell_y);
   if (!isValidCost(cost)) {
-    throw nav_core2::IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
+    throw dwb_core::
+          IllegalTrajectoryException(name_, "Trajectory Hits Obstacle.");
   }
   return cost;
 }
