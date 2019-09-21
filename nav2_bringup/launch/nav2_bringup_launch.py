@@ -60,47 +60,9 @@ def generate_launch_description():
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
-<<<<<<< HEAD
-    start_map_server_cmd = launch_ros.actions.Node(
-        package='nav2_map_server',
-        node_executable='map_server',
-        node_name='map_server',
-        output='screen',
-        parameters=[configured_params])
-
-    start_localizer_cmd = launch_ros.actions.Node(
-        package='nav2_amcl',
-        node_executable='amcl',
-        node_name='amcl',
-        output='screen',
-        parameters=[configured_params])
-
-    start_dwb_cmd = launch_ros.actions.Node(
-        package='dwb_controller',
-        node_executable='dwb_controller',
-        output='screen',
-        parameters=[configured_params])
-
-    start_planner_cmd = launch_ros.actions.Node(
-        package='nav2_planner',
-        node_executable='planner_server',
-        node_name='planner_server',
-        output='screen',
-        parameters=[configured_params])
-
-    start_recovery_cmd = launch_ros.actions.Node(
-        package='nav2_recoveries',
-        node_executable='recoveries_server_node',
-        node_name='recoveries_server_node',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}])
-
-    start_navigator_cmd = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[configured_params])
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
 
     # Specify the actions
     start_localization_cmd = IncludeLaunchDescription(
@@ -131,6 +93,7 @@ def generate_launch_description():
                                     'amcl',
                                     'controller_server',
                                     'planner_server',
+                                    'recoveries_server_node',
                                     'bt_navigator']}])
 
     # Create the launch description and populate

@@ -41,17 +41,17 @@ else
   ROS2_SETUP_FILE=/opt/ros/$ROS2_DISTRO/setup.bash
 fi
 
-# # Build ROS 2 base
-# if [ "$ENABLE_ROS2" = true ]; then
-#   cd $CWD/ros2_ws
-#   colcon build --symlink-install --packages-skip ros1_bridge
-# fi
+# Build ROS 2 base
+if [ "$ENABLE_ROS2" = true ]; then
+  cd $CWD/ros2_ws
+  colcon build --symlink-install --packages-skip ros1_bridge
+fi
 
-# # Build our ROS 2 dependencies
-# cd $CWD/ros2_nav_dependencies_ws
-# export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
-# (. $ROS2_SETUP_FILE &&
-#  colcon build --symlink-install)
+# Build our ROS 2 dependencies
+cd $CWD/ros2_nav_dependencies_ws
+export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
+(. $ROS2_SETUP_FILE &&
+ colcon build --symlink-install)
 
 # Build our code
 cd $CWD/navigation2_ws
