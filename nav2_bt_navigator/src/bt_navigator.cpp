@@ -54,6 +54,12 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_, "NavigateToPose");
 
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      get_node_base_interface(), get_node_timers_interface());
+    tf_->setCreateTimerInterface(timer_interface);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
+
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
     "/goal_pose",
     rclcpp::SystemDefaultsQoS(),
@@ -80,6 +86,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
   blackboard_->set<nav_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
@@ -143,6 +150,8 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
+  tf_.reset();
+  tf_listener_.reset();
   action_server_.reset();
   path_.reset();
   xml_string_.clear();
