@@ -47,43 +47,33 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * pause_msg = "Deactivate all nav2 lifecycle nodes";
   const char * resume_msg = "Activate all nav2 lifecycle nodes";
 
-<<<<<<< HEAD
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
-  pre_initial_->assignProperty(start_stop_button_, "text", "Startup");
-  pre_initial_->assignProperty(start_stop_button_, "enabled", false);
+  pre_initial_->assignProperty(start_reset_button_, "text", "Startup");
+  pre_initial_->assignProperty(start_reset_button_, "enabled", false);
 
-  initial_ = new QState();
-  initial_->setObjectName("initial");
-  initial_->assignProperty(start_stop_button_, "text", "Startup");
-  initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
-  initial_->assignProperty(start_stop_button_, "enabled", true);
-=======
-  // Initial state before system is activated
+  pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
+
   initial_ = new QState();
   initial_->setObjectName("initial");
   initial_->assignProperty(start_reset_button_, "text", "Startup");
   initial_->assignProperty(start_reset_button_, "toolTip", startup_msg);
+  initial_->assignProperty(start_reset_button_, "enabled", true);
 
   initial_->assignProperty(pause_resume_button_, "text", "Pause");
   initial_->assignProperty(pause_resume_button_, "enabled", false);
->>>>>>> 5176099e... add pause, resume, and repeat button transitions
 
   // State entered when NavigateToPose is not active
   idle_ = new QState();
   idle_->setObjectName("idle");
-<<<<<<< HEAD
-  idle_->assignProperty(start_stop_button_, "text", "Shutdown");
-  idle_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
-  idle_->assignProperty(start_stop_button_, "enabled", true);
-=======
   idle_->assignProperty(start_reset_button_, "text", "Reset");
   idle_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
+  idle_->assignProperty(start_reset_button_, "enabled", true);
 
   idle_->assignProperty(pause_resume_button_, "text", "Pause");
   idle_->assignProperty(pause_resume_button_, "enabled", true);
   idle_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
->>>>>>> 5176099e... add pause, resume, and repeat button transitions
 
   // State entered to cancel the NavigateToPose action
   canceled_ = new QState();
