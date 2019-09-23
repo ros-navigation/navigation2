@@ -16,6 +16,8 @@
 #define NAV2_CORE__RECOVERY_HPP_
 
 #include <string>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
