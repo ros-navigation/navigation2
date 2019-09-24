@@ -108,9 +108,12 @@ def generate_launch_description():
             node_name='lifecycle_manager',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
-                        {'node_names': ['map_server', 'amcl',
-                         'controller_server', 'planner_server',
-                         'recoveries_server_node', 'bt_navigator']},
+                        {'node_names': ['map_server',
+                                        'amcl',
+                                        'controller_server',
+                                        'planner_server',
+                                        'recoveries_server_node',
+                                        'bt_navigator']},
                         {'autostart': True}]),
     ])
 
