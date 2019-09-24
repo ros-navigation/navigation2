@@ -74,12 +74,12 @@ RecoveryServer::loadRecoveryPlugins()
 
   for (uint i = 0; i != plugin_names_.size(); i++) {
     try {
-      nav2_core::Recovery::Ptr recovery =
-        plugin_loader_.createSharedInstance(plugin_types_[i]);
+      pluginlib::UniquePtr<nav2_core::Recovery> recovery =
+        plugin_loader_.createUniqueInstance(plugin_types_[i]);
       RCLCPP_INFO(get_logger(), "Created recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
       recovery->configure(node, plugin_names_[i], tf_);
-      recoveries_.push_back(recovery);
+      recoveries_.push_back(std::move(recovery));
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),
@@ -93,8 +93,7 @@ nav2_util::CallbackReturn
 RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  std::vector<nav2_core::Recovery::Ptr>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->activate();
   }
@@ -107,7 +106,7 @@ RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  std::vector<nav2_core::Recovery::Ptr>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->deactivate();
   }
@@ -120,7 +119,7 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  std::vector<nav2_core::Recovery::Ptr>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->cleanup();
   }
