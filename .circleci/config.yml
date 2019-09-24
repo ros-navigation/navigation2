@@ -233,7 +233,7 @@ references:
       build: false
   install_overlay_dependencies: &install_overlay_dependencies
     install_dependencies:
-      underlay: /opt/ros_ws
+      underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
   setup_overlay_workspace: &setup_overlay_workspace
     setup_workspace: &setup_workspace_overlay
