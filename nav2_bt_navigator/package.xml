@@ -7,6 +7,8 @@
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <license>Apache-2.0</license>
 
+  <depend>tf2_ros</depend>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
   <build_depend>rclcpp</build_depend>
