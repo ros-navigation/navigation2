@@ -17,7 +17,6 @@
 
 #include <string>
 #include <memory>
-#include <thread>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
