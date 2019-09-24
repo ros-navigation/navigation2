@@ -66,7 +66,7 @@ references:
               cat << parameters.underlay >>/checksum.txt > checksum.txt
               vcs export --exact src | \
                 (echo vcs_export && cat) >> checksum.txt
-              sha256sum checksum.txt >> checksum.txt
+              sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
               dependencies=$(
                 rosdep install -q -y \
@@ -79,7 +79,7 @@ references:
                 tr -d \, | xargs -n1 | sort -u | xargs)
               dpkg -s $dependencies | \
                 (echo workspace_dependencies && cat) >> checksum.txt
-              sha256sum checksum.txt >> checksum.txt
+              sha256sum $PWD/checksum.txt >> checksum.txt
     setup_workspace:
       description: "Setup Workspace"
       parameters:
