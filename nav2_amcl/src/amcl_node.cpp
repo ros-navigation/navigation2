@@ -176,6 +176,11 @@ AmclNode::AmclNode()
   add_parameter("z_max", rclcpp::ParameterValue(0.05));
   add_parameter("z_rand", rclcpp::ParameterValue(0.5));
   add_parameter("z_short", rclcpp::ParameterValue(0.05));
+
+  add_parameter("always_reset_initial_pose", rclcpp::ParameterValue(false),
+    "Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter "
+    "(with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the"
+    "last known pose to initialize");
 }
 
 AmclNode::~AmclNode()
@@ -225,6 +230,10 @@ nav2_util::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  if (always_reset_initial_pose_) {
+    initial_pose_is_known_ = false;
+  }
 
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
@@ -308,6 +317,18 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   lasers_.clear();
   lasers_update_.clear();
   frame_to_laser_.clear();
+  force_update_ = true;
+
+  if (set_initial_pose_) {
+    set_parameter(rclcpp::Parameter("initial_pose.x",
+      rclcpp::ParameterValue(last_published_pose_.pose.pose.position.x)));
+    set_parameter(rclcpp::Parameter("initial_pose.y",
+      rclcpp::ParameterValue(last_published_pose_.pose.pose.position.y)));
+    set_parameter(rclcpp::Parameter("initial_pose.z",
+      rclcpp::ParameterValue(last_published_pose_.pose.pose.position.z)));
+    set_parameter(rclcpp::Parameter("initial_pose.yaw",
+      rclcpp::ParameterValue(tf2::getYaw(last_published_pose_.pose.pose.orientation))));
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -1005,6 +1026,7 @@ AmclNode::initParameters()
   get_parameter("z_rand", z_rand_);
   get_parameter("z_short", z_short_);
   get_parameter("first_map_only_", first_map_only_);
+  get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1221,9 +1243,15 @@ AmclNode::initOdometry()
   init_pose_[1] = last_published_pose_.pose.pose.position.y;
   init_pose_[2] = last_published_pose_.pose.pose.position.z;
 
-  init_cov_[0] = 0.5 * 0.5;
-  init_cov_[1] = 0.5 * 0.5;
-  init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
+  if (!initial_pose_is_known_) {
+    init_cov_[0] = 0.5 * 0.5;
+    init_cov_[1] = 0.5 * 0.5;
+    init_cov_[2] = (M_PI / 12.0) * (M_PI / 12.0);
+  } else {
+    init_cov_[0] = last_published_pose_.pose.covariance[0];
+    init_cov_[1] = last_published_pose_.pose.covariance[7];
+    init_cov_[2] = last_published_pose_.pose.covariance[35];
+  }
 
   motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
