@@ -81,7 +81,7 @@ public:
 
 
   void configure(
-    const nav2_util::LifecycleNode::SharedPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override
   {
     RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());

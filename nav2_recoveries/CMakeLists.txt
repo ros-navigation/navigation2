@@ -24,8 +24,8 @@ include_directories(
   include
 )
 
-set(library_name recoveries_server)
-set(executable_name ${library_name}_node)
+set(library_name recoveries_server_core)
+set(executable_name recoveries_server)
 
 set(dependencies
   rclcpp

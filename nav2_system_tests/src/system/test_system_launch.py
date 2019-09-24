@@ -90,8 +90,8 @@ def generate_launch_description():
 
         launch_ros.actions.Node(
             package='nav2_recoveries',
-            node_executable='recoveries_server_node',
-            node_name='recoveries_server_node',
+            node_executable='recoveries_server',
+            node_name='recoveries_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}]),
 
@@ -112,7 +112,7 @@ def generate_launch_description():
                                         'amcl',
                                         'controller_server',
                                         'planner_server',
-                                        'recoveries_server_node',
+                                        'recoveries_server',
                                         'bt_navigator']},
                         {'autostart': True}]),
     ])

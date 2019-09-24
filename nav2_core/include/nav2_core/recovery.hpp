@@ -46,7 +46,7 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const nav2_util::LifecycleNode::SharedPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
@@ -69,6 +69,8 @@ public:
    * @param  name The name of this planner
    * @return true if successful, false is failed to execute fully
    */
+  // TODO(stevemacenski) evaluate design for recoveries to not host
+  // their own servers and utilize a recovery server exposed action.
   // virtual bool executeRecovery() = 0;
 };
 
