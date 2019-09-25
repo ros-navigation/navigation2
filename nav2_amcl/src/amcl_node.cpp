@@ -231,10 +231,6 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (always_reset_initial_pose_) {
-    initial_pose_is_known_ = false;
-  }
-
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
   particlecloud_pub_->on_activate();
@@ -1043,6 +1039,10 @@ AmclNode::initParameters()
     RCLCPP_WARN(get_logger(), "You've set min_particles to be greater than max particles,"
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
+  }
+
+  if (always_reset_initial_pose_) {
+    initial_pose_is_known_ = false;
   }
 }
 
