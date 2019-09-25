@@ -28,7 +28,8 @@ def main():
                         help='the y component of the initial position [meters]')
     parser.add_argument('-z', type=float, default=0,
                         help='the z component of the initial position [meters]')
-    args = parser.parse_args()
+
+    args, unknown = parser.parse_known_args()
 
     # Start node
     rclpy.init()

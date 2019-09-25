@@ -92,7 +92,8 @@ def generate_launch_description():
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
                                   'z_pose': TextSubstitution(text=str(robot['z_pose'])),
-                                  'robot_name': robot['name']
+                                  'robot_name': robot['name'],
+                                  'turtlebot_type': TextSubstitution(text='waffle')
                                   }.items()))
 
     # Define commands for launching the navigation instances
