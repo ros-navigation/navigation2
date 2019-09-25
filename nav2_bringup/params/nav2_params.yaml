@@ -51,6 +51,10 @@ bt_navigator:
     use_sim_time: True
     bt_xml_filename: "bt_navigator.xml"
 
+bt_navigator_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
 controller_server:
   ros__parameters:
     use_sim_time: True
@@ -88,6 +92,10 @@ controller_server:
     PathDist.scale: 32.0
     GoalDist.scale: 24.0
     RotateToGoal.scale: 32.0
+
+controller_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
 
 local_costmap:
   local_costmap:
@@ -148,13 +156,13 @@ map_server:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
 
-navfn_planner:
+planner_server:
   ros__parameters:
     use_sim_time: True
     tolerance: 0.0
     use_astar: false
 
-navfn_planner_GetCostmap_client:
+planner_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
