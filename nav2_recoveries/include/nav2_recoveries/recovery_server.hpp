@@ -52,7 +52,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Plugins
-  std::vector<pluginlib::UniquePtr<nav2_core::Recovery> > recoveries_;
+  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>> recoveries_;
   pluginlib::ClassLoader<nav2_core::Recovery> plugin_loader_;
   std::vector<std::string> plugin_names_, plugin_types_;
 };

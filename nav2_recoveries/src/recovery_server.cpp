@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 #include "nav2_recoveries/recovery_server.hpp"
 
 namespace recovery_server
