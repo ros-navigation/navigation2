@@ -55,9 +55,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     client_node_, "NavigateToPose");
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      get_node_base_interface(), get_node_timers_interface());
-    tf_->setCreateTimerInterface(timer_interface);
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    get_node_base_interface(), get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
