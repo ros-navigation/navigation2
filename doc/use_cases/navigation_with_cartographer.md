@@ -27,7 +27,7 @@ This will bring up Navigation 2 without nav2_amcl and nav2_map_server. It is ass
              
       -  ros2 launch nav2_bringup nav2_navigation_launch.py
 
-**3- (PC)** Bring up SLAM package and RVIZ
+**3- (PC)** Launch SLAM package and RVIZ
 
 Bring up your choice of SLAM implementation. Make sure it provides the map->odom transform and /map topic. Run Rviz and add the topics you want to visualize such as /map, /tf, /laserscan etc.
 
