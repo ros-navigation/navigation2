@@ -1,21 +1,20 @@
 # nav2_bringup
 
-The `nav2_bringup` package is an example bringup system for navigation2 applications.
+The `nav2_bringup` package is an example bringup system for Navigation2 applications.
 
-Notes: (June 2019, Dashing Release)
-* We recommend doing this on a Ubuntu 18.04 installation. We have build issues on 16.04. (see https://github.com/ros-planning/navigation2/issues/353)
-* This stack and ROS2 are still in heavy development and there are some bugs and stability issues being worked on, so please do not try this on a robot without taking *heavy* safety precautions. THE ROBOT MAY CRASH!
-* It is recommended to start with simulation using Gazebo before proceeding to run on a physical robot
-
-Install and build our code by following this guide:
-https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md
-
-## Launch Navigation2 in simulation with Gazebo
 ### Pre-requisites:
-* Gazebo installed on the system
+* [Install ROS 2](https://index.ros.org/doc/ros2/Installation/Dashing/)
+* [Install Navigation 2](https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md)
+* Install your robot specific package (ex:[Turtlebot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/))
+
+## Launch Navigation2 in Simulation with Gazebo
+### Pre-requisites:
+
+* [Install Gazebo](http://gazebosim.org/tutorials?tut=install_ubuntu&cat=install)
 * gazebo_ros_pkgs for ROS2 installed on the system
-* A Gazebo world for simulating the robot (see Gazebo tutorials)
-* A map of that world saved to a map.pgm and map.yaml (see ROS Navigation tutorials)
+    ```sudo apt-get install ros-<ros2-distro>-gazebo*```
+* A Gazebo world for simulating the robot ([Gazebo tutorials](http://gazebosim.org/tutorials?tut=quick_start))
+* A map of that world saved to a map.pgm and map.yaml ([ROS Navigation Tutorials](https://github.com/ros-planning/navigation2/tree/master/doc/use_cases))
 
 ### Terminal 1: Launch Gazebo
 
@@ -36,7 +35,7 @@ export TURTLEBOT3_MODEL=waffle
 ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=True
 ```
 
-### Terminal 3: Launch navigation2
+### Terminal 3: Launch Navigation2
 
 ```
 source navigation2_ws/install/setup.bash
@@ -45,7 +44,7 @@ ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=Tr
 map:=<full/path/to/map.yaml>
 ```
 
-### Terminal 4: Run RViz with navigation2 config file
+### Terminal 4: Run RViz with Navigation2 config file
 ```
 source navigation2_ws/install/setup.bash
 ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz
@@ -62,26 +61,31 @@ To view the robot model in RViz:
 
 ## Launch Navigation2 on a Robot
 
-Pre-requisites:
-* Run SLAM or Cartographer with tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done. If not, it can be done in ROS1 before beginning to install our code.
+### Pre-requisites:
+* Run SLAM with Navigation 2 or tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done or there is already a map of the area.
+
+    Learn more about how to use Navigation 2 with SLAM to create maps; 
+    - [Navigation 2 with SLAM](https://github.com/ros-planning/navigation2/blob/master/doc/use_cases/navigation_with_slam.md)
+
+
 * Publish all the transforms from your robot from base_link to base_scan
 
-Launch the code using this launch file and your map.yaml:
+### Terminal 1 : Launch Navigation 2 using your map.yaml
 
 `ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
 
-In another terminal, run RVIZ:
+### Terminal 2 : Launch RVIZ
 
 `ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz`
 
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
 * Localize the robot using “2D Pose Estimate” button.
-
-In RVIZ:
-* Localize the robot using “2D Pose Estimate” button.
 * Send the robot a goal using “2D Nav Goal” button.
 
-## Future Work
+## WARNINGS - Please Read
 
-* Add instructions for running navigation2 with SLAM
+Notes: (September 2019, Dashing Release)
+* We recommend doing this on a Ubuntu 18.04 installation. We have build issues on 16.04. (see https://github.com/ros-planning/navigation2/issues/353)
+* This stack and ROS2 are still in heavy development and there are some bugs and stability issues being worked on, so please do not try this on a robot without taking *heavy* safety precautions. THE ROBOT MAY CRASH!
+* It is recommended to start with simulation using Gazebo before proceeding to run on a physical robot.
