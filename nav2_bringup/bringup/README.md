@@ -12,6 +12,7 @@ The `nav2_bringup` package is an example bringup system for Navigation2 applicat
 
 * [Install Gazebo](http://gazebosim.org/tutorials?tut=install_ubuntu&cat=install)
 * gazebo_ros_pkgs for ROS2 installed on the system
+    
     ```sudo apt-get install ros-<ros2-distro>-gazebo*```
 * A Gazebo world for simulating the robot ([Gazebo tutorials](http://gazebosim.org/tutorials?tut=quick_start))
 * A map of that world saved to a map.pgm and map.yaml ([ROS Navigation Tutorials](https://github.com/ros-planning/navigation2/tree/master/doc/use_cases))
