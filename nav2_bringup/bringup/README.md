@@ -4,7 +4,14 @@ The `nav2_bringup` package is an example bringup system for Navigation2 applicat
 
 ### Pre-requisites:
 * [Install ROS 2](https://index.ros.org/doc/ros2/Installation/Dashing/)
-* [Build Navigation 2](https://github.com/ros-planning/navigation2/blob/master/doc/BUILD.md)
+* Install Navigation2
+
+    ```sudo apt install ros-[ros2_distro]-navigation2)```
+    
+* Install Navigation2 Bringup
+
+    ```sudo apt install ros-[ros2_distro]-nav2-bringup)```
+
 * Install your robot specific package (ex:[Turtlebot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/))
 
 ## Launch Navigation2 in Simulation with Gazebo
@@ -31,7 +38,7 @@ gazebo --verbose -s libgazebo_ros_init.so <full/path/to/my_gazebo.world>
 Example: See [turtlebot3_gazebo](https://github.com/ROBOTIS-GIT/turtlebot3_simulations/tree/ros2/turtlebot3_gazebo) for details
 
 ```
-source turtlebot3_ws/install/setup.bash
+source /opt/ros/dashing/setup.bash
 export TURTLEBOT3_MODEL=waffle
 ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=True
 ```
@@ -39,15 +46,14 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 ### Terminal 3: Launch Navigation2
 
 ```
-source navigation2_ws/install/setup.bash
-# Launch Navigation2
+source /opt/ros/dashing/setup.bash
 ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=True \
 map:=<full/path/to/map.yaml>
 ```
 
 ### Terminal 4: Run RViz with Navigation2 config file
 ```
-source navigation2_ws/install/setup.bash
+source /opt/ros/dashing/setup.bash
 ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz
 ```
 In RViz:
@@ -73,11 +79,17 @@ To view the robot model in RViz:
 
 ### Terminal 1 : Launch Navigation2 using your map.yaml
 
-`ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy`
+```
+source /opt/ros/dashing/setup.bash
+ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy
+```
 
 ### Terminal 2 : Launch RVIZ
 
-`ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz`
+```
+source /opt/ros/dashing/setup.bash
+ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz
+```
 
 In RVIZ:
 * Make sure all transforms from odom are present. (odom->base_link->base_scan)
