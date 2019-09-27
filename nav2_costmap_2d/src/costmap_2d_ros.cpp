@@ -56,8 +56,10 @@ namespace nav2_costmap_2d
 Costmap2DROS::Costmap2DROS(const std::string & name)
 : Costmap2DROS(name, "/", name) {}
 
-Costmap2DROS::Costmap2DROS(const std::string & name,
-  const std::string & parent_namespace, const std::string & local_namespace)
+Costmap2DROS::Costmap2DROS(
+  const std::string & name,
+  const std::string & parent_namespace,
+  const std::string & local_namespace)
 : nav2_util::LifecycleNode(name, "", true,
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
@@ -84,7 +86,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name,
   declare_parameter("height", rclcpp::ParameterValue(10));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
   declare_parameter("map_topic", rclcpp::ParameterValue(
-    (parent_namespace_=="/" ? "" : parent_namespace_ ) + std::string("/map")));
+      (parent_namespace_ == "/" ? "" : parent_namespace_ ) + std::string("/map")));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));

@@ -85,8 +85,10 @@ public:
    * @param parent_namespace Absolute namespace of the node hosting the costmap node
    * @param local_namespace Namespace to append to the parent namespace
    */
-    explicit Costmap2DROS(const std::string & name,
-    const std::string & parent_namespace, const std::string & local_namespace);
+  explicit Costmap2DROS(
+    const std::string & name,
+    const std::string & parent_namespace,
+    const std::string & local_namespace);
 
   ~Costmap2DROS();
 

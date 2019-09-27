@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -84,7 +85,7 @@ public:
 class TestCollisionChecker : public nav2_util::LifecycleNode
 {
 public:
-  TestCollisionChecker(std::string name)
+  explicit TestCollisionChecker(std::string name)
   : LifecycleNode(name, "", true),
     global_frame_("map")
   {

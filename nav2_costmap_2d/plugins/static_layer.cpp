@@ -72,7 +72,7 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  rclcpp::QoS map_qos(10); // initialize to default
+  rclcpp::QoS map_qos(10);  // initialize to default
   if (map_subscribe_transient_local_) {
     map_qos.transient_local();
     map_qos.reliable();
