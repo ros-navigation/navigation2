@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <string>
+#include <memory>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -48,7 +49,6 @@
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
 #include "tf2/transform_datatypes.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2/LinearMath/Quaternion.h"
