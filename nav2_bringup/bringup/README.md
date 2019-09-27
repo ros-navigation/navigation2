@@ -6,11 +6,11 @@ The `nav2_bringup` package is an example bringup system for Navigation2 applicat
 * [Install ROS 2](https://index.ros.org/doc/ros2/Installation/Dashing/)
 * Install Navigation2
 
-    ```sudo apt install ros-[ros2_distro]-navigation2)```
+    ```sudo apt install ros-[ros2_distro]-navigation2```
     
 * Install Navigation2 Bringup
 
-    ```sudo apt install ros-[ros2_distro]-nav2-bringup)```
+    ```sudo apt install ros-[ros2_distro]-nav2-bringup```
 
 * Install your robot specific package (ex:[Turtlebot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/))
 
