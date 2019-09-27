@@ -75,7 +75,7 @@ To view the robot model in RViz:
 
     - [Navigation 2 with SLAM](https://github.com/ros-planning/navigation2/blob/master/doc/use_cases/navigation_with_slam.md)
 
-* _Please note that currently, nav2_bringup works if you provide a map file. However, providing a map is not required to use Navigation2. Navigation2 can be configured to use the costpmaps to navigate in an area without using a map file_
+* _Please note that currently, nav2_bringup works if you provide a map file. However, providing a map is not required to use Navigation2. Navigation2 can be configured to use the costmaps to navigate in an area without using a map file_
 
 * Publish all the transforms from your robot from base_link to base_scan
 
