@@ -79,6 +79,11 @@ public:
   {
   }
 
+  // an opportunity for derived classes to do something on cleanup
+  // if they chose
+  virtual void onCleanup()
+  {
+  }
 
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
@@ -120,6 +125,7 @@ public:
     footprint_sub_.reset();
     costmap_sub_.reset();
     collision_checker_.reset();
+    onCleanup();
   }
 
   void activate() override
