@@ -69,13 +69,16 @@ To view the robot model in RViz:
 ## Launch Navigation2 on a Robot
 
 ### Pre-requisites:
-* Run SLAM with Navigation 2 or tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done or there is already a map of the area.
+* Run SLAM with Navigation 2 or tele-op to drive the robot and generate a map of an area for testing first. The directions below assume this has already been done or there is already a map of the area. 
 
-    Learn more about how to use Navigation 2 with SLAM to create maps; 
+* Learn more about how to use Navigation 2 with SLAM to create maps; 
+
     - [Navigation 2 with SLAM](https://github.com/ros-planning/navigation2/blob/master/doc/use_cases/navigation_with_slam.md)
 
+* _Please note that currently, nav2_bringup works if you provide a map file. However, providing a map is not required to use Navigation2. Navigation2 can be configured to use the costpmaps to navigate in an area without using a map file_
 
 * Publish all the transforms from your robot from base_link to base_scan
+
 
 ### Terminal 1 : Launch Navigation2 using your map.yaml
 
