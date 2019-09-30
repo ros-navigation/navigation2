@@ -56,12 +56,10 @@ def generate_launch_description():
         'autostart': autostart,
         'map_subscribe_transient_local': map_subscribe_transient_local}
 
-    namespace_substitutions = {'navigation_namespace': namespace}
-
     configured_params = RewrittenYaml(
             source_file=params_file,
+            root_key=namespace,
             param_rewrites=param_substitutions,
-            key_rewrites=namespace_substitutions,
             convert_types=True)
 
     return LaunchDescription([
