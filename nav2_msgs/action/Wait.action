@@ -1,0 +1,7 @@
+#goal definition
+int32 time
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
