@@ -82,9 +82,13 @@ public:
   /**
    * @brief  Constructor for the wrapper
    * @param name Name of the costmap ROS node
-   * @param absolute_namespace Namespace of the costmap ROS node starting with "/"
+   * @param parent_namespace Absolute namespace of the node hosting the costmap node
+   * @param local_namespace Namespace to append to the parent namespace
    */
-  explicit Costmap2DROS(const std::string & name, const std::string & absolute_namespace);
+  explicit Costmap2DROS(
+    const std::string & name,
+    const std::string & parent_namespace,
+    const std::string & local_namespace);
 
   ~Costmap2DROS();
 
@@ -262,6 +266,7 @@ protected:
 
   LayeredCostmap * layered_costmap_{nullptr};
   std::string name_;
+  std::string parent_namespace_;
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_{false};
   bool stop_updates_{false};

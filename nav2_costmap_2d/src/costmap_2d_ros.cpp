@@ -44,6 +44,7 @@
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/robot_utils.hpp"
@@ -53,15 +54,20 @@ using namespace std::chrono_literals;
 namespace nav2_costmap_2d
 {
 Costmap2DROS::Costmap2DROS(const std::string & name)
-: Costmap2DROS(name, name) {}
+: Costmap2DROS(name, "/", name) {}
 
-Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolute_namespace)
+Costmap2DROS::Costmap2DROS(
+  const std::string & name,
+  const std::string & parent_namespace,
+  const std::string & local_namespace)
 : nav2_util::LifecycleNode(name, "", true,
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
-    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string(
-        "__ns:=") + absolute_namespace})),
-  name_(name)
+    // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
+    //              of the namespaces
+    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string("__ns:=") +
+      nav2_util::add_namespaces(parent_namespace, local_namespace)})),
+  name_(name), parent_namespace_(parent_namespace)
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
   auto options = rclcpp::NodeOptions().arguments(
@@ -79,7 +85,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const std::string & absolut
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter("height", rclcpp::ParameterValue(10));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+  declare_parameter("map_topic", rclcpp::ParameterValue(
+      (parent_namespace_ == "/" ? "" : parent_namespace_ ) + std::string("/map")));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
@@ -137,6 +144,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
       shared_from_this(), client_node_, rclcpp_node_);
+
+    RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
 
   // Create the publishers and subscribers

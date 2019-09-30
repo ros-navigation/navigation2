@@ -14,43 +14,65 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import Node
 
 from launch import LaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
+from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
-from launch_ros.actions import Node
 
 
 def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
 
+    namespace = LaunchConfiguration('namespace')
+    map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
-    bt_xml_file = LaunchConfiguration('bt_xml_file')
     use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
-    map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
+    use_remappings = LaunchConfiguration('use_remappings')
+
+    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+    #              https://github.com/ros2/launch_ros/issues/56
+    remappings = [((namespace, '/tf'), '/tf'),
+                  ((namespace, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map'),
+                  ('/goal_pose', 'goal_pose')]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'bt_xml_filename': bt_xml_file,
-        'autostart': autostart,
-        'map_subscribe_transient_local': map_subscribe_transient_local}
+        'yaml_filename': map_yaml_file}
+
+    namespace_substitutions = {'navigation_namespace': namespace}
 
     configured_params = RewrittenYaml(
-            source_file=params_file,
-            rewrites=param_substitutions,
-            convert_types=True)
+        source_file=params_file,
+        param_rewrites=param_substitutions,
+        key_rewrites=namespace_substitutions,
+        convert_types=True)
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+
+        DeclareLaunchArgument(
+            'namespace', default_value='',
+            description='Top-level namespace'),
+
+        DeclareLaunchArgument(
+            'map',
+            default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+            description='Full path to map yaml file to load'),
 
         DeclareLaunchArgument(
             'use_sim_time', default_value='false',
@@ -66,57 +88,38 @@ def generate_launch_description():
             description='Full path to the ROS2 parameters file to use'),
 
         DeclareLaunchArgument(
-            'bt_xml_file',
-            default_value=os.path.join(get_package_prefix('nav2_bt_navigator'),
-                'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
-            description='Full path to the behavior tree xml file to use'),
-
-        DeclareLaunchArgument(
             'use_lifecycle_mgr', default_value='true',
             description='Whether to launch the lifecycle manager'),
 
         DeclareLaunchArgument(
-            'map_subscribe_transient_local', default_value='false',
-            description='Whether to set the map subscriber QoS to transient local'),
+            'use_remappings', default_value='false',
+            description='Arguments to pass to all nodes launched by the file'),
 
         Node(
-            package='nav2_controller',
-            node_executable='controller_server',
+            package='nav2_map_server',
+            node_executable='map_server',
+            node_name='map_server',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[configured_params],
+            use_remappings=IfCondition(use_remappings),
+            remappings=remappings),
 
         Node(
-            package='nav2_planner',
-            node_executable='planner_server',
-            node_name='planner_server',
+            package='nav2_amcl',
+            node_executable='amcl',
+            node_name='amcl',
             output='screen',
-            parameters=[configured_params]),
-
-        Node(
-            package='nav2_recoveries',
-            node_executable='recoveries_server',
-            node_name='recoveries_server',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}]),
-
-        Node(
-            package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
-            output='screen',
-            parameters=[configured_params]),
+            parameters=[configured_params],
+            use_remappings=IfCondition(use_remappings),
+            remappings=remappings),
 
         Node(
             condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_navigation',
+            node_name='lifecycle_manager_localization',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['controller_server',
-                                        'planner_server',
-                                        'recoveries_server',
-                                        'bt_navigator']}]),
-
+                        {'node_names': ['map_server', 'amcl']}])
     ])

@@ -69,7 +69,7 @@ void CostmapSubscriber::toCostmap2D()
       costmap_msg_->metadata.size_x, costmap_msg_->metadata.size_y,
       costmap_msg_->metadata.resolution, costmap_msg_->metadata.origin.position.x,
       costmap_msg_->metadata.origin.position.y);
-  } else if (costmap_->getSizeInCellsX() != costmap_msg_->metadata.size_x ||
+  } else if (costmap_->getSizeInCellsX() != costmap_msg_->metadata.size_x ||  // NOLINT
     costmap_->getSizeInCellsY() != costmap_msg_->metadata.size_y ||
     costmap_->getResolution() != costmap_msg_->metadata.resolution ||
     costmap_->getOriginX() != costmap_msg_->metadata.origin.position.x ||

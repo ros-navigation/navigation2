@@ -22,8 +22,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.h"
 
 namespace nav2_behavior_tree
 {
@@ -59,12 +58,7 @@ public:
   {
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_->get_node_base_interface(),
-      node_->get_node_timers_interface());
-    tf_->setCreateTimerInterface(timer_interface);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+    tf_ = blackboard()->template get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
     initialized_ = true;
   }
@@ -74,7 +68,6 @@ public:
   {
     geometry_msgs::msg::PoseStamped current_pose;
 
-    rclcpp::spin_some(node_);
     if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
@@ -99,7 +92,6 @@ protected:
 private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;

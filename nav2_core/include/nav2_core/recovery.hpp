@@ -26,7 +26,7 @@ namespace nav2_core
 {
 
 /**
- * @class GlobalPlanner
+ * @class Recovery
  * @brief Abstract interface for recoveries to adhere to with pluginlib
  */
 class Recovery
