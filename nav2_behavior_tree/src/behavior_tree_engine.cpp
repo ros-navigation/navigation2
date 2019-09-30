@@ -27,6 +27,7 @@
 #include "nav2_behavior_tree/rate_controller_node.hpp"
 #include "nav2_behavior_tree/recovery_node.hpp"
 #include "nav2_behavior_tree/spin_action.hpp"
+#include "nav2_behavior_tree/wait_action.hpp"
 #include "nav2_behavior_tree/clear_costmap_service.hpp"
 #include "nav2_behavior_tree/reinitialize_global_localization_service.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -43,6 +44,7 @@ BehaviorTreeEngine::BehaviorTreeEngine()
   factory_.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
   factory_.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_behavior_tree::SpinAction>("Spin");
+  factory_.registerNodeType<nav2_behavior_tree::WaitAction>("Wait");
   factory_.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
   factory_.registerNodeType<nav2_behavior_tree::ReinitializeGlobalLocalizationService>(
     "ReinitializeGlobalLocalization");
