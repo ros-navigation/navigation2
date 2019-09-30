@@ -75,12 +75,10 @@ RecoveryServer::loadRecoveryPlugins()
 
   for (uint i = 0; i != plugin_names_.size(); i++) {
     try {
-      pluginlib::UniquePtr<nav2_core::Recovery> recovery =
-        plugin_loader_.createUniqueInstance(plugin_types_[i]);
-      RCLCPP_INFO(get_logger(), "Created recovery plugin %s of type %s",
+      RCLCPP_INFO(get_logger(), "Creating recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
-      recovery->configure(node, plugin_names_[i], tf_);
-      recoveries_.push_back(std::move(recovery));
+      recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_types_[i]));
+      recoveries_.back()->configure(node, plugin_names_[i], tf_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),

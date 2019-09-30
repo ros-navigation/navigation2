@@ -27,7 +27,6 @@ BackUp::BackUp()
 : Recovery<BackUpAction>()
 {
   simulate_ahead_time_ = 2.0;
-  node_->declare_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 BackUp::~BackUp()
@@ -36,6 +35,7 @@ BackUp::~BackUp()
 
 void BackUp::onConfigure()
 {
+  node_->declare_parameter("simulate_ahead_time", simulate_ahead_time_);
   simulate_ahead_time_ = node_->get_parameter("simulate_ahead_time").as_double();
 }
 
