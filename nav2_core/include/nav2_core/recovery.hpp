@@ -16,6 +16,8 @@
 #define NAV2_CORE__RECOVERY_HPP_
 
 #include <string>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
@@ -30,6 +32,8 @@ namespace nav2_core
 class Recovery
 {
 public:
+  using Ptr = std::shared_ptr<Recovery>;
+
   /**
    * @brief Virtual destructor
    */
@@ -42,8 +46,8 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const nav2_util::LifecycleNode * parent,
-    const std::string & name, tf2_ros::Buffer * tf) = 0;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -65,7 +69,9 @@ public:
    * @param  name The name of this planner
    * @return true if successful, false is failed to execute fully
    */
-  virtual bool executeRecovery() = 0;
+  // TODO(stevemacenski) evaluate design for recoveries to not host
+  // their own servers and utilize a recovery server exposed action.
+  // virtual bool executeRecovery() = 0;
 };
 
 }  // namespace nav2_core

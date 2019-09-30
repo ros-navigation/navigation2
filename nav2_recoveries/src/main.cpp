@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,37 +16,15 @@
 #include <string>
 #include <memory>
 
+#include "nav2_recoveries/recovery_server.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
-#include "nav2_recoveries/back_up.hpp"
-#include "nav2_recoveries/spin.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
+  auto recoveries_node = std::make_shared<recovery_server::RecoveryServer>();
 
-  auto recoveries_node = rclcpp::Node::make_shared("recoveries");
-
-  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(recoveries_node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    recoveries_node->get_node_base_interface(),
-    recoveries_node->get_node_timers_interface());
-  tf_buffer->setCreateTimerInterface(timer_interface);
-  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
-
-  recoveries_node->declare_parameter(
-    "costmap_topic", rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  recoveries_node->declare_parameter(
-    "footprint_topic", rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
-
-  auto spin = std::make_shared<nav2_recoveries::Spin>(
-    recoveries_node, tf_buffer);
-
-  auto back_up = std::make_shared<nav2_recoveries::BackUp>(
-    recoveries_node, tf_buffer);
-
-  rclcpp::spin(recoveries_node);
+  rclcpp::spin(recoveries_node->get_node_base_interface());
   rclcpp::shutdown();
 
   return 0;

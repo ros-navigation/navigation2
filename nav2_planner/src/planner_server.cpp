@@ -87,7 +87,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_INFO(get_logger(), "Created global planner plugin %s",
       planner_plugin_name_.c_str());
     planner_->configure(node,
-      gp_loader_.getName(planner_plugin_name_), tf_.get(), costmap_ros_);
+      gp_loader_.getName(planner_plugin_name_), tf_, costmap_ros_);
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
       ex.what());

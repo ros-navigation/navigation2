@@ -12,28 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__SPIN_HPP_
-#define NAV2_RECOVERIES__SPIN_HPP_
+#ifndef NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
+#define NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
 
 #include <chrono>
-#include <string>
 #include <memory>
 
 #include "nav2_recoveries/recovery.hpp"
-#include "nav2_msgs/action/spin.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 
 namespace nav2_recoveries
 {
-using SpinAction = nav2_msgs::action::Spin;
+using BackUpAction = nav2_msgs::action::BackUp;
 
-class Spin : public Recovery<SpinAction>
+class BackUp : public Recovery<BackUpAction>
 {
 public:
-  explicit Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
-  ~Spin();
+  BackUp();
+  ~BackUp();
 
-  Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
+  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
 
   Status onCycleUpdate() override;
 
@@ -43,14 +41,17 @@ protected:
     const geometry_msgs::msg::Twist & cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
 
-  double min_rotational_vel_;
-  double max_rotational_vel_;
-  double rotational_acc_lim_;
-  double cmd_yaw_;
-  double initial_yaw_;
+  void onConfigure() override;
+
+  double min_linear_vel_;
+  double max_linear_vel_;
+  double linear_acc_lim_;
+
+  geometry_msgs::msg::PoseStamped initial_pose_;
+  double command_x_;
   double simulate_ahead_time_;
 };
 
 }  // namespace nav2_recoveries
 
-#endif  // NAV2_RECOVERIES__SPIN_HPP_
+#endif  // NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_

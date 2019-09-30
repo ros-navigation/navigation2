@@ -90,8 +90,8 @@ def generate_launch_description():
 
         launch_ros.actions.Node(
             package='nav2_recoveries',
-            node_executable='recoveries_node',
-            node_name='recoveries',
+            node_executable='recoveries_server',
+            node_name='recoveries_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}]),
 
@@ -108,8 +108,12 @@ def generate_launch_description():
             node_name='lifecycle_manager',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
-                        {'node_names': ['map_server', 'amcl',
-                         'controller_server', 'planner_server', 'bt_navigator']},
+                        {'node_names': ['map_server',
+                                        'amcl',
+                                        'controller_server',
+                                        'planner_server',
+                                        'recoveries_server',
+                                        'bt_navigator']},
                         {'autostart': True}]),
     ])
 

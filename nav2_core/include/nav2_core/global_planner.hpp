@@ -49,7 +49,7 @@ public:
    */
   virtual void configure(
     rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-    std::string name, tf2_ros::Buffer * tf,
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
   /**

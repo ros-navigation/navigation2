@@ -16,23 +16,27 @@
 #include <ctime>
 #include <memory>
 
-#include "nav2_recoveries/back_up.hpp"
+#include "back_up.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_recoveries
 {
 
-BackUp::BackUp(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
-: Recovery<BackUpAction>(node, "BackUp", tf)
+BackUp::BackUp()
+: Recovery<BackUpAction>()
 {
   simulate_ahead_time_ = 2.0;
-  node_->declare_parameter("simulate_ahead_time");
-  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 BackUp::~BackUp()
 {
+}
+
+void BackUp::onConfigure()
+{
+  node_->declare_parameter("simulate_ahead_time", simulate_ahead_time_);
+  simulate_ahead_time_ = node_->get_parameter("simulate_ahead_time").as_double();
 }
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
@@ -44,7 +48,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
   command_x_ = command->target.x;
 
-  if (!nav2_util::getCurrentPose(initial_pose_, tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(initial_pose_, *tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
   }
@@ -55,7 +59,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 Status BackUp::onCycleUpdate()
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
@@ -118,3 +122,6 @@ bool BackUp::isCollisionFree(
 }
 
 }  // namespace nav2_recoveries
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_recoveries::BackUp, nav2_core::Recovery)

@@ -22,6 +22,8 @@
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav2_costmap_2d</build_depend>
+  <build_depend>nav2_core</build_depend>
+  <build_depend>pluginlib</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclcpp_action</exec_depend>
@@ -32,6 +34,8 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
+  <exec_depend>nav2_core</exec_depend>
+  <exec_depend>pluginlib</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -42,5 +46,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/recovery_plugin.xml" />
   </export>
 </package>

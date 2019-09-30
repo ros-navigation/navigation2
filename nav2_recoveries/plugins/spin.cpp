@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "nav2_recoveries/spin.hpp"
+#include "spin.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -32,8 +32,8 @@ using namespace std::chrono_literals;
 namespace nav2_recoveries
 {
 
-Spin::Spin(rclcpp::Node::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf)
-: Recovery<SpinAction>(node, "Spin", tf)
+Spin::Spin()
+: Recovery<SpinAction>()
 {
   // TODO(orduno) #378 Pull values from the robot
   max_rotational_vel_ = 1.0;
@@ -50,10 +50,11 @@ Spin::~Spin()
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
+
   initial_yaw_ = tf2::getYaw(current_pose.pose.orientation);
 
   cmd_yaw_ = -command->target_yaw;
@@ -65,7 +66,7 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 Status Spin::onCycleUpdate()
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
@@ -131,3 +132,6 @@ bool Spin::isCollisionFree(
 }
 
 }  // namespace nav2_recoveries
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Spin, nav2_core::Recovery)

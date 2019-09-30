@@ -120,8 +120,8 @@ def generate_launch_description():
 
         Node(
             package='nav2_recoveries',
-            node_executable='recoveries_node',
-            node_name='recoveries',
+            node_executable='recoveries_server',
+            node_name='recoveries_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
             use_remappings=IfCondition(use_remappings),
@@ -145,7 +145,8 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': ['controller_server',
-                                        'navfn_planner',
+                                        'planner_server',
+                                        'recoveries_server',
                                         'bt_navigator']}]),
 
     ])

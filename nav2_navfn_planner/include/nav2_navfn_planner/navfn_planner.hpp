@@ -43,7 +43,7 @@ public:
   // plugin configure
   void configure(
     rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-    std::string name, tf2_ros::Buffer * tf,
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   // plugin cleanup
@@ -117,7 +117,7 @@ protected:
   std::unique_ptr<NavFn> planner_;
 
   // TF buffer
-  tf2_ros::Buffer * tf_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
 
   // node ptr
   nav2_util::LifecycleNode::SharedPtr node_;
