@@ -21,6 +21,7 @@ import random
 
 from geometry_msgs.msg import Twist, Pose
 
+from gym import spaces
 
 class NavigationTaskEnv(Turtlebot3Environment):
     def __init__(self):
@@ -37,11 +38,14 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.states_input = [3.5] * 8
         self.zero_div_tol = 0.01
         self.range_min = 0.0
-        self.states = []
+        self.states = [0.0] * 14
 
         self.current_pose = Pose()
         self.goal_pose = Pose()
-
+        print(self.states)
+        print(self.observation_space_size())
+        high = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
+        self.observation_space = spaces.Box(-high, high, dtype=np.float32)
     def get_actions(self):
         """Defines the actions that the environment can have
 
@@ -143,7 +147,7 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.states[12] = float(self.goal_pose.position.x)
         self.states[13] = float(self.goal_pose.position.y)
 
-        return self.states
+        return np.array(self.states)
 
     def reset(self):
         self.reset_tb3_env()

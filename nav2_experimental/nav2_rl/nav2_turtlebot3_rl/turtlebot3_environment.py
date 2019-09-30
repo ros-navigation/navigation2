@@ -46,7 +46,7 @@ class Turtlebot3Environment(GazeboInterface):
         self.goal_pose = Pose()
 
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
-        self.sub_scan = self.node_.create_subscription(LaserScan, 'scan', self.scan_callback,
+        self.sub_scan = self.node_.create_subscription(LaserScan, '/turtlebot3_laserscan/out', self.scan_callback,
                                                        qos_profile_sensor_data)
 
         self.scan_msg_received = False
@@ -81,10 +81,10 @@ class Turtlebot3Environment(GazeboInterface):
             return True
         return False
 
-    def action_space(self):
+    def action_space_size(self):
         return len(self.actions)
 
-    def observation_space(self):
+    def observation_space_size(self):
         return len(self.states)
 
     def stop_action(self):

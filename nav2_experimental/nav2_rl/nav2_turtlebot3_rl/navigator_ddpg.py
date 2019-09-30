@@ -31,6 +31,8 @@ from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 
+from rl_coach.coach import CoachInterface
+
 
 class TB3Processor(WhiteningNormalizerProcessor):
     def process_action(self, action):
