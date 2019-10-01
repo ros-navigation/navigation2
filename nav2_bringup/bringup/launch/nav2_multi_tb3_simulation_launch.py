@@ -49,7 +49,9 @@ def generate_launch_description():
     map_yaml_file = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
+    autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
+    use_rviz = LaunchConfiguration('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
@@ -80,12 +82,21 @@ def generate_launch_description():
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='false',
+        description='Automatically startup the stacks')
+
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
-   # Start Gazebo with plugin providing the robot spawing service
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='True',
+        description='Whether to start RVIZ')
+
+    # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
@@ -133,9 +144,10 @@ def generate_launch_description():
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
                                   'bt_xml_file': bt_xml_file,
-                                  'autostart': 'False',
+                                  'autostart': autostart,
                                   'use_remappings': 'True',
                                   'rviz_config_file': namespaced_rviz_config_file,
+                                  'use_rviz': use_rviz,
                                   'use_simulator': 'False'}.items()),
 
             LogInfo(
@@ -152,7 +164,10 @@ def generate_launch_description():
                 msg=[robot['name'], ' behavior tree xml: ', bt_xml_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file])
+                msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' autostart: ', autostart])
         ])
 
         nav_instances_cmds.append(group)
@@ -174,6 +189,8 @@ def generate_launch_description():
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
+    ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
 
     # Add the actions to start gazebo, robots and simulations
