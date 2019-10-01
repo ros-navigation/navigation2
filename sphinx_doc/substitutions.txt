@@ -1,0 +1,32 @@
+.. |br|     raw:: html        .. force a line break in HTML output (blank lines needed here)
+
+   <br />
+.. |PN| replace:: Navigation 2
+
+.. |LPN| replace:: ROS 2 Navigation System
+
+.. _project repo: https://github.com/ros-planning/navigation2
+
+.. _documentation repo: https://github.com/ros-planning/navigation2/doc
+
+.. _documentation site: https://rosplanning.github.io/navigation2/
+
+.. _project website: https://rosplanning.github.io/navigation2/
+
+.. |PP| replace:: https://github.com/ros-planning/navigation2/blob/master
+
+.. These are replacement strings for non-ASCII characters used within the project
+   using the same name as the html entity names (e.g., &copy;) for that character
+
+.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
+   :ltrim:
+.. |trade|  unicode:: U+02122 .. TRADEMARK SIGN
+   :ltrim:
+.. |reg|    unicode:: U+000AE .. REGISTERED TRADEMARK SIGN
+   :ltrim:
+.. |deg|    unicode:: U+000B0 .. DEGREE SIGN
+   :ltrim:
+.. |plusminus|  unicode:: U+000B1 .. PLUS-MINUS SIGN
+   :rtrim:
+.. |micro|  unicode:: U+000B5 .. MICRO SIGN
+   :rtrim:
