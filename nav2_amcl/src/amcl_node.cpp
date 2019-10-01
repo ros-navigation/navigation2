@@ -1053,10 +1053,8 @@ AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
   if (first_map_only_ && first_map_received_) {
     return;
   }
-  if (initial_pose_is_known_) {
-    handleMapMessage(*msg);
-    first_map_received_ = true;
-  }
+  handleMapMessage(*msg);
+  first_map_received_ = true;
 }
 
 void
@@ -1075,32 +1073,13 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
       msg.header.frame_id.c_str(),
       global_frame_id_.c_str());
   }
-
   freeMapDependentMemory();
-  // Clear queued laser objects because they hold pointers to the existing
-  // map, #5202.
-  lasers_.clear();
-  lasers_update_.clear();
-  frame_to_laser_.clear();
-
   map_ = convertMap(msg);
 
 #if NEW_UNIFORM_SAMPLING
   createFreeSpaceVector();
 #endif
-  // Create the particle filter
-  initParticleFilter();
-  // resample_count = 0 is extra
 
-  // Instantiate the sensor objects
-  motion_model_.reset();
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
-        robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
-
-  // Laser
-  lasers_.clear();
-
-  handleInitialPose(last_published_pose_);
 }
 
 void
@@ -1125,17 +1104,11 @@ AmclNode::freeMapDependentMemory()
     map_ = NULL;
   }
 
-  if (pf_ != NULL) {
-    pf_free(pf_);
-    pf_ = NULL;
-  }
-
-  motion_model_.reset();
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
-        robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
-
-  // Laser
+  // Clear queued laser objects because they hold pointers to the existing
+  // map, #5202.
   lasers_.clear();
+  lasers_update_.clear();
+  frame_to_laser_.clear();
 }
 
 // Convert an OccupancyGrid map message into the internal representation. This function
