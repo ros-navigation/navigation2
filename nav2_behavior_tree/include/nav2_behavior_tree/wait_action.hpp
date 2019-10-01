@@ -43,7 +43,7 @@ public:
       duration *= -1;
     }
 
-    goal_.time = duration;
+    goal_.time.sec = duration;
   }
 };
 

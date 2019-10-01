@@ -24,7 +24,7 @@ namespace nav2_recoveries
 Wait::Wait()
 : Recovery<WaitAction>()
 {
-  duration_ = 0.0;
+  duration_.sec = 0.0;
 }
 
 Wait::~Wait()
@@ -39,9 +39,8 @@ Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> command)
 
 Status Wait::onCycleUpdate()
 {
-  RCLCPP_INFO(node_->get_logger(), "Waiting %i seconds.", duration_);
-  auto sleep_dur = std::chrono::seconds(duration_);
-  rclcpp::sleep_for(sleep_dur);
+  rclcpp::sleep_for(
+    rclcpp::Duration(duration_).to_chrono<std::chrono::nanoseconds>());
   return Status::SUCCEEDED;
 }
 

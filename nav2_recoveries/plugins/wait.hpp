@@ -37,7 +37,7 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-  int duration_;
+  builtin_interfaces::msg::Duration duration_;
 };
 
 }  // namespace nav2_recoveries

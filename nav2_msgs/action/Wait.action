@@ -1,5 +1,5 @@
 #goal definition
-int32 time
+builtin_interfaces/Duration time
 ---
 #result definition
 std_msgs/Empty result
