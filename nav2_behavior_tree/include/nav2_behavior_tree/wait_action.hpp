@@ -35,9 +35,9 @@ public:
 
   void on_init() override
   {
-  	int duration;
-  	getParam<int>("wait_duration", duration);
-  	goal_.time = duration;
+    int duration;
+    getParam<int>("wait_duration", duration);
+    goal_.time = duration;
   }
 };
 

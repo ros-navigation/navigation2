@@ -119,9 +119,9 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
-                       nav2_backup_recovery
-                       nav2_spin_recovery
-                       nav2_wait_recovery
+  nav2_backup_recovery
+  nav2_spin_recovery
+  nav2_wait_recovery
 )
 
 ament_package()
