@@ -35,8 +35,7 @@ RUN find ./ -name "package.xml" | \
 FROM $FROM_IMAGE AS build
 
 # install CI dependencies	
-RUN apt-get update && \
-    apt-get install -q -y \	
+RUN apt-get update && apt-get install -q -y \	
       ccache \
       lcov \
     && rm -rf /var/lib/apt/lists/*
@@ -48,10 +47,8 @@ WORKDIR $UNDERLAY_WS
 
 # install underlay dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    apt-get update && \
-    rosdep install -q -y \
-      --from-paths \
-        src \
+    apt-get update && rosdep install -q -y \
+      --from-paths src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
@@ -78,11 +75,8 @@ WORKDIR $OVERLAY_WS
 
 # install overlay dependencies
 RUN . $UNDERLAY_WS/install/setup.sh && \
-    apt-get update && \
-    rosdep install -q -y \
-      --from-paths \
-        $UNDERLAY_WS/src \
-        src \
+    apt-get update && rosdep install -q -y \
+      --from-paths src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
