@@ -1,0 +1,9 @@
+ament_add_test(test_multi_robot
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_multi_robot_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  TIMEOUT 120
+  ENV
+    TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
+)

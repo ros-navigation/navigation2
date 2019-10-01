@@ -47,6 +47,8 @@ def generate_launch_description():
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_simulator = LaunchConfiguration('use_simulator')
+    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    use_rviz = LaunchConfiguration('use_rviz')
     simulator = LaunchConfiguration('simulator')
     world = LaunchConfiguration('world')
 
@@ -106,6 +108,16 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start the simulator')
 
+    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
+        'use_robot_state_pub',
+        default_value='True',
+        description='Whether to start the robot state publisher')
+
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='True',
+        description='Whether to start RVIZ')
+
     declare_simulator_cmd = DeclareLaunchArgument(
         'simulator',
         default_value='gazebo',
@@ -130,6 +142,7 @@ def generate_launch_description():
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
 
     start_robot_state_publisher_cmd = Node(
+        condition=IfCondition(use_robot_state_pub),
         package='robot_state_publisher',
         node_executable='robot_state_publisher',
         node_name='robot_state_publisher',
@@ -160,6 +173,7 @@ def generate_launch_description():
     #     remappings=rviz_remappings)
 
     start_rviz_cmd = ExecuteProcess(
+        condition=IfCondition(use_rviz),
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
              ['-d', rviz_config_file],
              ['__ns:=/', namespace],
@@ -199,14 +213,16 @@ def generate_launch_description():
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
+    ld.add_action(declare_use_robot_state_pub_cmd)
+    ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
-    # Add any actions to launch in simulation (conditioned on 'use_simulator')
+    # Add any conditioned actions
     ld.add_action(start_gazebo_cmd)
+    ld.add_action(start_rviz_cmd)
 
     # Add other nodes and processes we need
-    ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
