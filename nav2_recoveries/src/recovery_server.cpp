@@ -50,9 +50,10 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
   std::vector<std::string> plugin_names{std::string("Spin"),
-    std::string("BackUp")};
+    std::string("BackUp"), std::string("Wait")};
   std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/BackUp")};
+    std::string("nav2_recoveries/BackUp"),
+    std::string("nav2_recoveries/Wait")};
 
   declare_parameter("plugin_names",
     rclcpp::ParameterValue(plugin_names));

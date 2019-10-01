@@ -61,6 +61,14 @@ ament_target_dependencies(nav2_backup_recovery
   ${dependencies}
 )
 
+add_library(nav2_wait_recovery SHARED
+  plugins/wait.cpp
+)
+
+ament_target_dependencies(nav2_wait_recovery
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
 # Library
@@ -87,6 +95,7 @@ install(TARGETS ${executable_name}
                 ${library_name}
                 nav2_backup_recovery
                 nav2_spin_recovery
+                nav2_wait_recovery
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -109,6 +118,10 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} nav2_backup_recovery nav2_spin_recovery)
+ament_export_libraries(${library_name}
+  nav2_backup_recovery
+  nav2_spin_recovery
+  nav2_wait_recovery
+)
 
 ament_package()
