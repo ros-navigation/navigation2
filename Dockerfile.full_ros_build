@@ -44,9 +44,9 @@ FROM $FROM_IMAGE AS build
 
 # install packages
 RUN apt-get update && apt-get install -q -y \
-    libasio-dev \
-    libtinyxml2-dev \
-    wget \
+      libasio-dev \
+      libtinyxml2-dev \
+      wget \
     && rm -rf /var/lib/apt/lists/*
 
 ARG ROS2_BRANCH=master
@@ -82,7 +82,7 @@ RUN apt-get update && rosdep install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # build ros2 source
-ARG ROS2_MIXINS="build-testing-on release"
+ARG ROS2_MIXINS="release"
 RUN colcon build \
       --symlink-install \
       --mixin \
@@ -97,7 +97,7 @@ RUN colcon build \
 COPY --from=cache /opt/underlay_ws src/underlay
 
 # build underlay source
-ARG UNDERLAY_MIXINS="build-testing-on release"
+ARG UNDERLAY_MIXINS="release"
 RUN colcon build \
       --symlink-install \
       --mixin \
@@ -155,7 +155,9 @@ RUN colcon build \
 ARG RUN_TESTS
 ARG FAIL_ON_TEST_FAILURE
 RUN if [ ! -z "$RUN_TESTS" ]; then \
-        colcon test; \
+        colcon test \
+          --packages-select \
+            $(cat src/overlay/packages.txt | xargs) \; \
         if [ ! -z "$FAIL_ON_TEST_FAILURE" ]; then \
             colcon test-result; \
         else \
