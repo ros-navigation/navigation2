@@ -18,7 +18,14 @@ import numpy as np
 from math import pi, atan2, sin, cos
 import math
 import random
+from time import sleep
 
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from nav2_msgs.action import NavigateToPose
+import nav2_msgs
+from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist, Pose
 
 from gym import spaces
@@ -44,6 +51,9 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.goal_pose = Pose()
         high = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+
+        self.action_client_ = ActionClient(self.node_, NavigateToPose, 'NavigateToPose')
+
     def get_actions(self):
         """Defines the actions that the environment can have
 
@@ -86,6 +96,9 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.set_entity_state_pose('turtlebot3_waffle', self.get_random_pose())
 
     def set_random_goal_pose(self):
+        '''
+        Generates a random goal pose, and sets this goal pose in the Gazebo env.
+        '''
         self.goal_pose = self.get_random_pose()
         self.set_entity_state_pose('goal_pose', self.goal_pose)
 
@@ -93,8 +106,8 @@ class NavigationTaskEnv(Turtlebot3Environment):
         random_pose = Pose()
         yaw = random.uniform(0, pi * 2)
 
-        random_pose.position.x = random.uniform(-3, 3)
-        random_pose.position.y = random.uniform(-3, 3)
+        random_pose.position.x = 0.2#random.uniform(-2, 2)
+        random_pose.position.y = 1.9#random.uniform(-2, 2)
         random_pose.position.z = 0.0
         random_pose.orientation.x = 0.0
         random_pose.orientation.y = 0.0
@@ -148,7 +161,39 @@ class NavigationTaskEnv(Turtlebot3Environment):
         return np.array(self.states)
 
     def reset(self):
+        """
+        Resets the turtlebot environment.
+        Gets a new goal pose.
+        Gets a path to the new goal pose from subscriber.
+        """
         self.reset_tb3_env()
         self.set_random_robot_pose()
         self.set_random_goal_pose()
+
+        self.get_path()
+
         return self.observation()
+
+    def get_path(self):
+        '''
+        This function will call NavigateToPose action service. Then the planner_server will
+        publish the global path. We then subscribe to the path. 
+        '''
+        # Call action server with new goal pose
+        goal_msg = nav2_msgs.action.NavigateToPose.Goal()
+        
+        goal_msg.pose.pose.position.x = self.goal_pose.position.x
+        goal_msg.pose.pose.position.y = self.goal_pose.position.y
+
+        self.action_client_.wait_for_server()
+        self.action_client_.send_goal_async(goal_msg)
+        print("Goal sent.")
+        
+        ref_time = self.node_._clock.now()
+
+        # Listen to subscribed path, and wait until we get new path
+        print("Wait for path. Sleep for 1 second.")
+        # while (self.path_updated_time < ref_time):
+            # sleep(0.001)
+        sleep(1.0)
+        # print("Received new path")

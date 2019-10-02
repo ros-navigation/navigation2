@@ -32,6 +32,7 @@ class GazeboInterface(Env):
     def __init__(self):
         super()
         self.GazeboInterface = GazeboInterface
+        rclpy.init()
         self.node_ = rclpy.create_node('gazebo_interface')
         self.executor = SingleThreadedExecutor()
         self.executor.add_node(self.node_)
