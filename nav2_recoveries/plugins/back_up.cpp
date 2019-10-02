@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "back_up.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -26,7 +27,6 @@ namespace nav2_recoveries
 BackUp::BackUp()
 : Recovery<BackUpAction>()
 {
-  simulate_ahead_time_ = 2.0;
 }
 
 BackUp::~BackUp()
@@ -35,8 +35,9 @@ BackUp::~BackUp()
 
 void BackUp::onConfigure()
 {
-  node_->declare_parameter("simulate_ahead_time", simulate_ahead_time_);
-  simulate_ahead_time_ = node_->get_parameter("simulate_ahead_time").as_double();
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
+  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
