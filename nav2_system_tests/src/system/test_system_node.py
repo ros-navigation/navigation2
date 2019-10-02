@@ -23,6 +23,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
+from rclpy.qos import QoSProfile
 
 
 class NavTester(Node):
@@ -30,11 +32,17 @@ class NavTester(Node):
     def __init__(self):
         super().__init__('nav2_tester')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      '/initialpose')
-        self.goal_pub = self.create_publisher(PoseStamped, '/move_base_simple/goal')
+                                                      '/initialpose', 10)
+        self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
+
+        pose_qos = QoSProfile(
+          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       '/amcl_pose', self.poseCallback)
+                                                       '/amcl_pose', self.poseCallback, pose_qos)
         self.initial_pose_received = False
 
     def setInitialPose(self, pose):
@@ -82,16 +90,6 @@ class NavTester(Node):
         distance = math.sqrt(d_x * d_x + d_y * d_y)
         self.get_logger().info('Distance from goal is: ' + str(distance))
         return distance
-
-    def setSimTime(self):
-        self.get_logger().info('Setting transforms to use sim time from gazebo')
-        from subprocess import call
-        # loop through the problematic nodes
-        for nav2_node in ('/static_transform_publisher', '/map_server',
-                          '/global_costmap/global_costmap', '/local_costmap/local_costmap'):
-            while (call(['ros2', 'param', 'set', nav2_node, 'use_sim_time', 'True'])):
-                self.get_logger().error("Error couldn't set use_sim_time param on: " +
-                                        nav2_node + ' retrying...')
 
     def wait_for_node_active(self, node):
         # wait for the bt_navigator to be in active state
@@ -161,7 +159,6 @@ def test_all(test_robot):
         test_robot.wait_for_node_active('amcl')
         result = test_InitialPose(test_robot, timeout=1, retries=10)
     if (result):
-        test_robot.setSimTime()  # needed for nodes to become active
         test_robot.wait_for_node_active('bt_navigator')
     if (result):
         result = test_RobotMovesToGoal(test_robot)

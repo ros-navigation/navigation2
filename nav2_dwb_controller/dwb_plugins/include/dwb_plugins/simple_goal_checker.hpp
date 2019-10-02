@@ -38,8 +38,8 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "dwb_core/goal_checker.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/goal_checker.hpp"
 
 namespace dwb_plugins
 {
@@ -48,15 +48,15 @@ namespace dwb_plugins
  * @class SimpleGoalChecker
  * @brief Goal Checker plugin that only checks the position difference
  */
-class SimpleGoalChecker : public dwb_core::GoalChecker
+class SimpleGoalChecker : public nav2_core::GoalChecker
 {
 public:
   SimpleGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) override;
   bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) override;
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;

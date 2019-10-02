@@ -31,7 +31,8 @@ BtNavigator::BtNavigator()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("bt_xml_filename", rclcpp::ParameterValue(std::string("bt_navigator.xml")));
+  declare_parameter("bt_xml_filename",
+    rclcpp::ParameterValue(std::string("navigate_w_replanning_and_recovery.xml")));
 }
 
 BtNavigator::~BtNavigator()
@@ -43,11 +44,10 @@ nav2_util::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-  auto node = shared_from_this();
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      std::string("__node:=") + get_name() + "_client_node",
+      "-r", std::string("__node:=") + get_name() + "_client_node",
       "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
@@ -55,29 +55,39 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_, "NavigateToPose");
 
-  goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/move_base_simple/goal",
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    get_node_base_interface(), get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
+
+  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+    "/goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
-  // Create an action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
-      std::bind(&BtNavigator::navigateToPose, this), false);
+  action_server_ = std::make_unique<ActionServer>(
+    get_node_base_interface(),
+    get_node_clock_interface(),
+    get_node_logging_interface(),
+    get_node_waitables_interface(),
+    "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();
-  path_ = std::make_shared<nav2_msgs::msg::Path>();
+  path_ = std::make_shared<nav_msgs::msg::Path>();
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Put items on the blackboard
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
-  blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
+  blackboard_->set<nav_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
@@ -141,6 +151,8 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
+  tf_.reset();
+  tf_listener_.reset();
   action_server_.reset();
   path_.reset();
   xml_string_.clear();
@@ -233,8 +245,6 @@ BtNavigator::initializeGoalPose()
 void
 BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  RCLCPP_WARN(get_logger(), "Depreciation: Topic based navigation will "
-    "not be available in future releases.");
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
   self_client_->async_send_goal(goal);

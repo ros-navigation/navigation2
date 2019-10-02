@@ -40,12 +40,14 @@
 #include <vector>
 
 #include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
 using std::max;
 using std::string;
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace dwb_core
 {
@@ -53,16 +55,17 @@ namespace dwb_core
 DWBPublisher::DWBPublisher(nav2_util::LifecycleNode::SharedPtr node)
 : node_(node)
 {
-  node_->declare_parameter("publish_evaluation", rclcpp::ParameterValue(true));
-  node_->declare_parameter("publish_global_plan", rclcpp::ParameterValue(true));
-  node_->declare_parameter("publish_transformed_plan", rclcpp::ParameterValue(true));
-  node_->declare_parameter("publish_local_plan", rclcpp::ParameterValue(true));
-  node_->declare_parameter("publish_trajectories", rclcpp::ParameterValue(true));
-  node_->declare_parameter("publish_cost_grid_pc", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(node_, "publish_evaluation", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "publish_global_plan", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "publish_transformed_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "publish_local_plan", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "publish_trajectories", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, "publish_cost_grid_pc", rclcpp::ParameterValue(false));
 }
 
 nav2_util::CallbackReturn
-DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_configure()
 {
   node_->get_parameter("publish_evaluation", publish_evaluation_);
   node_->get_parameter("publish_global_plan", publish_global_plan_);
@@ -84,7 +87,7 @@ DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-DWBPublisher::on_activate(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_activate()
 {
   eval_pub_->on_activate();
   global_pub_->on_activate();
@@ -97,7 +100,7 @@ DWBPublisher::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-DWBPublisher::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_deactivate()
 {
   eval_pub_->on_deactivate();
   global_pub_->on_deactivate();
@@ -110,7 +113,7 @@ DWBPublisher::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-DWBPublisher::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+DWBPublisher::on_cleanup()
 {
   eval_pub_.reset();
   global_pub_.reset();
@@ -207,7 +210,7 @@ DWBPublisher::publishLocalPlan(
 
 void
 DWBPublisher::publishCostGrid(
-  const CostmapROSPtr costmap_ros,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   const std::vector<TrajectoryCritic::Ptr> critics)
 {
   if (!publish_cost_grid_pc_) {return;}

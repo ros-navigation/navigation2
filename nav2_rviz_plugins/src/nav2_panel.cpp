@@ -26,6 +26,7 @@ using namespace std::chrono_literals;
 
 namespace nav2_rviz_plugins
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // Define global GoalPoseUpdater so that the nav2 GoalTool plugin can access to update goal pose
 GoalPoseUpdater GoalUpdater;
@@ -35,90 +36,140 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   // Create the control button and its tooltip
 
-  start_stop_button_ = new QPushButton;
+  start_reset_button_ = new QPushButton;
+  pause_resume_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
-  const char * shutdown_msg = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
+  const char * shutdown_msg = "Deactivate and cleanup all nav2 lifecycle nodes";
   const char * cancel_msg = "Cancel navigation";
+  const char * pause_msg = "Deactivate all nav2 lifecycle nodes";
+  const char * resume_msg = "Activate all nav2 lifecycle nodes";
+
+  pre_initial_ = new QState();
+  pre_initial_->setObjectName("pre_initial");
+  pre_initial_->assignProperty(start_reset_button_, "text", "Startup");
+  pre_initial_->assignProperty(start_reset_button_, "enabled", false);
+
+  pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
   initial_ = new QState();
   initial_->setObjectName("initial");
-  initial_->assignProperty(start_stop_button_, "text", "Startup");
-  initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
+  initial_->assignProperty(start_reset_button_, "text", "Startup");
+  initial_->assignProperty(start_reset_button_, "toolTip", startup_msg);
+  initial_->assignProperty(start_reset_button_, "enabled", true);
 
-  starting_ = new QState();
-  starting_->setObjectName("starting");
-  starting_->assignProperty(start_stop_button_, "text", "Shutdown");
-  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+  initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  initial_->assignProperty(pause_resume_button_, "enabled", false);
 
-  // State entered after NavigateToPose has been canceled
+  // State entered when NavigateToPose is not active
+  idle_ = new QState();
+  idle_->setObjectName("idle");
+  idle_->assignProperty(start_reset_button_, "text", "Reset");
+  idle_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
+  idle_->assignProperty(start_reset_button_, "enabled", true);
+
+  idle_->assignProperty(pause_resume_button_, "text", "Pause");
+  idle_->assignProperty(pause_resume_button_, "enabled", true);
+  idle_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
+
+  // State entered to cancel the NavigateToPose action
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
-  canceled_->assignProperty(start_stop_button_, "text", "Shutdown");
-  canceled_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
 
-  // State entered after the NavigateToPose action has completed
-  completed_ = new QState();
-  completed_->setObjectName("succesful");
-  completed_->assignProperty(start_stop_button_, "text", "Shutdown");
-  completed_->assignProperty(start_stop_button_, "toolTip", shutdown_msg);
+  // State entered to reset the nav2 lifecycle nodes
+  reset_ = new QState();
+  reset_->setObjectName("reset");
 
   // State entered while the NavigateToPose action is active
   running_ = new QState();
   running_->setObjectName("running");
-  running_->assignProperty(start_stop_button_, "text", "Cancel");
-  running_->assignProperty(start_stop_button_, "toolTip", cancel_msg);
+  running_->assignProperty(start_reset_button_, "text", "Cancel");
+  running_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
 
-  stopping_ = new QState();
-  stopping_->setObjectName("stopping");
-  stopping_->assignProperty(start_stop_button_, "enabled", false);
+  running_->assignProperty(pause_resume_button_, "text", "Pause");
+  running_->assignProperty(pause_resume_button_, "enabled", false);
 
-  QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
-  QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
-  QObject::connect(canceled_, SIGNAL(entered()), this, SLOT(onCancel()));
+  // State entered when pause is requested
+  paused_ = new QState();
+  paused_->setObjectName("pausing");
+  paused_->assignProperty(start_reset_button_, "text", "Reset");
+  paused_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
 
-  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
-  starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
-  running_->addTransition(start_stop_button_, SIGNAL(clicked()), canceled_);
-  canceled_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
-  completed_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  paused_->assignProperty(pause_resume_button_, "text", "Resume");
+  paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
+  paused_->assignProperty(pause_resume_button_, "enabled", true);
 
-  ROSActionQTransition * startupTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  startupTransition->setTargetState(running_);
-  starting_->addTransition(startupTransition);
+  // State entered to resume the nav2 lifecycle nodes
+  resumed_ = new QState();
+  resumed_->setObjectName("resuming");
 
-  ROSActionQTransition * canceledTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  canceledTransition->setTargetState(running_);
-  canceled_->addTransition(canceledTransition);
+  QObject::connect(initial_, SIGNAL(exited()), this, SLOT(onStartup()));
+  QObject::connect(canceled_, SIGNAL(exited()), this, SLOT(onCancel()));
+  QObject::connect(reset_, SIGNAL(exited()), this, SLOT(onShutdown()));
+  QObject::connect(paused_, SIGNAL(entered()), this, SLOT(onPause()));
+  QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
+
+  // Start/Reset button click transitions
+  initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
+  idle_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
+  running_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
+  paused_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
+
+  // Internal state transitions
+  canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
+  reset_->addTransition(reset_, SIGNAL(entered()), initial_);
+  resumed_->addTransition(resumed_, SIGNAL(entered()), idle_);
+
+  // Pause/Resume button click transitions
+  idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
+  paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), resumed_);
+
+  // ROSAction Transitions
+  ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
+  idleTransition->setTargetState(running_);
+  idle_->addTransition(idleTransition);
 
   ROSActionQTransition * runningTransition = new ROSActionQTransition(QActionState::ACTIVE);
-  runningTransition->setTargetState(completed_);
+  runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  ROSActionQTransition * completedTransition = new ROSActionQTransition(QActionState::INACTIVE);
-  completedTransition->setTargetState(running_);
-  completed_->addTransition(completedTransition);
+  InitialThread * initialThread = new InitialThread(client_);
+  connect(initialThread, &InitialThread::finished, initialThread, &QObject::deleteLater);
 
+  QSignalTransition * activeSignal = new QSignalTransition(initialThread,
+      &InitialThread::activeSystem);
+  activeSignal->setTargetState(idle_);
+  pre_initial_->addTransition(activeSignal);
+
+  QSignalTransition * inactiveSignal = new QSignalTransition(initialThread,
+      &InitialThread::inactiveSystem);
+  inactiveSignal->setTargetState(initial_);
+  pre_initial_->addTransition(inactiveSignal);
+
+  state_machine_.addState(pre_initial_);
   state_machine_.addState(initial_);
-  state_machine_.addState(starting_);
-  state_machine_.addState(stopping_);
+  state_machine_.addState(idle_);
   state_machine_.addState(running_);
   state_machine_.addState(canceled_);
-  state_machine_.addState(completed_);
+  state_machine_.addState(reset_);
+  state_machine_.addState(paused_);
+  state_machine_.addState(resumed_);
 
-  state_machine_.setInitialState(initial_);
+  state_machine_.setInitialState(pre_initial_);
   state_machine_.start();
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->addWidget(start_stop_button_);
+  main_layout->addWidget(pause_resume_button_);
+  main_layout->addWidget(start_reset_button_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 
   auto options = rclcpp::NodeOptions().arguments(
-    {"__node:=navigation_dialog_action_client"});
+    {"--ros-args --remap __node:=navigation_dialog_action_client"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
@@ -127,6 +178,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
+
+  initialThread->start();
 }
 
 Nav2Panel::~Nav2Panel()
@@ -137,6 +190,20 @@ void
 Nav2Panel::onInitialize()
 {
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+}
+
+void
+Nav2Panel::onPause()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause, &client_));
+}
+
+void
+Nav2Panel::onResume()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume, &client_));
 }
 
 void
@@ -151,7 +218,7 @@ void
 Nav2Panel::onShutdown()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::shutdown,
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
       &client_));
 
   timer_.stop();
@@ -178,14 +245,6 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.orientation = orientationAroundZAxis(theta);
 
   startNavigation(pose);
-}
-
-geometry_msgs::msg::Quaternion
-Nav2Panel::orientationAroundZAxis(double angle)
-{
-  tf2::Quaternion q;
-  q.setRPY(0, 0, angle);  // void returning function
-  return tf2::toMsg(q);
 }
 
 void

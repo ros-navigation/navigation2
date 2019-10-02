@@ -1,0 +1,7 @@
+#goal definition
+builtin_interfaces/Duration time
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback

@@ -39,9 +39,11 @@
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav_2d_utils
 {
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_2d)
 {
@@ -50,6 +52,15 @@ geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_
   cmd_vel.linear.y = cmd_vel_2d.y;
   cmd_vel.angular.z = cmd_vel_2d.theta;
   return cmd_vel;
+}
+
+nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel)
+{
+  nav_2d_msgs::msg::Twist2D cmd_vel_2d;
+  cmd_vel_2d.x = cmd_vel.linear.x;
+  cmd_vel_2d.y = cmd_vel.linear.y;
+  cmd_vel_2d.theta = cmd_vel.angular.z;
+  return cmd_vel_2d;
 }
 
 // nav_2d_msgs::msg::Pose2DStamped stampedPoseToPose2D(const tf2::Stamped<tf2::Pose>& pose)
@@ -87,9 +98,7 @@ geometry_msgs::msg::Pose pose2DToPose(const geometry_msgs::msg::Pose2D & pose2d)
   geometry_msgs::msg::Pose pose;
   pose.position.x = pose2d.x;
   pose.position.y = pose2d.y;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, pose2d.theta);
-  pose.orientation = tf2::toMsg(q);
+  pose.orientation = orientationAroundZAxis(pose2d.theta);
   return pose;
 }
 
@@ -111,9 +120,7 @@ geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
   pose.header.stamp = stamp;
   pose.pose.position.x = pose2d.x;
   pose.pose.position.y = pose2d.y;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, pose2d.theta);
-  pose.pose.orientation = tf2::toMsg(q);
+  pose.pose.orientation = orientationAroundZAxis(pose2d.theta);
   return pose;
 }
 
@@ -132,12 +139,12 @@ nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStampe
   return path;
 }
 
-nav_2d_msgs::msg::Path2D pathToPath2D(const nav2_msgs::msg::Path & path)
+nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path)
 {
   nav_2d_msgs::msg::Path2D path2d;
   path2d.header = path.header;
   for (auto & pose : path.poses) {
-    path2d.poses.push_back(poseToPose2D(pose));
+    path2d.poses.push_back(poseToPose2D(pose.pose));
   }
   return path2d;
 }

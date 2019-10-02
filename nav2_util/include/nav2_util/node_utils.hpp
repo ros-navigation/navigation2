@@ -80,6 +80,19 @@ std::string time_to_string(size_t len);
 rclcpp::NodeOptions
 get_node_options_default(bool allow_undeclared = true, bool declare_initial_params = true);
 
+template<typename NodeT>
+void declare_parameter_if_not_declared(
+  NodeT node,
+  const std::string & param_name,
+  const rclcpp::ParameterValue & default_value = rclcpp::ParameterValue(),
+  const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
+  rcl_interfaces::msg::ParameterDescriptor())
+{
+  if (!node->has_parameter(param_name)) {
+    node->declare_parameter(param_name, default_value, parameter_descriptor);
+  }
+}
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__NODE_UTILS_HPP_

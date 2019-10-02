@@ -1,6 +1,22 @@
+# Copyright (c) 2019 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Dict
 from typing import List
 from typing import Text
+from typing import Optional
+
 import yaml
 import tempfile
 import launch
@@ -18,21 +34,38 @@ class DictItemReference:
 
 class RewrittenYaml(launch.Substitution):
   """
-  Substitution that modifies the given Yaml file.
+  Substitution that modifies the given YAML file.
   """
 
   def __init__(self,
     source_file: launch.SomeSubstitutionsType,
-    rewrites: Dict,
+    param_rewrites: Dict,
+    root_key: Optional[launch.SomeSubstitutionsType] = None,
+    key_rewrites: Optional[Dict] = None,
     convert_types = False) -> None:
     super().__init__()
+    """
+    Construct the substitution
+
+    :param: source_file the original YAML file to modify
+    :param: param_rewrites mappings to replace
+    :param: root_key if provided, the contents are placed under this key
+    :param: key_rewrites keys of mappings to replace
+    :param: convert_types whether to attempt converting the string to a number or boolean
+    """
 
     from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
     self.__source_file = normalize_to_list_of_substitutions(source_file)
-    self.__rewrites = {}
+    self.__param_rewrites = {}
+    self.__key_rewrites = {}
     self.__convert_types = convert_types
-    for key in rewrites:
-        self.__rewrites[key] = normalize_to_list_of_substitutions(rewrites[key])
+    for key in param_rewrites:
+        self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
+    if key_rewrites is not None:
+        for key in key_rewrites:
+          self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
+    if root_key is not None:
+        self.__root_key = normalize_to_list_of_substitutions(root_key)
 
   @property
   def name(self) -> List[launch.Substitution]:
@@ -46,29 +79,46 @@ class RewrittenYaml(launch.Substitution):
   def perform(self, context: launch.LaunchContext) -> Text:
     yaml_filename = launch.utilities.perform_substitutions(context, self.name)
     rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
-    resolved_rewrites = self.resolve_rewrites(context)
-    data = yaml.load(open(yaml_filename, 'r'))
-    self.substitute_values(data, resolved_rewrites)
+    param_rewrites, keys_rewrites = self.resolve_rewrites(context)
+    data = yaml.safe_load(open(yaml_filename, 'r'))
+    self.substitute_params(data, param_rewrites)
+    self.substitute_keys(data, keys_rewrites)
+    if self.__root_key is not None:
+        root_key = launch.utilities.perform_substitutions(context, self.__root_key)
+        if root_key:
+            data = {root_key: data}
     yaml.dump(data, rewritten_yaml)
     rewritten_yaml.close()
     return rewritten_yaml.name
 
   def resolve_rewrites(self, context):
-    resolved = {}
-    for key in self.__rewrites:
-      resolved[key] = launch.utilities.perform_substitutions(context, self.__rewrites[key])
-    return resolved
+    resolved_params = {}
+    for key in self.__param_rewrites:
+      resolved_params[key] = launch.utilities.perform_substitutions(context, self.__param_rewrites[key])
+    resolved_keys = {}
+    for key in self.__key_rewrites:
+      resolved_keys[key] = launch.utilities.perform_substitutions(context, self.__key_rewrites[key])
+    return resolved_params, resolved_keys
 
-  def substitute_values(self, yaml, rewrites):
-    for key in self.getYamlKeys(yaml):
-      if key.key() in rewrites:
-        raw_value = rewrites[key.key()]
+  def substitute_params(self, yaml, param_rewrites):
+    for key in self.getYamlLeafKeys(yaml):
+      if key.key() in param_rewrites:
+        raw_value = param_rewrites[key.key()]
         key.setValue(self.convert(raw_value))
 
-  def getYamlKeys(self, yamlData):
+  def substitute_keys(self, yaml, key_rewrites):
+    if len(key_rewrites) != 0:
+      for key, val in yaml.items():
+        if isinstance(val, dict) and key in key_rewrites:
+          new_key = key_rewrites[key]
+          yaml[new_key] = yaml[key]
+          del yaml[key]
+          self.substitute_keys(val, key_rewrites)
+
+  def getYamlLeafKeys(self, yamlData):
     try:
       for key in yamlData.keys():
-        for k in self.getYamlKeys(yamlData[key]):
+        for k in self.getYamlLeafKeys(yamlData[key]):
           yield k
         yield DictItemReference(yamlData, key)
     except AttributeError:

@@ -28,12 +28,12 @@ namespace nav2_util
  *  way to combat that is to timeout the service call and retry it. To use this
  *  function, estimate how long your nodes should take to at each transition and
  *  set your timeout accordingly.
- * \param[in] node_names A vector of the fully qualified node names to bringup.
+ * \param[in] node_names A vector of the fully qualified node names to startup.
  * \param[in] service_call_timeout The maximum amount of time to wait for a
  *            service call.
  * \param[in] retries The number of times to try a state transition service call
  */
-void bringup_lifecycle_nodes(
+void startup_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3);
@@ -42,12 +42,39 @@ void bringup_lifecycle_nodes(
 /**
  * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
  */
-void bringup_lifecycle_nodes(
+void startup_lifecycle_nodes(
   const std::string & nodes,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3)
 {
-  bringup_lifecycle_nodes(split(nodes, ':'), service_call_timeout, retries);
+  startup_lifecycle_nodes(split(nodes, ':'), service_call_timeout, retries);
+}
+
+/// Transition the given lifecycle nodes to the UNCONFIGURED state in order
+/** At this time, service calls frequently hang for unknown reasons. The only
+ *  way to combat that is to timeout the service call and retry it. To use this
+ *  function, estimate how long your nodes should take to at each transition and
+ *  set your timeout accordingly.
+ * \param[in] node_names A vector of the fully qualified node names to reset.
+ * \param[in] service_call_timeout The maximum amount of time to wait for a
+ *            service call.
+ * \param[in] retries The number of times to try a state transition service call
+ */
+void reset_lifecycle_nodes(
+  const std::vector<std::string> & node_names,
+  const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
+  const int retries = 3);
+
+/// Transition the given lifecycle nodes to the UNCONFIGURED state in order.
+/**
+ * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
+ */
+void reset_lifecycle_nodes(
+  const std::string & nodes,
+  const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
+  const int retries = 3)
+{
+  reset_lifecycle_nodes(split(nodes, ':'), service_call_timeout, retries);
 }
 
 }  // namespace nav2_util

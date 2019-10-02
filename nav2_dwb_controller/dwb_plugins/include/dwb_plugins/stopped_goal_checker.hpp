@@ -38,8 +38,8 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "dwb_plugins/simple_goal_checker.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -53,10 +53,10 @@ class StoppedGoalChecker : public SimpleGoalChecker
 public:
   StoppedGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) override;
   bool isGoalReached(
-    const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-    const nav_2d_msgs::msg::Twist2D & velocity) override;
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
 protected:
   double rot_stopped_velocity_, trans_stopped_velocity_;

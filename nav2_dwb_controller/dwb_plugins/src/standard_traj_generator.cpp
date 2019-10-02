@@ -41,6 +41,7 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using nav_2d_utils::loadParameterWithDeprecation;
 
@@ -53,8 +54,9 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
   kinematics_->initialize(nh);
   initializeIterator(nh);
 
-  nh->declare_parameter("sim_time", rclcpp::ParameterValue(1.7));
-  nh->declare_parameter("discretize_by_time", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(nh, "sim_time", rclcpp::ParameterValue(1.7));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "discretize_by_time", rclcpp::ParameterValue(false));
 
   nh->get_parameter("sim_time", sim_time_);
   checkUseDwaParam(nh);
@@ -92,7 +94,8 @@ void StandardTrajectoryGenerator::checkUseDwaParam(
   bool use_dwa = true;
   nh->get_parameter("use_dwa", use_dwa);
   if (use_dwa) {
-    throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "
+    throw nav2_core::
+          PlannerException("Deprecated parameter use_dwa set to true. "
             "Please use LimitedAccelGenerator for that functionality.");
   }
 }

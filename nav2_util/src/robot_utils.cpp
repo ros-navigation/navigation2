@@ -52,6 +52,9 @@ bool getCurrentPose(
   } catch (tf2::TimeoutException & ex) {
     RCLCPP_ERROR(logger,
       "Transform timeout with tolerance: %.4f", transform_timeout);
+  } catch (...) {
+    RCLCPP_ERROR(logger, "Failed to transform from %s to %s",
+      global_frame.c_str(), robot_frame.c_str());
   }
 
   return false;

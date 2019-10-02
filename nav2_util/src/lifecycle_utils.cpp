@@ -42,7 +42,7 @@ namespace nav2_util
     } \
   }
 
-static void bringupLifecycleNode(
+static void startupLifecycleNode(
   const std::string & node_name,
   const std::chrono::seconds service_call_timeout,
   const int retries)
@@ -50,7 +50,7 @@ static void bringupLifecycleNode(
   LifecycleServiceClient sc(node_name);
 
   // Despite waiting for the service to be available and using reliable transport
-  // service calls still frequently hang. To get reliable bringup it's necessary
+  // service calls still frequently hang. To get reliable startup it's necessary
   // to timeout the service call and retry it when that happens.
   RETRY(sc.change_state(Transition::TRANSITION_CONFIGURE, service_call_timeout),
     retries);
@@ -58,13 +58,39 @@ static void bringupLifecycleNode(
     retries);
 }
 
-void bringup_lifecycle_nodes(
+void startup_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout,
   const int retries)
 {
   for (const auto & node_name : node_names) {
-    bringupLifecycleNode(node_name, service_call_timeout, retries);
+    startupLifecycleNode(node_name, service_call_timeout, retries);
+  }
+}
+
+static void resetLifecycleNode(
+  const std::string & node_name,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
+{
+  LifecycleServiceClient sc(node_name);
+
+  // Despite waiting for the service to be available and using reliable transport
+  // service calls still frequently hang. To get reliable reset it's necessary
+  // to timeout the service call and retry it when that happens.
+  RETRY(sc.change_state(Transition::TRANSITION_DEACTIVATE, service_call_timeout),
+    retries);
+  RETRY(sc.change_state(Transition::TRANSITION_CLEANUP, service_call_timeout),
+    retries);
+}
+
+void reset_lifecycle_nodes(
+  const std::vector<std::string> & node_names,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
+{
+  for (const auto & node_name : node_names) {
+    resetLifecycleNode(node_name, service_call_timeout, retries);
   }
 }
 

@@ -1,0 +1,30 @@
+digraph repo_sync {
+   bgcolor="transparent";
+   rankdir=LR
+	compound=true;
+	node [fontsize=10, shape=record, style=rounded];
+	edge [fontsize=10];
+
+
+	subgraph clusterPublic {
+		label="cool-project"; fontsize=10;
+
+		subgraph clusterPubMaster {
+			label="master\n(RW)"; fontsize=11;
+			style="filled,rounded"; color="#F0F0F0"
+
+			c1 -> c2 -> c3 -> c4;
+
+		}
+
+		subgraph clusterPubabcProd {
+			label="abc_prod\n(RO replica)"; fontsize=11;
+			style="filled,rounded"; color="#F0F0FF"
+
+			node [style="rounded,dashed"];
+
+			abc_c4 [label="c4 [REL1]"];
+			abc_c1 -> abc_c2 -> abc_c3 -> abc_c4;
+		}
+	}
+}

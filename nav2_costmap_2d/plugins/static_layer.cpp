@@ -72,12 +72,14 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  rclcpp::QoS map_qos(1);
+  rclcpp::QoS map_qos(10);  // initialize to default
   if (map_subscribe_transient_local_) {
     map_qos.transient_local();
+    map_qos.reliable();
+    map_qos.keep_last(1);
   }
 
-  RCLCPP_DEBUG(node_->get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
     "Subscribing to the map topic (%s) with %s durability",
     map_topic_.c_str(),
     map_subscribe_transient_local_ ? "transient local" : "volatile");
@@ -121,8 +123,7 @@ StaticLayer::getParameters()
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
-  declareParameter("map_subscribe_transient_local",
-    rclcpp::ParameterValue(true));
+  declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
@@ -137,6 +138,7 @@ StaticLayer::getParameters()
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
+  map_received_ = false;
 }
 
 void
@@ -239,6 +241,9 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   processMap(*new_map);
+  if (!map_received_) {
+    map_received_ = true;
+  }
 }
 
 void
@@ -291,6 +296,10 @@ StaticLayer::updateBounds(
   double * max_x,
   double * max_y)
 {
+  if (!map_received_) {
+    return;
+  }
+
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
@@ -319,6 +328,15 @@ StaticLayer::updateCosts(
   int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
+    return;
+  }
+  if (!map_received_) {
+    static int count = 0;
+    // throttle warning down to only 1/10 message rate
+    if (++count == 10) {
+      RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
+      count = 0;
+    }
     return;
   }
 

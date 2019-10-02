@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>costmap_queue</name>
-  <version>0.2.2</version>
+  <version>0.2.4</version>
   <description>The costmap_queue package</description>
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-  <license>BSD</license>
+  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>

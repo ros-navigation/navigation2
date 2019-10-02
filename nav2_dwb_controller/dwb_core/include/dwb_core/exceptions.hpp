@@ -38,54 +38,37 @@
 #include <string>
 #include <memory>
 
-namespace nav_core2
-{
+#include "nav2_core/exceptions.hpp"
 
-class PlannerException : public std::runtime_error
+namespace dwb_core
 {
-public:
-  explicit PlannerException(const std::string description)
-  : std::runtime_error(description) {}
-  typedef std::shared_ptr<PlannerException> Ptr;
-};
 
 /**
  * @class PlannerTFException
  * @brief Thrown when the planner cannot complete its operation due to TF errors
  */
-class PlannerTFException : public PlannerException
+class PlannerTFException : public nav2_core::PlannerException
 {
 public:
   explicit PlannerTFException(const std::string description)
-  : PlannerException(description) {}
+  : nav2_core::PlannerException(description) {}
 };
 
 /**
  * @class IllegalTrajectoryException
  * @brief Thrown when one of the critics encountered a fatal error
  */
-class IllegalTrajectoryException : public PlannerException
+class IllegalTrajectoryException : public nav2_core::PlannerException
 {
 public:
   IllegalTrajectoryException(const std::string critic_name, const std::string description)
-  : PlannerException(description), critic_name_(critic_name) {}
+  : nav2_core::PlannerException(description), critic_name_(critic_name) {}
   std::string getCriticName() const {return critic_name_;}
 
 protected:
   std::string critic_name_;
 };
 
-/**
- * @class NoLegalTrajectoriesException
- * @brief Thrown when all the trajectories explored are illegal
- */
-class NoLegalTrajectoriesException : public PlannerException
-{
-public:
-  explicit NoLegalTrajectoriesException(const std::string description)
-  : PlannerException(description) {}
-};
-
-}  // namespace nav_core2
+}  // namespace dwb_core
 
 #endif  // DWB_CORE__EXCEPTIONS_HPP_

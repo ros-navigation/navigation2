@@ -3,6 +3,7 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2008, 2013, Willow Garage, Inc.
+ *  Copyright (c) 2019, Samsung Research America, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -40,14 +41,18 @@
 
 #include <algorithm>
 #include <string>
+#include <memory>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/srv/get_costmap.hpp"
 #include "tf2/transform_datatypes.h"
 #include "nav2_util/lifecycle_node.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace nav2_costmap_2d
 {
@@ -119,6 +124,12 @@ private:
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
+  /** @brief GetCostmap callback service */
+  void costmap_service_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
+
   nav2_util::LifecycleNode::SharedPtr node_;
   Costmap2D * costmap_;
   std::string global_frame_;
@@ -133,8 +144,12 @@ private:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
   rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
     costmap_update_pub_;
+
   // Publisher for raw costmap values as msg::Costmap from layered costmap
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
+
+  // Service for getting the costmaps
+  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
 
   nav_msgs::msg::OccupancyGrid grid_;
   nav2_msgs::msg::Costmap costmap_raw_;

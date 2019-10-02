@@ -75,11 +75,11 @@ void ObstacleLayer::onInitialize()
   std::string topics_string;
 
   // TODO(mjeronimo): these four are candidates for dynamic update
-  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "footprint_clearing_enabled",
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("footprint_clearing_enabled",
     rclcpp::ParameterValue(true));
-  node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
-  node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
+  declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
+  declareParameter("combination_method", rclcpp::ParameterValue(1));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
@@ -114,31 +114,31 @@ void ObstacleLayer::onInitialize()
     std::string topic, sensor_frame, data_type;
     bool inf_is_valid, clearing, marking;
 
-    node_->declare_parameter(source + "." + "topic", rclcpp::ParameterValue(source));
-    node_->declare_parameter(source + "." + "sensor_frame",
-      rclcpp::ParameterValue(std::string("")));
-    node_->declare_parameter(source + "." + "observation_persistence", rclcpp::ParameterValue(0.0));
-    node_->declare_parameter(source + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
-    node_->declare_parameter(source + "." + "data_type",
-      rclcpp::ParameterValue(std::string("LaserScan")));
-    node_->declare_parameter(source + "." + "min_obstacle_height", rclcpp::ParameterValue(0.0));
-    node_->declare_parameter(source + "." + "max_obstacle_height", rclcpp::ParameterValue(0.0));
-    node_->declare_parameter(source + "." + "inf_is_valid", rclcpp::ParameterValue(false));
-    node_->declare_parameter(source + "." + "marking", rclcpp::ParameterValue(true));
-    node_->declare_parameter(source + "." + "clearing", rclcpp::ParameterValue(false));
-    node_->declare_parameter(source + "." + "obstacle_range", rclcpp::ParameterValue(2.5));
-    node_->declare_parameter(source + "." + "raytrace_range", rclcpp::ParameterValue(3.0));
+    declareParameter(source + "." + "topic", rclcpp::ParameterValue(source));
+    declareParameter(source + "." + "sensor_frame", rclcpp::ParameterValue(std::string("")));
+    declareParameter(source + "." + "observation_persistence", rclcpp::ParameterValue(0.0));
+    declareParameter(source + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
+    declareParameter(source + "." + "data_type", rclcpp::ParameterValue(std::string("LaserScan")));
+    declareParameter(source + "." + "min_obstacle_height", rclcpp::ParameterValue(0.0));
+    declareParameter(source + "." + "max_obstacle_height", rclcpp::ParameterValue(0.0));
+    declareParameter(source + "." + "inf_is_valid", rclcpp::ParameterValue(false));
+    declareParameter(source + "." + "marking", rclcpp::ParameterValue(true));
+    declareParameter(source + "." + "clearing", rclcpp::ParameterValue(false));
+    declareParameter(source + "." + "obstacle_range", rclcpp::ParameterValue(2.5));
+    declareParameter(source + "." + "raytrace_range", rclcpp::ParameterValue(3.0));
 
-    node_->get_parameter(source + "." + "topic", topic);
-    node_->get_parameter(source + "." + "sensor_frame", sensor_frame);
-    node_->get_parameter(source + "." + "observation_persistence", observation_keep_time);
-    node_->get_parameter(source + "." + "expected_update_rate", expected_update_rate);
-    node_->get_parameter(source + "." + "data_type", data_type);
-    node_->get_parameter(source + "." + "min_obstacle_height", min_obstacle_height);
-    node_->get_parameter(source + "." + "max_obstacle_height", max_obstacle_height);
-    node_->get_parameter(source + "." + "inf_is_valid", inf_is_valid);
-    node_->get_parameter(source + "." + "marking", marking);
-    node_->get_parameter(source + "." + "clearing", clearing);
+    node_->get_parameter(name_ + "." + source + "." + "topic", topic);
+    node_->get_parameter(name_ + "." + source + "." + "sensor_frame", sensor_frame);
+    node_->get_parameter(name_ + "." + source + "." + "observation_persistence",
+      observation_keep_time);
+    node_->get_parameter(name_ + "." + source + "." + "expected_update_rate",
+      expected_update_rate);
+    node_->get_parameter(name_ + "." + source + "." + "data_type", data_type);
+    node_->get_parameter(name_ + "." + source + "." + "min_obstacle_height", min_obstacle_height);
+    node_->get_parameter(name_ + "." + source + "." + "max_obstacle_height", max_obstacle_height);
+    node_->get_parameter(name_ + "." + source + "." + "inf_is_valid", inf_is_valid);
+    node_->get_parameter(name_ + "." + source + "." + "marking", marking);
+    node_->get_parameter(name_ + "." + source + "." + "clearing", clearing);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(node_->get_logger(),
@@ -149,11 +149,11 @@ void ObstacleLayer::onInitialize()
 
     // get the obstacle range for the sensor
     double obstacle_range;
-    node_->get_parameter(source + "." + "obstacle_range", obstacle_range);
+    node_->get_parameter(name_ + "." + source + "." + "obstacle_range", obstacle_range);
 
     // get the raytrace range for the sensor
     double raytrace_range;
-    node_->get_parameter(source + "." + "raytrace_range", raytrace_range);
+    node_->get_parameter(name_ + "." + source + "." + "raytrace_range", raytrace_range);
 
     RCLCPP_DEBUG(node_->get_logger(),
       "Creating an observation buffer for source %s, topic %s, frame %s",

@@ -2,13 +2,13 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>navigation2</name>
-  <version>0.2.2</version>
+  <version>0.2.4</version>
   <description>
     ROS2 Navigation Stack
   </description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -16,18 +16,20 @@
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
+  <exec_depend>nav2_core</exec_depend>
   <exec_depend>nav2_dwb_controller</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_recoveries</exec_depend>
+  <exec_depend>nav2_planner</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_rviz_plugins</exec_depend>
   <exec_depend>nav2_behavior_tree</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
-  <exec_depend>nav2_world_model</exec_depend>
-
+  <exec_depend>nav2_controller</exec_depend>
+  
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>

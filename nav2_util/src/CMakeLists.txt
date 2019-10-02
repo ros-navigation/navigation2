@@ -20,11 +20,7 @@ ament_target_dependencies(${library_name}
   tf2_geometry_msgs
 )
 
-add_subdirectory(pf)
-add_subdirectory(map)
 add_subdirectory(map_loader)
-add_subdirectory(motion_model)
-add_subdirectory(sensors)
 
 add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp

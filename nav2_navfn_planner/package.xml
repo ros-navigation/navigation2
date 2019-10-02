@@ -2,36 +2,29 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_navfn_planner</name>
-  <version>0.2.2</version>
+  <version>0.2.4</version>
   <description>TODO</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
+  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_action</build_depend>
-  <build_depend>rclcpp_lifecycle</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>nav2_util</build_depend>
-  <build_depend>nav2_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>builtin_interfaces</build_depend>
-  <build_depend>nav2_common</build_depend>
-  <build_depend>tf2_ros</build_depend>
-
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_action</exec_depend>
-  <exec_depend>rclcpp_lifecycle</exec_depend>
-  <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>nav2_util</exec_depend>
-  <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>builtin_interfaces</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>nav2_common</depend>
+  <depend>tf2_ros</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_core</depend>
+  <depend>pluginlib</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -42,5 +35,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/global_planner_plugin.xml" />
   </export>
 </package>

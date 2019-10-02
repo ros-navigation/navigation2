@@ -32,10 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/simple_goal_checker.hpp"
 #include <memory>
+#include "dwb_plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
+#include "nav2_util/node_utils.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace dwb_plugins
 {
@@ -45,10 +50,12 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
-void SimpleGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
 {
-  nh->declare_parameter("xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nh->declare_parameter("yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
 
   nh->get_parameter("xy_goal_tolerance", xy_goal_tolerance_);
   nh->get_parameter("yaw_goal_tolerance", yaw_goal_tolerance_);
@@ -57,18 +64,19 @@ void SimpleGoalChecker::initialize(const nav2_util::LifecycleNode::SharedPtr & n
 }
 
 bool SimpleGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose2D & query_pose, const geometry_msgs::msg::Pose2D & goal_pose,
-  const nav_2d_msgs::msg::Twist2D &)
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist &)
 {
-  double dx = query_pose.x - goal_pose.x,
-    dy = query_pose.y - goal_pose.y;
+  double dx = query_pose.position.x - goal_pose.position.x,
+    dy = query_pose.position.y - goal_pose.position.y;
   if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
     return false;
   }
-  double dyaw = angles::shortest_angular_distance(query_pose.theta, goal_pose.theta);
+  double dyaw = angles::shortest_angular_distance(tf2::getYaw(query_pose.orientation),
+      tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, dwb_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, nav2_core::GoalChecker)

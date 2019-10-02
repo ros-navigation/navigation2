@@ -2,10 +2,16 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_common</name>
-  <version>0.2.2</version>
+  <version>0.2.4</version>
   <description>Common support functionality used throughout the navigation 2 stack</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
-  <license>Apache License 2.0</license>
+  <license>Apache-2.0</license>
+
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>osrf_pycommon</depend>
+  <depend>rclpy</depend>
+  <depend>python3-yaml</depend>
 
   <buildtool_depend>ament_cmake_core</buildtool_depend>
 

@@ -32,8 +32,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/motion_model/motion_model.hpp"
-#include "nav2_util/sensors/laser/laser.hpp"
+#include "nav2_amcl/motion_model/motion_model.hpp"
+#include "nav2_amcl/sensors/laser/laser.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -86,7 +86,7 @@ protected:
   map_t * map_{nullptr};
   map_t * convertMap(const nav_msgs::msg::OccupancyGrid & map_msg);
   bool first_map_only_{true};
-  bool first_map_received_{false};
+  std::atomic<bool> first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
   std::recursive_mutex configuration_mutex_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
@@ -136,11 +136,11 @@ protected:
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
-  bool force_update_{false};
+  std::atomic<bool> force_update_{false};
 
   // Odometry
   void initOdometry();
-  std::unique_ptr<nav2_util::MotionModel> motion_model_;
+  std::unique_ptr<nav2_amcl::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
   double init_pose_[3];  // Initial robot pose
@@ -164,9 +164,9 @@ protected:
   // Laser scan related
   void initLaserScan();
   const char * scan_topic_{"scan"};
-  nav2_util::Laser * createLaserObject();
+  nav2_amcl::Laser * createLaserObject();
   int scan_error_count_{0};
-  std::vector<nav2_util::Laser *> lasers_;
+  std::vector<nav2_amcl::Laser *> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
   rclcpp::Time last_laser_received_ts_;
@@ -201,6 +201,12 @@ protected:
   void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   bool init_pose_received_on_inactive{false};
   bool initial_pose_is_known_{false};
+  bool set_initial_pose_{false};
+  bool always_reset_initial_pose_;
+  double initial_pose_x_;
+  double initial_pose_y_;
+  double initial_pose_z_;
+  double initial_pose_yaw_;
 
   // Node parameters (initialized via initParameters)
   void initParameters();

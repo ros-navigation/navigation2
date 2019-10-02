@@ -15,6 +15,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_core REQUIRED)
+find_package(pluginlib REQUIRED)
 
 nav2_package()
 
@@ -22,8 +24,8 @@ include_directories(
   include
 )
 
-set(library_name recoveries)
-set(executable_name ${library_name}_node)
+set(library_name recoveries_server_core)
+set(executable_name recoveries_server)
 
 set(dependencies
   rclcpp
@@ -38,12 +40,40 @@ set(dependencies
   tf2_geometry_msgs
   geometry_msgs
   nav2_costmap_2d
+  nav2_core
+  pluginlib
 )
+
+# plugins
+add_library(nav2_spin_recovery SHARED
+  plugins/spin.cpp
+)
+
+ament_target_dependencies(nav2_spin_recovery
+  ${dependencies}
+)
+
+add_library(nav2_backup_recovery SHARED
+  plugins/back_up.cpp
+)
+
+ament_target_dependencies(nav2_backup_recovery
+  ${dependencies}
+)
+
+add_library(nav2_wait_recovery SHARED
+  plugins/wait.cpp
+)
+
+ament_target_dependencies(nav2_wait_recovery
+  ${dependencies}
+)
+
+pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
 # Library
 add_library(${library_name}
-  src/spin.cpp
-  src/back_up.cpp
+  src/recovery_server.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -61,7 +91,11 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${executable_name}
+                ${library_name}
+                nav2_backup_recovery
+                nav2_spin_recovery
+                nav2_wait_recovery
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -69,6 +103,10 @@ install(TARGETS ${executable_name} ${library_name}
 
 install(DIRECTORY include/
   DESTINATION include/
+)
+
+install(FILES recovery_plugin.xml
+  DESTINATION share
 )
 
 if(BUILD_TESTING)
@@ -80,6 +118,10 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name}
+  nav2_backup_recovery
+  nav2_spin_recovery
+  nav2_wait_recovery
+)
 
 ament_package()
