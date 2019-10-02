@@ -64,7 +64,9 @@ FootprintSubscriber::FootprintSubscriber(
 }
 
 bool
-FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp)
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint,
+  rclcpp::Time & stamp)
 {
   if (!footprint_received_) {
     return false;
