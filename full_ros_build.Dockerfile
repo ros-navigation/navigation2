@@ -157,7 +157,7 @@ ARG FAIL_ON_TEST_FAILURE
 RUN if [ ! -z "$RUN_TESTS" ]; then \
         colcon test \
           --packages-select \
-            $(cat src/overlay/packages.txt | xargs) \; \
+            $(cat src/overlay/packages.txt | xargs); \
         if [ ! -z "$FAIL_ON_TEST_FAILURE" ]; then \
             colcon test-result; \
         else \
