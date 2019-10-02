@@ -25,6 +25,21 @@ RecoveryServer::RecoveryServer()
 : nav2_util::LifecycleNode("nav2_recoveries", "", true),
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
+  declare_parameter("costmap_topic",
+    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+  declare_parameter("footprint_topic",
+    rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
+  std::vector<std::string> plugin_names{std::string("Spin"),
+    std::string("BackUp"), std::string("Wait")};
+  std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
+    std::string("nav2_recoveries/BackUp"),
+    std::string("nav2_recoveries/Wait")};
+
+  declare_parameter("plugin_names",
+    rclcpp::ParameterValue(plugin_names));
+  declare_parameter("plugin_types",
+    rclcpp::ParameterValue(plugin_types));
 }
 
 
@@ -44,24 +59,8 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
-  declare_parameter("costmap_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  declare_parameter("footprint_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
-
-  std::vector<std::string> plugin_names{std::string("Spin"),
-    std::string("BackUp"), std::string("Wait")};
-  std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/BackUp"),
-    std::string("nav2_recoveries/Wait")};
-
-  declare_parameter("plugin_names",
-    rclcpp::ParameterValue(plugin_names));
-  declare_parameter("plugin_types",
-    rclcpp::ParameterValue(plugin_types));
-
-  plugin_names_ = get_parameter("plugin_names").as_string_array();
-  plugin_types_ = get_parameter("plugin_types").as_string_array();
+  get_parameter("plugin_names", plugin_names_);
+  get_parameter("plugin_types", plugin_types_);
 
   loadRecoveryPlugins();
 
