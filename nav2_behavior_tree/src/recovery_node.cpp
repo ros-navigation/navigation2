@@ -49,6 +49,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::SUCCESS:
           {
             retry_count_ = 0;
+            halt();
             return BT::NodeStatus::SUCCESS;
           }
           break;
