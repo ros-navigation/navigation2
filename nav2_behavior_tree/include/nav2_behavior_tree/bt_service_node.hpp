@@ -69,7 +69,7 @@ public:
     // Make sure the server is actually there before continuing
     RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    service_client_->wait_for_service();
+    // service_client_->wait_for_service();
 
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());

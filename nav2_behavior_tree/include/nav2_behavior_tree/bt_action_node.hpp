@@ -66,7 +66,7 @@ public:
 
     // Make sure the server is actually there before continuing
     RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    action_client_->wait_for_action_server();
+    // action_client_->wait_for_action_server();
 
     // Give the derive class a chance to do any initialization
     on_init();
@@ -109,10 +109,13 @@ public:
 
 new_goal_received:
     auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, std::chrono::seconds(1)) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
-      throw std::runtime_error("send_goal failed");
+      RCLCPP_INFO(node_->get_logger(),
+        "Failed to send goal for \"%s\" action server", action_name_.c_str());
+      return BT::NodeStatus::FAILURE;
+      // throw std::runtime_error("send_goal failed");
     }
 
     goal_handle_ = future_goal_handle.get();

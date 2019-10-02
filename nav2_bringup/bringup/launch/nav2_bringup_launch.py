@@ -119,7 +119,6 @@ def generate_launch_description():
                                     'amcl',
                                     'controller_server',
                                     'planner_server',
-                                    'recoveries_server',
                                     'bt_navigator']}])
 
     # Create the launch description and populate
