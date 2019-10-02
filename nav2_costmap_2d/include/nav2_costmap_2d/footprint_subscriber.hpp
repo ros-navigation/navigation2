@@ -69,8 +69,7 @@ protected:
 
   std::string topic_name_;
   bool footprint_received_{false};
-  rclcpp::Time footprint_received_time_;
-  double footprint_timeout_;
+  rclcpp::Duration footprint_timeout_;
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };

@@ -55,8 +55,7 @@ FootprintSubscriber::FootprintSubscriber(
   node_logging_(node_logging),
   node_clock_(node_clock),
   topic_name_(topic_name),
-  footprint_received_time_(0.0),
-  footprint_timeout_(footprint_timeout)
+  footprint_timeout_(rclcpp::Duration(footprint_timeout, 0.))
 {
   footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(node_topics_,
       topic_name, rclcpp::SystemDefaultsQoS(),
@@ -74,9 +73,9 @@ FootprintSubscriber::getFootprint(
 
   footprint = toPointVector(
     std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
-  stamp = footprint_->header.stamp;
+  auto & footprint_stamp = footprint_->header.stamp;
 
-  if (stamp - footprint_received_time_ > rclcpp::Duration(1.0, 0.0)) {
+  if (stamp - footprint_stamp > footprint_timeout_) {
     return false;
   }
 
@@ -94,7 +93,6 @@ void
 FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
 {
   footprint_ = msg;
-  footprint_received_time_ = msg->header.stamp;
   if (!footprint_received_) {
     footprint_received_ = true;
   }
