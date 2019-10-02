@@ -185,6 +185,8 @@ PlannerServer::computePathToPose()
 
     geometry_msgs::msg::PoseStamped start;
     if (!nav2_util::getCurrentPose(start, *tf_)) {
+      RCLCPP_INFO(get_logger(), "Start pose unavailable. Canceling planning action.");
+      action_server_->terminate_goals();
       return;
     }
 
