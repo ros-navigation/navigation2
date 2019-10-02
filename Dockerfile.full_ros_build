@@ -15,7 +15,32 @@
 # everything from source in one big workspace.
 
 ARG FROM_IMAGE=osrf/ros2:devel
-FROM $FROM_IMAGE
+
+# multi-stage for caching
+FROM $FROM_IMAGE AS cache
+
+# clone underlay source
+ENV UNDERLAY_WS /opt/underlay_ws
+RUN mkdir -p $UNDERLAY_WS/src
+WORKDIR $UNDERLAY_WS
+COPY ./tools/ros2_dependencies.repos ./
+RUN vcs import src < ros2_dependencies.repos
+
+# copy overlay source
+ENV OVERLAY_WS /opt/overlay_ws
+RUN mkdir -p $OVERLAY_WS/src
+WORKDIR $OVERLAY_WS
+COPY ./ src/navigation2
+
+# copy manifests for caching
+WORKDIR /opt
+RUN find ./ -name "package.xml" | \
+      xargs cp --parents -t /tmp && \
+    find ./ -name "COLCON_IGNORE" | \
+      xargs cp --parents -t /tmp
+
+# multi-stage for building
+FROM $FROM_IMAGE AS build
 
 # install packages
 RUN apt-get update && apt-get install -q -y \
@@ -38,53 +63,79 @@ RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos \
 # get skip keys
 COPY ./tools/skip_keys.txt ./
 
-# install ros2 dependencies
+# copy underlay manifests
+COPY --from=cache /tmp/underlay_ws src/underlay
+RUN cd src/underlay && colcon list | \
+      cat > packages.txt && \
+    cd ../../ && colcon list \
+      --packages-up-to \
+        $(cat src/underlay/packages.txt | xargs) | \
+          cat > packages.txt
+
+# install underlay dependencies
 RUN apt-get update && rosdep install -y \
       --from-paths src \
       --ignore-src \
       --skip-keys \
         "$(cat skip_keys.txt | xargs)" \
+      $(cat packages.txt | xargs)
     && rm -rf /var/lib/apt/lists/*
 
-# get upstream source code
-COPY ./tools/ros2_dependencies.repos ./
-RUN vcs import src < ros2_dependencies.repos
-
-# install ros2 dependencies
-RUN apt-get update && rosdep install -y \
-      --from-paths src \
-      --ignore-src \
-      --skip-keys \
-        "$(cat skip_keys.txt | xargs)" \
-    && rm -rf /var/lib/apt/lists/*
-
-# get nav2 source code
-ENV NAV2_DIR $ROS2_WS/src/navigation2
-COPY ./ src/navigation2/
-
-# clone dependency package repos
-ENV NAV2_DEPS_DIR $ROS2_WS/src/navigation2_dependencies
-RUN mkdir -p $NAV2_DEPS_DIR
-
-# install ros2 dependencies
-RUN apt-get update && rosdep install -y \
-      --from-paths src \
-      --ignore-src \
-      --skip-keys \
-        "$(cat skip_keys.txt | xargs)" \
-    && rm -rf /var/lib/apt/lists/*
-
-# build source
-ARG MIXINS="build-testing-on release"
-RUN NAV2_PACKAGES=$(cd src/navigation2 && colcon list -n) \
-    colcon build \
+# build ros2 source
+ARG ROS2_MIXINS="build-testing-on release"
+RUN colcon build \
       --symlink-install \
       --mixin \
-        $MIXINS \
-      --packages-up-to \
-        $NAV2_PACKAGES \
+        $ROS2_MIXINS \
+      --packages-select-by-dep \
+        $(cat src/underlay/packages.txt | xargs) \
       --cmake-args --no-warn-unused-cli
 
+# copy underlay source
+COPY --from=cache /opt/underlay_ws src/underlay
+
+# build underlay source
+ARG UNDERLAY_MIXINS="build-testing-on release"
+RUN colcon build \
+      --symlink-install \
+      --mixin \
+        $UNDERLAY_MIXINS \
+      --packages-up-to \
+        $(cat src/underlay/packages.txt | xargs) \
+      --cmake-args --no-warn-unused-cli
+
+# copy overlay manifests
+COPY --from=cache /tmp/overlay_ws src/overlay
+RUN cd src/overlay && colcon list | \
+      cat > packages.txt && \
+    cd ../../ && colcon list \
+      --packages-up-to \
+        $(cat src/overlay/packages.txt | xargs) | \
+          cat > packages.txt
+
+# install overlay dependencies
+RUN apt-get update && rosdep install -y \
+      --from-paths src \
+      --ignore-src \
+      --skip-keys \
+        "$(cat skip_keys.txt | xargs)" \
+      $(cat packages.txt | xargs)
+    && rm -rf /var/lib/apt/lists/*
+
+# copy overlay source
+COPY --from=cache /opt/overlay_ws src/overlay
+
+# build overlay source
+ARG OVERLAY_MIXINS="build-testing-on release"
+RUN colcon build \
+      --symlink-install \
+      --mixin \
+        $OVERLAY_MIXINS \
+      --packages-up-to \
+        $(cat src/overlay/packages.txt | xargs) \
+      --cmake-args --no-warn-unused-cli
+
+# test overlay source
 ARG RUN_TESTS
 ARG FAIL_ON_TEST_FAILURE
 RUN if [ ! -z "$RUN_TESTS" ]; then \
