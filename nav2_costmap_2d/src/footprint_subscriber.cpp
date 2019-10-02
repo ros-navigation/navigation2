@@ -64,20 +64,26 @@ FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footp
   footprint = toPointVector(
     std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
   stamp = footprint_->header.stamp;
+
+  if (stamp - footprint_received_time_ > rclcpp::Duration(1.0, 0.0)) {
+    return false;
+  }
+
   return true;
 }
 
 bool
 FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint)
 {
-  rclcpp::Time temp;
-  return getFootprint(footprint, temp);
+  rclcpp::Time t = node_clock_->get_clock()->now();
+  return getFootprint(footprint, t);
 }
 
 void
 FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
 {
   footprint_ = msg;
+  footprint_received_time_ = msg->header.stamp;
   if (!footprint_received_) {
     footprint_received_ = true;
   }
