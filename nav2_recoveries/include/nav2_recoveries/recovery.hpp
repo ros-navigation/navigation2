@@ -130,18 +130,20 @@ public:
 
   void activate() override
   {
+    vel_pub_->on_activate();
     enabled_ = true;
   }
 
   void deactivate() override
   {
+    vel_pub_->on_deactivate();
     enabled_ = false;
   }
 
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::string recovery_name_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<ActionServer> action_server_;
 
