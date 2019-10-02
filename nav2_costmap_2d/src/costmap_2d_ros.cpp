@@ -192,28 +192,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_->on_activate();
   footprint_pub_->on_activate();
 
-  // First, make sure that the transform between the robot base frame
-  // and the global frame is available
-
-  std::string tf_error;
-
-  RCLCPP_INFO(get_logger(), "Checking transform");
-  rclcpp::Rate r(2);
-  while (rclcpp::ok() &&
-    !tf_buffer_->canTransform(
-      global_frame_, robot_base_frame_, tf2::TimePointZero, &tf_error))
-  {
-    RCLCPP_INFO(
-      get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available, tf error: %s",
-      robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
-
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation
-    tf_error.clear();
-    r.sleep();
-  }
-
   // Create a thread to handle updating the map
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
@@ -385,9 +363,29 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     return;
   }
 
-  RCLCPP_DEBUG(get_logger(), "Entering loop");
+  // First, make sure that the transform between the robot base frame
+  // and the global frame is available
 
+  std::string tf_error;
   rclcpp::Rate r(frequency);    // 200ms by default
+
+  RCLCPP_INFO(get_logger(), "Checking transform");
+  while (rclcpp::ok() &&
+    !tf_buffer_->canTransform(
+      global_frame_, robot_base_frame_, tf2::TimePointZero, &tf_error))
+  {
+    RCLCPP_INFO(
+      get_logger(),
+      "Timed out waiting for transform from %s to %s to become available, tf error: %s",
+      robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
+
+    // The error string will accumulate and errors will typically be the same, so the last
+    // will do for the warning above. Reset the string here to avoid accumulation
+    tf_error.clear();
+    r.sleep();
+  }
+
+  RCLCPP_DEBUG(get_logger(), "Entering loop");
 
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
@@ -472,13 +470,6 @@ Costmap2DROS::start()
     stopped_ = false;
   }
   stop_updates_ = false;
-
-  // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(20.0);
-  while (rclcpp::ok() && !initialized_) {
-    RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
-    r.sleep();
-  }
 }
 
 void
