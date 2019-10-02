@@ -1,6 +1,6 @@
 # Dynamic Obstacle
 
-Dynamic Obstacle. 30x30 cm box.
+Dynamic Obstacle. 30x30x30 cm box.
 
 Updates its velocity direction and amount every 3 seconds. Max velocity is 0.5. 
 
