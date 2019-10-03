@@ -112,8 +112,9 @@ new_goal_received:
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle, std::chrono::seconds(1)) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
-      RCLCPP_INFO(node_->get_logger(),
+      RCLCPP_ERROR(node_->get_logger(),
         "Failed to send goal for \"%s\" action server", action_name_.c_str());
+      setStatus(BT::NodeStatus::IDLE);
       return BT::NodeStatus::FAILURE;
       // throw std::runtime_error("send_goal failed");
     }
