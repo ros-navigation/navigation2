@@ -49,6 +49,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::SUCCESS:
           {
             retry_count_ = 0;
+            halt();
             return BT::NodeStatus::SUCCESS;
           }
           break;
@@ -91,6 +92,7 @@ BT::NodeStatus RecoveryNode::tick()
           {
             current_child_idx_--;
             retry_count_ = 0;
+            halt();
             return BT::NodeStatus::FAILURE;
           }
           break;
@@ -108,6 +110,7 @@ BT::NodeStatus RecoveryNode::tick()
     }
   }  // end while loop
   retry_count_ = 0;
+  halt();
   return BT::NodeStatus::FAILURE;
 }
 
