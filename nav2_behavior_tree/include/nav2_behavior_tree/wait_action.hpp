@@ -45,6 +45,11 @@ public:
 
     goal_.time.sec = duration;
   }
+
+  BT::NodeStatus on_send_goal_failure() override
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
 };
 
 }  // namespace nav2_behavior_tree

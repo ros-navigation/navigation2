@@ -40,6 +40,11 @@ public:
   {
     goal_.target_yaw = M_PI / 2;
   }
+
+  BT::NodeStatus on_send_goal_failure() override
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
 };
 
 }  // namespace nav2_behavior_tree

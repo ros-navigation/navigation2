@@ -61,12 +61,11 @@ public:
     node_loop_timeout_ =
       blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
+    send_goal_timeout_ =
+      blackboard()->template get<std::chrono::milliseconds>("send_goal_timeout");
+
     // Now that we have the ROS node to use, create the action client for this BT action
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    // action_client_->wait_for_action_server();
 
     // Give the derive class a chance to do any initialization
     on_init();
@@ -98,6 +97,14 @@ public:
   {
   }
 
+  // Return a BT::NodeStatus when the action client fails to send the goal and allow derived
+  // classes to override. Particularly for recoveries, this can be overridden to return SUCCESS
+  // so that the remaining recoveries can be attempted. By default it returns FAILURE.
+  virtual BT::NodeStatus on_send_goal_failure()
+  {
+    return BT::NodeStatus::FAILURE;
+  }
+
   // The main override required by a BT action
   BT::NodeStatus tick() override
   {
@@ -109,14 +116,13 @@ public:
 
 new_goal_received:
     auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, std::chrono::seconds(1)) !=
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, send_goal_timeout_) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(node_->get_logger(),
         "Failed to send goal for \"%s\" action server", action_name_.c_str());
       setStatus(BT::NodeStatus::IDLE);
-      return BT::NodeStatus::FAILURE;
-      // throw std::runtime_error("send_goal failed");
+      return on_send_goal_failure();
     }
 
     goal_handle_ = future_goal_handle.get();
@@ -216,9 +222,12 @@ protected:
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
 
-  // The timeout value while to use in the tick loop while waiting for
+  // The timeout value to use while in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
+
+  // The timeout value to use to wait for sending a goal request
+  std::chrono::milliseconds send_goal_timeout_;
 };
 
 }  // namespace nav2_behavior_tree

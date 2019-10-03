@@ -40,6 +40,11 @@ public:
     goal_.target.y = 0.0;
     goal_.target.z = 0.0;
   }
+
+  BT::NodeStatus on_send_goal_failure() override
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
 };
 
 }  // namespace nav2_behavior_tree

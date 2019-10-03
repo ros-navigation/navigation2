@@ -39,6 +39,11 @@ public:
   void on_init() override
   {
   }
+
+  BT::NodeStatus on_send_request_failure() override
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
 };
 
 }  // namespace nav2_behavior_tree

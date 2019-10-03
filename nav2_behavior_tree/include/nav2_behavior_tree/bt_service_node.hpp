@@ -66,16 +66,19 @@ public:
     // Now that we have node_ to use, create the service client for this BT service
     service_client_ = node_->create_client<ServiceT>(service_name_);
 
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" service",
-      service_name_.c_str());
-    // service_client_->wait_for_service();
-
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());
 
     // Give user a chance for initialization and get the service name
     on_init();
+  }
+
+  // Return a BT::NodeStatus when the client fails to send the request and allow derived
+  // classes to override. Particularly for recoveries, this can be overridden to return SUCCESS
+  // so that the remaining recoveries can be attempted. By default it returns FAILURE.
+  virtual BT::NodeStatus on_send_request_failure()
+  {
+    return BT::NodeStatus::FAILURE;
   }
 
   // The main override required by a BT service
@@ -88,7 +91,9 @@ public:
     rc = rclcpp::spin_until_future_complete(node_,
         future_result, node_loop_timeout_);
     if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
-      return BT::NodeStatus::FAILURE;
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to send request for \"%s\" service", service_name_.c_str());
+      return on_send_request_failure();
     } else {
       return BT::NodeStatus::SUCCESS;
     }
