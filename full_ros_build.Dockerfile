@@ -6,12 +6,12 @@
 # docker build \
 #   --no-cache \
 #   --tag nav2:full_ros_build \
-#   --file Dockerfile.full_ros_build ./
+#   --file full_ros_build.Dockerfile ./
 #
 # Omit the `--no-cache` if you know you don't need to break the cache.
 # We're only building on top of a ros2 devel image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
-# actually use any of the ros dashing packages. Instead we are going to build
+# actually use any of the ros release packages. Instead we are going to build
 # everything from source in one big workspace.
 
 ARG FROM_IMAGE=osrf/ros2:devel
