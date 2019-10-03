@@ -117,7 +117,7 @@ Visualization Manager:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
-        Reliability Policy: Reliable
+        Reliability Policy: Best Effort
         Value: /scan
       Use Fixed Frame: true
       Use rainbow: true
@@ -150,7 +150,7 @@ Visualization Manager:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
-        Reliability Policy: Reliable
+        Reliability Policy: Best Effort
         Value: /mobile_base/sensors/bumper_pointcloud
       Use Fixed Frame: true
       Use rainbow: true
@@ -198,8 +198,8 @@ Visualization Manager:
           Enabled: true
           Name: Global Costmap
           Topic:
-            Depth: 5
-            Durability Policy: Volatile
+            Depth: 1
+            Durability Policy: Transient Local
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /global_costmap/costmap
@@ -255,8 +255,8 @@ Visualization Manager:
           Enabled: true
           Name: Local Costmap
           Topic:
-            Depth: 5
-            Durability Policy: Volatile
+            Depth: 1
+            Durability Policy: Transient Local
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /local_costmap/costmap
