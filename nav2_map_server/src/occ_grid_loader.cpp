@@ -183,10 +183,6 @@ nav2_util::CallbackReturn OccGridLoader::on_activate(const rclcpp_lifecycle::Sta
   occ_pub_->on_activate();
   occ_pub_->publish(*msg_);
 
-  // due to timing / discovery issues, need to republish map
-  auto timer_callback = [this]() -> void {occ_pub_->publish(*msg_);};
-  timer_ = node_->create_wall_timer(2s, timer_callback);
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
