@@ -28,8 +28,8 @@ namespace nav2_behavior_tree
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
 public:
-  explicit WaitAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::Wait>(action_name)
+  explicit WaitAction(const std::string & action_name, const BT::NodeParameters & params)
+  : BtActionNode<nav2_msgs::action::Wait>(action_name, params)
   {
   }
 
@@ -44,6 +44,13 @@ public:
     }
 
     goal_.time.sec = duration;
+  }
+
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  static const BT::NodeParameters & requiredNodeParameters()
+  {
+    static BT::NodeParameters params = {{"wait_duration", "1"}};
+    return params;
   }
 };
 
