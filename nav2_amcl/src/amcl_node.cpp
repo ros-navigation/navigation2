@@ -1214,7 +1214,7 @@ AmclNode::initOdometry()
   // When pausing and resuming, remember the last robot pose so we don't start at 0:0 again
   init_pose_[0] = last_published_pose_.pose.pose.position.x;
   init_pose_[1] = last_published_pose_.pose.pose.position.y;
-  init_pose_[2] = last_published_pose_.pose.pose.position.z;
+  init_pose_[2] = tf2::getYaw(last_published_pose_.pose.pose.orientation);
 
   if (!initial_pose_is_known_) {
     init_cov_[0] = 0.5 * 0.5;
