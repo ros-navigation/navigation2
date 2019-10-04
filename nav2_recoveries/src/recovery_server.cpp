@@ -123,6 +123,10 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
     (*iter)->cleanup();
   }
 
+  recoveries_.clear();
+  transform_listener_.reset();
+  tf_.reset();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
