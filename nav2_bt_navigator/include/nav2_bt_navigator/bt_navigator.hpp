@@ -26,6 +26,7 @@
 #include "nav2_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_ros/transform_listener.h"
 
 namespace nav2_bt_navigator
 {
@@ -83,6 +84,10 @@ protected:
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
+
+  // Spinning transform that can be used by the BT nodes
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_bt_navigator

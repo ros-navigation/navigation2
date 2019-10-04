@@ -66,12 +66,11 @@ references:
               cat << parameters.underlay >>/checksum.txt > checksum.txt
               vcs export --exact src | \
                 (echo vcs_export && cat) >> checksum.txt
-              sha256sum checksum.txt >> checksum.txt
+              sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
               dependencies=$(
                 rosdep install -q -y \
-                  --from-paths \
-                    $UNDERLAY_WS/src \
+                  --from-paths src \
                   --ignore-src \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
@@ -79,7 +78,7 @@ references:
                 tr -d \, | xargs -n1 | sort -u | xargs)
               dpkg -s $dependencies | \
                 (echo workspace_dependencies && cat) >> checksum.txt
-              sha256sum checksum.txt >> checksum.txt
+              sha256sum $PWD/checksum.txt >> checksum.txt
     setup_workspace:
       description: "Setup Workspace"
       parameters:
@@ -177,14 +176,14 @@ references:
     run:
       name: Pre Checkout
       command: |
-        mkdir -p $ROS_WS
-        ln -s /opt/ros/$ROS_DISTRO $ROS_WS/install
+        mkdir -p $ROS_WS && cd $ROS_WS
+        ln -s /opt/ros/$ROS_DISTRO install
         echo $CACHE_NONCE | \
-          (echo cache_nonce && cat) >> $ROS_WS/checksum.txt
-        sha256sum $ROS_WS/checksum.txt >> $ROS_WS/checksum.txt
+          (echo cache_nonce && cat) >> checksum.txt
+        sha256sum $PWD/checksum.txt >> checksum.txt
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
-          (echo ros_entrypoint && cat) >> $ROS_WS/checksum.txt
-        sha256sum $ROS_WS/checksum.txt >> $ROS_WS/checksum.txt
+          (echo ros_entrypoint && cat) >> checksum.txt
+        sha256sum $PWD/checksum.txt >> checksum.txt
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
@@ -193,7 +192,6 @@ references:
     run:
       name: Post Checkout
       command: |
-        rm $OVERLAY_WS/src/navigation2/nav2_system_tests/COLCON_IGNORE
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
           $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
@@ -234,7 +232,7 @@ references:
       build: false
   install_overlay_dependencies: &install_overlay_dependencies
     install_dependencies:
-      underlay: /opt/ros_ws
+      underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
   setup_overlay_workspace: &setup_overlay_workspace
     setup_workspace: &setup_workspace_overlay
@@ -322,7 +320,7 @@ executors:
       <<: *common_environment
       CACHE_NONCE: "Debug"
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
-      UNDERLAY_MIXINS: "debug ccache"
+      UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
       - image: rosplanning/navigation2:master.release
@@ -360,6 +358,10 @@ jobs:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_connext_cpp"
+  test_rmw_cyclonedds_cpp:
+    <<: *release_test
+    environment:
+      RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
   test_rmw_fastrtps_cpp:
     <<: *release_test
     environment:
@@ -389,6 +391,9 @@ workflows:
             - debug_build
       - release_build
       - test_rmw_connext_cpp:
+          requires:
+            - release_build
+      - test_rmw_cyclonedds_cpp:
           requires:
             - release_build
       - test_rmw_fastrtps_cpp:
