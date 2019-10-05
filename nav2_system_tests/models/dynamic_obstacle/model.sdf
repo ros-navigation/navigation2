@@ -34,7 +34,7 @@
             <bounce>
               <restitution_coefficient>0.0</restitution_coefficient>
               <threshold>100000</threshold>
-     </bounce>
+            </bounce>
 	  <contact>
             <ode>
               <soft_cfm>0</soft_cfm>
