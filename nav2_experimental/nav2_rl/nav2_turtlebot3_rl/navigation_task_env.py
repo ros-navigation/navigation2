@@ -42,8 +42,6 @@ class NavigationTaskEnv(Turtlebot3Environment):
 
         self.current_pose = Pose()
         self.goal_pose = Pose()
-        print(self.states)
-        print(self.observation_space_size())
         high = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
     def get_actions(self):
