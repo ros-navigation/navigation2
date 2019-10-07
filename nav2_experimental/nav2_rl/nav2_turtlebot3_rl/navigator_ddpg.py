@@ -21,6 +21,7 @@ from time import sleep
 import sys
 import numpy as np
 import gym
+from gym import spaces
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Concatenate
@@ -40,6 +41,13 @@ class TB3Processor(WhiteningNormalizerProcessor):
 
 
 class TB3NavigationEnvironmentDDPG(NavigationTaskEnv):
+    def __init__(self):
+        super().__init__()
+        self.action_space = spaces.Box(low=-0.2,
+                                       high=0.2,
+                                       shape=(2,),
+                                       dtype=np.float32)
+
     def get_actions(self):
         return [0.0, 0.0]
 
@@ -54,16 +62,16 @@ class TB3NavigationEnvironmentDDPG(NavigationTaskEnv):
 class NavigatorDDPG():
     def __init__(self, env):
         self.state = env.reset()
-        self.observation_space = env.observation_space()
+        self.observation_space_size = env.observation_space_size()
         self.build_model(env)
 
     def build_model(self, env):
 
-        nb_actions = env.action_space()
+        nb_actions = env.action_space_size()
         actor = Sequential()
 
         # Actor Model
-        actor.add(Flatten(input_shape=(1,) + (self.observation_space,)))
+        actor.add(Flatten(input_shape=(1,) + (self.observation_space_size,)))
         actor.add(Dense(32))
         actor.add(Activation('relu'))
         actor.add(Dense(32))
@@ -76,7 +84,8 @@ class NavigatorDDPG():
 
         # Critic Model
         action_input = Input(shape=(nb_actions,), name='action_input')
-        observation_input = Input(shape=(1,) + (self.observation_space,), name='observation_input')
+        observation_input = Input(shape=(1,) + (self.observation_space_size,),
+                                  name='observation_input')
         flattened_observation = Flatten()(observation_input)
         x = Concatenate()([action_input, flattened_observation])
         x = Dense(64)(x)
@@ -121,7 +130,7 @@ class NavigatorDDPG():
 def main(args=None):
     rclpy.init(args=args)
     env = TB3NavigationEnvironmentDDPG()
-    action_size = env.action_space()
+    action_size = env.action_space_size()
     ddpg_agent = NavigatorDDPG(env)
 
     # Ctrl-C doesn't make rclpy.ok() to return false. Thus, we catch the exception with
