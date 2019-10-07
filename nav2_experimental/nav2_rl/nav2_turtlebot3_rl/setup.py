@@ -19,6 +19,8 @@ setup(
         'gazebo_interface',
         'turtlebot3_environment',
         'navigation_task_env',
+	    'coach_navigator_ddpg',
+        'coach_navigator_dqn',
     ],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -48,6 +50,8 @@ setup(
             'random_crawl = random_crawl:main',
             'random_crawl_action = random_crawl_action:main',
             'navigator_ddpg = navigator_ddpg:main',
+	        'coach_navigator_ddpg = coach_navigator_ddpg:main',
+            'coach_navigator_dqn = coach_navigator_dqn:main',
             'navigator_dqn = navigator_dqn:main',
         ],
     },
