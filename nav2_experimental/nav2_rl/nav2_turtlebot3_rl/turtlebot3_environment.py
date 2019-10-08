@@ -117,17 +117,17 @@ class Turtlebot3Environment(GazeboInterface):
         self.current_pose.orientation = future.result().state.pose.orientation
 
     def reset_tb3_env(self):
-
+        
         self.unpause_gazebo_world()
         self.stop_action()
         self.reset_gazebo_world()
-
+        
         self.time_factor = self.get_time_factor()
 
         self.scan_msg_received = False
         #self.reset_gazebo_world()
         # self.reset_gazebo_simulation()
-
+        
         self.stop_action()
 
         self.laser_scan_range = [0] * 360
