@@ -24,8 +24,6 @@ import parameters
 from geometry_msgs.msg import Twist, Pose
 from sensor_msgs.msg import LaserScan
 from gazebo_msgs.srv import GetEntityState
-from nav_msgs.msg import Path
-
 
 class Turtlebot3Environment(GazeboInterface):
     def __init__(self):
@@ -42,7 +40,6 @@ class Turtlebot3Environment(GazeboInterface):
         self.zero_div_tol = 0.01
         self.range_min = 0.0
         self.states = []
-        self.path = Path()
 
         self.current_pose = Pose()
         self.goal_pose = Pose()
@@ -50,11 +47,7 @@ class Turtlebot3Environment(GazeboInterface):
         self.pub_cmd_vel = self.node_.create_publisher(Twist, 'cmd_vel', 1)
         self.sub_scan = self.node_.create_subscription(LaserScan, '/turtlebot3_laserscan/out', self.scan_callback,
                                                        qos_profile_sensor_data)
-        self.sub_path = self.node_.create_subscription(Path, 'plan', self.path_callback,
-                                                       qos_profile_sensor_data)
-
         self.scan_msg_received = False
-        self.path_updated_time = self.node_._clock.now()
 
     def scan_callback(self, LaserScan):
         self.scan_msg_received = True
@@ -79,11 +72,6 @@ class Turtlebot3Environment(GazeboInterface):
         if self.check_collision():
             self.collision = True
             self.done = True
-
-    def path_callback(self, PathMsg):
-        self.path = PathMsg
-        self.path_updated_time = self.node_._clock.now()
-        print("Plan received")
 
     def check_collision(self):
         if min(self.states_input) < self.range_min + self.collision_tol:
