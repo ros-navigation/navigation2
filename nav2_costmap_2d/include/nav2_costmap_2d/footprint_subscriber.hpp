@@ -48,10 +48,7 @@ public:
 
   ~FootprintSubscriber() {}
 
-  // Returns an oriented robot footprint.
-  // The footprint received by the subscriber has already been transformed
-  // such that all points are in the global frame.
-  // This frame is assumed to be known out of band, but typically it is "map".
+  // Returns an oriented robot footprint at current time.
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
   // Returns an oriented robot footprint.
