@@ -105,15 +105,6 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
-            package='nav2_amcl',
-            node_executable='amcl',
-            node_name='amcl',
-            output='screen',
-            parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
-            remappings=remappings),
-
-        Node(
             condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',

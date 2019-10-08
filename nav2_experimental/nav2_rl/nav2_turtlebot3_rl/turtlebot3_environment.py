@@ -125,8 +125,8 @@ class Turtlebot3Environment(GazeboInterface):
         self.time_factor = self.get_time_factor()
 
         self.scan_msg_received = False
-        self.reset_gazebo_world()
-        self.reset_gazebo_simulation()
+        #self.reset_gazebo_world()
+        # self.reset_gazebo_simulation()
 
         self.stop_action()
 

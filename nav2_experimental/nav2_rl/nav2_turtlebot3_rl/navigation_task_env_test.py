@@ -14,22 +14,11 @@
 
 from navigation_task_env import NavigationTaskEnv
 
-import numpy as np
-from math import pi, atan2, sin, cos
-import math
-import random
-from time import sleep
-
-import rclpy
-from rclpy.action import ActionClient
-from rclpy.node import Node
-from nav2_msgs.action import NavigateToPose
-import nav2_msgs
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Twist, Pose
-
-
 class Test(NavigationTaskEnv):
+    '''
+    This is a simple test to check if the navigation task is
+    getting the path using the ComputePathToPose action.
+    '''
     def __init__(self):
         super().__init__()
 
@@ -40,11 +29,9 @@ class Test(NavigationTaskEnv):
         '''
         Call reset and check if new path is received
         '''
-        #rclpy.init(args=args)
-
-        for _ in range(1):
-            self.reset()
-            print("Received path length is : " + str(len(self.path.poses)))
+        self.reset()
+        for i in (self.result_path):
+            print(str(i.pose.position.x) + " " + str(i.pose.position.y))
 
 if __name__=="__main__":
     test = Test()

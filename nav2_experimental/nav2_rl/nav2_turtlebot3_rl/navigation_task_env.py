@@ -23,10 +23,11 @@ from time import sleep
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from nav2_msgs.action import NavigateToPose
+from nav2_msgs.action import ComputePathToPose
 import nav2_msgs
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from geometry_msgs.msg import Twist, Pose
+from action_msgs.msg import GoalStatus
 
 from gym import spaces
 
@@ -38,7 +39,6 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.act = 0
         self.done = False
         self.actions = self.get_actions()
-
         self.collision = False
         self.collision_tol = 0.125
         self.laser_scan_range = [0] * 360
@@ -51,8 +51,43 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.goal_pose = Pose()
         high = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+        self.result_path = None
+        self.action_client_ = ActionClient(self.node_, ComputePathToPose, 'ComputePathToPose') 
+        self.new_path_received = False
 
-        self.action_client_ = ActionClient(self.node_, NavigateToPose, 'NavigateToPose')
+    def send_goal(self, goal_pose):
+        goal_msg = nav2_msgs.action.ComputePathToPose.Goal()
+        goal_msg.pose = goal_pose
+        self.action_client_.wait_for_server()
+        print("Server ready : "+ str(self.action_client_.server_is_ready()) + str('. Goal Sent!'))
+
+        self._send_goal_future = self.action_client_.send_goal_async(
+            goal_msg)
+        
+        self._send_goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            print('Goal rejected')
+            return
+
+        print('Goal accepted')
+
+        self._get_result_future = goal_handle.get_result_async()
+        self._get_result_future.add_done_callback(self.get_result_callback)
+
+    def get_result_callback(self, future):
+        result = future.result().result
+        status = future.result().status
+
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            print('Goal succeeded! Received path of length ' + str(len(result.path.poses)) + str('.'))
+        else:
+            print("Failed to get path")
+
+        self.result_path = result.path.poses
+        self.new_path_received = True
 
     def get_actions(self):
         """Defines the actions that the environment can have
@@ -106,13 +141,16 @@ class NavigationTaskEnv(Turtlebot3Environment):
         random_pose = Pose()
         yaw = random.uniform(0, pi * 2)
 
-        random_pose.position.x = 0.2#random.uniform(-2, 2)
-        random_pose.position.y = 1.9#random.uniform(-2, 2)
+        random_pose.position.x = random.uniform(-2, 2)
+        random_pose.position.y = random.uniform(-2, 2)
         random_pose.position.z = 0.0
         random_pose.orientation.x = 0.0
         random_pose.orientation.y = 0.0
         random_pose.orientation.z = sin(yaw * 0.5)
         random_pose.orientation.w = cos(yaw * 0.5)
+        
+        print(str(random_pose.position.x) + " " + str(random_pose.position.y))
+
         return random_pose
 
     def sq_distance_to_goal(self):
@@ -170,30 +208,23 @@ class NavigationTaskEnv(Turtlebot3Environment):
         self.set_random_robot_pose()
         self.set_random_goal_pose()
 
+        sleep(1.0)
         self.get_path()
 
         return self.observation()
 
     def get_path(self):
         '''
-        This function will call NavigateToPose action service. Then the planner_server will
-        publish the global path. We then subscribe to the path. 
+        This function will internally calls ComputePathToPose action service,
+        and saves the path.
         '''
-        # Call action server with new goal pose
-        goal_msg = nav2_msgs.action.NavigateToPose.Goal()
+        goal_msg = PoseStamped()
         
-        goal_msg.pose.pose.position.x = self.goal_pose.position.x
-        goal_msg.pose.pose.position.y = self.goal_pose.position.y
+        goal_msg.pose.position.x = self.goal_pose.position.x
+        goal_msg.pose.position.y = self.goal_pose.position.y
 
-        self.action_client_.wait_for_server()
-        self.action_client_.send_goal_async(goal_msg)
-        print("Goal sent.")
-        
-        ref_time = self.node_._clock.now()
+        self.send_goal(goal_msg)
 
-        # Listen to subscribed path, and wait until we get new path
-        print("Wait for path. Sleep for 1 second.")
-        # while (self.path_updated_time < ref_time):
-            # sleep(0.001)
-        sleep(1.0)
-        # print("Received new path")
+        while not self.new_path_received:
+            sleep(0.1)
+        self.new_path_received = False
