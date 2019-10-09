@@ -105,7 +105,6 @@ class Turtlebot3Environment(GazeboInterface):
         self.current_pose.orientation = future.result().state.pose.orientation
 
     def reset_tb3_env(self):
-        
         self.unpause_gazebo_world()
         self.stop_action()
         self.reset_gazebo_world()
