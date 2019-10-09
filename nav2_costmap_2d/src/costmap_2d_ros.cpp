@@ -68,7 +68,7 @@ Costmap2DROS::Costmap2DROS(
     rclcpp::NodeOptions().arguments({
     "--ros-args", "-r", std::string("__ns:=") +
     nav2_util::add_namespaces(parent_namespace, local_namespace),
-    "--ros-args", "-r", std::string("__node:=") + name
+    "--ros-args", "-r", name + ":" + std::string("__node:=") + name
   })),
   name_(name), parent_namespace_(parent_namespace)
 {
