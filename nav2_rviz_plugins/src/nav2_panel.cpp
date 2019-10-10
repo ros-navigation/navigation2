@@ -159,10 +159,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(resumed_);
 
   state_machine_.setInitialState(pre_initial_);
-  state_machine_.start();
 
   // delay starting initial thread until state machine has started or a race occurs
   QObject::connect(&state_machine_, SIGNAL(started()), this, SLOT(startThread()));
+  state_machine_.start();
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
