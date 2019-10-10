@@ -49,11 +49,16 @@ public:
   ~FootprintSubscriber() {}
 
   // Returns an oriented robot footprint at current time.
+  bool getFootprint(
+    std::vector<geometry_msgs::msg::Point> & footprint,
+    rclcpp::Duration & valid_footprint_timeout);
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
   // Returns an oriented robot footprint.
   // The second parameter is the time the fooptrint was at this orientation.
-  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp);
+  bool getFootprint(
+    std::vector<geometry_msgs::msg::Point> & footprint,
+    rclcpp::Time & stamp, rclcpp::Duration valid_footprint_timeout);
 
 protected:
   // Interfaces used for logging and creating publishers and subscribers

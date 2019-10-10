@@ -65,7 +65,8 @@ FootprintSubscriber::FootprintSubscriber(
 bool
 FootprintSubscriber::getFootprint(
   std::vector<geometry_msgs::msg::Point> & footprint,
-  rclcpp::Time & stamp)
+  rclcpp::Time & stamp,
+  rclcpp::Duration valid_footprint_timeout)
 {
   if (!footprint_received_) {
     return false;
@@ -75,7 +76,7 @@ FootprintSubscriber::getFootprint(
     std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
   auto & footprint_stamp = footprint_->header.stamp;
 
-  if (stamp - footprint_stamp > footprint_timeout_) {
+  if (stamp - footprint_stamp > valid_footprint_timeout) {
     return false;
   }
 
@@ -83,10 +84,19 @@ FootprintSubscriber::getFootprint(
 }
 
 bool
-FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint)
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint,
+  rclcpp::Duration & valid_footprint_timeout)
 {
   rclcpp::Time t = node_clock_->get_clock()->now();
-  return getFootprint(footprint, t);
+  return getFootprint(footprint, t, valid_footprint_timeout);
+}
+
+bool
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint)
+{
+  return getFootprint(footprint, footprint_timeout_);
 }
 
 void
