@@ -17,7 +17,6 @@
 #include <memory>
 #include <string>
 
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_behavior_tree/back_up_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_behavior_tree/compute_path_to_pose_action.hpp"

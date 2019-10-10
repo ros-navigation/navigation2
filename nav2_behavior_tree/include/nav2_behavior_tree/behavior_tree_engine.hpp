@@ -19,7 +19,6 @@
 #include <string>
 
 #include "behaviortree_cpp/behavior_tree.h"
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
