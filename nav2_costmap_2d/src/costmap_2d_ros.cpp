@@ -89,7 +89,7 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("height", rclcpp::ParameterValue(10));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
   declare_parameter("map_topic", rclcpp::ParameterValue(
-      (parent_namespace_ == "/" ? "" : parent_namespace_ + "/") + std::string("map")));
+      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
