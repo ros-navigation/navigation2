@@ -8,6 +8,9 @@
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
   <license>Apache License 2.0</license>
 
+  <build_depend>launch_ros</build_depend>
+  <exec_depend>launch_ros</exec_depend>
+
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>python-tensorflow-pip</exec_depend>

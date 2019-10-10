@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from navigation_task_env import NavigationTaskEnv
+import rclpy
 
 class Test(NavigationTaskEnv):
     '''
@@ -34,5 +35,6 @@ class Test(NavigationTaskEnv):
             print(str(i.pose.position.x) + " " + str(i.pose.position.y))
 
 if __name__=="__main__":
+    rclpy.init()
     test = Test()
     test.main()
