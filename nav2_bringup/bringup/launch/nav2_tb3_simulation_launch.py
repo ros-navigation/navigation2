@@ -52,13 +52,10 @@ def generate_launch_description():
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
+   remappings = [((namespace, '/tf'), '/tf'),
+                 ((namespace, '/tf_static'), '/tf_static'),
+                 ('/tf', 'tf'),
+                 ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -144,9 +141,7 @@ def generate_launch_description():
     #              Once fixed, launch by providing the remappings:
     # rviz_remappings = [('/tf', 'tf'),
     #                    ('/tf_static', 'tf_static'),
-    #                    ('goal_pose', 'goal_pose'),
     #                    ('/clicked_point', 'clicked_point'),
-    #                    ('/initialpose', 'initialpose'),
     #                    ('/parameter_events', 'parameter_events'),
     #                    ('/rosout', 'rosout')]
 
@@ -165,9 +160,7 @@ def generate_launch_description():
             ['__ns:=/', namespace],
             '/tf:=tf',
             '/tf_static:=tf_static',
-            '/goal_pose:=goal_pose',
-            '/clicked_point:=clicked_point',
-            '/initialpose:=initialpose'],
+            '/clicked_point:=clicked_point'],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(

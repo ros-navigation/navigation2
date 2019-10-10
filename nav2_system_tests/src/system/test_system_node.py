@@ -32,8 +32,8 @@ class NavTester(Node):
     def __init__(self):
         super().__init__('nav2_tester')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      '/initialpose', 10)
-        self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
+                                                      'initialpose', 10)
+        self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         pose_qos = QoSProfile(
           durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
@@ -42,7 +42,7 @@ class NavTester(Node):
           depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       '/amcl_pose', self.poseCallback, pose_qos)
+                                                       'amcl_pose', self.poseCallback, pose_qos)
         self.initial_pose_received = False
 
     def setInitialPose(self, pose):

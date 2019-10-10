@@ -63,7 +63,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/goal_pose",
+    "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
