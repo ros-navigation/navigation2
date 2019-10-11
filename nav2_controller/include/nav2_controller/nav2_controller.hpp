@@ -68,7 +68,7 @@ protected:
 
   // The local controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  std::unique_ptr<std::thread> costmap_thread_;
+  std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
 
   // Publishers and subscribers
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
@@ -77,9 +77,6 @@ protected:
   // Local Planner Plugin
   pluginlib::ClassLoader<nav2_core::LocalPlanner> lp_loader_;
   nav2_core::LocalPlanner::Ptr local_planner_;
-
-  // An executor used to spin the costmap node
-  rclcpp::executors::SingleThreadedExecutor costmap_executor_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
 
