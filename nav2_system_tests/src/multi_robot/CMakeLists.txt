@@ -5,4 +5,5 @@ ament_add_test(test_multi_robot
   TIMEOUT 120
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
 )

@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_bringup REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -25,6 +26,7 @@ nav2_package()
 set(dependencies
   rclcpp
   nav2_util
+  nav2_bringup
   nav2_msgs
   nav_msgs
   visualization_msgs

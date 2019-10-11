@@ -47,6 +47,7 @@ def generate_launch_description():
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_simulator = LaunchConfiguration('use_simulator')
+    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     simulator = LaunchConfiguration('simulator')
     world = LaunchConfiguration('world')
@@ -107,6 +108,11 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start the simulator')
 
+    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
+        'use_robot_state_pub',
+        default_value='True',
+        description='Whether to start the robot state publisher')
+
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
         default_value='True',
@@ -136,6 +142,7 @@ def generate_launch_description():
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
 
     start_robot_state_publisher_cmd = Node(
+        condition=IfCondition(use_robot_state_pub),
         package='robot_state_publisher',
         node_executable='robot_state_publisher',
         node_name='robot_state_publisher',
@@ -206,6 +213,7 @@ def generate_launch_description():
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
+    ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)

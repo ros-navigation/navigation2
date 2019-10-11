@@ -51,6 +51,7 @@ def generate_launch_description():
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
+    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
@@ -90,6 +91,11 @@ def generate_launch_description():
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
+
+    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
+        'use_robot_state_pub',
+        default_value='True',
+        description='Whether to start the robot state publisher')
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
@@ -148,7 +154,8 @@ def generate_launch_description():
                                   'use_remappings': 'True',
                                   'rviz_config_file': namespaced_rviz_config_file,
                                   'use_rviz': use_rviz,
-                                  'use_simulator': 'False'}.items()),
+                                  'use_simulator': 'False',
+                                  'use_robot_state_pub': use_robot_state_pub}.items()),
 
             LogInfo(
                 condition=IfCondition(log_settings),
@@ -165,6 +172,9 @@ def generate_launch_description():
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' using robot state pub: ', use_robot_state_pub]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' autostart: ', autostart])
@@ -192,6 +202,7 @@ def generate_launch_description():
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
+    ld.add_action(declare_use_robot_state_pub_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)
