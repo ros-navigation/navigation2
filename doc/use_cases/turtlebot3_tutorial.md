@@ -10,7 +10,7 @@ ROS2 Navigation2 - Turtlebot3 - Oct, 2019
 
 # Overview:
 
-This tutorial shows how to control and navigate Turtlebot 3 using the ROS 2 Navigation2. TurtleBot is a low-cost, personal robot kit with open-source software (ROS2). Turtblebot robots are widely supported by the ROS community. You can find many applications and examples of Turtlebot projects on the Internet. You can find more information about Turtlebot3 [here.](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
+This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2. Turtlebot is a low-cost, personal robot kit with open-source software (ROS2). Turtblebot robots are widely supported by the ROS community. You can find many applications and examples of Turtlebot projects on the Internet. You can find more information about Turtlebot3 [here.](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
 
 Links to the robot kits:
 
