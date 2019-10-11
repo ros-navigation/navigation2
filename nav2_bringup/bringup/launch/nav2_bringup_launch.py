@@ -14,7 +14,7 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from nav2_common.launch import Node
 
@@ -74,7 +74,7 @@ def generate_launch_description():
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
-            get_package_prefix('nav2_bt_navigator'),
+            get_package_share_directory('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
