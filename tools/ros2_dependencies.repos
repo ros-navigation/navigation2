@@ -2,7 +2,7 @@ repositories:
   BehaviorTree.CPP:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-    version: 2.5.2
+    version: ros2-version-2.x
   angles:
     type: git
     url: https://github.com/ros/angles.git
@@ -10,7 +10,7 @@ repositories:
   gazebo_ros_pkgs:
     type: git
     url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-    version: ros2
+    version: dashing
   image_common:
     type: git
     url: https://github.com/ros-perception/image_common.git
@@ -18,4 +18,4 @@ repositories:
   vision_opencv:
     type: git
     url: https://github.com/ros-perception/vision_opencv.git
-    version: ros2
+    version: dashing
