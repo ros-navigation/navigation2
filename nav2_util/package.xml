@@ -31,14 +31,8 @@
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>launch</test_depend>
-  <test_depend>launch_testing</test_depend>
   <test_depend>std_srvs</test_depend>
-  <test_depend>rclcpp_lifecycle</test_depend>
-  <test_depend>rclcpp_action</test_depend>
-  <test_depend>test_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
