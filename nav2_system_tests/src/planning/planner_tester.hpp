@@ -29,6 +29,7 @@
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
+#include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -166,9 +167,8 @@ private:
   // The global planner
   std::shared_ptr<NavFnPlannerTester> planner_tester_;
 
-  // A thread for spinning the ROS node and the executor used
-  std::unique_ptr<std::thread> spin_thread_;
-  rclcpp::executors::SingleThreadedExecutor executor_;
+  // A thread for spinning the ROS node
+  std::unique_ptr<nav2_util::NodeThread> spin_thread_;
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;

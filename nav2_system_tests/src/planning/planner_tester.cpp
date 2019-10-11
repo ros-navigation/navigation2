@@ -54,13 +54,7 @@ void PlannerTester::activate()
   is_active_ = true;
 
   // Launch a thread to process the messages for this node
-  spin_thread_ = std::make_unique<std::thread>(
-    [&]()
-    {
-      executor_.add_node(this->get_node_base_interface());
-      executor_.spin();
-      executor_.remove_node(this->get_node_base_interface());
-    });
+  spin_thread_ = std::make_unique<nav2_util::NodeThread>(this);
 
   // We start with a 10x10 grid with no obstacles
   costmap_ = std::make_unique<Costmap>(this);
@@ -87,8 +81,6 @@ void PlannerTester::deactivate()
   }
   is_active_ = false;
 
-  executor_.cancel();
-  spin_thread_->join();
   spin_thread_.reset();
 
   auto state = rclcpp_lifecycle::State();
