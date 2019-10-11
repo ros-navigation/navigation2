@@ -1,4 +1,3 @@
-
 ROS2 Navigation2 - Turtlebot3 - Oct, 2019
 # Navigation2 - Turtlebot 3
 
@@ -29,19 +28,31 @@ This tutorial may take about 2-5 hours to complete completely depends on your ex
 
 - Install Navigation2
 
-    - `sudo apt install ros-<ros2-distro>-navigation2`
+    - ```sudo apt install ros-<ros2-distro>-navigation2 ros-<ros2-distro>-nav2-bringup```
 
-    - `sudo apt install ros-<ros2-distro>-ros-dashing-nav2-bringup`
+- Install Turtlebot3 
 
-- [Build Turtlebot3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup)
+    - ```sudo apt install ros-<ros2-distro>-turtlebot3*```
+
+- [Setup Turtlbot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup)
 
 - [Install Gazebo](http://gazebosim.org/tutorials?tut=install_ubuntu&cat=install)
 
 ## Navigation2 with Turtlebot 3 in Gazebo
 
-### 0- Edit .bashrc
+### 0- Setup Your Enviroment Variables
 
-First, make sure you have the following lines in your .bashrc file.
+There are two ways to this.
+
+**- Option 1**  Run the following commands whenever you open a new terminal during this tutorial. If you are a beginner level ROS user or for any reason you don't don't want to do any perminant changes in your enviroment, this option is higly recommended. 
+
+- ```source /opt/ros/<ros2-distro>/setup.bash```
+- ```export TURTLEBOT3_MODEL=waffle```
+- ```export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models```
+
+**- Option 2** Edit your .bashrc file.
+
+You need to make sure you know what you are doing in this step, otherwise, these changes could cause issues especially, if you already have ROS1 or other ROS2 distributions installed on your system and you already edited your .bashrc file.
 
 Open a new terminal and open your .bashrc file which is located in your home directory. You can use your favorite text editor.
 
@@ -49,26 +60,24 @@ Open a new terminal and open your .bashrc file which is located in your home dir
 sudo gedit ~/.bashrc
 ```
 
-Add the following lines to the end of the file
+Add the following lines to the end of the file.
 
 ```
-source /opt/ros/<ros2_distro>/setup.bash
-source ~/turtlebot3_ws/install/setup.bash
+source /opt/ros/<ros2-distro>/setup.bash
 export TURTLEBOT3_MODEL=waffle
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models
 ```
-
 save the file and close it. Whenever we open a new terminal, this script will be executed. 
 
-*Please note that this will  make your terminal's start-up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.*
+*Please note that this will make your terminal's start-up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.*
 
 ### 1- Launch Gazebo
 
 Now, launch Gazebo with the world model, open a new terminal and type
 
-    gazebo --verbose -s libgazebo_ros_init.so /home/<user_name>/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/worlds/turtlebot3_worlds/waffle.model
+    gazebo --verbose -s libgazebo_ros_init.so /opt/ros/dashing/share/turtlebot3_gazebo/worlds/turtlebot3_worlds/waffle.model
 
-Don't forget to change <user_name> to your actual user name. Once, Gazebo is launched, you should see the Turtlebot3 world and Turtlebot 3.
+Once, Gazebo is launched, you should see the Turtlebot3 world and Turtlebot 3 Waffle.
 
 If Gazebo fails to start, run the following commands and try to launch Gazebo again.
 
@@ -92,10 +101,8 @@ Launch Navigation 2. If you set `autostart:=False`, you need to click on the sta
 turtlebot3_world.yaml is the configuration file for the map we want to provide Navigation2. In this case, it has the map resolution value, threshold values for obstacles and free spaces, and a map file location.
 
 ```
-ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=False \
-    map:=/home/<user_name>/navigation2_ws/install/nav2_bringup/share/nav2_bringup/launch/turtlebot3_world.yaml
+ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=False map:=/opt/ros/dashing/share/nav2_bringup/launch/turtlebot3_world.yaml
 ```
-Again don't forget to change **<user_name>** to your actual user name. 
 
 ### 4-  Launch RVIZ
 
@@ -146,9 +153,18 @@ This step concludes the first part of this tutorial. In the following sections, 
 
 ## Navigation2 with a Real Turtlebot 3
 
-### 0- Edit .bashrc
+### 0- Setup Your Enviroment Variables
 
-First, make sure you have the following lines in your .bashrc file.
+There are two ways to this.
+
+**- Option 1**  Run the following commands whenever you open a new terminal during this tutorial. If you are a beginner level ROS user or for any reason you don't don't want to do any perminant changes in your enviroment, this option is higly recommended. 
+
+- ```source /opt/ros/<ros2-distro>/setup.bash```
+- ```export TURTLEBOT3_MODEL=waffle```
+
+**- Option 2** Edit your .bashrc file.
+
+You need to make sure you know what you are doing in this step, otherwise, these changes could cause issues especially, if you already have ROS 1 or other ROS 2 distributions installed on your system and you already eddited your .bashrc file.
 
 Open a new terminal and open your .bashrc file which is located in your home directory. You can use your favorite text editor.
 
@@ -159,12 +175,10 @@ sudo gedit ~/.bashrc
 Add the following lines to the end of the file.
 
 ```
-source /opt/ros/<ros2_distro>/setup.bash
-source ~/turtlebot3_ws/install/setup.bash
+source /opt/ros/<ros2-distro>/setup.bash
 export TURTLEBOT3_MODEL=waffle
 ```
-
-Save the file and close it. Whenever you open a new terminal, this script will be executed. 
+save the file and close it. Whenever we open a new terminal, this script will be executed. 
 
 *Please note that this will  make your terminal's start-up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.*
 
@@ -183,15 +197,14 @@ Make sure use_sim_time is set to **False**.
    - ```your-map.map```
    - ```your-map.yaml```
 
-Launch Navigation 2. If you set autostart:=False, you need to click on the start button in RVIZ to initialize the nodes. Make sure `use_sim time` is set to **False**, because we want to use the system time instead of the time simulation time in Gazebo.
-
 `<your_map>.yaml` is the configuration file for the map we want to provide Navigation2. In this case, it has the map resolution value, threshold values for obstacles and free spaces, and a map file location. You need to make sure these values are correct. More information about the map.yaml can be found [here](http://wiki.ros.org/map_server).
 
+Launch Navigation 2. If you set autostart:=False, you need to click on the start button in RVIZ to initialize the nodes. Make sure `use_sim time` is set to **False**, because we want to use the system time instead of the time simulation time in Gazebo.
+
 ```
-ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=False autostart:=False \
-    map:=/home/<user_name>/navigation2_ws/install/nav2_bringup/share/nav2_bringup/launch/`your_map`.yaml
+ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=False autostart:=False map:=/path/to/your-map.yaml
 ```
-Again don't forget to change **<user_name>** to your actual user name. 
+Don't forget to change **/path/to/your-map.yaml** to the actual path to the your-map.yaml file.
 
 ### 3-  Launch RVIZ
 
