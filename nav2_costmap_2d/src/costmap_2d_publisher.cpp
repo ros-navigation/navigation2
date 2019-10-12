@@ -227,7 +227,7 @@ Costmap2DPublisher::costmap_service_callback(
   response->map.metadata.size_x = size_x;
   response->map.metadata.size_y = size_y;
   response->map.metadata.resolution = costmap_->getResolution();
-  response->map.metadata.layer = "Master";
+  response->map.metadata.layer = "master";
   response->map.metadata.map_load_time = current_time;
   response->map.metadata.update_time = current_time;
   response->map.metadata.origin.position.x = costmap_->getOriginX();
