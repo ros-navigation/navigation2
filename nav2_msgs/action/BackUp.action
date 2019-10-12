@@ -1,5 +1,6 @@
 #goal definition
 geometry_msgs/Point target
+float32 speed
 ---
 #result definition
 std_msgs/Empty result

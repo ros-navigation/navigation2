@@ -23,7 +23,7 @@
       <SequenceStar name="RecoveryActions">
         <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
         <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
-        <Spin/>
+        <Spin spin_dist="1.59"/>
         <Wait wait_duration="5"/>
       </SequenceStar>
     </RecoveryNode>
