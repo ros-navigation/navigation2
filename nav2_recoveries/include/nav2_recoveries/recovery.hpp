@@ -51,7 +51,7 @@ public:
 
   Recovery()
   : action_server_(nullptr),
-    cycle_frequency_(10),
+    cycle_frequency_(10.0),
     enabled_(false)
   {
   }
@@ -100,6 +100,7 @@ public:
 
     node_->get_parameter("costmap_topic", costmap_topic);
     node_->get_parameter("footprint_topic", footprint_topic);
+    node_->get_parameter("cycle_frequency", cycle_frequency_);
 
     action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));

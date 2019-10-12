@@ -29,6 +29,7 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
   declare_parameter("footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+  declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
   std::vector<std::string> plugin_names{std::string("Spin"),
     std::string("BackUp"), std::string("Wait")};
