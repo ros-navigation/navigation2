@@ -3,8 +3,8 @@ ROS2 Navigation2 - Turtlebot3 - Oct, 2019
 
 - [Overview](#overview)
 - [Requirments](#requirements)
-- [Navigation2 with Turtlebot 3 in Gazebo](navigation2-with-turtlebot-3-in-gazebo)
-- [Navigation2 with a Real Turtlebot 3](navigation2-with-a-real-turtlebot-3)
+- [Navigation2 with Turtlebot 3 in Gazebo](#navigation2-with-turtlebot-3-in-gazebo)
+- [Navigation2 with a Real Turtlebot 3](#navigation2-with-a-real-turtlebot-3)
 - [Videos](#videos)
 
 # Overview:
