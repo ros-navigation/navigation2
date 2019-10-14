@@ -47,7 +47,7 @@ public:
 
   static const BT::NodeParameters & requiredNodeParameters()
   {
-    static BT::NodeParameters params = {{"spin_dist", "1.59"}};
+    static BT::NodeParameters params = {{"spin_dist", "1.57"}};
     return params;
   }
 };
