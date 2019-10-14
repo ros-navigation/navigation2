@@ -21,9 +21,10 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription, LaunchService
 from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
-from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import TextSubstitution
+from launch_ros.actions import Node
+
 from launch_testing.legacy import LaunchTestService
 
 
@@ -43,8 +44,7 @@ def generate_launch_description():
                               'use_rviz': 'False',
                               'use_robot_state_pub': 'False'}.items()),
 
-        #  Launch robot state publishers for `robot1` and `robot2`
-        #  defined in `nav2_multi_tb3_simulation_launch.py`
+        #  Launch the robot state publishers separately
         Node(
             package='robot_state_publisher',
             node_executable='robot_state_publisher',
@@ -69,7 +69,9 @@ def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_multi_robot_node.py')],
+        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_multi_robot_node.py'),
+             '-r', 'robot1', '0.0', '0.5', '1.0', '0.5',
+             '-r', 'robot2', '0.0', '-0.5', '1.0', '-0.5'],
         name='test_multi_robot_node',
         output='screen')
 

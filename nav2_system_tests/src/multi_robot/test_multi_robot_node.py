@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import math
 import sys
 import time
@@ -152,7 +153,7 @@ def test_RobotMovesToGoal(robot_tester):
     return robot_tester.reachesGoal(timeout=60, distance=0.5)
 
 
-def test_all(robot_tester):
+def run_all_tests(robot_tester):
     # set transforms to use_sim_time
     result = True
     if (result):
@@ -186,27 +187,41 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
 
 
 def main(argv=sys.argv[1:]):
-    # Run python linter
+    # TODO(orduno) Run python linter
+
+    # Get input arguments
+    parser = argparse.ArgumentParser(description='System-level navigation tester node')
+    parser.add_argument('-r', '--robots', action='append', nargs=5,
+                        metavar=('name', 'init_x', 'init_y', 'final_x', 'final_y'),
+                        help="The robot's namespace and starting and final positions. " +
+                             'Repeating the argument for multiple robots is supported.')
+
+    args, unknown = parser.parse_known_args()
+
     rclpy.init()
 
     # Create testers for each robot
-    # Robot names and poses are defined on nav2_bringup::nav2_multi_tb3_simulation_launch.py
-    robot1_tester = NavTester(
-        namespace='robot1', initial_pose=fwd_pose(0.0, 0.5), goal_pose=fwd_pose(1.0, 0.5))
-    robot1_tester.info_msg('Starting tester')
-
-    robot2_tester = NavTester(
-        namespace='robot2', initial_pose=fwd_pose(0.0, -0.5), goal_pose=fwd_pose(1.0, -0.5))
-    robot2_tester.info_msg('Starting tester')
+    testers = []
+    for robot in args.robots:
+        namespace, init_x, init_y, final_x, final_y = robot
+        tester = NavTester(
+            namespace=namespace,
+            initial_pose=fwd_pose(float(init_x), float(init_y)),
+            goal_pose=fwd_pose(float(final_x), float(final_y)))
+        tester.info_msg(
+            'Starting tester for ' + namespace +
+            ' going from ' + init_x + ', ' + init_y +
+            ' to ' + final_x + ', ' + final_y)
+        testers.append(tester)
 
     # wait a few seconds to make sure entire stack is up
     time.sleep(20)
 
     # run tests on each robot
-    if (test_all(robot1_tester) and test_all(robot2_tester)):
-        return
-    else:
-        exit(1)
+    for tester in testers:
+        passed = run_all_tests(tester)
+        if not passed:
+            exit(1)
 
 
 if __name__ == '__main__':
