@@ -26,6 +26,7 @@
 #pragma GCC diagnostic pop
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -35,16 +36,30 @@ namespace nav2_recoveries
 Spin::Spin()
 : Recovery<SpinAction>()
 {
-  // TODO(orduno) #378 Pull values from the robot
-  max_rotational_vel_ = 1.0;
-  min_rotational_vel_ = 0.4;
-  rotational_acc_lim_ = 3.2;
   initial_yaw_ = 0.0;
-  simulate_ahead_time_ = 2.0;
 }
 
 Spin::~Spin()
 {
+}
+
+void Spin::onConfigure()
+{
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
+  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "max_rotational_vel", rclcpp::ParameterValue(1.0));
+  node_->get_parameter("max_rotational_vel", max_rotational_vel_);
+
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "min_rotational_vel", rclcpp::ParameterValue(0.4));
+  node_->get_parameter("min_rotational_vel", min_rotational_vel_);
+
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "rotational_acc_lim", rclcpp::ParameterValue(3.2));
+  node_->get_parameter("rotational_acc_lim", rotational_acc_lim_);
 }
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
