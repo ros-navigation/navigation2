@@ -51,7 +51,6 @@ if(BUILD_TESTING)
   add_subdirectory(src/planning)
   add_subdirectory(src/localization)
   add_subdirectory(src/system)
-  add_subdirectory(src/multi_robot)
   add_subdirectory(src/updown)
 
 endif()
