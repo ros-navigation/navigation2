@@ -28,7 +28,7 @@
 
 namespace nav2_map_server
 {
-class OccGridLoader : public nav2_util::LifecycleHelperInterface
+class OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 {
 public:
   OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);

@@ -17,7 +17,6 @@
 
 #include <memory>
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/lifecycle_helper_interface.hpp"
 
 namespace nav2_map_server
 {
@@ -38,7 +37,7 @@ protected:
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The map loader that will actually do the work
-  std::unique_ptr<nav2_util::LifecycleHelperInterface> map_loader_;
+  std::unique_ptr<rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface> map_loader_;
 };
 
 }  // namespace nav2_map_server
