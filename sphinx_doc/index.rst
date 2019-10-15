@@ -23,7 +23,7 @@ These all work seemlessly together, so that, with a bit of customization for you
 robot, you can just give it a destination and off it go.
 
 Here you will find documentation on how to install and use |PN| with a Turtlebot
-3, as well as how to customize it for your robot, tune the behavior for better
+3, as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results.
 
 Sections
