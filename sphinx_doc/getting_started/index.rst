@@ -6,11 +6,13 @@ Getting Started
 This document will take you through the process of installing the |PN| binaries
 and navigating a simulated Turtlebot 3 in the Gazebo simulator. We'll use the
 |Distro| version of ROS 2, since it is the latest stable version at the time
-this was written.
+this was written. The instructions are written primarily for Ubuntu 18, using
+the standard installation options.
 
-.. tip::
+.. note::
 
-  See the :ref:`howtos` for other situations
+  See the :ref:`howtos` for other situations such as building from source or
+  working with other types of robots.
 
 .. warning::
 
@@ -39,4 +41,17 @@ Installation
 Running the Example
 *******************
 
-1. Do stuff
+1. Start a terminal in your GUI
+2. Set key environment variables. Here's how to do it in Ubuntu.
+
+   .. code-block:: bash
+
+      source /opt/ros/dashing/setup.bash
+      export TURTLEBOT3_MODEL=waffle
+      export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models
+
+3. In the same terminal, run
+
+   .. code-block:: bash
+
+      ros2 launch nav2_bringup nav2_tb3_simulation_launch.py
