@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="How-Tos" href="../howtos/index.html" />
+    <link rel="next" title="How It Works" href="../how_it_works/index.html" />
     <link rel="prev" title="ROS 2 Navigation System" href="../index.html" />
 
 <link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
@@ -95,7 +95,13 @@
             
             
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-example">Running the Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#navigating">Navigating</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../how_it_works/index.html">How It Works</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../howtos/index.html">How-Tos</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../howtos/docs/index.html">Documentation How-Tos</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../howtos/docs/index.html#build-guide">Build Guide</a><ul>
@@ -205,8 +211,114 @@
             
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
-<p>This website is under construction. Please visit the <a class="reference external" href="https://github.com/ros-planning/navigation2">project repo</a> in the
-meantime.</p>
+<p>This document will take you through the process of installing the Navigation 2 binaries
+and navigating a simulated Turtlebot 3 in the Gazebo simulator. We’ll use the
+Dashing version of ROS 2, since it is the latest stable version at the time
+this was written. The instructions are written primarily for Ubuntu 18, using
+the standard installation options.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See the <a class="reference internal" href="../howtos/index.html#howtos"><span class="std std-ref">How-Tos</span></a> for other situations such as building from source or
+working with other types of robots.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a simplified version of the Turtlebot 3 instructions. We highly
+recommend you follow the <a class="reference external" href="http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#ros2">official Turtlebot 3 manual</a> if you intend to
+continue working with this robot beyond the minimal example provided here.</p>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Install the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation/Dashing/#binary-packages">ROS 2 binary packages</a> as described in the official docs</p></li>
+<li><p>Install the Navigation 2 packages using your operating system’s package manager. For
+Ubuntu 18, do this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros2-dashing-navigation2
+sudo apt install ros2-dashing-nav2-bringup
+</pre></div>
+</div>
+</li>
+<li><p>Install the Turtlebot 3 packages. Again, for Ubuntu 18, it looks like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros2-dashing-turtlebot3*
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="running-the-example">
+<h2>Running the Example<a class="headerlink" href="#running-the-example" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Start a terminal in your GUI</p></li>
+<li><p>Set key environment variables. Here’s how to do it in Ubuntu.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /opt/ros/dashing/setup.bash
+<span class="nb">export</span> <span class="nv">TURTLEBOT3_MODEL</span><span class="o">=</span>waffle
+<span class="nb">export</span> <span class="nv">GAZEBO_MODEL_PATH</span><span class="o">=</span><span class="nv">$GAZEBO_MODEL_PATH</span>:/opt/ros/dashing/share/turtlebot3_gazebo/models
+</pre></div>
+</div>
+</li>
+<li><p>In the same terminal, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2 launch nav2_bringup nav2_tb3_simulation_launch.py
+</pre></div>
+</div>
+<p>If everything has started correctly, you will see the RViz and Gazebo GUIs like
+this.</p>
+<div class="figure align-default" id="id2">
+<a class="reference internal image-reference" href="../_images/rviz-not-started.png"><img alt="Initial appearance of RViz before hitting startup button" src="../_images/rviz-not-started.png" style="width: 774.5px; height: 472.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 1 </span><span class="caption-text">Initial appearance of RViz before hitting startup button. Nothing is
+displayed at this point because Navigation 2 is still in the unconfigured state</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="id3">
+<a class="reference internal image-reference" href="../_images/gazebo_turtlebot1.png"><img alt="Initial appearance of Gazebo with Turtlebot 3 world" src="../_images/gazebo_turtlebot1.png" style="width: 807.5px; height: 488.0px;" /></a>
+<p class="caption"><span class="caption-number">Figure 2 </span><span class="caption-text">Initial appearance of Gazebo with Turtlebot 3 world</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+</li>
+<li><p>Click the “Startup” button in the bottom left corner of RViz. This will
+cause Navigation 2 to change to the Active lifecycle state. It should
+change appearance to show the map.</p>
+<div class="figure align-default" id="id4">
+<a class="reference internal image-reference" href="../_images/rviz_initial.png"><img alt="Initial appearance of RViz transitioning to the Active state" src="../_images/rviz_initial.png" style="width: 722.0px; height: 425.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 3 </span><span class="caption-text">Initial appearance of RViz transitioning to the Active state</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="navigating">
+<h2>Navigating<a class="headerlink" href="#navigating" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>After starting, the robot initially has no idea where it is. By default,
+Navigation 2 waits for you to give it an approximate starting position. Take a look
+at where the robot is in the Gazebo world, and find that spot on the map. Set
+the initial pose by clicking the “2D Pose Estimate” button in RViz, and then
+down clicking on the map in that location. You set the orientation by dragging
+forward from the down click.</p>
+<p>If you are using the defaults so far, it should look like this.</p>
+<div class="figure align-default" id="id5">
+<a class="reference internal image-reference" href="../_images/rviz-set-initial-pose.png"><img alt="Approximate starting location of Turtlebot" src="../_images/rviz-set-initial-pose.png" style="width: 774.5px; height: 472.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 4 </span><span class="caption-text">Approximate starting location of Turtlebot</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+</div>
+<p>If you don’t get the location exactly right, that’s fine. Navigation 2 will refine
+the position as it navigates. You can also, click the “2D Pose
+Estimate” button and try again, if you prefer.</p>
+<p>Once you’ve set the initial pose, the trasform tree will be complete and
+Navigation 2 is fully active and ready to go.</p>
+<div class="figure align-default" id="id6">
+<a class="reference internal image-reference" href="../_images/navstack-ready.png"><img alt="|PN| is ready. Transforms and Costmap show in RViz." src="../_images/navstack-ready.png" style="width: 774.5px; height: 472.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 5 </span><span class="caption-text">Navigation 2 is ready. Transforms and Costmap show in RViz.</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+</div>
+</li>
+<li><p>Click the “Navigaton2 Goal” button and choose a destination.</p>
+<div class="figure align-default" id="id7">
+<a class="reference internal image-reference" href="../_images/navigate-to-pose.png"><img alt="Setting the goal pose in RViz." src="../_images/navigate-to-pose.png" style="width: 774.5px; height: 472.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 6 </span><span class="caption-text">Setting the goal pose in RViz.</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+</div>
+<p>Watch the robot go!</p>
+<div class="figure align-default" id="id8">
+<a class="reference internal image-reference" href="../_images/navigating.png"><img alt="Turtlebot on its way to the goal." src="../_images/navigating.png" style="width: 774.5px; height: 472.5px;" /></a>
+<p class="caption"><span class="caption-number">Figure 7 </span><span class="caption-text">Turtlebot on its way to the goal.</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
+</div>
+</li>
+</ol>
+</div>
 </div>
 
 
@@ -222,7 +334,7 @@ meantime.</p>
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Sep 18, 2019.
+        Last updated on Oct 15, 2019.
       </span>
 
     </p>

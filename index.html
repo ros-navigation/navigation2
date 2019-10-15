@@ -94,7 +94,13 @@
             
             
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#running-the-example">Running the Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/index.html#navigating">Navigating</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_it_works/index.html">How It Works</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howtos/index.html">How-Tos</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="howtos/docs/index.html">Documentation How-Tos</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="howtos/docs/index.html#build-guide">Build Guide</a><ul>
@@ -204,17 +210,35 @@
             
   <div class="section" id="lpn">
 <span id="documentation-home"></span><h1>ROS 2 Navigation System<a class="headerlink" href="#lpn" title="Permalink to this headline">¶</a></h1>
-<p>This website is under construction. Please visit the <a class="reference external" href="https://github.com/ros-planning/navigation2">project repo</a> in the
-meantime.</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The Navigation 2 project is a set of ROS2 components that help you build a robot that
+can drive around.</p>
+<p>It has tools to:</p>
+<ul class="simple">
+<li><p>load and store maps</p></li>
+<li><p>localize the robot on the map</p></li>
+<li><p>plan a path from A to B around obstacles</p></li>
+<li><p>control the robot as it follows the path and avoid any obstacles along the way</p></li>
+<li><p>convert sensor data into a costmap representation of the world</p></li>
+<li><p>build complicated robot behaviors using behavior trees</p></li>
+</ul>
+<p>These all work seemlessly together, so that, with a bit of customization for your
+robot, you can just give it a destination and off it go.</p>
+<p>Here you will find documentation on how to install and use Navigation 2 with a Turtlebot
+3, as well as how to customize it for other robots, tune the behavior for better
+performance, as well as customize the internals for advanced results.</p>
 <div class="section" id="sections">
-<h2>Sections<a class="headerlink" href="#sections" title="Permalink to this headline">¶</a></h2>
+<h3>Sections<a class="headerlink" href="#sections" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_it_works/index.html">How It Works</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howtos/index.html">How-Tos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contribute/index.html">Contributing to the Project</a></li>
 </ul>
+</div>
 </div>
 </div>
 </div>
@@ -232,7 +256,7 @@ meantime.</p>
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Sep 18, 2019.
+        Last updated on Oct 15, 2019.
       </span>
 
     </p>
