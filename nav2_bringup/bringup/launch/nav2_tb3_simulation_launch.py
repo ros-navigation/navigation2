@@ -158,11 +158,11 @@ def generate_launch_description():
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             ['-d', rviz_config_file],
             ['__ns:=/', namespace],
-            '/tf:=tf',
-            '/tf_static:=tf_static',
-            '/goal_pose:=goal_pose',
-            '/clicked_point:=clicked_point',
-            '/initialpose:=initialpose'],
+             '/tf:=tf',
+             '/tf_static:=tf_static',
+             '/goal_pose:=goal_pose',
+             '/clicked_point:=clicked_point',
+             '/initialpose:=initialpose'],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(
