@@ -20,9 +20,13 @@ and launch multiple instances of the navigation stack, each controlling one robo
 The robots co-exist on a shared environment and are controlled by independent nav stacks
 """
 
-import os
+import os, sys
+sys.path.append(os.path.dirname(__file__))
 
 from ament_index_python.packages import get_package_share_directory
+
+from nav2_common.launch import ReplaceString
+import nav2_bringup_common as common
 
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
@@ -36,9 +40,6 @@ from nav2_common.launch import ReplaceString
 
 
 def generate_launch_description():
-    # Get the launch directory
-    bringup_dir = get_package_share_directory('nav2_bringup')
-
     # Names and poses of the robots
     robots = [
         {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
@@ -49,43 +50,18 @@ def generate_launch_description():
     simulator = LaunchConfiguration('simulator')
 
     # On this example all robots are launched with the same settings
-    map_yaml_file = LaunchConfiguration('map')
-    params_file = LaunchConfiguration('params_file')
-    bt_xml_file = LaunchConfiguration('bt_xml_file')
     rviz_config_file = LaunchConfiguration('rviz_config')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
+        default_value=os.path.join(common.bringup_dir, 'worlds', 'world_only.model'),
         description='Full path to world file to load')
-
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)')
-
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
-        description='Full path to map file to load')
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes')
-
-    declare_bt_xml_cmd = DeclareLaunchArgument(
-        'bt_xml_file',
-        default_value=os.path.join(
-            get_package_share_directory('nav2_bt_navigator'),
-            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
-        description='Full path to the behavior tree xml file to use')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
+        default_value=os.path.join(common.bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     # Start Gazebo with plugin providing the robot spawing service
@@ -98,8 +74,8 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch',
-                                                           'spawn_robot_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(common.bringup_dir, 'launch',
+                                                             'spawn_robot_launch.py')),
                 launch_arguments={
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
@@ -130,16 +106,16 @@ def generate_launch_description():
             PushRosNamespace(robot['name']),
 
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir,
-                                                           'launch',
-                                                           'nav2_tb3_simulation_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(common.bringup_dir,
+                                                            'launch',
+                                                            'nav2_tb3_simulation_launch.py')),
                 launch_arguments={
                                   # TODO(orduno) might not be necessary to pass the robot name
                                   'namespace': robot['name'],
-                                  'map_yaml_file': map_yaml_file,
+                                  'map_yaml_file': common.map_yaml_file,
                                   'use_sim_time': 'True',
-                                  'params_file': params_file,
-                                  'bt_xml_file': bt_xml_file,
+                                  'params_file': common.params_file,
+                                  'bt_xml_file': common.bt_xml_file,
                                   'autostart': 'False',
                                   'use_remappings': 'True',
                                   'rviz_config_file': namespaced_rviz_config_file,
@@ -150,13 +126,13 @@ def generate_launch_description():
                 msg=['Launching ', robot['name']]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' map yaml: ', map_yaml_file]),
+                msg=[robot['name'], ' map yaml: ', common.map_yaml_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' params yaml: ', params_file]),
+                msg=[robot['name'], ' params yaml: ', common.params_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' behavior tree xml: ', bt_xml_file]),
+                msg=[robot['name'], ' behavior tree xml: ', common.bt_xml_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file])
@@ -176,11 +152,11 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(declare_simulator_cmd)
+    ld.add_action(common.declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
-    ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_bt_xml_cmd)
+    ld.add_action(common.declare_tb3_map_yaml_cmd)
+    ld.add_action(common.declare_params_file_cmd)
+    ld.add_action(common.declare_bt_xml_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
 
     # Add the actions to start gazebo, robots and simulations

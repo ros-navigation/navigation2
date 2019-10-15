@@ -14,7 +14,8 @@
 
 """This is all-in-one launch script intended for use by nav2 developers."""
 
-import os
+import os, sys
+sys.path.append(os.path.dirname(__file__))
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
@@ -28,77 +29,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 from nav2_common.launch import Node
+import nav2_bringup_common as common
 
 
 def generate_launch_description():
-    # Get the launch directory
-    bringup_dir = get_package_share_directory('nav2_bringup')
-    launch_dir = os.path.join(bringup_dir, 'launch')
-
-    # Create the launch configuration variables
-    namespace = LaunchConfiguration('namespace')
-    map_yaml_file = LaunchConfiguration('map')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    params_file = LaunchConfiguration('params_file')
-    bt_xml_file = LaunchConfiguration('bt_xml_file')
-    autostart = LaunchConfiguration('autostart')
-    use_remappings = LaunchConfiguration('use_remappings')
-
-    # Launch configuration variables specific to simulation
-    rviz_config_file = LaunchConfiguration('rviz_config_file')
-    use_simulator = LaunchConfiguration('use_simulator')
-    simulator = LaunchConfiguration('simulator')
-    world = LaunchConfiguration('world')
-
-    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
-
-    # Declare the launch arguments
-    declare_namespace_cmd = DeclareLaunchArgument(
-        'namespace',
-        default_value='',
-        description='Top-level namespace')
-
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
-        description='Full path to map file to load')
-
-    declare_use_sim_time_cmd = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='true',
-        description='Use simulation (Gazebo) clock if true')
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes')
-
-    declare_bt_xml_cmd = DeclareLaunchArgument(
-        'bt_xml_file',
-        default_value=os.path.join(
-            get_package_share_directory('nav2_bt_navigator'),
-            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
-        description='Full path to the behavior tree xml file to use')
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart', default_value='false',
-        description='Automatically startup the nav2 stack')
-
-    declare_use_remappings_cmd = DeclareLaunchArgument(
-        'use_remappings', default_value='false',
-        description='Arguments to pass to all nodes launched by the file')
-
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+        default_value=os.path.join(common.bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     declare_use_simulator_cmd = DeclareLaunchArgument(
@@ -106,25 +43,20 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start the simulator')
 
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)')
-
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         # TODO(orduno) Switch back once ROS argument passing has been fixed upstream
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
         # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
         #                            'worlds/turtlebot3_worlds/waffle.model'),
-        default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+        default_value=os.path.join(common.bringup_dir, 'worlds', 'waffle.model'),
         description='Full path to world model file to load')
 
     # Specify the actions
     start_gazebo_cmd = ExecuteProcess(
-        condition=IfCondition(use_simulator),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-        cwd=[launch_dir], output='screen')
+        condition=IfCondition(common.use_simulator),
+        cmd=[common.simulator, '-s', 'libgazebo_ros_init.so', common.world],
+        cwd=[common.launch_dir], output='screen')
 
     urdf = os.path.join(
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
@@ -134,9 +66,9 @@ def generate_launch_description():
         node_executable='robot_state_publisher',
         node_name='robot_state_publisher',
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
-        use_remappings=IfCondition(use_remappings),
-        remappings=remappings,
+        parameters=[{'use_sim_time': common.use_sim_time}],
+        use_remappings=IfCondition(common.use_remappings),
+        remappings=common.remappings,
         arguments=[urdf])
 
     # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
@@ -161,14 +93,14 @@ def generate_launch_description():
 
     start_rviz_cmd = ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-             ['-d', rviz_config_file],
-             ['__ns:=/', namespace],
-             '/tf:=tf',
-             '/tf_static:=tf_static',
-             '/goal_pose:=goal_pose',
-             '/clicked_point:=clicked_point',
-             '/initialpose:=initialpose'],
-        cwd=[launch_dir], output='screen')
+            ['-d', common.rviz_config_file],
+            ['__ns:=/', common.namespace],
+            '/tf:=tf',
+            '/tf_static:=tf_static',
+            '/goal_pose:=goal_pose',
+            '/clicked_point:=clicked_point',
+            '/initialpose:=initialpose'],
+        cwd=[common.launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(
         event_handler=OnProcessExit(
@@ -176,30 +108,30 @@ def generate_launch_description():
             on_exit=EmitEvent(event=Shutdown(reason='rviz exited'))))
 
     bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
-        launch_arguments={'namespace': namespace,
-                          'map': map_yaml_file,
-                          'use_sim_time': use_sim_time,
-                          'params_file': params_file,
-                          'bt_xml_file': bt_xml_file,
-                          'autostart': autostart,
-                          'use_remappings': use_remappings}.items())
+        PythonLaunchDescriptionSource(os.path.join(common.launch_dir, 'nav2_bringup_launch.py')),
+        launch_arguments={'namespace': common.namespace,
+                          'map': common.map_yaml_file,
+                          'use_sim_time': common.use_sim_time,
+                          'params_file': common.params_file,
+                          'bt_xml_file': common.bt_xml_file,
+                          'autostart': common.autostart,
+                          'use_remappings': common.use_remappings}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(declare_namespace_cmd)
-    ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_bt_xml_cmd)
-    ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_use_remappings_cmd)
+    ld.add_action(common.declare_namespace_cmd)
+    ld.add_action(common.declare_map_yaml_cmd)
+    ld.add_action(common.declare_use_sim_time_cmd)
+    ld.add_action(common.declare_params_file_cmd)
+    ld.add_action(common.declare_bt_xml_cmd)
+    ld.add_action(common.declare_autostart_cmd)
+    ld.add_action(common.declare_use_remappings_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
-    ld.add_action(declare_simulator_cmd)
+    ld.add_action(common.declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulator')
