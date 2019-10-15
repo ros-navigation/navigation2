@@ -1,7 +1,76 @@
 Build Instructions
 ==================
 
-Quickstart
+## 1. Platform
+* Ubuntu 18.04
+
+## 2. Manual Build Steps
+* The instructions are to build **Navigation2** package and its dependency packages.
+* To build **Navigation2** package from script, kindly refer [QuickStart](BUILD.md#quickstart-using-initial-setup-script).
+* To build **Navigation2** package for `master` branch, select the latest ROS2 distro in place of `ros2-distro-name` during `rosdep install`.
+* To build **Navigation2** package for specific distro branch (e.g- dashing-devel), select the matching ROS2 distro in place of `ros2-distro-name` during `rosdep install`.
+
+
+### 2.1 ROS2
+* Install ROS2 with dependencies from the ROS2 Installation Page: https://index.ros.org/doc/ros2/Installation/
+* Install the latest distribution of ROS2 to support Navigation2 `master`.
+* ROS2 can be installed either from binary packages or build from source. Choose to build ROS2 from source to support Navigation2 `master`.
+
+### 2.2 Navigation2 Dependencies
+If ROS2 installed from source (Ignore if installed from binary packages)
+```console
+$ source ~/ros2_ws/install/setup.bash
+```
+Fetch, build and install navigation2 dependencies:
+```console
+$ mkdir -p ~/ros2_nav_dependencies_ws/src
+$ cd ~/ros2_nav_dependencies_ws
+$ wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/ros2_dependencies.repos
+$ vcs import src < ros2_dependencies.repos
+$ rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro-name>
+e.g- ros2-distro-name = dashing
+$ colcon build --symlink-install
+```
+
+### 2.3 Navigation2
+
+Fetch, build and install navigation2 stack:
+```console
+$ source ~/ros2_nav_dependencies_ws/install/setup.bash
+$ mkdir -p ~/navigation2_ws/src
+$ cd ~/navigation2_ws/src
+$ git clone https://github.com/ros-planning/navigation2.git -b <nav2-branch-name>
+e.g- nav2-branch-name = master
+$ cd ~/navigation2_ws
+$ rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro-name>
+e.g- ros2-distro-name = dashing
+$ colcon build --symlink-install
+```
+### 2.4 Turtlebot3
+Turtlebot3 is one of the target robot platform to run navigation2. Ignore building Turtlebot3 packages if turtlebot3 is not your target.
+
+If ROS2 installed from source (Ignore if installed from binary packages)
+```console
+$ source ~/ros2_ws/install/setup.bash
+```
+Fetch, build and install turtlebot3 packages:
+```console
+$ mkdir -p ~/turtlebot3_ws/src
+$ cd ~/turtlebot3_ws
+$ wget https://raw.githubusercontent.com/ROBOTIS-GIT/turtlebot3/ros2/turtlebot3.repos
+$ vcs import src < turtlebot3.repos
+$ rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro-name>
+e.g- ros2-distro-name = dashing
+$ colcon build --symlink-install
+```
+
+## 3. Conclusion
+After installation of **Navigation2** and required dependencies, test **Navigation2** by following steps in [nav2_bringup README](../nav2_bringup/README.md)
+
+## 4. Reporting Issue
+If run into any issue, feel free to submit pull request or report issue in this project.
+
+Quickstart using initial setup script
 ----------
 
 ### Steps

@@ -35,6 +35,8 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
+class InitialThread;
+
 /// Panel to interface to the nav2 stack
 class Nav2Panel : public rviz_common::Panel
 {
@@ -51,6 +53,7 @@ public:
   void save(rviz_common::Config config) const override;
 
 private Q_SLOTS:
+  void startThread();
   void onStartup();
   void onShutdown();
   void onCancel();
@@ -87,6 +90,7 @@ private:
   QPushButton * pause_resume_button_{nullptr};
 
   QStateMachine state_machine_;
+  InitialThread * initial_thread_;
 
   QState * pre_initial_{nullptr};
   QState * initial_{nullptr};

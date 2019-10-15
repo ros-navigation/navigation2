@@ -136,15 +136,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  InitialThread * initialThread = new InitialThread(client_);
-  connect(initialThread, &InitialThread::finished, initialThread, &QObject::deleteLater);
+  initial_thread_ = new InitialThread(client_);
+  connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
-  QSignalTransition * activeSignal = new QSignalTransition(initialThread,
+  QSignalTransition * activeSignal = new QSignalTransition(initial_thread_,
       &InitialThread::activeSystem);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
 
-  QSignalTransition * inactiveSignal = new QSignalTransition(initialThread,
+  QSignalTransition * inactiveSignal = new QSignalTransition(initial_thread_,
       &InitialThread::inactiveSystem);
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
@@ -159,6 +159,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(resumed_);
 
   state_machine_.setInitialState(pre_initial_);
+
+  // delay starting initial thread until state machine has started or a race occurs
+  QObject::connect(&state_machine_, SIGNAL(started()), this, SLOT(startThread()));
   state_machine_.start();
 
   // Lay out the items in the panel
@@ -178,8 +181,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
-
-  initialThread->start();
 }
 
 Nav2Panel::~Nav2Panel()
@@ -190,6 +191,13 @@ void
 Nav2Panel::onInitialize()
 {
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+}
+
+void
+Nav2Panel::startThread()
+{
+  // start initial thread now that state machine is started
+  initial_thread_->start();
 }
 
 void

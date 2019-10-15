@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "back_up.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -26,7 +27,6 @@ namespace nav2_recoveries
 BackUp::BackUp()
 : Recovery<BackUpAction>()
 {
-  simulate_ahead_time_ = 2.0;
 }
 
 BackUp::~BackUp()
@@ -35,8 +35,9 @@ BackUp::~BackUp()
 
 void BackUp::onConfigure()
 {
-  node_->declare_parameter("simulate_ahead_time", simulate_ahead_time_);
-  simulate_ahead_time_ = node_->get_parameter("simulate_ahead_time").as_double();
+  nav2_util::declare_parameter_if_not_declared(node_,
+    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
+  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
@@ -47,6 +48,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   }
 
   command_x_ = command->target.x;
+  command_speed_ = command->speed;
 
   if (!nav2_util::getCurrentPose(initial_pose_, *tf_, "odom")) {
     RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
@@ -76,7 +78,7 @@ Status BackUp::onCycleUpdate()
   geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
-  command_x_ < 0 ? cmd_vel.linear.x = -0.025 : cmd_vel.linear.x = 0.025;
+  command_x_ < 0 ? cmd_vel.linear.x = -command_speed_ : cmd_vel.linear.x = command_speed_;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;

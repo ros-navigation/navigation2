@@ -69,9 +69,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY behavior_trees/
-  DESTINATION behavior_trees/
-)
+install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

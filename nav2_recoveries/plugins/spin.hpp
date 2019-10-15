@@ -34,7 +34,7 @@ public:
   ~Spin();
 
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
-
+  void onConfigure() override;
   Status onCycleUpdate() override;
 
 protected:

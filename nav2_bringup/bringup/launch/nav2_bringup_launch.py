@@ -14,14 +14,14 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
-
-from nav2_common.launch import Node
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
+
+from nav2_common.launch import Node
 
 
 def generate_launch_description():
@@ -37,16 +37,6 @@ def generate_launch_description():
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
     use_remappings = LaunchConfiguration('use_remappings')
-
-    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -74,7 +64,7 @@ def generate_launch_description():
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
-            get_package_prefix('nav2_bt_navigator'),
+            get_package_share_directory('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 

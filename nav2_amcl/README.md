@@ -13,11 +13,6 @@ With the AutoLocalization branch of BT, first the `global_localization` service 
 
 **Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
 
-## Current Plan
-* Polishing AMCL core code, especially the `laserReceived` callback [Issue 211](https://github.com/ros-planning/navigation2/issues/211)
-* Using generic Particle Filter library [Issue 206](https://github.com/ros-planning/navigation2/issues/206)
-* Creating a generic library to pull out the algorithms that are from Probabilistic Robotics textbook.  These algorithms could potentially be used on other modules [Issue 207](https://github.com/ros-planning/navigation2/issues/207)
-
 ## Future Plan
 * Running from Ros bag
 * Extending AMCL to work with different type of Sensors

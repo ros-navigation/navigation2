@@ -49,6 +49,7 @@ protected:
 
   geometry_msgs::msg::PoseStamped initial_pose_;
   double command_x_;
+  double command_speed_;
   double simulate_ahead_time_;
 };
 

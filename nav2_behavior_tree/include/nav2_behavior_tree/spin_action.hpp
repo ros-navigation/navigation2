@@ -31,14 +31,24 @@ namespace nav2_behavior_tree
 class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {
 public:
-  explicit SpinAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::Spin>(action_name)
+  explicit SpinAction(
+    const std::string & action_name,
+    const BT::NodeParameters & params)
+  : BtActionNode<nav2_msgs::action::Spin>(action_name, params)
   {
   }
 
   void on_init() override
   {
-    goal_.target_yaw = M_PI / 2;
+    double dist;
+    getParam<double>("spin_dist", dist);
+    goal_.target_yaw = dist;
+  }
+
+  static const BT::NodeParameters & requiredNodeParameters()
+  {
+    static BT::NodeParameters params = {{"spin_dist", "1.57"}};
+    return params;
   }
 };
 

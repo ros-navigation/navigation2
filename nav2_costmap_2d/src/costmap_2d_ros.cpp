@@ -65,8 +65,11 @@ Costmap2DROS::Costmap2DROS(
     // use this to make sure the node is placed on the provided namespace
     // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
     //              of the namespaces
-    rclcpp::NodeOptions().arguments({"--ros-args", "-r", std::string("__ns:=") +
-      nav2_util::add_namespaces(parent_namespace, local_namespace)})),
+    rclcpp::NodeOptions().arguments({
+    "--ros-args", "-r", std::string("__ns:=") +
+    nav2_util::add_namespaces(parent_namespace, local_namespace),
+    "--ros-args", "-r", name + ":" + std::string("__node:=") + name
+  })),
   name_(name), parent_namespace_(parent_namespace)
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");

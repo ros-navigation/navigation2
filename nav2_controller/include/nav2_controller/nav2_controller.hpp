@@ -71,7 +71,7 @@ protected:
   std::unique_ptr<std::thread> costmap_thread_;
 
   // Publishers and subscribers
-  std::shared_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
   // Local Planner Plugin

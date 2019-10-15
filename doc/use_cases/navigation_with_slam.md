@@ -1,5 +1,5 @@
 
-# Navigation 2 with Cartographer
+# Navigation 2 with SLAM
 
 This document explains how to use Navigation 2 with SLAM. The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 
