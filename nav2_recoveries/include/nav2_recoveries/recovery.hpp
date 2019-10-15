@@ -51,7 +51,7 @@ public:
 
   Recovery()
   : action_server_(nullptr),
-    cycle_frequency_(10),
+    cycle_frequency_(10.0),
     enabled_(false)
   {
   }
@@ -100,14 +100,15 @@ public:
 
     node_->get_parameter("costmap_topic", costmap_topic);
     node_->get_parameter("footprint_topic", footprint_topic);
+    node_->get_parameter("cycle_frequency", cycle_frequency_);
 
     action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
 
-    costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+    costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
       node_, costmap_topic);
 
-    footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+    footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
       node_, footprint_topic);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
@@ -147,8 +148,8 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<ActionServer> action_server_;
 
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
   double enabled_;

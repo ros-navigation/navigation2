@@ -18,7 +18,6 @@ import os
 import sys
 
 
-from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
@@ -34,7 +33,7 @@ def generate_launch_description():
     bringup_package = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_package, 'params/nav2_params.yaml')
     astar = (os.getenv('ASTAR').lower() == 'true')
-    bt_navigator_install_path = get_package_prefix('nav2_bt_navigator')
+    bt_navigator_install_path = get_package_share_directory('nav2_bt_navigator')
     bt_navigator_xml = os.path.join(bt_navigator_install_path,
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))

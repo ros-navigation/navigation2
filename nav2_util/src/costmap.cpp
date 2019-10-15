@@ -87,7 +87,7 @@ void Costmap::set_test_costmap(const TestCostmap & testCostmapType)
 {
   costmap_properties_.map_load_time = node_->now();
   costmap_properties_.update_time = node_->now();
-  costmap_properties_.layer = "Master";
+  costmap_properties_.layer = "master";
   costmap_properties_.resolution = 1;
   costmap_properties_.size_x = 10;
   costmap_properties_.size_y = 10;

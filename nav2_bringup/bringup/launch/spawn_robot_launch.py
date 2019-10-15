@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from launch import LaunchDescription
 
 import launch.actions
 import launch_ros.actions
 
+
 def generate_launch_description():
 
     return LaunchDescription([
-        #TODO(orduno) might not be necessary to have it's own package
+        # TODO(orduno) might not be necessary to have it's own package
         launch_ros.actions.Node(
             package='spawn_turtlebot3',
             node_executable='spawn_turtlebot',

@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" This is all-in-one launch script intended for use by nav2 developers. """
+"""This is all-in-one launch script intended for use by nav2 developers."""
 
 import os
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
-from nav2_common.launch import Node
-
 from launch import LaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
+                            IncludeLaunchDescription, RegisterEventHandler)
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
-from launch.actions import (DeclareLaunchArgument, SetEnvironmentVariable,
-    IncludeLaunchDescription, ExecuteProcess, RegisterEventHandler, EmitEvent)
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+
+from nav2_common.launch import Node
 
 
 def generate_launch_description():
@@ -81,7 +81,7 @@ def generate_launch_description():
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
-            get_package_prefix('nav2_bt_navigator'),
+            get_package_share_directory('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
@@ -156,11 +156,13 @@ def generate_launch_description():
 
     start_rviz_cmd = ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            ['-d', rviz_config_file],
-            ['__ns:=/', namespace],
-            '/tf:=tf',
-            '/tf_static:=tf_static',
-            '/clicked_point:=clicked_point'],
+             ['-d', rviz_config_file],
+             ['__ns:=/', namespace],
+             '/tf:=tf',
+             '/tf_static:=tf_static',
+             '/goal_pose:=goal_pose',
+             '/clicked_point:=clicked_point',
+             '/initialpose:=initialpose'],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = RegisterEventHandler(

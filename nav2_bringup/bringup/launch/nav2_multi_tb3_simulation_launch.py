@@ -12,24 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-''' This is an example on how to create a launch file for spawning multiple robots into Gazebo
-    and launch multiple instances of the navigation stack, each controlling one robot.
-    The robots co-exist on a shared environment and are controlled by independent nav stacks '''
+"""
+Example for spawing multiple robots in Gazebo.
+
+This is an example on how to create a launch file for spawning multiple robots into Gazebo
+and launch multiple instances of the navigation stack, each controlling one robot.
+The robots co-exist on a shared environment and are controlled by independent nav stacks
+"""
 
 import os
 
-from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 
-from nav2_common.launch import ReplaceString
-
 from launch import LaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
-    LogInfo, GroupAction, ExecuteProcess)
+from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
+                            IncludeLaunchDescription, LogInfo)
 from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import PushRosNamespace
+
+from nav2_common.launch import ReplaceString
 
 
 def generate_launch_description():
@@ -76,7 +79,7 @@ def generate_launch_description():
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
-            get_package_prefix('nav2_bt_navigator'),
+            get_package_share_directory('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
@@ -85,7 +88,7 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
-   # Start Gazebo with plugin providing the robot spawing service
+    # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
@@ -95,7 +98,8 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'spawn_robot_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch',
+                                                           'spawn_robot_launch.py')),
                 launch_arguments={
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
@@ -112,12 +116,13 @@ def generate_launch_description():
             replacements={'<robot_namespace>': ('/' + robot['name'])})
 
         group = GroupAction([
-            # TODO(orduno) Each `action.Node` within the `localization` and `navigation` launch
-            #              files has two versions, one with the required remaps and another without.
-            #              The `use_remappings` flag specifies which runs.
-            #              A better mechanism would be to have a PushNodeRemapping() action:
-            #              https://github.com/ros2/launch_ros/issues/56
-            #              For more on why we're remapping topics, see the note below
+            # TODO(orduno)
+            # Each `action.Node` within the `localization` and `navigation` launch
+            # files has two versions, one with the required remaps and another without.
+            # The `use_remappings` flag specifies which runs.
+            # A better mechanism would be to have a PushNodeRemapping() action:
+            # https://github.com/ros2/launch_ros/issues/56
+            # For more on why we're remapping topics, see the note below
 
             # PushNodeRemapping(remappings)
 
@@ -125,9 +130,11 @@ def generate_launch_description():
             PushRosNamespace(robot['name']),
 
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'nav2_tb3_simulation_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bringup_dir,
+                                                           'launch',
+                                                           'nav2_tb3_simulation_launch.py')),
                 launch_arguments={
-                                  #TODO(orduno) might not be necessary to pass the robot name
+                                  # TODO(orduno) might not be necessary to pass the robot name
                                   'namespace': robot['name'],
                                   'map_yaml_file': map_yaml_file,
                                   'use_sim_time': 'True',
