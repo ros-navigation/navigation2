@@ -139,6 +139,7 @@ StaticLayer::getParameters()
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
+  map_received_ = false;
 }
 
 void
@@ -241,6 +242,9 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   processMap(*new_map);
+  if (!map_received_) {
+    map_received_ = true;
+  }
 }
 
 void
