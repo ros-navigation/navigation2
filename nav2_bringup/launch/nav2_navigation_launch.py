@@ -36,7 +36,6 @@ def generate_launch_description():
         'use_sim_time': use_sim_time,
         'bt_xml_filename': bt_xml_file,
         'autostart': autostart,
-        'map_subscribe_transient_local': 'False'
     }
 
     configured_params = RewrittenYaml(
