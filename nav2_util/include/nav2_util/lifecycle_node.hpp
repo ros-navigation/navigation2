@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 
+#include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -123,8 +124,7 @@ protected:
   rclcpp::Node::SharedPtr rclcpp_node_;
 
   // When creating a local node, this class will launch a separate thread created to spin the node
-  std::unique_ptr<std::thread> rclcpp_thread_;
-  rclcpp::executors::SingleThreadedExecutor rclcpp_exec_;
+  std::unique_ptr<NodeThread> rclcpp_thread_;
 };
 
 }  // namespace nav2_util
