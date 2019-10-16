@@ -248,5 +248,4 @@ Now, you can see that Turtlebot 3 moves towards the goal position in the room. S
 These steps conclude this tutorial part of this tutorial.
 
 ## Videos
-
-*TODO: Add videos.*
+[![Nav2_TB3](http://img.youtube.com/vi/ZeCds7Sv-5Q/0.jpg)](https://www.youtube.com/watch?time_continue=8&v=ZeCds7Sv-5Q "Nav2")
