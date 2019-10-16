@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_dynamic_params</name>
-  <version>0.2.5</version>
+  <version>0.2.6</version>
   <description>
     This package provides a validation class for ROS2 parameters with validation based on parameter
     type and defined bounds. Support for custom validation callbacks is also provided. Some useful
