@@ -30,10 +30,10 @@ class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEnti
 public:
   explicit ClearEntireCostmapService(
     const std::string & service_node_name,
-    const BT::NodeParameters & params)
+    const BT::NodeConfiguration & params)
   : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, params)
   {
-    getParam<std::string>("service_name", service_name_);
+    getInput<std::string>("service_name", service_name_);
   }
 
   void on_init() override

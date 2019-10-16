@@ -30,11 +30,11 @@ class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv
 public:
   explicit ReinitializeGlobalLocalizationService(
     const std::string & service_node_name,
-    const BT::NodeParameters & params)
+    const BT::NodeConfiguration & params)
   : BtServiceNode<std_srvs::srv::Empty>(service_node_name, params)
   {
     // default should be reinitialize_global_localization
-    getParam<std::string>("service_name", service_name_);
+    getInput<std::string>("service_name", service_name_);
   }
 
   void on_init() override

@@ -33,7 +33,7 @@ class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 public:
   explicit SpinAction(
     const std::string & action_name,
-    const BT::NodeParameters & params)
+    const BT::NodeConfiguration & params)
   : BtActionNode<nav2_msgs::action::Spin>(action_name, params)
   {
   }
@@ -41,14 +41,15 @@ public:
   void on_init() override
   {
     double dist;
-    getParam<double>("spin_dist", dist);
+    getInput<double>("spin_dist", dist);
     goal_.target_yaw = dist;
   }
 
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {{"spin_dist", "1.57"}};
-    return params;
+    return {
+      BT::InputPort<double>("spin_dist", 1.57, "Spin distance")
+    };
   }
 };
 

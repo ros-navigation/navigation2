@@ -34,13 +34,16 @@ namespace nav2_behavior_tree
 class IsStuckCondition : public BT::ConditionNode
 {
 public:
-  explicit IsStuckCondition(const std::string & condition_name)
-  : BT::ConditionNode(condition_name),
+  explicit IsStuckCondition(
+    const std::string & condition_name,
+    const BT::NodeConfiguration & config)
+  : BT::ConditionNode(condition_name, config),
     is_stuck_(false),
     odom_history_size_(10),
     current_accel_(0.0),
     brake_accel_limit_(-10.0)
   {
+    init();
   }
 
   IsStuckCondition() = delete;
@@ -50,9 +53,9 @@ public:
     RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
   }
 
-  void onInit() override
+  void init()
   {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
     odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
         rclcpp::SystemDefaultsQoS(),
@@ -145,9 +148,7 @@ public:
     return false;
   }
 
-  void halt() override
-  {
-  }
+  static BT::PortsList providedPorts() {return {};}
 
 private:
   // The node that will be used for any ROS operations

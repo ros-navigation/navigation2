@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
 public:
-  explicit WaitAction(const std::string & action_name, const BT::NodeParameters & params)
+  explicit WaitAction(const std::string & action_name, const BT::NodeConfiguration & params)
   : BtActionNode<nav2_msgs::action::Wait>(action_name, params)
   {
   }
@@ -36,7 +36,7 @@ public:
   void on_init() override
   {
     int duration;
-    getParam<int>("wait_duration", duration);
+    getInput<int>("wait_duration", duration);
     if (duration <= 0) {
       RCLCPP_WARN(node_->get_logger(), "Wait duration is negative or zero "
         "(%i). Setting to positive.", duration);
@@ -47,10 +47,11 @@ public:
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {{"wait_duration", "1"}};
-    return params;
+    return {
+      BT::InputPort<int>("wait_duration", 1, "Wait time")
+    };
   }
 };
 

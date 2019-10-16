@@ -35,15 +35,16 @@ namespace nav2_behavior_tree
 class RecoveryNode : public BT::ControlNode
 {
 public:
-  RecoveryNode(const std::string & name, const BT::NodeParameters & params);
+  RecoveryNode(const std::string & name, const BT::NodeConfiguration & params);
 
   ~RecoveryNode() override = default;
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {{"number_of_retries", "1"}};
-    return params;
+    return {
+      BT::InputPort<int>("number_of_retries", 1, "Number of retries")
+    };
   }
 
 private:

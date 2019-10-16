@@ -31,9 +31,10 @@ class BtServiceNode : public BT::CoroActionNode
 public:
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeParameters & params)
+    const BT::NodeConfiguration & params)
   : BT::CoroActionNode(service_node_name, params), service_node_name_(service_node_name)
   {
+    init();
   }
 
   BtServiceNode() = delete;
@@ -43,11 +44,11 @@ public:
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {{"service_name",
-      "please_set_service_name_in_BT_Node"}};
-    return params;
+    return {
+      BT::InputPort<std::string>("service_name", "please_set_service_name_in_BT_Node")
+    };
   }
 
   // This is a callback from the BT library invoked after the node
@@ -55,13 +56,13 @@ public:
   // by the library. It is the first opportunity for the node to
   // access the blackboard. Derived classes do not override this method,
   // but override on_init instead.
-  void onInit() final
+  void init()
   {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
     node_loop_timeout_ =
-      blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
 
     // Now that we have node_ to use, create the service client for this BT service
     service_client_ = node_->create_client<ServiceT>(service_name_);

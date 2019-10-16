@@ -29,48 +29,16 @@ template<class ActionT>
 class BtActionNode : public BT::CoroActionNode
 {
 public:
-  explicit BtActionNode(const std::string & action_name)
-  : BT::CoroActionNode(action_name), action_name_(action_name)
-  {
-  }
-
-  BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
+  BtActionNode(const std::string & action_name, const BT::NodeConfiguration & params)
   : BT::CoroActionNode(action_name, params), action_name_(action_name)
   {
+    init();
   }
 
   BtActionNode() = delete;
 
   virtual ~BtActionNode()
   {
-  }
-
-  // This is a callback from the BT library invoked after the node is created and after the
-  // blackboard has been set for the node by the library. It is the first opportunity for
-  // the node to access the blackboard. Derived classes do not override this method,
-  // but override on_init instead.
-  void onInit() final
-  {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
-
-    // Initialize the input and output messages
-    goal_ = typename ActionT::Goal();
-    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
-
-    // Get the required items from the blackboard
-    node_loop_timeout_ =
-      blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
-
-    // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    action_client_->wait_for_action_server();
-
-    // Give the derive class a chance to do any initialization
-    on_init();
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
   }
 
   // Derived classes can override any of the following methods to hook into the
@@ -180,6 +148,30 @@ new_goal_received:
   }
 
 protected:
+  void init()
+  {
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+    // Initialize the input and output messages
+    goal_ = typename ActionT::Goal();
+    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+
+    // Get the required items from the blackboard
+    node_loop_timeout_ =
+      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
+
+    // Now that we have the ROS node to use, create the action client for this BT action
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
+
+    // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
+    action_client_->wait_for_action_server();
+
+    // Give the derive class a chance to do any initialization
+    on_init();
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
+  }
+
   bool should_cancel_goal()
   {
     // Shut the node down if it is currently running
