@@ -30,7 +30,7 @@ public:
   : BT::DecoratorNode(name, params)
   {
     double hz = 1.0;
-    getInput<double>("hz", hz);
+    getInput("hz", hz);
     period_ = 1.0 / hz;
   }
 

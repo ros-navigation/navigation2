@@ -37,12 +37,12 @@ public:
 
   void on_tick() override
   {
-    goal_.pose = *(config().blackboard->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal"));
+    getInput("goal", goal_.pose);
   }
 
   void on_success() override
   {
-    *(config().blackboard->get<nav_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
+    setOutput("path", result_.result->path );
 
     if (first_time_) {
       first_time_ = false;
@@ -53,7 +53,10 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return {};
+    return {
+      BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to")
+    };
   }
 
 private:

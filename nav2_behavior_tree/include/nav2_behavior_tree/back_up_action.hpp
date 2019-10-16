@@ -33,14 +33,10 @@ public:
     const BT::NodeConfiguration & params)
   : BtActionNode<nav2_msgs::action::BackUp>(action_name, params)
   {
-  }
-
-  void on_init() override
-  {
     double dist;
-    getInput<double>("backup_dist", dist);
+    getInput("backup_dist", dist);
     double speed;
-    getInput<double>("backup_speed", speed);
+    getInput("backup_speed", speed);
 
     // silently fix, vector direction determined by distance sign
     if (speed < 0.0) {

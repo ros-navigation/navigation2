@@ -42,12 +42,7 @@ public:
   }
 
   // Derived classes can override any of the following methods to hook into the
-  // processing for the action: on_init, on_tick, on_loop_timeout, and on_success
-
-  // Perform any local initialization such as getting values from the blackboard
-  virtual void on_init()
-  {
-  }
+  // processing for the action: on_tick, on_loop_timeout, and on_success
 
   // Could do dynamic checks, such as getting updates to values on the blackboard
   virtual void on_tick()
@@ -168,7 +163,6 @@ protected:
     action_client_->wait_for_action_server();
 
     // Give the derive class a chance to do any initialization
-    on_init();
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
   }
 

@@ -41,8 +41,8 @@ public:
     geometry_msgs::msg::Point position;
     geometry_msgs::msg::Quaternion orientation;
 
-    bool have_position = getInput<geometry_msgs::msg::Point>("position", position);
-    bool have_orientation = getInput<geometry_msgs::msg::Quaternion>("orientation", orientation);
+    bool have_position = getInput("position", position);
+    bool have_orientation = getInput("orientation", orientation);
 
     if (!have_position || !have_orientation) {
       RCLCPP_ERROR(node_->get_logger(),

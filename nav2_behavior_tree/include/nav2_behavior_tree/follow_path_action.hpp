@@ -32,16 +32,12 @@ public:
     const BT::NodeConfiguration & params)
   : BtActionNode<nav2_msgs::action::FollowPath>(action_name, params)
   {
-  }
-
-  void on_init() override
-  {
     config().blackboard->set<bool>("path_updated", false);
   }
 
   void on_tick() override
   {
-    goal_.path = *(config().blackboard->get<nav_msgs::msg::Path::SharedPtr>("path"));
+    getInput("path", goal_.path);
   }
 
   void on_loop_timeout() override
@@ -53,14 +49,16 @@ public:
 
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration
-      goal_.path = *(config().blackboard->get<nav_msgs::msg::Path::SharedPtr>("path"));
+      getInput("path", goal_.path);
       goal_updated_ = true;
     }
   }
 
   static BT::PortsList providedPorts()
   {
-    return {};
+    return {
+      BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
+    };
   }
 };
 

@@ -64,12 +64,6 @@ protected:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
-  // The goal (on the blackboard) to be passed to ComputePath
-  std::shared_ptr<geometry_msgs::msg::PoseStamped> goal_;
-
-  // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
-  std::shared_ptr<nav_msgs::msg::Path> path_;
-
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;
 

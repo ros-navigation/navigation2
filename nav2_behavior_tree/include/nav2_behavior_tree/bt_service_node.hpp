@@ -34,6 +34,7 @@ public:
     const BT::NodeConfiguration & params)
   : BT::CoroActionNode(service_node_name, params), service_node_name_(service_node_name)
   {
+    getInput("service_name", service_name_);
     init();
   }
 
@@ -54,8 +55,7 @@ public:
   // This is a callback from the BT library invoked after the node
   // is created and after the blackboard has been set for the node
   // by the library. It is the first opportunity for the node to
-  // access the blackboard. Derived classes do not override this method,
-  // but override on_init instead.
+  // access the blackboard.
   void init()
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -75,8 +75,6 @@ public:
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());
 
-    // Give user a chance for initialization and get the service name
-    on_init();
   }
 
   // The main override required by a BT service
@@ -99,11 +97,6 @@ public:
   virtual void on_tick()
   {
     request_ = std::make_shared<typename ServiceT::Request>();
-  }
-
-  // Perform local initialization such as getting values from the blackboard
-  virtual void on_init()
-  {
   }
 
 protected:

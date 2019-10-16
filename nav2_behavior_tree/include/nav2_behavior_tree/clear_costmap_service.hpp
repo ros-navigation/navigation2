@@ -33,12 +33,8 @@ public:
     const BT::NodeConfiguration & params)
   : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, params)
   {
-    getInput<std::string>("service_name", service_name_);
   }
 
-  void on_init() override
-  {
-  }
 };
 
 }  // namespace nav2_behavior_tree

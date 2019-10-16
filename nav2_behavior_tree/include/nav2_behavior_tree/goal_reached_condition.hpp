@@ -74,10 +74,11 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
-    // TODO(mhpanah): replace this with a function
-    config().blackboard->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
-    double dx = goal_->pose.position.x - current_pose.pose.position.x;
-    double dy = goal_->pose.position.y - current_pose.pose.position.y;
+
+    geometry_msgs::msg::PoseStamped goal;
+    getInput("goal", goal);
+    double dx = goal.pose.position.x - current_pose.pose.position.x;
+    double dy = goal.pose.position.y - current_pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
@@ -86,7 +87,12 @@ public:
     }
   }
 
-  static BT::PortsList providedPorts() {return {};}
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination")
+    };
+  }
 
 protected:
   void cleanup()
@@ -96,7 +102,6 @@ protected:
 private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-  geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;
   double goal_reached_tol_;

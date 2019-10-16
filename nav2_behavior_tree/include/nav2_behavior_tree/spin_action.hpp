@@ -36,12 +36,8 @@ public:
     const BT::NodeConfiguration & params)
   : BtActionNode<nav2_msgs::action::Spin>(action_name, params)
   {
-  }
-
-  void on_init() override
-  {
     double dist;
-    getInput<double>("spin_dist", dist);
+    getInput("spin_dist", dist);
     goal_.target_yaw = dist;
   }
 

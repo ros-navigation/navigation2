@@ -33,12 +33,6 @@ public:
     const BT::NodeConfiguration & params)
   : BtServiceNode<std_srvs::srv::Empty>(service_node_name, params)
   {
-    // default should be reinitialize_global_localization
-    getInput<std::string>("service_name", service_name_);
-  }
-
-  void on_init() override
-  {
   }
 };
 
