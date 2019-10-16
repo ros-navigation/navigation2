@@ -30,11 +30,11 @@ This tutorial may take about 2-5 hours to complete completely depends on your ex
 
     - ```sudo apt install ros-<ros2-distro>-navigation2 ros-<ros2-distro>-nav2-bringup```
 
-- Install Turtlebot3 
+- Install Turtlebot 3 
 
     - ```sudo apt install ros-<ros2-distro>-turtlebot3*```
 
-- [Setup Turtlbot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup)
+- [Setup Turtlebot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup)
 
 ## Navigation2 with Turtlebot 3 in Gazebo
 
