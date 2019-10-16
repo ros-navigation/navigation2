@@ -42,34 +42,11 @@ This tutorial may take about 2-5 hours to complete completely depends on your ex
 
 ### 0- Setup Your Enviroment Variables
 
-There are two ways to this.
-
-**- Option 1**  Run the following commands whenever you open a new terminal during this tutorial. If you are a beginner level ROS user or for any reason you don't don't want to do any perminant changes in your enviroment, this option is higly recommended. 
+Run the following commands whenever you open a new terminal during this tutorial. If you are a beginner level ROS user or for any reason you don't don't want to do any perminant changes in your enviroment, this option is higly recommended. 
 
 - ```source /opt/ros/<ros2-distro>/setup.bash```
 - ```export TURTLEBOT3_MODEL=waffle```
 - ```export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models```
-
-**- Option 2** Edit your .bashrc file.
-
-You need to make sure you know what you are doing in this step, otherwise, these changes could cause issues especially, if you already have ROS1 or other ROS2 distributions installed on your system and you already edited your .bashrc file.
-
-Open a new terminal and open your .bashrc file which is located in your home directory. You can use your favorite text editor.
-
-```
-gedit ~/.bashrc
-```
-
-Add the following lines to the end of the file.
-
-```
-source /opt/ros/<ros2-distro>/setup.bash
-export TURTLEBOT3_MODEL=waffle
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models
-```
-save the file and close it. Whenever we open a new terminal, this script will be executed. 
-
-*Please note that this will make your terminal's start-up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.*
 
 ### 1- Launch Gazebo
 
@@ -155,32 +132,10 @@ This step concludes the first part of this tutorial. In the following sections, 
 
 ### 0- Setup Your Enviroment Variables
 
-There are two ways to this.
-
-**- Option 1**  Run the following commands whenever you open a new terminal during this tutorial. If you are a beginner level ROS user or for any reason you don't don't want to do any perminant changes in your enviroment, this option is higly recommended. 
+Run the following commands first whenever you open a new terminal during this tutorial.
 
 - ```source /opt/ros/<ros2-distro>/setup.bash```
 - ```export TURTLEBOT3_MODEL=waffle```
-
-**- Option 2** Edit your .bashrc file.
-
-You need to make sure you know what you are doing in this step, otherwise, these changes could cause issues especially, if you already have ROS 1 or other ROS 2 distributions installed on your system and you already eddited your .bashrc file.
-
-Open a new terminal and open your .bashrc file which is located in your home directory. You can use your favorite text editor.
-
-```
-sudo gedit ~/.bashrc
-```
-
-Add the following lines to the end of the file.
-
-```
-source /opt/ros/<ros2-distro>/setup.bash
-export TURTLEBOT3_MODEL=waffle
-```
-save the file and close it. Whenever we open a new terminal, this script will be executed. 
-
-*Please note that this will  make your terminal's start-up time considerably longer, so when you are done with this tutorial you may want to remove these lines from your .bashrc file.*
 
 ### 1- Launch Turtlebot 3 Robot State Publisher
 
