@@ -36,8 +36,6 @@ This tutorial may take about 2-5 hours to complete completely depends on your ex
 
 - [Setup Turtlbot 3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup)
 
-- [Install Gazebo](http://gazebosim.org/tutorials?tut=install_ubuntu&cat=install)
-
 ## Navigation2 with Turtlebot 3 in Gazebo
 
 ### 0- Setup Your Enviroment Variables
