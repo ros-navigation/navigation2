@@ -24,7 +24,7 @@ This tutorial may take about 2-5 hours to complete completely depends on your ex
 
 ## Requirements:
 
-- [Install ROS2](https://index.ros.org/doc/ros2/Installation/](https://index.ros.org/doc/ros2/Installation/)
+- [Install ROS2](https://index.ros.org/doc/ros2/Installation/)
 
 - Install Navigation2
 
