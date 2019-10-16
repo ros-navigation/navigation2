@@ -97,7 +97,7 @@ Footprint CollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose
 {
   Footprint footprint;
   if (!footprint_sub_.getFootprint(footprint)) {
-    throw CollisionCheckerException("Current footprint not available.");
+    throw CollisionCheckerException("Footprint not available.");
   }
 
   Footprint footprint_spec;

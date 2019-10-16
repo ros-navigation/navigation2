@@ -31,7 +31,8 @@ BtNavigator::BtNavigator()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("bt_xml_filename");
+  declare_parameter("bt_xml_filename",
+    rclcpp::ParameterValue(std::string("navigate_w_replanning_and_recovery.xml")));
 }
 
 BtNavigator::~BtNavigator()
