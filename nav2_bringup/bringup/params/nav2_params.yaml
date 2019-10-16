@@ -113,10 +113,11 @@ local_costmap:
       obstacle_layer:
         enabled: True
         scan:
-          topic: /scan
+          topic: /intel_realsense_r200_depth/points
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          data_type: "PointCloud2"
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
@@ -136,10 +137,11 @@ global_costmap:
       obstacle_layer:
         enabled: True
         scan:
-          topic: /scan
+          topic: /intel_realsense_r200_depth/points
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          data_type: "PointCloud2"
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
