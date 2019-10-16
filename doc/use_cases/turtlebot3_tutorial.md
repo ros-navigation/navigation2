@@ -48,6 +48,14 @@ Run the following commands whenever you open a new terminal during this tutorial
 - ```export TURTLEBOT3_MODEL=waffle```
 - ```export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models```
 
+## Short-cut 
+
+If you don't have the time to go through all the steps and only want to try Navigation2 in simulation, there is a solution for that. After setting up your system variables, if you don't want to go through the step by step launch instructions, you can use the launch file that does all the steps that are explained in the next sections for you.
+
+- ```ros2 launch nav2_bringup nav2_tb3_simulation_launch.py```
+
+This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RVIZ2. Once you see everything launced, you can jump to step 5.
+
 ### 1- Launch Gazebo
 
 Now, launch Gazebo with the world model, open a new terminal and type
