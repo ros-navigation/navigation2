@@ -82,7 +82,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   path_ = std::make_shared<nav_msgs::msg::Path>();
 
   // Create the blackboard that will be shared by all of the nodes in the tree
-  blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
+  blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
