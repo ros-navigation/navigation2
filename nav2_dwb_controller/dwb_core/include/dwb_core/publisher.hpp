@@ -42,7 +42,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
-#include "nav2_util/lifecycle_helper_interface.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
