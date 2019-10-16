@@ -57,7 +57,7 @@ You need to make sure you know what you are doing in this step, otherwise, these
 Open a new terminal and open your .bashrc file which is located in your home directory. You can use your favorite text editor.
 
 ```
-sudo gedit ~/.bashrc
+gedit ~/.bashrc
 ```
 
 Add the following lines to the end of the file.
