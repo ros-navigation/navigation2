@@ -16,7 +16,7 @@ Links to the robot kits:
 - [Turtlebot Burger](http://www.robotis.us/turtlebot-3-burger-us/)
 - [Turtlebot Waffle](http://www.robotis.us/turtlebot-3-waffle-pi/)
 
-This tutorial consists of two parts. In the first part, you will learn how to use Turtlebot 3 robots in summation (Gazebo). And in the second part, you will learn how to control a real Turtlebot Waffle using Navigation2.
+This tutorial consists of two parts. In the first part, you will learn how to use Turtlebot 3 robots in simulation (Gazebo). And in the second part, you will learn how to control a real Turtlebot Waffle using Navigation2.
 
 ```ROS2 Dashing``` and ```Navigation2 Dashing 0.2.4``` are used to create this tutorial.
 
