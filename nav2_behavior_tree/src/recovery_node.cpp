@@ -17,8 +17,10 @@
 
 namespace nav2_behavior_tree
 {
-RecoveryNode::RecoveryNode(const std::string & name, const BT::NodeConfiguration & params)
-: BT::ControlNode::ControlNode(name, params), current_child_idx_(0), retry_count_(0)
+RecoveryNode::RecoveryNode(
+  const std::string & name,
+  const BT::NodeConfiguration & conf)
+: BT::ControlNode::ControlNode(name, conf), current_child_idx_(0), retry_count_(0)
 {
   getInput("number_of_retries", number_of_retries_);
 }

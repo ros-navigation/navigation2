@@ -29,8 +29,8 @@ class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 public:
   FollowPathAction(
     const std::string & action_name,
-    const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::FollowPath>(action_name, params)
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::FollowPath>(action_name, conf)
   {
     config().blackboard->set<bool>("path_updated", false);
   }

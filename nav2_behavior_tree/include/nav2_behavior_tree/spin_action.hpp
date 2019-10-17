@@ -31,10 +31,10 @@ namespace nav2_behavior_tree
 class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {
 public:
-  explicit SpinAction(
+  SpinAction(
     const std::string & action_name,
-    const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::Spin>(action_name, params)
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::Spin>(action_name, conf)
   {
     double dist;
     getInput("spin_dist", dist);

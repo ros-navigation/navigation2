@@ -31,11 +31,26 @@ class BtServiceNode : public BT::CoroActionNode
 public:
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeConfiguration & params)
-  : BT::CoroActionNode(service_node_name, params), service_node_name_(service_node_name)
+    const BT::NodeConfiguration & conf)
+  : BT::CoroActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+    // Get the required items from the blackboard
+    node_loop_timeout_ =
+      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
+
+    // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
-    init();
+    service_client_ = node_->create_client<ServiceT>(service_name_);
+
+    // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" service",
+      service_name_.c_str());
+    service_client_->wait_for_service();
+
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
+      service_node_name_.c_str());
   }
 
   BtServiceNode() = delete;
@@ -50,31 +65,6 @@ public:
     return {
       BT::InputPort<std::string>("service_name", "please_set_service_name_in_BT_Node")
     };
-  }
-
-  // This is a callback from the BT library invoked after the node
-  // is created and after the blackboard has been set for the node
-  // by the library. It is the first opportunity for the node to
-  // access the blackboard.
-  void init()
-  {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-
-    // Get the required items from the blackboard
-    node_loop_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
-
-    // Now that we have node_ to use, create the service client for this BT service
-    service_client_ = node_->create_client<ServiceT>(service_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" service",
-      service_name_.c_str());
-    service_client_->wait_for_service();
-
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
-      service_node_name_.c_str());
-
   }
 
   // The main override required by a BT service

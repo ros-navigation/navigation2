@@ -30,8 +30,8 @@ class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePa
 public:
   ComputePathToPoseAction(
     const std::string & action_name,
-    const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name, params)
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name, conf)
   {
   }
 
@@ -42,7 +42,7 @@ public:
 
   void on_success() override
   {
-    setOutput("path", result_.result->path );
+    setOutput("path", result_.result->path);
 
     if (first_time_) {
       first_time_ = false;

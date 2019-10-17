@@ -46,7 +46,9 @@ public:
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
+  BT::Tree buildTreeFromText(
+    const std::string & xml_string,
+    BT::Blackboard::Ptr blackboard);
 
   void haltAllActions(BT::TreeNode * root_node)
   {

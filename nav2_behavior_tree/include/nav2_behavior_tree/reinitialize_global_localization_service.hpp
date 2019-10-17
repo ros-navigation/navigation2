@@ -28,10 +28,10 @@ namespace nav2_behavior_tree
 class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
 {
 public:
-  explicit ReinitializeGlobalLocalizationService(
+  ReinitializeGlobalLocalizationService(
     const std::string & service_node_name,
-    const BT::NodeConfiguration & params)
-  : BtServiceNode<std_srvs::srv::Empty>(service_node_name, params)
+    const BT::NodeConfiguration & conf)
+  : BtServiceNode<std_srvs::srv::Empty>(service_node_name, conf)
   {
   }
 };

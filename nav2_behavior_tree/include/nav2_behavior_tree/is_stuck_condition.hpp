@@ -34,26 +34,14 @@ namespace nav2_behavior_tree
 class IsStuckCondition : public BT::ConditionNode
 {
 public:
-  explicit IsStuckCondition(
+  IsStuckCondition(
     const std::string & condition_name,
-    const BT::NodeConfiguration & config)
-  : BT::ConditionNode(condition_name, config),
+    const BT::NodeConfiguration & conf)
+  : BT::ConditionNode(condition_name, conf),
     is_stuck_(false),
     odom_history_size_(10),
     current_accel_(0.0),
     brake_accel_limit_(-10.0)
-  {
-    init();
-  }
-
-  IsStuckCondition() = delete;
-
-  ~IsStuckCondition()
-  {
-    RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
-  }
-
-  void init()
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -64,6 +52,13 @@ public:
     RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
 
     RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
+  }
+
+  IsStuckCondition() = delete;
+
+  ~IsStuckCondition()
+  {
+    RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
   }
 
   void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)

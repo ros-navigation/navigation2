@@ -29,10 +29,30 @@ template<class ActionT>
 class BtActionNode : public BT::CoroActionNode
 {
 public:
-  BtActionNode(const std::string & action_name, const BT::NodeConfiguration & params)
-  : BT::CoroActionNode(action_name, params), action_name_(action_name)
+  BtActionNode(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BT::CoroActionNode(action_name, conf), action_name_(action_name)
   {
-    init();
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+    // Initialize the input and output messages
+    goal_ = typename ActionT::Goal();
+    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+
+    // Get the required items from the blackboard
+    node_loop_timeout_ =
+      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
+
+    // Now that we have the ROS node to use, create the action client for this BT action
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
+
+    // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
+    action_client_->wait_for_action_server();
+
+    // Give the derive class a chance to do any initialization
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
   }
 
   BtActionNode() = delete;
@@ -143,29 +163,6 @@ new_goal_received:
   }
 
 protected:
-  void init()
-  {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-
-    // Initialize the input and output messages
-    goal_ = typename ActionT::Goal();
-    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
-
-    // Get the required items from the blackboard
-    node_loop_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
-
-    // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    action_client_->wait_for_action_server();
-
-    // Give the derive class a chance to do any initialization
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
-  }
-
   bool should_cancel_goal()
   {
     // Shut the node down if it is currently running

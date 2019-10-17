@@ -26,8 +26,10 @@ namespace nav2_behavior_tree
 class RateController : public BT::DecoratorNode
 {
 public:
-  RateController(const std::string & name, const BT::NodeConfiguration & params)
-  : BT::DecoratorNode(name, params)
+  RateController(
+    const std::string & name,
+    const BT::NodeConfiguration & conf)
+  : BT::DecoratorNode(name, conf)
   {
     double hz = 1.0;
     getInput("hz", hz);

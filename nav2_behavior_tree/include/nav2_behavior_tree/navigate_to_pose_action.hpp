@@ -30,8 +30,10 @@ namespace nav2_behavior_tree
 class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {
 public:
-  NavigateToPoseAction(const std::string & action_name, const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, params)
+  NavigateToPoseAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, conf)
   {
   }
 

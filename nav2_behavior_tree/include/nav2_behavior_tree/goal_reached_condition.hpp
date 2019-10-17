@@ -30,10 +30,10 @@ namespace nav2_behavior_tree
 class GoalReachedCondition : public BT::ConditionNode
 {
 public:
-  explicit GoalReachedCondition(
+  GoalReachedCondition(
     const std::string & condition_name,
-    const BT::NodeConfiguration & config)
-  : BT::ConditionNode(condition_name, config), initialized_(false)
+    const BT::NodeConfiguration & conf)
+  : BT::ConditionNode(condition_name, conf), initialized_(false)
   {
   }
 

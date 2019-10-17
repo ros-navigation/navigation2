@@ -28,8 +28,10 @@ namespace nav2_behavior_tree
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
 public:
-  explicit WaitAction(const std::string & action_name, const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::Wait>(action_name, params)
+  WaitAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::Wait>(action_name, conf)
   {
     int duration;
     getInput("wait_duration", duration);

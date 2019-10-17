@@ -35,7 +35,7 @@ namespace nav2_behavior_tree
 class RecoveryNode : public BT::ControlNode
 {
 public:
-  RecoveryNode(const std::string & name, const BT::NodeConfiguration & params);
+  RecoveryNode(const std::string & name, const BT::NodeConfiguration & conf);
 
   ~RecoveryNode() override = default;
 

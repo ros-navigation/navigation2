@@ -72,9 +72,7 @@ BehaviorTreeEngine::run(
   std::chrono::milliseconds loopTimeout)
 {
   // Parse the input XML and create the corresponding Behavior Tree
-  BT::XMLParser p(factory_);
-  p.loadFromText(behavior_tree_xml);
-  BT::Tree tree = p.instantiateTree(blackboard);
+  BT::Tree tree = buildTreeFromText(behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
@@ -124,7 +122,9 @@ BehaviorTreeEngine::run(
 }
 
 BT::Tree
-BehaviorTreeEngine::buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard)
+BehaviorTreeEngine::buildTreeFromText(
+  const std::string & xml_string,
+  BT::Blackboard::Ptr blackboard)
 {
   BT::XMLParser p(factory_);
   p.loadFromText(xml_string);

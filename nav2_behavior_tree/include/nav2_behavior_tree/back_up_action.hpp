@@ -28,10 +28,10 @@ namespace nav2_behavior_tree
 class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
 public:
-  explicit BackUpAction(
+  BackUpAction(
     const std::string & action_name,
-    const BT::NodeConfiguration & params)
-  : BtActionNode<nav2_msgs::action::BackUp>(action_name, params)
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::BackUp>(action_name, conf)
   {
     double dist;
     getInput("backup_dist", dist);
