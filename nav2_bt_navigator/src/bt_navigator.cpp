@@ -233,7 +233,7 @@ BtNavigator::initializeGoalPose()
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Update the goal pose on the blackboard
-  blackboard_->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
+  blackboard_->set("goal", goal->pose);
 }
 
 void

@@ -32,7 +32,7 @@ public:
     const BT::NodeConfiguration & conf)
   : BtActionNode<nav2_msgs::action::FollowPath>(action_name, conf)
   {
-    config().blackboard->set<bool>("path_updated", false);
+    config().blackboard->set("path_updated", false);
   }
 
   void on_tick() override
@@ -45,7 +45,7 @@ public:
     // Check if the goal has been updated
     if (config().blackboard->get<bool>("path_updated")) {
       // Reset the flag in the blackboard
-      config().blackboard->set<bool>("path_updated", false);  // NOLINT
+      config().blackboard->set("path_updated", false);
 
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration

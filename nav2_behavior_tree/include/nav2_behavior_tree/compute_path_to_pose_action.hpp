@@ -47,7 +47,7 @@ public:
     if (first_time_) {
       first_time_ = false;
     } else {
-      config().blackboard->set<bool>("path_updated", true);  // NOLINT
+      config().blackboard->set("path_updated", true);
     }
   }
 
