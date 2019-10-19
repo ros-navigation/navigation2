@@ -28,7 +28,7 @@ matrix:
   include:
     - env: CMAKE_BUILD_TYPE=Release COVERAGE_ENABLED=False
       after_success:
-        - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+        - if [ "$TRAVIS_BRANCH" == "dashing-devel" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
             echo "Successfully built! Deploying container..."
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
             docker tag navigation2:latest stevemacenski/navigation2:latest
