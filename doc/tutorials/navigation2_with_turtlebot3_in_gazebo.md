@@ -66,7 +66,7 @@ If Gazebo fails to start, run the following commands and try to launch Gazebo ag
     killall gzserver
     killall gzclient
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/gazebo_turlebot1.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png?raw=true)
 
 ### 2- Launch Turtlebot 3 Robot State Publisher
  
@@ -94,21 +94,21 @@ Launch RVIZ with a pre-defined configuration file.
 
 Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in Rviz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/Rviz_start.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png?raw=true)
 
 Now, the map should appear in Rviz.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/Rviz_initial.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_initial_view.png?raw=true)
 
 ### 5- Initialize the location of Turtlebot 3
 
 First, find where the robot is in Gazebo. You can see where the robot's initial position in Gazebo.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/gazebo_turlebot1.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png?raw=true)
 
 Set the pose of the robot in Rviz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
   
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/Rviz2D_Pose_Estimate.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_set_initial_pose.png?raw=true)
 
 Now, the 3D model of Turtlebot should move to that location. A small error in the estimated location is tolerable.
 
@@ -118,18 +118,18 @@ Pick a target location for Turtlebot on the map. You can send Turtlebot 3 a goal
 
 *Note*: Difference between buttons. Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/RvizNavigation2Goal1.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_send_goal_pose.png?raw=true)
 
 Once you define the target pose,  Navigation2 will find a global path and start navigating the robot on the map.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/RvizNavigation2Goal2.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_robot_navigating.png?raw=true)
 
 You can also observe that Turtlebot 3 moves in the simulated environment in Gazebo as well.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/gazebo_turtlebot3.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_robot_reached_goal.png?raw=true)
 
 This step concludes the first part of this tutorial. In the following sections, you are going to learn how to control the real Turtlebot.
 
 ## Videos
 
-![enter image description here](https://raw.githubusercontent.com/mlherd/ros2/master/img/nav2_gif.gif)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif?raw=true)
