@@ -7,7 +7,7 @@
 
 # Overview:
 
-This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a real Turtlebot 3 robot. Before completing this tutorials, completing the Navigation2 with Turtlebot 3 in Gazebo is highly recommended espesially if you are new to ROS and Navigation2.
+This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a real Turtlebot 3 robot. Before completing this tutorials, completing the [Navigation2 with Turtlebot 3 in Gazebo](navigation2_with_turtlebot3_in_gazebo.md) is highly recommended espesially if you are new to ROS and Navigation2.
 
 Turtlebot is a low-cost, personal robot kit with open-source software (ROS2). Turtblebot robots are widely supported by the ROS community. You can find many applications and examples of Turtlebot projects on the Internet. You can find more information about Turtlebot3 [here.](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
 
@@ -79,11 +79,11 @@ Launch RVIZ with a pre-defined configuration file.
 
 Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in Rviz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 
-![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png?raw=true)
+![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png)
 
 Now, the map should appear in Rviz.
 
-![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_slam_map_view.png?raw=true)
+![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_slam_map_view.png)
 
 
 ### 4- Initialize the Location of Turtlebot 3
@@ -92,7 +92,7 @@ First, find where the robot is on the map. Check where your robot is in the room
 
 Set the pose of the robot in Rviz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
   
-![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_set_initial_pose.png?raw=true)
+![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_set_initial_pose.png)
 
 Now, the 3D model of Turtlebot should move to that location. A small error in the estimated location is tolerable.
 
@@ -102,15 +102,13 @@ Pick a target location for Turtlebot on the map. You can send Turtlebot 3 a goal
 
 *Note*: Difference between buttons. Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
 
-![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_send_goal.png?raw=true)
+![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_send_goal.png)
 
 Once you define the target pose,  Navigation2 will find a global path and start navigating the robot on the map.
 
-![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_robot_navigating.png?raw=true)
+![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_robot_navigating.png)
 
 Now, you can see that Turtlebot 3 moves towards the goal position in the room. See the video below.
-
-These steps conclude this tutorial part of this tutorial.
 
 ## Videos
 [![Nav2_TB3](http://img.youtube.com/vi/ZeCds7Sv-5Q/0.jpg)](https://www.youtube.com/watch?time_continue=8&v=ZeCds7Sv-5Q "Nav2")
