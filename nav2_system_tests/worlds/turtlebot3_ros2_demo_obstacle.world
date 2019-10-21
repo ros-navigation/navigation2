@@ -1,18 +1,4 @@
 <?xml version="1.0"?>
-<!--
-  Gazebo ROS turtlebot3 demo
-
-  Run teleop node:
-
-  ros2 run turtlebot3_teleop turtlebot3_teleop_key 
-
-  Try sending commands:
-
-    ros2 topic pub /tb3/cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}}' -1
-
-    ros2 topic pub /tb3/cmd_vel geometry_msgs/Twist '{angular: {z: 0.1}}' -1
-
--->
 <sdf version="1.6">
   <world name="default">
 
