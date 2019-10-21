@@ -51,7 +51,7 @@ Run the following commands first whenever you open a new terminal during this tu
 
 Launch Turtlebot 3 robot state publisher,
 
-    ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=True
+    ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=False
 
 Make sure use_sim_time is set to **False**.
 
