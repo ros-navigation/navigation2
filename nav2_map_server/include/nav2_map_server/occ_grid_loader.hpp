@@ -1,16 +1,18 @@
-// Copyright (c) 2018 Intel Corporation
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/**
+ * Copyright (c) 2018 Intel Corporation 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef NAV2_MAP_SERVER__OCC_GRID_LOADER_HPP_
 #define NAV2_MAP_SERVER__OCC_GRID_LOADER_HPP_
@@ -28,16 +30,51 @@
 
 namespace nav2_map_server
 {
+/**
+ * @class nav2_map_server::OccGridLoader
+ * @brief Parses the map yaml file and creates a service and a publisher that
+ * provides occupancy grid
+ */
 class OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 {
 public:
+  /**
+   * @brief Constructor for OccGridLoader
+   * @param node 
+   * @param Yaml_filename File that contains map data
+   */
   OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);
+  /**
+   * @brief Disabling the use of default or empty constructor
+   */
   OccGridLoader() = delete;
+  /**
+   * @brief Destructor for OccGridLoader
+   */
   ~OccGridLoader();
-
+  /**
+   * @brief Load map and its parameters from the file
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Start publishing the map using the latched topic
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Stops publishing the latched topic
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Resets the memeber variabels
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
@@ -58,8 +95,11 @@ protected:
     bool negate;
   } LoadParameters;
 
-  // Load and parse the given YAML file
-  /// @throw YAML::Exception
+  /**
+   * @brief Load and parse the given YAML file
+   * @param yaml_filename_ Name of the map file passed though parameter
+   * @throw YAML::Exception
+   */
   LoadParameters load_map_yaml(const std::string & yaml_filename_);
 
   // Load the image and generate an OccupancyGrid
