@@ -95,11 +95,12 @@ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:<full/path/to/my_robot/models>
 export TURTLEBOT3_MODEL=waffle
 ```
 
-Also, still under development, is a file for launching **two** robots with **independent** navigation stacks:
+Also, a file for launching **two** robots with **independent** navigation stacks is provided:
 
 ```bash
 ros2 launch nav2_bringup nav2_multi_tb3_simulation_launch.py <settings>
 ```
+
 
 ## Launch Navigation2 on a *Robot*
 
