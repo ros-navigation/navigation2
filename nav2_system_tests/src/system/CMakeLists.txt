@@ -46,6 +46,8 @@ ament_add_test(test_multi_robot
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 120
   ENV
+    TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/world_only.model
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_SDF=${PROJECT_SOURCE_DIR}/models/turtlebot3_waffle/model.sdf
