@@ -38,6 +38,7 @@ ament_add_test(test_dynamic_obstacle
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=True
+)
 
 ament_add_test(test_multi_robot
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
