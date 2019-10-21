@@ -51,7 +51,7 @@ If you don't have the time to go through all the steps and only want to try Navi
 
 - ```ros2 launch nav2_bringup nav2_tb3_simulation_launch.py```
 
-This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RVIZ2. Once you see everything launced, you can jump to step 5.
+This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RViz2. Once you see everything launced, you can jump to step 5.
 
 ### 1- Launch Gazebo
 
@@ -66,7 +66,7 @@ If Gazebo fails to start, run the following commands and try to launch Gazebo ag
     killall gzserver
     killall gzclient
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png)
+![TB3 world and robot in Gazebo](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png)
 
 ### 2- Launch Turtlebot 3 Robot State Publisher
  
@@ -86,29 +86,29 @@ turtlebot3_world.yaml is the configuration file for the map we want to provide N
 ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=False map:=/opt/ros/dashing/share/nav2_bringup/launch/turtlebot3_world.yaml
 ```
 
-### 4-  Launch RVIZ
+### 4-  Launch RViz
 
 Launch RVIZ with a pre-defined configuration file.
 
     ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/launch/nav2_default_view.rviz
 
-Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in Rviz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
+Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in RViz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 
-![enter image description here](images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png)
+![Rviz after launch, auto_start = false](images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png)
 
-Now, the map should appear in Rviz.
+Now, the map should appear in RViz.
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_initial_view.png)
+![Turtlebot 3 map in RViz](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_initial_view.png)
 
 ### 5- Initialize the location of Turtlebot 3
 
 First, find where the robot is in Gazebo. You can see where the robot's initial position in Gazebo.
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png)
+![Turtlebot 3 world and robot in Gazebo](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png)
 
-Set the pose of the robot in Rviz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
+Set the pose of the robot in RViz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
   
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_set_initial_pose.png)
+![Set initial pose in RViz](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_set_initial_pose.png)
 
 Now, the 3D model of Turtlebot should move to that location. A small error in the estimated location is tolerable.
 
@@ -118,21 +118,21 @@ Pick a target location for Turtlebot on the map. You can send Turtlebot 3 a goal
 
 *Note*: Difference between buttons. Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_send_goal_pose.png)
+![Send goal pose in RViz](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_send_goal_pose.png)
 
 Once you define the target pose,  Navigation2 will find a global path and start navigating the robot on the map.
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_robot_navigating.png)
+![Turtlebot 3 navigating on a map in RViz](images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_robot_navigating.png)
 
 You can also observe that Turtlebot 3 moves in the simulated environment in Gazebo as well.
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_robot_reached_goal.png)
+![Turtlebot 3 navigating in Gazebo](images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_robot_reached_goal.png)
 
 
 ### Next Tutorial 
 
-[Navigation2 on Real Turtlebot3](navigation2_with_turtlebot3_in_gazebo.md)
+[Navigation2 on Real Turtlebot 3](navigation2_with_turtlebot3_in_gazebo.md)
 
 ## Videos
 
-![enter image description here](images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif)
+![Navigation2 with Turtlebot 3 Demo](images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif)
