@@ -62,8 +62,8 @@ protected:
    */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief Calls OccGridLoader node's cleaningup state and resets the memeber
-   * variable
+   * @brief Calls OccGridLoader node's cleaning up state and resets the member
+   * variables
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */

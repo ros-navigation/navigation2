@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Intel Corporation 
+ * Copyright (c) 2018 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public:
    */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief Resets the memeber variabels
+   * @brief Resets the member variables
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
