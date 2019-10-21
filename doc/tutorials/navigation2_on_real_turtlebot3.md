@@ -79,11 +79,11 @@ Launch RVIZ with a pre-defined configuration file.
 
 Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in Rviz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/Rviz_start.PNG?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png?raw=true)
 
 Now, the map should appear in Rviz.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/rviz_custom_map.png?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_slam_map_view.png?raw=true)
 
 
 ### 4- Initialize the Location of Turtlebot 3
@@ -92,7 +92,7 @@ First, find where the robot is on the map. Check where your robot is in the room
 
 Set the pose of the robot in Rviz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
   
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/rviz_2d_pose_extimate_custom_map.png?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_set_initial_pose.png?raw=true)
 
 Now, the 3D model of Turtlebot should move to that location. A small error in the estimated location is tolerable.
 
@@ -102,11 +102,11 @@ Pick a target location for Turtlebot on the map. You can send Turtlebot 3 a goal
 
 *Note*: Difference between buttons. Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/rviz_send_goal_pose_custom_map.png?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_send_goal.png?raw=true)
 
 Once you define the target pose,  Navigation2 will find a global path and start navigating the robot on the map.
 
-![enter image description here](https://github.com/mlherd/ros2/blob/master/img/rviz_navigate_custom_map.png?raw=true)
+![enter image description here](https://github.com/ros-planning/navigation2/blob/master/doc/tutorials/images/Navigation2_on_real_Turtlebot3/rviz_robot_navigating.png?raw=true)
 
 Now, you can see that Turtlebot 3 moves towards the goal position in the room. See the video below.
 
