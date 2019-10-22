@@ -10,7 +10,7 @@
           <Fallback name="GoalReached">
             <GoalReached/>
             <RecoveryNode number_of_retries="1" name="ComputePath">
-              <ComputePathToPose goal="{goal}" path="{path}"/>
+              <ComputePlan goal="{goal}" path="{path}" planner="ComputePlan"/>
               <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
             </RecoveryNode>
           </Fallback>

@@ -25,8 +25,8 @@ using namespace std::chrono_literals;
 using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
-using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-using ComputePathToPoseResult = nav_msgs::msg::Path;
+using ComputePlanCommand = geometry_msgs::msg::PoseStamped;
+using ComputePlanResult = nav_msgs::msg::Path;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
 class RclCppFixture
@@ -49,7 +49,7 @@ TEST_F(PlannerTester, testSimpleCostmaps)
     TestCostmap::maze2
   };
 
-  ComputePathToPoseResult result;
+  ComputePlanResult result;
 
   activate();
 

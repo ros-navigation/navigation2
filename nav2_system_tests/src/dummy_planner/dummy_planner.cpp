@@ -31,11 +31,11 @@ DummyPlanner::DummyPlanner()
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
 
   task_server_ =
-    std::make_unique<nav2_behavior_tree::ComputePathToPoseTaskServer>(temp_node, false),
+    std::make_unique<nav2_behavior_tree::ComputePlanTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&DummyPlanner::computePathToPose, this, std::placeholders::_1));
+    std::bind(&DummyPlanner::computePlan, this, std::placeholders::_1));
 
-  // Start listening for incoming ComputePathToPose task requests
+  // Start listening for incoming ComputePlan task requests
   task_server_->start();
 
   RCLCPP_INFO(get_logger(), "Initialized DummyPlanner");
@@ -47,7 +47,7 @@ DummyPlanner::~DummyPlanner()
 }
 
 void
-DummyPlanner::computePathToPose(const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr cmd)
+DummyPlanner::computePlan(const nav2_behavior_tree::ComputePlanCommand::SharedPtr cmd)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", cmd->start.position.x, cmd->start.position.y,
@@ -64,7 +64,7 @@ DummyPlanner::computePathToPose(const nav2_behavior_tree::ComputePathToPoseComma
 
   RCLCPP_INFO(get_logger(), "Found a dummy path");
 
-  nav2_behavior_tree::ComputePathToPoseResult result;
+  nav2_behavior_tree::ComputePlanResult result;
   // set succeeded
   task_server_->setResult(result);
 }

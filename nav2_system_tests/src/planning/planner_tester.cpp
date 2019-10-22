@@ -224,7 +224,7 @@ void PlannerTester::setCostmap()
 }
 
 bool PlannerTester::defaultPlannerTest(
-  ComputePathToPoseResult & path,
+  ComputePlanResult & path,
   const double /*deviation_tolerance*/)
 {
   if (!costmap_set_) {
@@ -234,7 +234,7 @@ bool PlannerTester::defaultPlannerTest(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  ComputePathToPoseCommand goal;
+  ComputePlanCommand goal;
   auto costmap_properties = costmap_->get_properties();
 
   if (using_fake_costmap_) {
@@ -299,8 +299,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  ComputePathToPoseCommand goal;
-  ComputePathToPoseResult path;
+  ComputePlanCommand goal;
+  ComputePlanResult path;
 
   unsigned int num_fail = 0;
   auto start = high_resolution_clock::now();
@@ -341,8 +341,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
 bool PlannerTester::plannerTest(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  ComputePathToPoseResult & path)
+  const ComputePlanCommand & goal,
+  ComputePlanResult & path)
 {
   RCLCPP_DEBUG(this->get_logger(), "Getting the path from the planner");
 
@@ -367,8 +367,8 @@ bool PlannerTester::plannerTest(
 }
 
 TaskStatus PlannerTester::createPlan(
-  const ComputePathToPoseCommand & goal,
-  ComputePathToPoseResult & path)
+  const ComputePlanCommand & goal,
+  ComputePlanResult & path)
 {
   // Update the costmap of the planner to the set data
   planner_tester_->setCostmap(costmap_.get());
@@ -381,7 +381,7 @@ TaskStatus PlannerTester::createPlan(
   return TaskStatus::FAILED;
 }
 
-bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
+bool PlannerTester::isCollisionFree(const ComputePlanResult & path)
 {
   // At each point of the path, check if the corresponding cell is free
 
@@ -413,19 +413,19 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  const ComputePathToPoseResult & path) const
+  const ComputePlanCommand & goal,
+  const ComputePlanResult & path) const
 {
   return isWithinTolerance(
-    robot_position, goal, path, 0.0, ComputePathToPoseResult());
+    robot_position, goal, path, 0.0, ComputePlanResult());
 }
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  const ComputePathToPoseResult & path,
+  const ComputePlanCommand & goal,
+  const ComputePlanResult & path,
   const double /*deviationTolerance*/,
-  const ComputePathToPoseResult & /*reference_path*/) const
+  const ComputePlanResult & /*reference_path*/) const
 {
   // TODO(orduno) #443 Work in progress, for now we only check that the path start matches the
   //              robot start location and that the path end matches the goal.
@@ -455,7 +455,7 @@ bool PlannerTester::isWithinTolerance(
   return false;
 }
 
-void PlannerTester::printPath(const ComputePathToPoseResult & path) const
+void PlannerTester::printPath(const ComputePlanResult & path) const
 {
   auto index = 0;
   auto ss = std::stringstream{};

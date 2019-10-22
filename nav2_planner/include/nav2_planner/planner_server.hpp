@@ -25,7 +25,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/action/compute_plan.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -57,13 +57,13 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePlan>;
 
-  // Our action server implements the ComputePathToPose action
+  // Our action server implements the ComputePlan action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback
-  void computePathToPose();
+  void computePlan();
 
   // Publish a path for visualization purposes
   void publishPlan(const nav_msgs::msg::Path & path);

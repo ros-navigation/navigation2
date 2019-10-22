@@ -37,7 +37,7 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
       <RateController hz="1.0">
         <Fallback>
           <GoalReached/>
-          <ComputePathToPose goal="${goal}"/>
+          <ComputePlan goal="${goal}" planner="ComputePlan"/>
         </Fallback>
       </RateController>
       <FollowPath path="${path}"/>
@@ -49,13 +49,13 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
 Navigate with replanning is composed of the following custom decorator, condition and action nodes:
 
 #### Decorator Nodes
-* RateController: A custom control flow node, which throttles down the tick rate.  This custom node has only one child and its tick rate is defined with a pre-defined frequency that the user can set.  This node returns RUNNING when it is not ticking its child. Currently, in the navigation, the `RateController` is used to tick the  `ComputePathToPose` and `GoalReached` node at 1 Hz.
+* RateController: A custom control flow node, which throttles down the tick rate.  This custom node has only one child and its tick rate is defined with a pre-defined frequency that the user can set.  This node returns RUNNING when it is not ticking its child. Currently, in the navigation, the `RateController` is used to tick the  `ComputePlan` and `GoalReached` node at 1 Hz.
 
 #### Condition Nodes
-* GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked. 
+* GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePlan` action node will not get ticked.
 
 #### Action Nodes
-* ComputePathToPose: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard.
+* ComputePlan: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard. The `planner` parameter will tell the planning server which of the loaded planning plugins to utilize, in case of desiring different parameters, planners, or behaviors. The name of the planner should correspond with the high level task it accomplishes and align with the `planner_plugin_names` name given to it in the planner server. An example would be `ComputePath` for a path finder, or `FollowPerson` for a person follower.
 
 
 The graphical version of this Behavior Tree:
@@ -63,7 +63,7 @@ The graphical version of this Behavior Tree:
 <img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
 <br/>
 
-The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal.
+The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePlan` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePlan` should be ticked or not. The `ComputePlan` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal.
 
 ### Recovery Node
 In this section, the recovery node is being introduced to the navigation package.
