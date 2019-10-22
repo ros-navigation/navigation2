@@ -12,8 +12,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_core</exec_depend>
