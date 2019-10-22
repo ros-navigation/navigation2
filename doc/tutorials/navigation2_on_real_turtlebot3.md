@@ -29,7 +29,7 @@ This tutorial may take about 1-2 hours to complete. It depends on your experienc
 
 - Install Navigation2
 
-    - ```sudo apt install ros-<ros2-distro>-navigation2 ros-<ros2-distro>-nav2-bringup```
+    - ```sudo apt install ros-<ros2-distro>-navigation2```
 
 - Install Turtlebot 3 
 
