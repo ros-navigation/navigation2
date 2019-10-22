@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -45,6 +46,8 @@ public:
   PlannerServer();
   ~PlannerServer();
 
+  typedef std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr> PlannerMap;
+
 protected:
   // Implement the lifecycle interface
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
@@ -66,9 +69,9 @@ protected:
   void publishPlan(const nav_msgs::msg::Path & path);
 
   // Planner
-  nav2_core::GlobalPlanner::Ptr planner_;
+  PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
-  std::string planner_plugin_name_;
+  std::vector<std::string> plugin_names_, plugin_types_;
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
