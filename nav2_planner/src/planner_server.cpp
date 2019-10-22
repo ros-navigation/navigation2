@@ -59,7 +59,7 @@ PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
   PlannerMap::iterator it;
-  for (it = planners_.begin(); it !+ planners_.end(); ++it) {
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second.reset();
   }
 }
@@ -82,7 +82,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   if (plugin_names_.size() != plugin_types_.size()) {
-    RCLCPP_FATAL("Planner plugin names and types sizes do not match!");
+    RCLCPP_FATAL(get_logger(),
+      "Planner plugin names and types sizes do not match!");
     exit(-1);
   }
 
@@ -106,7 +107,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePlan",
-      std::bind(&PlannerServer::ComputePlan, this));
+      std::bind(&PlannerServer::computePlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -121,7 +122,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_activate(state);
 
   PlannerMap::iterator it;
-  for (it = planners_.begin(); it !+ planners_.end(); ++it) {
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
   }
 
@@ -138,7 +139,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_deactivate(state);
 
   PlannerMap::iterator it;
-  for (it = planners_.begin(); it !+ planners_.end(); ++it) {
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
 
@@ -156,12 +157,11 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_cleanup(state);
 
   PlannerMap::iterator it;
-  for (it = planners_.begin(); it !+ planners_.end(); ++it) {
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->cleanup();
   }
 
-  PlannerMap::iterator it;
-  for (it = planners_.begin(); it !+ planners_.end(); ++it) {
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second.reset();
   }
 
@@ -183,11 +183,12 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-PlannerServer::ComputePlan()
+PlannerServer::computePlan()
 {
   // Initialize the ComputePlan goal and result
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePlan::Result>();
+  const std::string & p_name = goal->planner_name;
 
   try {
     if (action_server_ == nullptr) {
@@ -220,7 +221,6 @@ PlannerServer::ComputePlan()
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-    std::string & p_name = goal->planner_name;
     result->path = planners_[p_name]->createPlan(start, goal->pose);
 
     if (result->path.poses.size() == 0) {

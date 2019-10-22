@@ -80,7 +80,7 @@ public:
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
-    path = planner_->createPlan(start, goal);
+    path = planners_["ComputePath"]->createPlan(start, goal);
     return true;
   }
 

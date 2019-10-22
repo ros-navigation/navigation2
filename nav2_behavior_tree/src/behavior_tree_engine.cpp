@@ -19,7 +19,7 @@
 
 #include "nav2_behavior_tree/back_up_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "nav2_behavior_tree/planning_action.hpp"
+#include "nav2_behavior_tree/compute_plan_action.hpp"
 #include "nav2_behavior_tree/follow_path_action.hpp"
 #include "nav2_behavior_tree/goal_reached_condition.hpp"
 #include "nav2_behavior_tree/is_stuck_condition.hpp"

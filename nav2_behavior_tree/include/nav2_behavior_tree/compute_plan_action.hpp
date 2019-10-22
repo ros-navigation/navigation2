@@ -57,7 +57,7 @@ public:
   {
     return {
       BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePlan node"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to")
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
       BT::InputPort<std::string>("planner", "Name of planner to use")
     };
   }
