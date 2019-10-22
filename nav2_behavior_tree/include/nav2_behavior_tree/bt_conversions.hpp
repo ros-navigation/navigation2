@@ -59,6 +59,12 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
   }
 }
 
+template <>
+inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(StringView str)
+{
+  return std::chrono::milliseconds(std::stoul(str.data()));
+}
+
 }  // namespace BT
 
 #endif  // NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_

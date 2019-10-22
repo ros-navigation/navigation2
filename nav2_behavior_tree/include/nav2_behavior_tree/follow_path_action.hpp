@@ -40,7 +40,7 @@ public:
     getInput("path", goal_.path);
   }
 
-  void on_loop_timeout() override
+  void on_server_timeout() override
   {
     // Check if the goal has been updated
     if (config().blackboard->get<bool>("path_updated")) {

@@ -41,8 +41,9 @@ public:
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
 
     // Get the required items from the blackboard
-    node_loop_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
+    server_timeout_ =
+      config().blackboard->get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Now that we have the ROS node to use, create the action client for this BT action
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
@@ -61,8 +62,16 @@ public:
   {
   }
 
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+    };
+  }
+
   // Derived classes can override any of the following methods to hook into the
-  // processing for the action: on_tick, on_loop_timeout, and on_success
+  // processing for the action: on_tick, on_server_timeout, and on_success
 
   // Could do dynamic checks, such as getting updates to values on the blackboard
   virtual void on_tick()
@@ -71,7 +80,7 @@ public:
 
   // There can be many loop iterations per tick. Any opportunity to do something after
   // a timeout waiting for a result that hasn't been received yet
-  virtual void on_loop_timeout()
+  virtual void on_server_timeout()
   {
   }
 
@@ -106,9 +115,9 @@ new_goal_received:
     auto future_result = goal_handle_->async_result();
     rclcpp::executor::FutureReturnCode rc;
     do {
-      rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
+      rc = rclcpp::spin_until_future_complete(node_, future_result, server_timeout_);
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
-        on_loop_timeout();
+        on_server_timeout();
 
         // We can handle a new goal if we're still executing
         auto status = goal_handle_->get_status();
@@ -197,7 +206,7 @@ protected:
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
-  std::chrono::milliseconds node_loop_timeout_;
+  std::chrono::milliseconds server_timeout_;
 };
 
 }  // namespace nav2_behavior_tree
