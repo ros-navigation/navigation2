@@ -30,8 +30,10 @@ namespace nav2_behavior_tree
 class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {
 public:
-  NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, params)
+  NavigateToPoseAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, conf)
   {
   }
 
@@ -41,8 +43,8 @@ public:
     geometry_msgs::msg::Point position;
     geometry_msgs::msg::Quaternion orientation;
 
-    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
-    bool have_orientation = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
+    bool have_position = getInput("position", position);
+    bool have_orientation = getInput("orientation", orientation);
 
     if (!have_position || !have_orientation) {
       RCLCPP_ERROR(node_->get_logger(),
@@ -54,10 +56,12 @@ public:
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {{"position", "0;0;0"}, {"orientation", "0;0;0;0"}};
-    return params;
+    return {
+      BT::InputPort<geometry_msgs::msg::Point>("position", "0;0;0", "Position"),
+      BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "0;0;0;0", "Orientation")
+    };
   }
 };
 

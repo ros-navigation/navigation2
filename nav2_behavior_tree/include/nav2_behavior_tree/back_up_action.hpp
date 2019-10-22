@@ -28,19 +28,15 @@ namespace nav2_behavior_tree
 class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
 public:
-  explicit BackUpAction(
+  BackUpAction(
     const std::string & action_name,
-    const BT::NodeParameters & params)
-  : BtActionNode<nav2_msgs::action::BackUp>(action_name, params)
-  {
-  }
-
-  void on_init() override
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::BackUp>(action_name, conf)
   {
     double dist;
-    getParam<double>("backup_dist", dist);
+    getInput("backup_dist", dist);
     double speed;
-    getParam<double>("backup_speed", speed);
+    getInput("backup_speed", speed);
 
     // silently fix, vector direction determined by distance sign
     if (speed < 0.0) {
@@ -54,11 +50,12 @@ public:
     goal_.speed = speed;
   }
 
-  static const BT::NodeParameters & requiredNodeParameters()
+  static BT::PortsList providedPorts()
   {
-    static BT::NodeParameters params = {
-      {"backup_dist", "-0.15"}, {"backup_speed", "0.025"}};
-    return params;
+    return {
+      BT::InputPort<double>("backup_dist", -0.15, "Distance to backup"),
+      BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup")
+    };
   }
 };
 

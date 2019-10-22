@@ -28,25 +28,35 @@ namespace nav2_behavior_tree
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
 public:
-  explicit ComputePathToPoseAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name)
+  ComputePathToPoseAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name, conf)
   {
   }
 
   void on_tick() override
   {
-    goal_.pose = *(blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal"));
+    getInput("goal", goal_.pose);
   }
 
   void on_success() override
   {
-    *(blackboard()->get<nav_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
+    setOutput("path", result_.result->path);
 
     if (first_time_) {
       first_time_ = false;
     } else {
-      blackboard()->set<bool>("path_updated", true);  // NOLINT
+      config().blackboard->set("path_updated", true);
     }
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to")
+    };
   }
 
 private:
