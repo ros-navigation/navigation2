@@ -42,7 +42,7 @@ PlannerServer::PlannerServer()
 
   // Declare this node's parameters
   std::vector<std::string> default_name, default_type;
-  default_name.push_back("ComputePath");
+  default_name.push_back("ComputePlan");
   default_type.push_back("nav2_navfn_planner/NavfnPlanner");
   declare_parameter("planner_plugin_names", default_name);
   declare_parameter("planner_plugin_types", default_type);
@@ -228,7 +228,8 @@ PlannerServer::computePlan()
       result->path = planners_[goal->planner_name]->createPlan(start, goal->pose);
     } else {
       RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
-        "Planner names are: %s", goal->planner_name, planner_names_concat_);
+        "Planner names are: %s", goal->planner_name.c_str(),
+        planner_names_concat_.c_str());
     }
 
     if (result->path.poses.size() == 0) {
