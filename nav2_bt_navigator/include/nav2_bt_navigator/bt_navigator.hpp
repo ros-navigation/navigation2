@@ -32,8 +32,8 @@ namespace nav2_bt_navigator
 {
 /**
  * @class nav2_bt_navigator::BtNavigator
- * @brief A class that uses behavior tree for navigating a robot to its goal
- * position.
+ * @brief An action server that uses behavior tree for navigating a robot to its
+ * goal position.
  */
 class BtNavigator : public nav2_util::LifecycleNode
 {
