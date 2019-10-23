@@ -10,6 +10,7 @@ references:
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
+    RETEST_UNTIL_PASS: "3"
   common_commands: &common_commands
     restore_from_cache:
       description: "Restore From Cache"
@@ -151,7 +152,8 @@ references:
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
-                --mixin << parameters.mixins >>
+                --mixin << parameters.mixins >> \
+                --retest-until-pass ${RETEST_UNTIL_PASS}
               colcon test-result \
                 --verbose
         - run:
