@@ -36,8 +36,8 @@ namespace nav2_controller
 class ProgressChecker;
 /**
  * @class nav2_controller::ControllerServer
- * @brief This class publishes twist velocity for robot by computing velocities
- * using specified local planner.
+ * @brief This class hosts variety of plugins of different algorithms to
+ * complete control tasks from the exposed FollowPath action server.
  */
 class ControllerServer : public nav2_util::LifecycleNode
 {
@@ -55,16 +55,18 @@ protected:
   /**
    * @brief Configures controller parameters and member variables
    *
-   * Configures local planner and costmap; Initialize odom subscriber, velocity
-   * publisher and follow path action server.
+   * Configures controller plugin and costmap; Initialize odom subscriber,
+   * velocity publisher and follow path action server.
    * @param state LifeCycle Node's state
    * @return Success or Failure
+   * @throw pluginlib::PluginlibException When failed to initialize controller
+   * plugin
    */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates member variables
    *
-   * Activates local planner, costmap, velocity publisher and follow path action
+   * Activates controller, costmap, velocity publisher and follow path action
    * server
    * @param state LifeCycle Node's state
    * @return Success or Failure
@@ -73,7 +75,7 @@ protected:
   /**
    * @brief Deactivates member variables
    *
-   * Deactivates follow path action server, local planner, costmap and velocity
+   * Deactivates follow path action server, controller, costmap and velocity
    * publisher. Before calling deactivate state, velocity is being set to zero.
    * @param state LifeCycle Node's state
    * @return Success or Failure
@@ -82,7 +84,7 @@ protected:
   /**
    * @brief Calls clean up states and resets member variables.
    *
-   * Local planner and costmap clean up state is called, and resets rest of the
+   * Controller and costmap clean up state is called, and resets rest of the
    * variables
    * @param state LifeCycle Node's state
    * @return Success or Failure
@@ -106,16 +108,22 @@ protected:
   // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
   /**
-   * @brief Follow path action server's callback method
+   * @brief FollowPath action server callback. Handles action server updates and
+   * spins server until goal is reached
+   *
+   * Provides global path to controller received from action client. Twist
+   * velocities for the robot are calculated and published using controller at
+   * the specified rate till the goal is reached.
+   * @throw nav2_core::PlannerException
    */
   void followPath();
   /**
-   * @brief Assigns path to local planner
+   * @brief Assigns path to controller
    * @param path Path received from action server
    */
   void setPlannerPath(const nav_msgs::msg::Path & path);
   /**
-   * @brief Calculates velocity and publishes to "/cmd_vel" topic
+   * @brief Calculates velocity and publishes to "cmd_vel" topic
    */
   void computeAndPublishVelocity();
   /**
@@ -124,7 +132,7 @@ protected:
    */
   void updateGlobalPath();
   /**
-   * @brief Calls velocity publisher to publish the velocity on "/cmd_vel" topic
+   * @brief Calls velocity publisher to publish the velocity on "cmd_vel" topic
    * @param velocity Twist velocity to be published
    */
   void publishVelocity(const geometry_msgs::msg::TwistStamped & velocity);
@@ -133,18 +141,19 @@ protected:
    */
   void publishZeroVelocity();
   /**
-   * @brief Checks if the robot reached to the goal
+   * @brief Checks if robot reached goal position by calling getRobotPose method
+   * to get it's current position.
    * @return true or false
    */
   bool isGoalReached();
   /**
-   * @brief Obtain current pos of the robot
+   * @brief Obtain current pose of the robot
    * @param pose To store current pose of the robot
    * @return true if able to obtain current pose of the robot, else false
    */
   bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
 
-  // The local controller needs a costmap node
+  // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
 

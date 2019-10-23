@@ -23,15 +23,15 @@ namespace nav2_controller
 {
 /**
  * @class nav2_controller::ProgressChecker
- * @brief This class aids nav2_controller::ControllerServer by keeping regular
- * checks on robot movements
+ * @brief This class is used to check the position of the robot to make sure
+ * that it is actually progressing towards a goal.
  */
 class ProgressChecker
 {
 public:
   /**
    * @brief Constructor of ProgressChecker
-   * @param node Node pointer to execute ROS related operations
+   * @param node Node pointer
    */
   explicit ProgressChecker(const rclcpp::Node::SharedPtr & node);
   /**
@@ -42,7 +42,7 @@ public:
    */
   void check(geometry_msgs::msg::PoseStamped & current_pose);
   /**
-   * @brief Resets baseline_pose_set_ flag upon calling
+   * @brief Reset class state flag upon calling
    */
   void reset() {baseline_pose_set_ = false;}
 
