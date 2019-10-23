@@ -31,8 +31,7 @@ BtNavigator::BtNavigator()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("bt_xml_filename",
-    rclcpp::ParameterValue(std::string("navigate_w_replanning_and_recovery.xml")));
+  declare_parameter("bt_xml_filename");
 }
 
 BtNavigator::~BtNavigator()
@@ -77,16 +76,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
 
-  // Create the path that will be returned from ComputePath and sent to FollowPath
-  goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();
-  path_ = std::make_shared<nav_msgs::msg::Path>();
-
   // Create the blackboard that will be shared by all of the nodes in the tree
-  blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
+  blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
-  blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
-  blackboard_->set<nav_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
@@ -155,7 +148,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_.reset();
   tf_listener_.reset();
   action_server_.reset();
-  path_.reset();
   xml_string_.clear();
   tree_.reset();
   blackboard_.reset();
@@ -240,7 +232,7 @@ BtNavigator::initializeGoalPose()
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Update the goal pose on the blackboard
-  *(blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal")) = goal->pose;
+  blackboard_->set("goal", goal->pose);
 }
 
 void

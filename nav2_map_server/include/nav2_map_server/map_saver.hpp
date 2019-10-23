@@ -22,18 +22,41 @@
 
 namespace nav2_map_server
 {
+
+/**
+ * @class nav2_map_server::MapSaver
+ * @brief A class that writes map to a file from occpancy grid which is
+ * subscribed from "/map" topic.
+ */
 class MapSaver : public rclcpp::Node
 {
 public:
+  /**
+   * @brief Constructor for the MapSaver
+   * @param options NodeOptions for the MapSaver
+   */
   explicit MapSaver(const rclcpp::NodeOptions & options);
 
+  /**
+   * @brief A Map callback function calls try_write_map_to_file method to
+   * write map data to a file.
+   * @param map Occupancy Grid message data
+   */
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map);
 
+  /**
+   * @brief Returns the promise as shared future
+   * @return a shared future copy of save_next_map_promise
+   */
   std::shared_future<void> map_saved_future() {return save_next_map_promise.get_future().share();}
 
 protected:
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 
+  /**
+   * @brief Writes map data to file
+   * @param map Occupancy grid data
+   */
   void try_write_map_to_file(const nav_msgs::msg::OccupancyGrid & map);
 
   std::promise<void> save_next_map_promise;

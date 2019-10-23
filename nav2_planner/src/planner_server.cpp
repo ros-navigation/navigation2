@@ -48,21 +48,12 @@ PlannerServer::PlannerServer()
     "global_costmap", std::string{get_namespace()}, "global_costmap");
 
   // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<std::thread>(
-    [&](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
-    {
-      // TODO(mjeronimo): Once Brian pushes his change upstream to rlcpp executors, we'll
-      costmap_executor_.add_node(node->get_node_base_interface());
-      costmap_executor_.spin();
-      costmap_executor_.remove_node(node->get_node_base_interface());
-    }, costmap_ros_);
+  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  costmap_executor_.cancel();
-  costmap_thread_->join();
   planner_.reset();
 }
 

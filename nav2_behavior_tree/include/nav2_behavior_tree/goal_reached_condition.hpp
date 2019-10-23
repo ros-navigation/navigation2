@@ -30,8 +30,10 @@ namespace nav2_behavior_tree
 class GoalReachedCondition : public BT::ConditionNode
 {
 public:
-  explicit GoalReachedCondition(const std::string & condition_name)
-  : BT::ConditionNode(condition_name), initialized_(false)
+  GoalReachedCondition(
+    const std::string & condition_name,
+    const BT::NodeConfiguration & conf)
+  : BT::ConditionNode(condition_name, conf), initialized_(false)
   {
   }
 
@@ -56,9 +58,9 @@ public:
 
   void initialize()
   {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    tf_ = blackboard()->template get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
     initialized_ = true;
   }
@@ -72,16 +74,24 @@ public:
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
-    // TODO(mhpanah): replace this with a function
-    blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);
-    double dx = goal_->pose.position.x - current_pose.pose.position.x;
-    double dy = goal_->pose.position.y - current_pose.pose.position.y;
+
+    geometry_msgs::msg::PoseStamped goal;
+    getInput("goal", goal);
+    double dx = goal.pose.position.x - current_pose.pose.position.x;
+    double dy = goal.pose.position.y - current_pose.pose.position.y;
 
     if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
       return true;
     } else {
       return false;
     }
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination")
+    };
   }
 
 protected:
@@ -92,7 +102,6 @@ protected:
 private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-  geometry_msgs::msg::PoseStamped::SharedPtr goal_;
 
   bool initialized_;
   double goal_reached_tol_;

@@ -31,39 +31,17 @@ class BtServiceNode : public BT::CoroActionNode
 public:
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeParameters & params)
-  : BT::CoroActionNode(service_node_name, params), service_node_name_(service_node_name)
+    const BT::NodeConfiguration & conf)
+  : BT::CoroActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
-  }
-
-  BtServiceNode() = delete;
-
-  virtual ~BtServiceNode()
-  {
-  }
-
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static const BT::NodeParameters & requiredNodeParameters()
-  {
-    static BT::NodeParameters params = {{"service_name",
-      "please_set_service_name_in_BT_Node"}};
-    return params;
-  }
-
-  // This is a callback from the BT library invoked after the node
-  // is created and after the blackboard has been set for the node
-  // by the library. It is the first opportunity for the node to
-  // access the blackboard. Derived classes do not override this method,
-  // but override on_init instead.
-  void onInit() final
-  {
-    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
     node_loop_timeout_ =
-      blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
+      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
 
     // Now that we have node_ to use, create the service client for this BT service
+    getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(service_name_);
 
     // Make sure the server is actually there before continuing
@@ -73,9 +51,20 @@ public:
 
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());
+  }
 
-    // Give user a chance for initialization and get the service name
-    on_init();
+  BtServiceNode() = delete;
+
+  virtual ~BtServiceNode()
+  {
+  }
+
+  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::InputPort<std::string>("service_name", "please_set_service_name_in_BT_Node")
+    };
   }
 
   // The main override required by a BT service
@@ -98,11 +87,6 @@ public:
   virtual void on_tick()
   {
     request_ = std::make_shared<typename ServiceT::Request>();
-  }
-
-  // Perform local initialization such as getting values from the blackboard
-  virtual void on_init()
-  {
   }
 
 protected:

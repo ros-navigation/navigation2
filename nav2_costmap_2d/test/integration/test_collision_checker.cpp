@@ -72,7 +72,7 @@ public:
   DummyFootprintSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
     std::string & topic_name)
-  : FootprintSubscriber(node, topic_name)
+  : FootprintSubscriber(node, topic_name, 10.0)
   {}
 
   void setFootprint(geometry_msgs::msg::PolygonStamped::SharedPtr msg)

@@ -17,28 +17,70 @@
 
 #include <memory>
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/lifecycle_helper_interface.hpp"
 
 namespace nav2_map_server
 {
 
+/**
+ * @class nav2_map_server::MapServer
+ * @brief This class on activate, loads the OccGridLoader node to start map
+ * server from the yaml file which is being passed as parameter.
+ */
 class MapServer : public nav2_util::LifecycleNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_map_server::MapServer
+   */
   MapServer();
+
+  /**
+   * @brief A Destructor for nav2_map_server::MapServer
+   */
   ~MapServer();
 
 protected:
-  // Implement the lifecycle interface
+  /**
+   * @brief Sets up required params and calls OccGridLoader node's configure
+   * state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Calls OccGridLoader node's activate state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Calls OccGridLoader node's deactivate state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Calls OccGridLoader node's cleaning up state and resets the member
+   * variables
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in Shutdown state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when Error is raised
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // The map loader that will actually do the work
-  std::unique_ptr<nav2_util::LifecycleHelperInterface> map_loader_;
+  std::unique_ptr<rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface> map_loader_;
 };
 
 }  // namespace nav2_map_server
