@@ -42,7 +42,7 @@ public:
    */
   void check(geometry_msgs::msg::PoseStamped & current_pose);
   /**
-   * @brief Reset class state flag upon calling
+   * @brief Reset class state upon calling
    */
   void reset() {baseline_pose_set_ = false;}
 

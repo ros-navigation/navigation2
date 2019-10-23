@@ -141,8 +141,7 @@ protected:
    */
   void publishZeroVelocity();
   /**
-   * @brief Checks if robot reached goal position by calling getRobotPose method
-   * to get it's current position.
+   * @brief Checks if goal is reached
    * @return true or false
    */
   bool isGoalReached();
