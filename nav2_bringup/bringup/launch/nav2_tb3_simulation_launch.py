@@ -16,7 +16,7 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
@@ -153,6 +153,7 @@ def generate_launch_description():
         arguments=[urdf])
 
     start_rviz_cmd = Node(
+        condition=IfCondition(use_rviz),
         package='rviz2',
         node_executable='rviz2',
         node_name='rviz2',
