@@ -34,8 +34,8 @@ RUN find ./ -name "package.xml" | \
 # multi-stage for building
 FROM $FROM_IMAGE AS build
 
-# install CI dependencies	
-RUN apt-get update && apt-get install -q -y \	
+# install CI dependencies
+RUN apt-get update && apt-get install -q -y \
       ccache \
       lcov \
     && rm -rf /var/lib/apt/lists/*
@@ -63,6 +63,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --symlink-install \
       --mixin \
         $UNDERLAY_MIXINS \
+      --event-handlers console_direct+ \
     || touch build_failed && \
     if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
       exit 1; \
