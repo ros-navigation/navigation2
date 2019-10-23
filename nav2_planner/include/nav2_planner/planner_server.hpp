@@ -72,6 +72,7 @@ protected:
   PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
   std::vector<std::string> plugin_names_, plugin_types_;
+  std::string planner_names_concat_;
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;

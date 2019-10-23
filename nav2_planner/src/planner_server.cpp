@@ -102,6 +102,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
+  for (uint i = 0; i != plugin_names_.size(); i++) {
+    planner_names_concat_ += plugin_names_[i] + std::string(" ");
+  }
+
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
@@ -188,7 +192,6 @@ PlannerServer::computePlan()
   // Initialize the ComputePlan goal and result
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePlan::Result>();
-  const std::string & p_name = goal->planner_name;
 
   try {
     if (action_server_ == nullptr) {
@@ -221,11 +224,16 @@ PlannerServer::computePlan()
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-    result->path = planners_[p_name]->createPlan(start, goal->pose);
+    if (planners_.find(goal->planner_name) != planners_.end()) {
+      result->path = planners_[goal->planner_name]->createPlan(start, goal->pose);
+    } else {
+      RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
+        "Planner names are: %s", goal->planner_name, planner_names_concat_);
+    }
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
-        " path to (%.2f, %.2f)", p_name.c_str(),
+        " path to (%.2f, %.2f)", goal->planner_name.c_str(),
         goal->pose.pose.position.x, goal->pose.pose.position.y);
       // TODO(orduno): define behavior if a preemption is available
       action_server_->terminate_goals();
@@ -245,7 +253,7 @@ PlannerServer::computePlan()
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-      p_name.c_str(), goal->pose.pose.position.x,
+      goal->planner_name.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
