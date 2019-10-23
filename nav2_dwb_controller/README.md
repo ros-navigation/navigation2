@@ -75,7 +75,4 @@ TaskStatus execute(path)
 ```
 ## Future Plans
 
-* Add support for recovery behaviors https://github.com/ros-planning/navigation2/issues/49
-* Simplify parameters and remove obsolete parameters https://github.com/ros-planning/navigation2/issues/201
-* Remove the direct inclusion of `costmap_2d` and replace it with calls to the world model node. https://github.com/ros-planning/navigation2/issues/21
 * Port another planner to refine the interfaces to the planner and to the world model. There are not many local planners available for the navigation stack, it seems. However `Time Elastic Band` seems like an interesting possibility of the few that are out there, as it interprets the dynamic obstacles very differently. https://github.com/ros-planning/navigation2/issues/202
