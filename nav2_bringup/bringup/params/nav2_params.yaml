@@ -113,7 +113,7 @@ local_costmap:
       obstacle_layer:
         enabled: True
         scan:
-          topic: scan
+          topic: /scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -136,7 +136,7 @@ global_costmap:
       obstacle_layer:
         enabled: True
         scan:
-          topic: scan
+          topic: /scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
