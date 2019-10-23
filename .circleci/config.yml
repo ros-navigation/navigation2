@@ -285,7 +285,10 @@ references:
       command: |
         cd src/navigation2/sphinx_doc
         make html
-
+  store_docs: &store_docs
+    store_artifacts:
+        path: /opt/overlay_ws/src/navigation2/sphinx_doc/_build/html
+        destination: html
 commands:
   <<: *common_commands
   checkout_source:
@@ -335,6 +338,7 @@ commands:
     description: "Build docs"
     steps:
       - *make_docs
+      - *store_docs
 
 executors:
   debug_exec:
