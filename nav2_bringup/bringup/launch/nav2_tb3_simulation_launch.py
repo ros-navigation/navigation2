@@ -52,10 +52,10 @@ def generate_launch_description():
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
     #              https://github.com/ros2/launch_ros/issues/56
-   remappings = [((namespace, '/tf'), '/tf'),
-                 ((namespace, '/tf_static'), '/tf_static'),
-                 ('/tf', 'tf'),
-                 ('/tf_static', 'tf_static')]
+    remappings = [((namespace, '/tf'), '/tf'),
+                  ((namespace, '/tf_static'), '/tf_static'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -156,8 +156,8 @@ def generate_launch_description():
 
     start_rviz_cmd = ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            ['-d', rviz_config_file],
-            ['__ns:=/', namespace],
+             ['-d', rviz_config_file],
+             ['__ns:=/', namespace],
              '/tf:=tf',
              '/tf_static:=tf_static',
              '/goal_pose:=goal_pose',
