@@ -23,7 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ManageLifecycleNodes.srv"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
-  "action/FollowPath.action"
+  "action/ComputeControl.action"
   "action/NavigateToPose.action"
   "action/Wait.action"
   "action/Spin.action"
