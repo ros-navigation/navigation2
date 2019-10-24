@@ -40,8 +40,8 @@ namespace nav2_planner
 {
 /**
  * @class nav2_planner::PlannerServer
- * @brief An action server implements behavior tree's ComputePathToPose
- * interface
+ * @brief An action server implements the behavior tree's ComputePathToPose
+ * interface and hosts various plugins of different algorithms to compute plans.
  */
 class PlannerServer : public nav2_util::LifecycleNode
 {
