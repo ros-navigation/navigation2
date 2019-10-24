@@ -104,9 +104,8 @@ new_goal_received:
     }
 
     auto future_result = goal_handle_->async_result();
-    rclcpp::executor::FutureReturnCode rc = rclcpp::executor::FutureReturnCode::UNKNOWN;
-    while (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
-
+    rclcpp::executor::FutureReturnCode rc = rclcpp::executor::FutureReturnCode::TIMEOUT;
+    while (rclcpp::ok()) {
       // We can handle a new goal if we're still executing
       auto status = goal_handle_->get_status();
       if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
@@ -114,15 +113,21 @@ new_goal_received:
       {
         goal_updated_ = false;
         goto new_goal_received;
-      } else if (status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED ||
-        status == action_msgs::msg::GoalStatus::STATUS_CANCELLED ||
-        status == action_msgs::msg::GoalStatus::STATUS_ABORTED) {
-        // In a terminal condition, lets get our result
-        rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
-        if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT ||
-          rc == rclcpp::executor::FutureReturnCode::INTERRUPTED) {
-          RCLCPP_ERROR(node_->get_logger(), "Timed out getting terminal action result!");
-          on_loop_timeout();
+      } else {
+        if (status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED ||
+          status == action_msgs::msg::GoalStatus::STATUS_CANCELED ||
+          status == action_msgs::msg::GoalStatus::STATUS_ABORTED)
+        {
+          // In a terminal condition, lets get our result
+          rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
+          if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT ||
+            rc == rclcpp::executor::FutureReturnCode::INTERRUPTED)
+          {
+            RCLCPP_ERROR(node_->get_logger(), "Failed to get terminal action result!");
+            on_loop_timeout();
+          }
+
+          break;
         }
       }
 
