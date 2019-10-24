@@ -18,11 +18,12 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #include "nav2_core/local_planner.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/action/compute_control.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -38,6 +39,7 @@ class ProgressChecker;
 class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
+  typedef std::unordered_map<std::string, nav2_core::LocalPlanner::Ptr> ControllerMap;
   ControllerServer();
   ~ControllerServer();
 
@@ -50,13 +52,13 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputeControl>;
 
-  // Our action server implements the FollowPath action
+  // Our action server implements the ComputeControl action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback
-  void followPath();
+  void computeControl();
 
   void setPlannerPath(const nav_msgs::msg::Path & path);
   void computeAndPublishVelocity();
@@ -74,9 +76,11 @@ protected:
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
-  // Local Planner Plugin
+  // Controller Plugins
   pluginlib::ClassLoader<nav2_core::LocalPlanner> lp_loader_;
-  nav2_core::LocalPlanner::Ptr local_planner_;
+  ControllerMap controllers_;
+  std::vector<std::string> controller_names_, controller_types_;
+  std::string controller_names_concat_, current_controller_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
 

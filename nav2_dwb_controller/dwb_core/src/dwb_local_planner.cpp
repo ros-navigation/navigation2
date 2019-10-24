@@ -66,7 +66,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 
 void DWBLocalPlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-  const std::shared_ptr<tf2_ros::Buffer> & tf,
+  std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
   node_ = node;

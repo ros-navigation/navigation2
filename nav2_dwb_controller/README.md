@@ -27,12 +27,12 @@ The advantages of DWB were:
 
 For the most part, the DWB codebase is unchanged, other than what was required for ROS2.
 
-The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` task interface.
+The main architectural change is due to the replacement of `MoveBase` by the `ComputeControl` task interface.
 
 ![ROS 1 DWB Structure](./images/DWB_Structure_Simplified.svg "ROS 1 DWB Structure")
 
-To support the new FollowPath task interface, the `MoveBase` adapter layer and `nav_core2` interfaces were removed. They were replaced by an an alternate adapter between
-the `FollowPath` task interface and the `DWBLocalPlanner` component.
+To support the new ComputeControl task interface, the `MoveBase` adapter layer and `nav_core2` interfaces were removed. They were replaced by an an alternate adapter between
+the `ComputeControl` task interface and the `DWBLocalPlanner` component.
 
 ## New local planner interface
 
@@ -66,7 +66,7 @@ TaskStatus execute(path)
       std::this_thread::sleep_for(10ms);
     }
 
-  nav2_behavior_tree::FollowPathResult result;
+  nav2_behavior_tree::ComputeControlResult result;
   setResult(result);
 
   return TaskStatus::SUCCEEDED;
