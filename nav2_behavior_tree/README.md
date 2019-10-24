@@ -15,7 +15,7 @@ The [bt_action_node template](include/nav2_behavior_tree/bt_action_node.hpp) all
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
-class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
+class ComputeControlAction : public BtActionNode<nav2_msgs::action::ComputeControl>
 {
     ...
 };
@@ -28,20 +28,20 @@ BehaviorTreeEngine::BehaviorTreeEngine()
 {
     ...
 
-  factory_.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
+  factory_.registerNodeType<nav2_behavior_tree::ComputeControlAction>("ComputeControl");
 
     ...
 }
 ```
 
-Once a new node is registered with the factory, it is now available to the BehaviorTreeEngine and can be used in Behavior Trees. For example, the following simple XML description of a BT shows the FollowPath node in use:
+Once a new node is registered with the factory, it is now available to the BehaviorTreeEngine and can be used in Behavior Trees. For example, the following simple XML description of a BT shows the ComputeControl node in use:
 
 ```XML
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <ComputePathToPose goal="${goal}"/>
-      <FollowPath path="${path}"/>
+      <ComputeControl path="${path}" controller_name="FollowPath"/>
     </Sequence>
   </BehaviorTree>
 </root>
@@ -67,7 +67,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 |----------|:-------------|------|
 | Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. | 
 | ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. |
-| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the nav2_dwb_controller module. |
+| ComputeControl | Action |Invokes the ComputeControl ROS2 action server, which is implemented by the controller plugin modules loaded. |
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
 | IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
 | NavigateToPose | Action | Invokes the NavigateToPose ROS2 action server, which is implemented by the bt_navigator module. |

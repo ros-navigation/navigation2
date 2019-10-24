@@ -131,12 +131,12 @@
        <path fill="none" stroke="rgb(128,128,128)" d="M 8264,9989 C 8084,9989 7904,10169 7904,10349 L 7904,11789 C 7904,11969 8084,12149 8264,12149 L 12117,12149 C 12297,12149 12477,11969 12477,11789 L 12477,10349 C 12477,10169 12297,9989 12117,9989 L 8264,9989 Z"/>
        <path fill="none" stroke="rgb(128,128,128)" d="M 7904,9989 L 7904,9989 Z"/>
        <path fill="none" stroke="rgb(128,128,128)" d="M 12477,12149 L 12477,12149 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="8865" y="11238"><tspan fill="rgb(128,128,128)" stroke="none">FollowPath</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="8865" y="11238"><tspan fill="rgb(128,128,128)" stroke="none">ComputeControl</tspan></tspan></tspan></text>
        <path fill="rgb(0,102,204)" stroke="none" d="M 8064,9789 C 7884,9789 7704,9969 7704,10149 L 7704,11589 C 7704,11769 7884,11949 8064,11949 L 11917,11949 C 12097,11949 12277,11769 12277,11589 L 12277,10149 C 12277,9969 12097,9789 11917,9789 L 8064,9789 Z M 7704,9789 L 7704,9789 Z M 12277,11949 L 12277,11949 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 8064,9789 C 7884,9789 7704,9969 7704,10149 L 7704,11589 C 7704,11769 7884,11949 8064,11949 L 11917,11949 C 12097,11949 12277,11769 12277,11589 L 12277,10149 C 12277,9969 12097,9789 11917,9789 L 8064,9789 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 7704,9789 L 7704,9789 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 12277,11949 L 12277,11949 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="8665" y="11038"><tspan fill="rgb(255,255,255)" stroke="none">FollowPath</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="8665" y="11038"><tspan fill="rgb(255,255,255)" stroke="none">ComputeControl</tspan></tspan></tspan></text>
       </g>
      </g>
      <g class="com.sun.star.drawing.LineShape">
