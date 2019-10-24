@@ -7,3 +7,4 @@ How-Tos
    :maxdepth: 1
 
    docs/index.rst
+   tunning/index.rst
