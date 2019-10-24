@@ -62,12 +62,21 @@ public:
   {
   }
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
+  // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
+  // and call providedBasicPorts in it.
+  static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
-    return {
+    BT::PortsList basic = {
       BT::InputPort<std::chrono::milliseconds>("server_timeout")
     };
+    basic.insert(addition.begin(), addition.end());
+
+    return basic;
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({});
   }
 
   // Derived classes can override any of the following methods to hook into the
