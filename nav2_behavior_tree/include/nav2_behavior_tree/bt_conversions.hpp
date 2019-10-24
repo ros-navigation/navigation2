@@ -59,10 +59,10 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
   }
 }
 
-template <>
-inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(StringView str)
+template<>
+inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
-  return std::chrono::milliseconds(std::stoul(str.data()));
+  return std::chrono::milliseconds(std::stoul(key.data()));
 }
 
 }  // namespace BT

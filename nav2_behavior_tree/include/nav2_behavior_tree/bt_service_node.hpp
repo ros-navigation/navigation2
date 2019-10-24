@@ -80,9 +80,9 @@ public:
         future_result, server_timeout_);
     if (rc == rclcpp::executor::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::SUCCESS;
-    } else if(rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
+    } else if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
       RCLCPP_WARN(node_->get_logger(),
-                  "Node timed out while executing service call to %s.", service_name_.c_str());
+        "Node timed out while executing service call to %s.", service_name_.c_str());
       on_server_timeout();
     }
     return BT::NodeStatus::FAILURE;
