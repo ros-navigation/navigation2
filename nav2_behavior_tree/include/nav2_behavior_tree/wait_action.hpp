@@ -48,8 +48,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({
-      BT::InputPort<int>("wait_duration", 1, "Wait time")
-    });
+        BT::InputPort<int>("wait_duration", 1, "Wait time")
+      });
   }
 };
 

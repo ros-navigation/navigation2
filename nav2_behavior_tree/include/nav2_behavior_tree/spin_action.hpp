@@ -44,8 +44,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({
-      BT::InputPort<double>("spin_dist", 1.57, "Spin distance")
-    });
+        BT::InputPort<double>("spin_dist", 1.57, "Spin distance")
+      });
   }
 };
 

@@ -59,9 +59,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({
-      BT::InputPort<geometry_msgs::msg::Point>("position", "0;0;0", "Position"),
-      BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "0;0;0;0", "Orientation")
-    });
+        BT::InputPort<geometry_msgs::msg::Point>("position", "0;0;0", "Position"),
+        BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "0;0;0;0", "Orientation")
+      });
   }
 };
 

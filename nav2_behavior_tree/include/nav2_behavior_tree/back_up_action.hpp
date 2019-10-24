@@ -53,9 +53,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({
-      BT::InputPort<double>("backup_dist", -0.15, "Distance to backup"),
-      BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup")
-    });
+        BT::InputPort<double>("backup_dist", -0.15, "Distance to backup"),
+        BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup")
+      });
   }
 };
 
