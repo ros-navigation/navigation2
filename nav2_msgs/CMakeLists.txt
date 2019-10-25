@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
   "srv/ManageLifecycleNodes.srv"
+  "srv/LoadMap.srv"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
   "action/FollowPath.action"
