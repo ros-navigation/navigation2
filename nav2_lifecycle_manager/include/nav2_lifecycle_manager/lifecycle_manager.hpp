@@ -31,11 +31,20 @@ namespace nav2_lifecycle_manager
 {
 
 using nav2_msgs::srv::ManageLifecycleNodes;
-
+/**
+ * @class nav2_lifecycle_manager::LifecycleManager
+ * @brief Implements lifecycle node manager service
+ */
 class LifecycleManager : public rclcpp::Node
 {
 public:
+  /**
+   * @brief A constructor for nav2_lifecycle_manager::LifecycleManager
+   */
   LifecycleManager();
+  /**
+   * @brief A destructor for nav2_lifecycle_manager::LifecycleManager
+   */
   ~LifecycleManager();
 
 protected:
@@ -45,38 +54,84 @@ protected:
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
-
+  /**
+   * @brief Lifecycle node manager callback function
+   * @param request_header Header of the service request
+   * @param request Service request
+   * @param reponse Service response
+   */
   void managerCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<ManageLifecycleNodes::Request> request,
     std::shared_ptr<ManageLifecycleNodes::Response> response);
-
+  /**
+   * @brief Trigger callback funcition checks if the system is active or not
+   * @param request_header Header of the request
+   * @param request Service request
+   * @param reponse Service response
+   */
   void isActiveCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response);
 
   // Support functions for the service calls
+  /**
+   * @brief Start up manage nodes.
+   * @return true or false
+   */
   bool startup();
+  /**
+   * @brief Deactivates, clean up and shutdown all the manage nodes.
+   * @return true or false
+   */
   bool shutdown();
+  /**
+   * @brief Reset all the manage nodes.
+   * @return true or false
+   */
   bool reset();
+  /**
+   * @brief Pause all the manage nodes.
+   * @return true or false
+   */
   bool pause();
+  /**
+   * @brief Resume all the manage nodes.
+   * @return true or false
+   */
   bool resume();
 
   // Support function for creating service clients
+  /**
+   * @brief Support function for creating service clients
+   */
   void createLifecycleServiceClients();
 
   // Support functions for shutdown
+  /**
+   * @brief Support function for shutdown
+   */
   void shutdownAllNodes();
+  /**
+   * @brief Destroy all the lifecycle service clients.
+   */
   void destroyLifecycleServiceClients();
 
-  // For a node, transition to the new target state
+  /**
+   * @brief For a node, transition to the new target state
+   */
   bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
 
-  // For each node in the map, transition to the new target state
+  /**
+   * @brief For each node in the map, transition to the new target state
+   */
   bool changeStateForAllNodes(std::uint8_t transition, bool reverse_order = false);
 
   // Convenience function to highlight the output on the console
+  /**
+   * @brief Helper function to highlight the output on the console
+   */
   void message(const std::string & msg);
 
   // A map of all nodes to be controlled
