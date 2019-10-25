@@ -51,7 +51,7 @@ def generate_launch_description():
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
     robot1_params_file = LaunchConfiguration('robot1_params_file')
-    robot2_params_file = LaunchConfiguration('robot2_params_file')
+    robot2_params_file = LaunchConfiguration('robot2_params_file')  # noqa: F841
 
     # flake8 complaining about param not used because we use with eval()
     robot1_params_file
