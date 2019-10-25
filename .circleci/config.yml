@@ -10,6 +10,8 @@ references:
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
+    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "1"
+    RETEST_UNTIL_PASS: "2"
   common_commands: &common_commands
     restore_from_cache:
       description: "Restore From Cache"
@@ -152,6 +154,12 @@ references:
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
                 --mixin << parameters.mixins >>
+              colcon test \
+                --packages-select ${TEST_PACKAGES} \
+                --packages-select-test-failures \
+                --mixin << parameters.mixins >> \
+                --retest-until-pass ${RETEST_UNTIL_PASS} \
+                --ctest-args --test-regex "test_.*"
               colcon test-result \
                 --verbose
         - run:
@@ -285,7 +293,10 @@ references:
       command: |
         cd src/navigation2/sphinx_doc
         make html
-
+  store_docs: &store_docs
+    store_artifacts:
+        path: /opt/overlay_ws/src/navigation2/sphinx_doc/_build/html
+        destination: html
 commands:
   <<: *common_commands
   checkout_source:
@@ -335,6 +346,7 @@ commands:
     description: "Build docs"
     steps:
       - *make_docs
+      - *store_docs
 
 executors:
   debug_exec:

@@ -38,20 +38,59 @@
 
 namespace nav2_planner
 {
-
+/**
+ * @class nav2_planner::PlannerServer
+ * @brief An action server implements the behavior tree's ComputePathToPose
+ * interface and hosts various plugins of different algorithms to compute plans.
+ */
 class PlannerServer : public nav2_util::LifecycleNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_planner::PlannerServer
+   */
   PlannerServer();
+  /**
+   * @brief A destructor for nav2_planner::PlannerServer
+   */
   ~PlannerServer();
 
 protected:
-  // Implement the lifecycle interface
+  /**
+   * @brief Configure member variables and initializes planner
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Reset member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in error state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
@@ -59,10 +98,15 @@ protected:
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
 
-  // The action server callback
+  /**
+   * @brief The action server callback which calls planner to get the path
+   */
   void computePathToPose();
 
-  // Publish a path for visualization purposes
+  /**
+   * @brief Publish a path for visualization purposes
+   * @param path Reference to Global Path
+   */
   void publishPlan(const nav_msgs::msg::Path & path);
 
   // Planner

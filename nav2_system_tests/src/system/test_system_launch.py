@@ -17,7 +17,7 @@
 import os
 import sys
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
@@ -33,7 +33,7 @@ def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
 
-    bt_navigator_xml = os.path.join(get_package_prefix('nav2_bt_navigator'),
+    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))
 

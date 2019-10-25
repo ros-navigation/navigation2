@@ -17,7 +17,7 @@
 import os
 import sys
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription, LaunchService
 from launch.actions import (ExecuteProcess, GroupAction,
@@ -35,7 +35,7 @@ def generate_launch_description():
     urdf = os.getenv('TEST_URDF')
     sdf = os.getenv('TEST_SDF')
 
-    bt_xml_file = os.path.join(get_package_prefix('nav2_bt_navigator'),
+    bt_xml_file = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                'behavior_trees',
                                os.getenv('BT_NAVIGATOR_XML'))
 
