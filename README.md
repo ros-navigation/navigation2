@@ -21,7 +21,7 @@ The ROS 2 Navigation System is the control system that enables a robot to autono
 For detailed instructions on how to install and run the examples, please visit our [documentation site](https://ros-planning.github.io/navigation2/).
 
 # Contributing
-We are currently in the pre-release development phase, [contributions are welcome](doc/README.md#contributing). For more information, please review our [contribution guidelines](https://ros-planning.github.io/navigation2/contribute/contribute_guidelines.html).
+[Contributions are welcome!](doc/README.md#contributing). For more information, please review our [contribution guidelines](https://ros-planning.github.io/navigation2/contribute/contribute_guidelines.html).
 
 # Building the source
 For instructions on how to download and build this repo, see the [BUILD.md](doc/BUILD.md) file.
