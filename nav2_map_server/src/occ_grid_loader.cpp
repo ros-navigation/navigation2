@@ -128,19 +128,23 @@ OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & y
 
 bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
 {
+  if (yaml_file == "") {
+    RCLCPP_ERROR(node_->get_logger(), "YAML file name is empty, can't load!");
+    return false;
+  }
+  RCLCPP_INFO(node_->get_logger(), "Loading yaml file: %s", yaml_file.c_str());
   LoadParameters loadParameters;
-
   try {
     loadParameters = load_map_yaml(yaml_file);
   } catch (YAML::Exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed processing YAML file %s at position (%d:%d) for reason: %s",
-      yaml_filename_.c_str(), e.mark.line, e.mark.column, e.what());
+      yaml_file.c_str(), e.mark.line, e.mark.column, e.what());
     return false;
   } catch (std::exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to parse map YAML loaded from file %s for reason: %s",
-      yaml_filename_.c_str(), e.what());
+      yaml_file.c_str(), e.what());
     return false;
   }
 
@@ -158,12 +162,13 @@ bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
 nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
+
+  // initialize Occupancy Grid msg - needed by loadMapFromYaml
+  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+
   if (!loadMapFromYaml(yaml_filename_)) {
     throw std::runtime_error("Failed to load map yaml file: " + yaml_filename_);
   }
-
-  // initialize Occupancy Grid msg
-  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   // Create GetMap service callback handle
   auto handle_occ_callback = [this](
@@ -185,7 +190,8 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
       RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling LoadMap request");
       // Check if map_id is a file
       if (request->type != nav2_msgs::srv::LoadMap::Request::TYPE_FILE) {
-        RCLCPP_ERROR(node_->get_logger(), "OccGridLoader: requested unsupported FILE_TYPE in request, can't load map");
+        RCLCPP_ERROR(node_->get_logger(),
+          "OccGridLoader: unsupported FILE_TYPE in request, can't load map");
         return;
       }
       // Load from file
@@ -193,16 +199,18 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
         response->map = *msg_;
         response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
       } else {
-        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE; // TODO: Return fail code based on failure
+        // TODO(mkhansen): Return fail code based on failure
+        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE;
       }
     };
 
   // Create a service that loads the occupancy grid from a file
-  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_, load_map_callback);
+  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_,
+      load_map_callback);
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-                      topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name_,
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -244,6 +252,8 @@ void OccGridLoader::loadMapFromFile(const LoadParameters & loadParameters)
   Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
+  RCLCPP_INFO(node_->get_logger(), "Loading image_file: %s",
+    loadParameters.image_file_name.c_str());
   Magick::Image img(loadParameters.image_file_name);
 
   // Copy the image data into the map structure
