@@ -84,6 +84,9 @@ protected:
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+
+  // Whether we've published the single planner warning yet
+  bool single_planner_warning_given_{false};
 };
 
 }  // namespace nav2_planner

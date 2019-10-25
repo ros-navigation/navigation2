@@ -227,9 +227,19 @@ PlannerServer::computePlan()
     if (planners_.find(goal->planner_name) != planners_.end()) {
       result->path = planners_[goal->planner_name]->createPlan(start, goal->pose);
     } else {
-      RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
-        "Planner names are: %s", goal->planner_name.c_str(),
-        planner_names_concat_.c_str());
+      if (planners_.size() == 1 && goal->planner_name.empty()) {
+        if (!single_planner_warning_given_) {
+          single_planner_warning_given_ = true;
+          RCLCPP_WARN(get_logger(), "No planners specified in action call. "
+            "Server will use only plugin %s in server."
+            " This warning will appear once.", planner_names_concat_);
+        }
+        result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
+      } else {
+        RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
+          "Planner names are: %s", goal->planner_name.c_str(),
+          planner_names_concat_.c_str());
+        }
     }
 
     if (result->path.poses.size() == 0) {
