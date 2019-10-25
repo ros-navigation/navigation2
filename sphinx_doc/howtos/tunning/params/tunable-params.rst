@@ -3,8 +3,10 @@
 Tunable Parameters
 ##################
 
-Below is a list of all tunable parameters per node, only relevant nodes are shown, together
-with some example values.
+Below is a list of all tunable parameters per node with some example values.
+Only relevant nodes are shown.
+
+Also, the `nav2_bringup pkg`_ contains a `nav2_params file`_ with the default values to use for TB3.
 
 .. rst-class:: content-collapse
 
@@ -311,7 +313,7 @@ Map Server
     map_server:
       ros__parameters:
         use_sim_time: true
-        yaml_filename: /home/caorduno/master/overlay_ws/install/nav2_bringup/share/nav2_bringup/maps/turtlebot3_world.yaml
+        yaml_filename: turtlebot3_world.yaml
 
 
 .. rst-class:: content-collapse
@@ -353,5 +355,5 @@ Behavior-Tree-based Navigator
 
     bt_navigator:
       ros__parameters:
-        bt_xml_filename: /home/caorduno/master/overlay_ws/install/nav2_bt_navigator/share/nav2_bt_navigator/behavior_trees/navigate_w_replanning_and_recovery.xml
+        bt_xml_filename: navigate_w_replanning_and_recovery.xml
         use_sim_time: true
