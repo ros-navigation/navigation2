@@ -40,8 +40,8 @@ def generate_launch_description():
                                os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    robot1_params_file = os.path.join(bringup_dir, 'params/nav2_multirobot_params_1.yaml')
-    robot2_params_file = os.path.join(bringup_dir, 'params/nav2_multirobot_params_2.yaml')
+    robot1_params_file = os.path.join(bringup_dir, 'params/nav2_multirobot_params_1.yaml') # noqa: F841
+    robot2_params_file = os.path.join(bringup_dir, 'params/nav2_multirobot_params_2.yaml') # noqa: F841
 
     # Names and poses of the robots
     robots = [
@@ -87,7 +87,7 @@ def generate_launch_description():
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        params_file = eval(robot['name'] + "_params_file")
+        params_file = eval(robot['name'] + '_params_file')
 
         group = GroupAction([
             # Instances use the robot's name for namespace
