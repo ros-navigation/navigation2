@@ -188,7 +188,7 @@ void ControllerServer::computeControl()
 
     if (controllers_.find(c_name) == controllers_.end()) {
       if (controllers_.size() == 1 && c_name.empty()) {
-        if (!single_planner_warning_given_) {
+        if (!single_controller_warning_given_) {
           RCLCPP_WARN(get_logger(), "No controller was specified in action call."
             " Server will use only plugin loaded %s. "
             "This warning will appear once.", controller_names_concat_);
