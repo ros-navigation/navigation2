@@ -55,7 +55,6 @@ def generate_launch_description():
 
     # flake8 complaining about param not used because we use with eval()
     robot1_params_file
-    robot2_params_file
 
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
@@ -143,7 +142,7 @@ def generate_launch_description():
             source_file=rviz_config_file,
             replacements={'<robot_namespace>': ('/' + robot['name'])})
 
-        params_file = eval(robot['name'] + "_params_file")
+        params_file = eval(robot['name'] + '_params_file')
 
         group = GroupAction([
             # TODO(orduno)
