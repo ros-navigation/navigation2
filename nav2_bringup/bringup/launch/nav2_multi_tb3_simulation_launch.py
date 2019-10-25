@@ -52,6 +52,11 @@ def generate_launch_description():
     map_yaml_file = LaunchConfiguration('map')
     robot1_params_file = LaunchConfiguration('robot1_params_file')
     robot2_params_file = LaunchConfiguration('robot2_params_file')
+
+    # flake8 complaining about param not used because we use with eval()
+    robot1_params_file
+    robot2_params_file
+
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
