@@ -126,24 +126,22 @@ OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & y
   return loadParameters;
 }
 
-nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
-
-  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
   LoadParameters loadParameters;
+
   try {
-    loadParameters = load_map_yaml(yaml_filename_);
+    loadParameters = load_map_yaml(yaml_file);
   } catch (YAML::Exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed processing YAML file %s at position (%d:%d) for reason: %s",
       yaml_filename_.c_str(), e.mark.line, e.mark.column, e.what());
-    throw std::runtime_error("Failed to load map yaml file.");
+    return false;
   } catch (std::exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to parse map YAML loaded from file %s for reason: %s",
       yaml_filename_.c_str(), e.what());
-    throw std::runtime_error("Failed to load map yaml file.");
+    return false;
   }
 
   try {
@@ -152,25 +150,59 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to load image file %s for reason: %s",
       loadParameters.image_file_name.c_str(), e.what());
+    return false;
+  }
+  return true;
+}
 
-    throw std::runtime_error("Failed to load map image file.");
+nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
+  if (!loadMapFromYaml(yaml_filename_)) {
+    throw std::runtime_error("Failed to load map yaml file: " + yaml_filename_);
   }
 
-  // Create a service callback handle
+  // initialize Occupancy Grid msg
+  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+
+  // Create GetMap service callback handle
   auto handle_occ_callback = [this](
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
-      RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling map request");
+      RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling GetMap request");
       response->map = *msg_;
     };
 
   // Create a service that provides the occupancy grid
   occ_service_ = node_->create_service<nav_msgs::srv::GetMap>(service_name_, handle_occ_callback);
 
+  // Create the load_map service callback handle
+  auto load_map_callback = [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) -> void {
+      RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling LoadMap request");
+      // Check if map_id is a file
+      if (request->type != nav2_msgs::srv::LoadMap::Request::TYPE_FILE) {
+        RCLCPP_ERROR(node_->get_logger(), "OccGridLoader: requested unsupported FILE_TYPE in request, can't load map");
+        return;
+      }
+      // Load from file
+      if (loadMapFromYaml(request->map_id)) {
+        response->map = *msg_;
+        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
+      } else {
+        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE; // TODO: Return fail code based on failure
+      }
+    };
+
+  // Create a service that loads the occupancy grid from a file
+  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_, load_map_callback);
+
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+                      topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
