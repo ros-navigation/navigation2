@@ -37,8 +37,9 @@ public:
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
-    node_loop_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("node_loop_timeout");
+    server_timeout_ =
+      config().blackboard->get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
@@ -59,12 +60,22 @@ public:
   {
   }
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  // Any subclass of BtServiceNode that accepts parameters must provide a providedPorts method
+  // and call providedBasicPorts in it.
+  static BT::PortsList providedBasicPorts(BT::PortsList addition)
+  {
+    BT::PortsList basic = {
+      BT::InputPort<std::string>("service_name", "please_set_service_name_in_BT_Node"),
+      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+    };
+    basic.insert(addition.begin(), addition.end());
+
+    return basic;
+  }
+
   static BT::PortsList providedPorts()
   {
-    return {
-      BT::InputPort<std::string>("service_name", "please_set_service_name_in_BT_Node")
-    };
+    return providedBasicPorts({});
   }
 
   // The main override required by a BT service
@@ -75,18 +86,27 @@ public:
 
     rclcpp::executor::FutureReturnCode rc;
     rc = rclcpp::spin_until_future_complete(node_,
-        future_result, node_loop_timeout_);
-    if (rc != rclcpp::executor::FutureReturnCode::SUCCESS) {
-      return BT::NodeStatus::FAILURE;
-    } else {
+        future_result, server_timeout_);
+    if (rc == rclcpp::executor::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::SUCCESS;
+    } else if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
+      RCLCPP_WARN(node_->get_logger(),
+        "Node timed out while executing service call to %s.", service_name_.c_str());
+      on_server_timeout();
     }
+    return BT::NodeStatus::FAILURE;
   }
 
   // Fill in service request with information if necessary
   virtual void on_tick()
   {
     request_ = std::make_shared<typename ServiceT::Request>();
+  }
+
+  // An opportunity to do something after
+  // a timeout waiting for a result that hasn't been received yet
+  virtual void on_server_timeout()
+  {
   }
 
 protected:
@@ -99,7 +119,7 @@ protected:
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
-  std::chrono::milliseconds node_loop_timeout_;
+  std::chrono::milliseconds server_timeout_;
 };
 
 }  // namespace nav2_behavior_tree
