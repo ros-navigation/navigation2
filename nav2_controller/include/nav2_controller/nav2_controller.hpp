@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "nav2_core/local_planner.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -43,7 +44,7 @@ class ProgressChecker;
 class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
-  typedef std::unordered_map<std::string, nav2_core::LocalPlanner::Ptr> ControllerMap;
+  using ControllerMap = std::unordered_map<std::string, nav2_core::LocalPlanner::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -120,7 +121,7 @@ protected:
    * the specified rate till the goal is reached.
    * @throw nav2_core::PlannerException
    */
-void computeControl();
+  void computeControl();
 
   /**
    * @brief Assigns path to controller

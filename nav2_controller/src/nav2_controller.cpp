@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <vector>
 #include <memory>
 #include <string>
 
@@ -72,7 +73,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     exit(-1);
   }
 
-  for (uint i = 0; i != controller_names_.size(); i++) {
+  for (uint i = 0; i != controller_types_.size(); i++) {
     try {
       nav2_core::LocalPlanner::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
@@ -179,7 +180,7 @@ ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
 void ControllerServer::computeControl()
 {
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
-  //TODO STEVE msg string, check and use
+
   try {
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
