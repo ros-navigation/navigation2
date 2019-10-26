@@ -102,7 +102,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (uint i = 0; i != plugin_names_.size(); i++) {
+  for (uint i = 0; i != plugin_types_.size(); i++) {
     planner_names_concat_ += plugin_names_[i] + std::string(" ");
   }
 

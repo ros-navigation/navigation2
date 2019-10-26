@@ -56,7 +56,7 @@ public:
    */
   ~PlannerServer();
 
-  typedef std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr> PlannerMap;
+  using PlannerMap = std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr>;
 
 protected:
   /**
