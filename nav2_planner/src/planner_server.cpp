@@ -239,7 +239,7 @@ PlannerServer::computePlan()
         RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
           "Planner names are: %s", goal->planner_name.c_str(),
           planner_names_concat_.c_str());
-        }
+      }
     }
 
     if (result->path.poses.size() == 0) {
