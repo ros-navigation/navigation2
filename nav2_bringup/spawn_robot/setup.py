@@ -4,8 +4,7 @@ PACKAGE_NAME = 'spawn_robot'
 
 setup(
     name=PACKAGE_NAME,
-    version='1.0.0',
-    package_dir={'': 'src'},
+    version='0.2.4',
     packages=[PACKAGE_NAME],
     data_files=[
         ('share/ament_index/resource_index/packages',
