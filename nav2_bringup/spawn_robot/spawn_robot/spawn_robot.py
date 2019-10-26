@@ -38,7 +38,7 @@ def main():
                         help='the z component of the initial position [meters]')
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-t', '--turtlebot_type', type=str, default='waffle',
+    group.add_argument('-t', '--turtlebot_type', type=str,
                        choices=['waffle', 'burger'])
     group.add_argument('-s', '--sdf', type=str,
                        help="the path to the robot's model file (sdf)")
