@@ -19,7 +19,7 @@
 
 #include "nav2_behavior_tree/back_up_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "nav2_behavior_tree/compute_plan_action.hpp"
+#include "nav2_behavior_tree/compute_path_to_pose_action.hpp"
 #include "nav2_behavior_tree/follow_path_action.hpp"
 #include "nav2_behavior_tree/goal_reached_condition.hpp"
 #include "nav2_behavior_tree/is_stuck_condition.hpp"
@@ -39,7 +39,7 @@ namespace nav2_behavior_tree
 BehaviorTreeEngine::BehaviorTreeEngine()
 {
   // Register our custom action nodes so that they can be included in XML description
-  factory_.registerNodeType<nav2_behavior_tree::ComputePlanAction>("ComputePlan");
+  factory_.registerNodeType<nav2_behavior_tree::ComputePathToPoseAction>("ComputePathToPose");
   factory_.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
   factory_.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
   factory_.registerNodeType<nav2_behavior_tree::SpinAction>("Spin");

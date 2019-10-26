@@ -29,10 +29,10 @@ public:
   ~DummyPlanner();
 
   nav2_behavior_tree::TaskStatus computePathToPose(
-    const nav2_behavior_tree::ComputePlanCommand::SharedPtr command);
+    const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr command);
 
 private:
-  std::unique_ptr<nav2_behavior_tree::ComputePlanTaskServer> task_server_;
+  std::unique_ptr<nav2_behavior_tree::ComputePathToPoseTaskServer> task_server_;
 };
 
 }  // namespace nav2_system_tests

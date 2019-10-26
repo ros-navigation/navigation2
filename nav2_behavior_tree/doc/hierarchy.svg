@@ -116,12 +116,12 @@
        <path fill="none" stroke="rgb(128,128,128)" d="M 1912,9989 C 1732,9989 1553,10169 1553,10349 L 1553,11789 C 1553,11969 1732,12149 1912,12149 L 6655,12149 C 6835,12149 7015,11969 7015,11789 L 7015,10349 C 7015,10169 6835,9989 6655,9989 L 1912,9989 Z"/>
        <path fill="none" stroke="rgb(128,128,128)" d="M 1553,9989 L 1553,9989 Z"/>
        <path fill="none" stroke="rgb(128,128,128)" d="M 7015,12149 L 7015,12149 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="1826" y="11238"><tspan fill="rgb(128,128,128)" stroke="none">ComputePlan</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="1826" y="11238"><tspan fill="rgb(128,128,128)" stroke="none">ComputePathToPose</tspan></tspan></tspan></text>
        <path fill="rgb(0,102,204)" stroke="none" d="M 1712,9789 C 1532,9789 1353,9969 1353,10149 L 1353,11589 C 1353,11769 1532,11949 1712,11949 L 6455,11949 C 6635,11949 6815,11769 6815,11589 L 6815,10149 C 6815,9969 6635,9789 6455,9789 L 1712,9789 Z M 1353,9789 L 1353,9789 Z M 6815,11949 L 6815,11949 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 1712,9789 C 1532,9789 1353,9969 1353,10149 L 1353,11589 C 1353,11769 1532,11949 1712,11949 L 6455,11949 C 6635,11949 6815,11769 6815,11589 L 6815,10149 C 6815,9969 6635,9789 6455,9789 L 1712,9789 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 1353,9789 L 1353,9789 Z"/>
        <path fill="none" stroke="rgb(52,101,164)" d="M 6815,11949 L 6815,11949 Z"/>
-       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="1626" y="11038"><tspan fill="rgb(255,255,255)" stroke="none">ComputePlan</tspan></tspan></tspan></text>
+       <text class="TextShape"><tspan class="TextParagraph" font-family="Verdana, sans-serif" font-size="423px" font-weight="700"><tspan class="TextPosition" x="1626" y="11038"><tspan fill="rgb(255,255,255)" stroke="none">ComputePathToPose</tspan></tspan></tspan></text>
       </g>
      </g>
      <g class="com.sun.star.drawing.CustomShape">

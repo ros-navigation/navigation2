@@ -42,7 +42,7 @@ PlannerServer::PlannerServer()
 
   // Declare this node's parameters
   std::vector<std::string> default_name, default_type;
-  default_name.push_back("ComputePlan");
+  default_name.push_back("ComputePathToPose");
   default_type.push_back("nav2_navfn_planner/NavfnPlanner");
   declare_parameter("planner_plugin_names", default_name);
   declare_parameter("planner_plugin_types", default_type);
@@ -110,7 +110,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePlan",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
       std::bind(&PlannerServer::computePlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -189,9 +189,9 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 void
 PlannerServer::computePlan()
 {
-  // Initialize the ComputePlan goal and result
+  // Initialize the ComputePathToPose goal and result
   auto goal = action_server_->get_current_goal();
-  auto result = std::make_shared<nav2_msgs::action::ComputePlan::Result>();
+  auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
     if (action_server_ == nullptr) {

@@ -8,7 +8,7 @@
       <RateController hz="1.0">
         <Fallback>
           <GoalReached/>
-          <ComputePlan goal="{goal}" planner="ComputePlan"/>
+          <ComputePathToPose goal="{goal}" planner_name="ComputePathToPose"/>
         </Fallback>
       </RateController>
       <FollowPath path="{path}"/>
