@@ -23,7 +23,7 @@
 #include "nav2_core/local_planner.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_msgs/action/compute_control.hpp"
+#include "nav2_msgs/action/follow_path.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -106,13 +106,13 @@ protected:
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputeControl>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
 
-  // Our action server implements the ComputeControl action
+  // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
 
   /**
-   * @brief ComputeControl action server callback. Handles action server updates and
+   * @brief FollowPath action server callback. Handles action server updates and
    * spins server until goal is reached
    *
    * Provides global path to controller received from action client. Twist

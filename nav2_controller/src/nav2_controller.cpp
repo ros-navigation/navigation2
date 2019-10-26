@@ -97,7 +97,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputeControl",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&ControllerServer::computeControl, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -196,7 +196,7 @@ void ControllerServer::computeControl()
         }
         current_controller_ = controllers_.begin()->first;
       } else {
-        RCLCPP_ERROR(get_logger(), "ComputeControl called with controller name %s, "
+        RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
           "which does not exist. Available controllers are %s.",
           c_name.c_str(), controller_names_concat_.c_str());
       }

@@ -27,52 +27,10 @@ The advantages of DWB were:
 
 For the most part, the DWB codebase is unchanged, other than what was required for ROS2.
 
-The main architectural change is due to the replacement of `MoveBase` by the `ComputeControl` task interface.
+The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` action server.
 
 ![ROS 1 DWB Structure](./images/DWB_Structure_Simplified.svg "ROS 1 DWB Structure")
 
-To support the new ComputeControl task interface, the `MoveBase` adapter layer and `nav_core2` interfaces were removed. They were replaced by an an alternate adapter between
-the `ComputeControl` task interface and the `DWBLocalPlanner` component.
-
 ## New local planner interface
 
-For the local planner, the new task interface consist of
-initialization/destruction code and one core method - `execute`. This method
-gets called with the path produced by the global planner. The local planner
-keeps processing the path until:
-1. It reaches the goal.
-2. It gets a new plan which preempts the current plan.
-3. It fails to produce an adequate plan, in which case it fails and leaves it to the caller to hand off to a recovery behavior.
-
-This is in contrast to the local planner in ROS1, where the local planner is
-queried at each iteration for a velocity command and the iteration and
-publishing of the command were handled by `MoveBase`
-
-The new task interface looks something like this in pseudocode
-```c++
-TaskStatus execute(path)
-{
-    planner_.initialize(nodeHandle);
-    planner_.setPlan(path);
-    while (true) {
-      auto pose = getRobotPose(pose2d);
-      if (isGoalReached(pose)) {
-        break;
-      }
-      auto velocity = getTwist();
-      auto cmd_vel_2d = planner_.computeVelocityCommands(pose, velocity);
-      publishVelocity(cmd_vel_2d);
-
-      std::this_thread::sleep_for(10ms);
-    }
-
-  nav2_behavior_tree::ComputeControlResult result;
-  setResult(result);
-
-  return TaskStatus::SUCCEEDED;
-}
-
-```
-## Future Plans
-
-* Port another planner to refine the interfaces to the planner and to the world model. There are not many local planners available for the navigation stack, it seems. However `Time Elastic Band` seems like an interesting possibility of the few that are out there, as it interprets the dynamic obstacles very differently. https://github.com/ros-planning/navigation2/issues/202
+See `nav2_core` `LocalPlanner` interface. They are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.

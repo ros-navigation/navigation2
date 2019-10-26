@@ -34,7 +34,7 @@ DummyController::DummyController()
   vel_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
-  task_server_ = std::make_unique<nav2_behavior_tree::ComputeControlTaskServer>(temp_node, false),
+  task_server_ = std::make_unique<nav2_behavior_tree::FollowPathTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
     std::bind(&DummyController::followPath, this, std::placeholders::_1));
 
@@ -50,7 +50,7 @@ DummyController::~DummyController()
 }
 
 void
-DummyController::followPath(const nav2_behavior_tree::ComputeControlCommand::SharedPtr /*command*/)
+DummyController::followPath(const nav2_behavior_tree::FollowPathCommand::SharedPtr /*command*/)
 {
   RCLCPP_INFO(get_logger(), "Starting controller ");
 
@@ -87,7 +87,7 @@ DummyController::followPath(const nav2_behavior_tree::ComputeControlCommand::Sha
     }
   }
 
-  nav2_behavior_tree::ComputeControlResult result;
+  nav2_behavior_tree::FollowPathResult result;
   task_server_->setResult(result);
 }
 

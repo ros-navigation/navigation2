@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "nav2_behavior_tree/compute_control_task.hpp"
+#include "nav2_behavior_tree/follow_path_task.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 namespace nav2_system_tests
@@ -30,12 +30,12 @@ public:
   ~DummyController();
 
   nav2_behavior_tree::TaskStatus followPath(
-    const nav2_behavior_tree::ComputeControlCommand::SharedPtr command);
+    const nav2_behavior_tree::FollowPathCommand::SharedPtr command);
 
 private:
   void setZeroVelocity();
 
-  std::unique_ptr<nav2_behavior_tree::ComputeControlTaskServer> task_server_;
+  std::unique_ptr<nav2_behavior_tree::FollowPathTaskServer> task_server_;
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist>> vel_pub_;
 };
