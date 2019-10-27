@@ -38,6 +38,7 @@ public:
   void on_tick() override
   {
     getInput("path", goal_.path);
+    getInput("controller_name", goal_.controller_name);
   }
 
   void on_server_timeout() override
@@ -50,7 +51,6 @@ public:
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration
       getInput("path", goal_.path);
-      getInput("controller_name", goal_.controller_name);
       goal_updated_ = true;
     }
   }
