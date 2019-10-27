@@ -182,9 +182,6 @@ void ControllerServer::computeControl()
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
-    setPlannerPath(action_server_->get_current_goal()->path);
-    progress_checker_->reset();
-
     std::string c_name = action_server_->get_current_goal()->controller_name;
 
     if (controllers_.find(c_name) == controllers_.end()) {
@@ -202,9 +199,13 @@ void ControllerServer::computeControl()
           c_name.c_str(), controller_names_concat_.c_str());
       }
       action_server_->terminate_goals();
+      return;
     } else {
       current_controller_ = c_name;
     }
+
+    setPlannerPath(action_server_->get_current_goal()->path);
+    progress_checker_->reset();
 
     rclcpp::Rate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
