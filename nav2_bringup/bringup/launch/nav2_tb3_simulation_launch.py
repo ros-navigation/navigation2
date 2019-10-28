@@ -16,7 +16,7 @@
 
 import os
 
-from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
@@ -152,37 +152,19 @@ def generate_launch_description():
         remappings=remappings,
         arguments=[urdf])
 
-    # TODO(orduno) RVIZ crashing if launched as a node: https://github.com/ros2/rviz/issues/442
-    #              Launching as node works after applying the change described on the github issue.
-    #              Once fixed, launch by providing the remappings:
-    # rviz_remappings = [('/tf', 'tf'),
-    #                    ('/tf_static', 'tf_static'),
-    #                    ('goal_pose', 'goal_pose'),
-    #                    ('/clicked_point', 'clicked_point'),
-    #                    ('/initialpose', 'initialpose'),
-    #                    ('/parameter_events', 'parameter_events'),
-    #                    ('/rosout', 'rosout')]
-
-    # start_rviz_cmd = Node(
-    #     package='rviz2',
-    #     node_executable='rviz2',
-    #     node_name='rviz2',
-    #     arguments=['-d', rviz_config_file],
-    #     output='screen',
-    #     use_remappings=IfCondition(use_remappings),
-    #     remappings=rviz_remappings)
-
-    start_rviz_cmd = ExecuteProcess(
+    start_rviz_cmd = Node(
         condition=IfCondition(use_rviz),
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-             ['-d', rviz_config_file],
-             ['__ns:=/', namespace],
-             '/tf:=tf',
-             '/tf_static:=tf_static',
-             '/goal_pose:=goal_pose',
-             '/clicked_point:=clicked_point',
-             '/initialpose:=initialpose'],
-        cwd=[launch_dir], output='screen')
+        package='rviz2',
+        node_executable='rviz2',
+        node_name='rviz2',
+        arguments=['-d', rviz_config_file],
+        output='screen',
+        use_remappings=IfCondition(use_remappings),
+        remappings=[('/tf', 'tf'),
+                    ('/tf_static', 'tf_static'),
+                    ('goal_pose', 'goal_pose'),
+                    ('/clicked_point', 'clicked_point'),
+                    ('/initialpose', 'initialpose')])
 
     exit_event_handler = RegisterEventHandler(
         event_handler=OnProcessExit(
