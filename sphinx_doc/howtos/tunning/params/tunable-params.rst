@@ -160,7 +160,7 @@ Hosted on the `PlannerServer` node
         clearable_layers:
         - obstacle_layer
         footprint: '[]'
-        footprint_padding: 0.009999999776482582
+        footprint_padding: 0.01
         global_frame: odom
         height: 3
         inflation_layer:
@@ -245,7 +245,7 @@ Hosted on the `ControllerServer` node
         clearable_layers:
         - obstacle_layer
         footprint: '[]'
-        footprint_padding: 0.009999999776482582
+        footprint_padding: 0.01
         global_frame: map
         height: 10
         inflation_layer:
