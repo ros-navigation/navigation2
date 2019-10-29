@@ -6,6 +6,3 @@ An execution module implementing the `nav2_msgs::action::FollowPath` action serv
 
 
 Currently available controller plugins are: DWB, and [TEB (dashing release)](https://github.com/rst-tu-dortmund/teb_local_planner/tree/dashing-devel).
-
-
-The nav2_controller node is a Lifecycle node.
