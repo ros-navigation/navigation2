@@ -47,7 +47,7 @@ namespace dwb_critics
 
 void RotateToGoalCritic::onInit()
 {
-  xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(nh_, "xy_goal_tolerance", 0.25);
+  xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(nh_, name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
