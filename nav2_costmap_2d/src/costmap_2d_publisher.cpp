@@ -165,7 +165,7 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if(node_->count_subscribers(costmap_raw_pub_->get_topic_name()) == 0){
+  if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) == 0) {
     RCLCPP_DEBUG(node_->get_logger(), "costmap_raw subscriber not found!");
     return;
   }
