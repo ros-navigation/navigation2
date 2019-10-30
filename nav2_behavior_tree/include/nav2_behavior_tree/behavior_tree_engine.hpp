@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
@@ -30,7 +31,7 @@ enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 class BehaviorTreeEngine
 {
 public:
-  BehaviorTreeEngine();
+  explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
   virtual ~BehaviorTreeEngine() {}
 
   BtStatus run(
@@ -63,9 +64,6 @@ public:
   }
 
 protected:
-  // Methods used to register as (simple action) BT nodes
-  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
-
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };

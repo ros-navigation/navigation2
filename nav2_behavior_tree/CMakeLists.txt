@@ -31,6 +31,10 @@ add_library(${library_name} SHARED
   src/recovery_node.cpp
 )
 
+add_library(nav2_behavior_tree_nodes SHARED
+  src/bt_nodes.cpp
+)
+
 set(dependencies
   rclcpp
   rclcpp_action
@@ -51,7 +55,16 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+ament_target_dependencies(nav2_behavior_tree_nodes
+  ${dependencies}
+)
+
+target_compile_definitions(nav2_behavior_tree_nodes PRIVATE
+  BT_PLUGIN_EXPORT
+)
+
 install(TARGETS ${library_name}
+                nav2_behavior_tree_nodes
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -67,7 +80,12 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+
+ament_export_libraries(
+  ${library_name}
+  nav2_behavior_tree_nodes
+)
+
 ament_export_dependencies(${dependencies})
 
 ament_package()
