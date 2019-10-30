@@ -172,9 +172,9 @@ DWBLocalPlanner::loadCritics()
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
 
-    declare_parameter_if_not_declared(node_, plugin_name + "/class",
+    declare_parameter_if_not_declared(node_, plugin_name + ".class",
       rclcpp::ParameterValue(plugin_name));
-    node_->get_parameter(plugin_name + "/class", plugin_class);
+    node_->get_parameter(plugin_name + ".class", plugin_class);
 
     plugin_class = resolveCriticClassName(plugin_class);
 
