@@ -118,9 +118,6 @@ protected:
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
 
-  // The complete behavior tree that results from parsing the incoming XML
-  std::unique_ptr<BT::Tree> tree_;
-
   // A client that we'll use to send a command message to our own task server
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
 

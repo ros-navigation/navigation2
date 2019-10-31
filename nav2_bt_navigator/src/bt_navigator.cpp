@@ -104,16 +104,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
 
-  // Create the Behavior Tree from the XML input (after registering our own node types)
-  BT::Tree temp_tree = bt_->buildTreeFromText(xml_string_, blackboard_);
-
-  // Unfortunately, the BT library provides the tree as a struct instead of a pointer. So, we will
-  // createa new BT::Tree ourselves and move the data over
-  tree_ = std::make_unique<BT::Tree>();
-  tree_->root_node = temp_tree.root_node;
-  tree_->nodes = std::move(temp_tree.nodes);
-  temp_tree.root_node = nullptr;
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -149,7 +139,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   action_server_.reset();
   xml_string_.clear();
-  tree_.reset();
   blackboard_.reset();
   bt_.reset();
 
@@ -197,8 +186,11 @@ BtNavigator::navigateToPose()
       }
     };
 
+  // Create the Behavior Tree from the XML input
+  BT::Tree tree = bt_->buildTreeFromText(xml_string_, blackboard_);
+
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree, on_loop, is_canceling);
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
@@ -214,8 +206,6 @@ BtNavigator::navigateToPose()
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       action_server_->terminate_goals();
-      // Reset the BT so that it can be run again in the future
-      bt_->resetTree(tree_->root_node);
       break;
 
     default:
