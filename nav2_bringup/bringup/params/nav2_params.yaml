@@ -113,6 +113,7 @@ local_costmap:
         cost_scaling_factor: 3.0
       obstacle_layer:
         enabled: True
+        observation_sources: scan
         scan:
           topic: /scan
           max_obstacle_height: 2.0
@@ -127,6 +128,7 @@ local_costmap:
         z_voxels: 10
         max_obstacle_height: 2.0
         mark_threshold: 0
+        observation_sources: pointcloud
         pointcloud:
           topic: /intel_realsense_r200_depth/points
           max_obstacle_height: 2.0
@@ -136,7 +138,6 @@ local_costmap:
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
-      observation_sources: scan pointcloud
   local_costmap_client:
     ros__parameters:
       use_sim_time: True
