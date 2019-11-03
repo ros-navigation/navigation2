@@ -50,8 +50,6 @@ def generate_launch_description():
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
-    robot1_params_file = LaunchConfiguration('robot1_params_file')  # noqa: F841
-    robot2_params_file = LaunchConfiguration('robot2_params_file')  # noqa: F841
 
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
@@ -139,7 +137,7 @@ def generate_launch_description():
             source_file=rviz_config_file,
             replacements={'<robot_namespace>': ('/' + robot['name'])})
 
-        params_file = eval(robot['name'] + '_params_file')
+        params_file = LaunchConfiguration(robot['name'] + '_params_file')
 
         group = GroupAction([
             # TODO(orduno)
