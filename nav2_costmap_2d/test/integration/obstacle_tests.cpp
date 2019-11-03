@@ -104,7 +104,7 @@ public:
   TestNode()
   {
     node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
-    node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+    node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
     node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
