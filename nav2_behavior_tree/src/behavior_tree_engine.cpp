@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 #include <memory>
 #include <string>
@@ -27,8 +28,9 @@ namespace nav2_behavior_tree
 
 BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries)
 {
+  BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
-    factory_.registerFromPlugin(std::string{"lib" + p + ".so"});
+    factory_.registerFromPlugin(loader.getOSName(p));
   }
 }
 
