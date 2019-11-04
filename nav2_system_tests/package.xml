@@ -45,8 +45,6 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>gazebo_ros_pkgs</exec_depend>
-  <exec_depend>launch_ros</exec_depend>
-  <exec_depend>launch_testing</exec_depend>
   <exec_depend>navigation2</exec_depend>
   <exec_depend>lcov</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
