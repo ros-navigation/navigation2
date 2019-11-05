@@ -38,6 +38,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
+  navigation_mode_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
 
@@ -46,6 +47,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * cancel_msg = "Cancel navigation";
   const char * pause_msg = "Deactivate all nav2 lifecycle nodes";
   const char * resume_msg = "Activate all nav2 lifecycle nodes";
+  const char * single_goal_msg = "Change to waypoint mode navigation";
+  const char * waypoint_goal_msg = "Start navigation";
+  const char * cancel_waypoint_msg = "Cancel waypoint mode";
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -55,6 +59,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
   pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
+  pre_initial_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  pre_initial_->assignProperty(navigation_mode_button_, "enabled", false);
+
   initial_ = new QState();
   initial_->setObjectName("initial");
   initial_->assignProperty(start_reset_button_, "text", "Startup");
@@ -63,6 +70,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   initial_->assignProperty(pause_resume_button_, "text", "Pause");
   initial_->assignProperty(pause_resume_button_, "enabled", false);
+
+  initial_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
   // State entered when NavigateToPoses is not active
   idle_ = new QState();
@@ -74,6 +84,27 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(pause_resume_button_, "text", "Pause");
   idle_->assignProperty(pause_resume_button_, "enabled", true);
   idle_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
+
+  idle_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  idle_->assignProperty(navigation_mode_button_, "enabled", true);
+  idle_->assignProperty(navigation_mode_button_, "toolTip", single_goal_msg);
+  
+    // State entered when NavigateToPose is not active
+  accumulating_ = new QState();
+  accumulating_->setObjectName("accumulating");
+  accumulating_->assignProperty(start_reset_button_, "text", "Reset");
+  accumulating_->assignProperty(start_reset_button_, "toolTip", cancel_waypoint_msg);
+  accumulating_->assignProperty(start_reset_button_, "enabled", true);
+
+  accumulating_->assignProperty(pause_resume_button_, "text", "Pause");
+  accumulating_->assignProperty(pause_resume_button_, "enabled", false);
+  accumulating_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
+
+  accumulating_->assignProperty(navigation_mode_button_, "text", "Start Navigation");
+  accumulating_->assignProperty(navigation_mode_button_, "enabled", true);
+  accumulating_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
+
+  accumulated_ = new QState();
 
   // State entered to cancel the NavigateToPoses action
   canceled_ = new QState();
@@ -92,6 +123,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   running_->assignProperty(pause_resume_button_, "text", "Pause");
   running_->assignProperty(pause_resume_button_, "enabled", false);
 
+  running_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  running_->assignProperty(navigation_mode_button_, "enabled", false);
+
   // State entered when pause is requested
   paused_ = new QState();
   paused_->setObjectName("pausing");
@@ -102,6 +136,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
   paused_->assignProperty(pause_resume_button_, "enabled", true);
 
+  paused_->assignProperty(navigation_mode_button_, "text", "Start navidation");
+  paused_->assignProperty(navigation_mode_button_, "toolTip", resume_msg);
+  paused_->assignProperty(navigation_mode_button_, "enabled", true);
+
   // State entered to resume the nav2 lifecycle nodes
   resumed_ = new QState();
   resumed_->setObjectName("resuming");
@@ -111,17 +149,23 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(reset_, SIGNAL(exited()), this, SLOT(onShutdown()));
   QObject::connect(paused_, SIGNAL(entered()), this, SLOT(onPause()));
   QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
+  QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
+  QObject::connect(accumulated_, SIGNAL(entered()), this, SLOT(onAccumulated()));
 
   // Start/Reset button click transitions
   initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
   idle_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
   running_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
   paused_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
-
+  idle_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulating_);
+  accumulating_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulated_);
+  accumulating_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
+  
   // Internal state transitions
   canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
   reset_->addTransition(reset_, SIGNAL(entered()), initial_);
   resumed_->addTransition(resumed_, SIGNAL(entered()), idle_);
+  accumulated_->addTransition(accumulated_, SIGNAL(entered()), idle_);
 
   // Pause/Resume button click transitions
   idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
@@ -157,6 +201,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(reset_);
   state_machine_.addState(paused_);
   state_machine_.addState(resumed_);
+  state_machine_.addState(accumulating_);
+  state_machine_.addState(accumulated_);
 
   state_machine_.setInitialState(pre_initial_);
 
@@ -168,6 +214,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QVBoxLayout * main_layout = new QVBoxLayout;
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
+  main_layout->addWidget(navigation_mode_button_);
+
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 
@@ -252,9 +300,16 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  auto poses = nav_msgs::msg::Path();
-  poses.poses.push_back(pose);
-  startNavigation(poses);
+  if (state_machine_.configuration().contains(accumulating_))
+  {
+    acummulated_path_.poses.push_back(pose);
+  }else
+  {
+    acummulated_path_.poses.clear();
+    acummulated_path_.poses.push_back(pose);
+    startNavigation(acummulated_path_);
+    acummulated_path_.poses.clear();
+  }
 }
 
 void
@@ -270,6 +325,18 @@ Nav2Panel::onCancelButtonPressed()
   }
 
   timer_.stop();
+}
+
+void
+Nav2Panel::onAccumulated()
+{
+  startNavigation(acummulated_path_);
+}
+
+void
+Nav2Panel::onAccumulating()
+{
+  acummulated_path_.poses.clear();
 }
 
 void
@@ -309,6 +376,12 @@ Nav2Panel::startNavigation(nav_msgs::msg::Path poses)
 
   // Send the goal poses
   goal_.poses = poses;
+
+  RCLCPP_DEBUG(client_node_->get_logger(), "Sending a path of %zu waypoints:", goal_.poses.poses.size());
+  for (auto waypoint : goal_.poses.poses)
+  {
+    RCLCPP_DEBUG(client_node_->get_logger(), "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
+  }
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =

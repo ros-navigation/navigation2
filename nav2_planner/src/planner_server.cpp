@@ -184,11 +184,18 @@ PlannerServer::computePathToPoses()
       goal = action_server_->accept_pending_goal();
     }
 
-    RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->poses.poses.back().pose.position.x, goal->poses.poses.back().pose.position.y);
 
-    result->path = planner_->createPlan(start, goal->poses.poses.back());
+    result->path.poses.clear();
+    result->path.poses.push_back(start);
+    for (auto current_waypoint : goal->poses.poses)
+    {
+      auto partial_path = planner_->createPlan(result->path.poses.back(), current_waypoint);
+      result->path.header = partial_path.header;
+      result->path.poses.insert(result->path.poses.end(), partial_path.poses.begin(), partial_path.poses.end());
+    }
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
