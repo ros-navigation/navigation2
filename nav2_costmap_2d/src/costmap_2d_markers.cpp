@@ -62,7 +62,8 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
 V_Cell g_cells;
 nav2_util::LifecycleNode::SharedPtr g_node;
-rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
   if (grid->data.empty()) {
@@ -150,6 +151,7 @@ int main(int argc, char ** argv)
 
   pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
     "visualization_marker", 1);
+  pub->on_activate();
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
