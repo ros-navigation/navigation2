@@ -67,7 +67,29 @@ Please note that not all params needed to run the navigation stack are shown her
 - Currently due to some bug in rviz, you need to set the `fixed_frame` in the rviz display, to `odom` frame.
 - Using pointcloud data from a saved bag file while using gazebo simulation can be troublesome due to the clock time skipping to an earlier time.
 
+## How to use multiple sensor sources:
+Multiple sources can be added into a costmap layer (e.g., obstacle layer), by listing them under the 'observation_sources' for that layer.
+For example, to add laser scan and pointcloud as two different sources of inputs to the obstacle layer, you can define them in the params file as shown below for the local costmap:
+```
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      plugin_names: ["obstacle_layer", "inflation_layer"]
+      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      obstacle_layer:
+        enabled: True
+        observation_sources: scan pointcloud
+        scan:
+          topic: /scan
+          data_type: "LaserScan"
+        pointcloud:
+          topic: /intel_realsense_r200_depth/points
+          data_type: "PointCloud2"
+```
+In order to add multiple sources to the global costmap, follow the same procedure shown in the example above, but now adding the sources and their specific params under the `global_costmap` scope.
+
 ## Future Plans
 - Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like
 to broaden this world model concept and use costmap's layer concept as motivation for providing a service-style interface to
 potential clients needing information about the world (see issue https://github.com/ros-planning/navigation2/issues/18)
+
