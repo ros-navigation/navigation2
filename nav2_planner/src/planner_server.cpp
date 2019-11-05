@@ -89,8 +89,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
-      std::bind(&PlannerServer::computePathToPose, this));
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPoses",
+      std::bind(&PlannerServer::computePathToPoses, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -151,11 +151,11 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-PlannerServer::computePathToPose()
+PlannerServer::computePathToPoses()
 {
-  // Initialize the ComputePathToPose goal and result
+  // Initialize the ComputePathToPoses goal and result
   auto goal = action_server_->get_current_goal();
-  auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
+  auto result = std::make_shared<nav2_msgs::action::ComputePathToPoses::Result>();
 
   try {
     if (action_server_ == nullptr) {
@@ -186,14 +186,14 @@ PlannerServer::computePathToPose()
 
     RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
-      goal->pose.pose.position.x, goal->pose.pose.position.y);
+      goal->poses.poses.back().pose.position.x, goal->poses.poses.back().pose.position.y);
 
-    result->path = planner_->createPlan(start, goal->pose);
+    result->path = planner_->createPlan(start, goal->poses.poses.back());
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
         " path to (%.2f, %.2f)", planner_plugin_name_.c_str(),
-        goal->pose.pose.position.x, goal->pose.pose.position.y);
+        goal->poses.poses.back().pose.position.x, goal->poses.poses.back().pose.position.y);
       // TODO(orduno): define behavior if a preemption is available
       action_server_->terminate_goals();
       return;
@@ -201,8 +201,8 @@ PlannerServer::computePathToPose()
 
     RCLCPP_DEBUG(get_logger(),
       "Found valid path of size %u to (%.2f, %.2f)",
-      result->path.poses.size(), goal->pose.pose.position.x,
-      goal->pose.pose.position.y);
+      result->path.poses.size(), goal->poses.poses.back().pose.position.x,
+      goal->poses.poses.back().pose.position.y);
 
     // Publish the plan for visualization purposes
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
@@ -212,8 +212,8 @@ PlannerServer::computePathToPose()
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-      planner_plugin_name_.c_str(), goal->pose.pose.position.x,
-      goal->pose.pose.position.y, ex.what());
+      planner_plugin_name_.c_str(), goal->poses.poses.back().pose.position.x,
+      goal->poses.poses.back().pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update

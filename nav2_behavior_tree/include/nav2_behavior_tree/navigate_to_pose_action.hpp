@@ -20,20 +20,20 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_poses.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
+class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPoses>
 {
 public:
   NavigateToPoseAction(
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::NavigateToPoses>(action_name, conf)
   {
   }
 
@@ -51,8 +51,11 @@ public:
         "NavigateToPoseAction: position or orientation not provided");
     }
 
-    goal_.pose.pose.position = position;
-    goal_.pose.pose.orientation = orientation;
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position = position;
+    pose.pose.orientation = orientation;
+    
+    goal_.poses.push_back(pose);
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method

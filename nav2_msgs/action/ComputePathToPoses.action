@@ -1,7 +1,7 @@
 #goal definition
-geometry_msgs/PoseStamped pose
+nav_msgs/Path poses
 ---
 #result definition
-std_msgs/Empty result
+nav_msgs/Path path
 ---
 #feedback

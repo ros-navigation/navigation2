@@ -20,7 +20,7 @@
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_poses.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -68,8 +68,8 @@ protected:
   // For convenience, this client also supports sending the initial pose
   rclcpp::Publisher<PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
 
-  // Also, for convenience, this client supports invoking the NavigateToPose action
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigate_action_client_;
+  // Also, for convenience, this client supports invoking the NavigateToPoses action
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPoses>::SharedPtr navigate_action_client_;
 };
 
 }  // namespace nav2_lifecycle_manager

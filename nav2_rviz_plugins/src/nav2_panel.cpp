@@ -64,7 +64,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(pause_resume_button_, "text", "Pause");
   initial_->assignProperty(pause_resume_button_, "enabled", false);
 
-  // State entered when NavigateToPose is not active
+  // State entered when NavigateToPoses is not active
   idle_ = new QState();
   idle_->setObjectName("idle");
   idle_->assignProperty(start_reset_button_, "text", "Reset");
@@ -75,7 +75,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(pause_resume_button_, "enabled", true);
   idle_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
 
-  // State entered to cancel the NavigateToPose action
+  // State entered to cancel the NavigateToPoses action
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
 
@@ -83,7 +83,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   reset_ = new QState();
   reset_->setObjectName("reset");
 
-  // State entered while the NavigateToPose action is active
+  // State entered while the NavigateToPoses action is active
   running_ = new QState();
   running_->setObjectName("running");
   running_->assignProperty(start_reset_button_, "text", "Cancel");
@@ -175,9 +175,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     {"--ros-args --remap __node:=navigation_dialog_action_client"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
-      "NavigateToPose");
-  goal_ = nav2_msgs::action::NavigateToPose::Goal();
+  action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPoses>(client_node_,
+      "NavigateToPoses");
+  goal_ = nav2_msgs::action::NavigateToPoses::Goal();
 
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
@@ -252,7 +252,9 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  startNavigation(pose);
+  auto poses = nav_msgs::msg::Path();
+  poses.poses.push_back(pose);
+  startNavigation(poses);
 }
 
 void
@@ -296,21 +298,21 @@ Nav2Panel::timerEvent(QTimerEvent * event)
 }
 
 void
-Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
+Nav2Panel::startNavigation(nav_msgs::msg::Path poses)
 {
   auto is_action_server_ready = action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
-    RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPose action server is not available."
+    RCLCPP_ERROR(client_node_->get_logger(), "NavigateToPoses action server is not available."
       " Is the initial pose set?");
     return;
   }
 
-  // Send the goal pose
-  goal_.pose = pose;
+  // Send the goal poses
+  goal_.poses = poses;
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+    rclcpp_action::Client<nav2_msgs::action::NavigateToPoses>::SendGoalOptions();
   send_goal_options.result_callback = [](auto) {};
 
   auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);

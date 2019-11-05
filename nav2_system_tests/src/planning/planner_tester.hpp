@@ -23,7 +23,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/action/compute_path_to_poses.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
@@ -110,8 +110,8 @@ enum class TaskStatus : int8_t
 class PlannerTester : public rclcpp::Node, public ::testing::Test
 {
 public:
-  using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-  using ComputePathToPoseResult = nav_msgs::msg::Path;
+  using ComputePathToPosesCommand = nav_msgs::msg::Path;
+  using ComputePathToPosesResult = nav_msgs::msg::Path;
 
   PlannerTester();
   ~PlannerTester();
@@ -130,7 +130,7 @@ public:
   // Success criteria is a collision free path and a deviation to a
   // reference path smaller than a tolerance.
   bool defaultPlannerTest(
-    ComputePathToPoseResult & path,
+    ComputePathToPosesResult & path,
     const double deviation_tolerance = 1.0);
 
   // Runs multiple tests with random initial and goal poses
@@ -142,8 +142,8 @@ private:
   void setCostmap();
 
   TaskStatus createPlan(
-    const ComputePathToPoseCommand & goal,
-    ComputePathToPoseResult & path
+    const ComputePathToPosesCommand & goal,
+    ComputePathToPosesResult & path
   );
 
   bool is_active_;
@@ -189,24 +189,24 @@ private:
   // TODO(orduno): #443 Assuming a robot the size of a costmap cell
   bool plannerTest(
     const geometry_msgs::msg::Point & robot_position,
-    const ComputePathToPoseCommand & goal,
-    ComputePathToPoseResult & path);
+    const ComputePathToPosesCommand & goal,
+    ComputePathToPosesResult & path);
 
-  bool isCollisionFree(const ComputePathToPoseResult & path);
-
-  bool isWithinTolerance(
-    const geometry_msgs::msg::Point & robot_position,
-    const ComputePathToPoseCommand & goal,
-    const ComputePathToPoseResult & path) const;
+  bool isCollisionFree(const ComputePathToPosesResult & path);
 
   bool isWithinTolerance(
     const geometry_msgs::msg::Point & robot_position,
-    const ComputePathToPoseCommand & goal,
-    const ComputePathToPoseResult & path,
+    const ComputePathToPosesCommand & goal,
+    const ComputePathToPosesResult & path) const;
+
+  bool isWithinTolerance(
+    const geometry_msgs::msg::Point & robot_position,
+    const ComputePathToPosesCommand & goal,
+    const ComputePathToPosesResult & path,
     const double deviationTolerance,
-    const ComputePathToPoseResult & reference_path) const;
+    const ComputePathToPosesResult & reference_path) const;
 
-  void printPath(const ComputePathToPoseResult & path) const;
+  void printPath(const ComputePathToPosesResult & path) const;
 };
 
 }  // namespace nav2_system_tests

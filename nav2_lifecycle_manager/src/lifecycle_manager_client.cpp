@@ -34,7 +34,7 @@ LifecycleManagerClient::LifecycleManagerClient()
   is_active_client_ = node_->create_client<std_srvs::srv::Trigger>(active_service_name_);
 
   navigate_action_client_ =
-    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
+    rclcpp_action::create_client<nav2_msgs::action::NavigateToPoses>(node_, "NavigateToPoses");
 
   initial_pose_publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -131,12 +131,12 @@ LifecycleManagerClient::navigate_to_pose(double x, double y, double theta)
   target_pose.pose.position.z = 0;
   target_pose.pose.orientation = orientationAroundZAxis(theta);
 
-  auto goal = nav2_msgs::action::NavigateToPose::Goal();
-  goal.pose = target_pose;
+  auto goal = nav2_msgs::action::NavigateToPoses::Goal();
+  goal.poses.poses.push_back(target_pose);
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+    typename rclcpp_action::Client<nav2_msgs::action::NavigateToPoses>::SendGoalOptions();
   send_goal_options.result_callback = [](auto) {};
 
   // Send it

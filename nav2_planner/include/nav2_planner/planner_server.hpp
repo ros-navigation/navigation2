@@ -24,7 +24,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/action/compute_path_to_poses.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -40,7 +40,7 @@ namespace nav2_planner
 {
 /**
  * @class nav2_planner::PlannerServer
- * @brief An action server implements the behavior tree's ComputePathToPose
+ * @brief An action server implements the behavior tree's ComputePathToPoses
  * interface and hosts various plugins of different algorithms to compute plans.
  */
 class PlannerServer : public nav2_util::LifecycleNode
@@ -93,15 +93,15 @@ protected:
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPoses>;
 
-  // Our action server implements the ComputePathToPose action
+  // Our action server implements the ComputePathToPoses action
   std::unique_ptr<ActionServer> action_server_;
 
   /**
    * @brief The action server callback which calls planner to get the path
    */
-  void computePathToPose();
+  void computePathToPoses();
 
   /**
    * @brief Publish a path for visualization purposes

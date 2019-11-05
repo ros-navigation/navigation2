@@ -18,10 +18,9 @@
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_poses.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -51,7 +50,7 @@ protected:
   /**
    * @brief Configures member variables
    *
-   * Initializes action server for "NavigationToPose"; subscription to
+   * Initializes action server for "NavigationToPoses"; subscription to
    * "goal_sub"; and builds behavior tree from xml file.
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
@@ -87,27 +86,27 @@ protected:
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPoses>;
 
-  // Our action server implements the NavigateToPose action
+  // Our action server implements the NavigateToPoses action
   std::unique_ptr<ActionServer> action_server_;
 
   /**
    * @brief Action server callbacks
    */
-  void navigateToPose();
+  void navigateToPoses();
 
   /**
-   * @brief Goal pose initialization on the blackboard
+   * @brief Goal poses initialization on the blackboard
    */
-  void initializeGoalPose();
+  void initializeGoalPoses();
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
    */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  void onGoalPosesReceived(const nav_msgs::msg::Path::SharedPtr poses);
+  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr goal_sub_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
@@ -122,7 +121,7 @@ protected:
   std::unique_ptr<BT::Tree> tree_;
 
   // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPoses>::SharedPtr self_client_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;

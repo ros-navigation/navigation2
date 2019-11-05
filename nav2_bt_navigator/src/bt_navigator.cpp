@@ -51,8 +51,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "NavigateToPose");
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPoses>(
+    client_node_, "NavigateToPoses");
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -61,17 +61,17 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
-  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
+  goal_sub_ = create_subscription<nav_msgs::msg::Path>(
+    "goal_poses",
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+    std::bind(&BtNavigator::onGoalPosesReceived, this, std::placeholders::_1));
 
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
+    "NavigateToPoses", std::bind(&BtNavigator::navigateToPoses, this), false);
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
@@ -171,9 +171,9 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 void
-BtNavigator::navigateToPose()
+BtNavigator::navigateToPoses()
 {
-  initializeGoalPose();
+  initializeGoalPoses();
 
   auto is_canceling = [this]() {
       if (action_server_ == nullptr) {
@@ -193,7 +193,7 @@ BtNavigator::navigateToPose()
       if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
-        initializeGoalPose();
+        initializeGoalPoses();
       }
     };
 
@@ -224,22 +224,22 @@ BtNavigator::navigateToPose()
 }
 
 void
-BtNavigator::initializeGoalPose()
+BtNavigator::initializeGoalPoses()
 {
   auto goal = action_server_->get_current_goal();
 
-  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
+  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f) in %zu steps",
+    goal->poses.poses.back().pose.position.x, goal->poses.poses.back().pose.position.y, goal->poses.poses.size());
 
   // Update the goal pose on the blackboard
-  blackboard_->set("goal", goal->pose);
+  blackboard_->set("goal", goal->poses);
 }
 
 void
-BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+BtNavigator::onGoalPosesReceived(const nav_msgs::msg::Path::SharedPtr poses)
 {
-  nav2_msgs::action::NavigateToPose::Goal goal;
-  goal.pose = *pose;
+  nav2_msgs::action::NavigateToPoses::Goal goal;
+  goal.poses = *poses;
   self_client_->async_send_goal(goal);
 }
 

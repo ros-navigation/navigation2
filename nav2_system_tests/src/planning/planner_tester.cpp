@@ -224,7 +224,7 @@ void PlannerTester::setCostmap()
 }
 
 bool PlannerTester::defaultPlannerTest(
-  ComputePathToPoseResult & path,
+  ComputePathToPosesResult & path,
   const double /*deviation_tolerance*/)
 {
   if (!costmap_set_) {
@@ -234,7 +234,7 @@ bool PlannerTester::defaultPlannerTest(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  ComputePathToPoseCommand goal;
+  ComputePathToPosesCommand goal;
   auto costmap_properties = costmap_->get_properties();
 
   if (using_fake_costmap_) {
@@ -243,8 +243,11 @@ bool PlannerTester::defaultPlannerTest(
     robot_position.x = 1.0;
     robot_position.y = 1.0;
 
-    goal.pose.position.x = 8.0;
-    goal.pose.position.y = 8.0;
+    auto pose = geometry_msgs::msg::PoseStamped();
+    pose.pose.position.x = 8.0;
+    pose.pose.position.y = 8.0;
+
+    goal.poses.push_back(pose);
 
   } else {
     RCLCPP_DEBUG(this->get_logger(), "Planning using the provided map");
@@ -254,8 +257,11 @@ bool PlannerTester::defaultPlannerTest(
     robot_position.x = 390.0;
     robot_position.y = 10.0;
 
-    goal.pose.position.x = 10.0;
-    goal.pose.position.y = 390.0;
+    auto pose = geometry_msgs::msg::PoseStamped();
+    pose.pose.position.x = 10.0;
+    pose.pose.position.y = 390.0;
+
+    goal.poses.push_back(pose);
   }
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
@@ -299,8 +305,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   // TODO(orduno) #443 Add support for planners that take into account robot orientation
   geometry_msgs::msg::Point robot_position;
-  ComputePathToPoseCommand goal;
-  ComputePathToPoseResult path;
+  ComputePathToPosesCommand goal;
+  ComputePathToPosesResult path;
 
   unsigned int num_fail = 0;
   auto start = high_resolution_clock::now();
@@ -316,12 +322,14 @@ bool PlannerTester::defaultPlannerRandomTests(
     robot_position.y = vals.second;
 
     vals = generate_random();
-    goal.pose.position.x = vals.first;
-    goal.pose.position.y = vals.second;
+    auto pose = geometry_msgs::msg::PoseStamped();
+    pose.pose.position.x = vals.first;
+    pose.pose.position.y = vals.second;
+    goal.poses.push_back(pose);
 
     if (!plannerTest(robot_position, goal, path)) {
       RCLCPP_WARN(this->get_logger(), "Failed with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
-        robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
+        robot_position.x, robot_position.y, goal.poses.back().pose.position.x, goal.poses.back().pose.position.y);
       ++num_fail;
     }
   }
@@ -341,8 +349,8 @@ bool PlannerTester::defaultPlannerRandomTests(
 
 bool PlannerTester::plannerTest(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  ComputePathToPoseResult & path)
+  const ComputePathToPosesCommand & goal,
+  ComputePathToPosesResult & path)
 {
   RCLCPP_DEBUG(this->get_logger(), "Getting the path from the planner");
 
@@ -367,21 +375,21 @@ bool PlannerTester::plannerTest(
 }
 
 TaskStatus PlannerTester::createPlan(
-  const ComputePathToPoseCommand & goal,
-  ComputePathToPoseResult & path)
+  const ComputePathToPosesCommand & goal,
+  ComputePathToPosesResult & path)
 {
   // Update the costmap of the planner to the set data
   planner_tester_->setCostmap(costmap_.get());
 
   // Call planning algorithm
-  if (planner_tester_->createPath(goal, path)) {
+  if (planner_tester_->createPath(goal.poses.back(), path)) {
     return TaskStatus::SUCCEEDED;
   }
 
   return TaskStatus::FAILED;
 }
 
-bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
+bool PlannerTester::isCollisionFree(const ComputePathToPosesResult & path)
 {
   // At each point of the path, check if the corresponding cell is free
 
@@ -413,19 +421,19 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  const ComputePathToPoseResult & path) const
+  const ComputePathToPosesCommand & goal,
+  const ComputePathToPosesResult & path) const
 {
   return isWithinTolerance(
-    robot_position, goal, path, 0.0, ComputePathToPoseResult());
+    robot_position, goal, path, 0.0, ComputePathToPosesResult());
 }
 
 bool PlannerTester::isWithinTolerance(
   const geometry_msgs::msg::Point & robot_position,
-  const ComputePathToPoseCommand & goal,
-  const ComputePathToPoseResult & path,
+  const ComputePathToPosesCommand & goal,
+  const ComputePathToPosesResult & path,
   const double /*deviationTolerance*/,
-  const ComputePathToPoseResult & /*reference_path*/) const
+  const ComputePathToPosesResult & /*reference_path*/) const
 {
   // TODO(orduno) #443 Work in progress, for now we only check that the path start matches the
   //              robot start location and that the path end matches the goal.
@@ -436,8 +444,8 @@ bool PlannerTester::isWithinTolerance(
   if (
     path_start.pose.position.x == robot_position.x &&
     path_start.pose.position.y == robot_position.y &&
-    path_end.pose.position.x == goal.pose.position.x &&
-    path_end.pose.position.y == goal.pose.position.y)
+    path_end.pose.position.x == goal.poses.back().pose.position.x &&
+    path_end.pose.position.y == goal.poses.back().pose.position.y)
   {
     RCLCPP_DEBUG(this->get_logger(), "Path has correct start and end points");
 
@@ -446,7 +454,7 @@ bool PlannerTester::isWithinTolerance(
   RCLCPP_WARN(this->get_logger(), "Path deviates from requested start and end points");
 
   RCLCPP_DEBUG(this->get_logger(), "Requested path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
-    robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
+    robot_position.x, robot_position.y, goal.poses.back().pose.position.x, goal.poses.back().pose.position.y);
 
   RCLCPP_DEBUG(this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
     path_start.pose.position.x, path_start.pose.position.y,
@@ -455,7 +463,7 @@ bool PlannerTester::isWithinTolerance(
   return false;
 }
 
-void PlannerTester::printPath(const ComputePathToPoseResult & path) const
+void PlannerTester::printPath(const ComputePathToPosesResult & path) const
 {
   auto index = 0;
   auto ss = std::stringstream{};

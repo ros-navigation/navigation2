@@ -22,7 +22,7 @@
 #include <string>
 
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_poses.hpp"
 #include "nav2_rviz_plugins/ros_action_qevent.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -66,9 +66,9 @@ private:
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
 
-  // Call to send NavigateToPose action request for goal pose
-  void startNavigation(geometry_msgs::msg::PoseStamped pose);
-  using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
+  // Call to send NavigateToPoses action request for goal poses
+  void startNavigation(nav_msgs::msg::Path poses);
+  using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPoses>;
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -76,11 +76,11 @@ private:
   // A timer used to check on the completion status of the action
   QBasicTimer timer_;
 
-  // The NavigateToPose action client
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr action_client_;
+  // The NavigateToPoses action client
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPoses>::SharedPtr action_client_;
 
   // Goal-related state
-  nav2_msgs::action::NavigateToPose::Goal goal_;
+  nav2_msgs::action::NavigateToPoses::Goal goal_;
   GoalHandle::SharedPtr goal_handle_;
 
   // The client used to control the nav2 stack
@@ -99,7 +99,7 @@ private:
   QState * paused_{nullptr};
   QState * resumed_{nullptr};
   // The following states are added to allow for the state of the button to only expose reset
-  // while the NavigateToPose action is not active. While running, the user will be allowed to
+  // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
   // and the button state to change automatically.
   QState * running_{nullptr};
