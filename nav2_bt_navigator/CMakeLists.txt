@@ -33,6 +33,7 @@ set(library_name ${executable_name}_core)
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
   src/ros_console_logger.cpp
+  src/ros_topic_logger.cpp
 )
 
 set(dependencies

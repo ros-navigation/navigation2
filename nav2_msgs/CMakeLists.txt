@@ -16,6 +16,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/VoxelGrid.msg"
+  "msg/BehaviorTreeStatusChange.msg"
+  "msg/BehaviorTreeLog.msg"
   "srv/GetCostmap.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"

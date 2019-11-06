@@ -22,6 +22,7 @@
 
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_console_logger.hpp"
+#include "nav2_bt_navigator/ros_topic_logger.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -190,15 +191,17 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  auto on_loop = [this]() {
+  RosConsoleLogger console_logger(client_node_->get_logger(), *tree_);
+  RosTopicLogger topic_logger(client_node_, *tree_);
+
+  auto on_loop = [&]() {
       if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
       }
+      topic_logger.flush();
     };
-
-  RosConsoleLogger console_logger(client_node_->get_logger(), *tree_);
 
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
