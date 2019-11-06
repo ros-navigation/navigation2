@@ -38,6 +38,7 @@ public:
   void on_tick() override
   {
     getInput("goal", goal_.pose);
+    getInput("planner_property", goal_.planner_property);
   }
 
   void on_success() override
@@ -55,7 +56,8 @@ public:
   {
     return providedBasicPorts({
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to")
+        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
+        BT::InputPort<std::string>("planner_property", "")
       });
   }
 

@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -54,6 +55,8 @@ public:
    * @brief A destructor for nav2_planner::PlannerServer
    */
   ~PlannerServer();
+
+  using PlannerMap = std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr>;
 
 protected:
   /**
@@ -101,7 +104,7 @@ protected:
   /**
    * @brief The action server callback which calls planner to get the path
    */
-  void computePathToPose();
+  void computePlan();
 
   /**
    * @brief Publish a path for visualization purposes
@@ -110,9 +113,10 @@ protected:
   void publishPlan(const nav_msgs::msg::Path & path);
 
   // Planner
-  nav2_core::GlobalPlanner::Ptr planner_;
+  PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
-  std::string planner_plugin_name_;
+  std::vector<std::string> plugin_properties_, plugin_types_;
+  std::string planner_properties_concat_;
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -124,6 +128,9 @@ protected:
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+
+  // Whether we've published the single planner warning yet
+  bool single_planner_warning_given_{false};
 };
 
 }  // namespace nav2_planner
