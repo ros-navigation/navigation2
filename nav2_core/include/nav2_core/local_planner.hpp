@@ -54,7 +54,7 @@ namespace nav2_core
 
 /**
  * @class LocalPlanner
- * @brief planner interface that will be inherited by all local planners
+ * @brief planner interface that acts as a virtual base class for all local planner plugins
  */
 class LocalPlanner
 {
