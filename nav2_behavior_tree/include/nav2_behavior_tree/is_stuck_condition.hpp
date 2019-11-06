@@ -23,7 +23,7 @@
 #include <deque>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp_v3/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
 
 using namespace std::chrono_literals; // NOLINT

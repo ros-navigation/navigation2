@@ -14,7 +14,7 @@
 
 #include "nav2_behavior_tree/reinitialize_global_localization_service.hpp"
 
-#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp_v3/bt_factory.h"
 
 
 BT_REGISTER_NODES(factory)
