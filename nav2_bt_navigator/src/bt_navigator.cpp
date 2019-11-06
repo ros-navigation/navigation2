@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_bt_navigator/ros_console_logger.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -196,6 +197,8 @@ BtNavigator::navigateToPose()
         initializeGoalPose();
       }
     };
+
+  RosConsoleLogger console_logger(client_node_->get_logger(), *tree_);
 
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
