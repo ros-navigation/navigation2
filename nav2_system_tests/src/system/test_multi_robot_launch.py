@@ -61,8 +61,8 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             Node(
-                package='spawn_robot',
-                node_executable='spawn_robot',
+                package='nav2_gazebo_spawner',
+                node_executable='nav2_gazebo_spawner',
                 output='screen',
                 arguments=[
                     '--robot_name', TextSubstitution(text=robot['name']),
