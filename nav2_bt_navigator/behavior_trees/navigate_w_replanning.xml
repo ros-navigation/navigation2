@@ -11,7 +11,7 @@
           <ComputePathToPose goal="{goal}"/>
         </Fallback>
       </RateController>
-      <FollowPath path="{path}" controller_name="FollowPath"/>
+      <FollowPath path="{path}" controller_property="FollowPath"/>
     </Sequence>
   </BehaviorTree>
 </root>

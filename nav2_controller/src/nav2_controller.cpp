@@ -35,10 +35,11 @@ ControllerServer::ControllerServer()
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  std::vector<std::string> default_name, default_type;
+  std::vector<std::string> default_property, default_type;
   default_type.push_back("dwb_core::DWBLocalPlanner");
-  default_name.push_back("FollowPath");
-  controller_names_ = declare_parameter("controller_plugin_names", default_name);
+  default_property.push_back("FollowPath");
+  controller_properties_ = declare_parameter("controller_plugin_properties",
+      default_property);
   controller_types_ = declare_parameter("controller_plugin_types", default_type);
 
   // The costmap node is used in the implementation of the local planner
@@ -65,11 +66,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
 
-  if (controller_types_.size() != controller_names_.size()) {
+  if (controller_types_.size() != controller_properties_.size()) {
     RCLCPP_FATAL(get_logger(), "Size of controller names (%i) and "
       "controller types (%i) are not the same!",
       static_cast<int>(controller_types_.size()),
-      static_cast<int>(controller_names_.size()));
+      static_cast<int>(controller_properties_.size()));
     exit(-1);
   }
 
@@ -78,17 +79,17 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       nav2_core::LocalPlanner::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(get_logger(), "Created controller : %s of type %s",
-        controller_names_[i].c_str(), controller_types_[i].c_str());
-      controller->configure(node, controller_names_[i],
+        controller_properties_[i].c_str(), controller_types_[i].c_str());
+      controller->configure(node, controller_properties_[i],
         costmap_ros_->getTfBuffer(), costmap_ros_);
-      controllers_.insert({controller_names_[i], controller});
+      controllers_.insert({controller_properties_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
     }
   }
 
-  for (uint i = 0; i != controller_names_.size(); i++) {
-    controller_names_concat_ += controller_names_[i] + std::string(" ");
+  for (uint i = 0; i != controller_properties_.size(); i++) {
+    controller_properties_concat_ += controller_properties_[i] + std::string(" ");
   }
 
   get_parameter("controller_frequency", controller_frequency_);
@@ -182,21 +183,21 @@ void ControllerServer::computeControl()
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
-    std::string c_name = action_server_->get_current_goal()->controller_name;
+    std::string c_name = action_server_->get_current_goal()->controller_property;
 
     if (controllers_.find(c_name) == controllers_.end()) {
       if (controllers_.size() == 1 && c_name.empty()) {
         if (!single_controller_warning_given_) {
           RCLCPP_WARN(get_logger(), "No controller was specified in action call."
             " Server will use only plugin loaded %s. "
-            "This warning will appear once.", controller_names_concat_.c_str());
+            "This warning will appear once.", controller_properties_concat_.c_str());
           single_controller_warning_given_ = true;
         }
         current_controller_ = controllers_.begin()->first;
       } else {
         RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
           "which does not exist. Available controllers are %s.",
-          c_name.c_str(), controller_names_concat_.c_str());
+          c_name.c_str(), controller_properties_concat_.c_str());
         action_server_->terminate_goals();
         return;
       }
