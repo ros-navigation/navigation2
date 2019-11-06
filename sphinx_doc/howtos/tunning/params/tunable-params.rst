@@ -63,7 +63,7 @@ ACML
 Controller Server
 =================
 
-Hosts the `DWB` controller
+Hosts the `DWB` controller.
 
 .. code-block:: yaml
 
@@ -150,7 +150,7 @@ Hosts the `DWB` controller
 Local Costmap
 =================
 
-Hosted on the `PlannerServer` node
+Hosted on the `PlannerServer` node.
 
 .. code-block:: yaml
 
@@ -170,12 +170,13 @@ Hosted on the `PlannerServer` node
           inflation_radius: 0.55
         lethal_cost_threshold: 100
         map_topic: /map
-        observation_sources: scan
+        observation_sources: ''
         obstacle_layer:
           combination_method: 1
           enabled: true
           footprint_clearing_enabled: true
           max_obstacle_height: 2.0
+          observation_sources: scan
           scan:
             clearing: true
             data_type: LaserScan
@@ -193,9 +194,11 @@ Hosted on the `PlannerServer` node
         origin_y: 0.0
         plugin_names:
         - obstacle_layer
+        - voxel_layer
         - inflation_layer
         plugin_types:
         - nav2_costmap_2d::ObstacleLayer
+        - nav2_costmap_2d::VoxelLayer
         - nav2_costmap_2d::InflationLayer
         publish_frequency: 1.0
         resolution: 0.05
@@ -209,6 +212,31 @@ Hosted on the `PlannerServer` node
         update_frequency: 5.0
         use_maximum: false
         use_sim_time: true
+        voxel_layer:
+          combination_method: 1
+          enabled: true
+          footprint_clearing_enabled: true
+          mark_threshold: 0
+          max_obstacle_height: 2.0
+          observation_sources: pointcloud
+          origin_z: 0.0
+          pointcloud:
+            clearing: true
+            data_type: PointCloud2
+            expected_update_rate: 0.0
+            inf_is_valid: false
+            marking: true
+            max_obstacle_height: 2.0
+            min_obstacle_height: 0.0
+            observation_persistence: 0.0
+            obstacle_range: 2.5
+            raytrace_range: 3.0
+            sensor_frame: ''
+            topic: /intel_realsense_r200_depth/points
+          publish_voxel_map: true
+          unknown_threshold: 15
+          z_resolution: 0.2
+          z_voxels: 10
         width: 3
 
 
@@ -217,7 +245,7 @@ Hosted on the `PlannerServer` node
 Planner Server
 =================
 
-Hosts the `NAVFN` controller
+Hosts the `NAVFN` controller.
 
 .. code-block:: yaml
 
@@ -235,7 +263,7 @@ Hosts the `NAVFN` controller
 Global Costmap
 =================
 
-Hosted on the `ControllerServer` node
+Hosted on the `ControllerServer` node.
 
 .. code-block:: yaml
 
@@ -255,12 +283,13 @@ Hosted on the `ControllerServer` node
           inflation_radius: 0.55
         lethal_cost_threshold: 100
         map_topic: /map
-        observation_sources: scan
+        observation_sources: ''
         obstacle_layer:
           combination_method: 1
           enabled: true
           footprint_clearing_enabled: true
           max_obstacle_height: 2.0
+          observation_sources: scan
           scan:
             clearing: true
             data_type: LaserScan
@@ -279,10 +308,12 @@ Hosted on the `ControllerServer` node
         plugin_names:
         - static_layer
         - obstacle_layer
+        - voxel_layer
         - inflation_layer
         plugin_types:
         - nav2_costmap_2d::StaticLayer
         - nav2_costmap_2d::ObstacleLayer
+        - nav2_costmap_2d::VoxelLayer
         - nav2_costmap_2d::InflationLayer
         publish_frequency: 1.0
         resolution: 0.1
@@ -300,6 +331,31 @@ Hosted on the `ControllerServer` node
         update_frequency: 5.0
         use_maximum: false
         use_sim_time: true
+        voxel_layer:
+          combination_method: 1
+          enabled: true
+          footprint_clearing_enabled: true
+          mark_threshold: 0
+          max_obstacle_height: 2.0
+          observation_sources: pointcloud
+          origin_z: 0.0
+          pointcloud:
+            clearing: true
+            data_type: PointCloud2
+            expected_update_rate: 0.0
+            inf_is_valid: false
+            marking: true
+            max_obstacle_height: 2.0
+            min_obstacle_height: 0.0
+            observation_persistence: 0.0
+            obstacle_range: 2.5
+            raytrace_range: 3.0
+            sensor_frame: ''
+            topic: /intel_realsense_r200_depth/points
+          publish_voxel_map: true
+          unknown_threshold: 15
+          z_resolution: 0.2
+          z_voxels: 10
         width: 10
 
 
