@@ -165,8 +165,10 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  prepareCostmap();
-  costmap_raw_pub_->publish(costmap_raw_);
+  if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
+    prepareCostmap();
+    costmap_raw_pub_->publish(costmap_raw_);
+  }
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||
@@ -175,28 +177,31 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
-    prepareGrid();
-    costmap_pub_->publish(grid_);
-  } else if (x0_ < xn_) {
-    std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-    // Publish Just an Update
-    map_msgs::msg::OccupancyGridUpdate update;
-    update.header.stamp = rclcpp::Time();
-    update.header.frame_id = global_frame_;
-    update.x = x0_;
-    update.y = y0_;
-    update.width = xn_ - x0_;
-    update.height = yn_ - y0_;
-    update.data.resize(update.width * update.height);
-
-    unsigned int i = 0;
-    for (unsigned int y = y0_; y < yn_; y++) {
-      for (unsigned int x = x0_; x < xn_; x++) {
-        unsigned char cost = costmap_->getCost(x, y);
-        update.data[i++] = cost_translation_table_[cost];
-      }
+    if (node_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
+      prepareGrid();
+      costmap_pub_->publish(grid_);
     }
-    costmap_update_pub_->publish(update);
+  } else if (x0_ < xn_) {
+    if (node_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
+      std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+      // Publish Just an Update
+      map_msgs::msg::OccupancyGridUpdate update;
+      update.header.stamp = rclcpp::Time();
+      update.header.frame_id = global_frame_;
+      update.x = x0_;
+      update.y = y0_;
+      update.width = xn_ - x0_;
+      update.height = yn_ - y0_;
+      update.data.resize(update.width * update.height);
+      unsigned int i = 0;
+      for (unsigned int y = y0_; y < yn_; y++) {
+        for (unsigned int x = x0_; x < xn_; x++) {
+          unsigned char cost = costmap_->getCost(x, y);
+          update.data[i++] = cost_translation_table_[cost];
+        }
+      }
+      costmap_update_pub_->publish(update);
+    }
   }
 
   xn_ = yn_ = 0;

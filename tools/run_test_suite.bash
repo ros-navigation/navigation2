@@ -25,3 +25,4 @@ $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner_ran
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator$
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator_with_dijkstra$
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_dynamic_obstacle$
+$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_multi_robot$

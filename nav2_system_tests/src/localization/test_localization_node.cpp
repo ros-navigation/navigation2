@@ -43,7 +43,7 @@ public:
 
     node = rclcpp::Node::make_shared("localization_test");
 
-    while (node->count_subscribers("/scan") < 1) {
+    while (node->count_subscribers("scan") < 1) {
       std::this_thread::sleep_for(100ms);
       rclcpp::spin_some(node);
     }

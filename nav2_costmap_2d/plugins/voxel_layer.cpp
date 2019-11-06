@@ -88,6 +88,8 @@ void VoxelLayer::onInitialize()
       "voxel_grid", custom_qos);
   }
 
+  voxel_pub_->on_activate();
+
   clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
     "clearing_endpoints", custom_qos);
 
@@ -108,11 +110,12 @@ void VoxelLayer::matchSize()
 
 void VoxelLayer::reset()
 {
+  voxel_pub_->on_deactivate();
   deactivate();
   resetMaps();
-  voxel_grid_.reset();
   activate();
   undeclareAllParameters();
+  voxel_pub_->on_activate();
 }
 
 void VoxelLayer::resetMaps()

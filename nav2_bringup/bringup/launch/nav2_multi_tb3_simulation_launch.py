@@ -50,7 +50,7 @@ def generate_launch_description():
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
-    params_file = LaunchConfiguration('params_file')
+
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
@@ -74,10 +74,15 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
-    declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes')
+    declare_robot1_params_file_cmd = DeclareLaunchArgument(
+        'robot1_params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'),
+        description='Full path to the ROS2 parameters file to use for robot1 launched nodes')
+
+    declare_robot2_params_file_cmd = DeclareLaunchArgument(
+        'robot2_params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
+        description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
 
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
@@ -131,6 +136,8 @@ def generate_launch_description():
         namespaced_rviz_config_file = ReplaceString(
             source_file=rviz_config_file,
             replacements={'<robot_namespace>': ('/' + robot['name'])})
+
+        params_file = LaunchConfiguration(robot['name'] + '_params_file')
 
         group = GroupAction([
             # TODO(orduno)
@@ -204,7 +211,8 @@ def generate_launch_description():
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_robot1_params_file_cmd)
+    ld.add_action(declare_robot2_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_autostart_cmd)
