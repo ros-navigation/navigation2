@@ -7,22 +7,22 @@
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <Sequence name="NavigateWithReplanning">
         <RateController hz="1.0">
-          <Fallback name="GoalReached">
+          <Fallback name="GoalReachedFallback">
             <GoalReached/>
-            <RecoveryNode number_of_retries="1" name="ComputePath">
+            <RecoveryNode number_of_retries="1" name="ComputePathRecovery">
               <ComputePathToPose goal="{goal}" path="{path}"/>
-              <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+              <ClearEntireCostmap  name="ClearLocalCostmap-CP" service_name="global_costmap/clear_entirely_global_costmap"/>
             </RecoveryNode>
           </Fallback>
         </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
+        <RecoveryNode number_of_retries="1" name="FollowPathRecovery">
           <FollowPath path="{path}"/>
-          <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-FP" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </Sequence>
       <SequenceStar name="RecoveryActions">
-        <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
-        <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+        <ClearEntireCostmap name="ClearLocalCostmap-Top" service_name="local_costmap/clear_entirely_local_costmap"/>
+        <ClearEntireCostmap name="ClearGlobalCostmap-Top" service_name="global_costmap/clear_entirely_global_costmap"/>
         <Spin spin_dist="1.57"/>
         <Wait wait_duration="5"/>
       </SequenceStar>
