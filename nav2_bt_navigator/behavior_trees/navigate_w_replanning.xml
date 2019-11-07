@@ -4,14 +4,23 @@
 
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <Sequence name="root">
-      <RateController hz="1.0">
-        <Fallback>
-          <GoalReached/>
-          <ComputePathToPose goal="{goal}" planner_property="GridBased"/>
-        </Fallback>
-      </RateController>
-      <FollowPath path="{path}"/>
-    </Sequence>
+    <FirstCompletion name="root">
+      <Repeat num_cycles="-1">
+        <RateController hz="1.0">
+          <Fallback>
+            <GoalReached/>
+            <Sequence name="ComputePathSequence">
+              <ComputePathToPose goal="{goal}" path="{path}" planner_property="GridBased"/>
+              <SetBlackboard value="1" output_key="first_planning_complete" />
+            </Sequence>
+          </Fallback>
+        </RateController>
+      </Repeat>
+      <BlackboardCheckInt value_A="{first_planning_complete}"
+                            value_B="1"
+                            return_on_mismatch="RUNNING">
+        <FollowPath path="{path}"/>
+      </BlackboardCheckInt>
+    </FirstCompletion>
   </BehaviorTree>
 </root>

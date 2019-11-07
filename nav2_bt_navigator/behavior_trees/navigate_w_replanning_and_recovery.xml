@@ -5,21 +5,30 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <Sequence name="NavigateWithReplanning">
-        <RateController hz="1.0">
-          <Fallback name="GoalReached">
-            <GoalReached/>
-            <RecoveryNode number_of_retries="1" name="ComputePathToPose">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_property="GridBased"/>
-              <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
-            </RecoveryNode>
-          </Fallback>
-        </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}"/>
-          <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
-      </Sequence>
+      <FirstCompletion name="NavigateWithReplanning">
+        <Repeat num_cycles="-1">
+          <RateController hz="1.0">
+            <Fallback name="GoalReached">
+              <GoalReached/>
+              <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+                <Sequence name="ComputePathSequence">
+                  <ComputePathToPose goal="{goal}" path="{path}" planner_property="GridBased"/>
+                  <SetBlackboard value="1" output_key="first_planning_complete" />
+                </Sequence>
+                <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+              </RecoveryNode>
+            </Fallback>
+          </RateController>
+        </Repeat>
+        <BlackboardCheckInt value_A="{first_planning_complete}"
+                              value_B="1"
+                              return_on_mismatch="RUNNING">
+          <RecoveryNode number_of_retries="1" name="FollowPath">
+            <FollowPath path="{path}"/>
+            <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+          </RecoveryNode>
+        </BlackboardCheckInt>
+      </FirstCompletion>
       <SequenceStar name="RecoveryActions">
         <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
         <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
