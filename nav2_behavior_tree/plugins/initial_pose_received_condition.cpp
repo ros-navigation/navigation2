@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__BT_NODES_HPP_
-#define NAV2_BEHAVIOR_TREE__BT_NODES_HPP_
+#include "nav2_behavior_tree/initial_pose_received_condition.hpp"
 
-#include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
 
+
+BT_REGISTER_NODES(factory)
+{
+  factory.registerSimpleCondition("InitialPoseReceived",
+    std::bind(&nav2_behavior_tree::initialPoseReceived, std::placeholders::_1));
+}
 
 namespace nav2_behavior_tree
 {
 
-void RegisterNodes(BT::BehaviorTreeFactory & factory);
-
-BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
+BT::NodeStatus
+initialPoseReceived(BT::TreeNode & tree_node)
+{
+  auto initPoseReceived = tree_node.config().blackboard->get<bool>("initial_pose_received");
+  return initPoseReceived ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
+}
 
 }  // namespace nav2_behavior_tree
-
-#endif  // NAV2_BEHAVIOR_TREE__BT_NODES_HPP_
