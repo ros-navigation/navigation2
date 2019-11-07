@@ -64,6 +64,7 @@ set(bt_plugins
   reinitialize_global_localization_service
   rate_controller
   recovery_node
+  first_completion
 )
 
 foreach(bt_plugin ${bt_plugins})
