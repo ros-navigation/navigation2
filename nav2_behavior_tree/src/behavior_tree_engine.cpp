@@ -65,37 +65,6 @@ BehaviorTreeEngine::BehaviorTreeEngine()
 
 BtStatus
 BehaviorTreeEngine::run(
-  BT::Blackboard::Ptr & blackboard,
-  const std::string & behavior_tree_xml,
-  std::function<void()> onLoop,
-  std::function<bool()> cancelRequested,
-  std::chrono::milliseconds loopTimeout)
-{
-  // Parse the input XML and create the corresponding Behavior Tree
-  BT::Tree tree = buildTreeFromText(behavior_tree_xml, blackboard);
-
-  rclcpp::WallRate loopRate(loopTimeout);
-  BT::NodeStatus result = BT::NodeStatus::RUNNING;
-
-  // Loop until something happens with ROS or the node completes
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    if (cancelRequested()) {
-      tree.root_node->halt();
-      return BtStatus::CANCELED;
-    }
-
-    onLoop();
-
-    result = tree.root_node->executeTick();
-
-    loopRate.sleep();
-  }
-
-  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
-}
-
-BtStatus
-BehaviorTreeEngine::run(
   std::unique_ptr<BT::Tree> & tree,
   std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
