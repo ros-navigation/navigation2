@@ -54,8 +54,8 @@ MapSaver::MapSaver(const rclcpp::NodeOptions & options)
   Magick::InitializeMagick(nullptr);
   {
     mapname_ = declare_parameter("output_file_no_ext", "map");
-    if (mapname_.empty()) {
-      throw std::runtime_error("Map name not provided");
+    if (mapname_ == "map") {
+      mapname_ += "_" + std::to_string(static_cast<int>(now().seconds()));
     }
     threshold_occupied_ = declare_parameter("threshold_occupied", 65);
     if (100 < threshold_occupied_) {

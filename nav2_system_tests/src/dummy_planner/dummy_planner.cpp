@@ -33,7 +33,7 @@ DummyPlanner::DummyPlanner()
   task_server_ =
     std::make_unique<nav2_behavior_tree::ComputePathToPoseTaskServer>(temp_node, false),
   task_server_->setExecuteCallback(
-    std::bind(&DummyPlanner::computePathToPose, this, std::placeholders::_1));
+    std::bind(&DummyPlanner::computePlan, this, std::placeholders::_1));
 
   // Start listening for incoming ComputePathToPose task requests
   task_server_->start();
@@ -47,7 +47,7 @@ DummyPlanner::~DummyPlanner()
 }
 
 void
-DummyPlanner::computePathToPose(const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr cmd)
+DummyPlanner::computePlan(const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr cmd)
 {
   RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", cmd->start.position.x, cmd->start.position.y,

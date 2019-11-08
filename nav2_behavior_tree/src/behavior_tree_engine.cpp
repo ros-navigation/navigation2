@@ -17,7 +17,6 @@
 #include <memory>
 #include <string>
 
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "nav2_behavior_tree/back_up_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_behavior_tree/compute_path_to_pose_action.hpp"
@@ -66,37 +65,6 @@ BehaviorTreeEngine::BehaviorTreeEngine()
 
 BtStatus
 BehaviorTreeEngine::run(
-  BT::Blackboard::Ptr & blackboard,
-  const std::string & behavior_tree_xml,
-  std::function<void()> onLoop,
-  std::function<bool()> cancelRequested,
-  std::chrono::milliseconds loopTimeout)
-{
-  // Parse the input XML and create the corresponding Behavior Tree
-  BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
-
-  rclcpp::WallRate loopRate(loopTimeout);
-  BT::NodeStatus result = BT::NodeStatus::RUNNING;
-
-  // Loop until something happens with ROS or the node completes
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    if (cancelRequested()) {
-      tree.root_node->halt();
-      return BtStatus::CANCELED;
-    }
-
-    onLoop();
-
-    result = tree.root_node->executeTick();
-
-    loopRate.sleep();
-  }
-
-  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
-}
-
-BtStatus
-BehaviorTreeEngine::run(
   std::unique_ptr<BT::Tree> & tree,
   std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
@@ -123,15 +91,19 @@ BehaviorTreeEngine::run(
 }
 
 BT::Tree
-BehaviorTreeEngine::buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard)
+BehaviorTreeEngine::buildTreeFromText(
+  const std::string & xml_string,
+  BT::Blackboard::Ptr blackboard)
 {
-  return BT::buildTreeFromText(factory_, xml_string, blackboard);
+  BT::XMLParser p(factory_);
+  p.loadFromText(xml_string);
+  return p.instantiateTree(blackboard);
 }
 
 BT::NodeStatus
 BehaviorTreeEngine::initialPoseReceived(BT::TreeNode & tree_node)
 {
-  auto initPoseReceived = tree_node.blackboard()->template get<bool>("initial_pose_received");
+  auto initPoseReceived = tree_node.config().blackboard->get<bool>("initial_pose_received");
   return initPoseReceived ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 

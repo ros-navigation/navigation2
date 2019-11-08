@@ -23,31 +23,39 @@ namespace nav2_costmap_2d
 
 FootprintSubscriber::FootprintSubscriber(
   nav2_util::LifecycleNode::SharedPtr node,
-  const std::string & topic_name)
+  const std::string & topic_name,
+  const double & footprint_timeout)
 : FootprintSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),
     node->get_node_logging_interface(),
-    topic_name)
+    node->get_node_clock_interface(),
+    topic_name, footprint_timeout)
 {}
 
 FootprintSubscriber::FootprintSubscriber(
   rclcpp::Node::SharedPtr node,
-  const std::string & topic_name)
+  const std::string & topic_name,
+  const double & footprint_timeout)
 : FootprintSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),
     node->get_node_logging_interface(),
-    topic_name)
+    node->get_node_clock_interface(),
+    topic_name, footprint_timeout)
 {}
 
 FootprintSubscriber::FootprintSubscriber(
   const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
   const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
   const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-  const std::string & topic_name)
+  const rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock,
+  const std::string & topic_name,
+  const double & footprint_timeout)
 : node_base_(node_base),
   node_topics_(node_topics),
   node_logging_(node_logging),
-  topic_name_(topic_name)
+  node_clock_(node_clock),
+  topic_name_(topic_name),
+  footprint_timeout_(rclcpp::Duration(footprint_timeout, 0.))
 {
   footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(node_topics_,
       topic_name, rclcpp::SystemDefaultsQoS(),
@@ -55,7 +63,10 @@ FootprintSubscriber::FootprintSubscriber(
 }
 
 bool
-FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footprint)
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint,
+  rclcpp::Time & stamp,
+  rclcpp::Duration valid_footprint_timeout)
 {
   if (!footprint_received_) {
     return false;
@@ -63,7 +74,29 @@ FootprintSubscriber::getFootprint(std::vector<geometry_msgs::msg::Point> & footp
 
   footprint = toPointVector(
     std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
+  auto & footprint_stamp = footprint_->header.stamp;
+
+  if (stamp - footprint_stamp > valid_footprint_timeout) {
+    return false;
+  }
+
   return true;
+}
+
+bool
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint,
+  rclcpp::Duration & valid_footprint_timeout)
+{
+  rclcpp::Time t = node_clock_->get_clock()->now();
+  return getFootprint(footprint, t, valid_footprint_timeout);
+}
+
+bool
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint)
+{
+  return getFootprint(footprint, footprint_timeout_);
 }
 
 void

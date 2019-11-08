@@ -38,7 +38,7 @@ DummyController::DummyController()
   task_server_->setExecuteCallback(
     std::bind(&DummyController::followPath, this, std::placeholders::_1));
 
-  // Start listening for incoming ComputePathToPose task requests
+  // Start listening for incoming ComputePathToPose action server requests
   task_server_->start();
 
   RCLCPP_INFO(get_logger(), "Initialized DummyController");

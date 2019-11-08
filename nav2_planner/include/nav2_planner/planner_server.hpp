@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -38,20 +39,61 @@
 
 namespace nav2_planner
 {
-
+/**
+ * @class nav2_planner::PlannerServer
+ * @brief An action server implements the behavior tree's ComputePathToPose
+ * interface and hosts various plugins of different algorithms to compute plans.
+ */
 class PlannerServer : public nav2_util::LifecycleNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_planner::PlannerServer
+   */
   PlannerServer();
+  /**
+   * @brief A destructor for nav2_planner::PlannerServer
+   */
   ~PlannerServer();
 
+  using PlannerMap = std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr>;
+
 protected:
-  // Implement the lifecycle interface
+  /**
+   * @brief Configure member variables and initializes planner
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Reset member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in error state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
@@ -59,16 +101,22 @@ protected:
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
 
-  // The action server callback
-  void computePathToPose();
+  /**
+   * @brief The action server callback which calls planner to get the path
+   */
+  void computePlan();
 
-  // Publish a path for visualization purposes
+  /**
+   * @brief Publish a path for visualization purposes
+   * @param path Reference to Global Path
+   */
   void publishPlan(const nav_msgs::msg::Path & path);
 
   // Planner
-  nav2_core::GlobalPlanner::Ptr planner_;
+  PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
-  std::string planner_plugin_name_;
+  std::vector<std::string> plugin_properties_, plugin_types_;
+  std::string planner_properties_concat_;
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -80,6 +128,9 @@ protected:
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+
+  // Whether we've published the single planner warning yet
+  bool single_planner_warning_given_{false};
 };
 
 }  // namespace nav2_planner

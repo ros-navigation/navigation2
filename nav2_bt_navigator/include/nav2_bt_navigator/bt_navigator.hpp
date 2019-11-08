@@ -18,7 +18,6 @@
 #include <memory>
 #include <string>
 
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -31,20 +30,61 @@
 
 namespace nav2_bt_navigator
 {
-
+/**
+ * @class nav2_bt_navigator::BtNavigator
+ * @brief An action server that uses behavior tree for navigating a robot to its
+ * goal position.
+ */
 class BtNavigator : public nav2_util::LifecycleNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_bt_navigator::BtNavigator class
+   */
   BtNavigator();
+  /**
+   * @brief A destructor for nav2_bt_navigator::BtNavigator class
+   */
   ~BtNavigator();
 
 protected:
-  // The lifecycle node interface
+  /**
+   * @brief Configures member variables
+   *
+   * Initializes action server for "NavigationToPose"; subscription to
+   * "goal_sub"; and builds behavior tree from xml file.
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Resets member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in error state
+   * @param state Reference to LifeCycle node state
+   */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
@@ -52,24 +92,25 @@ protected:
   // Our action server implements the NavigateToPose action
   std::unique_ptr<ActionServer> action_server_;
 
-  // The action server callback
+  /**
+   * @brief Action server callbacks
+   */
   void navigateToPose();
 
-  // Goal pose initialization on the blackboard
+  /**
+   * @brief Goal pose initialization on the blackboard
+   */
   void initializeGoalPose();
 
-  // A subscription and callback to handle the topic-based goal published from rviz
+  /**
+   * @brief A subscription and callback to handle the topic-based goal published
+   * from rviz
+   */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
-
-  // The goal (on the blackboard) to be passed to ComputePath
-  std::shared_ptr<geometry_msgs::msg::PoseStamped> goal_;
-
-  // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
-  std::shared_ptr<nav_msgs::msg::Path> path_;
 
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;

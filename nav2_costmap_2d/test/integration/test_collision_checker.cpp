@@ -72,7 +72,7 @@ public:
   DummyFootprintSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
     std::string & topic_name)
-  : FootprintSubscriber(node, topic_name)
+  : FootprintSubscriber(node, topic_name, 10.0)
   {}
 
   void setFootprint(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
@@ -90,7 +90,7 @@ public:
     global_frame_("map")
   {
     // Declare non-plugin specific costmap parameters
-    declare_parameter("map_topic", rclcpp::ParameterValue(std::string("/map")));
+    declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
     declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));

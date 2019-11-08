@@ -17,112 +17,79 @@
 import os
 import sys
 
-
 from ament_index_python.packages import get_package_share_directory
+
 from launch import LaunchDescription
 from launch import LaunchService
-import launch.actions
-import launch_ros.actions
+from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
+
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    use_sim_time = True
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
-    bringup_package = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_package, 'params/nav2_params.yaml')
-    astar = (os.getenv('ASTAR').lower() == 'true')
-    bt_navigator_install_path = get_package_share_directory('nav2_bt_navigator')
-    bt_navigator_xml = os.path.join(bt_navigator_install_path,
+
+    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))
 
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
+
+    # Replace the `use_astar` setting on the params file
+    param_substitutions = {'use_astar': os.getenv('ASTAR')}
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        root_key='',
+        param_rewrites=param_substitutions,
+        convert_types=True)
+
     return LaunchDescription([
-        launch.actions.SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         # Launch gazebo server for simulation
-        launch.actions.ExecuteProcess(
+        ExecuteProcess(
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
                  '--minimal_comms', world],
             output='screen'),
 
-        # Launch navigation2 nodes
-        launch_ros.actions.Node(
+        # TODO(orduno) Launch the robot state publisher instead
+        #              using a local copy of TB3 urdf file
+        Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
 
-        launch_ros.actions.Node(
+        Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 
-        launch_ros.actions.Node(
-            package='nav2_map_server',
-            node_executable='map_server',
-            node_name='map_server',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'yaml_filename': map_yaml_file}]),
-
-        launch_ros.actions.Node(
-            package='nav2_amcl',
-            node_executable='amcl',
-            node_name='amcl',
-            output='screen',
-            parameters=[params_file]),
-
-        launch_ros.actions.Node(
-            package='nav2_controller',
-            node_executable='controller_server',
-            output='screen',
-            parameters=[params_file]),
-
-        launch_ros.actions.Node(
-            package='nav2_planner',
-            node_executable='planner_server',
-            node_name='planner_server',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'use_astar': astar}]),
-
-        launch_ros.actions.Node(
-            package='nav2_recoveries',
-            node_executable='recoveries_server',
-            node_name='recoveries_server',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}]),
-
-        launch_ros.actions.Node(
-            package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}, {'bt_xml_filename': bt_navigator_xml}]),
-
-        launch_ros.actions.Node(
-            package='nav2_lifecycle_manager',
-            node_executable='lifecycle_manager',
-            node_name='lifecycle_manager',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'node_names': ['map_server',
-                                        'amcl',
-                                        'controller_server',
-                                        'planner_server',
-                                        'recoveries_server',
-                                        'bt_navigator']},
-                        {'autostart': True}]),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(bringup_dir, 'launch', 'nav2_bringup_launch.py')),
+            launch_arguments={
+                              'map': map_yaml_file,
+                              'use_sim_time': 'True',
+                              'params_file': configured_params,
+                              'bt_xml_file': bt_navigator_xml,
+                              'autostart': 'True'}.items()),
     ])
 
 
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
-    test1_action = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_system_node.py')],
-        name='test_system_node',
+    test1_action = ExecuteProcess(
+        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+             '-r', '-2.0', '-0.5', '0.0', '2.0'],
+        name='tester_node',
         output='screen')
 
     lts = LaunchTestService()

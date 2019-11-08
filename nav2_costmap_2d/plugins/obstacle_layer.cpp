@@ -80,6 +80,7 @@ void ObstacleLayer::onInitialize()
     rclcpp::ParameterValue(true));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
   declareParameter("combination_method", rclcpp::ParameterValue(1));
+  declareParameter("observation_sources", rclcpp::ParameterValue(std::string("")));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
@@ -87,7 +88,7 @@ void ObstacleLayer::onInitialize()
   node_->get_parameter(name_ + "." + "combination_method", combination_method_);
   node_->get_parameter("track_unknown_space", track_unknown_space);
   node_->get_parameter("transform_tolerance", transform_tolerance);
-  node_->get_parameter("observation_sources", topics_string);
+  node_->get_parameter(name_ + "." + "observation_sources", topics_string);
 
   RCLCPP_INFO(node_->get_logger(), "Subscribed to Topics: %s", topics_string.c_str());
 

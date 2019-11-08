@@ -19,13 +19,14 @@
 #include <string>
 #include <thread>
 
-#include "nav2_util/lifecycle_helper_interface.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
+
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 // The following is a temporary wrapper for rclcpp_lifecycle::LifecycleNode. This class
 // adds the optional creation of an rclcpp::Node that can be used by derived classes

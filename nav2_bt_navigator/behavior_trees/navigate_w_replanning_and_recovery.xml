@@ -9,14 +9,14 @@
         <RateController hz="1.0">
           <Fallback name="GoalReached">
             <GoalReached/>
-            <RecoveryNode number_of_retries="1" name="ComputePath">
-              <ComputePathToPose goal="${goal}" path="${path}"/>
+            <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+              <ComputePathToPose goal="{goal}" path="{path}" planner_property="GridBased"/>
               <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
             </RecoveryNode>
           </Fallback>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="${path}"/>
+          <FollowPath path="{path}"/>
           <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </Sequence>

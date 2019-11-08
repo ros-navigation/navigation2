@@ -109,7 +109,7 @@ public:
       node_, costmap_topic);
 
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      node_, footprint_topic);
+      node_, footprint_topic, 1.0);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
       *costmap_sub_, *footprint_sub_, *tf_, node_->get_name(), "odom");

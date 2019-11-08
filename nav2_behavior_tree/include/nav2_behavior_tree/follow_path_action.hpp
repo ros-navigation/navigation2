@@ -27,33 +27,38 @@ namespace nav2_behavior_tree
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
 public:
-  explicit FollowPathAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::FollowPath>(action_name)
+  FollowPathAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::FollowPath>(action_name, conf)
   {
-  }
-
-  void on_init() override
-  {
-    blackboard()->set<bool>("path_updated", false);
+    config().blackboard->set("path_updated", false);
   }
 
   void on_tick() override
   {
-    goal_.path = *(blackboard()->get<nav_msgs::msg::Path::SharedPtr>("path"));
+    getInput("path", goal_.path);
   }
 
-  void on_loop_timeout() override
+  void on_server_timeout() override
   {
     // Check if the goal has been updated
-    if (blackboard()->get<bool>("path_updated")) {
+    if (config().blackboard->get<bool>("path_updated")) {
       // Reset the flag in the blackboard
-      blackboard()->set<bool>("path_updated", false);  // NOLINT
+      config().blackboard->set("path_updated", false);
 
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration
-      goal_.path = *(blackboard()->get<nav_msgs::msg::Path::SharedPtr>("path"));
+      getInput("path", goal_.path);
       goal_updated_ = true;
     }
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({
+        BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
+      });
   }
 };
 

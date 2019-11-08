@@ -28,15 +28,10 @@ namespace nav2_behavior_tree
 class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
-  explicit ClearEntireCostmapService(
+  ClearEntireCostmapService(
     const std::string & service_node_name,
-    const BT::NodeParameters & params)
-  : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, params)
-  {
-    getParam<std::string>("service_name", service_name_);
-  }
-
-  void on_init() override
+    const BT::NodeConfiguration & conf)
+  : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, conf)
   {
   }
 };

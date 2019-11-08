@@ -19,7 +19,6 @@
 #include <string>
 
 #include "behaviortree_cpp/behavior_tree.h"
-#include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
@@ -35,19 +34,14 @@ public:
   virtual ~BehaviorTreeEngine() {}
 
   BtStatus run(
-    BT::Blackboard::Ptr & blackboard,
-    const std::string & behavior_tree_xml,
-    std::function<void()> onLoop,
-    std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
-
-  BtStatus run(
     std::unique_ptr<BT::Tree> & tree,
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
+  BT::Tree buildTreeFromText(
+    const std::string & xml_string,
+    BT::Blackboard::Ptr blackboard);
 
   void haltAllActions(BT::TreeNode * root_node)
   {

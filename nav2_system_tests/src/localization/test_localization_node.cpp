@@ -43,7 +43,7 @@ public:
 
     node = rclcpp::Node::make_shared("localization_test");
 
-    while (node->count_subscribers("/scan") < 1) {
+    while (node->count_subscribers("scan") < 1) {
       std::this_thread::sleep_for(100ms);
       rclcpp::spin_some(node);
     }
@@ -51,7 +51,7 @@ public:
     initial_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "initialpose", rclcpp::SystemDefaultsQoS());
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "amcl_pose", rclcpp::SystemDefaultsQoS(),
+      "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
     initial_pose_pub_->publish(testPose_);
   }
@@ -85,7 +85,7 @@ bool TestAmclPose::defaultAmclTest()
   while (!pose_callback_) {
     // TODO(mhpanah): Initial pose should only be published once.
     initial_pose_pub_->publish(testPose_);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(1s);
     rclcpp::spin_some(node);
   }
   if (std::abs(amcl_pose_x - testPose_.pose.pose.position.x) < tol_ &&
