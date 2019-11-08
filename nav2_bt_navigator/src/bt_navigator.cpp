@@ -142,17 +142,27 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  // TODO(orduno) Fix the race condition between the worker thread ticking the tree
+  //              and the main thread resetting the resources, see #1344
+
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
-  tf_.reset();
+
+  // Reset the listener before the buffer
   tf_listener_.reset();
+  tf_.reset();
+
   action_server_.reset();
   xml_string_.clear();
+
+  RCLCPP_INFO(get_logger(), "Cleaning tree");
+
   tree_.reset();
   blackboard_.reset();
   bt_.reset();
 
+  RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
