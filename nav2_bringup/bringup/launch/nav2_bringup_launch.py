@@ -110,7 +110,8 @@ def generate_launch_description():
                                     'controller_server',
                                     'planner_server',
                                     'recoveries_server',
-                                    'bt_navigator']}])
+                                    'bt_navigator',
+                                    'waypoint_follower']}])
 
     # Create the launch description and populate
     ld = LaunchDescription()

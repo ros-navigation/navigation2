@@ -134,6 +134,15 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
+            package='nav2_waypoint_follower',
+            node_executable='waypoint_follower',
+            node_name='waypoint_follower',
+            output='screen',
+            parameters=[configured_params],
+            use_remappings=IfCondition(use_remappings),
+            remappings=remappings),
+
+        Node(
             condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
@@ -144,6 +153,7 @@ def generate_launch_description():
                         {'node_names': ['controller_server',
                                         'planner_server',
                                         'recoveries_server',
-                                        'bt_navigator']}]),
+                                        'bt_navigator',
+                                        'waypoint_follower']}]),
 
     ])
