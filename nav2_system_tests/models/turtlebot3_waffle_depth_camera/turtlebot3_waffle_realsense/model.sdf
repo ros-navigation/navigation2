@@ -353,7 +353,7 @@
           <frame_name>realsense_depth_frame</frame_name>
           <hack_baseline>0.07</hack_baseline>
           <min_depth>0.001</min_depth>
-       </plugin>
+        </plugin>
       </sensor>
     </link>  
 
