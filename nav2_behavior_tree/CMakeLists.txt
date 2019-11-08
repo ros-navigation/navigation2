@@ -68,15 +68,15 @@ set(bt_plugins
 
 foreach(bt_plugin ${bt_plugins})
 
-  set(lib_name "nav2_${bt_plugin}_bt_node" )
+  set(lib_name "nav2_${bt_plugin}_bt_node")
 
-  add_library(${lib_name} SHARED plugins/${bt_plugin}.cpp )
+  add_library(${lib_name} SHARED plugins/${bt_plugin}.cpp)
 
-  ament_target_dependencies(${lib_name} ${dependencies} )
+  ament_target_dependencies(${lib_name} ${dependencies})
 
-  target_compile_definitions(${lib_name} PRIVATE BT_PLUGIN_EXPORT )
+  target_compile_definitions(${lib_name} PRIVATE BT_PLUGIN_EXPORT)
 
-  list(APPEND plugin_libs ${lib_name} )
+  list(APPEND plugin_libs ${lib_name})
 
 endforeach()
 

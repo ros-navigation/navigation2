@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
-#include "behaviortree_cpp/utils/shared_library.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 using namespace std::chrono_literals;
 

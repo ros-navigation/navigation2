@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_NODE_HPP_
-#define NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_
+#define NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_
 
 #include <chrono>
 #include <string>
@@ -98,4 +98,4 @@ inline BT::NodeStatus RateController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_
