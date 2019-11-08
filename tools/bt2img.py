@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This tool converts a behavior tree XML file to a PNG image. Run bt2img.py -h
+# for instructions
 
 import argparse
 import xml.etree.ElementTree
@@ -63,9 +65,11 @@ def main():
     dot = convert2dot(behavior_tree)
     if args.legend:
         legend = make_legend()
-        legend.render(args.legend, view=True)
+        legend.format = 'png'
+        legend.render(args.legend)
     dot.format = 'png'
     if args.save_dot:
+        print("Saving dot to " + str(args.save_dot))
         args.save_dot.write(dot.source)
     dot.render(args.image_out, view=args.display)
 
@@ -74,7 +78,7 @@ def parse_command_line():
     parser.add_argument('--behavior_tree', required=True,
                         help='the behavior tree XML file to convert to an image')
     parser.add_argument('--image_out', required=True,
-                        help='The name of the output image file. It should end in .png')
+                        help='The name of the output image file. Leave off the .png extension')
     parser.add_argument('--display', action="store_true",
                         help='If specified, opens the image in the default viewer')
     parser.add_argument('--save_dot', type=argparse.FileType('w'),
@@ -83,6 +87,8 @@ def parse_command_line():
                         help='Generate a legend image as well')
     return parser.parse_args()
 
+# An XML file can have multiple behavior trees defined in it in theory. We don't
+# currently support that.
 def find_behavior_tree(xml_tree):
     trees = xml_tree.findall('BehaviorTree')
     if (len(trees) == 0):
@@ -91,6 +97,7 @@ def find_behavior_tree(xml_tree):
         raise RuntimeError("This program only supports one behavior tree per file")
     return trees[0]
 
+# Generate a dot description of the root of the behavior tree.
 def convert2dot(behavior_tree):
     dot = graphviz.Digraph()
     root = behavior_tree
@@ -99,6 +106,9 @@ def convert2dot(behavior_tree):
     convert_subtree(dot, root, parent_dot_name)
     return dot
 
+# Recursive function. We add the children to the dot file, and then recursively
+# call this function on the children. Nodes are given an ID that is the hash
+# of the node to ensure each is unique.
 def convert_subtree(dot, parent_node, parent_dot_name):
     for node in list(parent_node):
         label = make_label(node)
@@ -107,6 +117,8 @@ def convert_subtree(dot, parent_node, parent_dot_name):
         dot.edge(parent_dot_name, dot_name)
         convert_subtree(dot, node, dot_name)
 
+# The node label contains the:
+# type, the name if provided, and the parameters.
 def make_label(node):
     label = '< <table border="0" cellspacing="0" cellpadding="0">'
     label += '<tr><td align="text"><i>' + node.tag + '</i></td></tr>'
@@ -129,6 +141,7 @@ def node_color(type):
     #else it's unknown
     return "grey"
 
+# creates a legend which can be provided with the other images.
 def make_legend():
     legend = graphviz.Digraph(graph_attr={'rankdir': 'LR'})
     legend.attr(label='Legend')

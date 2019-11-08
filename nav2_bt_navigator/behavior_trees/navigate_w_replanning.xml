@@ -16,9 +16,10 @@
           </Fallback>
         </RateController>
       </Repeat>
-      <BlackboardCheckInt value_A="{first_planning_complete}"
-                            value_B="1"
-                            return_on_mismatch="RUNNING">
+      <BlackboardCheckInt name="Wait for first path" 
+                          value_A="{first_planning_complete}"
+                          value_B="1"
+                          return_on_mismatch="RUNNING">
         <FollowPath path="{path}"/>
       </BlackboardCheckInt>
     </FirstCompletion>

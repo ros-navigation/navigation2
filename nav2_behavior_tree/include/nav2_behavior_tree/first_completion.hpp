@@ -20,6 +20,10 @@
 namespace nav2_behavior_tree
 {
 
+/** @brief Type of parallel node that returns the status of the first child to stop running
+ *
+ * Usage in XML: <FirstCompletion>
+ */
 class FirstCompletion : public BT::ControlNode
 {
   public:
