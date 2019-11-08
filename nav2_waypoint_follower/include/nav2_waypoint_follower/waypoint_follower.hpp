@@ -27,6 +27,15 @@
 
 namespace nav2_waypoint_follower
 {
+
+enum class ActionStatus
+{
+  UNKNOWN = 0,
+  PROCESSING = 1,
+  FAILED = 2,
+  SUCCEEDED = 3
+};
+
 /**
  * @class nav2_waypoint_follower::WaypointFollower
  * @brief An action server that uses behavior tree for navigating a robot to its
@@ -35,6 +44,11 @@ namespace nav2_waypoint_follower
 class WaypointFollower : public nav2_util::LifecycleNode
 {
 public:
+  using ActionT = nav2_msgs::action::FollowWaypoints;
+  using ClientT = nav2_msgs::action::NavigateToPose;
+  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+  using ActionClient = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>;
+
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
    */
@@ -88,16 +102,25 @@ protected:
    */
   void followWaypoints();
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowWaypoints>;
-  using ActionClient = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>;
+  /**
+   * @brief Action client result callback
+   * @param result Result of action server updated asynchronously
+   */
+  void resultCallback(const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result);
+
+  /**
+   * @brief Action client goal response callback
+   * @param future Shared future to goalhandle
+   */
+  void goalResponseCallback(
+    std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future);
 
   // Our action server
   std::unique_ptr<ActionServer> action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::Node::SharedPtr client_node_;
-
   bool stop_on_failure_;
-
+  ActionStatus current_goal_status_;
 };
 
 }  // namespace nav2_waypoint_follower

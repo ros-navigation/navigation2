@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 
-// option for parameter & start on bringup of parameter & execute parameter
+// TODO(stevemacenski): Add capability for reading in yaml file and executing
 
 namespace nav2_waypoint_follower
 {
@@ -48,7 +48,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   client_node_ = std::make_shared<rclcpp::Node>(
     std::string(get_name()) + std::string("_client_node"));
 
-  nav_to_pose_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+  nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
     client_node_, "NavigateToPose");
 
   action_server_ = std::make_unique<ActionServer>(
@@ -110,8 +110,8 @@ void
 WaypointFollower::followWaypoints()
 {
   auto goal = action_server_->get_current_goal();
-  auto feedback = std::make_shared<nav2_msgs::action::FollowWaypoints::Feedback>();
-  auto result = std::make_shared<nav2_msgs::action::FollowWaypoints::Result>();
+  auto feedback = std::make_shared<ActionT::Feedback>();
+  auto result = std::make_shared<ActionT::Result>();
 
   // Check if request is valid
   if (!action_server_ || !action_server_->is_server_active()) {
@@ -142,41 +142,23 @@ WaypointFollower::followWaypoints()
     // Check if we need to send a new goal
     if (new_goal) {
       new_goal = false;
-      nav2_msgs::action::NavigateToPose::Goal client_goal;
+      ClientT::Goal client_goal;
       client_goal.pose = goal->poses[goal_index];
+
+      auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
+      send_goal_options.result_callback =
+        std::bind(&WaypointFollower::resultCallback, this, std::placeholders::_1);
+      send_goal_options.goal_response_callback =
+        std::bind(&WaypointFollower::goalResponseCallback, this, std::placeholders::_1);
       auto future_goal_handle =
-        nav_to_pose_client_->async_send_goal(client_goal);
-      if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
-      {
-        RCLCPP_ERROR(get_logger(),
-          "Failed to send goal to NavigateToPose action server.");
-        action_server_->terminate_goals();
-        return;
-      }
+        nav_to_pose_client_->async_send_goal(client_goal, send_goal_options);
+      current_goal_status_ = ActionStatus::PROCESSING;
     }
-
-    // Check up on NavigateToPose and see what's up
-    
-    // get state result from server (or check feedback?) TODO
-    // want result state: failed, succeeded, processing.
-
-
-
-
-
-
-
-
-
-
-
-
 
     feedback->current_waypoint = goal_index;
     action_server_->publish_feedback(feedback);
 
-    if (true /*result == failed*/) { //TODO
+    if (current_goal_status_ == ActionStatus::FAILED) {
       if (stop_on_failure_) {
         RCLCPP_WARN(get_logger(), "Failed to process waypoint %i in waypoint "
           "list and stop on failure is enabled."
@@ -187,10 +169,10 @@ WaypointFollower::followWaypoints()
         RCLCPP_INFO(get_logger(), "Failed to process waypoint %i,"
           " moving to next.", goal_index);
       }
-    } else if (true /*result == succeeded*/) { //TODO
+    } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
       RCLCPP_INFO(get_logger(), "Succeeded pocessing waypoint %i, "
         "moving to next.", goal_index);
-    } else if (true /*result != processing*/) { //TODO
+    } else if (current_goal_status_ != ActionStatus::PROCESSING) {
       // Update server state
       goal_index++;
       new_goal = true;
@@ -198,15 +180,45 @@ WaypointFollower::followWaypoints()
         RCLCPP_INFO(get_logger(), "Completed all %i waypoints requested.",
           goal->poses.size());
         action_server_->succeeded_current(result);
-      }        
+      }
     } else {
       RCLCPP_DEBUG(get_logger(), "Processing waypoint %i...", goal_index);
     }
 
     r.sleep();
   }
+}
 
-  return;
+void
+WaypointFollower::resultCallback(
+  const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result)
+{
+  switch (result.code) {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      current_goal_status_ = ActionStatus::SUCCEEDED;
+      return;
+    case rclcpp_action::ResultCode::ABORTED:
+      current_goal_status_ = ActionStatus::FAILED;
+      return;
+    case rclcpp_action::ResultCode::CANCELED:
+      current_goal_status_ = ActionStatus::FAILED;
+      return;
+    default:
+      current_goal_status_ = ActionStatus::UNKNOWN;
+      return;
+  }
+}
+
+void
+WaypointFollower::goalResponseCallback(
+  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future)
+{
+  auto goal_handle = future.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(get_logger(),
+      "NavigateToPose client failed to send goal to server.");
+    current_goal_status_ = ActionStatus::FAILED;
+  }
 }
 
 }  // namespace nav2_waypoint_follower
