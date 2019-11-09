@@ -14,19 +14,20 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <string>
 #include "nav2_behavior_tree/first_completion.hpp"
 
 namespace nav2_behavior_tree
 {
 
-FirstCompletion::FirstCompletion(const std::string& name)
-: BT::ControlNode(name, {} )
+FirstCompletion::FirstCompletion(const std::string & name)
+: BT::ControlNode(name, {})
 {
 }
 
 FirstCompletion::FirstCompletion(
-  const std::string &name,
-  const BT::NodeConfiguration& config)
+  const std::string & name,
+  const BT::NodeConfiguration & config)
 : BT::ControlNode(name, config)
 {
 }
@@ -34,9 +35,9 @@ FirstCompletion::FirstCompletion(
 BT::NodeStatus FirstCompletion::tick()
 {
   // tick every child until one returns something other than RUNNING.
-  for(const auto & child_node : children_nodes_) {
+  for (const auto & child_node : children_nodes_) {
     auto status = child_node->executeTick();
-    switch(status) {
+    switch (status) {
       case BT::NodeStatus::SUCCESS:
       case BT::NodeStatus::FAILURE:
         haltChildren(0);
@@ -51,7 +52,6 @@ BT::NodeStatus FirstCompletion::tick()
           "from child " << child_node->name();
         throw std::runtime_error(error_msg.str());
         break;
-
     }
   }
   return BT::NodeStatus::RUNNING;
@@ -59,7 +59,7 @@ BT::NodeStatus FirstCompletion::tick()
 
 void FirstCompletion::halt()
 {
-    BT::ControlNode::halt();
+  BT::ControlNode::halt();
 }
 
 }  // namespace nav2_behavior_tree

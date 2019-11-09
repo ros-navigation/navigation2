@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__FIRST_COMPLETION_HPP_
 #define NAV2_BEHAVIOR_TREE__FIRST_COMPLETION_HPP_
 
+#include <string>
 #include "behaviortree_cpp/control_node.h"
 
 namespace nav2_behavior_tree
@@ -26,14 +27,14 @@ namespace nav2_behavior_tree
  */
 class FirstCompletion : public BT::ControlNode
 {
-  public:
-    FirstCompletion(const std::string& name);
-    FirstCompletion(const std::string& name, const BT::NodeConfiguration& config);
-    virtual void halt() override;
-    static BT::PortsList providedPorts() { return {}; }
+public:
+  explicit FirstCompletion(const std::string & name);
+  FirstCompletion(const std::string & name, const BT::NodeConfiguration & config);
+  void halt() override;
+  static BT::PortsList providedPorts() {return {};}
 
-  private:
-    virtual BT::NodeStatus tick() override;
+private:
+  BT::NodeStatus tick() override;
 };
 
 }  // namespace nav2_behavior_tree
