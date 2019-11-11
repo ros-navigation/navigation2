@@ -19,10 +19,10 @@ colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "te
 # that happened in any of the `colcon test` lines above.
 colcon test-result --verbose
 
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization$
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner_costmaps$
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner_random$
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator$
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator_with_dijkstra$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_localization$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner_costmaps$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_planner_random$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_bt_navigator_with_dijkstra$
 $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_dynamic_obstacle$
-$SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_multi_robot$
+# $SCRIPT_DIR/ctest_retry.bash -r 3 -d build/nav2_system_tests -t test_multi_robot$
