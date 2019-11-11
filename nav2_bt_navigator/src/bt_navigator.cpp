@@ -19,6 +19,7 @@
 #include <streambuf>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "nav2_behavior_tree/bt_conversions.hpp"
 
@@ -32,6 +33,9 @@ BtNavigator::BtNavigator()
 
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
+
+  declare_parameter("plugin_lib_names",
+    rclcpp::ParameterValue(std::vector<std::string>({"nav2_behavior_tree_nodes"})));
 }
 
 BtNavigator::~BtNavigator()
@@ -73,8 +77,11 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
 
+  // Get the libraries to pull plugins from
+  get_parameter("plugin_lib_names", plugin_lib_names_);
+
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
+  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   blackboard_ = BT::Blackboard::create();
@@ -148,6 +155,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_.reset();
   tf_listener_.reset();
   action_server_.reset();
+  plugin_lib_names_.clear();
   xml_string_.clear();
   tree_.reset();
   blackboard_.reset();

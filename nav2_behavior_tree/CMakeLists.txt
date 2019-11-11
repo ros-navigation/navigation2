@@ -26,11 +26,6 @@ include_directories(
 
 set(library_name ${PROJECT_NAME})
 
-add_library(${library_name} SHARED
-  src/behavior_tree_engine.cpp
-  src/recovery_node.cpp
-)
-
 set(dependencies
   rclcpp
   rclcpp_action
@@ -47,11 +42,46 @@ set(dependencies
   nav2_util
 )
 
+add_library(${library_name} SHARED
+  src/behavior_tree_engine.cpp
+)
+
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+# The behavior tree (bt) node plugins
+set(bt_plugins
+  compute_path_to_pose_action
+  follow_path_action
+  back_up_action
+  spin_action
+  wait_action
+  clear_costmap_service
+  is_stuck_condition
+  goal_reached_condition
+  initial_pose_received_condition
+  reinitialize_global_localization_service
+  rate_controller
+  recovery_node
+)
+
+foreach(bt_plugin ${bt_plugins})
+
+  set(lib_name "nav2_${bt_plugin}_bt_node")
+
+  add_library(${lib_name} SHARED plugins/${bt_plugin}.cpp)
+
+  ament_target_dependencies(${lib_name} ${dependencies})
+
+  target_compile_definitions(${lib_name} PRIVATE BT_PLUGIN_EXPORT)
+
+  list(APPEND plugin_libs ${lib_name})
+
+endforeach()
+
 install(TARGETS ${library_name}
+                ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -67,7 +97,12 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+
+ament_export_libraries(
+  ${library_name}
+  ${plugin_libs}
+)
+
 ament_export_dependencies(${dependencies})
 
 ament_package()

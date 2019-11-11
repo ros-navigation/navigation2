@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include "nav2_behavior_tree/recovery_node.hpp"
+
+#include <string>
+
+#include "behaviortree_cpp/bt_factory.h"
+
+
+BT_REGISTER_NODES(factory)
+{
+  factory.registerNodeType<nav2_behavior_tree::RecoveryNode>("RecoveryNode");
+}
 
 namespace nav2_behavior_tree
 {
