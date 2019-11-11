@@ -71,6 +71,8 @@ lcov \
 lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/build/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/rosidl_generator_cpp/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
   --rc lcov_branch_coverage=1
 
