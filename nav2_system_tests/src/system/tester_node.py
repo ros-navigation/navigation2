@@ -19,20 +19,20 @@ import sys
 import time
 from typing import Optional
 
+from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_msgs.action import NavigateToPose
-from action_msgs.msg import GoalStatus
+from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
 
+from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
-from rclpy.action import ActionClient
 
 
 class NavTester(Node):
@@ -170,7 +170,7 @@ class NavTester(Node):
 
     def shutdown(self):
         self.info_msg('Shutting down')
-        transition_service = "lifecycle_manager/manage_nodes"
+        transition_service = 'lifecycle_manager/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(transition_service + ' service not available, waiting...')
@@ -218,7 +218,7 @@ def run_all_tests(robot_tester):
     if (result):
         robot_tester.wait_for_node_active('bt_navigator')
     if (result):
-        result = robot_tester.runNavigateAction();
+        result = robot_tester.runNavigateAction()
 
     # TODO(orduno) Test sending the navigation request through the topic interface.
     #              Need to update tester to receive multiple goal poses.
