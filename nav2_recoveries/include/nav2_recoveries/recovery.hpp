@@ -165,7 +165,6 @@ protected:
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
       RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
-      action_server_->terminate_goals();
       return;
     }
 
@@ -179,7 +178,6 @@ protected:
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_goals();
         return;
       }
 
@@ -189,7 +187,6 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_goals();
         return;
       }
 
@@ -201,7 +198,6 @@ protected:
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
-          action_server_->terminate_goals();
           return;
 
         case Status::RUNNING:

@@ -18,6 +18,9 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
+#include <future>
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -95,30 +98,55 @@ public:
 
           if (is_active(pending_handle_)) {
             debug_msg("The pending slot is occupied."
-              " The previous pending goal will be aborted and replaced.");
-
-            pending_handle_->abort(empty_result());
-            pending_handle_.reset();
-            preempt_requested_ = false;
+              " The previous pending goal will be terminated and replaced.");
+            terminate(pending_handle_);
           }
-
-          debug_msg("Setting flag so the action server can grab the preempt request.");
-          preempt_requested_ = true;
           pending_handle_ = handle;
+          preempt_requested_ = true;
         } else {
           if (is_active(pending_handle_)) {
             // Shouldn't reach a state with a pending goal but no current one.
-            error_msg("Forgot to handle a preemption. Aborting the pending goal.");
-
-            pending_handle_->abort(empty_result());
-            pending_handle_.reset();
+            error_msg("Forgot to handle a preemption. Terminating the pending goal.");
+            terminate(pending_handle_);
             preempt_requested_ = false;
           }
 
-          debug_msg("Starting a thread to process the goals");
-
           current_handle_ = handle;
-          std::thread{execute_callback_}.detach();
+
+          auto work = [this]() {
+              while (rclcpp::ok() && !stop_execution_ && is_active(current_handle_)) {
+                debug_msg("Executing the goal...");
+                execute_callback_();
+
+                debug_msg("Blocking processing of new goal handles.");
+                std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+                if (stop_execution_) {
+                  warn_msg("Stopping the thread per request.");
+                  terminate(current_handle_);
+                  terminate(pending_handle_);
+                  preempt_requested_ = false;
+                  break;
+                }
+
+                if (is_active(current_handle_)) {
+                  warn_msg("Current goal was not completed successfully.");
+                  terminate(current_handle_);
+                }
+
+                if (is_active(pending_handle_)) {
+                  debug_msg("Executing a pending handle on the existing thread.");
+                  accept_pending_goal();
+                } else {
+                  debug_msg("Done processing available goals.");
+                  break;
+                }
+              }
+              debug_msg("Worker thread done.");
+            };
+
+          debug_msg("Executing goal asynchronously.");
+          execution_future_ = std::async(std::launch::async, work);
         }
       };
 
@@ -137,22 +165,35 @@ public:
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     server_active_ = true;
+    stop_execution_ = false;
   }
 
   void deactivate()
   {
-    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-    server_active_ = false;
+    debug_msg("Deactivating...");
 
-    if (is_active(current_handle_)) {
-      warn_msg("Taking action server to deactive state with an active goal.");
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      server_active_ = false;
+      stop_execution_ = true;
     }
 
-    if (is_active(pending_handle_)) {
-      warn_msg("Taking action server to deactive state with a pending preemption.");
+    if (is_running()) {
+      warn_msg("Requested to deactivate server but goal is still executing."
+        " Should check if action server is running before deactivating.");
     }
 
-    terminate_goals();
+    using namespace std::chrono_literals;  //NOLINT
+    while (execution_future_.wait_for(100ms) != std::future_status::ready) {
+      info_msg("Waiting for async process to finish.");
+    }
+    debug_msg("Deactivation completed.");
+  }
+
+  bool is_running()
+  {
+    using namespace std::chrono_literals;  //NOLINT
+    return execution_future_.wait_for(0ms) == std::future_status::ready ? true : false;
   }
 
   bool is_server_active()
@@ -220,38 +261,22 @@ public:
     return current_handle_->is_canceling();
   }
 
-  void terminate_goals(
+  void terminate(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
-    if (is_active(current_handle_)) {
-      if (current_handle_->is_canceling()) {
-        debug_msg("Client requested to cancel the current goal. Cancelling.");
-        current_handle_->canceled(result);
-        current_handle_.reset();
+    if (is_active(handle)) {
+      if (handle->is_canceling()) {
+        warn_msg("Client requested to cancel the current goal. Cancelling.");
+        handle->canceled(result);
       } else {
-        debug_msg("Aborting the current goal.");
-        current_handle_->abort(result);
-        current_handle_.reset();
+        warn_msg("Aborting handle.");
+        handle->abort(result);
       }
-    }
-
-    if (is_active(pending_handle_)) {
-      if (pending_handle_->is_canceling()) {
-        warn_msg("Client requested to cancel the pending goal."
-          " Cancelling. Should check for pre-empt requests before terminating the goal.");
-        pending_handle_->canceled(result);
-        pending_handle_.reset();
-        preempt_requested_ = false;
-      } else {
-        warn_msg("Aborting a pending goal. "
-          " Should check for pre-empt requests before terminating the goal.");
-        pending_handle_->abort(result);
-        pending_handle_.reset();
-        preempt_requested_ = false;
-      }
+      handle.reset();
     }
   }
 
@@ -265,13 +290,6 @@ public:
       debug_msg("Setting succeed on current goal.");
       current_handle_->succeed(result);
       current_handle_.reset();
-    }
-
-    if (is_active(pending_handle_)) {
-      warn_msg("A preemption request was available before succeeding on the current goal.");
-      pending_handle_->abort(empty_result());
-      pending_handle_.reset();
-      preempt_requested_ = false;
     }
   }
 
@@ -293,6 +311,8 @@ protected:
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
+  std::future<void> execution_future_;
+  bool stop_execution_;
 
   mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
@@ -311,6 +331,12 @@ protected:
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle) const
   {
     return handle != nullptr && handle->is_active();
+  }
+
+  void info_msg(const std::string & msg) const
+  {
+    RCLCPP_INFO(node_logging_interface_->get_logger(),
+      "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
   }
 
   void debug_msg(const std::string & msg) const

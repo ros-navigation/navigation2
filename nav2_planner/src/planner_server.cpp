@@ -206,7 +206,6 @@ PlannerServer::computePlan()
 
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
-      action_server_->terminate_goals();
       return;
     }
 
@@ -246,8 +245,6 @@ PlannerServer::computePlan()
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
         " path to (%.2f, %.2f)", goal->planner_property.c_str(),
         goal->pose.pose.position.x, goal->pose.pose.position.y);
-      // TODO(orduno): define behavior if a preemption is available
-      action_server_->terminate_goals();
       return;
     }
 
@@ -266,19 +263,11 @@ PlannerServer::computePlan()
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
       goal->planner_property.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
-
-    // TODO(orduno): provide information about fail error to parent task,
-    //               for example: couldn't get costmap update
-    action_server_->terminate_goals();
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed, "
       "An unexpected error has occurred. The planner server"
       " may not be able to continue operating correctly.");
-
-    // TODO(orduno): provide information about the failure to the parent task,
-    //               for example: couldn't get costmap update
-    action_server_->terminate_goals();
     return;
   }
 }
