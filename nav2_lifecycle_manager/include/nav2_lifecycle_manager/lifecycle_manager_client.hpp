@@ -36,8 +36,8 @@ namespace nav2_lifecycle_manager
 enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
 /**
  * @class nav2_lifecycle_manager::LifeCycleMangerClient
- * @brief Implements lifecycle manager service client and NavigateToPose action
- * client
+ * @brief Implements lifecycle manager service client and NavgationToPose
+ * action client.
  */
 class LifecycleManagerClient
 {

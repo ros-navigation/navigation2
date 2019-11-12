@@ -33,7 +33,9 @@ namespace nav2_lifecycle_manager
 using nav2_msgs::srv::ManageLifecycleNodes;
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
- * @brief Implements lifecycle node manager service
+ * @brief Implements service interface to control the lifecycle nodes of
+ * Navigation2 stack. It receives control request and then uses lifecycle
+ * interface to change lifecycle node's state.
  */
 class LifecycleManager : public rclcpp::Node
 {
@@ -65,7 +67,8 @@ protected:
     const std::shared_ptr<ManageLifecycleNodes::Request> request,
     std::shared_ptr<ManageLifecycleNodes::Response> response);
   /**
-   * @brief Trigger callback funcition checks if the system is active or not
+   * @brief Trigger callback function checks if the managed nodes are in active
+   * state.
    * @param request_header Header of the request
    * @param request Service request
    * @param reponse Service response
@@ -77,27 +80,27 @@ protected:
 
   // Support functions for the service calls
   /**
-   * @brief Start up manage nodes.
+   * @brief Start up managed nodes.
    * @return true or false
    */
   bool startup();
   /**
-   * @brief Deactivates, clean up and shutdown all the manage nodes.
+   * @brief Deactivate, clean up and shut down all the managed nodes.
    * @return true or false
    */
   bool shutdown();
   /**
-   * @brief Reset all the manage nodes.
+   * @brief Reset all the managed nodes.
    * @return true or false
    */
   bool reset();
   /**
-   * @brief Pause all the manage nodes.
+   * @brief Pause all the managed nodes.
    * @return true or false
    */
   bool pause();
   /**
-   * @brief Resume all the manage nodes.
+   * @brief Resume all the managed nodes.
    * @return true or false
    */
   bool resume();
