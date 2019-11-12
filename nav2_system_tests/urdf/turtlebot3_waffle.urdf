@@ -58,11 +58,11 @@
 
   <link name="base_link">
     <visual>
-      <origin xyz="-0.064 0 0.0" rpy="0 0 0"/>
+      <origin xyz="-0.064 0 0.047" rpy="0 0 0"/>
       <geometry>
-        <box size="0.1 0.1 0.1"/>
+        <box size="0.266 0.266 0.094"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="blue"/>
     </visual>
 
     <collision>
@@ -90,11 +90,11 @@
 
   <link name="wheel_left_link">
     <visual>
-      <origin xyz="0 0 0" rpy="1.57 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.1 0.1 0.1"/>
+        <cylinder length="0.018" radius="0.033"/>
       </geometry>
-      <material name="dark"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -122,11 +122,11 @@
 
   <link name="wheel_right_link">
     <visual>
-      <origin xyz="0 0 0" rpy="1.57 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.1 0.1 0.1"/>
+        <cylinder length="0.018" radius="0.033"/>
       </geometry>
-      <material name="dark"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -206,14 +206,6 @@
   </joint>
 
   <link name="base_scan">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.1 0.1 0.1"/>
-      </geometry>
-      <material name="dark"/>
-    </visual>
-
     <collision>
       <origin xyz="0.015 0 -0.0065" rpy="0 0 0"/>
       <geometry>
@@ -233,16 +225,10 @@
   <joint name="camera_joint" type="fixed">
     <origin xyz="0.064 -0.065 0.094" rpy="0 0 0"/>
     <parent link="base_link"/>
-    <child link="realsense_link"/>
+    <child link="camera_link"/>
   </joint>
 
-  <link name="realsense_link">
-    <visual>
-     <origin xyz="0 0 0" rpy="1.57 0 1.57"/>
-      <geometry>
-        <box size="0.1 0.1 0.1"/>
-      </geometry>
-    </visual>
+  <link name="camera_link">
     <collision>
       <origin xyz="0.003 0.065 0.007" rpy="0 0 0"/>
       <geometry>
@@ -263,7 +249,7 @@
   <joint name="camera_rgb_joint" type="fixed">
     <origin xyz="0.005 0.018 0.013" rpy="-1.57 0 -1.57"/>
     <!-- <origin xyz="${r200_cam_rgb_px} ${r200_cam_rgb_py} ${r200_cam_rgb_pz}" rpy="0 0 0"/> -->
-    <parent link="realsense_link"/>
+    <parent link="camera_link"/>
     <child link="camera_rgb_frame"/>
   </joint>
   <link name="camera_rgb_frame"/>
@@ -275,17 +261,17 @@
   </joint>
   <link name="camera_rgb_optical_frame"/>
 
-  <joint name="realsense_depth_joint" type="fixed">
+  <joint name="camera_depth_joint" type="fixed">
     <origin xyz="0.005 0.028 0.013" rpy="-1.57 0 -1.57"/>
     <!-- <origin xyz="${r200_cam_rgb_px} ${r200_cam_rgb_py + r200_cam_depth_offset} ${r200_cam_rgb_pz}" rpy="0 0 0"/> -->
-    <parent link="realsense_link"/>
-    <child link="realsense_depth_frame"/>
+    <parent link="camera_link"/>
+    <child link="camera_depth_frame"/>
   </joint>
-  <link name="realsense_depth_frame"/>
+  <link name="camera_depth_frame"/>
 
   <joint name="camera_depth_optical_joint" type="fixed">
     <origin xyz="0 0 0" rpy="-1.57 0 -1.57"/>
-    <parent link="realsense_depth_frame"/>
+    <parent link="camera_depth_frame"/>
     <child link="camera_depth_optical_frame"/>
   </joint>
   <link name="camera_depth_optical_frame"/>

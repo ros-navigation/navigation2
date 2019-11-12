@@ -309,7 +309,7 @@
       </collision>
     </link>
 
-    <link name="realsense_link">
+    <link name="camera_link">
       <inertial>
         <pose>0.069 -0.047 0.107 0 0 0</pose>
         <inertia>
@@ -350,7 +350,7 @@
         -->
           </ros>
           <camera_name>intel_realsense_r200_depth</camera_name>
-          <frame_name>realsense_depth_frame</frame_name>
+          <frame_name>camera_depth_frame</frame_name>
           <hack_baseline>0.07</hack_baseline>
           <min_depth>0.001</min_depth>
         </plugin>
@@ -402,7 +402,7 @@
 
     <joint name="camera_joint" type="fixed">
       <parent>base_link</parent>
-      <child>realsense_link</child>
+      <child>camera_link</child>
     </joint>
 
     <plugin name="turtlebot3_diff_drive" filename="libgazebo_ros_diff_drive.so">
