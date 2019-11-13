@@ -55,11 +55,18 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 public:
   DummyCostmapSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
-    std::string & topic_name)
-  : CostmapSubscriber(node, topic_name)
+    std::string & topic_name,
+    bool use_raw)
+  : CostmapSubscriber(node, topic_name, use_raw)
   {}
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setRawCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  {
+    costmap_raw_msg_ = msg;
+    costmap_received_ = true;
+  }
+
+  void setCostmap(nav_msgs::msg::OccupancyGrid::SharedPtr msg)
   {
     costmap_msg_ = msg;
     costmap_received_ = true;
@@ -82,6 +89,7 @@ public:
   }
 };
 
+
 class TestCollisionChecker : public nav2_util::LifecycleNode
 {
 public:
@@ -97,6 +105,7 @@ public:
     declare_parameter("unknown_cost_value",
       rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
     declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+    declare_parameter("use_raw", rclcpp::ParameterValue(false));
   }
 
   nav2_util::CallbackReturn
@@ -110,13 +119,35 @@ public:
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
+    std::string costmap_topic;
+    get_parameter("use_raw", use_raw_);
+    if (use_raw_) {
+      costmap_topic = "costmap_raw";
+    } else {
+      costmap_topic = "costmap";
+      if (cost_translation_table_ == NULL) {
+        cost_translation_table_ = new char[256];
 
-    std::string costmap_topic = "costmap_raw";
+        // special values:
+        cost_translation_table_[0] = 0;  // NO obstacle
+        cost_translation_table_[253] = 99;  // INSCRIBED obstacle
+        cost_translation_table_[254] = 100;  // LETHAL obstacle
+        cost_translation_table_[255] = -1;  // UNKNOWN
+
+        // regular cost values scale the range 1 to 252 (inclusive) to fit
+        // into 1 to 98 (inclusive).
+        for (int i = 1; i < 253; i++) {
+          cost_translation_table_[i] = static_cast<char>(1 + (97 * (i - 1)) / 251);
+        }
+      }
+    }
+
     std::string footprint_topic = "published_footprint";
 
     costmap_sub_ = std::make_shared<DummyCostmapSubscriber>(
       shared_from_this(),
-      costmap_topic);
+      costmap_topic,
+      use_raw_);
 
     footprint_sub_ = std::make_shared<DummyFootprintSubscriber>(
       shared_from_this(),
@@ -218,8 +249,13 @@ protected:
   void publishCostmap()
   {
     layers_->updateMap(x_, y_, yaw_);
-    costmap_sub_->setCostmap(
-      std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+    if (use_raw_) {
+      costmap_sub_->setRawCostmap(
+        std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+    } else {
+      costmap_sub_->setCostmap(
+        std::make_shared<nav_msgs::msg::OccupancyGrid>(toOccupancyGridMsg(layers_->getCostmap())));
+    }
   }
 
   void publishPose(double x, double y, double /*theta*/)
@@ -264,6 +300,35 @@ protected:
     return costmap_msg;
   }
 
+  nav_msgs::msg::OccupancyGrid
+  toOccupancyGridMsg(nav2_costmap_2d::Costmap2D * costmap)
+  {
+    double resolution = costmap->getResolution();
+
+    double wx, wy;
+    costmap->mapToWorld(0, 0, wx, wy);
+
+    unsigned char * data = costmap->getCharMap();
+
+    nav_msgs::msg::OccupancyGrid costmap_msg;
+    costmap_msg.header.frame_id = global_frame_;
+    costmap_msg.header.stamp = now();
+    costmap_msg.info.resolution = resolution;
+    costmap_msg.info.width = costmap->getSizeInCellsX();
+    costmap_msg.info.height = costmap->getSizeInCellsY();
+    costmap_msg.info.origin.position.x = wx - resolution / 2;
+    costmap_msg.info.origin.position.y = wy - resolution / 2;
+    costmap_msg.info.origin.position.z = 0.0;
+    costmap_msg.info.origin.orientation.w = 1.0;
+    costmap_msg.data.resize(costmap_msg.info.width * costmap_msg.info.height);
+
+    for (unsigned int i = 0; i < costmap_msg.data.size(); i++) {
+      costmap_msg.data[i] = cost_translation_table_[data[i]];
+    }
+
+    return costmap_msg;
+  }
+
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -274,9 +339,12 @@ protected:
 
   nav2_costmap_2d::LayeredCostmap * layers_{nullptr};
   std::string global_frame_;
+  bool use_raw_;
   double x_, y_, yaw_;
   geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
+  // Translate from 0-255 values in costmap to -1 to 100 values in message.
+  char * cost_translation_table_;
 };
 
 
@@ -286,8 +354,6 @@ public:
   TestNode()
   {
     collision_checker_ = std::make_shared<TestCollisionChecker>("test_collision_checker");
-    collision_checker_->on_configure(collision_checker_->get_current_state());
-    collision_checker_->on_activate(collision_checker_->get_current_state());
   }
 
   ~TestNode()
@@ -302,6 +368,8 @@ protected:
 
 TEST_F(TestNode, uknownSpace)
 {
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
   collision_checker_->setFootprint(0, 1);
 
   // Completely off map
@@ -316,6 +384,8 @@ TEST_F(TestNode, uknownSpace)
 
 TEST_F(TestNode, FreeSpace)
 {
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
   collision_checker_->setFootprint(0, 1);
 
   // In complete free space
@@ -327,6 +397,53 @@ TEST_F(TestNode, FreeSpace)
 
 TEST_F(TestNode, CollisionSpace)
 {
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
+  collision_checker_->setFootprint(0, 1);
+
+  // Completely in obstacle
+  ASSERT_EQ(collision_checker_->testPose(8.5, 6.5, 0), false);
+
+  // Partially in obstacle
+  ASSERT_EQ(collision_checker_->testPose(4.5, 4.5, 0), false);
+}
+
+TEST_F(TestNode, uknownSpaceRaw)
+{
+  collision_checker_->set_parameter(rclcpp::Parameter("use_raw", true));
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
+  collision_checker_->setFootprint(0, 1);
+
+  // Completely off map
+  ASSERT_EQ(collision_checker_->testPose(5, 13, 0), false);
+
+  // Partially off map
+  ASSERT_EQ(collision_checker_->testPose(5, 9.5, 0), false);
+
+  // In unknown region inside map
+  ASSERT_EQ(collision_checker_->testPose(2, 4, 0), false);
+}
+
+TEST_F(TestNode, FreeSpaceRaw)
+{
+  collision_checker_->set_parameter(rclcpp::Parameter("use_raw", true));
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
+  collision_checker_->setFootprint(0, 1);
+
+  // In complete free space
+  ASSERT_EQ(collision_checker_->testPose(2, 8.5, 0), true);
+
+  // Partially in inscribed space
+  ASSERT_EQ(collision_checker_->testPose(2.5, 7, 0), true);
+}
+
+TEST_F(TestNode, CollisionSpaceRaw)
+{
+  collision_checker_->set_parameter(rclcpp::Parameter("use_raw", true));
+  collision_checker_->on_configure(collision_checker_->get_current_state());
+  collision_checker_->on_activate(collision_checker_->get_current_state());
   collision_checker_->setFootprint(0, 1);
 
   // Completely in obstacle

@@ -26,7 +26,7 @@ RecoveryServer::RecoveryServer()
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
   declare_parameter("costmap_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+    rclcpp::ParameterValue(std::string("local_costmap/costmap")));
   declare_parameter("footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
