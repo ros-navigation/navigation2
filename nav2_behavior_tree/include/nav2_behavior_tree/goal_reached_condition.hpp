@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp_v3/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
