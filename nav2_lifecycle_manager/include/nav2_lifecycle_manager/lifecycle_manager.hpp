@@ -33,8 +33,8 @@ namespace nav2_lifecycle_manager
 using nav2_msgs::srv::ManageLifecycleNodes;
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
- * @brief Implements service interface to control the lifecycle nodes of
- * Navigation2 stack. It receives control request and then uses lifecycle
+ * @brief Implements service interface to transition the lifecycle nodes of
+ * Navigation2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
 class LifecycleManager : public rclcpp::Node

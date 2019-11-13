@@ -49,46 +49,46 @@ public:
 
   // Client-side interface to the Nav2 lifecycle manager
   /**
-   * @brief Makes start up service call
+   * @brief Make start up service call
    * @return true or false
    */
   bool startup();
   /**
-   * @brief Makes shutdown service call
+   * @brief Make shutdown service call
    * @return true or false
    */
   bool shutdown();
   /**
-   * @brief Makes pause service call
+   * @brief Make pause service call
    * @return true or false
    */
   bool pause();
   /**
-   * @brief Makes resume service call
+   * @brief Make resume service call
    * @return true or false
    */
   bool resume();
   /**
-   * @brief Makes reset service call
+   * @brief Make reset service call
    * @return true or false
    */
   bool reset();
   /**
-   * @brief Checks if lifecycle node manager server is active
+   * @brief Check if lifecycle node manager server is active
    * @return ACTIVE or INACTIVE or TIMEOUT
    */
   SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // A couple convenience methods to facilitate scripting tests
   /**
-   * @brief Sets initial pose with covariance
+   * @brief Set initial pose with covariance
    * @param x X position
    * @param y Y position
    * @param theta orientation
    */
   void set_initial_pose(double x, double y, double theta);
   /**
-   * @brief Sends goal pose to NavigationToPose action server
+   * @brief Send goal pose to NavigationToPose action server
    * @param x X position
    * @param y Y position
    * @param theta orientation
