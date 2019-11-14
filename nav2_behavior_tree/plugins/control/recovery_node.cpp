@@ -41,7 +41,7 @@ public:
   : BT::ControlNode::ControlNode(name, conf), current_child_idx_(0), retry_count_(0)
   {
     getInput("number_of_retries", number_of_retries_);
-  };
+  }
 
   ~RecoveryNode() override = default;
 
@@ -50,7 +50,7 @@ public:
   {
     return {
       BT::InputPort<int>("number_of_retries", 1, "Number of retries")
-    };
+    }
   }
 
 private:
@@ -139,14 +139,14 @@ private:
     retry_count_ = 0;
     halt();
     return BT::NodeStatus::FAILURE;
-  };
+  }
 
   void RecoveryNode::halt() override
   {
     ControlNode::halt();
     current_child_idx_ = 0;
     retry_count_ = 0;
-  };
+  }
 };
 
 }  // namespace nav2_behavior_tree
