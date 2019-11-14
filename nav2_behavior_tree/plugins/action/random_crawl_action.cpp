@@ -26,8 +26,10 @@ namespace nav2_behavior_tree
 class RandomCrawlAction : public BtActionNode<nav2_msgs::action::RandomCrawl>
 {
 public:
-  explicit RandomCrawlAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name)
+  explicit RandomCrawlAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name, conf)
   {
   }
 };

@@ -50,7 +50,7 @@ public:
   {
     return {
       BT::InputPort<int>("number_of_retries", 1, "Number of retries")
-    }
+    };
   }
 
 private:
@@ -141,7 +141,7 @@ private:
     return BT::NodeStatus::FAILURE;
   }
 
-  void RecoveryNode::halt() override
+  void halt() override
   {
     ControlNode::halt();
     current_child_idx_ = 0;
