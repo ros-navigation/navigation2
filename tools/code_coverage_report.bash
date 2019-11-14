@@ -76,7 +76,7 @@ lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/*/nav2_msgs/*" \
   --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/*/nav2_2d_msgs/*" \
+    "${PWD}/*/nav_2d_msgs/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
   --rc lcov_branch_coverage=1
 
