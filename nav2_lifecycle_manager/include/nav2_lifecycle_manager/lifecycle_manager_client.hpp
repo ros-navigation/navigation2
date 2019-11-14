@@ -36,8 +36,8 @@ namespace nav2_lifecycle_manager
 enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
 /**
  * @class nav2_lifecycle_manager::LifeCycleMangerClient
- * @brief Implements lifecycle manager service client and NavgationToPose
- * action client.
+ * @brief The LifecycleManagerClient sends requests to the LifecycleManager to
+ * control the lifecycle state of the navigation modules.
  */
 class LifecycleManagerClient
 {
