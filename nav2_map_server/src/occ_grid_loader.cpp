@@ -41,6 +41,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "yaml-cpp/yaml.h"
 #include "nav2_util/geometry_utils.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 using namespace std::chrono_literals;
 
@@ -202,15 +203,19 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
         // TODO(mkhansen): Return fail code based on failure
         response->result = nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE;
       }
+      // if in ACTIVE state, publish map
+      if (node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        occ_pub_->publish(*msg_);
+      }
     };
-
-  // Create a service that loads the occupancy grid from a file
-  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_,
-      load_map_callback);
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name_,
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  // Create a service that loads the occupancy grid from a file
+  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_,
+      load_map_callback);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
