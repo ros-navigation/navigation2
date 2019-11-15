@@ -123,9 +123,7 @@ public:
                 } catch (std::exception & ex) {
                   RCLCPP_ERROR(node_logging_interface_->get_logger(),
                     "Action server failed while executing action callback: \"%s\"", ex.what());
-                  terminate(current_handle_);
-                  terminate(pending_handle_);
-                  preempt_requested_ = false;
+                  terminate_all();
                   return;
                 }
 
@@ -134,9 +132,7 @@ public:
 
                 if (stop_execution_) {
                   warn_msg("Stopping the thread per request.");
-                  terminate(current_handle_);
-                  terminate(pending_handle_);
-                  preempt_requested_ = false;
+                  terminate_all();
                   break;
                 }
 
@@ -282,10 +278,21 @@ public:
     return current_handle_->is_canceling();
   }
 
+  void terminate_all(
+    typename std::shared_ptr<typename ActionT::Result> result =
+    std::make_shared<typename ActionT::Result>())
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+    terminate(current_handle_, result);
+    terminate(pending_handle_, result);
+    preempt_requested_ = false;
+  }
+
   void terminate_current(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     terminate(current_handle_, result);
   }
 
