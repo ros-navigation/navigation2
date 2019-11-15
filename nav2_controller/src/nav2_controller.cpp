@@ -169,6 +169,7 @@ void ControllerServer::followPath()
 
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
+        action_server_->terminate_current();
         publishZeroVelocity();
         return;
       }
@@ -190,6 +191,7 @@ void ControllerServer::followPath()
   } catch (nav2_core::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
+    action_server_->terminate_current();
     return;
   }
 

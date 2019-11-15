@@ -226,10 +226,12 @@ BtNavigator::navigateToPose()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
+      action_server_->terminate_current();
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
+      action_server_->terminate_current();
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;
