@@ -65,6 +65,8 @@ public:
       server_active_ = true;
     }
 
+    server_timeout_ = std::chrono::milliseconds(2000);
+
     auto handle_goal =
       [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
@@ -116,7 +118,13 @@ public:
           auto work = [this]() {
               while (rclcpp::ok() && !stop_execution_ && is_active(current_handle_)) {
                 debug_msg("Executing the goal...");
-                execute_callback_();
+                try {
+                  execute_callback_();
+                } catch (std::exception & ex) {
+                  RCLCPP_ERROR(node_logging_interface_->get_logger(),
+                    "Action server failed while executing action callback: \"%s\"", ex.what());
+                  return;
+                }
 
                 debug_msg("Blocking processing of new goal handles.");
                 std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -183,17 +191,28 @@ public:
         " Should check if action server is running before deactivating.");
     }
 
-    using namespace std::chrono_literals;  //NOLINT
-    while (execution_future_.wait_for(100ms) != std::future_status::ready) {
+
+    using namespace std::chrono;  //NOLINT
+
+    auto end_time = steady_clock::now();
+    if (server_timeout_ > milliseconds::zero()) {
+      end_time += server_timeout_;
+    }
+
+    while (execution_future_.wait_for(milliseconds(100)) != std::future_status::ready)
+    {
       info_msg("Waiting for async process to finish.");
+      if (steady_clock::now() >= end_time) {
+        warn_msg("Async process is past stop deadline. Continuing deactivation");
+        break;
+      }
     }
     debug_msg("Deactivation completed.");
   }
 
   bool is_running()
   {
-    using namespace std::chrono_literals;  //NOLINT
-    return execution_future_.wait_for(0ms) == std::future_status::ready ? true : false;
+    return execution_future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
   }
 
   bool is_server_active()
@@ -261,23 +280,11 @@ public:
     return current_handle_->is_canceling();
   }
 
-  void terminate(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
+  void terminate_current(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
-    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-
-    if (is_active(handle)) {
-      if (handle->is_canceling()) {
-        warn_msg("Client requested to cancel the current goal. Cancelling.");
-        handle->canceled(result);
-      } else {
-        warn_msg("Aborting handle.");
-        handle->abort(result);
-      }
-      handle.reset();
-    }
+    terminate(current_handle_, result);
   }
 
   void succeeded_current(
@@ -317,6 +324,8 @@ protected:
   mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
   bool preempt_requested_{false};
+  std::chrono::milliseconds server_timeout_;
+
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> current_handle_;
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> pending_handle_;
 
@@ -331,6 +340,25 @@ protected:
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle) const
   {
     return handle != nullptr && handle->is_active();
+  }
+
+  void terminate(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
+    typename std::shared_ptr<typename ActionT::Result> result =
+    std::make_shared<typename ActionT::Result>())
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (is_active(handle)) {
+      if (handle->is_canceling()) {
+        warn_msg("Client requested to cancel the goal. Cancelling.");
+        handle->canceled(result);
+      } else {
+        warn_msg("Aborting handle.");
+        handle->abort(result);
+      }
+      handle.reset();
+    }
   }
 
   void info_msg(const std::string & msg) const
