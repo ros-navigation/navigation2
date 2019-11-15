@@ -16,6 +16,12 @@
 #include <sstream>
 #include <string>
 #include "nav2_behavior_tree/first_completion.hpp"
+#include "behaviortree_cpp_v3/bt_factory.h"
+
+BT_REGISTER_NODES(factory)
+{
+  factory.registerNodeType<nav2_behavior_tree::FirstCompletion>("FirstCompletion");
+}
 
 namespace nav2_behavior_tree
 {
