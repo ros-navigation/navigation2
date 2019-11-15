@@ -38,6 +38,7 @@ extern const unsigned int g_valid_image_height;
 extern const char g_valid_image_content[];
 extern const char * g_valid_png_file;
 extern const char * g_valid_bmp_file;
+extern const char * g_valid_yaml_file;
 
 extern const float g_valid_image_res;
 
