@@ -38,13 +38,14 @@ public:
     typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true)
+    bool autostart = true,
+    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, autostart)
+      action_name, execute_callback, autostart, server_timeout)
   {}
 
   explicit SimpleActionServer(
@@ -54,18 +55,19 @@ public:
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true)
+    bool autostart = true,
+    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
     node_waitables_interface_(node_waitables_interface),
-    action_name_(action_name), execute_callback_(execute_callback)
+    action_name_(action_name),
+    execute_callback_(execute_callback),
+    server_timeout_(server_timeout)
   {
     if (autostart) {
       server_active_ = true;
     }
-
-    server_timeout_ = std::chrono::milliseconds(2000);
 
     auto handle_goal =
       [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
@@ -190,21 +192,16 @@ public:
         " Should check if action server is running before deactivating.");
     }
 
-
     using namespace std::chrono;  //NOLINT
-
-    auto end_time = steady_clock::now();
-    if (server_timeout_ > milliseconds::zero()) {
-      end_time += server_timeout_;
-    }
-
+    auto start_time = steady_clock::now();
     while (execution_future_.wait_for(milliseconds(100)) != std::future_status::ready) {
       info_msg("Waiting for async process to finish.");
-      if (steady_clock::now() >= end_time) {
-        warn_msg("Async process is past stop deadline. Continuing deactivation");
-        break;
+      if (steady_clock::now() - start_time >= server_timeout_) {
+        terminate_all();
+        throw std::runtime_error("Action callback is still running and missed deadline to stop");
       }
     }
+
     debug_msg("Deactivation completed.");
   }
 
