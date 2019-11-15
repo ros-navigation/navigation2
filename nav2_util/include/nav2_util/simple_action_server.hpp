@@ -123,6 +123,9 @@ public:
                 } catch (std::exception & ex) {
                   RCLCPP_ERROR(node_logging_interface_->get_logger(),
                     "Action server failed while executing action callback: \"%s\"", ex.what());
+                  terminate(current_handle_);
+                  terminate(pending_handle_);
+                  preempt_requested_ = false;
                   return;
                 }
 
@@ -199,8 +202,7 @@ public:
       end_time += server_timeout_;
     }
 
-    while (execution_future_.wait_for(milliseconds(100)) != std::future_status::ready)
-    {
+    while (execution_future_.wait_for(milliseconds(100)) != std::future_status::ready) {
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() >= end_time) {
         warn_msg("Async process is past stop deadline. Continuing deactivation");
