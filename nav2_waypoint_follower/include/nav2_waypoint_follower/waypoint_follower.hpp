@@ -121,6 +121,8 @@ protected:
   rclcpp::Node::SharedPtr client_node_;
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
+  int loop_rate_;
+  std::vector<int> failed_ids_;
 };
 
 }  // namespace nav2_waypoint_follower

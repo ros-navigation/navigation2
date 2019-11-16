@@ -31,6 +31,7 @@ WaypointFollower::WaypointFollower()
   RCLCPP_INFO(get_logger(), "Creating");
 
   declare_parameter("stop_on_failure", true);
+  declare_parameter("loop_rate", 10);
 }
 
 WaypointFollower::~WaypointFollower()
@@ -44,6 +45,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
+  loop_rate_ = get_parameter("loop_rate").as_int();
 
   client_node_ = std::make_shared<rclcpp::Node>(
     std::string(get_name()) + std::string("_client_node"));
@@ -119,7 +121,7 @@ WaypointFollower::followWaypoints()
     return;
   }
 
-  rclcpp::Rate r(10);
+  rclcpp::Rate r(loop_rate_);
   uint goal_index = 0;
   bool new_goal = true;
 
@@ -159,11 +161,15 @@ WaypointFollower::followWaypoints()
     action_server_->publish_feedback(feedback);
 
     if (current_goal_status_ == ActionStatus::FAILED) {
+      failed_ids_.push_back(goal_index);
+
       if (stop_on_failure_) {
         RCLCPP_WARN(get_logger(), "Failed to process waypoint %i in waypoint "
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
-        action_server_->terminate_goals();
+        result->missed_waypoints = failed_ids_;
+        action_server_->terminate_goals(result);
+        failed_ids_.clear();
         return;
       } else {
         RCLCPP_INFO(get_logger(), "Failed to process waypoint %i,"
@@ -179,7 +185,10 @@ WaypointFollower::followWaypoints()
       if (goal_index >= goal->poses.size()) {
         RCLCPP_INFO(get_logger(), "Completed all %i waypoints requested.",
           goal->poses.size());
+        result->missed_waypoints = failed_ids_;
         action_server_->succeeded_current(result);
+        failed_ids_.clear();
+        return;
       }
     } else {
       RCLCPP_DEBUG(get_logger(), "Processing waypoint %i...", goal_index);
