@@ -47,7 +47,9 @@ public:
       std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
-    const std::chrono::seconds timeout(1);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));  // allow node to start up
+    const std::chrono::seconds timeout(5);
     lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE, timeout);
     lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, timeout);
   }
