@@ -32,6 +32,11 @@ public:
     const BT::NodeConfiguration & conf)
   : BtActionNode<nav2_msgs::action::FollowPath>(action_name, conf)
   {
+    std::string remapped_action_name;
+    if (getInput("server_name", remapped_action_name)) {
+      action_client_.reset();
+      createActionClient(remapped_action_name);
+    }
     config().blackboard->set("path_updated", false);
   }
 
@@ -60,6 +65,7 @@ public:
     return providedBasicPorts({
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_property", ""),
+        BT::InputPort<std::string>("server_name", "")
       });
   }
 };
