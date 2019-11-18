@@ -321,7 +321,13 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  planner_->calcPath(costmap_->getSizeInCellsX() * 4);
+  int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
+  if (path_len == 0) {
+    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
+    return false;
+  }
+
+  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
 
   // extract the plan
   float * x = planner_->getPathX();
