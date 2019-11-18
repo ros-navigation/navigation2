@@ -184,7 +184,8 @@ WaypointFollower::followWaypoints()
     }
 
     if (current_goal_status_ != ActionStatus::PROCESSING &&
-      current_goal_status_ != ActionStatus::UNKNOWN) {
+      current_goal_status_ != ActionStatus::UNKNOWN)
+    {
       // Update server state
       goal_index++;
       new_goal = true;

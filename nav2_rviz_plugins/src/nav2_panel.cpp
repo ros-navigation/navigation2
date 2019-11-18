@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 
 #include <memory>
+#include <vector>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
@@ -89,7 +90,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(navigation_mode_button_, "enabled", true);
   idle_->assignProperty(navigation_mode_button_, "toolTip", single_goal_msg);
 
-    // State entered when NavigateToPose is not active
+  // State entered when NavigateToPose is not active
   accumulating_ = new QState();
   accumulating_->setObjectName("accumulating");
   accumulating_->assignProperty(start_reset_button_, "text", "Reset");
@@ -223,9 +224,11 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     {"--ros-args --remap __node:=navigation_dialog_action_client"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  navigation_action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
+  navigation_action_client_ =
+    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
       "NavigateToPose");
-  waypoint_follower_action_client_ = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(client_node_,
+  waypoint_follower_action_client_ =
+    rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(client_node_,
       "FollowWaypoints");
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
@@ -315,10 +318,12 @@ void
 Nav2Panel::onCancelButtonPressed()
 {
   if (state_machine_.configuration().contains(accumulating_)) {
-    auto future_cancel = waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
+    auto future_cancel =
+      waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS) {
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
       return;
     }
@@ -326,7 +331,8 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS) {
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
       return;
     }
@@ -400,7 +406,8 @@ Nav2Panel::timerEvent(QTimerEvent * event)
 void
 Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses)
 {
-  auto is_action_server_ready = waypoint_follower_action_client_->wait_for_action_server(std::chrono::seconds(5));
+  auto is_action_server_ready =
+    waypoint_follower_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(client_node_->get_logger(), "FollowWaypoints action server is not available."
       " Is the initial pose set?");
@@ -413,7 +420,8 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   RCLCPP_INFO(client_node_->get_logger(), "Sending a path of %zu waypoints:",
     waypoint_follower_goal_.poses.size());
   for (auto waypoint : waypoint_follower_goal_.poses) {
-    RCLCPP_DEBUG(client_node_->get_logger(), "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
+    RCLCPP_DEBUG(client_node_->get_logger(),
+      "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
   }
 
   // Enable result awareness by providing an empty lambda function
@@ -421,9 +429,11 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
     rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
   send_goal_options.result_callback = [](auto) {};
 
-  auto future_goal_handle = waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
+  auto future_goal_handle =
+    waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS) {
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
     return;
   }
@@ -441,9 +451,11 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 void
 Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 {
-  auto is_action_server_ready = navigation_action_client_->wait_for_action_server(std::chrono::seconds(5));
+  auto is_action_server_ready =
+    navigation_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
-    RCLCPP_ERROR(client_node_->get_logger(), "FollowWaypoints action server is not available."
+    RCLCPP_ERROR(client_node_->get_logger(),
+      "FollowWaypoints action server is not available."
       " Is the initial pose set?");
     return;
   }
@@ -456,9 +468,11 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
     rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
   send_goal_options.result_callback = [](auto) {};
 
-  auto future_goal_handle = navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
+  auto future_goal_handle =
+    navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS) {
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
     return;
   }

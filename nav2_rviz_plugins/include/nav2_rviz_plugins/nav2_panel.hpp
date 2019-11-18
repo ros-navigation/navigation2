@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
@@ -72,8 +73,10 @@ private:
   // Call to send NavigateToPose action request for goal poses
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
-  using NavigationGoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
-  using WaypointFollowerGoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>;
+  using NavigationGoalHandle =
+    rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
+  using WaypointFollowerGoalHandle =
+    rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>;
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -83,7 +86,8 @@ private:
 
   // The NavigateToPose action client
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr waypoint_follower_action_client_;
+  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr
+    waypoint_follower_action_client_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
