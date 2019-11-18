@@ -176,7 +176,7 @@ WaypointFollower::followWaypoints()
           " moving to next.", goal_index);
       }
     } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
-      RCLCPP_INFO(get_logger(), "Succeeded pocessing waypoint %i, "
+      RCLCPP_INFO(get_logger(), "Succeeded processing waypoint %i, "
         "moving to next.", goal_index);
     } else if (current_goal_status_ != ActionStatus::PROCESSING) {
       // Update server state
