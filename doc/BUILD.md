@@ -121,7 +121,7 @@ The `initial_ros_setup.sh` script downloads four ROS workspaces and then builds 
 
  * **ROS 2 release** - This is the latest ROS 2 release as defined by the repos file found [here](https://github.com/ros2/ros2/)
 
- * **ROS 2 dependencies** - This is a set of ROS 2 packages that aren't included in the ROS 2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS 2 or Navigation2 uses a different version.
+ * **ROS 2 dependencies** - This is a set of ROS 2 packages that aren't included in the ROS 2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS 2 release where Navigation2 uses a different version.
 
  * **Navigation2** - This repository.
 
