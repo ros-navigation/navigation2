@@ -171,7 +171,7 @@ colcon build --symlink-install
 
 --- 
 
-# Troubleshooting Guide
+## Troubleshooting Guide
 
 * Check List
   * .bashrc file has no ROS environment variables in it.
