@@ -15,7 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 #define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 
-#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp_v3/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 

@@ -17,10 +17,11 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "behaviortree_cpp/behavior_tree.h"
-#include "behaviortree_cpp/bt_factory.h"
-#include "behaviortree_cpp/xml_parsing.h"
+#include "behaviortree_cpp_v3/behavior_tree.h"
+#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp_v3/xml_parsing.h"
 
 namespace nav2_behavior_tree
 {
@@ -30,15 +31,8 @@ enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 class BehaviorTreeEngine
 {
 public:
-  BehaviorTreeEngine();
+  explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
   virtual ~BehaviorTreeEngine() {}
-
-  BtStatus run(
-    BT::Blackboard::Ptr & blackboard,
-    const std::string & behavior_tree_xml,
-    std::function<void()> onLoop,
-    std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   BtStatus run(
     std::unique_ptr<BT::Tree> & tree,
@@ -70,9 +64,6 @@ public:
   }
 
 protected:
-  // Methods used to register as (simple action) BT nodes
-  BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
-
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };

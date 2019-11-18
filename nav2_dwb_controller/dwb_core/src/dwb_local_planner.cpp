@@ -66,7 +66,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 
 void DWBLocalPlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-  const std::shared_ptr<tf2_ros::Buffer> & tf,
+  std::string /*name*/, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
   node_ = node;
@@ -172,9 +172,9 @@ DWBLocalPlanner::loadCritics()
     std::string plugin_name = critic_names[i];
     std::string plugin_class;
 
-    declare_parameter_if_not_declared(node_, plugin_name + "/class",
+    declare_parameter_if_not_declared(node_, plugin_name + ".class",
       rclcpp::ParameterValue(plugin_name));
-    node_->get_parameter(plugin_name + "/class", plugin_class);
+    node_->get_parameter(plugin_name + ".class", plugin_class);
 
     plugin_class = resolveCriticClassName(plugin_class);
 

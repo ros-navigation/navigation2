@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
@@ -120,6 +121,9 @@ protected:
 
   // The complete behavior tree that results from parsing the incoming XML
   std::unique_ptr<BT::Tree> tree_;
+
+  // Libraries to pull plugins (BT Nodes) from
+  std::vector<std::string> plugin_lib_names_;
 
   // A client that we'll use to send a command message to our own task server
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;

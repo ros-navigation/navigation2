@@ -41,7 +41,7 @@ Once a new node is registered with the factory, it is now available to the Behav
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <ComputePathToPose goal="${goal}"/>
-      <FollowPath path="${path}"/>
+      <FollowPath path="${path}" controller_property="FollowPath"/>
     </Sequence>
   </BehaviorTree>
 </root>
@@ -67,7 +67,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 |----------|:-------------|------|
 | Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. | 
 | ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. |
-| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the nav2_dwb_controller module. |
+| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. |
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
 | IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
 | NavigateToPose | Action | Invokes the NavigateToPose ROS2 action server, which is implemented by the bt_navigator module. |

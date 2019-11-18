@@ -212,8 +212,9 @@ bool
 LifecycleManager::reset()
 {
   message("Resetting managed nodes...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
-    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
+  // Should transition in reverse order
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, true) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP, true))
   {
     RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
     return false;

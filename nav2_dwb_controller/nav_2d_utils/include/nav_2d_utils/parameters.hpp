@@ -40,6 +40,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
 
 // TODO(crdelsey): Remove when code is re-enabled
 #pragma GCC diagnostic push
@@ -71,8 +72,10 @@ param_t searchAndGetParam(
   //   nh->param(resolved_name, value, default_value);
   //   return value;
   // }
-  param_t value = 0;
-  nh->get_parameter_or(param_name, value, default_value);
+  param_t value;
+  nav2_util::declare_parameter_if_not_declared(nh, param_name,
+    rclcpp::ParameterValue(default_value));
+  nh->get_parameter(param_name, value);
   return value;
 }
 
