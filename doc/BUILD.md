@@ -155,7 +155,7 @@ In the case that the developer wants to change any dependencies, they can run
 
 ### Build System
 
-An automated build system could make a clean directory and run the `initial_ros_setup.sh` script each time, however, that will generate a lot of unnecessary  load on the upstream repo servers, and result in very long builds.
+An automated build system could make a clean directory and run the `initial_ros_setup.sh` script each time, however, that will generate a lot of unnecessary load on the upstream repo servers, and result in very long builds.
 
 Instead, it would be better to do an initial download of all the source and dependencies
 ```sh
