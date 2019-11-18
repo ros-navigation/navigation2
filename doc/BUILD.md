@@ -26,18 +26,18 @@ There two different recommended methods for building Navigation2 stack from sour
 
 ### 2- Manually Build from Source
 
-#### Step 1- Build ROS2
+#### Step 1- Build ROS 2
 * [ROS2 Build Instructions](https://index.ros.org/doc/ros2/Installation/)
-  * When building ROS2 from source, if you want to get the latest version of the ROS2 packages, make sure that the `ros2.repos` file is from the `master` branch.
-  * Also, when installing dependencies using rosdep, make sure to set `--rosdistro` to the lastest ROS2 distribution (e.g `eloquent`)
+  * When building ROS 2 from source, if you want to get the latest version of the ROS 2 packages, make sure that the `ros2.repos` file is from the `master` branch.
+  * When installing the ROS 2 dependencies using rosdep, make sure to set `--rosdistro` to the lastest ROS 2 distribution (e.g `eloquent`)
 
 #### Step 2- Build Navigation2 Dependencies
 
-* If you built ROS2 from source, source the setup.bash file in the ROS2 build workspace.
+* If you built ROS 2 from source, source the setup.bash file in the ROS 2 build workspace.
     ```sh
   source ~/ros2_ws/install/setup.bash
   ```
-* If you installed ROS2 from the binary packages, source the setup.bash file in the ROS2 installation directory.
+* If you installed ROS 2 from the binary packages, source the setup.bash file in the ROS 2 installation directory.
   ```sh 
   source /opt/ros/<ros2-distro>/setup.bash
   ```
@@ -57,11 +57,11 @@ colcon build --symlink-install
 
 **I want to build the latest version:**
   * To build the lastest Navigation2 stack, set `--branch` to `master`.
-  * When installing dependencies using rosdep, make sure to set `--rosdistro` to the lastest ROS2 distribution (e.g `eloquent`)
+  * When installing dependencies using rosdep, make sure to set `--rosdistro` to the lastest ROS 2 distribution (e.g `eloquent`)
 
 **I want to build an older version:**
-* To build Navigation2 stack for a specific ROS2 distribution such as Cristal or Dashing, set `--branch` to the selected branch name. (e.g- `dashing-devel`) 
-* Also you need to change `--rosdistro` to the selected ROS2 distribution name. (e.g `dashing`)
+* To build Navigation2 stack for a specific ROS 2 distribution such as Cristal or Dashing, set `--branch` to the selected branch name. (e.g- `dashing-devel`) 
+* Also you need to change `--rosdistro` to the selected ROS 2 distribution name. (e.g `dashing`)
 
 ```sh
 source ~/nav2_depend_ws/install/setup.bash
@@ -81,8 +81,8 @@ Turtlebot3 is one of the target robot platforms to run Navigation2. You can skip
   sudo apt install ros-<ros2-distro>-turtelbot3-*
   ```
 
-**Recommended:** To get the lastest Turtlebot3 packages and build them from source, follow the instructions at this [E-Manual](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/)
-* Make sure you select the correct ros2 distribution when following the build steps.
+**Recommended:** To get the lastest Turtlebot3 packages and build them from source, follow the instructions in this [E-Manual](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/)
+* Make sure you select the correct ROS 2 distribution when following the build steps.
 ```sh
 ex: sudo apt install ros-<ros2-distro>-<package-name>
 ```
@@ -103,7 +103,7 @@ After successfully building Navigation2 from source, you can test it by followin
 ## 2- Quickstart using initial setup script
 
 ### Steps
-- Install all ROS2 dependencies from the [ROS2 Installation page](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup/)
+- Install all ROS 2 dependencies from the [ROS2 Installation page](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup/)
 
 - Ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
 
@@ -119,9 +119,9 @@ chmod a+x initial_ros_setup.sh
 
 The `initial_ros_setup.sh` script downloads four ROS workspaces and then builds them in the correct order. The four workspaces are:
 
- * **ROS2 release** - This is the latest ROS2 release as defined by the repos file found [here](https://github.com/ros2/ros2/)
+ * **ROS 2 release** - This is the latest ROS 2 release as defined by the repos file found [here](https://github.com/ros2/ros2/)
 
- * **ROS2 dependencies** - This is a set of ROS2 packages that aren't included in the ROS2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS2 or Navigation2 uses a different version.
+ * **ROS 2 dependencies** - This is a set of ROS 2 packages that aren't included in the ROS 2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS 2 or Navigation2 uses a different version.
 
  * **Navigation2** - This repository.
 
@@ -130,7 +130,7 @@ The `initial_ros_setup.sh` script downloads four ROS workspaces and then builds 
 ### Options
 
 The `initial_ros_setup.sh` accepts the following options:
- * `--no-ros2` This skips downloading and building the ROS2 release. Instead it uses the binary packages and ```setup.sh``` installed in `/opt/ros/<ros2-distro>`
+ * `--no-ros2` This skips downloading and building the ROS 2 release. Instead it uses the binary packages and ```setup.sh``` installed in `/opt/ros/<ros2-distro>`
  * `--download-only` This skips the build steps
 
 ---
@@ -180,22 +180,22 @@ colcon build --symlink-install
 
 ### - Navigation2 Dependencies Build Failure
 
-* Make sure that the ```setup.bash``` file is sourced in the ROS2 installation or ROS2 build workspace. Check if you can run talker and listener nodes.
+* Make sure that the ```setup.bash``` file is sourced in the ROS 2 installation or ROS 2 build workspace. Check if you can run talker and listener nodes.
   
-* Make sure to run rosdep for the correct ROS2 distribution. 
+* Make sure to run rosdep for the correct ROS 2 distribution. 
   ```
   rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro>
   ```
 
 ### - Navigation2 Build Failure
 
-* Make sure that the ```setup.bash``` is sourced in the ROS2 installation or ROS2 build workspace. Check if you can run talker and listener nodes.
+* Make sure that the ```setup.bash``` is sourced in the ROS 2 installation or ROS 2 build workspace. Check if you can run talker and listener nodes.
 
 * Make sure that the ```setup.bash``` in ```nav2_depen_ws/install``` is sourced.
 
 * Check if you have the correct ROS version and distribution. ```printenv | grep -i ROS```
 
-* Make sure to run rosdep for the correct ROS2 distribution. 
+* Make sure to run rosdep for the correct ROS 2 distribution. 
   ```
   rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro>
   ```
