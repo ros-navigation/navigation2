@@ -20,6 +20,7 @@
 #include <thread>
 
 #include "nav2_util/node_thread.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -125,6 +126,8 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<NodeThread> rclcpp_thread_;
+
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
 };
 
 }  // namespace nav2_util
