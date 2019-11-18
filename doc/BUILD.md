@@ -2,14 +2,12 @@
 
 ## Overview
 
-* The instructions to build **Navigation2 Stack** and **Navigation2 Dependencies**.
+The instructions to build **Navigation2 Stack** and **Navigation2 Dependencies**.
 <br>
 
   - [Build Options](#build-options)
   - [Tutorials](#tutorials)
   - [Troubleshooting  Guide](#troubleshooting-guide)
-
----
 
 ## Recommended Platform
 * Ubuntu 18.04
@@ -18,7 +16,7 @@
 
 ## Build Options
 
-There two different recommended methods for building Navigation2 stack.
+There two different recommended methods for building Navigation2 stack from source.
 
 ### 1- Easy Build
 * An automated method to build Navigation2 in a simple and easy way.
@@ -176,7 +174,7 @@ colcon build --symlink-install
 # Troubleshooting Guide
 
 * Check List
-  * .bashrc file has no  ROS environment variables in it.
+  * .bashrc file has no ROS environment variables in it.
   * Open new terminals and try to build the packages again.
 
 
