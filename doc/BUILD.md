@@ -78,7 +78,7 @@ Turtlebot3 is one of the target robot platforms to run Navigation2. You can skip
 
 - Install Turtlebot 3
   ```sh
-  sudo apt install ros-<ros2-distro>-turtelbot3-*
+  sudo apt install ros-<ros2-distro>-turtlebot3-*
   ```
 
 **Recommended:** To get the lastest Turtlebot3 packages and build them from source, follow the instructions in this [E-Manual](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/)
