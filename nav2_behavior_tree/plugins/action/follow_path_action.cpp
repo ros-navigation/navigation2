@@ -38,6 +38,7 @@ public:
   void on_tick() override
   {
     getInput("path", goal_.path);
+    getInput("controller_property", goal_.controller_property);
   }
 
   void on_server_timeout() override
@@ -58,6 +59,7 @@ public:
   {
     return providedBasicPorts({
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
+        BT::InputPort<std::string>("controller_property", ""),
       });
   }
 };

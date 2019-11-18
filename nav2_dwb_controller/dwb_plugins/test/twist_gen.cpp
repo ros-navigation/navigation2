@@ -71,6 +71,8 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
   parameters.push_back(rclcpp::Parameter("max_speed_xy", 0.55));
   parameters.push_back(rclcpp::Parameter("min_speed_theta", 0.4));
 
+  parameters.push_back(rclcpp::Parameter("use_dwa", false));
+
   return parameters;
 }
 
@@ -233,17 +235,6 @@ TEST(VelocityIterator, dwa_gen)
   gen.initialize(nh);
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   // Same as no-limits since everything is within our velocity limits
-  EXPECT_EQ(twists.size(), 20u * 20u * 5u + 100u - 1u);
-  checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
-}
-
-TEST(VelocityIterator, dwa_gen_no_param)
-{
-  auto nh = makeTestNode("dwa_gen_no_param");
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
-  dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
   EXPECT_EQ(twists.size(), 20u * 20u * 5u + 100u - 1u);
   checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
 }

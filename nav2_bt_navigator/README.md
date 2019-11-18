@@ -40,7 +40,7 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
           <ComputePathToPose goal="${goal}" planner_property="GridBased"/>
         </Fallback>
       </RateController>
-      <FollowPath path="${path}"/>
+      <FollowPath path="${path}" controller_property="FollowPath"/>
     </Sequence>
   </BehaviorTree>
 </root>
@@ -63,7 +63,7 @@ The graphical version of this Behavior Tree:
 <img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
 <br/>
 
-The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal.
+The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_property` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
 
 ### Recovery Node
 In this section, the recovery node is being introduced to the navigation package.

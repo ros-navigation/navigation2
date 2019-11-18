@@ -162,11 +162,7 @@ protected:
   {
     auto goal = RecoveryAction::Goal();
     goal.command.data = command;
-
-    auto goal_options = rclcpp_action::Client<RecoveryAction>::SendGoalOptions();
-    goal_options.result_callback = [](auto) {};
-
-    return client_->async_send_goal(goal, goal_options);
+    return client_->async_send_goal(goal);
   }
 
   Status getOutcome()
@@ -180,7 +176,7 @@ protected:
 
   ClientGoalHandle::WrappedResult getResult()
   {
-    auto future_result = goal_handle_->async_result();
+    auto future_result = client_->async_get_result(goal_handle_);
     rclcpp::executor::FutureReturnCode frc;
 
     do {
