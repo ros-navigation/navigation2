@@ -31,7 +31,7 @@ WaypointFollower::WaypointFollower()
   RCLCPP_INFO(get_logger(), "Creating");
 
   declare_parameter("stop_on_failure", true);
-  declare_parameter("loop_rate", 10);
+  declare_parameter("loop_rate", 20);
 }
 
 WaypointFollower::~WaypointFollower()
@@ -121,6 +121,9 @@ WaypointFollower::followWaypoints()
     return;
   }
 
+  RCLCPP_INFO(get_logger(), "Received follow waypoint request with %i waypoints.",
+    static_cast<int>(goal->poses.size()));
+
   rclcpp::Rate r(loop_rate_);
   uint goal_index = 0;
   bool new_goal = true;
@@ -178,7 +181,10 @@ WaypointFollower::followWaypoints()
     } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
       RCLCPP_INFO(get_logger(), "Succeeded processing waypoint %i, "
         "moving to next.", goal_index);
-    } else if (current_goal_status_ != ActionStatus::PROCESSING) {
+    }
+
+    if (current_goal_status_ != ActionStatus::PROCESSING &&
+      current_goal_status_ != ActionStatus::UNKNOWN) {
       // Update server state
       goal_index++;
       new_goal = true;
@@ -191,9 +197,12 @@ WaypointFollower::followWaypoints()
         return;
       }
     } else {
-      RCLCPP_DEBUG(get_logger(), "Processing waypoint %i...", goal_index);
+      RCLCPP_INFO_EXPRESSION(get_logger(),
+        (static_cast<int>(now().seconds()) % 30 == 0),
+        "Processing waypoint %i...", goal_index);
     }
 
+    rclcpp::spin_some(client_node_);
     r.sleep();
   }
 }
