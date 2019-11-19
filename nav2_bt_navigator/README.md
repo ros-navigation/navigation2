@@ -46,7 +46,21 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
 </root>
 ```
 
-Navigate with replanning is composed of the following custom decorator, condition and action nodes:
+Navigate with replanning is composed of the following custom decorator, condition,
+contro and action nodes:
+
+#### Control Nodes
+* PipelineSequence: This is a variant of a Sequence Node. When this node is ticked,
+it will tick the first child till it succeeds. Then it will tick the first two
+children till the second one succeeds. Then it will tick the first three till the
+third succeeds and so on, till there are no more children. This will return RUNNING,
+till the last child succeeds, at which time it also returns SUCCESS. If any child
+returns FAILURE, all nodes are halted and this node returns FAILURE.
+* Recovery: This is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
+
+<img src="./doc/recovery_node.png" title="" width="40%" align="middle">
+<br/>
+
 
 #### Decorator Nodes
 * RateController: A custom control flow node, which throttles down the tick rate.  This custom node has only one child and its tick rate is defined with a pre-defined frequency that the user can set.  This node returns RUNNING when it is not ticking its child. Currently, in the navigation, the `RateController` is used to tick the  `ComputePathToPose` and `GoalReached` node at 1 Hz.
@@ -57,7 +71,6 @@ Navigate with replanning is composed of the following custom decorator, conditio
 #### Action Nodes
 * ComputePathToPose: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard. The `planner` parameter will tell the planning server which of the loaded planning plugins to utilize, in case of desiring different parameters, planners, or behaviors. The name of the planner should correspond with the high level task it accomplishes and align with the `planner_ids` name given to it in the planner server. If no planner name is provided, it will use the only planner in the planner server when only one is available.
 
-
 The graphical version of this Behavior Tree:
 
 <img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
@@ -65,17 +78,9 @@ The graphical version of this Behavior Tree:
 
 The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_id` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
 
-### Recovery Node
-In this section, the recovery node is being introduced to the navigation package.
-
-Recovery node is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
-
-<img src="./doc/recovery_node.png" title="" width="40%" align="middle">
-<br/>
-
 ### Navigate with replanning and simple recovery actions
 
-With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below. 
+With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below.
 
 <img src="./doc/parallel_w_recovery.png" title="" width="95%" align="middle">
 <br/>
@@ -92,3 +97,8 @@ Scope-based failure handling: Utilizing Behavior Trees with a recovery node allo
 ## Open Issues
 
 * **Schema definition and XML document validation** - Currently, there is no dynamic validation of incoming XML. The Behavior-Tree.CPP library is using tinyxml2, which doesn't have a validator. Instead, we can create a schema for the Mission Planning-level XML and use build-time validation of the XML input to ensure that it is well-formed and valid.
+
+## Legend
+Legend for the behavior tree diagrams:
+
+![Legend](./doc/legend.png)
