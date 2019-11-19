@@ -169,6 +169,8 @@ private:
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);
 
+  void setParamCallbacks();
+
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_;
   unsigned int cell_inflation_radius_;
@@ -185,6 +187,7 @@ private:
 
   // Indicates that the entire costmap should be reinflated next time around.
   bool need_reinflation_;
+  std::recursive_mutex mutex_;
 };
 
 }  // namespace nav2_costmap_2d
