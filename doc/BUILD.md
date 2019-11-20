@@ -153,6 +153,18 @@ colcon build --symlink-install
 In the case that the developer wants to change any dependencies, they can run
 `<directory_for_workspaces>/navigation2_ws/src/navigation2/tools/build_all.sh` in a clean environment to get everything rebuilt easily
 
+### Debugging
+
+To build Navigation2 with build symbols, use colcon build with the following flags and cmake arguments.
+
+```sh
+source ../nav2_dependencies_ws/install/setup.sh
+cd <directory_for_workspaces>/navigation2_ws
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug
+```
+
+This espesially is helpful when debugging an issue with a debugger such as GDB and QtCreator.
+
 ### Build System
 
 An automated build system could make a clean directory and run the `initial_ros_setup.sh` script each time, however, that will generate a lot of unnecessary load on the upstream repo servers, and result in very long builds.
