@@ -585,6 +585,6 @@ DWBLocalPlanner::transformGlobalPlan(
 
 }  // namespace dwb_core
 
-// Register this planner as a nav2_core plugin
+// Register this controller as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(dwb_core::DWBLocalPlanner,
-  nav2_core::LocalPlanner)
+  nav2_core::Controller)
