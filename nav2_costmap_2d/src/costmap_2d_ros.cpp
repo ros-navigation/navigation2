@@ -148,7 +148,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
-      shared_from_this(), client_node_, rclcpp_node_, param_subscriber_.get());
+      shared_from_this(), client_node_, rclcpp_node_, param_subscriber_);
 
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
