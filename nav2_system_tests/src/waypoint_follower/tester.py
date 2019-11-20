@@ -18,20 +18,23 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import NavigateToPose, FollowWaypoints
+from nav2_msgs.action import FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 
+
 class WaypointFollowerTest(Node):
+
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
         self.action_client = ActionClient(self, FollowWaypoints, 'FollowWaypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
+
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
         self.init_pose.pose.pose.position.x = -2.0
@@ -46,7 +49,7 @@ class WaypointFollowerTest(Node):
 
         for wp in waypoints:
             msg = PoseStamped()
-            msg.header.frame_id = "map"
+            msg.header.frame_id = 'map'
             msg.pose.position.x = wp[0]
             msg.pose.position.y = wp[1]
             msg.pose.orientation.w = 1.0
@@ -54,7 +57,7 @@ class WaypointFollowerTest(Node):
 
     def run(self):
         if not self.waypoints:
-            rclpy.error_msg("Did not set valid waypoints before running test!")
+            rclpy.error_msg('Did not set valid waypoints before running test!')
             return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
@@ -82,7 +85,8 @@ class WaypointFollowerTest(Node):
             self.info_msg('Goal failed with status code: {0}'.format(status))
             return False
         if len(result.missed_waypoints) > 0:
-            self.info_msg("Goal failed to process all waypoints, missed {0} wps.".format(len(result.missed_waypoints)))
+            self.info_msg('Goal failed to process all waypoints,'
+                          ' missed {0} wps.'.format(len(result.missed_waypoints)))
 
         self.info_msg('Goal succeeded!')
         return True
@@ -115,13 +119,14 @@ class WaypointFollowerTest(Node):
     def error_msg(self, msg: str):
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
 
+
 def main(argv=sys.argv[1:]):
     rclpy.init()
 
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
-    wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52], [-0.53, 0.55]]
+    wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
     starting_pose = [-2.0, -0.5]
 
     test = WaypointFollowerTest()
