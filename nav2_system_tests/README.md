@@ -9,7 +9,7 @@ Test a component's ROS API (Pub/Sub/Service).
 
 - [Global Planning](src/planning/README.md)
 
-- Local Planning
+- Controller
 
 - [Localization](src/localization/README.md)
 

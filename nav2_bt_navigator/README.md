@@ -28,7 +28,7 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
 
 ### Navigate with Replanning
 
-[navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default local planner, the nav2_dwb_controller, implements path following at a rate of 10Hz.
+[navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default controller, the nav2_dwb_controller, implements path following at a rate of 10Hz.
 
 ```XML
 <root main_tree_to_execute="MainTree">

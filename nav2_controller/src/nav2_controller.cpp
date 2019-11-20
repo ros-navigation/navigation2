@@ -30,7 +30,7 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
-  lp_loader_("nav2_core", "nav2_core::LocalPlanner")
+  lp_loader_("nav2_core", "nav2_core::Controller")
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
@@ -42,7 +42,7 @@ ControllerServer::ControllerServer()
       default_property);
   controller_types_ = declare_parameter("controller_plugin_types", default_type);
 
-  // The costmap node is used in the implementation of the local planner
+  // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
 
@@ -76,7 +76,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (uint i = 0; i != controller_types_.size(); i++) {
     try {
-      nav2_core::LocalPlanner::Ptr controller =
+      nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(get_logger(), "Created controller : %s of type %s",
         controller_properties_[i].c_str(), controller_types_[i].c_str());

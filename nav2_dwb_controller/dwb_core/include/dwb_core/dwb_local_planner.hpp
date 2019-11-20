@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_core/local_planner.hpp"
+#include "nav2_core/controller.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "dwb_core/publisher.hpp"
 #include "dwb_core/trajectory_critic.hpp"
@@ -56,9 +56,9 @@ namespace dwb_core
 
 /**
  * @class DWBLocalPlanner
- * @brief Plugin-based flexible local_planner
+ * @brief Plugin-based flexible controller
  */
-class DWBLocalPlanner : public nav2_core::LocalPlanner
+class DWBLocalPlanner : public nav2_core::Controller
 {
 public:
   /**
