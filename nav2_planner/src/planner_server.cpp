@@ -41,10 +41,10 @@ PlannerServer::PlannerServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  std::vector<std::string> default_property, default_type;
-  default_property.push_back("GridBased");
+  std::vector<std::string> default_id, default_type;
+  default_id.push_back("GridBased");
   default_type.push_back("nav2_navfn_planner/NavfnPlanner");
-  declare_parameter("planner_plugin_properties", default_property);
+  declare_parameter("planner_plugin_ids", default_id);
   declare_parameter("planner_plugin_types", default_type);
 
   // Setup the global costmap
@@ -77,11 +77,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugin_properties", plugin_properties_);
+  get_parameter("planner_plugin_ids", plugin_ids_);
   get_parameter("planner_plugin_types", plugin_types_);
   auto node = shared_from_this();
 
-  if (plugin_properties_.size() != plugin_types_.size()) {
+  if (plugin_ids_.size() != plugin_types_.size()) {
     RCLCPP_FATAL(get_logger(),
       "Planner plugin names and types sizes do not match!");
     exit(-1);
@@ -92,9 +92,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       nav2_core::GlobalPlanner::Ptr planner =
         gp_loader_.createUniqueInstance(plugin_types_[i]);
       RCLCPP_INFO(get_logger(), "Created global planner plugin %s of type %s",
-        plugin_properties_[i].c_str(), plugin_types_[i].c_str());
-      planner->configure(node, plugin_properties_[i], tf_, costmap_ros_);
-      planners_.insert({plugin_properties_[i], planner});
+        plugin_ids_[i].c_str(), plugin_types_[i].c_str());
+      planner->configure(node, plugin_ids_[i], tf_, costmap_ros_);
+      planners_.insert({plugin_ids_[i], planner});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
@@ -103,7 +103,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   for (uint i = 0; i != plugin_types_.size(); i++) {
-    planner_properties_concat_ += plugin_properties_[i] + std::string(" ");
+    planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
   }
 
   // Initialize pubs & subs
@@ -224,27 +224,27 @@ PlannerServer::computePlan()
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-    if (planners_.find(goal->planner_property) != planners_.end()) {
-      result->path = planners_[goal->planner_property]->createPlan(start, goal->pose);
+    if (planners_.find(goal->planner_id) != planners_.end()) {
+      result->path = planners_[goal->planner_id]->createPlan(start, goal->pose);
     } else {
-      if (planners_.size() == 1 && goal->planner_property.empty()) {
+      if (planners_.size() == 1 && goal->planner_id.empty()) {
         if (!single_planner_warning_given_) {
           single_planner_warning_given_ = true;
           RCLCPP_WARN(get_logger(), "No planners specified in action call. "
             "Server will use only plugin %s in server."
-            " This warning will appear once.", planner_properties_concat_.c_str());
+            " This warning will appear once.", planner_ids_concat_.c_str());
         }
         result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
       } else {
         RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
-          "Planner names are: %s", goal->planner_property.c_str(),
-          planner_properties_concat_.c_str());
+          "Planner names are: %s", goal->planner_id.c_str(),
+          planner_ids_concat_.c_str());
       }
     }
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
-        " path to (%.2f, %.2f)", goal->planner_property.c_str(),
+        " path to (%.2f, %.2f)", goal->planner_id.c_str(),
         goal->pose.pose.position.x, goal->pose.pose.position.y);
       // TODO(orduno): define behavior if a preemption is available
       action_server_->terminate_goals();
@@ -264,7 +264,7 @@ PlannerServer::computePlan()
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-      goal->planner_property.c_str(), goal->pose.pose.position.x,
+      goal->planner_id.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
