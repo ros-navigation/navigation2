@@ -65,7 +65,7 @@ $ colcon build --symlink-install
 ```
 
 ## 3. Conclusion
-After installation of **Navigation2** and required dependencies, test **Navigation2** by following steps in [nav2_bringup README](../nav2_bringup/README.md)
+After installation of **Navigation2** and required dependencies, test **Navigation2** by following steps in [nav2_bringup README](../nav2_bringup/bringup/README.md)
 
 ## 4. Reporting Issue
 If run into any issue, feel free to submit pull request or report issue in this project.

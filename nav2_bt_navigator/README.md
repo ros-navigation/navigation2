@@ -37,10 +37,10 @@ The BT Navigator package has two sample XML-based descriptions of BTs.  These tr
       <RateController hz="1.0">
         <Fallback>
           <GoalReached/>
-          <ComputePathToPose goal="${goal}" planner_property="GridBased"/>
+          <ComputePathToPose goal="${goal}" planner_id="GridBased"/>
         </Fallback>
       </RateController>
-      <FollowPath path="${path}" controller_property="FollowPath"/>
+      <FollowPath path="${path}" controller_id="FollowPath"/>
     </Sequence>
   </BehaviorTree>
 </root>
@@ -55,7 +55,7 @@ Navigate with replanning is composed of the following custom decorator, conditio
 * GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked.
 
 #### Action Nodes
-* ComputePathToPose: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard. The `planner` parameter will tell the planning server which of the loaded planning plugins to utilize, in case of desiring different parameters, planners, or behaviors. The name of the planner should correspond with the high level task it accomplishes and align with the `planner_property_names` name given to it in the planner server. If no planner name is provided, it will use the only planner in the planner server when only one is available.
+* ComputePathToPose: When this node is ticked, the goal will be placed on the blackboard which will be shared to the Behavior tree.  The bt action node would then utilizes the action server to send a request to the global planner to recompute the global path.  Once the global path is recomputed, the result will be sent back via action server and then the updated path will be placed on the blackboard. The `planner` parameter will tell the planning server which of the loaded planning plugins to utilize, in case of desiring different parameters, planners, or behaviors. The name of the planner should correspond with the high level task it accomplishes and align with the `planner_ids` name given to it in the planner server. If no planner name is provided, it will use the only planner in the planner server when only one is available.
 
 
 The graphical version of this Behavior Tree:
@@ -63,7 +63,7 @@ The graphical version of this Behavior Tree:
 <img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
 <br/>
 
-The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_property` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
+The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_id` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
 
 ### Recovery Node
 In this section, the recovery node is being introduced to the navigation package.
