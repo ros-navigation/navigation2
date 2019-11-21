@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_behavior_tree)
+project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -50,34 +50,51 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-# The behavior tree (bt) node plugins
-set(bt_plugins
-  compute_path_to_pose_action
-  follow_path_action
-  back_up_action
-  spin_action
-  wait_action
-  clear_costmap_service
-  is_stuck_condition
-  goal_reached_condition
-  initial_pose_received_condition
-  reinitialize_global_localization_service
-  rate_controller
-  recovery_node
-)
+add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
+list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
 
-foreach(bt_plugin ${bt_plugins})
+add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
+list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
-  set(lib_name "nav2_${bt_plugin}_bt_node")
+add_library(nav2_back_up_action_bt_node SHARED plugins/action/back_up_action.cpp)
+list(APPEND plugin_libs nav2_back_up_action_bt_node)
 
-  add_library(${lib_name} SHARED plugins/${bt_plugin}.cpp)
+add_library(nav2_spin_action_bt_node SHARED plugins/action/spin_action.cpp)
+list(APPEND plugin_libs nav2_spin_action_bt_node)
 
-  ament_target_dependencies(${lib_name} ${dependencies})
+add_library(nav2_wait_action_bt_node SHARED plugins/action/wait_action.cpp)
+list(APPEND plugin_libs nav2_wait_action_bt_node)
 
-  target_compile_definitions(${lib_name} PRIVATE BT_PLUGIN_EXPORT)
+add_library(nav2_clear_costmap_service_bt_node SHARED plugins/action/clear_costmap_service.cpp)
+list(APPEND plugin_libs nav2_clear_costmap_service_bt_node)
 
-  list(APPEND plugin_libs ${lib_name})
+add_library(nav2_is_stuck_condition_bt_node SHARED plugins/condition/is_stuck_condition.cpp)
+list(APPEND plugin_libs nav2_is_stuck_condition_bt_node)
 
+add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
+list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
+
+add_library(nav2_initial_pose_received_condition_bt_node SHARED plugins/condition/initial_pose_received_condition.cpp)
+list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
+
+add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
+list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
+
+add_library(nav2_rate_controller_bt_node SHARED plugins/decorator/rate_controller.cpp)
+list(APPEND plugin_libs nav2_rate_controller_bt_node)
+
+add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
+list(APPEND plugin_libs nav2_recovery_node_bt_node)
+
+add_library(nav2_navigate_to_pose_action_bt_node SHARED plugins/action/navigate_to_pose_action.cpp)
+list(APPEND plugin_libs nav2_navigate_to_pose_action_bt_node)
+
+add_library(nav2_random_crawl_action_bt_node SHARED plugins/action/random_crawl_action.cpp)
+list(APPEND plugin_libs nav2_random_crawl_action_bt_node)
+
+foreach(bt_plugin ${plugin_libs})
+  ament_target_dependencies(${bt_plugin} ${dependencies})
+  target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
 install(TARGETS ${library_name}

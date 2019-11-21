@@ -38,4 +38,10 @@ public:
 
 }  // namespace nav2_behavior_tree
 
+#include "behaviortree_cpp_v3/bt_factory.h"
+BT_REGISTER_NODES(factory)
+{
+  factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
+}
+
 #endif  // NAV2_BEHAVIOR_TREE__CLEAR_COSTMAP_SERVICE_HPP_

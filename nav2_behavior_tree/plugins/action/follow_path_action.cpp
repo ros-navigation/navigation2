@@ -66,4 +66,10 @@ public:
 
 }  // namespace nav2_behavior_tree
 
+#include "behaviortree_cpp_v3/bt_factory.h"
+BT_REGISTER_NODES(factory)
+{
+  factory.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
+}
+
 #endif  // NAV2_BEHAVIOR_TREE__FOLLOW_PATH_ACTION_HPP_
