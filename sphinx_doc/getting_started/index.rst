@@ -29,8 +29,8 @@ Installation
 
    .. code-block:: bash
 
-      sudo apt install ros2-dashing-navigation2
-      sudo apt install ros2-dashing-nav2-bringup
+      sudo apt install ros-dashing-navigation2
+      sudo apt install ros-dashing-nav2-bringup
 
 3. Install the Turtlebot 3 packages. Again, for Ubuntu 18, it looks like this:
 
