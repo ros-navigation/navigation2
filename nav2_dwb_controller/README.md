@@ -17,7 +17,7 @@ an implementation of both DWA and Trajectory Rollout.
 ## Migrating to ROS 2
 
 Rather than continue with 3 overlapping implementations of DWA, the DWB planner
-was chosen to use as the standard local planner.
+was chosen to use as the standard controller plugin to start.
 
 The advantages of DWB were:
 * it was designed with backwards compatibility with the other controllers
@@ -27,10 +27,10 @@ The advantages of DWB were:
 
 For the most part, the DWB codebase is unchanged, other than what was required for ROS2.
 
-The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` action server.
+The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` action server that uses this plugin.
 
 ![ROS 1 DWB Structure](./images/DWB_Structure_Simplified.svg "ROS 1 DWB Structure")
 
 ## New local planner interface
 
-See `nav2_core` `LocalPlanner` interface. They are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.
+See `nav2_core` `Controller` interface. They are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.
