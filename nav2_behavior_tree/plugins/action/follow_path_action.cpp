@@ -28,9 +28,10 @@ class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
 public:
   FollowPathAction(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::FollowPath>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::FollowPath>(xml_tag_name, action_name, conf)
   {
     config().blackboard->set("path_updated", false);
   }
@@ -69,7 +70,15 @@ public:
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::FollowPathAction>("FollowPath");
+  BT::NodeBuilder builder =
+    [](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<nav2_behavior_tree::FollowPathAction>(
+        name, "follow_path", config);
+    };
+
+  factory.registerBuilder<nav2_behavior_tree::FollowPathAction>(
+    "FollowPath", builder);
 }
 
 #endif  // NAV2_BEHAVIOR_TREE__FOLLOW_PATH_ACTION_HPP_

@@ -29,9 +29,10 @@ class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePa
 {
 public:
   ComputePathToPoseAction(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
   {
   }
 
@@ -70,7 +71,15 @@ private:
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::ComputePathToPoseAction>("ComputePathToPose");
+  BT::NodeBuilder builder =
+    [](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<nav2_behavior_tree::ComputePathToPoseAction>(
+        name, "compute_path_to_pose", config);
+    };
+
+  factory.registerBuilder<nav2_behavior_tree::ComputePathToPoseAction>(
+    "ComputePathToPose", builder);
 }
 
 #endif  // NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
