@@ -51,7 +51,7 @@ class RandomCrawlActionServer(Node):
         self._action_server = ActionServer(
             self,
             RandomCrawl,
-            'RandomCrawl',
+            'random_crawl',
             execute_callback=self.execute_callback,
             handle_accepted_callback=self.handle_accepted_callback,
             goal_callback=self.goal_callback,
