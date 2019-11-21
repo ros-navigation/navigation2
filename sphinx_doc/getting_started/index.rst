@@ -36,7 +36,7 @@ Installation
 
    .. code-block:: bash
 
-      sudo apt install ros2-dashing-turtlebot3*
+      sudo apt install ros-dashing-turtlebot3*
 
 Running the Example
 *******************
