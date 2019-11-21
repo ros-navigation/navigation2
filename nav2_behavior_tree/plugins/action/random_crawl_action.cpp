@@ -26,12 +26,20 @@ namespace nav2_behavior_tree
 class RandomCrawlAction : public BtActionNode<nav2_msgs::action::RandomCrawl>
 {
 public:
-  explicit RandomCrawlAction(const std::string & action_name)
-  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name)
+  explicit RandomCrawlAction(
+    const std::string & action_name,
+    const BT::NodeConfiguration & conf)
+  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name, conf)
   {
   }
 };
 
 }  // namespace nav2_behavior_tree
+
+#include "behaviortree_cpp_v3/bt_factory.h"
+BT_REGISTER_NODES(factory)
+{
+  factory.registerNodeType<nav2_behavior_tree::RandomCrawlAction>("RandomCrawl");
+}
 
 #endif  // NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_
