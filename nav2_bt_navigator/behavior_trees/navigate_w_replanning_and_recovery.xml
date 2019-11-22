@@ -5,21 +5,18 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <Sequence name="NavigateWithReplanning">
+      <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="1.0">
-          <Fallback name="GoalReached">
-            <GoalReached/>
-            <RecoveryNode number_of_retries="1" name="ComputePathToPose">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-              <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
-            </RecoveryNode>
-          </Fallback>
+          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath"/>
           <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
-      </Sequence>
+      </PipelineSequence>
       <SequenceStar name="RecoveryActions">
         <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
         <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
