@@ -85,29 +85,6 @@ protected:
   std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
 
-TEST_F(TestNode, LoadMap)
-{
-  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
-  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
-
-  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
-  ASSERT_TRUE(client->wait_for_service());
-
-  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_FILE;
-  req->map_id = path(TEST_DIR) / path(g_valid_yaml_file);
-  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
-
-  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
-  ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);
-  ASSERT_EQ(resp->map.info.width, g_valid_image_width);
-  ASSERT_EQ(resp->map.info.height, g_valid_image_height);
-
-  for (unsigned int i = 0; i < resp->map.info.width * resp->map.info.height; i++) {
-    ASSERT_EQ(g_valid_image_content[i], resp->map.data[i]);
-  }
-}
-
 TEST_F(TestNode, GetMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
@@ -126,4 +103,94 @@ TEST_F(TestNode, GetMap)
   for (unsigned int i = 0; i < resp->map.info.width * resp->map.info.height; i++) {
     ASSERT_EQ(g_valid_image_content[i], resp->map.data[i]);
   }
+}
+
+TEST_F(TestNode, LoadMap)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_FILE;
+  req->map_id = path(TEST_DIR) / path(g_valid_yaml_file);
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
+  ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);
+  ASSERT_EQ(resp->map.info.height, g_valid_image_height);
+
+  for (unsigned int i = 0; i < resp->map.info.width * resp->map.info.height; i++) {
+    ASSERT_EQ(g_valid_image_content[i], resp->map.data[i]);
+  }
+}
+
+TEST_F(TestNode, LoadMapURL)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_URL;
+  req->map_id = "dummy";
+  RCLCPP_INFO(node_->get_logger(), "Sending load_map request with invalid type");
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_TYPE);
+}
+
+TEST_F(TestNode, LoadMapNull)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_FILE;
+  req->map_id = "";
+  RCLCPP_INFO(node_->get_logger(), "Sending load_map request with null file name");
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_MAP_ID_DOES_NOT_EXIST);
+}
+
+TEST_F(TestNode, LoadMapInvalidYaml)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_FILE;
+  req->map_id = "invalid_file.yaml";
+  RCLCPP_INFO(node_->get_logger(), "Sending load_map request with invalid yaml file name");
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA);
+}
+
+TEST_F(TestNode, LoadMapInvalidImage)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->type = nav2_msgs::srv::LoadMap::Request::TYPE_FILE;
+  req->map_id = req->map_id = path(TEST_DIR) / "invalid_image.yaml";
+  RCLCPP_INFO(node_->get_logger(), "Sending load_map request with invalid image file name");
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA);
 }
