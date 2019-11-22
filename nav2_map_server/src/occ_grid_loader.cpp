@@ -127,10 +127,13 @@ OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & y
   return loadParameters;
 }
 
-bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
+bool OccGridLoader::loadMapFromYaml(
+  std::string yaml_file,
+  std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   if (yaml_file == "") {
     RCLCPP_ERROR(node_->get_logger(), "YAML file name is empty, can't load!");
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_ID_DOES_NOT_EXIST;
     return false;
   }
   RCLCPP_INFO(node_->get_logger(), "Loading yaml file: %s", yaml_file.c_str());
@@ -141,11 +144,13 @@ bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
     RCLCPP_ERROR(
       node_->get_logger(), "Failed processing YAML file %s at position (%d:%d) for reason: %s",
       yaml_file.c_str(), e.mark.line, e.mark.column, e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
     return false;
   } catch (std::exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to parse map YAML loaded from file %s for reason: %s",
       yaml_file.c_str(), e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
     return false;
   }
 
@@ -155,6 +160,7 @@ bool OccGridLoader::loadMapFromYaml(std::string yaml_file)
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to load image file %s for reason: %s",
       loadParameters.image_file_name.c_str(), e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
     return false;
   }
   return true;
@@ -193,19 +199,17 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
       if (request->type != nav2_msgs::srv::LoadMap::Request::TYPE_FILE) {
         RCLCPP_ERROR(node_->get_logger(),
           "OccGridLoader: unsupported FILE_TYPE in request, can't load map");
+        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_TYPE;
         return;
       }
       // Load from file
-      if (loadMapFromYaml(request->map_id)) {
+      if (loadMapFromYaml(request->map_id, response)) {
         response->map = *msg_;
         response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
-      } else {
-        // TODO(mkhansen): Return fail code based on failure
-        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE;
-      }
-      // if in ACTIVE state, publish map
-      if (node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-        occ_pub_->publish(*msg_);
+        // if in ACTIVE state, publish map
+        if (node_->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+          occ_pub_->publish(*msg_);
+        }
       }
     };
 
@@ -247,6 +251,7 @@ nav2_util::CallbackReturn OccGridLoader::on_cleanup(const rclcpp_lifecycle::Stat
 
   occ_pub_.reset();
   occ_service_.reset();
+  load_map_service_.reset();
   msg_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -264,6 +269,7 @@ void OccGridLoader::loadMapFromFile(const LoadParameters & loadParameters)
   // Copy the image data into the map structure
   msg.info.width = img.size().width();
   msg.info.height = img.size().height();
+
   msg.info.resolution = loadParameters.resolution;
   msg.info.origin.position.x = loadParameters.origin[0];
   msg.info.origin.position.y = loadParameters.origin[1];

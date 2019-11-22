@@ -105,7 +105,9 @@ protected:
   void loadMapFromFile(const LoadParameters & loadParameters);
 
   // Load the map yaml and image from yaml file name
-  bool loadMapFromYaml(std::string yaml_file);
+  bool loadMapFromYaml(
+    std::string yaml_file,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response = nullptr);
 
   // A service to provide the occupancy grid (GetMap) and the message to return
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
