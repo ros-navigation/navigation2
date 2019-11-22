@@ -428,9 +428,9 @@ Costmap2DROS::updateMap()
     // get global pose
     geometry_msgs::msg::PoseStamped pose;
     if (getRobotPose(pose)) {
-      double x = pose.pose.position.x;
-      double y = pose.pose.position.y;
-      double yaw = tf2::getYaw(pose.pose.orientation);
+      const double & x = pose.pose.position.x;
+      const double & y = pose.pose.position.y;
+      const double yaw = tf2::getYaw(pose.pose.orientation);
       layered_costmap_->updateMap(x, y, yaw);
 
       geometry_msgs::msg::PolygonStamped footprint;
