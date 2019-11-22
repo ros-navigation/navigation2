@@ -4,23 +4,63 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+    <RecoveryNode number_of_retries="4" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
+        <!--Throttling down the tick rate of the global planner-->
         <RateController hz="1.0">
-          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
-            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-            <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
-          </RecoveryNode>
+          <Sequence>
+            <SetBlackboard output_key="global_planer_recovery" value="0" />
+            <!--Recovery actions for the global planner module-->
+            <RecoveryNode number_of_retries="4" name="ComputePathToPose">
+              <SequenceStar>
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                <SetBlackboard output_key="global_planer_recovery" value="0" />
+              </SequenceStar>
+              <Fallback name="GlobalPlannerRecoveryActions">
+                <BlackboardCheckInt value_A="{global_planer_recovery}" value_B="0" return_on_mismatch="FAILURE">
+                  <SequenceStar>
+                    <SetBlackboard output_key="global_planer_recovery" value="1" />
+                    <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+                    <Wait wait_duration="1"/>
+                  </SequenceStar>
+                </BlackboardCheckInt>
+                <BlackboardCheckInt value_A="{global_planer_recovery}" value_B="1" return_on_mismatch="FAILURE">
+                  <SequenceStar>
+                    <SetBlackboard output_key="global_planer_recovery" value="0" />
+                    <Wait wait_duration="2"/>
+                  </SequenceStar>
+                </BlackboardCheckInt>
+              </Fallback>
+            </RecoveryNode>
+          </Sequence>
         </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
+        <!--Recovery actions for the local planner module-->
+        <Sequence>
+          <SetBlackboard output_key="local_planner_recovery" value="0" />
+          <RecoveryNode number_of_retries="2" name="FollowPath">
+            <SequenceStar>
+              <FollowPath path="{path}"/>
+              <SetBlackboard output_key="local_planner_recovery" value="0" />
+            </SequenceStar>
+              <Fallback name="LocalPlannerRecoveryActions">
+                <BlackboardCheckInt value_A="{local_planner_recovery}" value_B="0" return_on_mismatch="FAILURE">
+                  <SequenceStar>
+                    <SetBlackboard output_key="local_planner_recovery" value="1" />
+                    <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+                  </SequenceStar>
+                </BlackboardCheckInt>
+                <BlackboardCheckInt value_A="{local_planner_recovery}" value_B="1" return_on_mismatch="FAILURE">
+                  <SequenceStar>
+                    <SetBlackboard output_key="local_planner_recovery" value="0" />
+                    <Spin spin_dist="1.57"/>
+                  </SequenceStar>
+                </BlackboardCheckInt>
+              </Fallback>
+          </RecoveryNode>
+        </Sequence>
       </PipelineSequence>
+      <!--Recovery actions for the Navigate to pose module-->
       <SequenceStar name="RecoveryActions">
-        <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
-        <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
-        <Spin spin_dist="1.57"/>
         <Wait wait_duration="5"/>
       </SequenceStar>
     </RecoveryNode>
