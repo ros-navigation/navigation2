@@ -117,8 +117,22 @@ protected:
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+    std::string costmap_topic, footprint_topic;
+    node_lifecycle_->get_parameter("costmap_topic", costmap_topic);
+    node_lifecycle_->get_parameter("footprint_topic", footprint_topic);
+    std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_ =
+      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+      node_lifecycle_, costmap_topic);
+    std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_ =
+      std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+      node_lifecycle_, footprint_topic, 1.0);
+    std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_ =
+      std::make_shared<nav2_costmap_2d::CollisionChecker>(
+      *costmap_sub_, *footprint_sub_, *tf_buffer_,
+      node_lifecycle_->get_name(), "odom");
+
     recovery_ = std::make_unique<DummyRecovery>();
-    recovery_->configure(node_lifecycle_, "Recovery", tf_buffer_);
+    recovery_->configure(node_lifecycle_, "Recovery", tf_buffer_, collision_checker_);
     recovery_->activate();
 
     client_ = rclcpp_action::create_client<RecoveryAction>(
