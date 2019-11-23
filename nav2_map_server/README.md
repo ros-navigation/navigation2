@@ -95,6 +95,3 @@ Example:
 $ ros2 service call /load_map nav2_msgs/srv/LoadMap "{type: 0, map_id: /ros/maps/map.yaml}
 ```
 
-## Future Plans
-- Allow for dynamic configuration of conversion parameters
-- Support additional map types, e.g. GridMap (https://github.com/ros-planning/navigation2/issues/191)
