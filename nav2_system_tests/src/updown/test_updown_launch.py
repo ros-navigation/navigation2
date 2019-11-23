@@ -40,7 +40,7 @@ def generate_launch_description():
     declare_urdf_cmd = launch.actions.DeclareLaunchArgument(
         'urdf',
         default_value=[launch.substitutions.ThisLaunchFileDir(),
-                       '/../../urdf/turtlebot3_burger.urdf'],
+                       '/../../urdf/turtlebot3_waffle.urdf'],
         description='Full path to model file to load')
 
     launch_dir = os.path.join(
