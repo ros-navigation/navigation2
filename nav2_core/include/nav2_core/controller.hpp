@@ -54,7 +54,7 @@ namespace nav2_core
 
 /**
  * @class Controller
- * @brief planner interface that acts as a virtual base class for all controller plugins
+ * @brief controller interface that acts as a virtual base class for all controller plugins
  */
 class Controller
 {
