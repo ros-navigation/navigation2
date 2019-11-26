@@ -17,7 +17,7 @@ an implementation of both DWA and Trajectory Rollout.
 ## Migrating to ROS 2
 
 Rather than continue with 3 overlapping implementations of DWA, the DWB planner
-was chosen to use as the standard controller plugin to start.
+was chosen to use as the default controller plugin.
 
 The advantages of DWB were:
 * it was designed with backwards compatibility with the other controllers
