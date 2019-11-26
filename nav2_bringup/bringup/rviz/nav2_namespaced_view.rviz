@@ -308,7 +308,7 @@ Visualization Manager:
             Value: <robot_namespace>/local_costmap/published_footprint
           Value: true
       Enabled: true
-      Name: Local Planner
+      Name: Controller
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

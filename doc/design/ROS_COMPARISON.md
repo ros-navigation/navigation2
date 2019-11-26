@@ -16,13 +16,9 @@ In addition, move_base itself has been split into multiple components:
 
 ![Move Base 2](./move_base_compare_2.png)
 
-The *nav2_bt_navigator* replaces move_base at the top level, with a *Task* interface to call the global and local planners with a configurable tree-based action model.
+The *nav2_bt_navigator* replaces move_base at the top level, with an *Action* interface to call the global planner and controller with a configurable tree-based action model.
 
-* Note: the *Task* interface is a temporary proxy for ROS2 *Actions* which are not yet implemented. When *Actions* become available, the planners will be called through ROS2 *Actions*.
-
-The reason for the change was to make it so that global and local planners would be *Action Servers* and could be replaced at launch or run time with other implementations providing the same *Action*.
-
-The *nav2_bt_navigator* itself is also a *Task Server* and can also be replaced with other implementations. It uses *Behavior Trees* to make it possible to have more complex state machines and to add in recovery behaviors as additional *Task Servers*. See *nav2_bt_navigator* for that implementation. (currently WIP in [Pull request 91](https://github.com/ros-planning/navigation2/pull/91))
+The *nav2_bt_navigator* itself is also an *Action Server* and can also be replaced with other implementations. It uses *Behavior Trees* to make it possible to have more complex state machines and to add in recovery behaviors as additional *Action Servers*. See *nav2_bt_navigator* for that implementation. (currently WIP in [Pull request 91](https://github.com/ros-planning/navigation2/pull/91))
 
 The *nav2_navfn_planner* is ported from the *navfn* package in ROS, but adds the *Task Server* interface to enable it to be strongly decoupled from the nav2_bt_navigator.
 
