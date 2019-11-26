@@ -27,7 +27,7 @@ The advantages of DWB were:
 
 For the most part, the DWB codebase is unchanged, other than what was required for ROS2.
 
-The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` action server that uses this plugin.
+The main architectural change is due to the replacement of `MoveBase` by the `FollowPath` action server, called the controller_server, which uses this DWB plugin.
 
 ![ROS 1 DWB Structure](./images/DWB_Structure_Simplified.svg "ROS 1 DWB Structure")
 
