@@ -9,7 +9,7 @@ This module is used by the nav2_bt_navigator to implement a ROS2 node that execu
 
 ## The bt_action_node Template and the Behavior Tree Engine
 
-The [bt_action_node template](include/nav2_behavior_tree/bt_action_node.hpp) allows one to easily integrate a ROS2 action into a BehaviorTree. To do so, one derives from the BTActionNode template, providing the action message type. For example,
+The [bt_action_node template](include/nav2_behavior_tree/bt_action_node.hpp) allows one to easily integrate a ROS2 action into a BehaviorTree. To do so, one derives from the BtActionNode template, providing the action message type. For example,
 
 ```C++
 #include "nav2_msgs/action/follow_path.hpp"
@@ -66,8 +66,8 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 | BT Node   |      Type      |  Description |
 |----------|:-------------|------|
 | Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. | 
-| ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. |
-| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. |
+| ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
+| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. The server address can be remapped using the `server_name` input port.|
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
 | IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
 | NavigateToPose | Action | Invokes the NavigateToPose ROS2 action server, which is implemented by the bt_navigator module. |
