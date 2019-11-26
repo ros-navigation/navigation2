@@ -72,15 +72,6 @@ protected:
   virtual void initializeIterator(const nav2_util::LifecycleNode::SharedPtr & nh);
 
   /**
-   * @brief Check if the deprecated use_dwa parameter is set to the functionality that matches this class
-   *
-   * The functionality guarded by the use_dwa parameter has been split between this class and the derived
-   * LimitedAccelGenerator. If use_dwa was false, this class should be used. If it was true, then LimitedAccelGenerator.
-   * If this is NOT the case, this function will throw an exception.
-   */
-  virtual void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh);
-
-  /**
    * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits
    *
    * @param cmd_vel Desired velocity

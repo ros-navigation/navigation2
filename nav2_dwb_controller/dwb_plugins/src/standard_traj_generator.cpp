@@ -59,7 +59,6 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
     "discretize_by_time", rclcpp::ParameterValue(false));
 
   nh->get_parameter("sim_time", sim_time_);
-  checkUseDwaParam(nh);
 
   /*
    * If discretize_by_time, then sim_granularity represents the amount of time that should be between
@@ -86,18 +85,6 @@ void StandardTrajectoryGenerator::initializeIterator(
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_);
-}
-
-void StandardTrajectoryGenerator::checkUseDwaParam(
-  const nav2_util::LifecycleNode::SharedPtr & nh)
-{
-  bool use_dwa = true;
-  nh->get_parameter("use_dwa", use_dwa);
-  if (use_dwa) {
-    throw nav2_core::
-          PlannerException("Deprecated parameter use_dwa set to true. "
-            "Please use LimitedAccelGenerator for that functionality.");
-  }
 }
 
 void StandardTrajectoryGenerator::startNewIteration(
