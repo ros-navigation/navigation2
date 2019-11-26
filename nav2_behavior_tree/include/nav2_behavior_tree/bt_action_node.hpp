@@ -112,7 +112,6 @@ new_goal_received:
       [&](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
         goal_result_available = true;
         result_ = result;
-        std::cout << "Got Result!!" << std::endl;
       };
 
     auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
@@ -128,7 +127,6 @@ new_goal_received:
       throw std::runtime_error("Goal was rejected by the action server");
     }
 
-    rclcpp::Rate r(20);
     while (rclcpp::ok() && !goal_result_available) {
       on_wait_for_result();
       if (goal_updated_) {
