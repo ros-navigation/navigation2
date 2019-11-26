@@ -1,21 +1,13 @@
-# Type definitions
-uint8 TYPE_FILE=0
-uint8 TYPE_URL=1
-
-# Type of map resource
-uint8 type
-
-# ID of map resource
-string map_id
-
+# URL of map resource
+# Can be an absolute path to a file: file:///path/to/maps/floor1.yaml
+# Or, relative to a ROS package: package://my_ros_package/maps/floor2.yaml
+string map_url
 ---
-
 # Result code defintions
 uint8 RESULT_SUCCESS=0
-uint8 RESULT_INVALID_TYPE=1
-uint8 RESULT_MAP_ID_DOES_NOT_EXIST=2
+uint8 RESULT_MAP_DOES_NOT_EXIST=1
+uint8 RESULT_INVALID_MAP_DATA=2
 uint8 RESULT_INVALID_MAP_METADATA=3
-uint8 RESULT_INVALID_MAP_DATA=4
 uint8 RESULT_UNDEFINED_FAILURE=255
 
 # Returned map is only valid if result equals RESULT_SUCCESS
