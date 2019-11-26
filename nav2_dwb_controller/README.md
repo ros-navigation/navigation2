@@ -33,4 +33,4 @@ The main architectural change is due to the replacement of `MoveBase` by the `Fo
 
 ## New local planner interface
 
-See `nav2_core` `Controller` interface. They are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.
+See `nav2_core` `Controller` interface, which defines an interface for the controller plugins. These plugins are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.
