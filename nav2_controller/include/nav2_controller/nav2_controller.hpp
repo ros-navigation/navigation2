@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "nav2_core/local_planner.hpp"
+#include "nav2_core/controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -44,7 +44,7 @@ class ProgressChecker;
 class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
-  using ControllerMap = std::unordered_map<std::string, nav2_core::LocalPlanner::Ptr>;
+  using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -167,10 +167,10 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
   // Controller Plugins
-  pluginlib::ClassLoader<nav2_core::LocalPlanner> lp_loader_;
+  pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
-  std::vector<std::string> controller_properties_, controller_types_;
-  std::string controller_properties_concat_, current_controller_;
+  std::vector<std::string> controller_ids_, controller_types_;
+  std::string controller_ids_concat_, current_controller_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
 

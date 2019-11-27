@@ -21,7 +21,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
                             IncludeLaunchDescription, RegisterEventHandler)
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -49,7 +49,7 @@ def generate_launch_description():
     use_simulator = LaunchConfiguration('use_simulator')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
-    simulator = LaunchConfiguration('simulator')
+    headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
 
     # TODO(orduno) Remove once `PushNodeRemapping` is resolved
@@ -116,9 +116,9 @@ def generate_launch_description():
         description='Whether to start RVIZ')
 
     declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)')
+        'headless',
+        default_value='False',
+        description='Whether to execute gzclient)')
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
@@ -130,9 +130,14 @@ def generate_launch_description():
         description='Full path to world model file to load')
 
     # Specify the actions
-    start_gazebo_cmd = ExecuteProcess(
+    start_gazebo_server_cmd = ExecuteProcess(
         condition=IfCondition(use_simulator),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
+        cwd=[launch_dir], output='screen')
+
+    start_gazebo_client_cmd = ExecuteProcess(
+        condition=(IfCondition(use_simulator) and UnlessCondition(headless)),
+        cmd=['gzclient'],
         cwd=[launch_dir], output='screen')
 
     urdf = os.path.join(
@@ -198,7 +203,8 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
 
     # Add any conditioned actions
-    ld.add_action(start_gazebo_cmd)
+    ld.add_action(start_gazebo_server_cmd)
+    ld.add_action(start_gazebo_client_cmd)
     ld.add_action(start_rviz_cmd)
 
     # Add other nodes and processes we need

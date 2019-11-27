@@ -33,8 +33,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV2_CORE__LOCAL_PLANNER_HPP_
-#define NAV2_CORE__LOCAL_PLANNER_HPP_
+#ifndef NAV2_CORE__CONTROLLER_HPP_
+#define NAV2_CORE__CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -53,19 +53,19 @@ namespace nav2_core
 {
 
 /**
- * @class LocalPlanner
- * @brief planner interface that acts as a virtual base class for all local planner plugins
+ * @class Controller
+ * @brief controller interface that acts as a virtual base class for all controller plugins
  */
-class LocalPlanner
+class Controller
 {
 public:
-  using Ptr = std::shared_ptr<nav2_core::LocalPlanner>;
+  using Ptr = std::shared_ptr<nav2_core::Controller>;
 
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~LocalPlanner() {}
+  virtual ~Controller() {}
 
   /**
    * @param  parent pointer to user's node
@@ -98,7 +98,7 @@ public:
   virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
 
   /**
-   * @brief local_planner computeVelocityCommands - calculates the best command given the current pose and velocity
+   * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity
    *
    * It is presumed that the global plan is already set.
    *
@@ -114,7 +114,7 @@ public:
     const geometry_msgs::msg::Twist & velocity) = 0;
 
   /**
-   * @brief local_planner isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
+   * @brief Controller isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
    *
    * The pose that it checks against is the last pose in the current global plan.
    * The calculation is delegated to the goal_checker plugin.
@@ -130,4 +130,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE__LOCAL_PLANNER_HPP_
+#endif  // NAV2_CORE__CONTROLLER_HPP_

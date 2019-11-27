@@ -295,18 +295,7 @@ NavFn::calcNavFnDijkstra(bool atStart)
   setupNavFn(true);
 
   // calculate the nav fn and path
-  propNavFnDijkstra(std::max(nx * ny / 20, nx + ny), atStart);
-
-  // path
-  int len = calcPath(nx * ny / 2);
-
-  if (len > 0) {  // found plan
-    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Path found, %d steps\n", len);
-    return true;
-  } else {
-    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] No path found\n");
-    return false;
-  }
+  return propNavFnDijkstra(std::max(nx * ny / 20, nx + ny), atStart);
 }
 
 
@@ -320,18 +309,7 @@ NavFn::calcNavFnAstar()
   setupNavFn(true);
 
   // calculate the nav fn and path
-  propNavFnAstar(std::max(nx * ny / 20, nx + ny));
-
-  // path
-  int len = calcPath(nx * 4);
-
-  if (len > 0) {  // found plan
-    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Path found, %d steps\n", len);
-    return true;
-  } else {
-    RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] No path found\n");
-    return false;
-  }
+  return propNavFnAstar(std::max(nx * ny / 20, nx + ny));
 }
 
 //

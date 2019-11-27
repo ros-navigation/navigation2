@@ -38,6 +38,8 @@
 #include "gtest/gtest.h"
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "dwb_plugins/stopped_goal_checker.hpp"
+#include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;
@@ -61,9 +63,11 @@ void checkMacro(
   v.y = yv;
   v.theta = thetav;
   if (expected_result) {
-    EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
+    EXPECT_TRUE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
+      nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
   } else {
-    EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
+    EXPECT_FALSE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
+      nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
   }
 }
 
