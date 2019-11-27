@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_
 
 #include <string>
+#include <memory>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/random_crawl.hpp"
@@ -27,9 +28,10 @@ class RandomCrawlAction : public BtActionNode<nav2_msgs::action::RandomCrawl>
 {
 public:
   explicit RandomCrawlAction(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::RandomCrawl>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::RandomCrawl>(xml_tag_name, action_name, conf)
   {
   }
 };
@@ -39,7 +41,14 @@ public:
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::RandomCrawlAction>("RandomCrawl");
+  BT::NodeBuilder builder =
+    [](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<nav2_behavior_tree::RandomCrawlAction>(
+        name, "random_crawl", config);
+    };
+  factory.registerBuilder<nav2_behavior_tree::RandomCrawlAction>(
+    "RandomCrawl", builder);
 }
 
 #endif  // NAV2_BEHAVIOR_TREE__RANDOM_CRAWL_ACTION_HPP_

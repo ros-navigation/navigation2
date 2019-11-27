@@ -31,9 +31,10 @@ class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPo
 {
 public:
   NavigateToPoseAction(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::NavigateToPose>(xml_tag_name, action_name, conf)
   {
   }
 
@@ -68,7 +69,15 @@ public:
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::NavigateToPoseAction>("NavigateToPose");
+  BT::NodeBuilder builder =
+    [](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<nav2_behavior_tree::NavigateToPoseAction>(
+        name, "navigate_to_pose", config);
+    };
+
+  factory.registerBuilder<nav2_behavior_tree::NavigateToPoseAction>(
+    "NavigateToPose", builder);
 }
 
 #endif  // NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_

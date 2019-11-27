@@ -29,9 +29,10 @@ class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
 public:
   BackUpAction(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::BackUp>(action_name, conf)
+  : BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
   {
     double dist;
     getInput("backup_dist", dist);
@@ -64,7 +65,14 @@ public:
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::BackUpAction>("BackUp");
+  BT::NodeBuilder builder =
+    [](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<nav2_behavior_tree::BackUpAction>(
+        name, "back_up", config);
+    };
+
+  factory.registerBuilder<nav2_behavior_tree::BackUpAction>("BackUp", builder);
 }
 
 #endif  // NAV2_BEHAVIOR_TREE__BACK_UP_ACTION_HPP_

@@ -30,9 +30,10 @@ class BtActionNode : public BT::CoroActionNode
 {
 public:
   BtActionNode(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(action_name, conf), action_name_(action_name)
+  : BT::CoroActionNode(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -53,7 +54,7 @@ public:
     action_client_->wait_for_action_server();
 
     // Give the derive class a chance to do any initialization
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
   BtActionNode() = delete;

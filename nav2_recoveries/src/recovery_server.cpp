@@ -31,8 +31,8 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
-  std::vector<std::string> plugin_names{std::string("Spin"),
-    std::string("BackUp"), std::string("Wait")};
+  std::vector<std::string> plugin_names{std::string("spin"),
+    std::string("back_up"), std::string("wait")};
   std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
     std::string("nav2_recoveries/BackUp"),
     std::string("nav2_recoveries/Wait")};

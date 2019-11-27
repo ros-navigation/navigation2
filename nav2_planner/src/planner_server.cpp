@@ -110,7 +110,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_,
+      "compute_path_to_pose",
       std::bind(&PlannerServer::computePlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
