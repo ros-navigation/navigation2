@@ -39,6 +39,7 @@ control_nodes = [
     "RateController",
     "RecoveryNode",
     "PipelineSequence",
+    "RoundRobin"
     ]
 action_nodes = [
     "AlwaysFailure",

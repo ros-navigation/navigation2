@@ -95,6 +95,10 @@ list(APPEND plugin_libs nav2_random_crawl_action_bt_node)
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
+add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
+list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
