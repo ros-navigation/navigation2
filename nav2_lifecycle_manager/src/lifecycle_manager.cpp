@@ -39,7 +39,7 @@ LifecycleManager::LifecycleManager()
   // The default set of node names for the nav2 stack
   std::vector<std::string> default_node_names{"map_server", "amcl",
     "planner_server", "controller_server",
-    "recoveries_server", "bt_navigator"};
+    "recoveries_server", "bt_navigator", "waypoint_follower"};
 
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
