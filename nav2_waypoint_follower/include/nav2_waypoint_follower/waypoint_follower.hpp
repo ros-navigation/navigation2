@@ -48,7 +48,7 @@ public:
   using ActionT = nav2_msgs::action::FollowWaypoints;
   using ClientT = nav2_msgs::action::NavigateToPose;
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
-  using ActionClient = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>;
+  using ActionClient = rclcpp_action::Client<ClientT>;
 
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
