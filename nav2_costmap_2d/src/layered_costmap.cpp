@@ -102,7 +102,7 @@ void LayeredCostmap::resizeMap(
 bool LayeredCostmap::isOutofBounds(double robot_x, double robot_y)
 {
   unsigned int mx, my;
-  return costmap_.worldToMap(robot_x, robot_y, mx, my);
+  return !costmap_.worldToMap(robot_x, robot_y, mx, my);
 }
 
 void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
