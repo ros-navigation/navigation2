@@ -440,6 +440,7 @@ jobs:
   docs_publish:
     executor: docs_exec
     steps:
+      - install_doc_dependencies
       - *install_deployment_key
       - attach_workspace:
           at: src/navigation2
