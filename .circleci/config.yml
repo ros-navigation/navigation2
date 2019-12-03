@@ -385,6 +385,8 @@ executors:
     docker:
       - image: alpine:latest
     working_directory: /opt/overlay_ws
+    environment:
+      <<: *common_environment
 
 jobs:
   debug_build: &debug_build
@@ -431,10 +433,16 @@ jobs:
       - install_doc_dependencies
       - *on_checkout
       - build_docs
+      - persist_to_workspace:
+          root: src/navigation2
+          paths:
+            - sphinx_doc
   docs_publish:
     executor: docs_exec
     steps:
       - *install_deployment_key
+      - attach_workspace:
+          at: src/navigation2
       - publish_docs_to_gh_pages_branch
 
 workflows:
@@ -449,6 +457,8 @@ workflows:
       - release_test:
           requires:
             - release_build
+  build_and_publish_docs:
+    jobs:
       - docs_build
       - docs_publish:
           requires:
