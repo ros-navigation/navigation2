@@ -288,6 +288,7 @@ references:
         apk --no-cache add graphviz
         apk --no-cache add ttf-dejavu
         apk --no-cache add openjdk8-jre
+        apk --no-cache add bash git openssh
   make_docs: &make_docs
     run:
       command: |
