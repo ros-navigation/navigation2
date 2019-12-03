@@ -297,6 +297,16 @@ references:
     store_artifacts:
         path: /opt/overlay_ws/src/navigation2/sphinx_doc/_build/html
         destination: html
+  publish_docs: &publish_docs
+    run:
+      command: |
+        cd src/navigation2/sphinx_doc
+        make publish
+  install_deployment_key: &install_deployment_key
+    add_ssh_keys:
+      fingerprints:
+        - "0e:8e:90:bf:3d:a9:04:d9:04:b4:62:38:a5:3b:90:7d"
+
 commands:
   <<: *common_commands
   checkout_source:
@@ -347,6 +357,10 @@ commands:
     steps:
       - *make_docs
       - *store_docs
+  publish_docs_to_gh_pages_branch:
+    description: "Commit newly built docs to gh-pages branch"
+    steps:
+      - *publish_docs
 
 executors:
   debug_exec:
@@ -420,7 +434,8 @@ jobs:
   docs_publish:
     executor: docs_exec
     steps:
-      - run: echo 'TODO - This is where we would publish the docs.'
+      - *install_deployment_key
+      - publish_docs_to_gh_pages_branch
 
 workflows:
   version: 2
