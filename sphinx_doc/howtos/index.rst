@@ -8,4 +8,4 @@ How-Tos
 
    tutorials/index.rst
    docs/index.rst
-   tunning/index.rst
+   configuration/index.rst
