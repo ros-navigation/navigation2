@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Important Sphinx files" href="important-sphinx-files.html" />
@@ -113,6 +121,20 @@
 <li class="toctree-l4 current"><a class="current reference internal" href="#">Examples of Generated Images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="important-sphinx-files.html">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -216,7 +238,7 @@
   <div class="section" id="examples-of-generated-images">
 <span id="dot-examples"></span><h1>Examples of Generated Images<a class="headerlink" href="#examples-of-generated-images" title="Permalink to this headline">¶</a></h1>
 <p>Test graphviz drawing from mft.dot</p>
-<div class="graphviz"><img src="../../../_images/graphviz-6a4db67fb6f18edd78ba5af68a9017be394c6d87.png" alt="digraph G {
+<img src="../../../_images/graphviz-849d25466b98f7c01e547d5bf5f8d8141fb3b3d3.png" alt="digraph G {
   bgcolor=&quot;transparent&quot;;
   node [fontsize=10 shape=record]
   node [fontsize=10]
@@ -240,9 +262,9 @@
   bin_complete:mft -&gt; mft:hdr
   mft:mcb -&gt; mcb
 
-}" class="graphviz" /></div>
+}" />
 <p>Test another graphviz drawing from repo_sync.dot</p>
-<div class="graphviz"><img src="../../../_images/graphviz-49fc4fb4cc3421b19d26c5bac1ecace273a4c8f8.png" alt="digraph repo_sync {
+<img src="../../../_images/graphviz-8a4f52f6b9a4b3b67917eda86e831c3167df4c0a.png" alt="digraph repo_sync {
    bgcolor=&quot;transparent&quot;;
    rankdir=LR
 	compound=true;
@@ -271,7 +293,7 @@
 			abc_c1 -&gt; abc_c2 -&gt; abc_c3 -&gt; abc_c4;
 		}
 	}
-}" class="graphviz" /></div>
+}" />
 <p>And a test of plantuml from ssp.pu</p>
 <p class="plantuml">
 <img src="../../../_images/plantuml-2d8cd038ccc26e65593512ce4ba0f294d2c14402.png" alt="&#64;startuml
@@ -308,7 +330,7 @@ ssp ..&gt; ssp_ops : provide
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>

@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Contribution Guidelines" href="contribute_guidelines.html" />
@@ -112,6 +120,20 @@
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -234,10 +256,10 @@ we only use an underline indicator for headings.)  For consistency in
 our documentation, we define the order of characters used to indicated
 the nested table of contents levels:</p>
 <ul class="simple">
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">#</span></code> for the Document title underline character</p></li>
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">*</span></code> for the First sub-section heading level</p></li>
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">=</span></code> for the Second sub-section heading level</p></li>
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">-</span></code> for the Third sub-section heading level</p></li>
+<li>Use <code class="docutils literal notranslate"><span class="pre">#</span></code> for the Document title underline character</li>
+<li>Use <code class="docutils literal notranslate"><span class="pre">*</span></code> for the First sub-section heading level</li>
+<li>Use <code class="docutils literal notranslate"><span class="pre">=</span></code> for the Second sub-section heading level</li>
+<li>Use <code class="docutils literal notranslate"><span class="pre">-</span></code> for the Third sub-section heading level</li>
 </ul>
 <p>Additional heading level depth is discouraged.</p>
 <p>The heading underline must be at least as long as the title it’s under.</p>
@@ -278,13 +300,13 @@ following directive just before the section header to use this feature.</p>
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This feature must only be used before a conventional Sphinx section
+<p class="first admonition-title">Note</p>
+<p class="last">This feature must only be used before a conventional Sphinx section
 header.</p>
 </div>
 <div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This feature is in active development and may change without warning.</p>
+<p class="first admonition-title">Warning</p>
+<p class="last">This feature is in active development and may change without warning.</p>
 </div>
 </div>
 </div>
@@ -292,9 +314,9 @@ header.</p>
 <h2>Content Highlighting<a class="headerlink" href="#content-highlighting" title="Permalink to this headline">¶</a></h2>
 <p>Some common reST inline markup samples:</p>
 <ul class="simple">
-<li><p>one asterisk: <code class="docutils literal notranslate"><span class="pre">*text*</span></code> for emphasis (<em>italics</em>),</p></li>
-<li><p>two asterisks: <code class="docutils literal notranslate"><span class="pre">**text**</span></code> for strong emphasis (<strong>boldface</strong>), and</p></li>
-<li><p>two backquotes: <code class="docutils literal notranslate"><span class="pre">``text``</span></code> for <code class="docutils literal notranslate"><span class="pre">inline</span> <span class="pre">code</span></code> samples.</p></li>
+<li>one asterisk: <code class="docutils literal notranslate"><span class="pre">*text*</span></code> for emphasis (<em>italics</em>),</li>
+<li>two asterisks: <code class="docutils literal notranslate"><span class="pre">**text**</span></code> for strong emphasis (<strong>boldface</strong>), and</li>
+<li>two backquotes: <code class="docutils literal notranslate"><span class="pre">``text``</span></code> for <code class="docutils literal notranslate"><span class="pre">inline</span> <span class="pre">code</span></code> samples.</li>
 </ul>
 <p>ReST rules for inline markup try to be forgiving to account for common
 cases of using these marks.  For example using an asterisk to indicate
@@ -361,12 +383,12 @@ clean
 <p>Would be rendered as:</p>
 <blockquote>
 <div><p>The Makefile has targets that include:</p>
-<dl class="simple">
-<dt>html</dt><dd><p>Build the HTML output for the project</p>
-</dd>
-<dt>clean</dt><dd><p>Remove all generated output, restoring the folders to a
-clean state.</p>
-</dd>
+<dl class="docutils">
+<dt>html</dt>
+<dd>Build the HTML output for the project</dd>
+<dt>clean</dt>
+<dd>Remove all generated output, restoring the folders to a
+clean state.</dd>
 </dl>
 </div></blockquote>
 </div>
@@ -376,7 +398,7 @@ clean state.</p>
 you can indicate the list items should be rendered in multiple columns
 with a special <code class="docutils literal notranslate"><span class="pre">hlist</span></code> directive:</p>
 <div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">hlist</span><span class="p">::</span>
-   <span class="nc">:columns:</span> <span class="nf">3</span>
+   <span class="nc">:columns:</span> 3
 
    <span class="m">*</span> A list of
    <span class="m">*</span> short items
@@ -391,19 +413,19 @@ with a special <code class="docutils literal notranslate"><span class="pre">hlis
 </div>
 <p>This would be rendered as:</p>
 <table class="hlist"><tr><td><ul class="simple">
-<li><p>A list of</p></li>
-<li><p>short items</p></li>
-<li><p>that should be</p></li>
+<li>A list of</li>
+<li>short items</li>
+<li>that should be</li>
 </ul>
 </td><td><ul class="simple">
-<li><p>displayed</p></li>
-<li><p>horizontally</p></li>
-<li><p>so it doesn’t</p></li>
+<li>displayed</li>
+<li>horizontally</li>
+<li>so it doesn’t</li>
 </ul>
 </td><td><ul class="simple">
-<li><p>use up so much</p></li>
-<li><p>space on</p></li>
-<li><p>the page</p></li>
+<li>use up so much</li>
+<li>space on</li>
+<li>the page</li>
 </ul>
 </td></tr></table>
 <p>Note the optional <code class="docutils literal notranslate"><span class="pre">:columns:</span></code> parameter (default is two columns), and
@@ -430,8 +452,7 @@ notation:</p>
 </div>
 <p>which renders as,</p>
 <blockquote>
-<div><p>refer to the <a class="reference internal" href="#internal-linking">internal-linking</a> page</p>
-</div></blockquote>
+<div>refer to the <a class="reference internal" href="#internal-linking">internal-linking</a> page</div></blockquote>
 <p>Note the use of a trailing
 underscore to indicate an outbound link. In this example, the label was
 added immediately before a heading, so the text that’s displayed is the
@@ -497,6 +518,10 @@ defined in the file <code class="docutils literal notranslate"><span class="pre"
 <span class="p">..</span> <span class="nt">_project repo:</span> https://github.com/ros-planning/navigation2
 
 <span class="p">..</span> <span class="nt">_documentation repo:</span> https://github.com/ros-planning/navigation2/doc
+
+<span class="p">..</span> <span class="nt">_nav2_bringup pkg:</span> https://github.com/ros-planning/navigation2/tree/master/nav2_bringup/bringup
+
+<span class="p">..</span> <span class="nt">_nav2_params file:</span> https://github.com/ros-planning/navigation2/blob/master/nav2_bringup/bringup/params/nav2_params.yaml
 
 <span class="p">..</span> <span class="nt">_documentation site:</span> https://rosplanning.github.io/navigation2/
 
@@ -626,7 +651,7 @@ are an allowed exception.</p>
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>

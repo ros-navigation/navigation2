@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Use Docker to build this Sphinx project" href="docker-build.html" />
@@ -113,6 +121,20 @@
 <li class="toctree-l4"><a class="reference internal" href="../tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tech/important-sphinx-files.html">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -229,9 +251,9 @@ your workstation.</p>
 their respective websites.</p>
 <p>The project’s documentation contains the following items:</p>
 <ul class="simple">
-<li><p>ReStructuredText source files used to generate documentation found at the
+<li>ReStructuredText source files used to generate documentation found at the
 <a class="reference external" href="https://rosplanning.github.io/navigation2/">documentation site</a>. All of the reStructuredText sources
-are found in the <a class="reference external" href="https://github.com/ros-planning/navigation2/doc">documentation repo</a>.</p></li>
+are found in the <a class="reference external" href="https://github.com/ros-planning/navigation2/doc">documentation repo</a>.</li>
 </ul>
 <p>The reStructuredText files are processed by the Sphinx documentation system,
 and make use of the breathe extension for including the doxygen-generated API
@@ -241,12 +263,12 @@ material.</p>
 <h2>Set up the documentation working folders<a class="headerlink" href="#set-up-the-documentation-working-folders" title="Permalink to this headline">¶</a></h2>
 <p>You’ll need git installed to get the working folders set up:</p>
 <ul>
-<li><p>For an Ubuntu development system use:</p>
+<li><p class="first">For an Ubuntu development system use:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install git
 </pre></div>
 </div>
 </li>
-<li><p>For a Fedora development system use</p>
+<li><p class="first">For a Fedora development system use</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo dnf install git
 </pre></div>
 </div>
@@ -264,14 +286,14 @@ publishing area that will come later.  It’s best if the <code class="docutils 
 folder is an ssh clone of your personal fork of the upstream project
 repos (though https clones work too):</p>
 <ol class="arabic">
-<li><p>Use your browser to visit the <a class="reference external" href="https://github.com/ros-planning/navigation2/doc">documentation repo</a> and make a
+<li><p class="first">Use your browser to visit the <a class="reference external" href="https://github.com/ros-planning/navigation2/doc">documentation repo</a> and make a
 fork of the repo to your personal GitHub account.</p>
 <img alt="../../../_images/fork-docs.png" src="../../../_images/fork-docs.png" />
 </li>
-<li><p>Copy the clone URL of the GitHub repo:</p>
+<li><p class="first">Copy the clone URL of the GitHub repo:</p>
 <img alt="../../../_images/copy-clone-url.png" src="../../../_images/copy-clone-url.png" />
 </li>
-<li><p>At a command prompt, create the working folder and clone
+<li><p class="first">At a command prompt, create the working folder and clone
 the <a class="reference external" href="https://github.com/ros-planning/navigation2/doc">documentation repo</a> to your local computer (and if you
 have publishing rights, the <a class="reference external" href="https://rosplanning.github.io/navigation2/">documentation site</a>). If you don’t have
 publishing rights, you’ll still be able to generate the docs locally, but
@@ -282,13 +304,13 @@ git clone git@github.com:&lt;github-username&gt;/&lt;projectname&gt;/&lt;documen
 </pre></div>
 </div>
 </li>
-<li><p>For the cloned local repos, tell git about the upstream repo:</p>
+<li><p class="first">For the cloned local repos, tell git about the upstream repo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> doc-repo
 git remote add upstream git@github.com:&lt;projectname&gt;/&lt;document-repo&gt;.git
 </pre></div>
 </div>
 </li>
-<li><p>If you haven’t done so already, be sure to configure git with your name
+<li><p class="first">If you haven’t done so already, be sure to configure git with your name
 and email address for the signed-off-by line in your commit messages:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git config --global user.name <span class="s2">&quot;David Developer&quot;</span>
 git config --global user.email <span class="s2">&quot;david.developer@company.com&quot;</span>
@@ -301,33 +323,33 @@ git config --global user.email <span class="s2">&quot;david.developer@company.co
 <span id="install-doc-gen"></span><h2>Installing the documentation tools<a class="headerlink" href="#installing-the-documentation-tools" title="Permalink to this headline">¶</a></h2>
 <p>Our documentation processing has been tested to run with:</p>
 <ul class="simple">
-<li><p>Python 3.6.3</p></li>
-<li><p>Doxygen version 1.8.13</p></li>
-<li><p>Sphinx version 1.7.5</p></li>
-<li><p>Breathe version 4.9.1</p></li>
-<li><p>docutils version 0.14</p></li>
-<li><p>sphinx_rtd_theme version 0.4.0</p></li>
+<li>Python 3.6.3</li>
+<li>Doxygen version 1.8.13</li>
+<li>Sphinx version 1.7.5</li>
+<li>Breathe version 4.9.1</li>
+<li>docutils version 0.14</li>
+<li>sphinx_rtd_theme version 0.4.0</li>
 </ul>
 <p>The Navigation 2 makes use of additional Sphinx extensions used for
 creating drawings:</p>
 <ul class="simple">
-<li><p>sphinxcontrib-plantuml</p></li>
-<li><p>sphinx.ext.graphviz  (included with Sphinx)</p></li>
+<li>sphinxcontrib-plantuml</li>
+<li>sphinx.ext.graphviz  (included with Sphinx)</li>
 </ul>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The plantuml extension uses Java to render the uml drawing
+<p class="first admonition-title">Note</p>
+<p class="last">The plantuml extension uses Java to render the uml drawing
 syntax into an image. You’ll need to have a Java runtime environment
 (JRE) installed when generating documentation.</p>
 </div>
 <p>Depending on your Linux version, install the needed tools:</p>
 <ul>
-<li><p>For Ubuntu use:</p>
+<li><p class="first">For Ubuntu use:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install doxygen python3-pip python3-wheel make default-jre
 </pre></div>
 </div>
 </li>
-<li><p>For Fedora use:</p>
+<li><p class="first">For Fedora use:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo dnf install doxygen python3-pip python3-wheel make default-jre
 </pre></div>
 </div>
@@ -386,11 +408,11 @@ locally generated html before publishing.</p>
 <div class="section" id="basic-editing-and-making-the-template-your-own">
 <h2>Basic editing and making the template your own<a class="headerlink" href="#basic-editing-and-making-the-template-your-own" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p>TOC trees need to be in the index.rst at each level to define the
+<li><p class="first">TOC trees need to be in the index.rst at each level to define the
 site structure. For example, this is the TOC tree used to generate
 this site:</p>
 <div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">toctree</span><span class="p">::</span>
-   <span class="nc">:maxdepth:</span> <span class="nf">1</span>
+   <span class="nc">:maxdepth:</span> 1
 
    introduction/index.rst
    getting_started/index.rst
@@ -400,11 +422,13 @@ this site:</p>
 </pre></div>
 </div>
 </li>
-<li><p>Changes to theme can be made by editing <code class="docutils literal notranslate"><span class="pre">static/custom.css</span></code>.</p></li>
-<li><p>No matter where the images are before the build, after the build all the
+<li><p class="first">Changes to theme can be made by editing <code class="docutils literal notranslate"><span class="pre">static/custom.css</span></code>.</p>
+</li>
+<li><p class="first">No matter where the images are before the build, after the build all the
 images are collected in one directory: all the image filenames must be
-unique.</p></li>
-<li><p>Modify <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> to reflect your project:</p>
+unique.</p>
+</li>
+<li><p class="first">Modify <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> to reflect your project:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># General information about the project.</span>
 <span class="nv">project</span> <span class="o">=</span> u<span class="s1">&#39;&lt;project name&gt;&#39;</span>
 <span class="nv">copyright</span> <span class="o">=</span> u<span class="s1">&#39;&lt;year&gt;, &lt;project name&gt;&#39;</span>
@@ -412,7 +436,7 @@ unique.</p></li>
 </pre></div>
 </div>
 </li>
-<li><p>Modify <code class="docutils literal notranslate"><span class="pre">substitutions.txt</span></code> to reflect your project:</p>
+<li><p class="first">Modify <code class="docutils literal notranslate"><span class="pre">substitutions.txt</span></code> to reflect your project:</p>
 <div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|PN|</span> <span class="ow">replace</span><span class="p">::</span> <span class="nt">&lt;project name&gt;</span>
 
 <span class="p">..</span> <span class="nt">|LPN|</span> <span class="ow">replace</span><span class="p">::</span> <span class="nt">&lt;long project name&gt;</span>
@@ -427,14 +451,20 @@ unique.</p></li>
 </pre></div>
 </div>
 </li>
-<li><p>Edit <code class="docutils literal notranslate"><span class="pre">LICENSE</span></code> to reflect your project name and requirements</p></li>
-<li><p>Make any edits to <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> that might be needed to facilitate the
+<li><p class="first">Edit <code class="docutils literal notranslate"><span class="pre">LICENSE</span></code> to reflect your project name and requirements</p>
+</li>
+<li><p class="first">Make any edits to <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> that might be needed to facilitate the
 build or change the name of your local instantiation of the github.io
-website repository directory.</p></li>
-<li><p>Replace logos and favicon in <code class="docutils literal notranslate"><span class="pre">/images</span></code> with your project logos</p></li>
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code> to remove any previously generated HTML.</p></li>
-<li><p>Regenerate the HTML with Sphinx with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code>.</p></li>
-<li><p>Push the updated content to the github.io repo with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">publish</span></code>.</p></li>
+website repository directory.</p>
+</li>
+<li><p class="first">Replace logos and favicon in <code class="docutils literal notranslate"><span class="pre">/images</span></code> with your project logos</p>
+</li>
+<li><p class="first">Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code> to remove any previously generated HTML.</p>
+</li>
+<li><p class="first">Regenerate the HTML with Sphinx with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code>.</p>
+</li>
+<li><p class="first">Push the updated content to the github.io repo with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">publish</span></code>.</p>
+</li>
 </ol>
 </div>
 </div>
@@ -452,7 +482,7 @@ website repository directory.</p></li>
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>

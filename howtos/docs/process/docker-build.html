@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Examples of Generated Images" href="../tech/GeneratedImagesExamples.html" />
@@ -113,6 +121,20 @@
 <li class="toctree-l4"><a class="reference internal" href="../tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tech/important-sphinx-files.html">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -216,13 +238,13 @@
   <div class="section" id="use-docker-to-build-this-sphinx-project">
 <span id="docker-build"></span><h1>Use Docker to build this Sphinx project<a class="headerlink" href="#use-docker-to-build-this-sphinx-project" title="Permalink to this headline">¶</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This is a work in progress and will only work if Docker is already
+<p class="first admonition-title">Warning</p>
+<p class="last">This is a work in progress and will only work if Docker is already
 installed.</p>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Permission to share the C drive must be reset every time you change
+<p class="first admonition-title">Note</p>
+<p class="last">Permission to share the C drive must be reset every time you change
 your windows password.</p>
 </div>
 <p>If you’d like to build the documentation but don’t want to install all of the
@@ -237,11 +259,11 @@ docker build -t sphinx-builder . <span class="c1">#Windows Powershell</span>
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">sphinx-builder</span></code> is the name of the image that gets created.</p>
+<p class="first admonition-title">Note</p>
+<p class="last"><code class="docutils literal notranslate"><span class="pre">sphinx-builder</span></code> is the name of the image that gets created.</p>
 </div>
 <p>Once the image has successfully built (docker not being configured for proxy
-is a common gotcha <a class="footnote-reference brackets" href="#f1" id="id1">1</a> <a class="footnote-reference brackets" href="#f2" id="id2">2</a>), you can build the project. You’ll need to be in the same
+is a common gotcha <a class="footnote-reference" href="#f1" id="id1">[1]</a> <a class="footnote-reference" href="#f2" id="id2">[2]</a>), you can build the project. You’ll need to be in the same
 directory as the <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code> to successfully build the documentation, so
 do that first, then run the following command (remember sphinx-builder is the
 name we gave the image in the previous command, so if you named it something
@@ -257,14 +279,18 @@ command maps (-v) the <code class="docutils literal notranslate"><span class="pr
 <strong class="command">make html</strong> command to build the documentation. The <code class="docutils literal notranslate"><span class="pre">--rm</span></code> option
 ensures that docker cleans up after it’s finished by deleting the container.</p>
 <p class="rubric">Footnotes</p>
-<dl class="footnote brackets">
-<dt class="label" id="f1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
-<dd><p>Configuring proxy for Docker for Windows: <a class="reference external" href="https://docs.docker.com/docker-for-windows/#proxies">https://docs.docker.com/docker-for-windows/#proxies</a></p>
-</dd>
-<dt class="label" id="f2"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
-<dd><p>Configuring proxy for DockerCE in Linux: <a class="reference external" href="https://docs.docker.com/config/daemon/systemd/#httphttps-proxy">https://docs.docker.com/config/daemon/systemd/#httphttps-proxy</a></p>
-</dd>
-</dl>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Configuring proxy for Docker for Windows: <a class="reference external" href="https://docs.docker.com/docker-for-windows/#proxies">https://docs.docker.com/docker-for-windows/#proxies</a></td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Configuring proxy for DockerCE in Linux: <a class="reference external" href="https://docs.docker.com/config/daemon/systemd/#httphttps-proxy">https://docs.docker.com/config/daemon/systemd/#httphttps-proxy</a></td></tr>
+</tbody>
+</table>
 </div>
 
 
@@ -280,7 +306,7 @@ ensures that docker cleans up after it’s finished by deleting the container.</
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>

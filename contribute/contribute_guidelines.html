@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Documentation Guidelines" href="doc_guidelines.html" />
@@ -113,6 +121,20 @@
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../howtos/docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../howtos/tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../howtos/tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -288,8 +310,8 @@ to add the sign-off you can also amend a previous commit with the sign-off by
 running <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">--amend</span> <span class="pre">-s</span></code>. If you’ve pushed your changes to GitHub
 already you’ll need to force push your branch after this with <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">-f</span></code>.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The name and email address of the account you use to submit your PR must
+<p class="first admonition-title">Note</p>
+<p class="last">The name and email address of the account you use to submit your PR must
 match the name and email address on the <code class="docutils literal notranslate"><span class="pre">Signed-off-by</span></code> line in
 your commit message.</p>
 </div>
@@ -322,7 +344,7 @@ on <a class="reference external" href="https://github.com">https://github.com</a
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>

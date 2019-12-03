@@ -22,11 +22,20 @@
   <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -35,7 +44,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Pandocs Conversion Tutorial" href="pandocs-conversion.html" />
@@ -113,6 +121,20 @@
 <li class="toctree-l4"><a class="reference internal" href="GeneratedImagesExamples.html">Examples of Generated Images</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">Important Sphinx files</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tunning/index.html">Tunning Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tunning/params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#acml">ACML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tunning/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
 </ul>
 </li>
 </ul>
@@ -219,36 +241,42 @@
 <div class="content-collapse section" id="conf-py">
 <h2>conf.py<a class="headerlink" href="#conf-py" title="Permalink to this headline">¶</a></h2>
 <p>Configure Sphinx variables</p>
-<dl>
-<dt>suffix</dt><dd><p>Set the kind of files to process (.rst or .md).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">source_suffix</span> <span class="o">=</span> <span class="s1">&#39;.rst&#39;</span>
+<dl class="docutils">
+<dt>suffix</dt>
+<dd><p class="first">Set the kind of files to process (.rst or .md).</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">source_suffix</span> <span class="o">=</span> <span class="s1">&#39;.rst&#39;</span>
 </pre></div>
 </div>
 </dd>
-<dt>master document</dt><dd><p>Set the file to use as the top level document for the project (relative to conf.py).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">master_doc</span> <span class="o">=</span> <span class="s1">&#39;index&#39;</span>
+<dt>master document</dt>
+<dd><p class="first">Set the file to use as the top level document for the project (relative to conf.py).</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">master_doc</span> <span class="o">=</span> <span class="s1">&#39;index&#39;</span>
 </pre></div>
 </div>
 </dd>
-<dt>general info</dt><dd><p>General information about the project.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;Open source documentation template&#39;</span>
+<dt>general info</dt>
+<dd><p class="first">General information about the project.</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;Open source documentation template&#39;</span>
 <span class="n">copyright</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;2018, TCS Documentation Template&#39;</span>
 <span class="n">author</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;TCS developers&#39;</span>
 </pre></div>
 </div>
 </dd>
-<dt>extensions</dt><dd><p>Add functionality to your Sphinx build.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;breathe&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinx.ext.graphviz&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinxcontrib.plantuml&#39;</span><span class="p">]</span>
+<dt>extensions</dt>
+<dd><p class="first">Add functionality to your Sphinx build.</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;breathe&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinx.ext.graphviz&#39;</span><span class="p">,</span> <span class="s1">&#39;sphinxcontrib.plantuml&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </dd>
-<dt>exclude patterns</dt><dd><p>Exclude directories from Sphinx processing by adding them to a list.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">exclude_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_build&#39;</span><span class="p">,</span><span class="s1">&#39;_themes&#39;</span><span class="p">,</span><span class="s1">&#39;scripts&#39;</span> <span class="p">]</span>
+<dt>exclude patterns</dt>
+<dd><p class="first">Exclude directories from Sphinx processing by adding them to a list.</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">exclude_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_build&#39;</span><span class="p">,</span><span class="s1">&#39;_themes&#39;</span><span class="p">,</span><span class="s1">&#39;scripts&#39;</span> <span class="p">]</span>
 </pre></div>
 </div>
 </dd>
-<dt>theme</dt><dd><p>Use one of the provided Sphinx themes or a custom one.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_theme_path</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_themes&#39;</span><span class="p">]</span>
+<dt>theme</dt>
+<dd><p class="first">Use one of the provided Sphinx themes or a custom one.</p>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_theme_path</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_themes&#39;</span><span class="p">]</span>
 <span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;otc_tcs_sphinx_theme&#39;</span>
 </pre></div>
 </div>
@@ -260,29 +288,32 @@
 <p>Add content to this file when you want it to appear at the end of or be
 accessed by every page of the project. We use it to set global string
 replacements and links.</p>
-<dl>
-<dt>replace string</dt><dd><p>Useful when you want to create a shorthand version of a long string.</p>
-<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|PN|</span> <span class="ow">replace</span><span class="p">::</span> project name
+<dl class="docutils">
+<dt>replace string</dt>
+<dd><p class="first">Useful when you want to create a shorthand version of a long string.</p>
+<div class="last highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|PN|</span> <span class="ow">replace</span><span class="p">::</span> project name
 </pre></div>
 </div>
 </dd>
-<dt>global link</dt><dd><p>Use these when you will be re-using a link throughout the project.</p>
-<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_project website:</span> https://rosplanning.github.io/navigation2/
+<dt>global link</dt>
+<dd><p class="first">Use these when you will be re-using a link throughout the project.</p>
+<div class="last highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">_project website:</span> https://rosplanning.github.io/navigation2/
 </pre></div>
 </div>
 </dd>
-<dt>unicode</dt><dd><p>You can also create shortcuts for commonly used unicode characters.</p>
-<div class="highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|copy|</span>   <span class="ow">unicode</span><span class="p">::</span> U+000A9 .. COPYRIGHT SIGN
+<dt>unicode</dt>
+<dd><p class="first">You can also create shortcuts for commonly used unicode characters.</p>
+<div class="last highlight-rest notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="nt">|copy|</span>   <span class="ow">unicode</span><span class="p">::</span> U+000A9 .. COPYRIGHT SIGN
     <span class="nc">:ltrim:</span>
 </pre></div>
 </div>
 </dd>
 </dl>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
+<p class="first admonition-title">Note</p>
 <p>We implmented this by using an <code class="docutils literal notranslate"><span class="pre">include</span></code> directive in
 the <code class="docutils literal notranslate"><span class="pre">rst_epilog</span></code> variable in <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code> like this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rst_epilog</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rst_epilog</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">.. include:: /substitutions.txt</span>
 <span class="s2">&quot;&quot;&quot;</span>
 </pre></div>
@@ -304,7 +335,7 @@ the <code class="docutils literal notranslate"><span class="pre">rst_epilog</spa
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Oct 15, 2019.
+        Last updated on Dec 03, 2019.
       </span>
 
     </p>
