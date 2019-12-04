@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PLANNER__PLANNER_SERVER_HPP_
-#define NAV2_PLANNER__PLANNER_SERVER_HPP_
+#ifndef NAV2_PLANNER__PLANNE_SERVER_HPP_
+#define NAV2_PLANNER__PLANNE_SERVER_HPP_
 
 #include <chrono>
 #include <string>
@@ -135,4 +135,4 @@ protected:
 
 }  // namespace nav2_planner
 
-#endif  // NAV2_PLANNER__PLANNER_SERVER_HPP_
+#endif  // NAV2_PLANNER__PLANNE_SERVER_HPP_
