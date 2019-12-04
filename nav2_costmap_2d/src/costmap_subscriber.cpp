@@ -99,7 +99,6 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
   if (!costmap_received_) {
     throw std::runtime_error("Costmap is not available");
   }
-  toCostmap2D();
   return costmap_;
 }
 
@@ -143,6 +142,7 @@ void CostmapSubscriber::toCostmap2D()
           master_array[index] = interpretValue(costmap_update_msg_->data[di++]);
         }
       }
+      has_update_ = false;
     } else {
       if (costmap_ == nullptr) {
         costmap_ = std::make_shared<Costmap2D>(
@@ -199,6 +199,7 @@ void CostmapSubscriber::costmapRawCallback(const nav2_msgs::msg::Costmap::Shared
   if (!costmap_received_) {
     costmap_received_ = true;
   }
+  toCostmap2D();
 }
 
 void CostmapSubscriber::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
@@ -207,6 +208,7 @@ void CostmapSubscriber::costmapCallback(const nav_msgs::msg::OccupancyGrid::Shar
   if (!costmap_received_) {
     costmap_received_ = true;
   }
+  toCostmap2D();
 }
 
 void CostmapSubscriber::costmapUpdateCallback(
@@ -217,6 +219,7 @@ void CostmapSubscriber::costmapUpdateCallback(
     costmap_received_ = true;
   }
   has_update_ = true;
+  toCostmap2D();
 }
 
 }  // namespace nav2_costmap_2d
