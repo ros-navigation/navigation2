@@ -56,7 +56,7 @@ children till the second one succeeds. Then it will tick the first three till th
 third succeeds and so on, till there are no more children. This will return RUNNING,
 till the last child succeeds, at which time it also returns SUCCESS. If any child
 returns FAILURE, all nodes are halted and this node returns FAILURE.
-* RoundRobin: This is a custom control node introduced to the Behavior Tree. When this node is ticked, it will tick the first child until it returns SUCCESS or FAILURE. If the child returns either SUCCESS or FAILURE, it will tick its next child. Once the node reaches the last child, it will restart ticking from the first child.
+* RoundRobin: This is a custom control node introduced to the Behavior Tree. When this node is ticked, it will tick the first child until it returns SUCCESS or FAILURE. If the child returns either SUCCESS or FAILURE, it will tick its next child. Once the node reaches the last child, it will restart ticking from the first child. The main difference between the RoundRobin node versus the Sequence node is that when a child returns FAILURE the RoundRobin node will tick the next child but in the Sequence node, it will return FAILURE.
 
 * Recovery: This is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
 
