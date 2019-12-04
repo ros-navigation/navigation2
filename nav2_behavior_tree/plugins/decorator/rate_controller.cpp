@@ -72,8 +72,12 @@ inline BT::NodeStatus RateController::tick()
   typedef std::chrono::duration<float> float_seconds;
   auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
 
-  // If we've exceed the specified period, execute the child node
-  if (first_time || seconds.count() >= period_) {
+  // The child gets ticked the first time through and any time the period has
+  // expired. In addition, once the child begins to run, it is ticked each time
+  // 'til completion
+  if (first_time || (child_node_->status() == BT::NodeStatus::RUNNING) ||
+    seconds.count() >= period_)
+  {
     first_time = false;
     const BT::NodeStatus child_state = child_node_->executeTick();
 
