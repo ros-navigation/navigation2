@@ -42,14 +42,13 @@ int main(int argc, char ** argv)
 
   // The system should now be active
   int retries = 0;
-  while ((client.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE)
-        && (retries < 10))
+  while ((client.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
+    (retries < 10))
   {
     std::this_thread::sleep_for(2s);
     retries++;
   }
-  if (retries == 10)
-  {
+  if (retries == 10) {
     // the system isn't active
     RCLCPP_ERROR(rclcpp::get_logger("test_updown"), "System startup failed");
     test_passed = false;
@@ -58,12 +57,11 @@ int main(int argc, char ** argv)
   // Shut down the nav2 system, bringing it to the FINALIZED state
   client.shutdown();
 
-  if (test_passed)
-  {
-    RCLCPP_INFO(rclcpp::get_logger("test_updown"), 
+  if (test_passed) {
+    RCLCPP_INFO(rclcpp::get_logger("test_updown"),
       "****************************************************  TEST PASSED!");
   } else {
-    RCLCPP_INFO(rclcpp::get_logger("test_updown"), 
+    RCLCPP_INFO(rclcpp::get_logger("test_updown"),
       "****************************************************  TEST FAILED!");
   }
   rclcpp::shutdown();
