@@ -24,19 +24,13 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     # Configuration parameters for the launch
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
-
-    declare_map_cmd = launch.actions.DeclareLaunchArgument(
-        'map',
-        default_value=[launch.substitutions.ThisLaunchFileDir(),
-                       '/../../maps/map_circular.yaml'],
-        description='Full path to map file to load')
-
     launch_dir = os.path.join(
         get_package_share_directory('nav2_bringup'), 'launch')
 
-    # Specify the actions
+    map_yaml_file = os.path.join(
+        get_package_share_directory('nav2_system_tests'), 'maps/map_circular.yaml')
 
+    # Specify the actions
     start_tf_cmd_1 = Node(
             package='tf2_ros',
             node_executable='static_transform_publisher',
@@ -84,7 +78,6 @@ def generate_launch_description():
     # Compose the launch description
 
     ld = launch.LaunchDescription()
-    ld.add_action(declare_map_cmd)
 
     ld.add_action(start_tf_cmd_1)
     ld.add_action(start_tf_cmd_2)
