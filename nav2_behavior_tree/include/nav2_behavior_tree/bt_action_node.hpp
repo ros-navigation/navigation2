@@ -135,9 +135,9 @@ new_goal_received:
         goto new_goal_received;
       }
 
-        // Yield to any other CoroActionNodes (coroutines)
-        setStatusRunningAndYield();
-        rclcpp::spin_some(node_);
+      // Yield to any other CoroActionNodes (coroutines)
+      setStatusRunningAndYield();
+      rclcpp::spin_some(node_);
     }
 
     switch (result_.code) {
