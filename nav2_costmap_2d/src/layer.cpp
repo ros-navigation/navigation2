@@ -50,7 +50,7 @@ Layer::initialize(
   nav2_util::LifecycleNode::SharedPtr node,
   rclcpp::Node::SharedPtr client_node,
   rclcpp::Node::SharedPtr rclcpp_node,
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber)
+  nav2_util::ParameterEventsSubscriber * param_subscriber)
 {
   layered_costmap_ = parent;
   name_ = name;
