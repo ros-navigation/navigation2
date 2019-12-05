@@ -19,6 +19,7 @@
 #include <utility>
 #include <unordered_map>
 #include <vector>
+#include <list>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
