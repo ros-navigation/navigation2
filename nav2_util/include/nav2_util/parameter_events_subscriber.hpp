@@ -30,7 +30,7 @@ struct ParameterEventsCallbackHandle
 {
   RCLCPP_SMART_PTR_DEFINITIONS(ParameterEventsCallbackHandle)
 
-  using ParameterEventsCallbackType = std::function<void (const rclcpp::Parameter &)>;
+  using ParameterEventsCallbackType = std::function<void(const rclcpp::Parameter &)>;
 
   std::string parameter_name;
   std::string node_name;
@@ -127,7 +127,7 @@ public:
   /// Get a rclcpp::Parameter from parameter event, return true if parameter name & node in event.
   /**
    * If a node_name is not provided, defaults to the current node.
-   *
+   * 
    * \param[in] event Event msg to be inspected.
    * \param[out] parameter Reference to rclcpp::Parameter to be assigned.
    * \param[in] parameter_name Name of parameter.
@@ -144,11 +144,11 @@ public:
   /// Get a rclcpp::Parameter from parameter event
   /**
    * If a node_name is not provided, defaults to the current node.
-   *
+   * 
    * The user is responsible to check if the returned parameter has been properly assigned.
-   * By default, if the requested parameter is not found in the event, the returned parameter
+   * By default, if the requested parameter is not found in the event, the returned parameter 
    * has parameter value of type rclcpp::PARAMETER_NOT_SET.
-   *
+   * 
    * \param[in] event Event msg to be inspected.
    * \param[in] parameter_name Name of parameter.
    * \param[in] node_name Name of node which hosts the parameter.
