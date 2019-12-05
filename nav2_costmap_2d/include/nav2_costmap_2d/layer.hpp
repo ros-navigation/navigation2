@@ -155,8 +155,6 @@ protected:
   // Names of the parameters declared on the ROS node
   std::unordered_set<std::string> local_params_;
 
-  std::recursive_mutex mutex_;
-
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;
 };
