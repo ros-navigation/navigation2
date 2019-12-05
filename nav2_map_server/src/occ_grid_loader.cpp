@@ -133,7 +133,7 @@ bool OccGridLoader::loadMapFromYaml(
 {
   if (yaml_file.empty()) {
     RCLCPP_ERROR(node_->get_logger(), "YAML file name is empty, can't load!");
-    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_ID_DOES_NOT_EXIST;
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
     return false;
   }
   RCLCPP_INFO(node_->get_logger(), "Loading yaml file: %s", yaml_file.c_str());
@@ -206,15 +206,8 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
         return;
       }
       RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling LoadMap request");
-      // Check if map_id is a file
-      if (request->type != nav2_msgs::srv::LoadMap::Request::TYPE_FILE) {
-        RCLCPP_ERROR(node_->get_logger(),
-          "OccGridLoader: unsupported FILE_TYPE in request, can't load map");
-        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_TYPE;
-        return;
-      }
       // Load from file
-      if (loadMapFromYaml(request->map_id, response)) {
+      if (loadMapFromYaml(request->map_url, response)) {
         response->map = *msg_;
         response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
         occ_pub_->publish(*msg_);  // publish new map
