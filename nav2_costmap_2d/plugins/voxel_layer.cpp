@@ -95,63 +95,6 @@ void VoxelLayer::onInitialize()
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
-  setParamCallbacks();
-}
-
-void
-VoxelLayer::setParamCallbacks()
-{
-  if (param_subscriber_) {
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".enabled",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        enabled_ = p.get_value<bool>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".footprint_clearing_enabled",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        footprint_clearing_enabled_ = p.get_value<bool>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".max_obstacle_height",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        max_obstacle_height_ = p.get_value<double>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".combination_method",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        combination_method_ = p.get_value<int>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".z_voxels",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        size_z_ = p.get_value<int>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".origin_z",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        origin_z_ = p.get_value<double>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".z_resolution",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        z_resolution_ = p.get_value<double>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".unknown_threshold",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        unknown_threshold_ = p.get_value<int>() + (VOXEL_BITS - size_z_);
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".mark_threshold",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        mark_threshold_ = p.get_value<int>();
-      }));
-  }
 }
 
 VoxelLayer::~VoxelLayer()

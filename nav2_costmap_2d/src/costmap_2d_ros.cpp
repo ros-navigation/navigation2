@@ -137,8 +137,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  param_subscriber_ = std::make_shared<nav2_util::ParameterEventsSubscriber>(shared_from_this());
-
   // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names_[i].c_str());
@@ -148,7 +146,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
-      shared_from_this(), client_node_, rclcpp_node_, param_subscriber_);
+      shared_from_this(), client_node_, rclcpp_node_);
 
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
@@ -177,8 +175,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
 
-  param_subscriber_->set_event_callback(
-    std::bind(&Costmap2DROS::paramEventCallback, this, std::placeholders::_1));
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -281,72 +277,6 @@ Costmap2DROS::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-Costmap2DROS::paramEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & /*event*/)
-{
-  if (map_update_thread_ != NULL) {
-    map_update_thread_shutdown_ = true;
-    map_update_thread_->join();
-    delete map_update_thread_;
-  }
-  map_update_thread_shutdown_ = false;
-
-  get_parameter("transform_tolerance", transform_tolerance_);
-  get_parameter("map_update_frequency", map_update_frequency_);
-  get_parameter("map_publish_frequency", map_publish_frequency_);
-  if (map_publish_frequency_ > 0) {
-    publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
-  } else {
-    publish_cycle_ = rclcpp::Duration(-1);
-  }
-
-  get_parameter("width", map_width_meters_);
-  get_parameter("height", map_height_meters_);
-  get_parameter("resolution", resolution_);
-  get_parameter("origin_x", origin_x_);
-  get_parameter("origin_y", origin_y_);
-  if (!layered_costmap_->isSizeLocked()) {
-    layered_costmap_->resizeMap((unsigned int)(map_width_meters_ / resolution_),
-      (unsigned int)(map_height_meters_ / resolution_), resolution_, origin_x_, origin_y_);
-  }
-
-  double footprint_padding;
-  get_parameter("footprint_padding", footprint_padding);
-  if (footprint_padding_ != footprint_padding) {
-    footprint_padding_ = footprint_padding;
-    setRobotFootprint(unpadded_footprint_);
-  }
-
-  std::string footprint;
-  double robot_radius;
-  get_parameter("footprint", footprint);
-  get_parameter("robot_radius", robot_radius);
-  if (footprint_ != footprint || robot_radius_ != robot_radius) {
-    footprint_ = footprint;
-    robot_radius_ = robot_radius;
-    use_radius_ = true;
-    if (footprint_ != "" && footprint_ != "[]") {
-      std::vector<geometry_msgs::msg::Point> new_footprint;
-      if (makeFootprintFromString(footprint_, new_footprint)) {
-        use_radius_ = false;
-      } else {
-        RCLCPP_ERROR(
-          get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
-          footprint_.c_str(), robot_radius_);
-      }
-    }
-    if (use_radius_) {
-      setRobotFootprint(makeFootprintFromRadius(robot_radius_));
-    } else {
-      std::vector<geometry_msgs::msg::Point> new_footprint;
-      makeFootprintFromString(footprint_, new_footprint);
-      setRobotFootprint(new_footprint);
-    }
-  }
-  map_update_thread_ = new std::thread(std::bind(
-        &Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 }
 
 void

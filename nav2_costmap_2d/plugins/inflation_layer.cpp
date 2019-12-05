@@ -75,8 +75,6 @@ InflationLayer::InflationLayer()
 void
 InflationLayer::onInitialize()
 {
-  RCLCPP_INFO(node_->get_logger(), "Initializing inflation layer!");
-
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
   declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
@@ -92,44 +90,6 @@ InflationLayer::onInitialize()
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
-  setParamCallbacks();
-}
-
-void
-InflationLayer::setParamCallbacks()
-{
-  if (param_subscriber_) {
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".enabled",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        enabled_ = p.get_value<bool>();
-        need_reinflation_ = true;
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".inflate_unknown",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        inflate_unknown_ = p.get_value<bool>();
-        need_reinflation_ = true;
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".cost_scaling_factor",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        cost_scaling_factor_ = p.get_value<double>();
-        need_reinflation_ = true;
-        computeCaches();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".inflation_radius",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        inflation_radius_ = p.get_value<double>();
-        cell_inflation_radius_ = cellDistance(inflation_radius_);
-        need_reinflation_ = true;
-        computeCaches();
-      }));
-  }
 }
 
 void
