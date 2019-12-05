@@ -52,7 +52,10 @@ publish:
 	rm -fr $(PUBLISHDIR)/*
 	cp -r $(BUILDDIR)/html/* $(PUBLISHDIR)
 	cp scripts/.nojekyll $(PUBLISHDIR)/.nojekyll
-	cd $(PUBLISHDIR) && git add -A && git commit -s -m "[skip ci] publish $(RELEASE)" && git push origin
+	cd $(PUBLISHDIR) && \
+	git add -A && \
+	git diff-index --quiet HEAD || \  #if no changes, don't commit.
+	(git commit -s -m "[skip ci] publish $(RELEASE)" && git push origin)
 
 
 # Catch-all target: route all unknown targets to Sphinx using the new
