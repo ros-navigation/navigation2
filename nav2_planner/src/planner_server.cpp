@@ -206,7 +206,7 @@ PlannerServer::computePlan()
 
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
-      action_server_->terminate_all();
+      action_server_->terminate_current();
       return;
     }
 
