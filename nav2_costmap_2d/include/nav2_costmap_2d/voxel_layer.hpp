@@ -80,9 +80,7 @@ public:
   }
   virtual void matchSize();
   virtual void reset();
-
-protected:
-  virtual void resetMaps();
+  virtual void clearMap();
 
 private:
   void reconfigureCB();

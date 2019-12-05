@@ -588,12 +588,7 @@ ObstacleLayer::activate()
       observation_subscribers_[i]->subscribe();
     }
   }
-
-  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
-    if (observation_buffers_[i]) {
-      observation_buffers_[i]->resetLastUpdated();
-    }
-  }
+  triggerObservationsBufferUpdate();
 }
 void
 ObstacleLayer::deactivate()
@@ -625,6 +620,24 @@ ObstacleLayer::reset()
   current_ = true;
   activate();
   undeclareAllParameters();
+}
+
+void
+ObstacleLayer::triggerObservationsBufferUpdate()
+{
+  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
+    if (observation_buffers_[i]) {
+      observation_buffers_[i]->resetLastUpdated();
+    }
+  }
+}
+
+void
+ObstacleLayer::clearMap()
+{
+  resetMaps();
+  triggerObservationsBufferUpdate();
+  current_ = true;
 }
 
 }  // namespace nav2_costmap_2d

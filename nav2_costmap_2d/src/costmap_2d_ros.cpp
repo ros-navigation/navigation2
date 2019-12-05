@@ -517,7 +517,7 @@ Costmap2DROS::resetLayers()
   for (std::vector<std::shared_ptr<Layer>>::iterator plugin = plugins->begin();
     plugin != plugins->end(); ++plugin)
   {
-    (*plugin)->reset();
+    (*plugin)->clearMap();
   }
 }
 

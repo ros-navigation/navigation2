@@ -112,15 +112,15 @@ void VoxelLayer::reset()
 {
   voxel_pub_->on_deactivate();
   deactivate();
-  resetMaps();
+  clearMap();
   activate();
   undeclareAllParameters();
   voxel_pub_->on_activate();
 }
 
-void VoxelLayer::resetMaps()
+void VoxelLayer::clearMap()
 {
-  Costmap2D::resetMaps();
+  ObstacleLayer::clearMap();
   voxel_grid_.reset();
 }
 

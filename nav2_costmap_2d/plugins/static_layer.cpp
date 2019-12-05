@@ -117,6 +117,12 @@ StaticLayer::reset()
 }
 
 void
+StaticLayer::clearMap()
+{
+  has_updated_data_ = true;
+}
+
+void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
