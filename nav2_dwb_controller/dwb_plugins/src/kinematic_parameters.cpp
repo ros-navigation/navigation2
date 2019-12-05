@@ -52,7 +52,7 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");

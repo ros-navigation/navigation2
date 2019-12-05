@@ -48,7 +48,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
+void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
 {
   SimpleGoalChecker::initialize(nh);
 

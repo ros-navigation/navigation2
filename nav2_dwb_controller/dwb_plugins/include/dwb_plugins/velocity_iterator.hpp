@@ -41,6 +41,7 @@
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace dwb_plugins
 {
@@ -50,7 +51,8 @@ public:
   virtual ~VelocityIterator() {}
   virtual void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicParameters::Ptr kinematics) = 0;
+    KinematicParameters::Ptr kinematics,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) = 0;
   virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) = 0;
   virtual bool hasMoreTwists() = 0;
   virtual nav_2d_msgs::msg::Twist2D nextTwist() = 0;

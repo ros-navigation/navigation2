@@ -47,6 +47,7 @@
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace dwb_core
 {
@@ -94,11 +95,13 @@ public:
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
     std::string & name,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
   {
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
+    param_subcriber_ = param_sub;
     if (!nh_->has_parameter(name_ + ".scale")) {
       nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
     }
@@ -177,6 +180,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
   nav2_util::LifecycleNode::SharedPtr nh_;
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subcriber_;
 };
 
 }  // namespace dwb_core

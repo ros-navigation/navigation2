@@ -50,6 +50,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace dwb_core
 {
@@ -214,6 +215,8 @@ protected:
 
   pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
   std::vector<TrajectoryCritic::Ptr> critics_;
+
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
 };
 
 }  // namespace dwb_core

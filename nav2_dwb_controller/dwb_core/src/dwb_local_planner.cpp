@@ -72,6 +72,8 @@ void DWBLocalPlanner::configure(
   node_ = node;
   costmap_ros_ = costmap_ros;
   tf_ = tf;
+
+  param_subscriber_ = std::make_shared<nav2_util::ParameterEventsSubscriber>(node_);
   declare_parameter_if_not_declared(node_, "critics");
   declare_parameter_if_not_declared(node_, "prune_plan", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(node_, "prune_distance", rclcpp::ParameterValue(1.0));

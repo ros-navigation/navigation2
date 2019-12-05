@@ -41,6 +41,7 @@
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace dwb_core
 {
@@ -71,7 +72,7 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) = 0;
+  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) = 0;
 
   /**
    * @brief Start a new iteration based on the current velocity

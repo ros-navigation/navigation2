@@ -50,7 +50,8 @@ public:
   : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicParameters::Ptr kinematics) override;
+    KinematicParameters::Ptr kinematics,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;

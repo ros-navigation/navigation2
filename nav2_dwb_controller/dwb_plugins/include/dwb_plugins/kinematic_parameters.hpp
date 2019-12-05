@@ -39,6 +39,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace dwb_plugins
 {
@@ -51,7 +52,7 @@ class KinematicParameters
 {
 public:
   KinematicParameters();
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh);
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr);
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}

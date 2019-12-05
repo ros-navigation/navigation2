@@ -43,7 +43,7 @@
 namespace dwb_plugins
 {
 
-void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
 {
   StandardTrajectoryGenerator::initialize(nh);
 

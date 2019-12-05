@@ -50,7 +50,7 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
-void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
+void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
 {
   nav2_util::declare_parameter_if_not_declared(nh,
     "xy_goal_tolerance", rclcpp::ParameterValue(0.25));
