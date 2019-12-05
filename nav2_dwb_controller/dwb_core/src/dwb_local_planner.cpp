@@ -106,8 +106,8 @@ void DWBLocalPlanner::configure(
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
   goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
 
-  traj_generator_->initialize(node_);
-  goal_checker_->initialize(node_);
+  traj_generator_->initialize(node_, param_subscriber_);
+  goal_checker_->initialize(node_, param_subscriber_);
 
   try {
     loadCritics();
@@ -185,7 +185,7 @@ DWBLocalPlanner::loadCritics()
       "Using critic \"%s\" (%s)", plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
     try {
-      plugin->initialize(node_, plugin_name, costmap_ros_);
+      plugin->initialize(node_, plugin_name, costmap_ros_, param_subscriber_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(node_->get_logger(), "Couldn't initialize critic plugin!");
       throw;

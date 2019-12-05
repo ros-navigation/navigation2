@@ -52,7 +52,7 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
+void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");
@@ -92,6 +92,86 @@ void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr &
 
   min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
   max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
+
+  setParamCallbacks(param_sub);
+}
+
+void KinematicParameters::setParamCallbacks(std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber)
+{
+  if (param_subscriber) {
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("min_vel_x",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        min_vel_x_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("min_vel_y",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        min_vel_y_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("max_vel_x",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        max_vel_x_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("max_vel_y",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        max_vel_y_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("max_vel_theta",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        max_vel_theta_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("min_speed_xy",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        min_speed_xy_ = p.get_value<double>();
+        min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("max_speed_xy",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        max_speed_xy_ = p.get_value<double>();
+        max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("min_speed_theta",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        min_speed_theta_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("acc_lim_x",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        acc_lim_x_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("acc_lim_y",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        acc_lim_y_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("acc_lim_theta",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        acc_lim_theta_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("decel_lim_x",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        decel_lim_x_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("decel_lim_y",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        decel_lim_y_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_subscriber->add_parameter_callback("decel_lim_theta",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        decel_lim_theta_ = p.get_value<double>();
+      }));
+  }
 }
 
 bool KinematicParameters::isValidSpeed(double x, double y, double theta)
