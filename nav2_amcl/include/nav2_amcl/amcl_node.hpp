@@ -34,7 +34,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
-#include "nav2_util/parameter_events_subscriber.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -104,10 +103,6 @@ protected:
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
   void waitForTransforms();
-
-  // Parameter Event Subscriber
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
-  void parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & event);
 
   // Message filters
   void initMessageFilters();
