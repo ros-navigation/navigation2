@@ -57,6 +57,8 @@ LifecycleNode::LifecycleNode(
       "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
+
+  param_subscriber_ = std::make_shared<nav2_util::ParameterEventsSubscriber>(shared_from_this());
 }
 
 LifecycleNode::~LifecycleNode()
