@@ -164,8 +164,6 @@ protected:
     double * max_x,
     double * max_y);
 
-  void setParamCallbacks();
-
   std::string global_frame_;  ///< @brief The global frame for the costmap
   double max_obstacle_height_;  ///< @brief Max Obstacle Height
 
