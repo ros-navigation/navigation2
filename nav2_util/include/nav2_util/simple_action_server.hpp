@@ -69,95 +69,7 @@ public:
       server_active_ = true;
     }
 
-    auto handle_goal =
-      [this](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
-      {
-        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-
-        if (!server_active_) {
-          return rclcpp_action::GoalResponse::REJECT;
-        }
-
-        debug_msg("Received request for goal acceptance");
-        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-      };
-
-    auto handle_cancel =
-      [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
-      {
-        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-        // TODO(orduno) could goal handle be aborted (and on a terminal state) before reaching here?
-        debug_msg("Received request for goal cancellation");
-        return rclcpp_action::CancelResponse::ACCEPT;
-      };
-
-    auto handle_accepted =
-      [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
-      {
-        std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-        debug_msg("Receiving a new goal");
-
-        if (is_active(current_handle_)) {
-          debug_msg("An older goal is active, moving the new goal to a pending slot.");
-
-          if (is_active(pending_handle_)) {
-            debug_msg("The pending slot is occupied."
-              " The previous pending goal will be terminated and replaced.");
-            terminate(pending_handle_);
-          }
-          pending_handle_ = handle;
-          preempt_requested_ = true;
-        } else {
-          if (is_active(pending_handle_)) {
-            // Shouldn't reach a state with a pending goal but no current one.
-            error_msg("Forgot to handle a preemption. Terminating the pending goal.");
-            terminate(pending_handle_);
-            preempt_requested_ = false;
-          }
-
-          current_handle_ = handle;
-
-          auto work = [this]() {
-              while (rclcpp::ok() && !stop_execution_ && is_active(current_handle_)) {
-                debug_msg("Executing the goal...");
-                try {
-                  execute_callback_();
-                } catch (std::exception & ex) {
-                  RCLCPP_ERROR(node_logging_interface_->get_logger(),
-                    "Action server failed while executing action callback: \"%s\"", ex.what());
-                  terminate_all();
-                  return;
-                }
-
-                debug_msg("Blocking processing of new goal handles.");
-                std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-
-                if (stop_execution_) {
-                  warn_msg("Stopping the thread per request.");
-                  terminate_all();
-                  break;
-                }
-
-                if (is_active(current_handle_)) {
-                  warn_msg("Current goal was not completed successfully.");
-                  terminate(current_handle_);
-                }
-
-                if (is_active(pending_handle_)) {
-                  debug_msg("Executing a pending handle on the existing thread.");
-                  accept_pending_goal();
-                } else {
-                  debug_msg("Done processing available goals.");
-                  break;
-                }
-              }
-              debug_msg("Worker thread done.");
-            };
-
-          debug_msg("Executing goal asynchronously.");
-          execution_future_ = std::async(std::launch::async, work);
-        }
-      };
+    using namespace std::placeholders;  // NOLINT
 
     action_server_ = rclcpp_action::create_server<ActionT>(
       node_base_interface_,
@@ -165,9 +77,100 @@ public:
       node_logging_interface_,
       node_waitables_interface_,
       action_name_,
-      handle_goal,
-      handle_cancel,
-      handle_accepted);
+      std::bind(&SimpleActionServer::handle_goal, this, _1, _2),
+      std::bind(&SimpleActionServer::handle_cancel, this, _1),
+      std::bind(&SimpleActionServer::handle_accepted, this, _1));
+  }
+
+  rclcpp_action::GoalResponse handle_goal(
+    const rclcpp_action::GoalUUID & /*uuid*/,
+    std::shared_ptr<const typename ActionT::Goal>/*goal*/)
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!server_active_) {
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    debug_msg("Received request for goal acceptance");
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+
+  rclcpp_action::CancelResponse handle_cancel(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>/*handle*/)
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+    debug_msg("Received request for goal cancellation");
+    return rclcpp_action::CancelResponse::ACCEPT;
+  }
+
+  void handle_accepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+    debug_msg("Receiving a new goal");
+
+    if (is_active(current_handle_)) {
+      debug_msg("An older goal is active, moving the new goal to a pending slot.");
+
+      if (is_active(pending_handle_)) {
+        debug_msg("The pending slot is occupied."
+          " The previous pending goal will be terminated and replaced.");
+        terminate(pending_handle_);
+      }
+      pending_handle_ = handle;
+      preempt_requested_ = true;
+    } else {
+      if (is_active(pending_handle_)) {
+        // Shouldn't reach a state with a pending goal but no current one.
+        error_msg("Forgot to handle a preemption. Terminating the pending goal.");
+        terminate(pending_handle_);
+        preempt_requested_ = false;
+      }
+
+      current_handle_ = handle;
+
+      // Return quickly to avoid blocking the executor, so spin up a new thread
+      debug_msg("Executing goal asynchronously.");
+      execution_future_ = std::async(std::launch::async, [this]() {work();});
+    }
+  }
+
+  void work()
+  {
+    while (rclcpp::ok() && !stop_execution_ && is_active(current_handle_)) {
+      debug_msg("Executing the goal...");
+      try {
+        execute_callback_();
+      } catch (std::exception & ex) {
+        RCLCPP_ERROR(node_logging_interface_->get_logger(),
+          "Action server failed while executing action callback: \"%s\"", ex.what());
+        terminate_all();
+        return;
+      }
+
+      debug_msg("Blocking processing of new goal handles.");
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (stop_execution_) {
+        warn_msg("Stopping the thread per request.");
+        terminate_all();
+        break;
+      }
+
+      if (is_active(current_handle_)) {
+        warn_msg("Current goal was not completed successfully.");
+        terminate(current_handle_);
+      }
+
+      if (is_active(pending_handle_)) {
+        debug_msg("Executing a pending handle on the existing thread.");
+        accept_pending_goal();
+      } else {
+        debug_msg("Done processing available goals.");
+        break;
+      }
+    }
+    debug_msg("Worker thread done.");
   }
 
   void activate()
