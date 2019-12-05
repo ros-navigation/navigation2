@@ -30,7 +30,7 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
-  lp_loader_("nav2_core", "nav2_core::Controller")
+  lp_loader_("nav2_core", "nav2_core::LocalPlanner")
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
@@ -42,7 +42,7 @@ ControllerServer::ControllerServer()
       default_id);
   controller_types_ = declare_parameter("controller_plugin_types", default_type);
 
-  // The costmap node is used in the implementation of the controller
+  // The costmap node is used in the implementation of the local planner
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
 
@@ -65,6 +65,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
+  get_parameter("controller_plugin_ids", controller_ids_);
+  get_parameter("controller_plugin_types", controller_types_);
 
   if (controller_types_.size() != controller_ids_.size()) {
     RCLCPP_FATAL(get_logger(), "Size of controller names (%i) and "
@@ -76,7 +78,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (uint i = 0; i != controller_types_.size(); i++) {
     try {
-      nav2_core::Controller::Ptr controller =
+      nav2_core::LocalPlanner::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(get_logger(), "Created controller : %s of type %s",
         controller_ids_[i].c_str(), controller_types_[i].c_str());
@@ -99,7 +101,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "follow_path",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&ControllerServer::computeControl, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
