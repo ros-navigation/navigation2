@@ -101,14 +101,12 @@ InflationLayer::setParamCallbacks()
   if (param_subscriber_) {
     callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".enabled",
       [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
         enabled_ = p.get_value<bool>();
         need_reinflation_ = true;
       }));
     callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
       ".inflate_unknown",
       [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
         inflate_unknown_ = p.get_value<bool>();
         need_reinflation_ = true;
       }));

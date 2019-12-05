@@ -187,6 +187,7 @@ private:
 
   // Indicates that the entire costmap should be reinflated next time around.
   bool need_reinflation_;
+  std::recursive_mutex mutex_;
 };
 
 }  // namespace nav2_costmap_2d
