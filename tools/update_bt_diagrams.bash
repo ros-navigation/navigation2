@@ -9,3 +9,6 @@ navigation2/tools/bt2img.py \
 navigation2/tools/bt2img.py \
   --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_w_replanning_and_recovery.xml \
   --image_out navigation2/nav2_bt_navigator/doc/parallel_w_recovery
+navigation2/tools/bt2img.py \
+  --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_w_replanning_and_round_robin_recovery.xml \
+  --image_out navigation2/nav2_bt_navigator/doc/parallel_w_round_robin_recovery
