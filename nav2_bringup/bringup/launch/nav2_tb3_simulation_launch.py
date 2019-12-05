@@ -21,11 +21,11 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
                             IncludeLaunchDescription, RegisterEventHandler)
-from launch.conditions import IfCondition, UnlessCondition
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 
 from nav2_common.launch import Node
 
@@ -136,7 +136,7 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     start_gazebo_client_cmd = ExecuteProcess(
-        condition=(IfCondition(use_simulator) and UnlessCondition(headless)),
+        condition=IfCondition(PythonExpression([use_simulator, ' and not ', headless])),
         cmd=['gzclient'],
         cwd=[launch_dir], output='screen')
 

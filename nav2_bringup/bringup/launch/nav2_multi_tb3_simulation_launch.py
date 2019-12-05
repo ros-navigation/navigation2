@@ -169,6 +169,7 @@ def generate_launch_description():
                                   'rviz_config_file': namespaced_rviz_config_file,
                                   'use_rviz': use_rviz,
                                   'use_simulator': 'False',
+                                  'headless': 'False',
                                   'use_robot_state_pub': use_robot_state_pub}.items()),
 
             LogInfo(
