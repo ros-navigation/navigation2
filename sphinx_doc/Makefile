@@ -54,7 +54,7 @@ publish:
 	cp scripts/.nojekyll $(PUBLISHDIR)/.nojekyll
 	cd $(PUBLISHDIR) && \
 	git add -A && \
-	git diff-index --quiet HEAD || \  #if no changes, don't commit.
+	git diff-index --quiet HEAD || \
 	(git commit -s -m "[skip ci] publish $(RELEASE)" && git push origin)
 
 
