@@ -113,9 +113,8 @@ protected:
   double min_speed_xy_sq_{0};
   double max_speed_xy_sq_{0};
 
-  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
-
   void setParamCallbacks(std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub);
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
   std::recursive_mutex mutex_;
 };
 

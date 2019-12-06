@@ -101,11 +101,16 @@ public:
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    param_subcriber_ = param_sub;
+    param_subscriber_ = param_sub;
     if (!nh_->has_parameter(name_ + ".scale")) {
       nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
     }
     nh_->get_parameter(name_ + ".scale", scale_);
+    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".scale",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        scale_ = p.get_value<double>();
+      }));
     onInit();
   }
   virtual void onInit() {}
@@ -180,7 +185,9 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
   nav2_util::LifecycleNode::SharedPtr nh_;
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subcriber_;
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
+  std::recursive_mutex mutex_;
 };
 
 }  // namespace dwb_core

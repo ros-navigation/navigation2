@@ -42,7 +42,7 @@ namespace dwb_plugins
 void XYThetaIterator::initialize(
   const nav2_util::LifecycleNode::SharedPtr & nh,
   KinematicParameters::Ptr kinematics,
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   kinematics_ = kinematics;
 
@@ -54,6 +54,34 @@ void XYThetaIterator::initialize(
 
   vtheta_samples_ = nav_2d_utils::loadParameterWithDeprecation(nh, "vtheta_samples", "vth_samples",
       20);
+
+  callback_handles_.push_back(param_sub->add_parameter_callback("vx_samples",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      if (p.get_value<int>() < 0) {
+        vx_samples_ = 1;
+      } else {
+        vx_samples_ = p.get_value<int>();
+      }
+    }));
+  callback_handles_.push_back(param_sub->add_parameter_callback("vy_samples",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      if (p.get_value<int>() < 0) {
+        vy_samples_ = 1;
+      } else {
+        vy_samples_ = p.get_value<int>();
+      }
+    }));
+  callback_handles_.push_back(param_sub->add_parameter_callback("vtheta_samples",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      if (p.get_value<int>() < 0) {
+        vtheta_samples_ = 1;
+      } else {
+        vtheta_samples_ = p.get_value<int>();
+      }
+    }));
 }
 
 void XYThetaIterator::startNewIteration(

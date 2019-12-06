@@ -48,7 +48,7 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> /*param_sub*/)
+void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);
@@ -73,12 +73,33 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
   if (discretize_by_time_) {
     time_granularity_ = loadParameterWithDeprecation(
       nh, "time_granularity", "sim_granularity", 0.5);
+    callback_handles_.push_back(param_sub->add_parameter_callback("time_granularity",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        time_granularity_ = p.get_value<double>();
+      }));
   } else {
     linear_granularity_ = loadParameterWithDeprecation(
       nh, "linear_granularity", "sim_granularity", 0.5);
     angular_granularity_ = loadParameterWithDeprecation(
       nh, "angular_granularity", "angular_sim_granularity", 0.025);
+    callback_handles_.push_back(param_sub->add_parameter_callback("linear_granularity",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        linear_granularity_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_sub->add_parameter_callback("angular_granularity",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        angular_granularity_ = p.get_value<double>();
+      }));
   }
+
+  callback_handles_.push_back(param_sub->add_parameter_callback("sim_time",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      sim_time_ = p.get_value<double>();
+    }));
 }
 
 void StandardTrajectoryGenerator::initializeIterator(

@@ -135,6 +135,9 @@ protected:
 
   /// @brief If not discretizing by time, the amount of angular space between points
   double angular_granularity_;
+
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
+  std::recursive_mutex mutex_;
 };
 
 

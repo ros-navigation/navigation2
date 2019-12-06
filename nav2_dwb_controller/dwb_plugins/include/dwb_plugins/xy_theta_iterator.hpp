@@ -63,6 +63,9 @@ protected:
   KinematicParameters::Ptr kinematics_;
 
   std::shared_ptr<OneDVelocityIterator> x_it_, y_it_, th_it_;
+
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
+  std::recursive_mutex mutex_;
 };
 }  // namespace dwb_plugins
 
