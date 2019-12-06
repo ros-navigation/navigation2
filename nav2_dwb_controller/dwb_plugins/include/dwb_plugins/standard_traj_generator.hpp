@@ -55,7 +55,10 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) override;
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
+  override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;

@@ -132,18 +132,21 @@ void OscillationCritic::onInit()
   //   x_only_threshold_ = 0.05;
   // }
 
-  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".oscillation_reset_dist",
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
+    ".oscillation_reset_dist",
     [&](const rclcpp::Parameter & p) {
       std::lock_guard<std::recursive_mutex> lock(mutex_);
       oscillation_reset_dist_ = p.get_value<double>();
       oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
     }));
-  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".oscillation_reset_angle",
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
+    ".oscillation_reset_angle",
     [&](const rclcpp::Parameter & p) {
       std::lock_guard<std::recursive_mutex> lock(mutex_);
       oscillation_reset_angle_ = p.get_value<double>();
     }));
-  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".oscillation_reset_time",
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
+    ".oscillation_reset_time",
     [&](const rclcpp::Parameter & p) {
       std::lock_guard<std::recursive_mutex> lock(mutex_);
       oscillation_reset_time_ = rclcpp::Duration::from_seconds(p.get_value<double>());

@@ -89,7 +89,7 @@ void MapGridCritic::getAggregationType(std::string & aggro_str)
         "MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.",
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
-  }  
+  }
 }
 
 void MapGridCritic::setAsObstacle(unsigned int index)

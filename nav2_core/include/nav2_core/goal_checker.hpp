@@ -66,7 +66,10 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param nh NodeHandle for grabbing parameters
    */
-  virtual void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) = 0;
+  virtual void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
+  = 0;
 
   /**
    * @brief Check whether the goal should be considered reached

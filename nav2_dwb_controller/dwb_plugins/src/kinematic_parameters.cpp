@@ -52,7 +52,9 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
+void KinematicParameters::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   // Special handling for renamed parameters
   moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");
@@ -96,7 +98,8 @@ void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr &
   setParamCallbacks(param_sub);
 }
 
-void KinematicParameters::setParamCallbacks(std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber)
+void KinematicParameters::setParamCallbacks(
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber)
 {
   if (param_subscriber) {
     callback_handles_.push_back(param_subscriber->add_parameter_callback("min_vel_x",

@@ -48,7 +48,9 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
+void StandardTrajectoryGenerator::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
   kinematics_->initialize(nh);

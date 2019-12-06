@@ -49,7 +49,10 @@ namespace dwb_plugins
 class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) override;
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
+  override;
   void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   dwb_msgs::msg::Trajectory2D generateTrajectory(

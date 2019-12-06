@@ -72,7 +72,10 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) = 0;
+  virtual void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
+  = 0;
 
   /**
    * @brief Start a new iteration based on the current velocity

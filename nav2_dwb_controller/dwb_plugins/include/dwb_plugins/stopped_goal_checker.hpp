@@ -53,7 +53,10 @@ class StoppedGoalChecker : public SimpleGoalChecker
 public:
   StoppedGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh, std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr) override;
+  void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
+  override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) override;
