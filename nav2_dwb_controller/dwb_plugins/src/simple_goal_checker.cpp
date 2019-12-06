@@ -64,17 +64,19 @@ void SimpleGoalChecker::initialize(
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
-  callback_handles_.push_back(param_sub->add_parameter_callback("xy_goal_tolerance",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      xy_goal_tolerance_ = p.get_value<double>();
-      xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-    }));
-  callback_handles_.push_back(param_sub->add_parameter_callback("yaw_goal_tolerance",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      yaw_goal_tolerance_ = p.get_value<double>();
-    }));
+  if (param_sub) {
+    callback_handles_.push_back(param_sub->add_parameter_callback("xy_goal_tolerance",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        xy_goal_tolerance_ = p.get_value<double>();
+        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+      }));
+    callback_handles_.push_back(param_sub->add_parameter_callback("yaw_goal_tolerance",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        yaw_goal_tolerance_ = p.get_value<double>();
+      }));
+  }
 }
 
 bool SimpleGoalChecker::isGoalReached(

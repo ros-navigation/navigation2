@@ -45,9 +45,9 @@ namespace dwb_plugins
 
 void LimitedAccelGenerator::initialize(
   const nav2_util::LifecycleNode::SharedPtr & nh,
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber>/*param_sub*/)
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
-  StandardTrajectoryGenerator::initialize(nh);
+  StandardTrajectoryGenerator::initialize(nh, param_sub);
 
   nav2_util::declare_parameter_if_not_declared(nh, "sim_period");
 

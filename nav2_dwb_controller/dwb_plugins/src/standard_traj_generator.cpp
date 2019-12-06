@@ -53,8 +53,8 @@ void StandardTrajectoryGenerator::initialize(
   std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   kinematics_ = std::make_shared<KinematicParameters>();
-  kinematics_->initialize(nh);
-  initializeIterator(nh);
+  kinematics_->initialize(nh, param_sub);
+  initializeIterator(nh, param_sub);
 
   nav2_util::declare_parameter_if_not_declared(nh, "sim_time", rclcpp::ParameterValue(1.7));
   nav2_util::declare_parameter_if_not_declared(nh,
@@ -75,40 +75,47 @@ void StandardTrajectoryGenerator::initialize(
   if (discretize_by_time_) {
     time_granularity_ = loadParameterWithDeprecation(
       nh, "time_granularity", "sim_granularity", 0.5);
-    callback_handles_.push_back(param_sub->add_parameter_callback("time_granularity",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        time_granularity_ = p.get_value<double>();
-      }));
+    if (param_sub) {
+      callback_handles_.push_back(param_sub->add_parameter_callback("time_granularity",
+        [&](const rclcpp::Parameter & p) {
+          std::lock_guard<std::recursive_mutex> lock(mutex_);
+          time_granularity_ = p.get_value<double>();
+        }));
+    }
   } else {
     linear_granularity_ = loadParameterWithDeprecation(
       nh, "linear_granularity", "sim_granularity", 0.5);
     angular_granularity_ = loadParameterWithDeprecation(
       nh, "angular_granularity", "angular_sim_granularity", 0.025);
-    callback_handles_.push_back(param_sub->add_parameter_callback("linear_granularity",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        linear_granularity_ = p.get_value<double>();
-      }));
-    callback_handles_.push_back(param_sub->add_parameter_callback("angular_granularity",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        angular_granularity_ = p.get_value<double>();
-      }));
+    if (param_sub) {
+      callback_handles_.push_back(param_sub->add_parameter_callback("linear_granularity",
+        [&](const rclcpp::Parameter & p) {
+          std::lock_guard<std::recursive_mutex> lock(mutex_);
+          linear_granularity_ = p.get_value<double>();
+        }));
+      callback_handles_.push_back(param_sub->add_parameter_callback("angular_granularity",
+        [&](const rclcpp::Parameter & p) {
+          std::lock_guard<std::recursive_mutex> lock(mutex_);
+          angular_granularity_ = p.get_value<double>();
+        }));
+    }
   }
 
-  callback_handles_.push_back(param_sub->add_parameter_callback("sim_time",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      sim_time_ = p.get_value<double>();
-    }));
+  if (param_sub) {
+    callback_handles_.push_back(param_sub->add_parameter_callback("sim_time",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        sim_time_ = p.get_value<double>();
+      }));
+  }
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
-  const nav2_util::LifecycleNode::SharedPtr & nh)
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
-  velocity_iterator_->initialize(nh, kinematics_);
+  velocity_iterator_->initialize(nh, kinematics_, param_sub);
 }
 
 void StandardTrajectoryGenerator::checkUseDwaParam(

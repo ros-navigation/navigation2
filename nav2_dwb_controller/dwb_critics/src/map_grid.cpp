@@ -67,11 +67,14 @@ void MapGridCritic::onInit()
   std::string aggro_str;
   nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
   getAggregationType(aggro_str);
-  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".aggregation_type",
-    [&](const rclcpp::Parameter & p) {
-      auto aggro_str = p.get_value<std::string>();
-      getAggregationType(aggro_str);
-    }));
+  if (param_subscriber_) {
+    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
+      ".aggregation_type",
+      [&](const rclcpp::Parameter & p) {
+        auto aggro_str = p.get_value<std::string>();
+        getAggregationType(aggro_str);
+      }));
+  }
 }
 
 void MapGridCritic::getAggregationType(std::string & aggro_str)

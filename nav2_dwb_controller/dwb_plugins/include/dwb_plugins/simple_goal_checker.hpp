@@ -36,6 +36,7 @@
 #define DWB_PLUGINS__SIMPLE_GOAL_CHECKER_HPP_
 
 #include <memory>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"

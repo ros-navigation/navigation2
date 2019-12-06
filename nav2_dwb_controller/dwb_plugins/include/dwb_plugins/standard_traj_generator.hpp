@@ -72,7 +72,9 @@ protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding
    */
-  virtual void initializeIterator(const nav2_util::LifecycleNode::SharedPtr & nh);
+  virtual void initializeIterator(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr);
 
   /**
    * @brief Check if the deprecated use_dwa parameter is set to the functionality that matches this class

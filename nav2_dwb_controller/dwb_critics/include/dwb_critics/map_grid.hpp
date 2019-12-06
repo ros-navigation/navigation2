@@ -35,6 +35,7 @@
 #ifndef DWB_CRITICS__MAP_GRID_HPP_
 #define DWB_CRITICS__MAP_GRID_HPP_
 
+#include <string>
 #include <vector>
 #include <memory>
 #include "dwb_core/trajectory_critic.hpp"

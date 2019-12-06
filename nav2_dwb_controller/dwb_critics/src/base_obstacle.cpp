@@ -50,11 +50,13 @@ void BaseObstacleCritic::onInit()
   nav2_util::declare_parameter_if_not_declared(nh_,
     name_ + ".sum_scores", rclcpp::ParameterValue(false));
   nh_->get_parameter(name_ + ".sum_scores", sum_scores_);
-  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".sum_scores",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      sum_scores_ = p.get_value<bool>();
-    }));
+  if (param_subscriber_) {
+    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".sum_scores",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        sum_scores_ = p.get_value<bool>();
+      }));
+  }
 }
 
 double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)

@@ -106,11 +106,13 @@ public:
       nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
     }
     nh_->get_parameter(name_ + ".scale", scale_);
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".scale",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        scale_ = p.get_value<double>();
-      }));
+    if (param_sub) {
+      callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".scale",
+        [&](const rclcpp::Parameter & p) {
+          std::lock_guard<std::recursive_mutex> lock(mutex_);
+          scale_ = p.get_value<double>();
+        }));
+    }
     onInit();
   }
   virtual void onInit() {}

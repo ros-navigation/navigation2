@@ -52,7 +52,7 @@ void StoppedGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
   std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub)
 {
-  SimpleGoalChecker::initialize(nh);
+  SimpleGoalChecker::initialize(nh, param_sub);
 
   nav2_util::declare_parameter_if_not_declared(nh,
     "rot_stopped_velocity", rclcpp::ParameterValue(0.25));
@@ -62,16 +62,18 @@ void StoppedGoalChecker::initialize(
   nh->get_parameter("rot_stopped_velocity", rot_stopped_velocity_);
   nh->get_parameter("trans_stopped_velocity", trans_stopped_velocity_);
 
-  callback_handles_.push_back(param_sub->add_parameter_callback("rot_stopped_velocity",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      rot_stopped_velocity_ = p.get_value<double>();
-    }));
-  callback_handles_.push_back(param_sub->add_parameter_callback("trans_stopped_velocity",
-    [&](const rclcpp::Parameter & p) {
-      std::lock_guard<std::recursive_mutex> lock(mutex_);
-      trans_stopped_velocity_ = p.get_value<double>();
-    }));
+  if (param_sub) {
+    callback_handles_.push_back(param_sub->add_parameter_callback("rot_stopped_velocity",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        rot_stopped_velocity_ = p.get_value<double>();
+      }));
+    callback_handles_.push_back(param_sub->add_parameter_callback("trans_stopped_velocity",
+      [&](const rclcpp::Parameter & p) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        trans_stopped_velocity_ = p.get_value<double>();
+      }));
+  }
 }
 
 bool StoppedGoalChecker::isGoalReached(
