@@ -49,6 +49,12 @@ void RotateToGoalCritic::onInit()
 {
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(nh_, name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".xy_goal_tolerance",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      xy_goal_tolerance_ = p.get_value<double>();
+      xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+    }));  
 }
 
 bool RotateToGoalCritic::prepare(

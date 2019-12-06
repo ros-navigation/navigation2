@@ -55,6 +55,27 @@ void PreferForwardCritic::onInit()
   nh_->get_parameter(name_ + ".strafe_x", strafe_x_);
   nh_->get_parameter(name_ + ".strafe_theta", strafe_theta_);
   nh_->get_parameter(name_ + ".theta_scale", theta_scale_);
+
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".penalty",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      penalty_ = p.get_value<double>();
+    }));
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".strafe_x",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      strafe_x_ = p.get_value<double>();
+    }));
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".strafe_theta",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      strafe_theta_ = p.get_value<double>();
+    }));
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".theta_scale",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      theta_scale_ = p.get_value<double>();
+    }));
 }
 
 double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)

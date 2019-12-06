@@ -100,6 +100,8 @@ protected:
   // cppcheck-suppress syntaxError
   enum class ScoreAggregationType {Last, Sum, Product};
 
+  void getAggregationType(std::string & aggro_str);
+
   /**
    * @class MapGridQueue
    * @brief Subclass of CostmapQueue that avoids Obstacles and Unknown Values

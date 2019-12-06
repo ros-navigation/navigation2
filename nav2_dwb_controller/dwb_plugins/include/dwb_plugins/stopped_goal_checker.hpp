@@ -60,6 +60,9 @@ public:
 
 protected:
   double rot_stopped_velocity_, trans_stopped_velocity_;
+
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
+  std::recursive_mutex mutex_;
 };
 
 }  // namespace dwb_plugins

@@ -66,6 +66,17 @@ void MapGridCritic::onInit()
 
   std::string aggro_str;
   nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
+  getAggregationType(aggro_str);
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".aggregation_type",
+    [&](const rclcpp::Parameter & p) {
+      auto aggro_str = p.get_value<std::string>();
+      getAggregationType(aggro_str);
+    }));
+}
+
+void MapGridCritic::getAggregationType(std::string & aggro_str)
+{
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;
@@ -78,7 +89,7 @@ void MapGridCritic::onInit()
         "MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.",
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
-  }
+  }  
 }
 
 void MapGridCritic::setAsObstacle(unsigned int index)

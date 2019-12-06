@@ -72,7 +72,7 @@ param_t searchAndGetParam(
   //   nh->param(resolved_name, value, default_value);
   //   return value;
   // }
-  param_t value;
+  param_t value = 0;
   nav2_util::declare_parameter_if_not_declared(nh, param_name,
     rclcpp::ParameterValue(default_value));
   nh->get_parameter(param_name, value);
