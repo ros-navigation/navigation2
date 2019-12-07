@@ -61,6 +61,9 @@ Layer::initialize(
   onInitialize();
 }
 
+void
+Layer::clearMap() {}
+
 const std::vector<geometry_msgs::msg::Point> &
 Layer::getFootprint() const
 {

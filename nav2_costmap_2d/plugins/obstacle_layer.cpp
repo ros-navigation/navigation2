@@ -588,8 +588,9 @@ ObstacleLayer::activate()
       observation_subscribers_[i]->subscribe();
     }
   }
-  triggerObservationsBufferUpdate();
+  resetBuffersLastUpdated();
 }
+
 void
 ObstacleLayer::deactivate()
 {
@@ -623,7 +624,7 @@ ObstacleLayer::reset()
 }
 
 void
-ObstacleLayer::triggerObservationsBufferUpdate()
+ObstacleLayer::resetBuffersLastUpdated()
 {
   for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
     if (observation_buffers_[i]) {
@@ -636,7 +637,7 @@ void
 ObstacleLayer::clearMap()
 {
   resetMaps();
-  triggerObservationsBufferUpdate();
+  resetBuffersLastUpdated();
   current_ = true;
 }
 

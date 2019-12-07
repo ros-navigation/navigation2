@@ -88,7 +88,7 @@ public:
   /**
    * @brief triggers the update of observations buffer
    */
-  void triggerObservationsBufferUpdate();
+  void resetBuffersLastUpdated();
 
   /**
    * @brief  A callback to handle buffering LaserScan messages
