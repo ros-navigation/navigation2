@@ -63,6 +63,8 @@ RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos \
 # get skip keys
 COPY ./tools/skip_keys.txt ./
 
+RUN rosdep update
+
 # copy underlay manifests
 COPY --from=cache /tmp/underlay_ws src/underlay
 RUN cd src/underlay && colcon list --names-only | \
