@@ -178,6 +178,10 @@ protected:
 
   // Whether we've published the single controller warning yet
   bool single_controller_warning_given_{false};
+
+  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
+  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
+  std::recursive_mutex mutex_;
 };
 
 }  // namespace nav2_controller

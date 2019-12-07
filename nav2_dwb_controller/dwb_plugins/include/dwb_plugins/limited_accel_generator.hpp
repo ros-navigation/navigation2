@@ -54,6 +54,7 @@ public:
     std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_sub = nullptr)
   override;
   void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void computeAccelerationTime(double controller_frequency);
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   dwb_msgs::msg::Trajectory2D generateTrajectory(
     const geometry_msgs::msg::Pose2D & start_pose,

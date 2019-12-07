@@ -96,16 +96,12 @@ param_t loadParameterWithDeprecation(
   nav2_util::declare_parameter_if_not_declared(nh, old_name);
   param_t value = 0;
 
-  auto param = nh->get_parameter(current_name);
-  if (param.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
-    value = param.get_value<param_t>();
+  if (nh->get_parameter(current_name, value)) {
     nh->undeclare_parameter(old_name);
     return value;
   }
 
-  param = nh->get_parameter(old_name);
-  if (param.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
-    value = param.get_value<param_t>();
+  if (nh->get_parameter(old_name, value)) {
     nh->undeclare_parameter(current_name);
     RCLCPP_WARN(nh->get_logger(),
       "Parameter %s is deprecated. Please use the name %s instead.",

@@ -64,6 +64,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
+  param_subscriber_ = std::make_shared<nav2_util::ParameterEventsSubscriber>(node);
+
   progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
 
   if (controller_types_.size() != controller_ids_.size()) {
@@ -94,6 +96,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   get_parameter("controller_frequency", controller_frequency_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
+  callback_handles_.push_back(param_subscriber_->add_parameter_callback("controller_frequency",
+    [&](const rclcpp::Parameter & p) {
+      std::lock_guard<std::recursive_mutex> lock(mutex_);
+      controller_frequency_ = p.get_value<double>();
+    }));
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);

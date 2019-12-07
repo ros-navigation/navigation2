@@ -52,17 +52,36 @@ void LimitedAccelGenerator::initialize(
   nav2_util::declare_parameter_if_not_declared(nh, "sim_period");
 
   if (nh->get_parameter("sim_period", acceleration_time_)) {
+    if (param_sub) {
+      callback_handles_.push_back(param_sub->add_parameter_callback("sim_period",
+        [&](const rclcpp::Parameter & p) {
+          std::lock_guard<std::recursive_mutex> lock(mutex_);
+          acceleration_time_ = p.get_value<double>();
+        }));
+    }
   } else {
     double controller_frequency = nav_2d_utils::searchAndGetParam(
       nh, "controller_frequency", 20.0);
-    if (controller_frequency > 0) {
-      acceleration_time_ = 1.0 / controller_frequency;
-    } else {
-      RCLCPP_WARN(rclcpp::get_logger("LimitedAccelGenerator"),
-        "A controller_frequency less than or equal to 0 has been set. "
-        "Ignoring the parameter, assuming a rate of 20Hz");
-      acceleration_time_ = 0.05;
+    computeAccelerationTime(controller_frequency);
+    if (param_sub) {
+      callback_handles_.push_back(param_sub->add_parameter_callback("controller_frequency",
+        [&](const rclcpp::Parameter & p) {
+          computeAccelerationTime(p.get_value<double>());
+        }));
     }
+  }
+}
+
+void LimitedAccelGenerator::computeAccelerationTime(double controller_frequency)
+{
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  if (controller_frequency > 0) {
+    acceleration_time_ = 1.0 / controller_frequency;
+  } else {
+    RCLCPP_WARN(rclcpp::get_logger("LimitedAccelGenerator"),
+      "A controller_frequency less than or equal to 0 has been set. "
+      "Ignoring the parameter, assuming a rate of 20Hz");
+    acceleration_time_ = 0.05;
   }
 }
 
