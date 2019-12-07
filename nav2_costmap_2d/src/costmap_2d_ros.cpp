@@ -284,69 +284,71 @@ Costmap2DROS::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-Costmap2DROS::paramEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & /*event*/)
+Costmap2DROS::paramEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & event)
 {
-  if (map_update_thread_ != NULL) {
-    map_update_thread_shutdown_ = true;
-    map_update_thread_->join();
-    delete map_update_thread_;
-  }
-  map_update_thread_shutdown_ = false;
+  if (event->node == get_node_base_interface()->get_fully_qualified_name()) {
+    if (map_update_thread_ != NULL) {
+      map_update_thread_shutdown_ = true;
+      map_update_thread_->join();
+      delete map_update_thread_;
+    }
+    map_update_thread_shutdown_ = false;
 
-  get_parameter("transform_tolerance", transform_tolerance_);
-  get_parameter("map_update_frequency", map_update_frequency_);
-  get_parameter("map_publish_frequency", map_publish_frequency_);
-  if (map_publish_frequency_ > 0) {
-    publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
-  } else {
-    publish_cycle_ = rclcpp::Duration(-1);
-  }
+    get_parameter("transform_tolerance", transform_tolerance_);
+    get_parameter("map_update_frequency", map_update_frequency_);
+    get_parameter("map_publish_frequency", map_publish_frequency_);
+    if (map_publish_frequency_ > 0) {
+      publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
+    } else {
+      publish_cycle_ = rclcpp::Duration(-1);
+    }
 
-  get_parameter("width", map_width_meters_);
-  get_parameter("height", map_height_meters_);
-  get_parameter("resolution", resolution_);
-  get_parameter("origin_x", origin_x_);
-  get_parameter("origin_y", origin_y_);
-  if (!layered_costmap_->isSizeLocked()) {
-    layered_costmap_->resizeMap((unsigned int)(map_width_meters_ / resolution_),
-      (unsigned int)(map_height_meters_ / resolution_), resolution_, origin_x_, origin_y_);
-  }
+    get_parameter("width", map_width_meters_);
+    get_parameter("height", map_height_meters_);
+    get_parameter("resolution", resolution_);
+    get_parameter("origin_x", origin_x_);
+    get_parameter("origin_y", origin_y_);
+    if (!layered_costmap_->isSizeLocked()) {
+      layered_costmap_->resizeMap((unsigned int)(map_width_meters_ / resolution_),
+        (unsigned int)(map_height_meters_ / resolution_), resolution_, origin_x_, origin_y_);
+    }
 
-  double footprint_padding;
-  get_parameter("footprint_padding", footprint_padding);
-  if (footprint_padding_ != footprint_padding) {
-    footprint_padding_ = footprint_padding;
-    setRobotFootprint(unpadded_footprint_);
-  }
+    double footprint_padding;
+    get_parameter("footprint_padding", footprint_padding);
+    if (footprint_padding_ != footprint_padding) {
+      footprint_padding_ = footprint_padding;
+      setRobotFootprint(unpadded_footprint_);
+    }
 
-  std::string footprint;
-  double robot_radius;
-  get_parameter("footprint", footprint);
-  get_parameter("robot_radius", robot_radius);
-  if (footprint_ != footprint || robot_radius_ != robot_radius) {
-    footprint_ = footprint;
-    robot_radius_ = robot_radius;
-    use_radius_ = true;
-    if (footprint_ != "" && footprint_ != "[]") {
-      std::vector<geometry_msgs::msg::Point> new_footprint;
-      if (makeFootprintFromString(footprint_, new_footprint)) {
-        use_radius_ = false;
+    std::string footprint;
+    double robot_radius;
+    get_parameter("footprint", footprint);
+    get_parameter("robot_radius", robot_radius);
+    if (footprint_ != footprint || robot_radius_ != robot_radius) {
+      footprint_ = footprint;
+      robot_radius_ = robot_radius;
+      use_radius_ = true;
+      if (footprint_ != "" && footprint_ != "[]") {
+        std::vector<geometry_msgs::msg::Point> new_footprint;
+        if (makeFootprintFromString(footprint_, new_footprint)) {
+          use_radius_ = false;
+        } else {
+          RCLCPP_ERROR(
+            get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
+            footprint_.c_str(), robot_radius_);
+        }
+      }
+      if (use_radius_) {
+        setRobotFootprint(makeFootprintFromRadius(robot_radius_));
       } else {
-        RCLCPP_ERROR(
-          get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
-          footprint_.c_str(), robot_radius_);
+        std::vector<geometry_msgs::msg::Point> new_footprint;
+        makeFootprintFromString(footprint_, new_footprint);
+        setRobotFootprint(new_footprint);
       }
     }
-    if (use_radius_) {
-      setRobotFootprint(makeFootprintFromRadius(robot_radius_));
-    } else {
-      std::vector<geometry_msgs::msg::Point> new_footprint;
-      makeFootprintFromString(footprint_, new_footprint);
-      setRobotFootprint(new_footprint);
-    }
+    map_update_thread_ = new std::thread(std::bind(
+          &Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
   }
-  map_update_thread_ = new std::thread(std::bind(
-        &Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 }
 
 void

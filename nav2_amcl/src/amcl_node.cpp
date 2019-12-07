@@ -351,12 +351,14 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 void
-AmclNode::parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & /*event*/)
+AmclNode::parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & event)
 {
-  initParameters();
-  initMessageFilters();
-  initOdometry();
-  initParticleFilter();
+  if (event->node == get_node_base_interface()->get_fully_qualified_name()) {
+    initParameters();
+    initMessageFilters();
+    initOdometry();
+    initParticleFilter();
+  }
 }
 
 void
