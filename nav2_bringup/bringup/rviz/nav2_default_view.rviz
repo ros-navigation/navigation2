@@ -9,6 +9,7 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /Global Planner1/Global Costmap1
+        - /MarkerArray1
       Splitter Ratio: 0.5833333134651184
     Tree Height: 464
   - Class: rviz_common/Selection
@@ -315,6 +316,18 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: Controller
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /waypoints
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
