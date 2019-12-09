@@ -546,7 +546,7 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_text.color.a = 1.0f;
     marker_text.lifetime = rclcpp::Duration(0);
     marker_text.frame_locked = false;
-    marker_text.text = "wp_" + std::to_string(i);
+    marker_text.text = "wp_" + std::to_string(i + 1);
     marker_array.markers.push_back(marker_text);
   }
 
