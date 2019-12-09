@@ -235,7 +235,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   wp_navigation_markers_pub_ =
     client_node_->create_publisher<visualization_msgs::msg::MarkerArray>("waypoints",
-    rclcpp::QoS(1).transient_local());
+      rclcpp::QoS(1).transient_local());
 
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
@@ -505,13 +505,12 @@ Nav2Panel::load(const rviz_common::Config & config)
   Panel::load(config);
 }
 
-void 
+void
 Nav2Panel::updateWpNavigationMarkers()
 {
   visualization_msgs::msg::MarkerArray marker_array;
 
-  for (size_t i = 0; i < acummulated_poses_.size(); i++)
-  {
+  for (size_t i = 0; i < acummulated_poses_.size(); i++) {
     // Draw a green ball at the waypoint pose
     visualization_msgs::msg::Marker marker;
     marker.header = acummulated_poses_[i].header;
@@ -551,8 +550,7 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_array.markers.push_back(marker_text);
   }
 
-  if (marker_array.markers.empty())
-  {
+  if (marker_array.markers.empty()) {
     visualization_msgs::msg::Marker clear_all_marker;
     clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
     marker_array.markers.push_back(clear_all_marker);

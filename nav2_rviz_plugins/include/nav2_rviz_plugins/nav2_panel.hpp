@@ -124,7 +124,7 @@ private:
   QState * accumulated_{nullptr};
 
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
-  
+
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
   // Waypoint navigation visual markers publisher
