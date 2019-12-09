@@ -198,7 +198,7 @@ void ControllerServer::computeControl()
         RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
           "which does not exist. Available controllers are %s.",
           c_name.c_str(), controller_ids_concat_.c_str());
-        action_server_->terminate_goals();
+        action_server_->terminate_current();
         return;
       }
     } else {
