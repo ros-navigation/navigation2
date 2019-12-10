@@ -29,7 +29,7 @@ And in the second part, you will learn how to control a real Turtlebot Waffle us
 
 ``ROS2 Dashing`` and ``Navigation2 Dashing 0.2.4`` are used to create this tutorial.
 
-This tutorial may take about 1-2 hours to complete. It depends on your experience with ROS, robots, and what computer system you have.
+This tutorial may take about 30 minutes to complete. It depends on your experience with ROS, robots, and what computer system you have.
 
 Requirements
 ============
@@ -67,7 +67,7 @@ you can use the launch file that does all the steps that are explained in the ne
 
 - ``ros2 launch nav2_bringup nav2_tb3_simulation_launch.py``
 
-This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RViz2. 
+This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RViz2.
 Once you see everything launced, you can jump to step 5.
 
 1- Launch Gazebo
@@ -84,7 +84,6 @@ If Gazebo fails to start, run the following commands and try to launch Gazebo ag
     - ``killall gzserver``
     - ``killall gzclient``
 
-
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png
     :height: 720px
     :width: 1024px
@@ -92,12 +91,12 @@ If Gazebo fails to start, run the following commands and try to launch Gazebo ag
 
 2- Launch Turtlebot 3 Robot State Publisher
 -------------------------------------------
- 
+
 Launch Turtlebot 3 specific nodes,
 
   ``ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=True``
 
-Make sure ``use_sim_time`` is set to **True**.
+Note : Make sure ``use_sim_time`` is set to **True** because our robot Turtlebot 3 is in Gazebo.
 
 3- Launch Navigation2
 ---------------------
@@ -157,10 +156,9 @@ A small error in the estimated location is tolerable.
 --------------------
 
 Pick a target location for Turtlebot on the map. 
-You can send Turtlebot 3 a goal position and a goal orientation by using the **Navigation2 Goal** and the **GoalTool** buttons.
+You can send Turtlebot 3 a goal position and a goal orientation by using the **Navigation2 Goal** or the **GoalTool** buttons.
 
-*Note*: Difference between buttons. 
-Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
+Note: Navigation2 Goal button uses a ROS2 Action to send the goal and the GoalTool publishes the goal to a topic.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_send_goal_pose.png
     :height: 720px

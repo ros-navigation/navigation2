@@ -14,40 +14,20 @@ Overview
 This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a real Turtlebot 3 robot.
 Before completing this tutorials, completing the :ref:`navigation2-with-turtlebot3-in-gazebo`. is highly recommended especially if you are new to ROS and Navigation2.
 
-Turtlebot is a low-cost, personal robot kit with open-source software (ROS2).
-Turtblebot robots are widely supported by the ROS community.
-You can find many applications and examples of Turtlebot projects on the Internet.
-You can find more information about Turtlebot3 `here. <http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/>`_
-
-Links to the robot kits and Github repo.
-
-- `Turtlebot Burger <http://www.robotis.us/turtlebot-3-burger-us/>`_
-- `Turtlebot Waffle <http://www.robotis.us/turtlebot-3-waffle-pi/>`_
-- `Turtlebot 3 Github <https://github.com/ROBOTIS-GIT/turtlebot3>`_
-
 This tutorial consists of two parts. In the first part, you learned how to use Turtlebot 3 robots in simulation (Gazebo).
 In this part, you will learn how to control a real Turtlebot Waffle using Navigation2.
 
 ``ROS2 Dashing`` and ``Navigation2 Dashing 0.2.4`` are used to create this tutorial.
 You should be able to do this tutorial using other Navigation2 versions as well.
 
-This tutorial may take about 1-2 hours to complete. 
+This tutorial may take about 1 hour to complete. 
 It depends on your experience with ROS, robots, and what computer system you have.
 
 Requirements
 ============
 
-- `Install ROS2 <https://index.ros.org/doc/ros2/Installation/>`_
-
-- Install Navigation2
-
-    - ``sudo apt install ros-<ros2-distro>-navigation2 ros-<ros2-distro>-nav2-bringup``
-
-- Install Turtlebot 3
-
-    - ``sudo apt install ros-<ros2-distro>-turtlebot3*``
-
-- `Setup Turtlebot 3 <http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#setup>`_
+You must install Navigation2, Turtelbot3. 
+If you don't have them installed, please follow the steps in the previous tutorial. :ref:`navigation2-with-turtlebot3-in-gazebo`
 
 Tutorial Steps
 ==============
@@ -67,27 +47,32 @@ Launch Turtlebot 3 robot state publisher,
 
   ``ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=False``
 
-Make sure use_sim_time is set to **False**.
+Note: use_sim_time is set to **False** because we're on a real robot.
 
 2- Launch Navigation2
 ---------------------
 
-You need to have a map of the environment where you want to Navigate Turtlebot 3. Required files:
+You need to have a map of the environment where you want to Navigate Turtlebot 3, or create one live with SLAM.
+
+In case you are interested, there is a use case tutorial which shows how to use Navigation2 with SLAM.
+`Navigation2 with SLAM <https://github.com/ros-planning/navigation2/blob/master/doc/use_cases/navigation_with_slam.md>`_
+
+Required files:
 
    - ``your-map.map``
    - ``your-map.yaml``
 
 ``<your_map>.yaml`` is the configuration file for the map we want to provide Navigation2.
 In this case, it has the map resolution value, threshold values for obstacles and free spaces, and a map file location.
-You need to make sure these values are correct. 
+You need to make sure these values are correct.
 More information about the map.yaml can be found `here <http://wiki.ros.org/map_server>`_.
 
-Launch Navigation 2. If you set autostart:=False, you need to click on the start button in RViz to initialize the nodes. 
+Launch Navigation 2. If you set autostart:=False, you need to click on the start button in RViz to initialize the nodes.
 Make sure `use_sim time` is set to **False**, because we want to use the system time instead of the time simulation time from Gazebo.
 
 ``ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=False autostart:=False map:=/path/to/your-map.yaml``
 
-Don't forget to change **/path/to/your-map.yaml** to the actual path to the your-map.yaml file.
+Note: Don't forget to change **/path/to/your-map.yaml** to the actual path to the your-map.yaml file.
 
 3-  Launch RVIZ
 ---------------
@@ -116,7 +101,7 @@ Now, the map should appear in RViz.
 
 First, find where the robot is on the map. Check where your robot is in the room.
 
-Set the pose of the robot in RViz. 
+Set the pose of the robot in RViz.
 Click on the 2D Pose Estimate button and point the location of the robot on the map. 
 The direction of the green arrow is the orientation of Turtlebot.
 
@@ -132,10 +117,9 @@ A small error in the estimated location is tolerable.
 --------------------
 
 Pick a target location for Turtlebot on the map. 
-You can send Turtlebot 3 a goal position and a goal orientation by using the **Navigation2 Goal** and the **GoalTool** buttons.
+You can send Turtlebot 3 a goal position and a goal orientation by using the **Navigation2 Goal** or the **GoalTool** buttons.
 
-*Note*: Difference between buttons. 
-Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
+Note: Navigation2 Goal button uses a ROS2 Action to send the goal and the GoalTool publishes the goal to a topic.
 
 .. image:: images/Navigation2_on_real_Turtlebot3/rviz_send_goal.png
     :height: 720px
