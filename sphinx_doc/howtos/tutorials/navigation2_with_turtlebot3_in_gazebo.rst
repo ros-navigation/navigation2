@@ -3,10 +3,10 @@
 Navigation2 with Turtlebot 3 in Gazebo
 **************************************
 
-- [Overview](#overview)
-- [Requirments](#requirements)
-- [Navigation2 with Turtlebot 3 in Gazebo](#navigation2-with-turtlebot-3-in-gazebo)
-- [Videos](#videos)
+- Overview
+- Requirments
+- Navigation2 with Turtlebot 3 in Gazebo
+- Videos
 
 Overview
 ========
@@ -44,7 +44,7 @@ Navigation2 with Turtlebot 3 in Gazebo
 ======================================
 
 0- Setup Your Environment Variables
-----------------------------------
+-----------------------------------
 
 Run the following commands whenever you open a new terminal during this tutorial. 
 
@@ -77,7 +77,8 @@ If Gazebo fails to start, run the following commands and try to launch Gazebo ag
 
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: TB3 world and robot in Gazebo
 
 2- Launch Turtlebot 3 Robot State Publisher
@@ -108,13 +109,15 @@ Launch RVIZ with a pre-defined configuration file.
 Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in RViz. Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 
 .. image:: images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Rviz after launch, auto_start = false
 
 Now, the map should appear in RViz.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_initial_view.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Turtlebot 3 map in RViz
 
 5- Initialize the location of Turtlebot 3
@@ -123,13 +126,15 @@ Now, the map should appear in RViz.
 First, find where the robot is in Gazebo. You can see where the robot's initial position in Gazebo.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_turlebot3.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Turtlebot 3 world and robot in Gazebo
 
 Set the pose of the robot in RViz. Click on the 2D Pose Estimate button and point the location of the robot on the map. The direction of the green arrow is the orientation of Turtlebot.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_set_initial_pose.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Set initial pose in RViz
 
 Now, the 3D model of Turtlebot should move to that location. A small error in the estimated location is tolerable.
@@ -142,29 +147,33 @@ Pick a target location for Turtlebot on the map. You can send Turtlebot 3 a goal
 *Note*: Difference between buttons. Navigation2 Goal button uses a ROS2 Action to send the goal and GoalTool publishes the goal to a topic.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_send_goal_pose.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Send goal pose in RViz
 
 Once you define the target pose,  Navigation2 will find a global path and start navigating the robot on the map.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/rviz_robot_navigating.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Turtlebot 3 navigating on a map in RViz
 
 You can also observe that Turtlebot 3 moves in the simulated environment in Gazebo as well.
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/gazebo_robot_reached_goal.png
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: Turtlebot 3 navigating in Gazebo
 
 Next Tutorial
 -------------
 
-[Navigation2 on Real Turtlebot 3](navigation2_with_turtlebot3_in_gazebo.md)
+:ref:`navigation2-on-real-turtlebot3`
 
 Videos
 ======
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif
-    :scale: 100%
+    :height: 600px
+    :width: 940px
     :alt: [Navigation2 with Turtlebot 3 Demo
