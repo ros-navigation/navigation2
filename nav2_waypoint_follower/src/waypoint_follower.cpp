@@ -132,7 +132,7 @@ WaypointFollower::followWaypoints()
     // Check if asked to stop processing action
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Cancelling action.");
-      action_server_->terminate_goals();
+      action_server_->terminate_all();
       return;
     }
 
@@ -171,7 +171,7 @@ WaypointFollower::followWaypoints()
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
         result->missed_waypoints = failed_ids_;
-        action_server_->terminate_goals(result);
+        action_server_->terminate_current(result);
         failed_ids_.clear();
         return;
       } else {
