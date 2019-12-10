@@ -41,6 +41,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/layer.cpp
   src/layered_costmap.cpp
   src/costmap_2d_ros.cpp
+  src/costmap_2d_utils.cpp
   src/costmap_2d_publisher.cpp
   src/costmap_math.cpp
   src/footprint.cpp

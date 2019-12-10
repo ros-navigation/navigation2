@@ -20,6 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_utils.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/static_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
@@ -64,12 +65,14 @@ public:
   {
     costmap_raw_msg_ = msg;
     costmap_received_ = true;
+    toCostmap2D();
   }
 
   void setCostmap(nav_msgs::msg::OccupancyGrid::SharedPtr msg)
   {
     costmap_msg_ = msg;
     costmap_received_ = true;
+    toCostmap2D();
   }
 };
 
@@ -125,21 +128,6 @@ public:
       costmap_topic = "costmap_raw";
     } else {
       costmap_topic = "costmap";
-      if (cost_translation_table_ == NULL) {
-        cost_translation_table_ = new char[256];
-
-        // special values:
-        cost_translation_table_[0] = 0;  // NO obstacle
-        cost_translation_table_[253] = 99;  // INSCRIBED obstacle
-        cost_translation_table_[254] = 100;  // LETHAL obstacle
-        cost_translation_table_[255] = -1;  // UNKNOWN
-
-        // regular cost values scale the range 1 to 252 (inclusive) to fit
-        // into 1 to 98 (inclusive).
-        for (int i = 1; i < 253; i++) {
-          cost_translation_table_[i] = static_cast<char>(1 + (97 * (i - 1)) / 251);
-        }
-      }
     }
 
     std::string footprint_topic = "published_footprint";
@@ -251,10 +239,12 @@ protected:
     layers_->updateMap(x_, y_, yaw_);
     if (use_raw_) {
       costmap_sub_->setRawCostmap(
-        std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+        std::make_shared<nav2_msgs::msg::Costmap>(nav2_costmap_2d::toCostmapMsg(layers_->getCostmap(),
+        global_frame_)));
     } else {
       costmap_sub_->setCostmap(
-        std::make_shared<nav_msgs::msg::OccupancyGrid>(toOccupancyGridMsg(layers_->getCostmap())));
+        std::make_shared<nav_msgs::msg::OccupancyGrid>(nav2_costmap_2d::toOccupancyGridMsg(layers_->
+        getCostmap(), global_frame_)));
     }
   }
 
@@ -268,65 +258,6 @@ protected:
     tf_stamped.transform.translation.y = y;
     tf_stamped.transform.rotation.w = 1.0;
     tf_broadcaster_->sendTransform(tf_stamped);
-  }
-
-  nav2_msgs::msg::Costmap
-  toCostmapMsg(nav2_costmap_2d::Costmap2D * costmap)
-  {
-    double resolution = costmap->getResolution();
-
-    double wx, wy;
-    costmap->mapToWorld(0, 0, wx, wy);
-
-    unsigned char * data = costmap->getCharMap();
-
-    nav2_msgs::msg::Costmap costmap_msg;
-    costmap_msg.header.frame_id = global_frame_;
-    costmap_msg.header.stamp = now();
-    costmap_msg.metadata.layer = "master";
-    costmap_msg.metadata.resolution = resolution;
-    costmap_msg.metadata.size_x = costmap->getSizeInCellsX();
-    costmap_msg.metadata.size_y = costmap->getSizeInCellsY();
-    costmap_msg.metadata.origin.position.x = wx - resolution / 2;
-    costmap_msg.metadata.origin.position.y = wy - resolution / 2;
-    costmap_msg.metadata.origin.position.z = 0.0;
-    costmap_msg.metadata.origin.orientation.w = 1.0;
-    costmap_msg.data.resize(costmap_msg.metadata.size_x * costmap_msg.metadata.size_y);
-
-    for (unsigned int i = 0; i < costmap_msg.data.size(); i++) {
-      costmap_msg.data[i] = data[i];
-    }
-
-    return costmap_msg;
-  }
-
-  nav_msgs::msg::OccupancyGrid
-  toOccupancyGridMsg(nav2_costmap_2d::Costmap2D * costmap)
-  {
-    double resolution = costmap->getResolution();
-
-    double wx, wy;
-    costmap->mapToWorld(0, 0, wx, wy);
-
-    unsigned char * data = costmap->getCharMap();
-
-    nav_msgs::msg::OccupancyGrid costmap_msg;
-    costmap_msg.header.frame_id = global_frame_;
-    costmap_msg.header.stamp = now();
-    costmap_msg.info.resolution = resolution;
-    costmap_msg.info.width = costmap->getSizeInCellsX();
-    costmap_msg.info.height = costmap->getSizeInCellsY();
-    costmap_msg.info.origin.position.x = wx - resolution / 2;
-    costmap_msg.info.origin.position.y = wy - resolution / 2;
-    costmap_msg.info.origin.position.z = 0.0;
-    costmap_msg.info.origin.orientation.w = 1.0;
-    costmap_msg.data.resize(costmap_msg.info.width * costmap_msg.info.height);
-
-    for (unsigned int i = 0; i < costmap_msg.data.size(); i++) {
-      costmap_msg.data[i] = cost_translation_table_[data[i]];
-    }
-
-    return costmap_msg;
   }
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -343,8 +274,6 @@ protected:
   double x_, y_, yaw_;
   geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
-  // Translate from 0-255 values in costmap to -1 to 100 values in message.
-  char * cost_translation_table_;
 };
 
 

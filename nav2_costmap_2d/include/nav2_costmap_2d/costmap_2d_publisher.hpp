@@ -45,6 +45,7 @@
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_utils.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
@@ -153,8 +154,6 @@ private:
 
   nav_msgs::msg::OccupancyGrid grid_;
   nav2_msgs::msg::Costmap costmap_raw_;
-  // Translate from 0-255 values in costmap to -1 to 100 values in message.
-  static char * cost_translation_table_;
 };
 
 }  // namespace nav2_costmap_2d

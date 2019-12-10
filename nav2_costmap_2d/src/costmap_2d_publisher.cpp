@@ -46,8 +46,6 @@
 namespace nav2_costmap_2d
 {
 
-char * Costmap2DPublisher::cost_translation_table_ = NULL;
-
 Costmap2DPublisher::Costmap2DPublisher(
   nav2_util::LifecycleNode::SharedPtr ros_node, Costmap2D * costmap,
   std::string global_frame,
@@ -72,22 +70,6 @@ Costmap2DPublisher::Costmap2DPublisher(
     this, std::placeholders::_1, std::placeholders::_2,
     std::placeholders::_3));
 
-  if (cost_translation_table_ == NULL) {
-    cost_translation_table_ = new char[256];
-
-    // special values:
-    cost_translation_table_[0] = 0;  // NO obstacle
-    cost_translation_table_[253] = 99;  // INSCRIBED obstacle
-    cost_translation_table_[254] = 100;  // LETHAL obstacle
-    cost_translation_table_[255] = -1;  // UNKNOWN
-
-    // regular cost values scale the range 1 to 252 (inclusive) to fit
-    // into 1 to 98 (inclusive).
-    for (int i = 1; i < 253; i++) {
-      cost_translation_table_[i] = static_cast<char>(1 + (97 * (i - 1)) / 251);
-    }
-  }
-
   xn_ = yn_ = 0;
   x0_ = costmap_->getSizeInCellsX();
   y0_ = costmap_->getSizeInCellsY();
@@ -107,60 +89,13 @@ void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher&
 void Costmap2DPublisher::prepareGrid()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  double resolution = costmap_->getResolution();
-
-  grid_.header.frame_id = global_frame_;
-  grid_.header.stamp = rclcpp::Time();
-
-  grid_.info.resolution = resolution;
-
-  grid_.info.width = costmap_->getSizeInCellsX();
-  grid_.info.height = costmap_->getSizeInCellsY();
-
-  double wx, wy;
-  costmap_->mapToWorld(0, 0, wx, wy);
-  grid_.info.origin.position.x = wx - resolution / 2;
-  grid_.info.origin.position.y = wy - resolution / 2;
-  grid_.info.origin.position.z = 0.0;
-  grid_.info.origin.orientation.w = 1.0;
-  saved_origin_x_ = costmap_->getOriginX();
-  saved_origin_y_ = costmap_->getOriginY();
-
-  grid_.data.resize(grid_.info.width * grid_.info.height);
-
-  unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < grid_.data.size(); i++) {
-    grid_.data[i] = cost_translation_table_[data[i]];
-  }
+  grid_ = toOccupancyGridMsg(costmap_, global_frame_);
 }
 
 void Costmap2DPublisher::prepareCostmap()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  double resolution = costmap_->getResolution();
-
-  costmap_raw_.header.frame_id = global_frame_;
-  costmap_raw_.header.stamp = node_->now();
-
-  costmap_raw_.metadata.layer = "master";
-  costmap_raw_.metadata.resolution = resolution;
-
-  costmap_raw_.metadata.size_x = costmap_->getSizeInCellsX();
-  costmap_raw_.metadata.size_y = costmap_->getSizeInCellsY();
-
-  double wx, wy;
-  costmap_->mapToWorld(0, 0, wx, wy);
-  costmap_raw_.metadata.origin.position.x = wx - resolution / 2;
-  costmap_raw_.metadata.origin.position.y = wy - resolution / 2;
-  costmap_raw_.metadata.origin.position.z = 0.0;
-  costmap_raw_.metadata.origin.orientation.w = 1.0;
-
-  costmap_raw_.data.resize(costmap_raw_.metadata.size_x * costmap_raw_.metadata.size_y);
-
-  unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < costmap_raw_.data.size(); i++) {
-    costmap_raw_.data[i] = data[i];
-  }
+  costmap_raw_ = toCostmapMsg(costmap_, global_frame_, node_->now());
 }
 
 void Costmap2DPublisher::publishCostmap()
@@ -185,21 +120,8 @@ void Costmap2DPublisher::publishCostmap()
     if (node_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
       std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
       // Publish Just an Update
-      map_msgs::msg::OccupancyGridUpdate update;
-      update.header.stamp = rclcpp::Time();
-      update.header.frame_id = global_frame_;
-      update.x = x0_;
-      update.y = y0_;
-      update.width = xn_ - x0_;
-      update.height = yn_ - y0_;
-      update.data.resize(update.width * update.height);
-      unsigned int i = 0;
-      for (unsigned int y = y0_; y < yn_; y++) {
-        for (unsigned int x = x0_; x < xn_; x++) {
-          unsigned char cost = costmap_->getCost(x, y);
-          update.data[i++] = cost_translation_table_[cost];
-        }
-      }
+      map_msgs::msg::OccupancyGridUpdate update =
+        toOccupancyGridUpdateMsg(costmap_, global_frame_, x0_, xn_, y0_, yn_);
       costmap_update_pub_->publish(update);
     }
   }
