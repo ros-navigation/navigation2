@@ -3,8 +3,7 @@
 Tutorials
 #########
 
-This guide provides a process through which the user can adjust the tunable parameters to obtain
-the best navigation performance.
+Navigation2 Tutorials
 
 .. toctree::
    :maxdepth: 1
