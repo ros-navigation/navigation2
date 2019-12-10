@@ -39,7 +39,6 @@ Sections
    :maxdepth: 1
 
    getting_started/index.rst
-   build_instructions/build.rst
    how_it_works/index.rst
    howtos/index.rst
    release_notes.rst
