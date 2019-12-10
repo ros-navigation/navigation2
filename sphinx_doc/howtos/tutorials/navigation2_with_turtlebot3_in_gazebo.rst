@@ -11,7 +11,7 @@ Navigation2 with Turtlebot 3 in Gazebo
 Overview
 ========
 
-This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 in Gazebo. Turtlebot is a low-cost, personal robot kit with open-source software (ROS2). Turtblebot robots are widely supported by the ROS community. You can find many applications and examples of Turtlebot projects on the Internet. You can find more information about Turtlebot3 [here.](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
+This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 in Gazebo. Turtlebot is a low-cost, personal robot kit with open-source software (ROS2). Turtblebot robots are widely supported by the ROS community. You can find many applications and examples of Turtlebot projects on the Internet. You can find more information about Turtlebot3 `here. <http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/>`_
 
 Links to the robot kits and Github repo.
 
@@ -171,9 +171,9 @@ Next Tutorial
 :ref:`navigation2-on-real-turtlebot3`
 
 Videos
-======
+------
 
 .. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif
     :height: 600px
     :width: 940px
-    :alt: [Navigation2 with Turtlebot 3 Demo
+    :alt: Navigation2 with Turtlebot 3 Demo
