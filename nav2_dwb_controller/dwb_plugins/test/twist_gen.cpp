@@ -71,8 +71,6 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
   parameters.push_back(rclcpp::Parameter("max_speed_xy", 0.55));
   parameters.push_back(rclcpp::Parameter("min_speed_theta", 0.4));
 
-  parameters.push_back(rclcpp::Parameter("use_dwa", false));
-
   return parameters;
 }
 
@@ -210,26 +208,9 @@ TEST(VelocityIterator, no_limits_samples)
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, hypot(0.55, 0.1), 0.0, 0.0);
 }
 
-TEST(VelocityIterator, dwa_gen_exception)
-{
-  auto nh = makeTestNode("dwa_gen_exception");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
-  StandardTrajectoryGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
-}
-
-TEST(VelocityIterator, no_dwa_gen_exception)
-{
-  auto nh = makeTestNode("no_dwa_gen_exception");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", false)});
-  dwb_plugins::LimitedAccelGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
-}
-
 TEST(VelocityIterator, dwa_gen)
 {
   auto nh = makeTestNode("dwa_gen");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
@@ -242,7 +223,6 @@ TEST(VelocityIterator, dwa_gen)
 TEST(VelocityIterator, nonzero)
 {
   auto nh = makeTestNode("nonzero");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
@@ -402,7 +382,6 @@ TEST(TrajectoryGenerator, accel)
 TEST(TrajectoryGenerator, dwa)
 {
   auto nh = makeTestNode("dwa");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("sim_period", 1.0)});
   nh->set_parameters({rclcpp::Parameter("sim_time", 5.0)});
   nh->set_parameters({rclcpp::Parameter("discretize_by_time", true)});
