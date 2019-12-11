@@ -64,17 +64,6 @@ void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr
   }
 }
 
-void LimitedAccelGenerator::checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh)
-{
-  bool use_dwa = false;
-  nh->get_parameter("use_dwa", use_dwa);
-  if (!use_dwa) {
-    throw nav2_core::
-          PlannerException("Deprecated parameter use_dwa set to false. "
-            "Please use StandardTrajectoryGenerator for that functionality.");
-  }
-}
-
 void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity)
 {
   // Limit our search space to just those within the limited acceleration_time
