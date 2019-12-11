@@ -171,7 +171,6 @@ void VoxelLayer::reset()
   deactivate();
   resetMaps();
   activate();
-  undeclareAllParameters();
   voxel_pub_->on_activate();
 }
 
