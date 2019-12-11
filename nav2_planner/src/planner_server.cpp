@@ -165,10 +165,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->cleanup();
   }
-
-  for (it = planners_.begin(); it != planners_.end(); ++it) {
-    it->second.reset();
-  }
+  planners_.clear();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
