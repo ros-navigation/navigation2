@@ -99,7 +99,6 @@ public:
 
   virtual void reset()
   {
-    undeclareAllParameters();
     onInitialize();
   }
 

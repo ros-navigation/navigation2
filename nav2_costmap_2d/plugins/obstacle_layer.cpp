@@ -655,7 +655,6 @@ ObstacleLayer::reset()
   resetMaps();
   current_ = true;
   activate();
-  undeclareAllParameters();
 }
 
 }  // namespace nav2_costmap_2d

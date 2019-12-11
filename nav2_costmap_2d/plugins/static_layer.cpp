@@ -125,7 +125,6 @@ StaticLayer::reset()
   map_sub_.reset();
   map_update_sub_.reset();
 
-  undeclareAllParameters();
   onInitialize();
 }
 
