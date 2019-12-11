@@ -11,6 +11,8 @@
 ARG FROM_IMAGE=dashing
 FROM ros:$FROM_IMAGE
 
+RUN rosdep update
+
 # copy ros package repo
 ENV NAV2_WS /opt/nav2_ws
 RUN mkdir -p $NAV2_WS/src
