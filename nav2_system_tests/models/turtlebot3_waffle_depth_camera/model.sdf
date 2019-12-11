@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="turtlebot3_waffle">  
+  <model name="TurtleBot3_Waffle_DepthCamera">  
   <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
 
     <link name="base_footprint"/>
@@ -335,7 +335,7 @@
 
       <sensor name="intel_realsense_r200_depth" type="depth">
         <always_on>1</always_on>
-        <update_rate>1</update_rate>
+        <update_rate>15</update_rate>
         <pose>0.064 -0.047 0.107 0 0 0</pose>
         <camera name="realsense_depth_camera">
         </camera>
