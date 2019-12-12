@@ -250,10 +250,6 @@ public:
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
 protected:
-  /** @brief Prep layers for onCleanup state transition
-   **/
-  void cleanupLayers();
-
   rclcpp::Node::SharedPtr client_node_;
 
   // Publishers and subscribers
