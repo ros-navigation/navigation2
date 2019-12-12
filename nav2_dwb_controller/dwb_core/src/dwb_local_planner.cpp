@@ -81,7 +81,6 @@ void DWBLocalPlanner::configure(
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
   declare_parameter_if_not_declared(node_, "goal_checker_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
-  declare_parameter_if_not_declared(node_, "use_dwa", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(node_, "transform_tolerance", rclcpp::ParameterValue(0.1));
 
   std::string traj_generator_name;
