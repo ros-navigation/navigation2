@@ -167,16 +167,18 @@ void VoxelLayer::matchSize()
 
 void VoxelLayer::reset()
 {
-  voxel_pub_->on_deactivate();
-  deactivate();
+  // Call the base class method before adding our own functionality
+  ObstacleLayer::reset();
   resetMaps();
-  activate();
-  voxel_pub_->on_activate();
 }
 
 void VoxelLayer::resetMaps()
 {
-  Costmap2D::resetMaps();
+  // Call the base class method before adding our own functionality
+  // Note: at the time this was written, ObstacleLayer doesn't implement
+  // resetMaps so this goes to the next layer down Costmap2DLayer which also
+  // doesn't implement this, so it actually goes all the way to Costmap2D
+  ObstacleLayer::resetMaps();
   voxel_grid_.reset();
 }
 

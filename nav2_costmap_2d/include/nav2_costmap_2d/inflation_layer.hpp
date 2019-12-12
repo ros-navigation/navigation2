@@ -99,7 +99,7 @@ public:
 
   virtual void reset()
   {
-    onInitialize();
+    matchSize();
   }
 
   /** @brief  Given a distance, compute a cost.
