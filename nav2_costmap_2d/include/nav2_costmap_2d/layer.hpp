@@ -67,7 +67,7 @@ public:
     rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
   virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
-  virtual void reset() {}
+  virtual void reset() = 0;
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how

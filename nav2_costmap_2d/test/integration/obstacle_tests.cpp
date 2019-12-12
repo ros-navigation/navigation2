@@ -357,20 +357,9 @@ TEST_F(TestNode, testRepeatedResets) {
       return plugin->hasParameter(layer_param);
     }));
 
-  // Reset all layers. This will un-declare all params and might re-declare internal ones
-  // Should run without throwing exceptions
+  // Reset all layers. Parameters should be declared if not declared, otherwise skipped.
   ASSERT_NO_THROW(
     for_each(begin(*plugins), end(*plugins), [](const auto & plugin) {
       plugin->reset();
-    }));
-
-  // Check for node-level param
-  ASSERT_TRUE(node_->has_parameter(node_dummy.first));
-
-  // Layer-level parameters shouldn't be found
-  ASSERT_TRUE(
-    none_of(begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
-      string layer_param = layer_dummy.first + "_" + plugin->getName();
-      return plugin->hasParameter(layer_param);
     }));
 }

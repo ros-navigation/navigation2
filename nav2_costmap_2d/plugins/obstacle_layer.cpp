@@ -588,13 +588,9 @@ ObstacleLayer::activate()
       observation_subscribers_[i]->subscribe();
     }
   }
-
-  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
-    if (observation_buffers_[i]) {
-      observation_buffers_[i]->resetLastUpdated();
-    }
-  }
+  resetBuffersLastUpdated();
 }
+
 void
 ObstacleLayer::deactivate()
 {
@@ -620,11 +616,19 @@ ObstacleLayer::updateRaytraceBounds(
 void
 ObstacleLayer::reset()
 {
-  deactivate();
   resetMaps();
+  resetBuffersLastUpdated();
   current_ = true;
-  activate();
-  undeclareAllParameters();
+}
+
+void
+ObstacleLayer::resetBuffersLastUpdated()
+{
+  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
+    if (observation_buffers_[i]) {
+      observation_buffers_[i]->resetLastUpdated();
+    }
+  }
 }
 
 }  // namespace nav2_costmap_2d
