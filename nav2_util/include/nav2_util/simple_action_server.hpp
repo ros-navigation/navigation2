@@ -190,6 +190,10 @@ public:
       stop_execution_ = true;
     }
 
+    if (!execution_future_.valid()) {
+      return;
+    }
+
     if (is_running()) {
       warn_msg("Requested to deactivate server but goal is still executing."
         " Should check if action server is running before deactivating.");
