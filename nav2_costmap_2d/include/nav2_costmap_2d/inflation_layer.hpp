@@ -99,12 +99,6 @@ public:
 
   virtual void reset()
   {
-    undeclareAllParameters();
-    onInitialize();
-  }
-
-  void clearMap()
-  {
     matchSize();
   }
 

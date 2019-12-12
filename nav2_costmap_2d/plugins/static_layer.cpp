@@ -109,16 +109,6 @@ StaticLayer::deactivate()
 void
 StaticLayer::reset()
 {
-  map_sub_.reset();
-  map_update_sub_.reset();
-
-  undeclareAllParameters();
-  onInitialize();
-}
-
-void
-StaticLayer::clearMap()
-{
   has_updated_data_ = true;
 }
 

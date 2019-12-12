@@ -83,8 +83,7 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
-  virtual void clearMap();
-
+  
   /**
    * @brief triggers the update of observations buffer
    */

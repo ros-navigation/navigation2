@@ -110,17 +110,7 @@ void VoxelLayer::matchSize()
 
 void VoxelLayer::reset()
 {
-  voxel_pub_->on_deactivate();
-  deactivate();
-  clearMap();
-  activate();
-  undeclareAllParameters();
-  voxel_pub_->on_activate();
-}
-
-void VoxelLayer::clearMap()
-{
-  ObstacleLayer::clearMap();
+  ObstacleLayer::reset();
   voxel_grid_.reset();
 }
 

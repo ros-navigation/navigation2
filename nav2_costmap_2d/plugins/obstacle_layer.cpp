@@ -616,11 +616,9 @@ ObstacleLayer::updateRaytraceBounds(
 void
 ObstacleLayer::reset()
 {
-  deactivate();
   resetMaps();
+  resetBuffersLastUpdated();
   current_ = true;
-  activate();
-  undeclareAllParameters();
 }
 
 void
@@ -631,14 +629,6 @@ ObstacleLayer::resetBuffersLastUpdated()
       observation_buffers_[i]->resetLastUpdated();
     }
   }
-}
-
-void
-ObstacleLayer::clearMap()
-{
-  resetMaps();
-  resetBuffersLastUpdated();
-  current_ = true;
 }
 
 }  // namespace nav2_costmap_2d
