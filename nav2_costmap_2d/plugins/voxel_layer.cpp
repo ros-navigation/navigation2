@@ -111,6 +111,12 @@ void VoxelLayer::matchSize()
 void VoxelLayer::reset()
 {
   ObstacleLayer::reset();
+  resetMaps();
+}
+
+void VoxelLayer::resetMaps()
+{
+  ObstacleLayer::resetMaps();
   voxel_grid_.reset();
 }
 
