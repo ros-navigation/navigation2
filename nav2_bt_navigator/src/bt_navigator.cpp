@@ -257,9 +257,7 @@ BtNavigator::initializeGoalPose()
 void
 BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  auto is_action_server_ready =
-    self_client_->wait_for_action_server(std::chrono::seconds(5));
-  if (!is_action_server_ready) {
+  if (!self_client_->wait_for_action_server(std::chrono::milliseconds(500))) {
     RCLCPP_ERROR(client_node_->get_logger(),
       "NavigateToPose action server is not available."
       " Is the initial pose set?");
@@ -269,11 +267,6 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
   navigation_goal_.pose = *pose;
 
-  // Enable result awareness by providing an empty lambda function
-  auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
-  send_goal_options.result_callback = [](auto) {};
-
-  self_client_->async_send_goal(navigation_goal_, send_goal_options);
+  self_client_->async_send_goal(navigation_goal_);
 }
 }  // namespace nav2_bt_navigator
