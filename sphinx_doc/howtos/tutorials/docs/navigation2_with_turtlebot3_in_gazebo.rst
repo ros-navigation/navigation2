@@ -17,11 +17,10 @@ Turtblebot robots are widely supported by the ROS community.
 You can find many applications and examples of Turtlebot projects on the Internet.
 You can find more information about Turtlebot3 `here. <https://www.turtlebot.com/>`_
 
-Links to the robot kits and Github repo.
+Links to the robot kits and Github repo. 
 
-- `Turtlebot Burger <http://www.robotis.us/turtlebot-3-burger-us/>`_
-- `Turtlebot Waffle <http://www.robotis.us/turtlebot-3-waffle-pi/>`_
-- `Turtlebot 3 Github <https://github.com/ROBOTIS-GIT/turtlebot3>`_
+  - `Turtlebot3 Kits <https://www.turtlebot.com/purchase/>`_
+  - `Turtlebot 3 Github <https://github.com/ROBOTIS-GIT/turtlebot3>`_
 
 This tutorial consists of two parts.
 In the first part, you will learn how to use Turtlebot 3 robots in simulation (Gazebo).
