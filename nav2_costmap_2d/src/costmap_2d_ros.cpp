@@ -245,7 +245,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  resetLayers();
+  cleanupLayers();
+
   delete layered_costmap_;
   layered_costmap_ = nullptr;
 
@@ -518,6 +519,15 @@ Costmap2DROS::resetLayers()
     plugin != plugins->end(); ++plugin)
   {
     (*plugin)->reset();
+  }
+}
+
+void
+Costmap2DROS::cleanupLayers()
+{
+  resetLayers();
+  for (auto & plugin : *(layered_costmap_->getPlugins())) {
+    plugin->undeclareAllParameters();
   }
 }
 

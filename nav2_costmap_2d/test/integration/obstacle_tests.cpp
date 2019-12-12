@@ -362,6 +362,7 @@ TEST_F(TestNode, testRepeatedResets) {
   ASSERT_NO_THROW(
     for_each(begin(*plugins), end(*plugins), [](const auto & plugin) {
       plugin->reset();
+      plugin->undeclareAllParameters();
     }));
 
   // Check for node-level param
