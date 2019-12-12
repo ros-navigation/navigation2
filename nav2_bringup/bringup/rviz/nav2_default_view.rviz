@@ -356,6 +356,9 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /clicked_point
     - Class: nav2_rviz_plugins/GoalTool
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
