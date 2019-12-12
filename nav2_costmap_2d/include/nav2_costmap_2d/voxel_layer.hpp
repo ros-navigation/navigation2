@@ -81,6 +81,9 @@ public:
   virtual void matchSize();
   virtual void reset();
 
+protected:
+  virtual void resetMaps();
+
 private:
   void reconfigureCB();
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
