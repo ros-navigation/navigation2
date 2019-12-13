@@ -199,7 +199,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  g_node = nav2_util::LifecycleNode::make_shared("costmap_2d_cloud");
+  g_node = rclcpp::Node::make_shared("costmap_2d_cloud");
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
