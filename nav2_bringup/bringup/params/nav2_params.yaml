@@ -115,8 +115,8 @@ controller_server_rclcpp_node:
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 5
-      publish_frequency: 2
+      update_frequency: 5.0
+      publish_frequency: 2.0
       robot_base_frame: base_link
       use_sim_time: True
       global_frame: odom
@@ -166,8 +166,8 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 1
-      publish_frequency: 1
+      update_frequency: 1.0
+      publish_frequency: 1.0
       robot_base_frame: base_link
       global_frame: map
       use_sim_time: True
