@@ -86,7 +86,8 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
   declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("height", rclcpp::ParameterValue(10));
+  declare_parameter("height", rclcpp::ParameterValue(5));
+  declare_parameter("width", rclcpp::ParameterValue(5));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
   declare_parameter("map_topic", rclcpp::ParameterValue(
       (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
@@ -106,7 +107,6 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  declare_parameter("width", rclcpp::ParameterValue(10));
   declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
 }
 
