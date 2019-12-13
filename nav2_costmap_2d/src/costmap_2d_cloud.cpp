@@ -34,7 +34,6 @@
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 
 static inline void mapToWorld3D(
   const unsigned int mx,
@@ -67,7 +66,7 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 V_Cell g_marked;
 V_Cell g_unknown;
 
-nav2_util::LifecycleNode::SharedPtr g_node;
+rclcpp::Node::SharedPtr g_node;
 
 rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_marked;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_unknown;
