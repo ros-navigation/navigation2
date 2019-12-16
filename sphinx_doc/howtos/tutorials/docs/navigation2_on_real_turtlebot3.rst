@@ -27,7 +27,7 @@ Requirements
 ============
 
 You must install Navigation2, Turtelbot3. 
-If you don't have them installed, please follow the steps in the previous tutorial. :ref:`navigation2-with-turtlebot3-in-gazebo`
+If you don't have them installed, please follow :ref:`navigation2-with-turtlebot3-in-gazebo`.
 
 Tutorial Steps
 ==============
