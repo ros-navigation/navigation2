@@ -4,7 +4,7 @@ PACKAGE_NAME = 'nav2_gazebo_spawner'
 
 setup(
     name=PACKAGE_NAME,
-    version='0.2.4',
+    version='0.3.0',
     packages=[PACKAGE_NAME],
     data_files=[
         ('share/ament_index/resource_index/packages',

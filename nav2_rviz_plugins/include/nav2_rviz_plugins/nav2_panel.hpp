@@ -30,6 +30,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 class QPushButton;
@@ -123,6 +124,11 @@ private:
   QState * accumulated_{nullptr};
 
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
+
+  // Publish the visual markers with the waypoints
+  void updateWpNavigationMarkers();
+  // Waypoint navigation visual markers publisher
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;
 };
 
 class InitialThread : public QThread

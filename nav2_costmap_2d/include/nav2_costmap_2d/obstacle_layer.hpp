@@ -83,6 +83,10 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
+  /**
+   * @brief triggers the update of observations buffer
+   */
+  void resetBuffersLastUpdated();
 
   /**
    * @brief  A callback to handle buffering LaserScan messages
@@ -159,8 +163,6 @@ protected:
     double * min_y,
     double * max_x,
     double * max_y);
-
-  void setParamCallbacks();
 
   std::string global_frame_;  ///< @brief The global frame for the costmap
   double max_obstacle_height_;  ///< @brief Max Obstacle Height

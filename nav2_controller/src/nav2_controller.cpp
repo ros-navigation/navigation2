@@ -38,9 +38,8 @@ ControllerServer::ControllerServer()
   std::vector<std::string> default_id, default_type;
   default_type.push_back("dwb_core::DWBLocalPlanner");
   default_id.push_back("FollowPath");
-  controller_ids_ = declare_parameter("controller_plugin_ids",
-      default_id);
-  controller_types_ = declare_parameter("controller_plugin_types", default_type);
+  declare_parameter("controller_plugin_ids", default_id);
+  declare_parameter("controller_plugin_types", default_type);
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -59,6 +58,11 @@ nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
+
+  get_parameter("controller_plugin_ids", controller_ids_);
+  get_parameter("controller_plugin_types", controller_types_);
+  get_parameter("controller_frequency", controller_frequency_);
+  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   costmap_ros_->on_configure(state);
 
@@ -91,9 +95,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (uint i = 0; i != controller_ids_.size(); i++) {
     controller_ids_concat_ += controller_ids_[i] + std::string(" ");
   }
-
-  get_parameter("controller_frequency", controller_frequency_);
-  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
@@ -149,6 +150,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->cleanup();
   }
+  controllers_.clear();
   costmap_ros_->on_cleanup(state);
 
   // Release any allocated resources
@@ -198,7 +200,7 @@ void ControllerServer::computeControl()
         RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
           "which does not exist. Available controllers are %s.",
           c_name.c_str(), controller_ids_concat_.c_str());
-        action_server_->terminate_goals();
+        action_server_->terminate_current();
         return;
       }
     } else {
@@ -222,7 +224,7 @@ void ControllerServer::computeControl()
 
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
-        action_server_->terminate_goals();
+        action_server_->terminate_all();
         publishZeroVelocity();
         return;
       }
@@ -244,7 +246,7 @@ void ControllerServer::computeControl()
   } catch (nav2_core::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
-    action_server_->terminate_goals();
+    action_server_->terminate_current();
     return;
   }
 

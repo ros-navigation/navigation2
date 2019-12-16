@@ -137,7 +137,6 @@ Hosts the `DWB` controller.
         sim_time: 1.7
         trajectory_generator_name: dwb_plugins::StandardTrajectoryGenerator
         transform_tolerance: 0.2
-        use_dwa: false
         use_sim_time: true
         vx_samples: 20
         vy_samples: 5

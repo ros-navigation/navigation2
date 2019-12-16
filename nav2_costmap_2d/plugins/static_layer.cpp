@@ -94,19 +94,6 @@ StaticLayer::onInitialize()
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
-
-  auto cb = [&](const rclcpp::Parameter & p) {
-      if (enabled_ != p.get_value<bool>()) {
-        enabled_ = p.get_value<bool>();
-        has_updated_data_ = true;
-        x_ = y_ = 0;
-        width_ = size_x_;
-        height_ = size_y_;
-      }
-    };
-  if (param_subscriber_) {
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".enabled", cb));
-  }
 }
 
 void
@@ -122,11 +109,7 @@ StaticLayer::deactivate()
 void
 StaticLayer::reset()
 {
-  map_sub_.reset();
-  map_update_sub_.reset();
-
-  undeclareAllParameters();
-  onInitialize();
+  has_updated_data_ = true;
 }
 
 void

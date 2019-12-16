@@ -243,37 +243,6 @@ void ObstacleLayer::onInitialize()
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
   }
-  setParamCallbacks();
-}
-
-void
-ObstacleLayer::setParamCallbacks()
-{
-  if (param_subscriber_) {
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ + ".enabled",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        enabled_ = p.get_value<bool>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".footprint_clearing_enabled",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        footprint_clearing_enabled_ = p.get_value<bool>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".max_obstacle_height",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        max_obstacle_height_ = p.get_value<double>();
-      }));
-    callback_handles_.push_back(param_subscriber_->add_parameter_callback(name_ +
-      ".combination_method",
-      [&](const rclcpp::Parameter & p) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        combination_method_ = p.get_value<int>();
-      }));
-  }
 }
 
 void
@@ -619,13 +588,9 @@ ObstacleLayer::activate()
       observation_subscribers_[i]->subscribe();
     }
   }
-
-  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
-    if (observation_buffers_[i]) {
-      observation_buffers_[i]->resetLastUpdated();
-    }
-  }
+  resetBuffersLastUpdated();
 }
+
 void
 ObstacleLayer::deactivate()
 {
@@ -651,11 +616,19 @@ ObstacleLayer::updateRaytraceBounds(
 void
 ObstacleLayer::reset()
 {
-  deactivate();
   resetMaps();
+  resetBuffersLastUpdated();
   current_ = true;
-  activate();
-  undeclareAllParameters();
+}
+
+void
+ObstacleLayer::resetBuffersLastUpdated()
+{
+  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
+    if (observation_buffers_[i]) {
+      observation_buffers_[i]->resetLastUpdated();
+    }
+  }
 }
 
 }  // namespace nav2_costmap_2d

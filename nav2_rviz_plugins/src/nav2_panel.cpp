@@ -233,6 +233,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
 
+  wp_navigation_markers_pub_ =
+    client_node_->create_publisher<visualization_msgs::msg::MarkerArray>("waypoints",
+      rclcpp::QoS(1).transient_local());
+
   QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
 }
@@ -312,6 +316,8 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
     std::cout << "Start navigation" << std::endl;
     startNavigation(pose);
   }
+
+  updateWpNavigationMarkers();
 }
 
 void
@@ -497,6 +503,60 @@ void
 Nav2Panel::load(const rviz_common::Config & config)
 {
   Panel::load(config);
+}
+
+void
+Nav2Panel::updateWpNavigationMarkers()
+{
+  visualization_msgs::msg::MarkerArray marker_array;
+
+  for (size_t i = 0; i < acummulated_poses_.size(); i++) {
+    // Draw a green ball at the waypoint pose
+    visualization_msgs::msg::Marker marker;
+    marker.header = acummulated_poses_[i].header;
+    marker.id = i * 2;
+    marker.type = visualization_msgs::msg::Marker::SPHERE;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose = acummulated_poses_[i].pose;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.r = 0;
+    marker.color.g = 255;
+    marker.color.b = 0;
+    marker.color.a = 1.0f;
+    marker.lifetime = rclcpp::Duration(0);
+    marker.frame_locked = false;
+    marker_array.markers.push_back(marker);
+
+    // Draw the waypoint number
+    visualization_msgs::msg::Marker marker_text;
+    marker_text.header = acummulated_poses_[i].header;
+    marker_text.id = i * 2 + 1;
+    marker_text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+    marker_text.action = visualization_msgs::msg::Marker::ADD;
+    marker_text.pose = acummulated_poses_[i].pose;
+    marker_text.pose.position.z += 0.2;  // draw it on top of the waypoint
+    marker_text.scale.x = 0.1;
+    marker_text.scale.y = 0.1;
+    marker_text.scale.z = 0.1;
+    marker_text.color.r = 0;
+    marker_text.color.g = 255;
+    marker_text.color.b = 0;
+    marker_text.color.a = 1.0f;
+    marker_text.lifetime = rclcpp::Duration(0);
+    marker_text.frame_locked = false;
+    marker_text.text = "wp_" + std::to_string(i + 1);
+    marker_array.markers.push_back(marker_text);
+  }
+
+  if (marker_array.markers.empty()) {
+    visualization_msgs::msg::Marker clear_all_marker;
+    clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    marker_array.markers.push_back(clear_all_marker);
+  }
+
+  wp_navigation_markers_pub_->publish(marker_array);
 }
 
 }  // namespace nav2_rviz_plugins

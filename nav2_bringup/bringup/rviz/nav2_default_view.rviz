@@ -425,6 +425,7 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: Controller
+<<<<<<< HEAD
     - Class: rviz_common/Group
       Displays:
         - Class: rviz_default_plugins/Image
@@ -476,6 +477,18 @@ Visualization Manager:
           Value: true
       Enabled: false
       Name: Realsense
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /waypoints
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

@@ -85,7 +85,7 @@ protected:
   virtual void resetMaps();
 
 private:
-  void setParamCallbacks();
+  void reconfigureCB();
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
   virtual void raytraceFreespace(
     const nav2_costmap_2d::Observation & clearing_observation,

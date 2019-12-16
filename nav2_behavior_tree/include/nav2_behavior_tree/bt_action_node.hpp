@@ -46,12 +46,7 @@ public:
       config().blackboard->get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    action_client_->wait_for_action_server();
+    createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
@@ -61,6 +56,17 @@ public:
 
   virtual ~BtActionNode()
   {
+  }
+
+  // Create instance of an action server
+  void createActionClient(const std::string & action_name)
+  {
+    // Now that we have the ROS node to use, create the action client for this BT action
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
+
+    // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
+    action_client_->wait_for_action_server();
   }
 
   // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
