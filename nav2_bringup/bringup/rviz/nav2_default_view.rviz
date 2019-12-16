@@ -425,7 +425,6 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: Controller
-<<<<<<< HEAD
     - Class: rviz_common/Group
       Displays:
         - Class: rviz_default_plugins/Image
