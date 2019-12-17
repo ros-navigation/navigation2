@@ -10,7 +10,7 @@ Also, the `nav2_bringup pkg`_ contains a `nav2_params file`_ with the default va
 
 .. rst-class:: content-collapse
 
-ACML
+AMCL
 ====
 
 .. code-block:: yaml
