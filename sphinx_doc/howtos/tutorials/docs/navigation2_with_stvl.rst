@@ -121,7 +121,7 @@ An example fully-described parameterization of an STVL configuration is:
         decay_acceleration: 15.0
         model_type: 0
 
-Please copy-paste this blob, with the ``plugin_names`` and ``plugin_types`` registration, into your ``nav2_params.yaml`` to enable STVL in your application.
+Please copy-paste the text above, with the ``plugin_names`` and ``plugin_types`` registration, into your ``nav2_params.yaml`` to enable STVL in your application.
 Make sure to change both the local and global costmaps.
 
 Note: Pluginlib plugins for other Navigation2 servers such as planning, recovery, and control can be set in this same way.
