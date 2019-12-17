@@ -12,7 +12,7 @@ Overview
 ========
 
 This tutorial shows how to load and use an external plugin.
-This example uses the `Spatio Temporal Voxel Layer <https://github.com/SteveMacenski/spatio_temporal_voxel_layer/>`_ (STVL) costmap pluginlib plugin as an example.
+This example uses the `Spatio Temporal Voxel Layer <https://github.com/SteveMacenski/spatio_temporal_voxel_layer/>`_ (STVL) costmap `pluginlib <http://wiki.ros.org/pluginlib/>`_ plugin as an example.
 STVL is a demonstrative pluginlib plugin and the same process can be followed for other costmap plugins as well as plugin planners, controllers, and recoveries.
 
 Before completing this tutorial, please look at the previous two tutorials on navigation in simulation and physical hardware, if available.
