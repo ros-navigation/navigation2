@@ -21,7 +21,7 @@ This tutorial assumes knowledge of navigation and basic understanding of costmap
 Costmap2D and STVL
 ==================
 
-Costmap 2D is the software we use to buffer sensor information into a global view that the robot will use to create plans and control efforts.
+Costmap 2D is the data object we use to buffer sensor information into a global view that the robot will use to create plans and control efforts.
 Within Costmap2D, there are pluginlib plugin interfaces available to create custom behaviors loadable at runtime.
 Examples of included pluginlib plugins for Costmap2D are the Obstacle Layer, Voxel Layer, Static Layer, and Inflation Layer.
 
