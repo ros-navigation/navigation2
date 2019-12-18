@@ -29,10 +29,16 @@ include_directories(
 
 add_library(simple_goal_checker SHARED src/simple_goal_checker.cpp)
 ament_target_dependencies(simple_goal_checker ${dependencies})
+# prevent pluginlib from using boost
+target_compile_definitions(simple_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 
 add_library(stopped_goal_checker SHARED src/stopped_goal_checker.cpp)
 target_link_libraries(stopped_goal_checker simple_goal_checker)
 ament_target_dependencies(stopped_goal_checker ${dependencies})
+# prevent pluginlib from using boost
+target_compile_definitions(stopped_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 
 add_library(standard_traj_generator SHARED
             src/standard_traj_generator.cpp
@@ -40,6 +46,9 @@ add_library(standard_traj_generator SHARED
             src/kinematic_parameters.cpp
             src/xy_theta_iterator.cpp)
 ament_target_dependencies(standard_traj_generator ${dependencies})
+# prevent pluginlib from using boost
+target_compile_definitions(standard_traj_generator PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
