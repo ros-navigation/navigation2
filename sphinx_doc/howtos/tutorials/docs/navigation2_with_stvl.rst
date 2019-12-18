@@ -6,7 +6,7 @@ Navigation2 With External Costmap Plugin
 - `Overview`_
 - `Costmap2D and STVL`_
 - `Tutorial Steps`_
-- `Videos`_
+- `Video`_
 
 Overview
 ========
