@@ -50,6 +50,9 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+# prevent pluginlib from using boost
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
