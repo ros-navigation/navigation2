@@ -165,7 +165,9 @@ def generate_launch_description():
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_rviz_launch.py')),
         condition=IfCondition(use_rviz),
-        launch_arguments={'rviz_config_file': rviz_config_file}.items())
+        launch_arguments={'namespace': '',
+                          'use_namespace': 'False',
+                          'rviz_config': rviz_config_file}.items())
 
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
@@ -175,10 +177,7 @@ def generate_launch_description():
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
-                          'autostart': autostart,
-                          'use_remappings': use_remappings,
-                          'rviz_config_file': rviz_config_file,
-                          'use_rviz': use_rviz}.items())
+                          'autostart': autostart}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()

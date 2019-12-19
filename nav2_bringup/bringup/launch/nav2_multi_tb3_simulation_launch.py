@@ -136,11 +136,12 @@ def generate_launch_description():
         group = GroupAction([
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                        os.path.join(launch_dir, 'nav2_namespaced_rviz_launch.py')),
+                        os.path.join(launch_dir, 'nav2_rviz_launch.py')),
                 condition=IfCondition(use_rviz),
                 launch_arguments={
                                   'namespace': TextSubstitution(text=robot['name']),
-                                  'rviz_config_file': rviz_config_file}.items()),
+                                  'use_namespace': 'True',
+                                  'rviz_config': rviz_config_file}.items()),
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir,
@@ -148,7 +149,7 @@ def generate_launch_description():
                                                            'nav2_tb3_simulation_launch.py')),
                 launch_arguments={'namespace': robot['name'],
                                   'use_namespace': 'True',
-                                  'map_yaml_file': map_yaml_file,
+                                  'map': map_yaml_file,
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
                                   'bt_xml_file': bt_xml_file,
