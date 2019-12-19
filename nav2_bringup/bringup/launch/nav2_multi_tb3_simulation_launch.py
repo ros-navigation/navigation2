@@ -30,14 +30,12 @@ from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
-from launch_ros.actions import PushRosNamespace
-
-from nav2_common.launch import ReplaceString
 
 
 def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
+    launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Names and poses of the robots
     robots = [
@@ -98,7 +96,7 @@ def generate_launch_description():
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
-        description='Full path to the RVIZ config file to use')
+        description='Full path to the RVIZ config file to use.')
 
     declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
         'use_robot_state_pub',
@@ -133,41 +131,31 @@ def generate_launch_description():
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        namespaced_rviz_config_file = ReplaceString(
-            source_file=rviz_config_file,
-            replacements={'<robot_namespace>': ('/' + robot['name'])})
-
         params_file = LaunchConfiguration(robot['name'] + '_params_file')
 
         group = GroupAction([
-            # TODO(orduno)
-            # Each `action.Node` within the `localization` and `navigation` launch
-            # files has two versions, one with the required remaps and another without.
-            # The `use_remappings` flag specifies which runs.
-            # A better mechanism would be to have a PushNodeRemapping() action:
-            # https://github.com/ros2/launch_ros/issues/56
-            # For more on why we're remapping topics, see the note below
-
-            # PushNodeRemapping(remappings)
-
-            # Instances use the robot's name for namespace
-            PushRosNamespace(robot['name']),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                        os.path.join(launch_dir, 'nav2_rviz_launch.py')),
+                condition=IfCondition(use_rviz),
+                launch_arguments={
+                                  'namespace': TextSubstitution(text=robot['name']),
+                                  'use_namespace': 'True',
+                                  'rviz_config': rviz_config_file}.items()),
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir,
                                                            'launch',
                                                            'nav2_tb3_simulation_launch.py')),
-                launch_arguments={
-                                  # TODO(orduno) might not be necessary to pass the robot name
-                                  'namespace': robot['name'],
-                                  'map_yaml_file': map_yaml_file,
+                launch_arguments={'namespace': robot['name'],
+                                  'use_namespace': 'True',
+                                  'map': map_yaml_file,
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
                                   'bt_xml_file': bt_xml_file,
                                   'autostart': autostart,
                                   'use_remappings': 'True',
-                                  'rviz_config_file': namespaced_rviz_config_file,
-                                  'use_rviz': use_rviz,
+                                  'use_rviz': 'False',
                                   'use_simulator': 'False',
                                   'headless': 'False',
                                   'use_robot_state_pub': use_robot_state_pub}.items()),
@@ -186,7 +174,7 @@ def generate_launch_description():
                 msg=[robot['name'], ' behavior tree xml: ', bt_xml_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' rviz config file: ', namespaced_rviz_config_file]),
+                msg=[robot['name'], ' rviz config file: ', rviz_config_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' using robot state pub: ', use_robot_state_pub]),
@@ -196,14 +184,6 @@ def generate_launch_description():
         ])
 
         nav_instances_cmds.append(group)
-
-    # A note on the `remappings` variable defined above and the fact it's passed as a node arg.
-    # A few topics have fully qualified names (have a leading '/'), these need to be remapped
-    # to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # for multi-robot transforms:
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
 
     # Create the launch description and populate
     ld = LaunchDescription()
