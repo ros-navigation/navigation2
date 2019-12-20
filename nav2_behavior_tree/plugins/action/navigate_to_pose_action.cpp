@@ -73,7 +73,7 @@ BT_REGISTER_NODES(factory)
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
       return std::make_unique<nav2_behavior_tree::NavigateToPoseAction>(
-        name, "navigate_to_pose", config);
+        name, "NavigateToPose", config);
     };
 
   factory.registerBuilder<nav2_behavior_tree::NavigateToPoseAction>(
