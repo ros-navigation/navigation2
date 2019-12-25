@@ -515,11 +515,11 @@ Nav2Panel::updateWpNavigationMarkers()
     visualization_msgs::msg::Marker marker;
     marker.header = acummulated_poses_[i].header;
     marker.id = i * 2;
-    marker.type = visualization_msgs::msg::Marker::SPHERE;
+    marker.type = visualization_msgs::msg::Marker::ARROW;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.pose = acummulated_poses_[i].pose;
-    marker.scale.x = 0.1;
-    marker.scale.y = 0.1;
+    marker.scale.x = 0.3;
+    marker.scale.y = 0.05;
     marker.scale.z = 0.1;
     marker.color.r = 0;
     marker.color.g = 255;
