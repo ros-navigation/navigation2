@@ -71,6 +71,8 @@ private:
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
 
+  int unique_id {0};
+
   // Call to send NavigateToPose action request for goal poses
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
@@ -127,6 +129,12 @@ private:
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
+
+  // Create unique id numbers for markers
+  int getUniqueId();
+
+  void resetUniqueId();
+
   // Waypoint navigation visual markers publisher
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;
 };
