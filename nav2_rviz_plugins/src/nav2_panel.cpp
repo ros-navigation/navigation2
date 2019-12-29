@@ -545,7 +545,7 @@ Nav2Panel::updateWpNavigationMarkers()
     arrow_marker.frame_locked = false;
     marker_array.markers.push_back(arrow_marker);
 
-    // Draw a green circle at the waypoint pose
+    // Draw a red circle at the waypoint pose
     visualization_msgs::msg::Marker circle_marker;
     circle_marker.header = acummulated_poses_[i].header;
     circle_marker.id = getUniqueId();
