@@ -44,11 +44,11 @@
 using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace dwb_plugins
 {
-
-using std::placeholders::_1;
 
 KinematicParameters::KinematicParameters()
 {
@@ -120,8 +120,6 @@ void
 KinematicParameters::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  using namespace rcl_interfaces::msg;
-
   for (auto & changed_parameter : event->changed_parameters) {
     const auto & type = changed_parameter.value.type;
     const auto & name = changed_parameter.name;

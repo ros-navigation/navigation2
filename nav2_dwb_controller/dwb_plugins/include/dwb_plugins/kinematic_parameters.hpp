@@ -113,7 +113,7 @@ protected:
   double max_speed_xy_sq_{0};
 
   void reconfigureCB();
-  
+
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
