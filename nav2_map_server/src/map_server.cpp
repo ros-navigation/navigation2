@@ -34,7 +34,7 @@ MapServer::MapServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
-  declare_parameter("yaml_filename", "/home/s.macenski/Documents/nav/navigation2_ws/src/navigation2/nav2_bringup/bringup/maps/turtlebot3_world.yaml");
+  declare_parameter("yaml_filename");
 }
 
 MapServer::~MapServer()
@@ -48,8 +48,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Get the name of the YAML file to use
-  std::string yaml_filename;
-  get_parameter("yaml_filename", yaml_filename);
+  std::string yaml_filename = get_parameter("yaml_filename").as_string();
 
   // Make sure that there's a valid file there and open it up
   std::ifstream fin(yaml_filename.c_str());
