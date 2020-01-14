@@ -1,7 +1,7 @@
 # Navigation2 Stack
 
 
-| Builder                | Statuc                    |
+| Builder                | Status                    |
 |----------------------|-------------------------|
 | CircleCI             | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master)   |
 | DockerHub       | [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=build)](https://hub.docker.com/r/rosplanning/navigation2)       |
