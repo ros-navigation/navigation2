@@ -38,7 +38,7 @@ LifecycleManagerClient::LifecycleManagerClient(const std::string & name)
   is_active_client_ = node_->create_client<std_srvs::srv::Trigger>(active_service_name_);
 
   navigate_action_client_ =
-    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
+    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "navigate_to_pose");
 
   initial_pose_publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(

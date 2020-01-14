@@ -76,7 +76,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
   initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  // State entered when NavigateToPose is not active
+  // State entered when navigate_to_pose action is not active
   idle_ = new QState();
   idle_->setObjectName("idle");
   idle_->assignProperty(start_reset_button_, "text", "Reset");
@@ -91,7 +91,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(navigation_mode_button_, "enabled", true);
   idle_->assignProperty(navigation_mode_button_, "toolTip", single_goal_msg);
 
-  // State entered when NavigateToPose is not active
+  // State entered when navigate_to_pose action is not active
   accumulating_ = new QState();
   accumulating_->setObjectName("accumulating");
   accumulating_->assignProperty(start_reset_button_, "text", "Reset");
@@ -108,7 +108,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   accumulated_ = new QState();
 
-  // State entered to cancel the NavigateToPose action
+  // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
 
@@ -116,7 +116,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   reset_ = new QState();
   reset_->setObjectName("reset");
 
-  // State entered while the NavigateToPose action is active
+  // State entered while the navigate_to_pose action is active
   running_ = new QState();
   running_->setObjectName("running");
   running_->assignProperty(start_reset_button_, "text", "Cancel");
@@ -230,7 +230,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_,
-    "NavigateToPose");
+    "navigate_to_pose");
   waypoint_follower_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
     client_node_,

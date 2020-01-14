@@ -75,7 +75,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
+    "navigate_to_pose", std::bind(&BtNavigator::navigateToPose, this), false);
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
