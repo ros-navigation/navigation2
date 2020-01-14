@@ -34,8 +34,8 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
-    use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
     use_remappings = LaunchConfiguration('use_remappings')
+    lifecycle_nodes = ['map_server', 'amcl']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -64,7 +64,7 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         DeclareLaunchArgument(
-            'namespace', default_value='',
+            'namespace', default_value='navigation',
             description='Top-level namespace'),
 
         DeclareLaunchArgument(
@@ -84,10 +84,6 @@ def generate_launch_description():
             'params_file',
             default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
-
-        DeclareLaunchArgument(
-            'use_lifecycle_mgr', default_value='true',
-            description='Whether to launch the lifecycle manager'),
 
         DeclareLaunchArgument(
             'use_remappings', default_value='false',
@@ -112,12 +108,11 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
-            condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
             node_name='lifecycle_manager_localization',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['map_server', 'amcl']}])
+                        {'node_names': lifecycle_nodes}])
     ])

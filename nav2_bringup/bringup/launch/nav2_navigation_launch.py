@@ -34,9 +34,13 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
-    use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
     use_remappings = LaunchConfiguration('use_remappings')
     map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
+    lifecycle_nodes = ['controller_server',
+                       'planner_server',
+                       'recoveries_server',
+                       'bt_navigator',
+                       'waypoint_follower']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -67,7 +71,7 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         DeclareLaunchArgument(
-            'namespace', default_value='',
+            'namespace', default_value='navigation',
             description='Top-level namespace'),
 
         DeclareLaunchArgument(
@@ -91,15 +95,11 @@ def generate_launch_description():
             description='Full path to the behavior tree xml file to use'),
 
         DeclareLaunchArgument(
-            'use_lifecycle_mgr', default_value='true',
-            description='Whether to launch the lifecycle manager'),
-
-        DeclareLaunchArgument(
             'use_remappings', default_value='false',
             description='Arguments to pass to all nodes launched by the file'),
 
         DeclareLaunchArgument(
-            'map_subscribe_transient_local', default_value='false',
+            'map_subscribe_transient_local', default_value='true',
             description='Whether to set the map subscriber QoS to transient local'),
 
         Node(
@@ -147,17 +147,12 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
-            condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
             node_name='lifecycle_manager_navigation',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['controller_server',
-                                        'planner_server',
-                                        'recoveries_server',
-                                        'bt_navigator',
-                                        'waypoint_follower']}]),
+                        {'node_names': lifecycle_nodes}]),
 
     ])

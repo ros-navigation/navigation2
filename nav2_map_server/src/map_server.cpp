@@ -34,7 +34,7 @@ MapServer::MapServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
-  declare_parameter("yaml_filename", rclcpp::ParameterValue(std::string("map.yaml")));
+  declare_parameter("yaml_filename", "/home/s.macenski/Documents/nav/navigation2_ws/src/navigation2/nav2_bringup/bringup/maps/turtlebot3_world.yaml");
 }
 
 MapServer::~MapServer()
