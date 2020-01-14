@@ -71,7 +71,7 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         DeclareLaunchArgument(
-            'namespace', default_value='navigation',
+            'namespace', default_value='',
             description='Top-level namespace'),
 
         DeclareLaunchArgument(

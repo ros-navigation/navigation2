@@ -78,8 +78,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
-  bool hi = declare_parameter("hi").get<bool>();
-  std::cout << hi << std::endl;
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
