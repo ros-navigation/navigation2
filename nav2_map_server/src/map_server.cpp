@@ -35,6 +35,8 @@ MapServer::MapServer()
 
   // Declare the node parameters
   declare_parameter("yaml_filename");
+
+  RCLCPP_WARN(get_logger(), "map_server lifecycle node launched. Awaiting lifecycle transitions");
 }
 
 MapServer::~MapServer()
