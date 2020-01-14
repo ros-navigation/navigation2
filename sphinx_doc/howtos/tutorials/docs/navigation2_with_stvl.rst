@@ -144,5 +144,5 @@ Video
 .. raw:: html
 
     <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-      <iframe width="960" height="720" src="https://www.youtube.com/watch?v=TGxb1OzgmNQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <iframe width="960" height="720" src="https://www.youtube.com/embed/TGxb1OzgmNQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
