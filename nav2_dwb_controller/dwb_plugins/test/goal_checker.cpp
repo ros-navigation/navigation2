@@ -136,8 +136,8 @@ TEST(VelocityIterator, two_checks)
 
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  gc.initialize(x);
-  sgc.initialize(x);
+  gc.initialize(x, "dwb");
+  sgc.initialize(x, "dwb");
   sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
   sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
   sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);

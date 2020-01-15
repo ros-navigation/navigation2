@@ -71,7 +71,7 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) = 0;
+  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & pluigin_name) = 0;
 
   /**
    * @brief Start a new iteration based on the current velocity

@@ -49,7 +49,7 @@ namespace dwb_plugins
 class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   dwb_msgs::msg::Trajectory2D generateTrajectory(
     const geometry_msgs::msg::Pose2D & start_pose,
@@ -58,6 +58,7 @@ public:
 
 protected:
   double acceleration_time_;
+  std::string plugin_name_;
 };
 }  // namespace dwb_plugins
 

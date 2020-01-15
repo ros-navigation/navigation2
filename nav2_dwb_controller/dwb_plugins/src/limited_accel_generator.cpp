@@ -43,13 +43,15 @@
 namespace dwb_plugins
 {
 
-void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
 {
-  StandardTrajectoryGenerator::initialize(nh);
+  plugin_name_ = plugin_name;
+  StandardTrajectoryGenerator::initialize(nh, plugin_name_);
 
-  nav2_util::declare_parameter_if_not_declared(nh, "dwb.sim_period");
+  nav2_util::declare_parameter_if_not_declared(nh, plugin_name + ".sim_period");
 
-  if (nh->get_parameter("dwb.sim_period", acceleration_time_)) {
+  if (nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
   } else {
     double controller_frequency = nav_2d_utils::searchAndGetParam(
       nh, "controller_frequency", 20.0);

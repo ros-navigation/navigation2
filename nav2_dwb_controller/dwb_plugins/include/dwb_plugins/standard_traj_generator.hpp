@@ -55,7 +55,7 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
@@ -126,6 +126,9 @@ protected:
 
   /// @brief If not discretizing by time, the amount of angular space between points
   double angular_granularity_;
+
+  /// @brief the name of the overlying plugin ID
+  std::string plugin_name_;
 };
 
 

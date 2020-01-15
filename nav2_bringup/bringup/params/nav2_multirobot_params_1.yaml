@@ -75,43 +75,43 @@ controller_server:
     controller_frequency: 20.0
     controller_plugin_types: ["dwb_core::DWBLocalPlanner"]
     controller_plugin_ids: ["FollowPath"]
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
 
     # DWB parameters
-    dwb.debug_trajectory_details: True
-    dwb.min_vel_x: 0.0
-    dwb.min_vel_y: 0.0
-    dwb.max_vel_x: 0.26
-    dwb.max_vel_y: 0.0
-    dwb.max_vel_theta: 1.0
-    dwb.min_speed_xy: 0.0
-    dwb.max_speed_xy: 0.26
-    dwb.min_speed_theta: 0.0
-    dwb.min_x_velocity_threshold: 0.001
+    FollowPath.debug_trajectory_details: True
+    FollowPath.min_vel_x: 0.0
+    FollowPath.min_vel_y: 0.0
+    FollowPath.max_vel_x: 0.26
+    FollowPath.max_vel_y: 0.0
+    FollowPath.max_vel_theta: 1.0
+    FollowPath.min_speed_xy: 0.0
+    FollowPath.max_speed_xy: 0.26
+    FollowPath.min_speed_theta: 0.0
     # Add high threshold velocity for turtlebot 3 issue.
     # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-    dwb.min_y_velocity_threshold: 0.5
-    dwb.min_theta_velocity_threshold: 0.001
-    dwb.acc_lim_x: 2.5
-    dwb.acc_lim_y: 0.0
-    dwb.acc_lim_theta: 3.2
-    dwb.decel_lim_y: 0.0
-    dwb.decel_lim_theta: -3.2
-    dwb.vx_samples: 20
-    dwb.vy_samples: 5
-    dwb.vtheta_samples: 20
-    dwb.sim_time: 1.7
-    dwb.linear_granularity: 0.05
-    dwb.angular_granularity: 0.025
-    dwb.time_granularity: 0.05
-    dwb.xy_goal_tolerance: 0.25
-    dwb.transform_tolerance: 0.2
-    dwb.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-    dwb.BaseObstacle.scale: 0.02
-    dwb.PathAlign.scale: 10.0
-    dwb.GoalAlign.scale: 10.0
-    dwb.PathDist.scale: 3.0
-    dwb.GoalDist.scale: 4.0
-    dwb.RotateToGoal.scale: 2.0
+    FollowPath.acc_lim_x: 2.5
+    FollowPath.acc_lim_y: 0.0
+    FollowPath.acc_lim_theta: 3.2
+    FollowPath.decel_lim_y: 0.0
+    FollowPath.decel_lim_theta: -3.2
+    FollowPath.vx_samples: 20
+    FollowPath.vy_samples: 5
+    FollowPath.vtheta_samples: 20
+    FollowPath.sim_time: 1.7
+    FollowPath.linear_granularity: 0.05
+    FollowPath.angular_granularity: 0.025
+    FollowPath.time_granularity: 0.05
+    FollowPath.xy_goal_tolerance: 0.25
+    FollowPath.transform_tolerance: 0.2
+    FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+    FollowPath.BaseObstacle.scale: 0.02
+    FollowPath.PathAlign.scale: 10.0
+    FollowPath.GoalAlign.scale: 10.0
+    FollowPath.PathDist.scale: 3.0
+    FollowPath.GoalDist.scale: 4.0
+    FollowPath.RotateToGoal.scale: 2.0
 
 controller_server_rclcpp_node:
   ros__parameters:

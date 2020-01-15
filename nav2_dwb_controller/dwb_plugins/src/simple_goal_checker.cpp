@@ -50,15 +50,16 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
-void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
+void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
 {
   nav2_util::declare_parameter_if_not_declared(nh,
-    "dwb.xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+    plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(nh,
-    "dwb.yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
+    plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
 
-  nh->get_parameter("dwb.xy_goal_tolerance", xy_goal_tolerance_);
-  nh->get_parameter("dwb.yaw_goal_tolerance", yaw_goal_tolerance_);
+  nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
+  nh->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
