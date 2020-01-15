@@ -9,4 +9,4 @@ How-Tos
    build_instructions/index.rst
    tutorials/index.rst
    docs/index.rst
-   tunning/index.rst
+   configuration/index.rst
