@@ -24,7 +24,7 @@ Step 2- Build Navigation2 Dependencies
 
   mkdir -p ~/nav2_depend_ws/src
   cd ~/nav2_depend_ws
-  wget https://raw.githubusercontent.com/ros-planning/navigation2/master/tools/ros2_dependencies.repos
+  wget https://raw.githubusercontent.com/ros-planning/navigation2/eloquent-devel/tools/ros2_dependencies.repos
   vcs import src < ros2_dependencies.repos
   rosdep install -y -r -q --from-paths src --ignore-src --rosdistro eloquent
   colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
