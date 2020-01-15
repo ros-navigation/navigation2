@@ -54,7 +54,7 @@ Running the Example
 
    .. code-block:: bash
 
-      ros2 launch nav2_bringup nav2_tb3_simulation_launch.py
+      ros2 launch nav2_bringup nav2_simulation_launch.py
 
 
    If everything has started correctly, you will see the RViz and Gazebo GUIs like
