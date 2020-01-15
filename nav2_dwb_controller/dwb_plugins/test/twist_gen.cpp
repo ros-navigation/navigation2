@@ -362,7 +362,7 @@ TEST(TrajectoryGenerator, accel)
   auto nh = makeTestNode("accel");
   nh->set_parameters({rclcpp::Parameter("dwb.sim_time", 5.0)});
   nh->set_parameters({rclcpp::Parameter("dwb.discretize_by_time", true)});
-  nh->set_parameters({rclcpp::Parameter("dwb.sim_granularity", 1.0)});
+  nh->set_parameters({rclcpp::Parameter("dwb.time_granularity", 1.0)});
   nh->set_parameters({rclcpp::Parameter("dwb.acc_lim_x", 0.1)});
   nh->set_parameters({rclcpp::Parameter("dwb.min_speed_xy", -1.0)});
   StandardTrajectoryGenerator gen;
@@ -385,7 +385,7 @@ TEST(TrajectoryGenerator, dwa)
   nh->set_parameters({rclcpp::Parameter("dwb.sim_period", 1.0)});
   nh->set_parameters({rclcpp::Parameter("dwb.sim_time", 5.0)});
   nh->set_parameters({rclcpp::Parameter("dwb.discretize_by_time", true)});
-  nh->set_parameters({rclcpp::Parameter("dwb.sim_granularity", 1.0)});
+  nh->set_parameters({rclcpp::Parameter("dwb.time_granularity", 1.0)});
   nh->set_parameters({rclcpp::Parameter("dwb.acc_lim_x", 0.1)});
   nh->set_parameters({rclcpp::Parameter("dwb.min_speed_xy", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
