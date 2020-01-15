@@ -47,9 +47,9 @@ void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr
 {
   StandardTrajectoryGenerator::initialize(nh);
 
-  nav2_util::declare_parameter_if_not_declared(nh, "sim_period");
+  nav2_util::declare_parameter_if_not_declared(nh, "dwb.sim_period");
 
-  if (nh->get_parameter("sim_period", acceleration_time_)) {
+  if (nh->get_parameter("dwb.sim_period", acceleration_time_)) {
   } else {
     double controller_frequency = nav_2d_utils::searchAndGetParam(
       nh, "controller_frequency", 20.0);

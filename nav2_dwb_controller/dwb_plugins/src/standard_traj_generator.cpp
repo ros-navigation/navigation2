@@ -54,11 +54,16 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
   kinematics_->initialize(nh);
   initializeIterator(nh);
 
-  nav2_util::declare_parameter_if_not_declared(nh, "sim_time", rclcpp::ParameterValue(1.7));
+  nav2_util::declare_parameter_if_not_declared(nh, "dwb.sim_time", rclcpp::ParameterValue(1.7));
   nav2_util::declare_parameter_if_not_declared(nh,
-    "discretize_by_time", rclcpp::ParameterValue(false));
+    "dwb.discretize_by_time", rclcpp::ParameterValue(false));
 
-  nh->get_parameter("sim_time", sim_time_);
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "dwb.time_granularity", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "dwb.linear_granularity", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    "dwb.angular_granularity", rclcpp::ParameterValue(0.025));
 
   /*
    * If discretize_by_time, then sim_granularity represents the amount of time that should be between
@@ -68,16 +73,11 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
    *  two successive points on the trajectory, and angular_sim_granularity is the maximum amount of
    *  angular distance between two successive points.
    */
-  nh->get_parameter("discretize_by_time", discretize_by_time_);
-  if (discretize_by_time_) {
-    time_granularity_ = loadParameterWithDeprecation(
-      nh, "time_granularity", "sim_granularity", 0.5);
-  } else {
-    linear_granularity_ = loadParameterWithDeprecation(
-      nh, "linear_granularity", "sim_granularity", 0.5);
-    angular_granularity_ = loadParameterWithDeprecation(
-      nh, "angular_granularity", "angular_sim_granularity", 0.025);
-  }
+  nh->get_parameter("dwb.sim_time", sim_time_);
+  nh->get_parameter("dwb.discretize_by_time", discretize_by_time_);
+  nh->get_parameter("dwb.time_granularity", time_granularity_);
+  nh->get_parameter("dwb.linear_granularity", linear_granularity_);
+  nh->get_parameter("dwb.angular_granularity", angular_granularity_);
 }
 
 void StandardTrajectoryGenerator::initializeIterator(

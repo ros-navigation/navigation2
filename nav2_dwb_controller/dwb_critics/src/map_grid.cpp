@@ -62,10 +62,10 @@ void MapGridCritic::onInit()
   stop_on_failure_ = true;
 
   nav2_util::declare_parameter_if_not_declared(nh_,
-    name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
+    "dwb." + name_ + ".aggregation_type", rclcpp::ParameterValue(std::string("last")));
 
   std::string aggro_str;
-  nh_->get_parameter(name_ + ".aggregation_type", aggro_str);
+  nh_->get_parameter("dwb." + name_ + ".aggregation_type", aggro_str);
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;

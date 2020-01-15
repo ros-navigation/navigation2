@@ -73,15 +73,15 @@ public:
         std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
 
     nav2_util::declare_parameter_if_not_declared(nh,
-      "min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
+      "dwb.min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
     nav2_util::declare_parameter_if_not_declared(nh,
-      "min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
+      "dwb.min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
     nav2_util::declare_parameter_if_not_declared(nh,
-      "min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
+      "dwb.min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
 
-    nh->get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
-    nh->get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
-    nh->get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
+    nh->get_parameter("dwb.min_x_velocity_threshold", min_x_velocity_threshold_);
+    nh->get_parameter("dwb.min_y_velocity_threshold", min_y_velocity_threshold_);
+    nh->get_parameter("dwb.min_theta_velocity_threshold", min_theta_velocity_threshold_);
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}

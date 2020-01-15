@@ -92,15 +92,15 @@ bool OscillationCritic::CommandTrend::hasSignFlipped()
 void OscillationCritic::onInit()
 {
   oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_,
-      name_ + ".oscillation_reset_dist", 0.05);
+      "dwb." + name_ + ".oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_,
-      name_ + ".oscillation_reset_angle", 0.2);
+      "dwb." + name_ + ".oscillation_reset_angle", 0.2);
   oscillation_reset_time_ = rclcpp::Duration::from_seconds(
-    nav_2d_utils::searchAndGetParam(nh_, name_ + ".oscillation_reset_time", -1.0));
+    nav_2d_utils::searchAndGetParam(nh_, "dwb." + name_ + ".oscillation_reset_time", -1.0));
 
   nav2_util::declare_parameter_if_not_declared(nh_,
-    name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));
+    "dwb." + name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));
 
   /**
    * Historical Parameter Loading
@@ -109,7 +109,7 @@ void OscillationCritic::onInit()
    * If min_trans_vel is set in the namespace, as it used to be used for trajectory generation, complain then use that.
    * Otherwise, set x_only_threshold_ to 0.05
    */
-  nh_->get_parameter(name_ + ".x_only_threshold", x_only_threshold_);
+  nh_->get_parameter("dwb." + name_ + ".x_only_threshold", x_only_threshold_);
   // TODO(crdelsey): How to handle searchParam?
   // std::string resolved_name;
   // if (nh_->hasParam("x_only_threshold"))
