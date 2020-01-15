@@ -9,7 +9,7 @@ Controller Server
 The controller server responds to FollowPath action requests. It runs a loop
 that continuously computes new command velocities until the goal is reached,
 cancelled or an error occurs. It computes command velocities by using the
-services of a controller plugin. These parameters are set on the
+services of a controller plugin. The parameters in this section are set on the
 controller_server node
 
 Parameters
@@ -59,9 +59,9 @@ Parameters
 Progress Checker
 =================
 
-This is a component of the controller server that ensures the robot is making progress towards
-the goal. If it fails to make progress, the controller fails and triggers recoveries in the
-behavior tree. These parameters are set on the controller_server node as well.
+This is a component of the controller server that verifies that the robot has moved sufficiently.
+If the robot fails to make progress, the controller fails and triggers recoveries in the
+behavior tree. The parameters in this section are set on the controller_server node.
 
 Parameters
 **********
