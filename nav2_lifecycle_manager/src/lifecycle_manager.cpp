@@ -153,9 +153,11 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 }
 
 bool
-LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool reverse_order)
+LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
 {
-  if (!reverse_order) {
+  if (transition == Transition::TRANSITION_CONFIGURE ||
+    transition == Transition::TRANSITION_ACTIVATE)
+  {
     for (auto & node_name : node_names_) {
       if (!changeStateForNode(node_name, transition)) {
         return false;
@@ -169,7 +171,6 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool reverse_o
       }
     }
   }
-
   return true;
 }
 
@@ -177,9 +178,9 @@ void
 LifecycleManager::shutdownAllNodes()
 {
   message("Deactivate, cleanup, and shutdown nodes");
-  changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, true);
-  changeStateForAllNodes(Transition::TRANSITION_CLEANUP, true);
-  changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN, true);
+  changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE);
+  changeStateForAllNodes(Transition::TRANSITION_CLEANUP);
+  changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
 }
 
 bool
@@ -213,8 +214,8 @@ LifecycleManager::reset()
 {
   message("Resetting managed nodes...");
   // Should transition in reverse order
-  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, true) ||
-    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP, true))
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
   {
     RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
     return false;
