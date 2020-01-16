@@ -129,7 +129,7 @@ protected:
   /**
    * @brief For each node in the map, transition to the new target state
    */
-  bool changeStateForAllNodes(std::uint8_t transition, bool reverse_order = false);
+  bool changeStateForAllNodes(std::uint8_t transition);
 
   // Convenience function to highlight the output on the console
   /**
