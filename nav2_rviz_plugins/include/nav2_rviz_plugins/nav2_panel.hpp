@@ -156,15 +156,24 @@ public:
   {
     SystemStatus status_nav = SystemStatus::TIMEOUT;
     SystemStatus status_loc = SystemStatus::TIMEOUT;
-    while (status_nav == SystemStatus::TIMEOUT || status_loc == SystemStatus::TIMEOUT) {
+
+    while (status_nav == SystemStatus::TIMEOUT) {
       if (status_nav == SystemStatus::TIMEOUT) {
         status_nav = client_nav_.is_active(std::chrono::seconds(1));
       }
-      if (status_loc == SystemStatus::TIMEOUT) {
-        status_loc = client_loc_.is_active(std::chrono::seconds(1));
-      }
     }
-    if (status_nav == SystemStatus::ACTIVE && status_loc == SystemStatus::ACTIVE) {
+
+    // try to communicate twice, might not actually be up if in SLAM mode
+    bool tried_loc_bringup_once = false;
+    while (status_loc == SystemStatus::TIMEOUT) {
+      status_loc = client_loc_.is_active(std::chrono::seconds(1));
+      if (tried_loc_bringup_once) {
+        break;
+      }
+      tried_loc_bringup_once = true;
+    }
+
+    if (status_nav == SystemStatus::ACTIVE) {
       emit activeSystem();
     } else {
       emit inactiveSystem();
