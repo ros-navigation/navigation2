@@ -17,6 +17,7 @@ The ROS 2 Navigation System is the control system that enables a robot to autono
 # Documentation
 For detailed instructions on how to install and run the examples, please visit our [documentation site](https://ros-planning.github.io/navigation2/).
 
+# API Documentation
 Run `doxygen` in the root of this repository. It will generate a `/doc/*` directory containing the documentation. Entrypoint in a browser is index.html.
 
 # Contributing
