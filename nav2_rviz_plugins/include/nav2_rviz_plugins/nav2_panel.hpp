@@ -147,7 +147,8 @@ class InitialThread : public QThread
 public:
   using SystemStatus = nav2_lifecycle_manager::SystemStatus;
 
-  explicit InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client_nav,
+  explicit InitialThread(
+    nav2_lifecycle_manager::LifecycleManagerClient & client_nav,
     nav2_lifecycle_manager::LifecycleManagerClient & client_loc)
   : client_nav_(client_nav), client_loc_(client_loc)
   {}

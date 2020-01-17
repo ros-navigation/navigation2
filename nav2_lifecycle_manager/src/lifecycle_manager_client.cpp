@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <memory>
+#include <string>
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_util/geometry_utils.hpp"
