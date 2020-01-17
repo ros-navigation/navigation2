@@ -99,7 +99,8 @@ private:
   WaypointFollowerGoalHandle::SharedPtr waypoint_follower_goal_handle_;
 
   // The client used to control the nav2 stack
-  nav2_lifecycle_manager::LifecycleManagerClient client_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
 
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
@@ -146,17 +147,24 @@ class InitialThread : public QThread
 public:
   using SystemStatus = nav2_lifecycle_manager::SystemStatus;
 
-  explicit InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client)
-  : client_(client)
+  explicit InitialThread(nav2_lifecycle_manager::LifecycleManagerClient & client_nav,
+    nav2_lifecycle_manager::LifecycleManagerClient & client_loc)
+  : client_nav_(client_nav), client_loc_(client_loc)
   {}
 
   void run() override
   {
-    SystemStatus status = SystemStatus::TIMEOUT;
-    while (status == SystemStatus::TIMEOUT) {
-      status = client_.is_active(std::chrono::seconds(1));
+    SystemStatus status_nav = SystemStatus::TIMEOUT;
+    SystemStatus status_loc = SystemStatus::TIMEOUT;
+    while (status_nav == SystemStatus::TIMEOUT || status_loc == SystemStatus::TIMEOUT) {
+      if (status_nav == SystemStatus::TIMEOUT) {
+        status_nav = client_nav_.is_active(std::chrono::seconds(1));
+      }
+      if (status_loc == SystemStatus::TIMEOUT) {
+        status_loc = client_loc_.is_active(std::chrono::seconds(1));
+      }
     }
-    if (status == SystemStatus::ACTIVE) {
+    if (status_nav == SystemStatus::ACTIVE && status_loc == SystemStatus::ACTIVE) {
       emit activeSystem();
     } else {
       emit inactiveSystem();
@@ -168,7 +176,8 @@ signals:
   void inactiveSystem();
 
 private:
-  nav2_lifecycle_manager::LifecycleManagerClient client_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
 };
 
 }  // namespace nav2_rviz_plugins
