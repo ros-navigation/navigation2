@@ -15,44 +15,14 @@
 
 """Module for the Node action."""
 
-import os
-import pathlib
-from tempfile import NamedTemporaryFile
-from typing import cast
-from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Text  # noqa: F401
-from typing import Tuple  # noqa: F401
-from typing import Union
 
 from launch import Condition
 from launch.action import Action
-from launch.actions import ExecuteProcess
-from launch.frontend import Entity
-from launch.frontend import Parser
 from launch.launch_context import LaunchContext
-import launch.logging
-from launch.some_substitutions_type import SomeSubstitutionsType
-from launch.substitutions import LocalSubstitution
-from launch.substitutions import TextSubstitution
-from launch.utilities import ensure_argument_type
-from launch.utilities import normalize_to_list_of_substitutions
-from launch.utilities import perform_substitutions
 
 import launch_ros
-from launch_ros.parameters_type import SomeParameters
-from launch_ros.remap_rule_type import SomeRemapRules
-from launch_ros.substitutions import ExecutableInPackage
-from launch_ros.utilities import evaluate_parameters
-from launch_ros.utilities import normalize_parameters
-from launch_ros.utilities import normalize_remap_rules
-
-from rclpy.validate_namespace import validate_namespace
-from rclpy.validate_node_name import validate_node_name
-
-import yaml
 
 class Node(launch_ros.actions.Node):
     def __init__(
