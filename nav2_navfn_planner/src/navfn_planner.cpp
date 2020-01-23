@@ -70,12 +70,12 @@ NavfnPlanner::configure(
 
   // Initialize parameters
   // Declare this plugin's parameters
-  declare_parameter_if_not_declared(node_, "navfn.tolerance", rclcpp::ParameterValue(0.0));
-  node_->get_parameter("navfn.tolerance", tolerance_);
-  declare_parameter_if_not_declared(node_, "navfn.use_astar", rclcpp::ParameterValue(false));
-  node_->get_parameter("navfn.use_astar", use_astar_);
-  declare_parameter_if_not_declared(node_, "navfn.allow_unknown", rclcpp::ParameterValue(true));
-  node_->get_parameter("navfn.allow_unknown", allow_unknown_);
+  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(0.0));
+  node_->get_parameter(name + ".tolerance", tolerance_);
+  declare_parameter_if_not_declared(node_, name + ".use_astar", rclcpp::ParameterValue(false));
+  node_->get_parameter(name + ".use_astar", use_astar_);
+  declare_parameter_if_not_declared(node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
+  node_->get_parameter(name + ".allow_unknown", allow_unknown_);
 
   // Create a planner based on the new costmap size
   planner_ = std::make_unique<NavFn>(costmap_->getSizeInCellsX(),
