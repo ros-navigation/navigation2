@@ -47,7 +47,7 @@ def generate_launch_description():
 
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
-        default_value='navigation',
+        default_value='',
         description='Top-level namespace')
 
     declare_use_namespace_cmd = DeclareLaunchArgument(
