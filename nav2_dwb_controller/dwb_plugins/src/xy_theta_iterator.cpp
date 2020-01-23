@@ -56,14 +56,6 @@ void XYThetaIterator::initialize(
   nh->get_parameter(plugin_name + ".vx_samples", vx_samples_);
   nh->get_parameter(plugin_name + ".vy_samples", vy_samples_);
   nh->get_parameter(plugin_name + ".vtheta_samples", vtheta_samples_);
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
-  std::cout << vtheta_samples_ << std::endl;
 }
 
 void XYThetaIterator::startNewIteration(
