@@ -26,7 +26,6 @@ from launch_ros.actions import Node
 from launch_ros.actions import PushRosNamespace
 
 
-
 def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
