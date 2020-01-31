@@ -91,11 +91,13 @@ bool OscillationCritic::CommandTrend::hasSignFlipped()
 
 void OscillationCritic::onInit()
 {
-  oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_dist", 0.05);
+  oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(nh_,
+      name_ + ".oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
-  oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_angle", 0.2);
+  oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_,
+      name_ + ".oscillation_reset_angle", 0.2);
   oscillation_reset_time_ = rclcpp::Duration::from_seconds(
-    nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0));
+    nav_2d_utils::searchAndGetParam(nh_, name_ + ".oscillation_reset_time", -1.0));
 
   nav2_util::declare_parameter_if_not_declared(nh_,
     name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));

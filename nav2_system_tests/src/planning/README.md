@@ -1,7 +1,5 @@
 # Global Planner Component Testing
 
-Component level tests are available that exercise the Planning Module Task Server API ``` nav2_behavior_tree::ComputePathToPoseTaskServer```. The intention is to develop standard tests that can be used across all planners.
-
 A PlannerTester node provides the world representation in the form of a costmap, sends a request to generate a path, and receives and checks the quality of the generated path.
 
 As mentioned above, currently the world is represented as a costmap. Simplified versions of the world model and costmap are used for testing.

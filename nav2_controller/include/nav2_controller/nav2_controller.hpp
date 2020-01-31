@@ -18,8 +18,10 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <vector>
 
-#include "nav2_core/local_planner.hpp"
+#include "nav2_core/controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -42,6 +44,8 @@ class ProgressChecker;
 class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
+  using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
+
   /**
    * @brief Constructor for nav2_controller::ControllerServer
    */
@@ -107,6 +111,7 @@ protected:
 
   // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
+
   /**
    * @brief FollowPath action server callback. Handles action server updates and
    * spins server until goal is reached
@@ -116,7 +121,8 @@ protected:
    * the specified rate till the goal is reached.
    * @throw nav2_core::PlannerException
    */
-  void followPath();
+  void computeControl();
+
   /**
    * @brief Assigns path to controller
    * @param path Path received from action server
@@ -160,13 +166,18 @@ protected:
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
-  // Local Planner Plugin
-  pluginlib::ClassLoader<nav2_core::LocalPlanner> lp_loader_;
-  nav2_core::LocalPlanner::Ptr local_planner_;
+  // Controller Plugins
+  pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
+  ControllerMap controllers_;
+  std::vector<std::string> controller_ids_, controller_types_;
+  std::string controller_ids_concat_, current_controller_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;
 
   double controller_frequency_;
+
+  // Whether we've published the single controller warning yet
+  bool single_controller_warning_given_{false};
 };
 
 }  // namespace nav2_controller

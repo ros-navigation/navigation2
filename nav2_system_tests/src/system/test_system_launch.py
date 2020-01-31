@@ -38,7 +38,7 @@ def generate_launch_description():
                                     os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
+    params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {'use_astar': os.getenv('ASTAR')}
@@ -74,7 +74,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(bringup_dir, 'launch', 'nav2_bringup_launch.py')),
-            launch_arguments={
+            launch_arguments={'namespace': '',
+                              'use_namespace': 'False',
                               'map': map_yaml_file,
                               'use_sim_time': 'True',
                               'params_file': configured_params,

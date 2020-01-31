@@ -66,7 +66,7 @@ install(DIRECTORY include/
         DESTINATION include/
 )
 install(FILES default_critics.xml
-        DESTINATION share
+        DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

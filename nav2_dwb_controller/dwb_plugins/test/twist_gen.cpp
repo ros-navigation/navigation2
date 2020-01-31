@@ -208,26 +208,9 @@ TEST(VelocityIterator, no_limits_samples)
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0, hypot(0.55, 0.1), 0.0, 0.0);
 }
 
-TEST(VelocityIterator, dwa_gen_exception)
-{
-  auto nh = makeTestNode("dwa_gen_exception");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
-  StandardTrajectoryGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
-}
-
-TEST(VelocityIterator, no_dwa_gen_exception)
-{
-  auto nh = makeTestNode("no_dwa_gen_exception");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", false)});
-  dwb_plugins::LimitedAccelGenerator gen;
-  EXPECT_THROW(gen.initialize(nh), nav2_core::PlannerException);
-}
-
 TEST(VelocityIterator, dwa_gen)
 {
   auto nh = makeTestNode("dwa_gen");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
@@ -237,21 +220,9 @@ TEST(VelocityIterator, dwa_gen)
   checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
 }
 
-TEST(VelocityIterator, dwa_gen_no_param)
-{
-  auto nh = makeTestNode("dwa_gen_no_param");
-  nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
-  dwb_plugins::LimitedAccelGenerator gen;
-  gen.initialize(nh);
-  std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
-  EXPECT_EQ(twists.size(), 20u * 20u * 5u + 100u - 1u);
-  checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
-}
-
 TEST(VelocityIterator, nonzero)
 {
   auto nh = makeTestNode("nonzero");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("min_speed_theta", -1.0)});
   dwb_plugins::LimitedAccelGenerator gen;
   gen.initialize(nh);
@@ -411,7 +382,6 @@ TEST(TrajectoryGenerator, accel)
 TEST(TrajectoryGenerator, dwa)
 {
   auto nh = makeTestNode("dwa");
-  nh->set_parameters({rclcpp::Parameter("use_dwa", true)});
   nh->set_parameters({rclcpp::Parameter("sim_period", 1.0)});
   nh->set_parameters({rclcpp::Parameter("sim_time", 5.0)});
   nh->set_parameters({rclcpp::Parameter("discretize_by_time", true)});

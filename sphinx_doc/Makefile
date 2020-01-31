@@ -44,12 +44,18 @@ clean:
 # along with a README
 
 publish:
-	#cd /tmp; git clone git@github.com:ros-planning/navigation2.git
-	cd $(PUBLISHDIR) && git checkout gh-pages
+	git clone --reference .. git@github.com:ros-planning/navigation2.git $(PUBLISHDIR)
+	cd $(PUBLISHDIR) && \
+	git checkout gh-pages && \
+	git config user.email "navigation2-ci@circleci.com" && \
+	git config user.name "navigation2-ci"
 	rm -fr $(PUBLISHDIR)/*
 	cp -r $(BUILDDIR)/html/* $(PUBLISHDIR)
 	cp scripts/.nojekyll $(PUBLISHDIR)/.nojekyll
-	cd $(PUBLISHDIR); git add -A; git commit -s -m "publish $(RELEASE)"; git push origin;
+	cd $(PUBLISHDIR) && \
+	git add -A && \
+	git diff-index --quiet HEAD || \
+	(git commit -s -m "[skip ci] publish $(RELEASE)" && git push origin)
 
 
 # Catch-all target: route all unknown targets to Sphinx using the new

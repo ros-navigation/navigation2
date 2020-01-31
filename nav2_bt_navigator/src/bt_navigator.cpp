@@ -19,9 +19,9 @@
 #include <streambuf>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "nav2_bt_navigator/ros_console_logger.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 
 namespace nav2_bt_navigator
@@ -34,6 +34,9 @@ BtNavigator::BtNavigator()
 
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
+
+  declare_parameter("plugin_lib_names",
+    rclcpp::ParameterValue(std::vector<std::string>({"nav2_behavior_tree_nodes"})));
 }
 
 BtNavigator::~BtNavigator()
@@ -54,7 +57,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "NavigateToPose");
+    client_node_, "navigate_to_pose");
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -75,8 +78,11 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
 
+  // Get the libraries to pull plugins from
+  get_parameter("plugin_lib_names", plugin_lib_names_);
+
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>();
+  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   blackboard_ = BT::Blackboard::create();
@@ -144,17 +150,28 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  // TODO(orduno) Fix the race condition between the worker thread ticking the tree
+  //              and the main thread resetting the resources, see #1344
+
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
-  tf_.reset();
+
+  // Reset the listener before the buffer
   tf_listener_.reset();
+  tf_.reset();
+
   action_server_.reset();
+  plugin_lib_names_.clear();
   xml_string_.clear();
+
+  RCLCPP_INFO(get_logger(), "Cleaning tree");
+
   tree_.reset();
   blackboard_.reset();
   bt_.reset();
 
+  RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -191,7 +208,6 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  RosConsoleLogger console_logger(client_node_->get_logger(), *tree_);
   RosTopicLogger topic_logger(client_node_, *tree_);
 
   auto on_loop = [&]() {
@@ -214,12 +230,12 @@ BtNavigator::navigateToPose()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->terminate_goals();
+      action_server_->terminate_current();
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->terminate_goals();
+      action_server_->terminate_all();
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;

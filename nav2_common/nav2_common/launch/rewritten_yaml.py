@@ -59,6 +59,7 @@ class RewrittenYaml(launch.Substitution):
     self.__param_rewrites = {}
     self.__key_rewrites = {}
     self.__convert_types = convert_types
+    self.__root_key = None
     for key in param_rewrites:
         self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
     if key_rewrites is not None:

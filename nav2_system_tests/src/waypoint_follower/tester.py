@@ -1,0 +1,145 @@
+#! /usr/bin/env python3
+# Copyright 2019 Samsung Research America
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import sys
+import time
+
+from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from nav2_msgs.action import FollowWaypoints
+from nav2_msgs.srv import ManageLifecycleNodes
+
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+
+
+class WaypointFollowerTest(Node):
+
+    def __init__(self):
+        super().__init__(node_name='nav2_waypoint_tester', namespace='')
+        self.waypoints = None
+        self.action_client = ActionClient(self, FollowWaypoints, 'FollowWaypoints')
+        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
+                                                      'initialpose', 10)
+
+    def setInitialPose(self, pose):
+        self.init_pose = PoseWithCovarianceStamped()
+        self.init_pose.pose.pose.position.x = -2.0
+        self.init_pose.pose.pose.position.y = -0.5
+        self.init_pose.header.frame_id = 'map'
+        self.publishInitialPose()
+        time.sleep(5)
+
+    def setWaypoints(self, waypoints):
+        if not self.waypoints:
+            self.waypoints = []
+
+        for wp in waypoints:
+            msg = PoseStamped()
+            msg.header.frame_id = 'map'
+            msg.pose.position.x = wp[0]
+            msg.pose.position.y = wp[1]
+            msg.pose.orientation.w = 1.0
+            self.waypoints.append(msg)
+
+    def run(self):
+        if not self.waypoints:
+            rclpy.error_msg('Did not set valid waypoints before running test!')
+            return False
+
+        while not self.action_client.wait_for_server(timeout_sec=1.0):
+            self.info_msg("'FollowWaypoints' action server not available, waiting...")
+
+        action_request = FollowWaypoints.Goal()
+        action_request.poses = self.waypoints
+
+        self.info_msg('Sending goal request...')
+        send_goal_future = self.action_client.send_goal_async(action_request)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        goal_handle = send_goal_future.result()
+        if not goal_handle.accepted:
+            self.error_msg('Goal rejected')
+            return False
+
+        self.info_msg('Goal accepted')
+        get_result_future = goal_handle.get_result_async()
+
+        self.info_msg("Waiting for 'FollowWaypoints' action to complete")
+        rclpy.spin_until_future_complete(self, get_result_future)
+        status = get_result_future.result().status
+        result = get_result_future.result().result
+        if status != GoalStatus.STATUS_SUCCEEDED:
+            self.info_msg('Goal failed with status code: {0}'.format(status))
+            return False
+        if len(result.missed_waypoints) > 0:
+            self.info_msg('Goal failed to process all waypoints,'
+                          ' missed {0} wps.'.format(len(result.missed_waypoints)))
+
+        self.info_msg('Goal succeeded!')
+        return True
+
+    def publishInitialPose(self):
+        self.initial_pose_pub.publish(self.init_pose)
+
+    def shutdown(self):
+        self.info_msg('Shutting down')
+        transition_service = 'lifecycle_manager/manage_nodes'
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        while not mgr_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg(transition_service + ' service not available, waiting...')
+
+        req = ManageLifecycleNodes.Request()
+        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        future = mgr_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        try:
+            future.result()
+        except Exception as e:
+            self.error_msg('Service call failed %r' % (e,))
+
+    def info_msg(self, msg: str):
+        self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
+
+    def warn_msg(self, msg: str):
+        self.get_logger().warn('\033[1;37;43m' + msg + '\033[0m')
+
+    def error_msg(self, msg: str):
+        self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
+
+
+def main(argv=sys.argv[1:]):
+    rclpy.init()
+
+    # wait a few seconds to make sure entire stacks are up
+    time.sleep(10)
+
+    wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
+    starting_pose = [-2.0, -0.5]
+
+    test = WaypointFollowerTest()
+    test.setWaypoints(wps)
+    test.setInitialPose(starting_pose)
+    result = test.run()
+    test.shutdown()
+
+    if not result:
+        exit(1)
+    else:
+        exit(0)
+
+
+if __name__ == '__main__':
+    main()

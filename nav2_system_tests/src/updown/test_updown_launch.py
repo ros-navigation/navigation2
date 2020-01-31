@@ -18,127 +18,74 @@ from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 
 import launch.actions
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
 
     # Configuration parameters for the launch
-
-    world = launch.substitutions.LaunchConfiguration('world')
-    urdf = launch.substitutions.LaunchConfiguration('urdf')
-
-    params_file = launch.substitutions.LaunchConfiguration(
-        'params',
-        default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
-
-    declare_world_cmd = launch.actions.DeclareLaunchArgument(
-        'world',
-        default_value=[launch.substitutions.ThisLaunchFileDir(),
-                       '/../../worlds/turtlebot3_ros2_demo.world'],
-        description='Full path to world file to load')
-
-    declare_urdf_cmd = launch.actions.DeclareLaunchArgument(
-        'urdf',
-        default_value=[launch.substitutions.ThisLaunchFileDir(),
-                       '/../../urdf/turtlebot3_burger.urdf'],
-        description='Full path to model file to load')
-
     launch_dir = os.path.join(
         get_package_share_directory('nav2_bringup'), 'launch')
 
+    map_yaml_file = os.path.join(
+        get_package_share_directory('nav2_system_tests'), 'maps/map_circular.yaml')
+
     # Specify the actions
+    start_tf_cmd_1 = Node(
+        package='tf2_ros',
+        node_executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'])
 
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-             world,
-             '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
+    start_tf_cmd_2 = Node(
+        package='tf2_ros',
+        node_executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_footprint'])
 
-    start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('robot_state_publisher'),
-                'lib/robot_state_publisher/robot_state_publisher'),
-            urdf,
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
+    start_tf_cmd_3 = Node(
+       package='tf2_ros',
+       node_executable='static_transform_publisher',
+       output='screen',
+       arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
 
-    start_map_server_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_map_server'),
-                'lib/nav2_map_server/map_server'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
+    start_tf_cmd_4 = Node(
+        package='tf2_ros',
+        node_executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
 
-    start_localizer_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_amcl'),
-                'lib/nav2_amcl/amcl'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
+    nav2_bringup = launch.actions.IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'nav2_bringup_launch.py')),
+        launch_arguments={'map': map_yaml_file,
+                          'use_sim_time': 'True',
+                          'autostart': 'False'}.items())
 
-    start_dwb_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_controller'),
-                'lib/nav2_controller/controller_server'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
-
-    start_planner_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_planner'),
-                'lib/nav2_planner/planner_server'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
-
-    start_navigator_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_bt_navigator'),
-                'lib/nav2_bt_navigator/bt_navigator'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
-
-    start_controller_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_lifecycle_manager'),
-                'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            '--ros-args', '--params-file', params_file],
-        cwd=[launch_dir], output='screen')
-
-    startup_cmd = launch.actions.ExecuteProcess(
+    start_test = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_system_tests'),
-                'lib/nav2_system_tests/test_updown'),
-            '--ros-args', '--params-file', params_file],
+                'lib/nav2_system_tests/test_updown')],
         cwd=[launch_dir], output='screen')
 
-    startup_exit_event_handler = launch.actions.RegisterEventHandler(
+    test_exit_event_handler = launch.actions.RegisterEventHandler(
         event_handler=launch.event_handlers.OnProcessExit(
-            target_action=startup_cmd,
+            target_action=start_test,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
 
     # Compose the launch description
 
     ld = launch.LaunchDescription()
 
-    ld.add_action(declare_world_cmd)
-    ld.add_action(declare_urdf_cmd)
-    ld.add_action(start_controller_cmd)
-    ld.add_action(start_gazebo_cmd)
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_map_server_cmd)
-    ld.add_action(start_localizer_cmd)
-    ld.add_action(start_dwb_cmd)
-    ld.add_action(start_planner_cmd)
-    ld.add_action(start_navigator_cmd)
-    ld.add_action(startup_cmd)
-    ld.add_action(startup_exit_event_handler)
+    ld.add_action(start_tf_cmd_1)
+    ld.add_action(start_tf_cmd_2)
+    ld.add_action(start_tf_cmd_3)
+    ld.add_action(start_tf_cmd_4)
+
+    ld.add_action(nav2_bringup)
+    ld.add_action(start_test)
+    ld.add_action(test_exit_event_handler)
 
     return ld

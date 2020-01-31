@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -30,9 +30,10 @@ class BtActionNode : public BT::CoroActionNode
 {
 public:
   BtActionNode(
+    const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(action_name, conf), action_name_(action_name)
+  : BT::CoroActionNode(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -45,21 +46,27 @@ public:
       config().blackboard->get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name_.c_str());
-    action_client_->wait_for_action_server();
+    createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", action_name_.c_str());
+    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
   BtActionNode() = delete;
 
   virtual ~BtActionNode()
   {
+  }
+
+  // Create instance of an action server
+  void createActionClient(const std::string & action_name)
+  {
+    // Now that we have the ROS node to use, create the action client for this BT action
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
+
+    // Make sure the server is actually there before continuing
+    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
+    action_client_->wait_for_action_server();
   }
 
   // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
@@ -104,12 +111,8 @@ public:
   {
     on_tick();
 
-    // Enable result awareness by providing an empty lambda function
-    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
-    send_goal_options.result_callback = [](auto) {};
-
 new_goal_received:
-    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+    auto future_goal_handle = action_client_->async_send_goal(goal_);
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
@@ -121,7 +124,7 @@ new_goal_received:
       throw std::runtime_error("Goal was rejected by the action server");
     }
 
-    auto future_result = goal_handle_->async_result();
+    auto future_result = action_client_->async_get_result(goal_handle_);
     rclcpp::executor::FutureReturnCode rc;
     do {
       rc = rclcpp::spin_until_future_complete(node_, future_result, server_timeout_);

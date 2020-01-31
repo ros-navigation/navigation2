@@ -19,13 +19,17 @@ import sys
 import time
 from typing import Optional
 
+from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
+from nav2_msgs.action import NavigateToPose
+from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
 
+from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
@@ -55,6 +59,7 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
+        self.action_client = ActionClient(self, NavigateToPose, 'NavigateToPose')
 
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
@@ -73,12 +78,48 @@ class NavTester(Node):
         self.initial_pose_pub.publish(msg)
         self.currentPose = self.initial_pose
 
-    def setGoalPose(self, pose: Optional[Pose] = None):
-        self.goal_pose = pose if pose is not None else self.goal_pose
+    def getStampedPoseMsg(self, pose: Pose):
         msg = PoseStamped()
         msg.header.frame_id = 'map'
-        msg.pose = self.goal_pose
-        self.goal_pub.publish(msg)
+        msg.pose = pose
+        return msg
+
+    def publishGoalPose(self, goal_pose: Optional[Pose] = None):
+        self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
+        self.goal_pub.publish(self.getStampedPoseMsg(self.goal_pose))
+
+    def runNavigateAction(self, goal_pose: Optional[Pose] = None):
+        # Sends a `NavToPose` action request and waits for completion
+        self.info_msg("Waiting for 'NavigateToPose' action server")
+        while not self.action_client.wait_for_server(timeout_sec=1.0):
+            self.info_msg("'NavigateToPose' action server not available, waiting...")
+
+        self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
+        goal_msg = NavigateToPose.Goal()
+        goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
+
+        self.info_msg('Sending goal request...')
+        send_goal_future = self.action_client.send_goal_async(goal_msg)
+
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        goal_handle = send_goal_future.result()
+
+        if not goal_handle.accepted:
+            self.error_msg('Goal rejected')
+            return False
+
+        self.info_msg('Goal accepted')
+        get_result_future = goal_handle.get_result_async()
+
+        self.info_msg("Waiting for 'NavigateToPose' action to complete")
+        rclpy.spin_until_future_complete(self, get_result_future)
+        status = get_result_future.result().status
+        if status != GoalStatus.STATUS_SUCCEEDED:
+            self.info_msg('Goal failed with status code: {0}'.format(status))
+            return False
+
+        self.info_msg('Goal succeeded!')
+        return True
 
     def poseCallback(self, msg):
         self.info_msg('Received amcl_pose')
@@ -127,6 +168,22 @@ class NavTester(Node):
                 self.error_msg('Exception while calling service: %r' % future.exception())
             time.sleep(5)
 
+    def shutdown(self):
+        self.info_msg('Shutting down')
+        transition_service = 'lifecycle_manager/manage_nodes'
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        while not mgr_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg(transition_service + ' service not available, waiting...')
+
+        req = ManageLifecycleNodes.Request()
+        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        future = mgr_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        try:
+            future.result()
+        except Exception as e:
+            self.error_msg('Service call failed %r' % (e,))
+
 
 def test_InitialPose(robot_tester, timeout, retries):
     robot_tester.initial_pose_received = False
@@ -147,7 +204,7 @@ def test_InitialPose(robot_tester, timeout, retries):
 
 def test_RobotMovesToGoal(robot_tester):
     robot_tester.info_msg('Setting goal pose')
-    robot_tester.setGoalPose()
+    robot_tester.publishGoalPose()
     robot_tester.info_msg('Waiting 60 seconds for robot to reach goal')
     return robot_tester.reachesGoal(timeout=60, distance=0.5)
 
@@ -161,7 +218,14 @@ def run_all_tests(robot_tester):
     if (result):
         robot_tester.wait_for_node_active('bt_navigator')
     if (result):
-        result = test_RobotMovesToGoal(robot_tester)
+        result = robot_tester.runNavigateAction()
+
+    # TODO(orduno) Test sending the navigation request through the topic interface.
+    #              Need to update tester to receive multiple goal poses.
+    #              Need to fix bug with shutting down while bt_navigator
+    #              is still running.
+    # if (result):
+        # result = test_RobotMovesToGoal(robot_tester)
 
     # Add more tests here if desired
 
@@ -237,11 +301,17 @@ def main(argv=sys.argv[1:]):
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
-    # run tests on each robot
     for tester in testers:
         passed = run_all_tests(tester)
         if not passed:
-            exit(1)
+            break
+
+    for tester in testers:
+        # stop and shutdown the nav stack to exit cleanly
+        tester.shutdown()
+
+    if not passed:
+        exit(1)
 
 
 if __name__ == '__main__':

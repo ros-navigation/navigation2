@@ -49,7 +49,8 @@ NavfnPlanner::NavfnPlanner()
 
 NavfnPlanner::~NavfnPlanner()
 {
-  RCLCPP_INFO(node_->get_logger(), "Destroying plugin %s", name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Destroying plugin %s of type NavfnPlanner",
+    name_.c_str());
 }
 
 void
@@ -64,7 +65,8 @@ NavfnPlanner::configure(
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  RCLCPP_INFO(node_->get_logger(), "Configuring plugin %s", name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Configuring plugin %s of type NavfnPlanner",
+    name_.c_str());
 
   // Initialize parameters
   // Declare this plugin's parameters
@@ -83,19 +85,22 @@ NavfnPlanner::configure(
 void
 NavfnPlanner::activate()
 {
-  RCLCPP_INFO(node_->get_logger(), "Activating plugin %s", name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Activating plugin %s of type NavfnPlanner",
+    name_.c_str());
 }
 
 void
 NavfnPlanner::deactivate()
 {
-  RCLCPP_INFO(node_->get_logger(), "Deactivating plugin %s", name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
+    name_.c_str());
 }
 
 void
 NavfnPlanner::cleanup()
 {
-  RCLCPP_INFO(node_->get_logger(), "Cleaning up plugin %s", name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Cleaning up plugin %s of type NavfnPlanner",
+    name_.c_str());
   planner_.reset();
 }
 
@@ -316,7 +321,13 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  planner_->calcPath(costmap_->getSizeInCellsX() * 4);
+  int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
+  if (path_len == 0) {
+    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
+    return false;
+  }
+
+  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
 
   // extract the plan
   float * x = planner_->getPathX();

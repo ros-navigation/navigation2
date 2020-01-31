@@ -31,8 +31,8 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
-  std::vector<std::string> plugin_names{std::string("Spin"),
-    std::string("BackUp"), std::string("Wait")};
+  std::vector<std::string> plugin_names{std::string("spin"),
+    std::string("back_up"), std::string("wait")};
   std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
     std::string("nav2_recoveries/BackUp"),
     std::string("nav2_recoveries/Wait")};
@@ -55,13 +55,23 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(),
-    get_node_timers_interface());
+    this->get_node_base_interface(),
+    this->get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
-  get_parameter("plugin_names", plugin_names_);
-  get_parameter("plugin_types", plugin_types_);
+  std::string costmap_topic, footprint_topic;
+  this->get_parameter("costmap_topic", costmap_topic);
+  this->get_parameter("footprint_topic", footprint_topic);
+  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+    shared_from_this(), costmap_topic);
+  footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+    shared_from_this(), footprint_topic, 1.0);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CollisionChecker>(
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), "odom");
+
+  this->get_parameter("plugin_names", plugin_names_);
+  this->get_parameter("plugin_types", plugin_types_);
 
   loadRecoveryPlugins();
 
@@ -79,7 +89,7 @@ RecoveryServer::loadRecoveryPlugins()
       RCLCPP_INFO(get_logger(), "Creating recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
       recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_types_[i]));
-      recoveries_.back()->configure(node, plugin_names_[i], tf_);
+      recoveries_.back()->configure(node, plugin_names_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),
@@ -127,6 +137,9 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   recoveries_.clear();
   transform_listener_.reset();
   tf_.reset();
+  footprint_sub_.reset();
+  costmap_sub_.reset();
+  collision_checker_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

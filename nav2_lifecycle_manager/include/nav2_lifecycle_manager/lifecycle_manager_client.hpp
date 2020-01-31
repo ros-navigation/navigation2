@@ -29,30 +29,80 @@
 
 namespace nav2_lifecycle_manager
 {
-
+/**
+ * @enum nav2_lifecycle_manager::SystemStatus
+ * @brief Enum class representing the status of the system.
+ */
 enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
-
+/**
+ * @class nav2_lifecycle_manager::LifeCycleMangerClient
+ * @brief The LifecycleManagerClient sends requests to the LifecycleManager to
+ * control the lifecycle state of the navigation modules.
+ */
 class LifecycleManagerClient
 {
 public:
+  /**
+   * @brief A constructor for LifeCycleMangerClient
+   */
   LifecycleManagerClient();
 
   // Client-side interface to the Nav2 lifecycle manager
+  /**
+   * @brief Make start up service call
+   * @return true or false
+   */
   bool startup();
+  /**
+   * @brief Make shutdown service call
+   * @return true or false
+   */
   bool shutdown();
+  /**
+   * @brief Make pause service call
+   * @return true or false
+   */
   bool pause();
+  /**
+   * @brief Make resume service call
+   * @return true or false
+   */
   bool resume();
+  /**
+   * @brief Make reset service call
+   * @return true or false
+   */
   bool reset();
+  /**
+   * @brief Check if lifecycle node manager server is active
+   * @return ACTIVE or INACTIVE or TIMEOUT
+   */
   SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // A couple convenience methods to facilitate scripting tests
+  /**
+   * @brief Set initial pose with covariance
+   * @param x X position
+   * @param y Y position
+   * @param theta orientation
+   */
   void set_initial_pose(double x, double y, double theta);
+  /**
+   * @brief Send goal pose to NavigationToPose action server
+   * @param x X position
+   * @param y Y position
+   * @param theta orientation
+   * @return true or false
+   */
   bool navigate_to_pose(double x, double y, double theta);
 
 protected:
   using ManageLifecycleNodes = nav2_msgs::srv::ManageLifecycleNodes;
 
-  // A generic method used to call startup, shutdown, etc.
+  /**
+   * @brief A generic method used to call startup, shutdown, etc.
+   * @param command
+   */
   bool callService(uint8_t command);
 
   // The node to use for the service call

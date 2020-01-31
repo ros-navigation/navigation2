@@ -26,7 +26,6 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_core/recovery.hpp"
@@ -87,32 +86,21 @@ public:
 
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker) override
   {
     RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());
 
     node_ = parent;
-    tf_ = tf;
     recovery_name_ = name;
+    tf_ = tf;
 
-    std::string costmap_topic;
-    std::string footprint_topic;
-
-    node_->get_parameter("costmap_topic", costmap_topic);
-    node_->get_parameter("footprint_topic", footprint_topic);
     node_->get_parameter("cycle_frequency", cycle_frequency_);
 
     action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
 
-    costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-      node_, costmap_topic);
-
-    footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      node_, footprint_topic, 1.0);
-
-    collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
-      *costmap_sub_, *footprint_sub_, *tf_, node_->get_name(), "odom");
+    collision_checker_ = collision_checker;
 
     vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
@@ -123,9 +111,6 @@ public:
   {
     action_server_.reset();
     vel_pub_.reset();
-    footprint_sub_.reset();
-    costmap_sub_.reset();
-    collision_checker_.reset();
     onCleanup();
   }
 
@@ -145,12 +130,10 @@ protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<ActionServer> action_server_;
+  std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   double cycle_frequency_;
   double enabled_;
 
@@ -165,7 +148,7 @@ protected:
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
       RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
-      action_server_->terminate_goals();
+      action_server_->terminate_current();
       return;
     }
 
@@ -179,7 +162,7 @@ protected:
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_goals();
+        action_server_->terminate_all();
         return;
       }
 
@@ -189,7 +172,7 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_goals();
+        action_server_->terminate_current();
         return;
       }
 
@@ -201,7 +184,7 @@ protected:
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
-          action_server_->terminate_goals();
+          action_server_->terminate_current();
           return;
 
         case Status::RUNNING:

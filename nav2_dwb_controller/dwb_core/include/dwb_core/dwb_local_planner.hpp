@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_core/local_planner.hpp"
+#include "nav2_core/controller.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "dwb_core/publisher.hpp"
 #include "dwb_core/trajectory_critic.hpp"
@@ -56,9 +56,9 @@ namespace dwb_core
 
 /**
  * @class DWBLocalPlanner
- * @brief Plugin-based flexible local_planner
+ * @brief Plugin-based flexible controller
  */
-class DWBLocalPlanner : public nav2_core::LocalPlanner
+class DWBLocalPlanner : public nav2_core::Controller
 {
 public:
   /**
@@ -68,7 +68,7 @@ public:
 
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-    const std::shared_ptr<tf2_ros::Buffer> & tf,
+    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
 
   virtual ~DWBLocalPlanner() {}

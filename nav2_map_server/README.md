@@ -1,18 +1,20 @@
 # Map Server
 
 The `Map Server` provides maps to the rest of the Navigation2 system using both topic and
-service interfaces. 
+service interfaces.
 
 ## Changes from ROS1 Navigation Map Server
 
 While the nav2 map server provides the same general function as the nav1 map server, the new
 code has some changes to accomodate ROS2 as well as some architectural improvements.
 
+In addition, there is now a new "load_map" service which can be used to dynamically load a map.
+
 ### Architecture
 
 In contrast to the ROS1 navigation map server, the nav2 map server will support a variety
-of map types, and thus some aspects of the original code have been refactored to support 
-this new extensible framework. In particular, there is now a `MapLoader` abstract base class 
+of map types, and thus some aspects of the original code have been refactored to support
+this new extensible framework. In particular, there is now a `MapLoader` abstract base class
 and type-specific map loaders which derive from this class. There is currently one such
 derived class, the `OccGridLoader`, which converts an input image to an OccupancyGrid and
 makes this available via topic and service interfaces. The `MapServer` class is a ROS2 node
@@ -43,8 +45,8 @@ free_thresh: 0.196
 ```
 
 The Navigation2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
-mechanism to get the name of the YAML file to use. This effectively introduces a 
-level of indirection to get the map yaml filename. For example, for a node named 'map_server', 
+mechanism to get the name of the YAML file to use. This effectively introduces a
+level of indirection to get the map yaml filename. For example, for a node named 'map_server',
 the parameter file would look like this:
 
 ```
@@ -83,7 +85,13 @@ $ process_with_multiple_map_servers __params:=combined_params.yaml
 ## Currently Supported Map Types
 - Occupancy grid (nav_msgs/msg/OccupancyGrid), via the OccGridLoader
 
-## Future Plans
-- Allow for dynamic configuration of conversion parameters
-- Support additional map types, e.g. GridMap (https://github.com/ros-planning/navigation2/issues/191)
-- Port and refactor Map Saver (https://github.com/ros-planning/navigation2/issues/188)
+## Services
+As in ROS navigation, the map_server node provides a "map" service to get the map. See the nav_msgs/srv/GetMap.srv file for details.
+
+NEW in ROS2 Eloquent, map_server also now provides a "load_map" service. See nav2_msgs/srv/LoadMap.srv for details.
+
+Example:
+```
+$ ros2 service call /load_map nav2_msgs/srv/LoadMap "{type: 0, map_id: /ros/maps/map.yaml}
+```
+

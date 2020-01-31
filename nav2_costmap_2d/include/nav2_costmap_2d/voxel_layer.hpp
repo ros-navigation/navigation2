@@ -152,6 +152,11 @@ private:
   {
     return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
   }
+
+  double getSizeInMetersZ() const
+  {
+    return (size_z_ - 1 + 0.5) * z_resolution_;
+  }
 };
 
 }  // namespace nav2_costmap_2d

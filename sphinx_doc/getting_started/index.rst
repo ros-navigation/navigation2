@@ -29,14 +29,14 @@ Installation
 
    .. code-block:: bash
 
-      sudo apt install ros2-dashing-navigation2
-      sudo apt install ros2-dashing-nav2-bringup
+      sudo apt install ros-dashing-navigation2
+      sudo apt install ros-dashing-nav2-bringup
 
 3. Install the Turtlebot 3 packages. Again, for Ubuntu 18, it looks like this:
 
    .. code-block:: bash
 
-      sudo apt install ros2-dashing-turtlebot3*
+      sudo apt install ros-dashing-turtlebot3*
 
 Running the Example
 *******************
@@ -54,7 +54,7 @@ Running the Example
 
    .. code-block:: bash
 
-      ros2 launch nav2_bringup nav2_tb3_simulation_launch.py
+      ros2 launch nav2_bringup nav2_simulation_launch.py
 
 
    If everything has started correctly, you will see the RViz and Gazebo GUIs like

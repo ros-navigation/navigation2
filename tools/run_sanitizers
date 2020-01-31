@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# colcon sanitizer plugin instructions at
+# https://github.com/colcon/colcon-sanitizer-reports/blob/master/README.rst
+
+# To use this script, make sure you have the colcon plugins installed according
+# to the instructions above. Then build ros2_ws and navstack_dependencies_ws.
+# Source the navstack_dependencies_ws and then cd to the navigation2_ws.
+#
+# Run this script by invoking navigation2/tools/run_sanitizers
+# Afterwards, there should be two files in the root of the workspace:
+#  - sanitizer_report-asan.csv
+#  - sanitizer_report-tsan.csv
+
+clean_workspace() {
+  rm -rf build install log
+}
+
+build_with_sanitizer() {
+  colcon build --build-base=build-$1 --install-base=install-$1 \
+      --cmake-args -DOSRF_TESTING_TOOLS_CPP_DISABLE_MEMORY_TOOLS=ON \
+                   -DCMAKE_BUILD_TYPE=Debug \
+      --mixin $1 \
+      --symlink-install
+}
+
+test_with_sanitizer() {
+colcon test --build-base=build-$1 --install-base=install-$1 --retest-until-pass 3 \
+  --event-handlers sanitizer_report+
+}
+
+
+clean_workspace
+
+build_with_sanitizer asan-gcc
+build_with_sanitizer tsan
+
+test_with_sanitizer asan-gcc
+mv sanitizer_report.csv sanitizer_report-asan.csv
+test_with_sanitizer tsan
+mv sanitizer_report.csv sanitizer_report-tsan.csv

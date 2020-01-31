@@ -9,7 +9,7 @@ Test a component's ROS API (Pub/Sub/Service).
 
 - [Global Planning](src/planning/README.md)
 
-- Local Planning
+- Controller
 
 - [Localization](src/localization/README.md)
 
@@ -29,5 +29,8 @@ Test the integration of several components and subsystems.
 - Command chain (Mission Planning, Mission Execution, Navigation System, Robot Interface)
 
 ## 3. System Testing
+Test the lifecycle startup and shutdown of nodes.
+ - [Updown Test](src/updown/README.md)
+
 Test the integration of all subsystems.
  - [System Test](src/system/README.md)

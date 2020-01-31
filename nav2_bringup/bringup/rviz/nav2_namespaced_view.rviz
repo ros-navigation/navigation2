@@ -308,7 +308,7 @@ Visualization Manager:
             Value: <robot_namespace>/local_costmap/published_footprint
           Value: true
       Enabled: true
-      Name: Local Planner
+      Name: Controller
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -328,6 +328,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: <robot_namespace>/initialpose
+    - Class: nav2_rviz_plugins/GoalTool
   Transformation:
     Current:
       Class: rviz_default_plugins/TF

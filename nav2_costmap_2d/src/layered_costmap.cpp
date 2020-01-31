@@ -99,6 +99,12 @@ void LayeredCostmap::resizeMap(
   }
 }
 
+bool LayeredCostmap::isOutofBounds(double robot_x, double robot_y)
+{
+  unsigned int mx, my;
+  return !costmap_.worldToMap(robot_x, robot_y, mx, my);
+}
+
 void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
 {
   // Lock for the remainder of this function, some plugins (e.g. VoxelLayer)
@@ -111,6 +117,11 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     double new_origin_x = robot_x - costmap_.getSizeInMetersX() / 2;
     double new_origin_y = robot_y - costmap_.getSizeInMetersY() / 2;
     costmap_.updateOrigin(new_origin_x, new_origin_y);
+  }
+
+  if (isOutofBounds(robot_x, robot_y)) {
+    RCLCPP_WARN(rclcpp::get_logger("nav2_costmap_2d"),
+      "Robot is out of bounds of the costmap!");
   }
 
   if (plugins_.size() == 0) {

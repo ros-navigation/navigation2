@@ -110,17 +110,18 @@ void VoxelLayer::matchSize()
 
 void VoxelLayer::reset()
 {
-  voxel_pub_->on_deactivate();
-  deactivate();
+  // Call the base class method before adding our own functionality
+  ObstacleLayer::reset();
   resetMaps();
-  activate();
-  undeclareAllParameters();
-  voxel_pub_->on_activate();
 }
 
 void VoxelLayer::resetMaps()
 {
-  Costmap2D::resetMaps();
+  // Call the base class method before adding our own functionality
+  // Note: at the time this was written, ObstacleLayer doesn't implement
+  // resetMaps so this goes to the next layer down Costmap2DLayer which also
+  // doesn't implement this, so it actually goes all the way to Costmap2D
+  ObstacleLayer::resetMaps();
   voxel_grid_.reset();
 }
 
@@ -314,6 +315,7 @@ void VoxelLayer::raytraceFreespace(
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
   double map_end_y = origin_y_ + getSizeInMetersY();
+  double map_end_z = origin_z_ + getSizeInMetersZ();
 
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
@@ -337,9 +339,9 @@ void VoxelLayer::raytraceFreespace(
     double t = 1.0;
 
     // we can only raytrace to a maximum z height
-    if (wpz > max_obstacle_height_) {
+    if (wpz > map_end_z) {
       // we know we want the vector's z value to be max_z
-      t = std::max(0.0, std::min(t, (max_obstacle_height_ - 0.01 - oz) / c));
+      t = std::max(0.0, std::min(t, (map_end_z - 0.01 - oz) / c));
     } else if (wpz < origin_z_) {
       // and we can only raytrace down to the floor
       // we know we want the vector's z value to be 0.0

@@ -44,6 +44,12 @@ void RosTopicLogger::callback(
   event.previous_status = toStr(prev_status, false);
   event.current_status = toStr(status, false);
   event_log_.push_back(std::move(event));
+
+  RCLCPP_DEBUG(ros_node_->get_logger(), "[%.3f]: %25s %s -> %s",
+    std::chrono::duration<double>(timestamp).count(),
+    node.name().c_str(),
+    toStr(prev_status, true).c_str(),
+    toStr(status, true).c_str() );
 }
 
 void RosTopicLogger::flush()

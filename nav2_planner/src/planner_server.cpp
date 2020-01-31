@@ -41,7 +41,11 @@ PlannerServer::PlannerServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("planner_plugin", "nav2_navfn_planner/NavfnPlanner");
+  std::vector<std::string> default_id, default_type;
+  default_id.push_back("GridBased");
+  default_type.push_back("nav2_navfn_planner/NavfnPlanner");
+  declare_parameter("planner_plugin_ids", default_id);
+  declare_parameter("planner_plugin_types", default_type);
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -54,7 +58,10 @@ PlannerServer::PlannerServer()
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  planner_.reset();
+  PlannerMap::iterator it;
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
+    it->second.reset();
+  }
 }
 
 nav2_util::CallbackReturn
@@ -70,27 +77,42 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugin", planner_plugin_name_);
+  get_parameter("planner_plugin_ids", plugin_ids_);
+  get_parameter("planner_plugin_types", plugin_types_);
   auto node = shared_from_this();
 
-  try {
-    planner_ = gp_loader_.createUniqueInstance(planner_plugin_name_);
-    RCLCPP_INFO(get_logger(), "Created global planner plugin %s",
-      planner_plugin_name_.c_str());
-    planner_->configure(node,
-      gp_loader_.getName(planner_plugin_name_), tf_, costmap_ros_);
-  } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
-      ex.what());
+  if (plugin_ids_.size() != plugin_types_.size()) {
+    RCLCPP_FATAL(get_logger(),
+      "Planner plugin names and types sizes do not match!");
     exit(-1);
+  }
+
+  for (uint i = 0; i != plugin_types_.size(); i++) {
+    try {
+      nav2_core::GlobalPlanner::Ptr planner =
+        gp_loader_.createUniqueInstance(plugin_types_[i]);
+      RCLCPP_INFO(get_logger(), "Created global planner plugin %s of type %s",
+        plugin_ids_[i].c_str(), plugin_types_[i].c_str());
+      planner->configure(node, plugin_ids_[i], tf_, costmap_ros_);
+      planners_.insert({plugin_ids_[i], planner});
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
+        ex.what());
+      exit(-1);
+    }
+  }
+
+  for (uint i = 0; i != plugin_types_.size(); i++) {
+    planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
   }
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
-      std::bind(&PlannerServer::computePathToPose, this));
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_,
+      "compute_path_to_pose",
+      std::bind(&PlannerServer::computePlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -103,7 +125,11 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
   plan_publisher_->on_activate();
   action_server_->activate();
   costmap_ros_->on_activate(state);
-  planner_->activate();
+
+  PlannerMap::iterator it;
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
+    it->second->activate();
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -116,7 +142,11 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   action_server_->deactivate();
   plan_publisher_->on_deactivate();
   costmap_ros_->on_deactivate(state);
-  planner_->deactivate();
+
+  PlannerMap::iterator it;
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
+    it->second->deactivate();
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -130,8 +160,12 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   plan_publisher_.reset();
   tf_.reset();
   costmap_ros_->on_cleanup(state);
-  planner_->cleanup();
-  planner_.reset();
+
+  PlannerMap::iterator it;
+  for (it = planners_.begin(); it != planners_.end(); ++it) {
+    it->second->cleanup();
+  }
+  planners_.clear();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -151,7 +185,7 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-PlannerServer::computePathToPose()
+PlannerServer::computePlan()
 {
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_->get_current_goal();
@@ -170,7 +204,7 @@ PlannerServer::computePathToPose()
 
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
-      action_server_->terminate_goals();
+      action_server_->terminate_all();
       return;
     }
 
@@ -188,14 +222,29 @@ PlannerServer::computePathToPose()
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-    result->path = planner_->createPlan(start, goal->pose);
+    if (planners_.find(goal->planner_id) != planners_.end()) {
+      result->path = planners_[goal->planner_id]->createPlan(start, goal->pose);
+    } else {
+      if (planners_.size() == 1 && goal->planner_id.empty()) {
+        if (!single_planner_warning_given_) {
+          single_planner_warning_given_ = true;
+          RCLCPP_WARN(get_logger(), "No planners specified in action call. "
+            "Server will use only plugin %s in server."
+            " This warning will appear once.", planner_ids_concat_.c_str());
+        }
+        result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
+      } else {
+        RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
+          "Planner names are: %s", goal->planner_id.c_str(),
+          planner_ids_concat_.c_str());
+      }
+    }
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
-        " path to (%.2f, %.2f)", planner_plugin_name_.c_str(),
+        " path to (%.2f, %.2f)", goal->planner_id.c_str(),
         goal->pose.pose.position.x, goal->pose.pose.position.y);
-      // TODO(orduno): define behavior if a preemption is available
-      action_server_->terminate_goals();
+      action_server_->terminate_current();
       return;
     }
 
@@ -212,21 +261,19 @@ PlannerServer::computePathToPose()
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-      planner_plugin_name_.c_str(), goal->pose.pose.position.x,
+      goal->planner_id.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
-
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    action_server_->terminate_goals();
+    action_server_->terminate_current();
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed, "
       "An unexpected error has occurred. The planner server"
       " may not be able to continue operating correctly.");
-
-    // TODO(orduno): provide information about the failure to the parent task,
+    // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    action_server_->terminate_goals();
+    action_server_->terminate_current();
     return;
   }
 }

@@ -50,7 +50,6 @@ class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
-  void checkUseDwaParam(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   dwb_msgs::msg::Trajectory2D generateTrajectory(
     const geometry_msgs::msg::Pose2D & start_pose,

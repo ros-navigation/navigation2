@@ -158,6 +158,10 @@ public:
    * This is updated by setFootprint(). */
   double getInscribedRadius() {return inscribed_radius_;}
 
+  /** @brief Checks if the robot is outside the bounds of its costmap in the case
+  * of poorly configured setups. */
+  bool isOutofBounds(double robot_x, double robot_y);
+
 private:
   Costmap2D costmap_;
   std::string global_frame_;

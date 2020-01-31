@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_rviz_plugins</name>
-  <version>0.2.4</version>
+  <version>0.3.0</version>
   <description>Navigation 2 plugins for rviz</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <license>Apache-2.0</license>
@@ -25,7 +25,8 @@
   <depend>rviz_rendering</depend>
   <depend>std_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
-
+  <depend>visualization_msgs</depend>
+  
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-opengl</exec_depend>
