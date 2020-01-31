@@ -26,14 +26,16 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   RCLCPP_INFO(rclcpp::get_logger("test_updown"), "Initializing test");
-  nav2_lifecycle_manager::LifecycleManagerClient client;
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation");
+  nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization");
   bool test_passed = true;
 
   // Wait for a few seconds to let all of the nodes come up
   std::this_thread::sleep_for(5s);
 
   // Start the nav2 system, bringing it to the ACTIVE state
-  client.startup();
+  client_nav.startup();
+  client_loc.startup();
 
   // Wait for a couple secs to make sure the nodes have processed all discovery
   // info before starting
@@ -42,7 +44,8 @@ int main(int argc, char ** argv)
 
   // The system should now be active
   int retries = 0;
-  while ((client.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
+  while ((client_nav.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
+    (client_loc.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
     (retries < 10))
   {
     std::this_thread::sleep_for(2s);
@@ -55,7 +58,8 @@ int main(int argc, char ** argv)
   }
 
   // Shut down the nav2 system, bringing it to the FINALIZED state
-  client.shutdown();
+  client_nav.shutdown();
+  client_loc.shutdown();
 
   if (test_passed) {
     RCLCPP_INFO(rclcpp::get_logger("test_updown"),

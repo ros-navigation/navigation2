@@ -91,7 +91,7 @@ def generate_launch_description():
         description='Full path to the behavior tree xml file to use')
 
     declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart', default_value='false',
+        'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(

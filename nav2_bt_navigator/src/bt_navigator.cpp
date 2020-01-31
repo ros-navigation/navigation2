@@ -34,8 +34,7 @@ BtNavigator::BtNavigator()
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
 
-  declare_parameter("plugin_lib_names",
-    rclcpp::ParameterValue(std::vector<std::string>({"nav2_behavior_tree_nodes"})));
+  declare_parameter("plugin_lib_names");
 }
 
 BtNavigator::~BtNavigator()
@@ -78,7 +77,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
 
   // Get the libraries to pull plugins from
-  get_parameter("plugin_lib_names", plugin_lib_names_);
+  plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);

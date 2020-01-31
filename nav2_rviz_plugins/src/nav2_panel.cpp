@@ -33,7 +33,8 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
-: Panel(parent)
+: Panel(parent), client_nav_("lifecycle_manager_navigation"),
+  client_loc_("lifecycle_manager_localization")
 {
   // Create the control button and its tooltip
 
@@ -181,7 +182,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  initial_thread_ = new InitialThread(client_);
+  initial_thread_ = new InitialThread(client_nav_, client_loc_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
   QSignalTransition * activeSignal = new QSignalTransition(initial_thread_,
@@ -261,32 +262,45 @@ Nav2Panel::startThread()
 void
 Nav2Panel::onPause()
 {
-  QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause, &client_));
+  QFuture<void> futureNav =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause,
+      &client_nav_));
+  QFuture<void> futureLoc =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause,
+      &client_loc_));
 }
 
 void
 Nav2Panel::onResume()
 {
-  QFuture<void> future =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume, &client_));
+  QFuture<void> futureNav =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume,
+      &client_nav_));
+  QFuture<void> futureLoc =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume,
+      &client_loc_));
 }
 
 void
 Nav2Panel::onStartup()
 {
-  QFuture<void> future =
+  QFuture<void> futureNav =
     QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_));
+      &client_nav_));
+  QFuture<void> futureLoc =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
+      &client_loc_));
 }
 
 void
 Nav2Panel::onShutdown()
 {
-  QFuture<void> future =
+  QFuture<void> futureNav =
     QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_));
-
+      &client_nav_));
+  QFuture<void> futureLoc =
+    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
+      &client_loc_));
   timer_.stop();
 }
 
