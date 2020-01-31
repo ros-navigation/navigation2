@@ -154,7 +154,6 @@ def generate_launch_description():
                                   'params_file': params_file,
                                   'bt_xml_file': bt_xml_file,
                                   'autostart': autostart,
-                                  'use_remappings': 'True',
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
                                   'headless': 'False',

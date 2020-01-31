@@ -1,14 +1,13 @@
-# Navigation2
+# Navigation2 Stack
 
-ROS2 Navigation System
 
-[![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master) CircleCI
+| Builder                | Status                    |
+|----------------------|-------------------------|
+| CircleCI             | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master)   |
+| DockerHub       | [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=build)](https://hub.docker.com/r/rosplanning/navigation2)       |
+| ROS2 Build Farm   | [![Build Status](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/)      |
+| Code Coverage   | [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)    |
 
-[![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=build)](https://hub.docker.com/r/rosplanning/navigation2) DockerHub
-
-[![Build Status](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Cdev__navigation2__ubuntu_bionic_amd64/) ROS Build Farm 
-
-[![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
 # Overview
 The ROS 2 Navigation System is the control system that enables a robot to autonomously reach a goal state, such as a specific position and orientation relative to a specific map. Given a current pose, a map, and a goal, such as a destination pose, the navigation system generates a plan to reach the goal, and outputs commands to autonomously drive the robot, respecting any safety constraints and avoiding obstacles encountered along the way.
@@ -17,6 +16,9 @@ The ROS 2 Navigation System is the control system that enables a robot to autono
 
 # Documentation
 For detailed instructions on how to install and run the examples, please visit our [documentation site](https://ros-planning.github.io/navigation2/).
+
+# API Documentation
+Run `doxygen` in the root of this repository. It will generate a `/doc/*` directory containing the documentation. Entrypoint in a browser is index.html.
 
 # Contributing
 [Contributions are welcome!](doc/README.md#contributing). For more information, please review our [contribution guidelines](https://ros-planning.github.io/navigation2/contribute/contribute_guidelines.html).
