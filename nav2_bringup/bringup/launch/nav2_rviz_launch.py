@@ -22,8 +22,8 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.substitutions import LaunchConfiguration
-
-from nav2_common.launch import Node, ReplaceString
+from launch_ros.actions import Node
+from nav2_common.launch import ReplaceString
 
 
 def generate_launch_description():
@@ -73,7 +73,6 @@ def generate_launch_description():
         node_namespace=namespace,
         arguments=['-d', namespaced_rviz_config_file],
         output='screen',
-        use_remappings=IfCondition('True'),
         remappings=[('/tf', 'tf'),
                     ('/tf_static', 'tf_static'),
                     ('/goal_pose', 'goal_pose'),

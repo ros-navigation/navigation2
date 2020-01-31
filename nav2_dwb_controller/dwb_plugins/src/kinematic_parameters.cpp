@@ -44,6 +44,8 @@
 using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace dwb_plugins
 {
@@ -90,6 +92,16 @@ void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr &
   nh->get_parameter("decel_lim_y", decel_lim_y_);
   nh->get_parameter("decel_lim_theta", decel_lim_theta_);
 
+  // Setup callback for changes to parameters.
+  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+    nh->get_node_base_interface(),
+    nh->get_node_topics_interface(),
+    nh->get_node_graph_interface(),
+    nh->get_node_services_interface());
+
+  parameter_event_sub_ = parameters_client_->on_parameter_event(
+    std::bind(&KinematicParameters::on_parameter_event_callback, this, _1));
+
   min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
   max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
 }
@@ -102,6 +114,49 @@ bool KinematicParameters::isValidSpeed(double x, double y, double theta)
     min_speed_theta_ >= 0.0 && fabs(theta) < min_speed_theta_) {return false;}
   if (vmag_sq == 0.0 && theta == 0.0) {return false;}
   return true;
+}
+
+void
+KinematicParameters::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == "min_vel_x") {
+        min_vel_x_ = value.double_value;
+      } else if (name == "min_vel_y") {
+        min_vel_y_ = value.double_value;
+      } else if (name == "max_vel_x") {
+        max_vel_x_ = value.double_value;
+      } else if (name == "max_vel_y") {
+        max_vel_y_ = value.double_value;
+      } else if (name == "max_vel_theta") {
+        max_vel_theta_ = value.double_value;
+      } else if (name == "min_speed_xy") {
+        min_speed_xy_ = value.double_value;
+      } else if (name == "max_speed_xy") {
+        max_speed_xy_ = value.double_value;
+      } else if (name == "min_speed_theta") {
+        min_speed_theta_ = value.double_value;
+      } else if (name == "acc_lim_x") {
+        acc_lim_x_ = value.double_value;
+      } else if (name == "acc_lim_y") {
+        acc_lim_y_ = value.double_value;
+      } else if (name == "acc_lim_theta") {
+        acc_lim_theta_ = value.double_value;
+      } else if (name == "decel_lim_x") {
+        decel_lim_x_ = value.double_value;
+      } else if (name == "decel_lim_y") {
+        decel_lim_y_ = value.double_value;
+      } else if (name == "decel_lim_theta") {
+        decel_lim_theta_ = value.double_value;
+      }
+    }
+  }
 }
 
 }  // namespace dwb_plugins

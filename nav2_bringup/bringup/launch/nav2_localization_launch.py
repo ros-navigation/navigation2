@@ -20,8 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-
-from nav2_common.launch import Node
+from launch_ros.actions import Node
 from nav2_common.launch import RewrittenYaml
 
 
@@ -35,7 +34,6 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     use_lifecycle_mgr = LaunchConfiguration('use_lifecycle_mgr')
-    use_remappings = LaunchConfiguration('use_remappings')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -43,9 +41,7 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/tf', 'tf'),
+    remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
@@ -89,17 +85,12 @@ def generate_launch_description():
             'use_lifecycle_mgr', default_value='true',
             description='Whether to launch the lifecycle manager'),
 
-        DeclareLaunchArgument(
-            'use_remappings', default_value='false',
-            description='Arguments to pass to all nodes launched by the file'),
-
         Node(
             package='nav2_map_server',
             node_executable='map_server',
             node_name='map_server',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(
@@ -108,7 +99,6 @@ def generate_launch_description():
             node_name='amcl',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(

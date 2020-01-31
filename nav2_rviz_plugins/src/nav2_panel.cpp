@@ -506,40 +506,74 @@ Nav2Panel::load(const rviz_common::Config & config)
 }
 
 void
+Nav2Panel::resetUniqueId()
+{
+  unique_id = 0;
+}
+
+int
+Nav2Panel::getUniqueId()
+{
+  int temp_id = unique_id;
+  unique_id += 1;
+  return temp_id;
+}
+
+void
 Nav2Panel::updateWpNavigationMarkers()
 {
+  resetUniqueId();
+
   visualization_msgs::msg::MarkerArray marker_array;
 
   for (size_t i = 0; i < acummulated_poses_.size(); i++) {
-    // Draw a green ball at the waypoint pose
-    visualization_msgs::msg::Marker marker;
-    marker.header = acummulated_poses_[i].header;
-    marker.id = i * 2;
-    marker.type = visualization_msgs::msg::Marker::SPHERE;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.pose = acummulated_poses_[i].pose;
-    marker.scale.x = 0.1;
-    marker.scale.y = 0.1;
-    marker.scale.z = 0.1;
-    marker.color.r = 0;
-    marker.color.g = 255;
-    marker.color.b = 0;
-    marker.color.a = 1.0f;
-    marker.lifetime = rclcpp::Duration(0);
-    marker.frame_locked = false;
-    marker_array.markers.push_back(marker);
+    // Draw a green arrow at the waypoint pose
+    visualization_msgs::msg::Marker arrow_marker;
+    arrow_marker.header = acummulated_poses_[i].header;
+    arrow_marker.id = getUniqueId();
+    arrow_marker.type = visualization_msgs::msg::Marker::ARROW;
+    arrow_marker.action = visualization_msgs::msg::Marker::ADD;
+    arrow_marker.pose = acummulated_poses_[i].pose;
+    arrow_marker.scale.x = 0.3;
+    arrow_marker.scale.y = 0.05;
+    arrow_marker.scale.z = 0.02;
+    arrow_marker.color.r = 0;
+    arrow_marker.color.g = 255;
+    arrow_marker.color.b = 0;
+    arrow_marker.color.a = 1.0f;
+    arrow_marker.lifetime = rclcpp::Duration(0);
+    arrow_marker.frame_locked = false;
+    marker_array.markers.push_back(arrow_marker);
+
+    // Draw a red circle at the waypoint pose
+    visualization_msgs::msg::Marker circle_marker;
+    circle_marker.header = acummulated_poses_[i].header;
+    circle_marker.id = getUniqueId();
+    circle_marker.type = visualization_msgs::msg::Marker::SPHERE;
+    circle_marker.action = visualization_msgs::msg::Marker::ADD;
+    circle_marker.pose = acummulated_poses_[i].pose;
+    circle_marker.scale.x = 0.05;
+    circle_marker.scale.y = 0.05;
+    circle_marker.scale.z = 0.05;
+    circle_marker.color.r = 255;
+    circle_marker.color.g = 0;
+    circle_marker.color.b = 0;
+    circle_marker.color.a = 1.0f;
+    circle_marker.lifetime = rclcpp::Duration(0);
+    circle_marker.frame_locked = false;
+    marker_array.markers.push_back(circle_marker);
 
     // Draw the waypoint number
     visualization_msgs::msg::Marker marker_text;
     marker_text.header = acummulated_poses_[i].header;
-    marker_text.id = i * 2 + 1;
+    marker_text.id = getUniqueId();
     marker_text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
     marker_text.action = visualization_msgs::msg::Marker::ADD;
     marker_text.pose = acummulated_poses_[i].pose;
     marker_text.pose.position.z += 0.2;  // draw it on top of the waypoint
-    marker_text.scale.x = 0.1;
-    marker_text.scale.y = 0.1;
-    marker_text.scale.z = 0.1;
+    marker_text.scale.x = 0.07;
+    marker_text.scale.y = 0.07;
+    marker_text.scale.z = 0.07;
     marker_text.color.r = 0;
     marker_text.color.g = 255;
     marker_text.color.b = 0;

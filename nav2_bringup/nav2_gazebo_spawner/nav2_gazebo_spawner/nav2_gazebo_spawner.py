@@ -83,7 +83,7 @@ def main():
             break
 
     ros_params = plugin.find('ros')
-    ros_tf_remap = ET.SubElement(ros_params, 'argument')
+    ros_tf_remap = ET.SubElement(ros_params, 'remapping')
     ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
 
     # Set data for request
