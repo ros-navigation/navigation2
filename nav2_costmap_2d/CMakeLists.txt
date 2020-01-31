@@ -136,7 +136,7 @@ install(TARGETS nav2_costmap_2d_core nav2_costmap_2d layers nav2_costmap_2d_clie
 )
 
 install(FILES costmap_plugins.xml
-  DESTINATION share
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/
