@@ -69,7 +69,7 @@ install(DIRECTORY include/
         DESTINATION include/
 )
 install(FILES plugins.xml
-        DESTINATION share
+        DESTINATION share/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include)
