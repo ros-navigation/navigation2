@@ -29,5 +29,8 @@ Test the integration of several components and subsystems.
 - Command chain (Mission Planning, Mission Execution, Navigation System, Robot Interface)
 
 ## 3. System Testing
+Test the lifecycle startup and shutdown of nodes.
+ - [Updown Test](src/updown/README.md)
+
 Test the integration of all subsystems.
  - [System Test](src/system/README.md)

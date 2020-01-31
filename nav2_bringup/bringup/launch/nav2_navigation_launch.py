@@ -20,8 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-
-from nav2_common.launch import Node
+from launch_ros.actions import Node
 from nav2_common.launch import RewrittenYaml
 
 
@@ -35,6 +34,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     use_remappings = LaunchConfiguration('use_remappings')
+
     map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
     lifecycle_nodes = ['controller_server',
                        'planner_server',
@@ -48,9 +48,7 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/tf', 'tf'),
+    remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
@@ -99,7 +97,7 @@ def generate_launch_description():
             description='Arguments to pass to all nodes launched by the file'),
 
         DeclareLaunchArgument(
-            'map_subscribe_transient_local', default_value='true',
+            'map_subscribe_transient_local', default_value='false',
             description='Whether to set the map subscriber QoS to transient local'),
 
         Node(
@@ -107,7 +105,6 @@ def generate_launch_description():
             node_executable='controller_server',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(
@@ -116,7 +113,6 @@ def generate_launch_description():
             node_name='planner_server',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(
@@ -125,7 +121,6 @@ def generate_launch_description():
             node_name='recoveries_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(
@@ -134,7 +129,6 @@ def generate_launch_description():
             node_name='bt_navigator',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(
@@ -143,7 +137,6 @@ def generate_launch_description():
             node_name='waypoint_follower',
             output='screen',
             parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
         Node(

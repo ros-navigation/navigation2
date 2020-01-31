@@ -23,8 +23,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchD
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
-
-from nav2_common.launch import Node
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -40,7 +39,6 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
-    use_remappings = LaunchConfiguration('use_remappings')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -56,9 +54,7 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [((namespace, '/tf'), '/tf'),
-                  ((namespace, '/tf_static'), '/tf_static'),
-                  ('/tf', 'tf'),
+    remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
@@ -97,10 +93,6 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
-
-    declare_use_remappings_cmd = DeclareLaunchArgument(
-        'use_remappings', default_value='false',
-        description='Arguments to pass to all nodes launched by the file')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
@@ -157,7 +149,6 @@ def generate_launch_description():
         node_namespace=namespace,
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
-        use_remappings=IfCondition(use_remappings),
         remappings=remappings,
         arguments=[urdf])
 
@@ -189,7 +180,6 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_use_remappings_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
