@@ -34,8 +34,8 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     use_remappings = LaunchConfiguration('use_remappings')
-
     map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
+
     lifecycle_nodes = ['controller_server',
                        'planner_server',
                        'recoveries_server',

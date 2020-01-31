@@ -36,6 +36,7 @@ def generate_launch_description():
     use_remappings = LaunchConfiguration('use_remappings')
     lifecycle_nodes = ['map_server', 'amcl']
 
+
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
     # https://github.com/ros/geometry2/issues/32
