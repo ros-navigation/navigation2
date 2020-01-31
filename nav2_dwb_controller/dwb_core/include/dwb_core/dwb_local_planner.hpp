@@ -214,6 +214,8 @@ protected:
 
   pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
   std::vector<TrajectoryCritic::Ptr> critics_;
+
+  std::string dwb_plugin_name_;
 };
 
 }  // namespace dwb_core

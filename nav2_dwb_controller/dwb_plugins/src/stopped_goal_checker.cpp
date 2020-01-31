@@ -33,6 +33,7 @@
  */
 
 #include <cmath>
+#include <string>
 #include <memory>
 #include "dwb_plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -48,17 +49,19 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh)
+void StoppedGoalChecker::initialize(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
 {
-  SimpleGoalChecker::initialize(nh);
+  SimpleGoalChecker::initialize(nh, plugin_name);
 
   nav2_util::declare_parameter_if_not_declared(nh,
-    "rot_stopped_velocity", rclcpp::ParameterValue(0.25));
+    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(nh,
-    "trans_stopped_velocity", rclcpp::ParameterValue(0.25));
+    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
 
-  nh->get_parameter("rot_stopped_velocity", rot_stopped_velocity_);
-  nh->get_parameter("trans_stopped_velocity", trans_stopped_velocity_);
+  nh->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
+  nh->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
 }
 
 bool StoppedGoalChecker::isGoalReached(
