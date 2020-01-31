@@ -52,7 +52,9 @@ using nav2_util::declare_parameter_if_not_declared;
 namespace dwb_core
 {
 
-DWBPublisher::DWBPublisher(nav2_util::LifecycleNode::SharedPtr node, const std::string & plugin_name)
+DWBPublisher::DWBPublisher(
+  nav2_util::LifecycleNode::SharedPtr node,
+  const std::string & plugin_name)
 : node_(node), plugin_name_(plugin_name)
 {
   declare_parameter_if_not_declared(node_, plugin_name + ".publish_evaluation",

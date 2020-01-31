@@ -36,6 +36,7 @@
 #define NAV2_CORE__GOAL_CHECKER_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -65,7 +66,9 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param nh NodeHandle for grabbing parameters
    */
-  virtual void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh, const std::string & plugin_name) = 0;
+  virtual void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) = 0;
 
   /**
    * @brief Check whether the goal should be considered reached

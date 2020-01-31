@@ -36,6 +36,7 @@
 #define DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"

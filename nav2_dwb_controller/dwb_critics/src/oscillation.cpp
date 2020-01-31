@@ -97,7 +97,8 @@ void OscillationCritic::onInit()
   oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(nh_,
       dwb_plugin_name_ + "." + name_ + ".oscillation_reset_angle", 0.2);
   oscillation_reset_time_ = rclcpp::Duration::from_seconds(
-    nav_2d_utils::searchAndGetParam(nh_, dwb_plugin_name_ + "." + name_ + ".oscillation_reset_time", -1.0));
+    nav_2d_utils::searchAndGetParam(nh_,
+    dwb_plugin_name_ + "." + name_ + ".oscillation_reset_time", -1.0));
 
   nav2_util::declare_parameter_if_not_declared(nh_,
     dwb_plugin_name_ + "." + name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));

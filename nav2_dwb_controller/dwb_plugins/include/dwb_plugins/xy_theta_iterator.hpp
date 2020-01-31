@@ -36,6 +36,7 @@
 #define DWB_PLUGINS__XY_THETA_ITERATOR_HPP_
 
 #include <memory>
+#include <string>
 
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/one_d_velocity_iterator.hpp"

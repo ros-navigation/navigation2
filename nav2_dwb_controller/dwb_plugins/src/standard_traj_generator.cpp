@@ -48,7 +48,8 @@ using nav_2d_utils::loadParameterWithDeprecation;
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh,
+void StandardTrajectoryGenerator::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
@@ -56,7 +57,8 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
   kinematics_->initialize(nh, plugin_name_);
   initializeIterator(nh);
 
-  nav2_util::declare_parameter_if_not_declared(nh, plugin_name + ".sim_time", rclcpp::ParameterValue(1.7));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    plugin_name + ".sim_time", rclcpp::ParameterValue(1.7));
   nav2_util::declare_parameter_if_not_declared(nh,
     plugin_name + ".discretize_by_time", rclcpp::ParameterValue(false));
 

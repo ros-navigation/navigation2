@@ -46,8 +46,10 @@ namespace dwb_critics
 
 void PreferForwardCritic::onInit()
 {
-  declare_parameter_if_not_declared(nh_, dwb_plugin_name_ + "." + name_ + ".penalty", rclcpp::ParameterValue(1.0));
-  declare_parameter_if_not_declared(nh_, dwb_plugin_name_ + "." + name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(nh_,
+    dwb_plugin_name_ + "." + name_ + ".penalty", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(nh_,
+    dwb_plugin_name_ + "." + name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(nh_, dwb_plugin_name_ + "." + name_ + ".strafe_theta",
     rclcpp::ParameterValue(0.2));
   declare_parameter_if_not_declared(nh_, dwb_plugin_name_ + "." + name_ + ".theta_scale",

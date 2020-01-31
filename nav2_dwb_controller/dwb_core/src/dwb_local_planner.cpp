@@ -74,15 +74,18 @@ void DWBLocalPlanner::configure(
   tf_ = tf;
   dwb_plugin_name_ = name;
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".critics");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".prune_plan", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".prune_distance", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".prune_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".prune_distance",
+    rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".goal_checker_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".transform_tolerance",
+    rclcpp::ParameterValue(0.1));
 
   std::string traj_generator_name;
   std::string goal_checker_name;
@@ -221,7 +224,8 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".PathDist.scale");
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".GoalDist.scale");
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".ObstacleFootprint.scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor");
+  declare_parameter_if_not_declared(node_,
+    dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor");
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".ObstacleFootprint.scaling_speed");
 
   /* *INDENT-OFF* */

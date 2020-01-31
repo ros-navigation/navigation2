@@ -33,6 +33,7 @@
  */
 
 #include <cmath>
+#include <string>
 #include <memory>
 #include "dwb_plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -48,7 +49,8 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
-void StoppedGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+void StoppedGoalChecker::initialize(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   SimpleGoalChecker::initialize(nh, plugin_name);

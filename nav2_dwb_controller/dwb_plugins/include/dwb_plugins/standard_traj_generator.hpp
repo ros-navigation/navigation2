@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/trajectory_generator.hpp"
@@ -55,7 +56,9 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name) override;
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;

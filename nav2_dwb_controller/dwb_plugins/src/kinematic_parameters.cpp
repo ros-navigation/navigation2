@@ -54,7 +54,8 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh,
+void KinematicParameters::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
@@ -68,16 +69,22 @@ void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr &
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_theta", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_xy", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_speed_xy", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_theta",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_xy",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_speed_xy",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_theta",
+    rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_theta",
+    rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_theta",
+    rclcpp::ParameterValue(0.0));
 
   nh->get_parameter(plugin_name + ".min_vel_x", min_vel_x_);
   nh->get_parameter(plugin_name + ".min_vel_y", min_vel_y_);

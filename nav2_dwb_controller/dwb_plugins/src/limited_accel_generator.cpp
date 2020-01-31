@@ -35,6 +35,7 @@
 #include "dwb_plugins/limited_accel_generator.hpp"
 #include <vector>
 #include <memory>
+#include <string>
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
@@ -43,7 +44,8 @@
 namespace dwb_plugins
 {
 
-void LimitedAccelGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh,
+void LimitedAccelGenerator::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;

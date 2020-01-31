@@ -36,6 +36,7 @@
 #define DWB_PLUGINS__VELOCITY_ITERATOR_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"

@@ -33,6 +33,7 @@
  */
 
 #include <memory>
+#include <string>
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
@@ -50,7 +51,8 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
-void SimpleGoalChecker::initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+void SimpleGoalChecker::initialize(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   nav2_util::declare_parameter_if_not_declared(nh,

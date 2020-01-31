@@ -34,6 +34,7 @@
 
 #include "dwb_plugins/xy_theta_iterator.hpp"
 #include <memory>
+#include <string>
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
