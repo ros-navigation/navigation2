@@ -142,7 +142,7 @@ install(TARGETS
 )
 
 install(FILES costmap_plugins.xml
-  DESTINATION share
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/

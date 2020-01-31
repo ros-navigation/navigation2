@@ -68,7 +68,7 @@ install(DIRECTORY include/
 )
 
 install(FILES global_planner_plugin.xml
-  DESTINATION share
+  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
