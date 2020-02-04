@@ -317,6 +317,7 @@ TEST_F(ActionTest, test_simple_action_activation_cycling)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -327,6 +328,7 @@ TEST_F(ActionTest, test_simple_action_activation_cycling)
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Getting result, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -340,6 +342,7 @@ TEST_F(ActionTest, test_simple_action_activation_cycling)
 
   // Send the goal
   future_goal_handle = node_->action_client_->async_send_goal(goal);
+  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -347,6 +350,7 @@ TEST_F(ActionTest, test_simple_action_activation_cycling)
 
   // Wait for the result
   future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Getting result, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -365,6 +369,7 @@ TEST_F(ActionTest, test_simple_action_preemption)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -374,6 +379,7 @@ TEST_F(ActionTest, test_simple_action_preemption)
 
   // Send the goal
   future_goal_handle = node_->action_client_->async_send_goal(preemption_goal);
+  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -381,6 +387,7 @@ TEST_F(ActionTest, test_simple_action_preemption)
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Getting result, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
 
@@ -409,6 +416,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
   std::cout << "Sending first goal" << std::endl;
@@ -416,15 +424,17 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   node_->omit_server_preemptions();
 
   auto future_preempt_handle = node_->action_client_->async_send_goal(preemption);
+  std::cout << "Sending preemption, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Sending preempt" << std::endl;
+  std::cout << "Sent preempt" << std::endl;
 
   // Get the results
   auto goal_handle = future_goal_handle.get();
 
   // Wait for the result of initial goal
   auto future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Getting result, spinning until available" << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
   std::cout << "Got initial goal result" << std::endl;
@@ -446,9 +456,10 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   // Wait for the result of initial goal
   future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Geting result" << std::endl;
   ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Get result" << std::endl;
+  std::cout << "Got result" << std::endl;
 
   // The final result
   result = future_result.get();
