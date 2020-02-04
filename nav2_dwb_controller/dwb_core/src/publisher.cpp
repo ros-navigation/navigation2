@@ -52,27 +52,34 @@ using nav2_util::declare_parameter_if_not_declared;
 namespace dwb_core
 {
 
-DWBPublisher::DWBPublisher(nav2_util::LifecycleNode::SharedPtr node)
-: node_(node)
+DWBPublisher::DWBPublisher(
+  nav2_util::LifecycleNode::SharedPtr node,
+  const std::string & plugin_name)
+: node_(node), plugin_name_(plugin_name)
 {
-  declare_parameter_if_not_declared(node_, "publish_evaluation", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, "publish_global_plan", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, "publish_transformed_plan",
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_evaluation",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, "publish_local_plan", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, "publish_trajectories", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, "publish_cost_grid_pc", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_global_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_transformed_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_local_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_trajectories",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(node_, plugin_name + ".publish_cost_grid_pc",
+    rclcpp::ParameterValue(false));
 }
 
 nav2_util::CallbackReturn
 DWBPublisher::on_configure()
 {
-  node_->get_parameter("publish_evaluation", publish_evaluation_);
-  node_->get_parameter("publish_global_plan", publish_global_plan_);
-  node_->get_parameter("publish_transformed_plan", publish_transformed_);
-  node_->get_parameter("publish_local_plan", publish_local_plan_);
-  node_->get_parameter("publish_trajectories", publish_trajectories_);
-  node_->get_parameter("publish_cost_grid_pc", publish_cost_grid_pc_);
+  node_->get_parameter(plugin_name_ + ".publish_evaluation", publish_evaluation_);
+  node_->get_parameter(plugin_name_ + ".publish_global_plan", publish_global_plan_);
+  node_->get_parameter(plugin_name_ + ".publish_transformed_plan", publish_transformed_);
+  node_->get_parameter(plugin_name_ + ".publish_local_plan", publish_local_plan_);
+  node_->get_parameter(plugin_name_ + ".publish_trajectories", publish_trajectories_);
+  node_->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
 
   eval_pub_ = node_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
   global_pub_ = node_->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);

@@ -36,27 +36,22 @@ LifecycleManager::LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  // The default set of node names for the nav2 stack
-  std::vector<std::string> default_node_names{"map_server", "amcl",
-    "planner_server", "controller_server",
-    "recoveries_server", "bt_navigator", "waypoint_follower"};
-
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
-  declare_parameter("node_names", rclcpp::ParameterValue(default_node_names));
+  declare_parameter("node_names");
   declare_parameter("autostart", rclcpp::ParameterValue(false));
 
-  get_parameter("node_names", node_names_);
+  node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
 
-  manager_srv_ = create_service<ManageLifecycleNodes>("lifecycle_manager/manage_nodes",
+  manager_srv_ = create_service<ManageLifecycleNodes>(get_name() + std::string("/manage_nodes"),
       std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
-  is_active_srv_ = create_service<std_srvs::srv::Trigger>("lifecycle_manager/is_active",
+  is_active_srv_ = create_service<std_srvs::srv::Trigger>(get_name() + std::string("/is_active"),
       std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", "-r", std::string("__node:=") + get_name() + "service_client", "--"});
+    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_service_client", "--"});
   service_client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
@@ -190,7 +185,7 @@ LifecycleManager::startup()
   if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
-    RCLCPP_ERROR(get_logger(), "Failed to bring up nodes: aborting bringup");
+    RCLCPP_ERROR(get_logger(), "Failed to bring up all requested nodes. Aborting bringup.");
     return false;
   }
   message("Managed nodes are active");

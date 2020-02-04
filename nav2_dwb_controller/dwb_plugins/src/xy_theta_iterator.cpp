@@ -34,6 +34,7 @@
 
 #include "dwb_plugins/xy_theta_iterator.hpp"
 #include <memory>
+#include <string>
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -41,18 +42,21 @@ namespace dwb_plugins
 {
 void XYThetaIterator::initialize(
   const nav2_util::LifecycleNode::SharedPtr & nh,
-  KinematicParameters::Ptr kinematics)
+  KinematicParameters::Ptr kinematics,
+  const std::string & plugin_name)
 {
   kinematics_ = kinematics;
 
-  nav2_util::declare_parameter_if_not_declared(nh, "vx_samples", rclcpp::ParameterValue(20));
-  nav2_util::declare_parameter_if_not_declared(nh, "vy_samples", rclcpp::ParameterValue(5));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    plugin_name + ".vx_samples", rclcpp::ParameterValue(20));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    plugin_name + ".vy_samples", rclcpp::ParameterValue(5));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    plugin_name + ".vtheta_samples", rclcpp::ParameterValue(20));
 
-  nh->get_parameter("vx_samples", vx_samples_);
-  nh->get_parameter("vy_samples", vy_samples_);
-
-  vtheta_samples_ = nav_2d_utils::loadParameterWithDeprecation(nh, "vtheta_samples", "vth_samples",
-      20);
+  nh->get_parameter(plugin_name + ".vx_samples", vx_samples_);
+  nh->get_parameter(plugin_name + ".vy_samples", vy_samples_);
+  nh->get_parameter(plugin_name + ".vtheta_samples", vtheta_samples_);
 }
 
 void XYThetaIterator::startNewIteration(

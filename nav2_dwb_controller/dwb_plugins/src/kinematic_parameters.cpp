@@ -54,43 +54,52 @@ KinematicParameters::KinematicParameters()
 {
 }
 
-void KinematicParameters::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void KinematicParameters::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
 {
+  plugin_name_ = plugin_name;
   // Special handling for renamed parameters
-  moveDeprecatedParameter<double>(nh, "max_vel_theta", "max_rot_vel");
-  moveDeprecatedParameter<double>(nh, "min_speed_xy", "min_trans_vel");
-  moveDeprecatedParameter<double>(nh, "max_speed_xy", "max_trans_vel");
-  moveDeprecatedParameter<double>(nh, "min_speed_theta", "min_rot_vel");
+  moveDeprecatedParameter<double>(nh, plugin_name + ".max_vel_theta", "max_rot_vel");
+  moveDeprecatedParameter<double>(nh, plugin_name + ".min_speed_xy", "min_trans_vel");
+  moveDeprecatedParameter<double>(nh, plugin_name + ".max_speed_xy", "max_trans_vel");
+  moveDeprecatedParameter<double>(nh, plugin_name + ".min_speed_theta", "min_rot_vel");
 
-  declare_parameter_if_not_declared(nh, "min_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "min_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "max_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "max_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "max_vel_theta", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "min_speed_xy", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "max_speed_xy", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "min_speed_theta", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "acc_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "acc_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "acc_lim_theta", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "decel_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "decel_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, "decel_lim_theta", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_theta",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_xy",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".max_speed_xy",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_theta",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_theta",
+    rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_x", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_y", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_theta",
+    rclcpp::ParameterValue(0.0));
 
-  nh->get_parameter("min_vel_x", min_vel_x_);
-  nh->get_parameter("min_vel_y", min_vel_y_);
-  nh->get_parameter("max_vel_x", max_vel_x_);
-  nh->get_parameter("max_vel_y", max_vel_y_);
-  nh->get_parameter("max_vel_theta", max_vel_theta_);
-  nh->get_parameter("min_speed_xy", min_speed_xy_);
-  nh->get_parameter("max_speed_xy", max_speed_xy_);
-  nh->get_parameter("min_speed_theta", min_speed_theta_);
-  nh->get_parameter("acc_lim_x", acc_lim_x_);
-  nh->get_parameter("acc_lim_y", acc_lim_y_);
-  nh->get_parameter("acc_lim_theta", acc_lim_theta_);
-  nh->get_parameter("decel_lim_x", decel_lim_x_);
-  nh->get_parameter("decel_lim_y", decel_lim_y_);
-  nh->get_parameter("decel_lim_theta", decel_lim_theta_);
+  nh->get_parameter(plugin_name + ".min_vel_x", min_vel_x_);
+  nh->get_parameter(plugin_name + ".min_vel_y", min_vel_y_);
+  nh->get_parameter(plugin_name + ".max_vel_x", max_vel_x_);
+  nh->get_parameter(plugin_name + ".max_vel_y", max_vel_y_);
+  nh->get_parameter(plugin_name + ".max_vel_theta", max_vel_theta_);
+  nh->get_parameter(plugin_name + ".min_speed_xy", min_speed_xy_);
+  nh->get_parameter(plugin_name + ".max_speed_xy", max_speed_xy_);
+  nh->get_parameter(plugin_name + ".min_speed_theta", min_speed_theta_);
+  nh->get_parameter(plugin_name + ".acc_lim_x", acc_lim_x_);
+  nh->get_parameter(plugin_name + ".acc_lim_y", acc_lim_y_);
+  nh->get_parameter(plugin_name + ".acc_lim_theta", acc_lim_theta_);
+  nh->get_parameter(plugin_name + ".decel_lim_x", decel_lim_x_);
+  nh->get_parameter(plugin_name + ".decel_lim_y", decel_lim_y_);
+  nh->get_parameter(plugin_name + ".decel_lim_theta", decel_lim_theta_);
 
   // Setup callback for changes to parameters.
   parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -126,33 +135,33 @@ KinematicParameters::on_parameter_event_callback(
     const auto & value = changed_parameter.value;
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "min_vel_x") {
+      if (name == plugin_name_ + ".min_vel_x") {
         min_vel_x_ = value.double_value;
-      } else if (name == "min_vel_y") {
+      } else if (name == plugin_name_ + ".min_vel_y") {
         min_vel_y_ = value.double_value;
-      } else if (name == "max_vel_x") {
+      } else if (name == plugin_name_ + ".max_vel_x") {
         max_vel_x_ = value.double_value;
-      } else if (name == "max_vel_y") {
+      } else if (name == plugin_name_ + ".max_vel_y") {
         max_vel_y_ = value.double_value;
-      } else if (name == "max_vel_theta") {
+      } else if (name == plugin_name_ + ".max_vel_theta") {
         max_vel_theta_ = value.double_value;
-      } else if (name == "min_speed_xy") {
+      } else if (name == plugin_name_ + ".min_speed_xy") {
         min_speed_xy_ = value.double_value;
-      } else if (name == "max_speed_xy") {
+      } else if (name == plugin_name_ + ".max_speed_xy") {
         max_speed_xy_ = value.double_value;
-      } else if (name == "min_speed_theta") {
+      } else if (name == plugin_name_ + ".min_speed_theta") {
         min_speed_theta_ = value.double_value;
-      } else if (name == "acc_lim_x") {
+      } else if (name == plugin_name_ + ".acc_lim_x") {
         acc_lim_x_ = value.double_value;
-      } else if (name == "acc_lim_y") {
+      } else if (name == plugin_name_ + ".acc_lim_y") {
         acc_lim_y_ = value.double_value;
-      } else if (name == "acc_lim_theta") {
+      } else if (name == plugin_name_ + ".acc_lim_theta") {
         acc_lim_theta_ = value.double_value;
-      } else if (name == "decel_lim_x") {
+      } else if (name == plugin_name_ + ".decel_lim_x") {
         decel_lim_x_ = value.double_value;
-      } else if (name == "decel_lim_y") {
+      } else if (name == plugin_name_ + ".decel_lim_y") {
         decel_lim_y_ = value.double_value;
-      } else if (name == "decel_lim_theta") {
+      } else if (name == plugin_name_ + ".decel_lim_theta") {
         decel_lim_theta_ = value.double_value;
       }
     }

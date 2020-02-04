@@ -68,7 +68,7 @@ namespace dwb_core
 class DWBPublisher
 {
 public:
-  explicit DWBPublisher(nav2_util::LifecycleNode::SharedPtr node);
+  explicit DWBPublisher(nav2_util::LifecycleNode::SharedPtr node, const std::string & plugin_name);
 
   nav2_util::CallbackReturn on_configure();
   nav2_util::CallbackReturn on_activate();
@@ -129,6 +129,7 @@ protected:
   std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
 
   nav2_util::LifecycleNode::SharedPtr node_;
+  std::string plugin_name_;
 };
 
 }  // namespace dwb_core

@@ -45,7 +45,7 @@ public:
   /**
    * @brief A constructor for LifeCycleMangerClient
    */
-  LifecycleManagerClient();
+  LifecycleManagerClient(const std::string & name);
 
   // Client-side interface to the Nav2 lifecycle manager
   /**
@@ -110,8 +110,8 @@ protected:
 
   rclcpp::Client<ManageLifecycleNodes>::SharedPtr manager_client_;
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
-  std::string manage_service_name_{"lifecycle_manager/manage_nodes"};
-  std::string active_service_name_{"lifecycle_manager/is_active"};
+  std::string manage_service_name_;
+  std::string active_service_name_;
 
   using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
 

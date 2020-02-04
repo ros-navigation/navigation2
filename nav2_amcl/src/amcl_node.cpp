@@ -1079,7 +1079,6 @@ AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 #if NEW_UNIFORM_SAMPLING
   createFreeSpaceVector();
 #endif
-
 }
 
 void

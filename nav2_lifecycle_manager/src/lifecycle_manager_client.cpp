@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <memory>
+#include <string>
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_util/geometry_utils.hpp"
@@ -24,10 +25,13 @@ namespace nav2_lifecycle_manager
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-LifecycleManagerClient::LifecycleManagerClient()
+LifecycleManagerClient::LifecycleManagerClient(const std::string & name)
 {
+  manage_service_name_ = name + std::string("/manage_nodes");
+  active_service_name_ = name + std::string("/is_active");
+
   // Create the node to use for all of the service clients
-  node_ = std::make_shared<rclcpp::Node>("lifecycle_manager_client_service_client");
+  node_ = std::make_shared<rclcpp::Node>(name + "_service_client");
 
   // Create the service clients
   manager_client_ = node_->create_client<ManageLifecycleNodes>(manage_service_name_);

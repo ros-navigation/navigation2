@@ -94,15 +94,18 @@ public:
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
     std::string & name,
+    std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   {
     name_ = name;
     costmap_ros_ = costmap_ros;
     nh_ = nh;
-    if (!nh_->has_parameter(name_ + ".scale")) {
-      nh_->declare_parameter(name_ + ".scale", rclcpp::ParameterValue(1.0));
+    dwb_plugin_name_ = ns;
+    if (!nh_->has_parameter(dwb_plugin_name_ + "." + name_ + ".scale")) {
+      nh_->declare_parameter(dwb_plugin_name_ + "." + name_ + ".scale",
+        rclcpp::ParameterValue(1.0));
     }
-    nh_->get_parameter(name_ + ".scale", scale_);
+    nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
     onInit();
   }
   virtual void onInit() {}
@@ -174,6 +177,7 @@ public:
 
 protected:
   std::string name_;
+  std::string dwb_plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
   nav2_util::LifecycleNode::SharedPtr nh_;
