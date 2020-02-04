@@ -389,65 +389,67 @@ TEST_F(ActionTest, test_simple_action_preemption)
   ASSERT_EQ(sum, 1);
 }
 
+TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
+{
+  // Test race condition between successfully completing an action and receiving a preemption.
+  auto goal = Fibonacci::Goal();
+  goal.order = 20;
 
-// Removing flaky test, 50% pass rate, so there's some race condition in its design
-// TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
-// {
-//   // Test race condition between successfully completing an action and receiving a preemption.
-//   auto goal = Fibonacci::Goal();
-//   goal.order = 20;
+  auto preemption = Fibonacci::Goal();
+  preemption.order = 1;
 
-//   auto preemption = Fibonacci::Goal();
-//   preemption.order = 1;
+  // Send the goal
+  auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
+    future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-//   // Send the goal
-//   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
-//     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  node_->omit_server_preemptions();
 
-//   node_->omit_server_preemptions();
+  auto future_preempt_handle = node_->action_client_->async_send_goal(preemption);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
+    future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-//   auto future_preempt_handle = node_->action_client_->async_send_goal(preemption);
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
-//     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  // Get the results
+  auto goal_handle = future_goal_handle.get();
 
-//   // Get the results
-//   auto goal_handle = future_goal_handle.get();
+  // Wait for the result of initial goal
+  auto future_result = node_->action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
+    rclcpp::executor::FutureReturnCode::SUCCESS);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-//   // Wait for the result of initial goal
-//   auto future_result = node_->action_client_->async_get_result(goal_handle);
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
-//     rclcpp::executor::FutureReturnCode::SUCCESS);
+  // The final result
+  rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
+  ASSERT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
-//   // The final result
-//   rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
-//   ASSERT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  // Sum all of the values in the requested fibonacci series
+  int sum = 0;
+  for (auto number : result.result->sequence) {
+    sum += number;
+  }
 
-//   // Sum all of the values in the requested fibonacci series
-//   int sum = 0;
-//   for (auto number : result.result->sequence) {
-//     sum += number;
-//   }
+  ASSERT_EQ(sum, 17710);
 
-//   ASSERT_EQ(sum, 17710);
+  // Now get the preemption result
+  goal_handle = future_preempt_handle.get();
 
-//   // Now get the preemption result
-//   goal_handle = future_preempt_handle.get();
+  // Wait for the result of initial goal
+  future_result = node_->action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
+    rclcpp::executor::FutureReturnCode::SUCCESS);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-//   // Wait for the result of initial goal
-//   future_result = node_->action_client_->async_get_result(goal_handle);
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
-//     rclcpp::executor::FutureReturnCode::SUCCESS);
+  // The final result
+  result = future_result.get();
+  ASSERT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
-//   // The final result
-//   result = future_result.get();
-//   ASSERT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  // Sum all of the values in the requested fibonacci series
+  sum = 0;
+  for (auto number : result.result->sequence) {
+    sum += number;
+  }
 
-//   // Sum all of the values in the requested fibonacci series
-//   sum = 0;
-//   for (auto number : result.result->sequence) {
-//     sum += number;
-//   }
-
-//   ASSERT_EQ(sum, 1);
-// }
+  ASSERT_EQ(sum, 1);
+}

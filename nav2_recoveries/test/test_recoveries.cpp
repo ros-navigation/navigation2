@@ -138,6 +138,7 @@ protected:
       node_lifecycle_->get_node_graph_interface(),
       node_lifecycle_->get_node_logging_interface(),
       node_lifecycle_->get_node_waitables_interface(), "Recovery");
+    std::cout << "Setup complete." << std::endl;
   }
 
   void TearDown() override {}
