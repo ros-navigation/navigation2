@@ -17,6 +17,7 @@
 #include <chrono>
 #include <iostream>
 #include <future>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -70,13 +71,10 @@ public:
       return Status::FAILED;
     }
 
-    // Fake getting the robot state, calculate and send control output
-    std::this_thread::sleep_for(2ms);
-
     // For testing, pretend the robot takes some fixed
     // amount of time to complete the motion.
     auto current_time = std::chrono::system_clock::now();
-    auto motion_duration = 5s;
+    auto motion_duration = 1s;
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
@@ -120,18 +118,18 @@ protected:
     std::string costmap_topic, footprint_topic;
     node_lifecycle_->get_parameter("costmap_topic", costmap_topic);
     node_lifecycle_->get_parameter("footprint_topic", footprint_topic);
-    std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_ =
-      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_ =
+      std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node_lifecycle_, costmap_topic);
-    std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_ =
-      std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_ =
+      std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
       node_lifecycle_, footprint_topic, 1.0);
     std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_ =
       std::make_shared<nav2_costmap_2d::CollisionChecker>(
       *costmap_sub_, *footprint_sub_, *tf_buffer_,
       node_lifecycle_->get_name(), "odom");
 
-    recovery_ = std::make_unique<DummyRecovery>();
+    recovery_ = std::make_shared<DummyRecovery>();
     recovery_->configure(node_lifecycle_, "Recovery", tf_buffer_, collision_checker_);
     recovery_->activate();
 
@@ -140,6 +138,7 @@ protected:
       node_lifecycle_->get_node_graph_interface(),
       node_lifecycle_->get_node_logging_interface(),
       node_lifecycle_->get_node_waitables_interface(), "Recovery");
+    std::cout << "Setup complete." << std::endl;
   }
 
   void TearDown() override {}
@@ -151,7 +150,9 @@ protected:
       return false;
     }
 
-    auto future_goal = getGoal(command);
+    auto goal = RecoveryAction::Goal();
+    goal.command.data = command;
+    auto future_goal = client_->async_send_goal(goal);
 
     if (rclcpp::spin_until_future_complete(node_lifecycle_, future_goal) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
@@ -172,13 +173,6 @@ protected:
     return true;
   }
 
-  std::shared_future<ClientGoalHandle::SharedPtr> getGoal(const std::string & command)
-  {
-    auto goal = RecoveryAction::Goal();
-    goal.command.data = command;
-    return client_->async_send_goal(goal);
-  }
-
   Status getOutcome()
   {
     if (getResult().code == rclcpp_action::ResultCode::SUCCEEDED) {
@@ -190,18 +184,16 @@ protected:
 
   ClientGoalHandle::WrappedResult getResult()
   {
+    std::cout << "Getting async result..." << std::endl;
     auto future_result = client_->async_get_result(goal_handle_);
-    rclcpp::executor::FutureReturnCode frc;
-
-    do {
-      frc = rclcpp::spin_until_future_complete(node_lifecycle_, future_result);
-    } while (frc != rclcpp::executor::FutureReturnCode::SUCCESS);
-
+    std::cout << "Waiting on future..." << std::endl;
+    rclcpp::spin_until_future_complete(node_lifecycle_, future_result);
+    std::cout << "future received!" << std::endl;
     return future_result.get();
   }
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
-  std::unique_ptr<DummyRecovery> recovery_;
+  std::shared_ptr<DummyRecovery> recovery_;
   std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<RecoveryAction>> goal_handle_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -214,27 +206,28 @@ TEST_F(RecoveryTest, testingSuccess)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingSequentialFailures)
 {
-  ASSERT_TRUE(sendCommand("Testing failure on init"));
-  EXPECT_EQ(getOutcome(), Status::FAILED);
-
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
 }
 
 int main(int argc, char ** argv)
@@ -242,7 +235,7 @@ int main(int argc, char ** argv)
   ::testing::InitGoogleTest(&argc, argv);
 
   // initialize ROS
-  rclcpp::init(0, nullptr);
+  rclcpp::init(argc, argv);
 
   bool all_successful = RUN_ALL_TESTS();
 

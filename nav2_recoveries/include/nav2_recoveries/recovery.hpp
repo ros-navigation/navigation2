@@ -97,7 +97,7 @@ public:
 
     node_->get_parameter("cycle_frequency", cycle_frequency_);
 
-    action_server_ = std::make_unique<ActionServer>(node_, recovery_name_,
+    action_server_ = std::make_shared<ActionServer>(node_, recovery_name_,
         std::bind(&Recovery::execute, this));
 
     collision_checker_ = collision_checker;
@@ -116,6 +116,8 @@ public:
 
   void activate() override
   {
+    RCLCPP_INFO(node_->get_logger(), "Activating %s", recovery_name_.c_str());
+
     vel_pub_->on_activate();
     enabled_ = true;
   }
@@ -130,7 +132,7 @@ protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  std::unique_ptr<ActionServer> action_server_;
+  std::shared_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
