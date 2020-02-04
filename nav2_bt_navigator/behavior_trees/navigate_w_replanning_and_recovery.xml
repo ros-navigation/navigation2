@@ -10,17 +10,17 @@
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-            <ClearEntireCostmap  name="ClearGlobalCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </PipelineSequence>
       <SequenceStar name="RecoveryActions">
-        <ClearEntireCostmap name="ClearLocalCostmap-Top" service_name="local_costmap/clear_entirely_local_costmap"/>
-        <ClearEntireCostmap name="ClearGlobalCostmap-Top" service_name="global_costmap/clear_entirely_global_costmap"/>
+        <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+        <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
         <Spin spin_dist="1.57"/>
         <Wait wait_duration="5"/>
       </SequenceStar>

@@ -11,7 +11,7 @@
           <RecoveryNode number_of_retries="4" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
             <RoundRobin name="GlobalPlannerRecoveryActions">
-              <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
               <Wait wait_duration="2"/>
             </RoundRobin>
           </RecoveryNode>
@@ -19,7 +19,7 @@
         <RecoveryNode number_of_retries="4" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath"/>
           <RoundRobin name="PlannerRecoveryActions">
-            <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
             <Spin spin_dist="1.57"/>
           </RoundRobin>
         </RecoveryNode>
