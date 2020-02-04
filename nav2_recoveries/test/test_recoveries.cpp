@@ -17,6 +17,7 @@
 #include <chrono>
 #include <iostream>
 #include <future>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -70,13 +71,10 @@ public:
       return Status::FAILED;
     }
 
-    // Fake getting the robot state, calculate and send control output
-    std::this_thread::sleep_for(2ms);
-
     // For testing, pretend the robot takes some fixed
     // amount of time to complete the motion.
     auto current_time = std::chrono::system_clock::now();
-    auto motion_duration = 2s;
+    auto motion_duration = 1s;
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
@@ -204,24 +202,28 @@ TEST_F(RecoveryTest, testingSuccess)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 TEST_F(RecoveryTest, testingFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 TEST_F(RecoveryTest, testingFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 TEST_F(RecoveryTest, testingSequentialFailures)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
