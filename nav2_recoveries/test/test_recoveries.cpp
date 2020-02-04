@@ -184,8 +184,11 @@ protected:
 
   ClientGoalHandle::WrappedResult getResult()
   {
+    std::cout << "Getting async result..." << std::endl;
     auto future_result = client_->async_get_result(goal_handle_);
+    std::cout << "Waiting on future..." << std::endl;
     rclcpp::spin_until_future_complete(node_lifecycle_, future_result);
+    std::cout << "future received!" << std::endl;
     return future_result.get();
   }
 
@@ -203,31 +206,28 @@ TEST_F(RecoveryTest, testingSuccess)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  SUCCEED();
 }
 
 TEST_F(RecoveryTest, testingSequentialFailures)
 {
-  ASSERT_TRUE(sendCommand("Testing failure on init"));
-  EXPECT_EQ(getOutcome(), Status::FAILED);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
-
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
 }
 
 int main(int argc, char ** argv)
