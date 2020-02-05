@@ -25,7 +25,7 @@ Make sure /tf and /odom are being published.
 
 This will bring up Navigation 2 without nav2_amcl and nav2_map_server. It is assumed that the SLAM node(s) will publish to /map topic and provide the map->odom transform.
              
-      -  ros2 launch nav2_bringup nav2_navigation_launch.py
+      -  ros2 launch nav2_bringup navigation_launch.py
 
 **3- (PC)** Launch SLAM package and RVIZ
 

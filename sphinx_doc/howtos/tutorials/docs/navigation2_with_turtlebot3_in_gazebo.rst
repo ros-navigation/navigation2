@@ -64,7 +64,7 @@ If you don't have the time to go through all the steps and only want to try Navi
 After setting up your system variables, if you don't want to go through the step by step launch instructions,
 you can use the launch file that does all the steps that are explained in the next sections for you.
 
-- ``ros2 launch nav2_bringup nav2_tb3_simulation_launch.py``
+- ``ros2 launch nav2_bringup tb3_simulation_launch.py``
 
 This launch file is going to launch Gazebo, Turtlebot3 specific nodes, Navigation2 and RViz2.
 Once you see everything launced, you can jump to step 5.
@@ -106,7 +106,7 @@ Make sure `use_sim time` is set to **True**, because we want to use the time sim
 turtlebot3_world.yaml is the configuration file for the map we want to provide Navigation2. 
 In this case, it has the map resolution value, threshold values for obstacles and free spaces, and a map file location.
 
-  ``ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=False map:=/opt/ros/dashing/share/nav2_bringup/launch/turtlebot3_world.yaml``
+  ``ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=False map:=/opt/ros/dashing/share/nav2_bringup/launch/turtlebot3_world.yaml``
 
 4-  Launch RViz
 ---------------

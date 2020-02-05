@@ -73,7 +73,7 @@ def generate_launch_description():
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(bringup_dir, 'launch', 'nav2_bringup_launch.py')),
+                os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
             launch_arguments={'namespace': '',
                               'use_namespace': 'False',
                               'map': map_yaml_file,

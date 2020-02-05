@@ -96,7 +96,7 @@ def generate_launch_description():
             PushRosNamespace(robot['name']),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, 'launch', 'nav2_bringup_launch.py')),
+                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
                 launch_arguments={
                                   'namespace': robot['name'],
                                   'map': map_yaml_file,
