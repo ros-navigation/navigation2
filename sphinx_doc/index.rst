@@ -41,5 +41,6 @@ Sections
    getting_started/index.rst
    how_it_works/index.rst
    howtos/index.rst
+   tutorials/index.rst
    release_notes.rst
    contribute/index.rst
