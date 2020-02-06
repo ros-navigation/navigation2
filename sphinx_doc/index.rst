@@ -35,7 +35,7 @@ performance, as well as customize the internals for advanced results.
 .. image:: images/architectural_diagram.png
     :height: 720px
     :width: 1024px
-    :alt: TB3 world and robot in Gazebo
+    :alt: Navigation2 Block Diagram
 
 Sections
 ********
