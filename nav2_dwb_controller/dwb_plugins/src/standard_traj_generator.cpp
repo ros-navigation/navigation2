@@ -73,6 +73,8 @@ void StandardTrajectoryGenerator::initialize(
   nav2_util::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".angular_granularity", rclcpp::ParameterValue(0.025));
+  nav2_util::declare_parameter_if_not_declared(nh,
+    plugin_name + ".include_last_point", rclcpp::ParameterValue(true));
 
   /*
    * If discretize_by_time, then sim_granularity represents the amount of time that should be between
@@ -87,6 +89,7 @@ void StandardTrajectoryGenerator::initialize(
   nh->get_parameter(plugin_name + ".time_granularity", time_granularity_);
   nh->get_parameter(plugin_name + ".linear_granularity", linear_granularity_);
   nh->get_parameter(plugin_name + ".angular_granularity", angular_granularity_);
+  nh->get_parameter(plugin_name + ".include_last_point", include_last_point_);
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
@@ -148,10 +151,10 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = rclcpp::Duration::from_seconds(sim_time_);
   //  simulate the trajectory
   geometry_msgs::msg::Pose2D pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
+  double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   traj.poses.push_back(start_pose);
   for (double dt : steps) {
@@ -162,7 +165,14 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
     pose = computeNewPosition(pose, vel, dt);
 
     traj.poses.push_back(pose);
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+    running_time += dt;
   }  //  end for simulation steps
+
+  if (include_last_point_) {
+    traj.poses.push_back(pose);
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+  }
 
   return traj;
 }

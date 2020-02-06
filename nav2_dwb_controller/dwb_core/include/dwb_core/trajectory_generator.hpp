@@ -75,7 +75,7 @@ public:
   virtual void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
     const std::string & plugin_name) = 0;
-
+  virtual void reset() {}
   /**
    * @brief Start a new iteration based on the current velocity
    * @param current_velocity
