@@ -44,7 +44,6 @@ Sections
    :maxdepth: 1
 
    getting_started/index.rst
-   how_it_works/index.rst
    howtos/index.rst
    release_notes.rst
    contribute/index.rst
