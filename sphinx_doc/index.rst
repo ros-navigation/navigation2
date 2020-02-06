@@ -32,6 +32,11 @@ Here you will find documentation on how to install and use |PN| with a Turtlebot
 3, as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results.
 
+.. image:: images/architectural_diagram.png
+    :height: 720px
+    :width: 1024px
+    :alt: Navigation2 Block Diagram
+
 Sections
 ********
 
@@ -39,7 +44,7 @@ Sections
    :maxdepth: 1
 
    getting_started/index.rst
-   how_it_works/index.rst
    howtos/index.rst
+   tutorials/index.rst
    release_notes.rst
    contribute/index.rst
