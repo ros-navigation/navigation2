@@ -26,7 +26,7 @@ It depends on your experience with ROS, robots, and what computer system you hav
 Requirements
 ============
 
-You must install Navigation2, Turtelbot3. 
+You must install Navigation2, Turtlebot3.
 If you don't have them installed, please follow :ref:`navigation2-with-turtlebot3-in-gazebo`.
 
 Tutorial Steps
