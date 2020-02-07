@@ -332,7 +332,7 @@ protected:
 
   ExecuteCallback execute_callback_;
   std::future<void> execution_future_;
-  bool stop_execution_;
+  bool stop_execution_{false};
 
   mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
