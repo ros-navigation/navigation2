@@ -414,28 +414,22 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
-  std::cout << "Sent goal, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Sending first goal" << std::endl;
 
   node_->omit_server_preemptions();
 
   auto future_preempt_handle = node_->action_client_->async_send_goal(preemption);
-  std::cout << "Sending preemption, spinning til complete..." << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Sent preempt" << std::endl;
 
   // Get the results
   auto goal_handle = future_goal_handle.get();
 
   // Wait for the result of initial goal
   auto future_result = node_->action_client_->async_get_result(goal_handle);
-  std::cout << "Getting result, spinning until available" << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Got initial goal result" << std::endl;
 
   // The final result
   rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
@@ -450,16 +444,12 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   EXPECT_EQ(sum, 17710);
 
   // Now get the preemption result
-  std::cout << "get me some handz" << std::endl;
   goal_handle = future_preempt_handle.get();
-  std::cout << "got me some handz" << std::endl;
 
   // Wait for the result of initial goal
   future_result = node_->action_client_->async_get_result(goal_handle);
-  std::cout << "Geting result" << std::endl;
   ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
-  std::cout << "Got result" << std::endl;
 
   // The final result
   result = future_result.get();
@@ -472,6 +462,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   }
 
   EXPECT_EQ(sum, 1);
+  SUCCEED();
 }
 
 int main(int argc, char ** argv)

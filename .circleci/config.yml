@@ -412,10 +412,6 @@ jobs:
     steps:
       - restore_build
       - test_build
-  test_rmw_connext_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_connext_cpp"
   test_rmw_cyclonedds_cpp:
     <<: *release_test
     environment:
@@ -424,10 +420,6 @@ jobs:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-  test_rmw_opensplice_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
   docs_build:
     executor: docs_exec
     steps:
@@ -476,16 +468,10 @@ workflows:
           requires:
             - debug_build
       - release_build
-      - test_rmw_connext_cpp:
-          requires:
-            - release_build
       - test_rmw_cyclonedds_cpp:
           requires:
             - release_build
       - test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
-      - test_rmw_opensplice_cpp:
           requires:
             - release_build
     triggers:
