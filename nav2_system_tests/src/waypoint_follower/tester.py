@@ -24,8 +24,8 @@ from nav2_msgs.srv import ManageLifecycleNodes
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
+from rclpy.qos import QoSProfile
 
 
 class WaypointFollowerTest(Node):
@@ -46,6 +46,7 @@ class WaypointFollowerTest(Node):
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                        'amcl_pose', self.poseCallback, pose_qos)
+
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
         self.init_pose.pose.pose.position.x = -2.0
@@ -169,7 +170,6 @@ def main(argv=sys.argv[1:]):
         test.setInitialPose(starting_pose)
         test.info_msg('Waiting for amcl_pose to be received')
         rclpy.spin_once(test, timeout_sec=1.0)  # wait for poseCallback
-
 
     result = test.run()
     test.shutdown()
