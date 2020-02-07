@@ -42,18 +42,21 @@ ClearCostmapService::ClearCostmapService(
 
   clear_except_service_ = node_->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
-    std::bind(&ClearCostmapService::clearExceptRegionCallback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    std::bind(
+      &ClearCostmapService::clearExceptRegionCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   clear_around_service_ = node_->create_service<ClearAroundRobot>(
     "clear_around_" + costmap.getName(),
-    std::bind(&ClearCostmapService::clearAroundRobotCallback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    std::bind(
+      &ClearCostmapService::clearAroundRobotCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   clear_entire_service_ = node_->create_service<ClearEntirely>(
     "clear_entirely_" + costmap_.getName(),
-    std::bind(&ClearCostmapService::clearEntireCallback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    std::bind(
+      &ClearCostmapService::clearEntireCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void ClearCostmapService::clearExceptRegionCallback(
@@ -61,7 +64,8 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(),
+  RCLCPP_INFO(
+    node_->get_logger(),
     "Received request to clear except a region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
@@ -72,7 +76,8 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Request> request,
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
-  RCLCPP_INFO(node_->get_logger(),
+  RCLCPP_INFO(
+    node_->get_logger(),
     "Received request to clear around robot the " + costmap_.getName());
 
   if ((request->window_size_x == 0) || (request->window_size_y == 0)) {

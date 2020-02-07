@@ -126,8 +126,9 @@ bool Costmap2D::copyCostmapWindow(
   // compute the bounds of our new map
   unsigned int lower_left_x, lower_left_y, upper_right_x, upper_right_y;
   if (!map.worldToMap(win_origin_x, win_origin_y, lower_left_x, lower_left_y) ||
-    !map.worldToMap(win_origin_x + win_size_x, win_origin_y + win_size_y, upper_right_x,
-    upper_right_y))
+    !map.worldToMap(
+      win_origin_x + win_size_x, win_origin_y + win_size_y, upper_right_x,
+      upper_right_y))
   {
     // ROS_ERROR("Cannot window a map that the window bounds don't fit inside of");
     return false;
@@ -143,7 +144,8 @@ bool Costmap2D::copyCostmapWindow(
   initMaps(size_x_, size_y_);
 
   // copy the window of the static map and the costmap that we're taking
-  copyMapRegion(map.costmap_, lower_left_x, lower_left_y, map.size_x_, costmap_, 0, 0, size_x_,
+  copyMapRegion(
+    map.costmap_, lower_left_x, lower_left_y, map.size_x_, costmap_, 0, 0, size_x_,
     size_x_,
     size_y_);
   return true;
@@ -296,7 +298,8 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   unsigned char * local_map = new unsigned char[cell_size_x * cell_size_y];
 
   // copy the local window in the costmap to the local map
-  copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
+  copyMapRegion(
+    costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
     cell_size_x,
     cell_size_y);
 
@@ -312,7 +315,8 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   int start_y = lower_left_y - cell_oy;
 
   // now we want to copy the overlapping information back into the map, but in its new location
-  copyMapRegion(local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
+  copyMapRegion(
+    local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
     cell_size_y);
 
   // make sure to clean up
@@ -359,7 +363,8 @@ void Costmap2D::polygonOutlineCells(
   if (!polygon.empty()) {
     unsigned int last_index = polygon.size() - 1;
     // we also need to close the polygon by going from the last point to the first
-    raytraceLine(cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x,
+    raytraceLine(
+      cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x,
       polygon[0].y);
   }
 }

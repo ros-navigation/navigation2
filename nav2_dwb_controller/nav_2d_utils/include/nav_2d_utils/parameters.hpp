@@ -73,7 +73,8 @@ param_t searchAndGetParam(
   //   return value;
   // }
   param_t value;
-  nav2_util::declare_parameter_if_not_declared(nh, param_name,
+  nav2_util::declare_parameter_if_not_declared(
+    nh, param_name,
     rclcpp::ParameterValue(default_value));
   nh->get_parameter(param_name, value);
   return value;
@@ -97,7 +98,8 @@ param_t loadParameterWithDeprecation(
     return value;
   }
   if (nh->get_parameter(old_name, value)) {
-    RCLCPP_WARN(nh->get_logger(),
+    RCLCPP_WARN(
+      nh->get_logger(),
       "Parameter %s is deprecated. Please use the name %s instead.",
       old_name.c_str(), current_name.c_str());
     return value;
@@ -119,7 +121,8 @@ void moveDeprecatedParameter(
   param_t value;
   if (!nh->get_parameter(old_name, value)) {return;}
 
-  RCLCPP_WARN(nh->get_logger(),
+  RCLCPP_WARN(
+    nh->get_logger(),
     "Parameter %s is deprecated. Please use the name %s instead.",
     old_name.c_str(), current_name.c_str());
   nh->get_parameter(old_name, value);

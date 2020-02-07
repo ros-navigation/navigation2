@@ -57,17 +57,23 @@ DWBPublisher::DWBPublisher(
   const std::string & plugin_name)
 : node_(node), plugin_name_(plugin_name)
 {
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_evaluation",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_evaluation",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_global_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_global_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_transformed_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_transformed_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_local_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_local_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_trajectories",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_trajectories",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_cost_grid_pc",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_cost_grid_pc",
     rclcpp::ParameterValue(false));
 }
 

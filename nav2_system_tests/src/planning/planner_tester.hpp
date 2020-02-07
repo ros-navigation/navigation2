@@ -64,7 +64,8 @@ public:
     nav2_msgs::msg::CostmapMetaData prop;
     nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
     prop = cm.metadata;
-    costmap_ros_->getCostmap()->resizeMap(prop.size_x, prop.size_y,
+    costmap_ros_->getCostmap()->resizeMap(
+      prop.size_x, prop.size_y,
       prop.resolution, prop.origin.position.x, prop.origin.position.x);
     unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
     delete[] costmap_ptr;

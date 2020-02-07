@@ -72,10 +72,12 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
   std::string tf_error;
 
   geometry_msgs::msg::TransformStamped transformStamped;
-  if (!tf2_buffer_.canTransform(new_global_frame, global_frame_, tf2_ros::fromMsg(transform_time),
-    tf2::durationFromSec(tf_tolerance_), &tf_error))
+  if (!tf2_buffer_.canTransform(
+      new_global_frame, global_frame_, tf2_ros::fromMsg(transform_time),
+      tf2::durationFromSec(tf_tolerance_), &tf_error))
   {
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "nav2_costmap_2d"), "Transform between %s and %s with tolerance %.2f failed: %s.",
       new_global_frame.c_str(),
       global_frame_.c_str(), tf_tolerance_, tf_error.c_str());
@@ -99,7 +101,8 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
       // we also need to transform the cloud of the observation to the new global frame
       tf2_buffer_.transform(*(obs.cloud_), *(obs.cloud_), new_global_frame);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(rclcpp::get_logger(
+      RCLCPP_ERROR(
+        rclcpp::get_logger(
           "nav2_costmap_2d"), "TF Error attempting to transform an observation from %s to %s: %s",
         global_frame_.c_str(),
         new_global_frame.c_str(), ex.what());
@@ -186,7 +189,8 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   } catch (tf2::TransformException & ex) {
     // if an exception occurs, we need to remove the empty observation from the list
     observation_list_.pop_front();
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "nav2_costmap_2d"),
       "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
       sensor_frame_.c_str(),
@@ -245,7 +249,8 @@ bool ObservationBuffer::isCurrent() const
 
   bool current = (nh_->now() - last_updated_) <= expected_update_rate_;
   if (!current) {
-    RCLCPP_WARN(rclcpp::get_logger(
+    RCLCPP_WARN(
+      rclcpp::get_logger(
         "nav2_costmap_2d"),
       "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.", //NOLINT
       topic_name_.c_str(),

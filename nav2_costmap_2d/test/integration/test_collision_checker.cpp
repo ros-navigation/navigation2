@@ -94,7 +94,8 @@ public:
     declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
     declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-    declare_parameter("unknown_cost_value",
+    declare_parameter(
+      "unknown_cost_value",
       rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
     declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   }

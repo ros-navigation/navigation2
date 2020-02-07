@@ -103,12 +103,14 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     for (uint32_t x_grid = 0; x_grid < x_size; ++x_grid) {
       for (uint32_t z_grid = 0; z_grid < z_size; ++z_grid) {
         nav2_voxel_grid::VoxelStatus status =
-          nav2_voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid,
-            z_grid, x_size, y_size, z_size, data);
+          nav2_voxel_grid::VoxelGrid::getVoxel(
+          x_grid, y_grid,
+          z_grid, x_size, y_size, z_size, data);
         if (status == nav2_voxel_grid::UNKNOWN) {
           Cell c;
           c.status = status;
-          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin,
+          mapToWorld3D(
+            x_grid, y_grid, z_grid, x_origin, y_origin,
             z_origin, x_res, y_res, z_res, c.x, c.y, c.z);
 
           g_unknown.push_back(c);
@@ -117,7 +119,8 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
         } else if (status == nav2_voxel_grid::MARKED) {
           Cell c;
           c.status = status;
-          mapToWorld3D(x_grid, y_grid, z_grid, x_origin, y_origin,
+          mapToWorld3D(
+            x_grid, y_grid, z_grid, x_origin, y_origin,
             z_origin, x_res, y_res, z_res, c.x, c.y, c.z);
 
           g_marked.push_back(c);
@@ -191,7 +194,8 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
   }
 
   timer.end();
-  RCLCPP_DEBUG(g_node->get_logger(), "Published %d points in %f seconds",
+  RCLCPP_DEBUG(
+    g_node->get_logger(), "Published %d points in %f seconds",
     num_marked + num_unknown, timer.elapsed_time_in_seconds());
 }
 

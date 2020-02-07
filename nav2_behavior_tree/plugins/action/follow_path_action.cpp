@@ -63,7 +63,8 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({
+    return providedBasicPorts(
+      {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("server_name", "")

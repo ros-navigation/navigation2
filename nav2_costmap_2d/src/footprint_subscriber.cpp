@@ -57,9 +57,10 @@ FootprintSubscriber::FootprintSubscriber(
   topic_name_(topic_name),
   footprint_timeout_(rclcpp::Duration(footprint_timeout, 0.))
 {
-  footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(node_topics_,
-      topic_name, rclcpp::SystemDefaultsQoS(),
-      std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
+  footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(
+    node_topics_,
+    topic_name, rclcpp::SystemDefaultsQoS(),
+    std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
 }
 
 bool

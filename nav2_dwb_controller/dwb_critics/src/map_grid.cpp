@@ -61,7 +61,8 @@ void MapGridCritic::onInit()
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
-  nav2_util::declare_parameter_if_not_declared(nh_,
+  nav2_util::declare_parameter_if_not_declared(
+    nh_,
     dwb_plugin_name_ + "." + name_ + ".aggregation_type",
     rclcpp::ParameterValue(std::string("last")));
 
@@ -75,7 +76,8 @@ void MapGridCritic::onInit()
   } else if (aggro_str == "product") {
     aggregationType_ = ScoreAggregationType::Product;
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "MapGridCritic"), "aggregation_type parameter \"%s\" invalid. Using Last.",
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;

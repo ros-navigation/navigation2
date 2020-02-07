@@ -59,18 +59,21 @@ Costmap2DPublisher::Costmap2DPublisher(
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
-  costmap_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name,
-      custom_qos);
-  costmap_raw_pub_ = node_->create_publisher<nav2_msgs::msg::Costmap>(topic_name + "_raw",
-      custom_qos);
+  costmap_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    topic_name,
+    custom_qos);
+  costmap_raw_pub_ = node_->create_publisher<nav2_msgs::msg::Costmap>(
+    topic_name + "_raw",
+    custom_qos);
   costmap_update_pub_ = node_->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = node_->create_service<nav2_msgs::srv::GetCostmap>(
-    "get_costmap", std::bind(&Costmap2DPublisher::costmap_service_callback,
-    this, std::placeholders::_1, std::placeholders::_2,
-    std::placeholders::_3));
+    "get_costmap", std::bind(
+      &Costmap2DPublisher::costmap_service_callback,
+      this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];

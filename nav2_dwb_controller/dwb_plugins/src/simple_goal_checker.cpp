@@ -55,9 +55,11 @@ void SimpleGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
 
   nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
@@ -75,8 +77,9 @@ bool SimpleGoalChecker::isGoalReached(
   if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
     return false;
   }
-  double dyaw = angles::shortest_angular_distance(tf2::getYaw(query_pose.orientation),
-      tf2::getYaw(goal_pose.orientation));
+  double dyaw = angles::shortest_angular_distance(
+    tf2::getYaw(query_pose.orientation),
+    tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 

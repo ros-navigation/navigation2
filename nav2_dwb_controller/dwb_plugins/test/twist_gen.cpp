@@ -232,7 +232,8 @@ TEST(VelocityIterator, nonzero)
   initial.theta = 0.05;
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(initial);
   EXPECT_EQ(twists.size(), 2519u);
-  checkLimits(twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
+  checkLimits(
+    twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
     0.24622144504490268, 0.0, 0.1);
 }
 

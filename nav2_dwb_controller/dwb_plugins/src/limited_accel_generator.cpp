@@ -60,7 +60,8 @@ void LimitedAccelGenerator::initialize(
     if (controller_frequency > 0) {
       acceleration_time_ = 1.0 / controller_frequency;
     } else {
-      RCLCPP_WARN(rclcpp::get_logger("LimitedAccelGenerator"),
+      RCLCPP_WARN(
+        rclcpp::get_logger("LimitedAccelGenerator"),
         "A controller_frequency less than or equal to 0 has been set. "
         "Ignoring the parameter, assuming a rate of 20Hz");
       acceleration_time_ = 0.05;

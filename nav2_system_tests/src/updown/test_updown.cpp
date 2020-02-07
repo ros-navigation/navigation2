@@ -62,10 +62,12 @@ int main(int argc, char ** argv)
   client_loc.shutdown();
 
   if (test_passed) {
-    RCLCPP_INFO(rclcpp::get_logger("test_updown"),
+    RCLCPP_INFO(
+      rclcpp::get_logger("test_updown"),
       "****************************************************  TEST PASSED!");
   } else {
-    RCLCPP_INFO(rclcpp::get_logger("test_updown"),
+    RCLCPP_INFO(
+      rclcpp::get_logger("test_updown"),
       "****************************************************  TEST FAILED!");
   }
   rclcpp::shutdown();

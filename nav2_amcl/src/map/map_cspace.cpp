@@ -66,8 +66,9 @@ public:
 
 bool operator<(const CellData & a, const CellData & b)
 {
-  return a.map_->cells[MAP_INDEX(a.map_, a.i_,
-           a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
+  return a.map_->cells[MAP_INDEX(
+             a.map_, a.i_,
+             a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
 }
 
 CachedDistanceMap *
@@ -151,22 +152,26 @@ void map_update_cspace(map_t * map, double max_occ_dist)
   while (!Q.empty()) {
     CellData current_cell = Q.top();
     if (current_cell.i_ > 0) {
-      enqueue(map, current_cell.i_ - 1, current_cell.j_,
+      enqueue(
+        map, current_cell.i_ - 1, current_cell.j_,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }
     if (current_cell.j_ > 0) {
-      enqueue(map, current_cell.i_, current_cell.j_ - 1,
+      enqueue(
+        map, current_cell.i_, current_cell.j_ - 1,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
-      enqueue(map, current_cell.i_ + 1, current_cell.j_,
+      enqueue(
+        map, current_cell.i_ + 1, current_cell.j_,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
-      enqueue(map, current_cell.i_, current_cell.j_ + 1,
+      enqueue(
+        map, current_cell.i_, current_cell.j_ + 1,
         current_cell.src_i_, current_cell.src_j_,
         Q, cdm, marked);
     }

@@ -32,7 +32,8 @@ BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node)
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerSimpleCondition("InitialPoseReceived",
+  factory.registerSimpleCondition(
+    "InitialPoseReceived",
     std::bind(&nav2_behavior_tree::initialPoseReceived, std::placeholders::_1));
 }
 

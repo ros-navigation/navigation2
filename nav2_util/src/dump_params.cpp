@@ -46,7 +46,8 @@ get_param_names_for_node(rclcpp::Node::SharedPtr node, std::string node_name)
       throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
 
-    throw std::runtime_error(std::string("ListParameters service for ") +
+    throw std::runtime_error(
+            std::string("ListParameters service for ") +
             node_name + " not available");
   }
 
@@ -75,7 +76,8 @@ get_param_values_for_node(
       throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
 
-    throw std::runtime_error(std::string("GetParameters service for ") +
+    throw std::runtime_error(
+            std::string("GetParameters service for ") +
             node_name + " not available");
   }
 
@@ -106,7 +108,8 @@ get_param_descriptors_for_node(
       throw std::runtime_error("client interrupted while waiting for service to appear.");
     }
 
-    throw std::runtime_error(std::string("DescribeParameters service for ") +
+    throw std::runtime_error(
+            std::string("DescribeParameters service for ") +
             node_name + " not available");
   }
 
@@ -432,8 +435,9 @@ int main(int argc, char * argv[])
         auto param_names = get_param_names_for_node(dump_params_node, target_node_name);
         auto param_values =
           get_param_values_for_node(dump_params_node, target_node_name, param_names);
-        auto param_descriptors = get_param_descriptors_for_node(dump_params_node, target_node_name,
-            param_names);
+        auto param_descriptors = get_param_descriptors_for_node(
+          dump_params_node, target_node_name,
+          param_names);
 
         if (!vm.count("format")) {
           // Default to YAML if the format hasn't been specified
