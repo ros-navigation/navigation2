@@ -1,4 +1,4 @@
-.. _docs_configuration:
+.. _configuration:
 
 Configuration Guidelines
 ########################
