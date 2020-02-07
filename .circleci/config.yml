@@ -424,10 +424,6 @@ jobs:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-  test_rmw_opensplice_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_opensplice_cpp"
   docs_build:
     executor: docs_exec
     steps:
@@ -483,9 +479,6 @@ workflows:
           requires:
             - release_build
       - test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
-      - test_rmw_opensplice_cpp:
           requires:
             - release_build
     triggers:
