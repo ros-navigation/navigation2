@@ -45,6 +45,11 @@ It has tools to:
 - Manage the lifecycle of the servers (Nav2 Lifecycle Manager)
 - Plugins to enable your own custom algorithms and behaviors (Nav2 Core)
 
+.. image:: images/architectural_diagram.png
+    :height: 400px
+    :width: 708px
+    :alt: Navigation2 Block Diagram
+
 We also provide a set of starting plugins to get you going. NavFn computes the shortest path
 from a pose to a goal pose using A* or Dijkstra's algorithm. DWB will use the DWA algorithm
 to compute a control effort to follow a path, with several plugins of its own for trajectory
@@ -56,18 +61,13 @@ lifecycle.
 Here is the documentation on how to install and use |PN| with an example robot, Turtlebot
 3 (TB3), as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results. Below is an example
-of the TB3 navigating in a small lounge and the structure of Navigation 2.
+of the TB3 navigating in a small lounge.
 
 .. raw:: html
 
     <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
       <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
     </div>
-
-.. image:: images/architectural_diagram.png
-    :height: 400px
-    :width: 708px
-    :alt: Navigation2 Block Diagram
 
 Sections
 ********
