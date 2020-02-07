@@ -452,6 +452,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   // Now get the preemption result
   std::cout << "get me some handz" << std::endl;
   goal_handle = future_preempt_handle.get();
+  std::cout << "got me some handz" << std::endl;
 
   // Wait for the result of initial goal
   future_result = node_->action_client_->async_get_result(goal_handle);
