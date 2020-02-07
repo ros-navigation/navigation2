@@ -33,8 +33,8 @@ Here you will find documentation on how to install and use |PN| with a Turtlebot
 performance, as well as customize the internals for advanced results.
 
 .. image:: images/architectural_diagram.png
-    :height: 720px
-    :width: 1024px
+    :height: 769px
+    :width: 1415px
     :alt: Navigation2 Block Diagram
 
 Sections
