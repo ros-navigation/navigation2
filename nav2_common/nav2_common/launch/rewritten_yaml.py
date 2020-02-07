@@ -35,6 +35,8 @@ class DictItemReference:
 class RewrittenYaml(launch.Substitution):
   """
   Substitution that modifies the given YAML file.
+
+  Used in launch system
   """
 
   def __init__(self,

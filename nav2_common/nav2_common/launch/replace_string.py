@@ -21,6 +21,8 @@ import launch
 class ReplaceString(launch.Substitution):
   """
   Substitution that replaces strings on a given file.
+
+  Used in launch system
   """
 
   def __init__(self,

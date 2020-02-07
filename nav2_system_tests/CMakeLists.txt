@@ -50,9 +50,9 @@ if(BUILD_TESTING)
 
   add_subdirectory(src/planning)
   add_subdirectory(src/localization)
-  # add_subdirectory(src/system)
+  add_subdirectory(src/system)
   add_subdirectory(src/updown)
-  # add_subdirectory(src/waypoint_follower)
+  add_subdirectory(src/waypoint_follower)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
 endif()
