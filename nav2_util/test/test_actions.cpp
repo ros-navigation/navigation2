@@ -450,6 +450,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   EXPECT_EQ(sum, 17710);
 
   // Now get the preemption result
+  std::cout << "get me some handz" << std::endl;
   goal_handle = future_preempt_handle.get();
 
   // Wait for the result of initial goal
