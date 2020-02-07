@@ -47,7 +47,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contributing to the Project" href="contribute/index.html" />
-    <link rel="prev" title="Tunable Parameters" href="howtos/configuration/params/tunable-params.html" />
+    <link rel="prev" title="Navigation2 With External Costmap Plugin" href="tutorials/docs/navigation2_with_stvl.html" />
 
 <link rel="stylesheet" href="_static/tcs_theme.css" type="text/css" />
 
@@ -141,27 +141,6 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="howtos/tutorials/index.html">Tutorials</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html">Navigation2 with Turtlebot 3 in Gazebo</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#overview">Overview</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#requirements">Requirements</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#tutorial-steps">Tutorial Steps</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="howtos/tutorials/docs/navigation2_on_real_turtlebot3.html">Navigation2 on a Physical Turtlebot 3</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_on_real_turtlebot3.html#overview">Overview</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_on_real_turtlebot3.html#requirements">Requirements</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_on_real_turtlebot3.html#tutorial-steps">Tutorial Steps</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_stvl.html">Navigation2 With External Costmap Plugin</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_stvl.html#overview">Overview</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_stvl.html#costmap2d-and-stvl">Costmap2D and STVL</a></li>
-<li class="toctree-l4"><a class="reference internal" href="howtos/tutorials/docs/navigation2_with_stvl.html#tutorial-steps">Tutorial Steps</a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="howtos/docs/index.html">Documentation How-Tos</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="howtos/docs/index.html#build-guide">Build Guide</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="howtos/docs/process/docbuild.html">Build the template locally</a></li>
@@ -194,6 +173,56 @@
 <li class="toctree-l4"><a class="reference internal" href="howtos/configuration/params/tunable-params.html#map-server">Map Server</a></li>
 <li class="toctree-l4"><a class="reference internal" href="howtos/configuration/params/tunable-params.html#recovery-server">Recovery Server</a></li>
 <li class="toctree-l4"><a class="reference internal" href="howtos/configuration/params/tunable-params.html#bt-navigator">BT Navigator</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html">Navigation2 with Turtlebot 3 in Gazebo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#setup-your-environment-variables">0- Setup Your Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#short-cut">Short-cut</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#launch-gazebo">1- Launch Gazebo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#launch-turtlebot-3-robot-state-publisher">2- Launch Turtlebot 3 Robot State Publisher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#launch-navigation2">3- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#launch-rviz">4-  Launch RViz</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#initialize-the-location-of-turtlebot-3">5- Initialize the location of Turtlebot 3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#send-a-goal-pose">6-  Send a Goal Pose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#next-tutorial">Next Tutorial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_turtlebot3_in_gazebo.html#videos">Videos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html">Navigation2 on a Physical Turtlebot 3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#setup-your-enviroment-variables">0- Setup Your Enviroment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#launch-turtlebot-3-robot-state-publisher">1- Launch Turtlebot 3 Robot State Publisher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#launch-navigation2">2- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#launch-rviz">3-  Launch RVIZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#initialize-the-location-of-turtlebot-3">4- Initialize the Location of Turtlebot 3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#send-a-goal-pose">5-  Send a Goal Pose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_on_real_turtlebot3.html#videos">Videos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html">Navigation2 With External Costmap Plugin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#costmap2d-and-stvl">Costmap2D and STVL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#setup">0- Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#install-stvl">1- Install STVL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#modify-navigation2-parameter">1- Modify Navigation2 Parameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#launch-navigation2">2- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#rviz">3-  RVIZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/docs/navigation2_with_stvl.html#video">Video</a></li>
 </ul>
 </li>
 </ul>
@@ -307,7 +336,7 @@
     <p>
         &copy; Copyright 2019
       <span class="lastupdated">
-        Last updated on Feb 06, 2020.
+        Last updated on Feb 07, 2020.
       </span>
 
     </p>
