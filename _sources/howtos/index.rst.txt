@@ -9,3 +9,4 @@ How-Tos
    build_instructions/index.rst
    docs/index.rst
    configuration/index.rst
+   doxygen/index.rst

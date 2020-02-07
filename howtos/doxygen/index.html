@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Documentation How-Tos &mdash; Navigation 2 0.2.3 documentation</title>
+  <title>Generate Doxygen &mdash; Navigation 2 0.2.3 documentation</title>
   
 
   
@@ -46,8 +46,8 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Build the template locally" href="process/docbuild.html" />
-    <link rel="prev" title="Build Troubleshooting Guide" href="../build_instructions/build_docs/build_troubleshooting_guide.html" />
+    <link rel="next" title="Tutorials" href="../../tutorials/index.html" />
+    <link rel="prev" title="Tunable Parameters" href="../configuration/params/tunable-params.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
 
@@ -146,16 +146,16 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Documentation How-Tos</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#build-guide">Build Guide</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="process/docbuild.html">Build the template locally</a></li>
-<li class="toctree-l4"><a class="reference internal" href="process/docker-build.html">Use Docker to build this Sphinx project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../docs/index.html">Documentation How-Tos</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../docs/index.html#build-guide">Build Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../docs/process/docbuild.html">Build the template locally</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../docs/process/docker-build.html">Use Docker to build this Sphinx project</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#technical-guides">Technical Guides</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
-<li class="toctree-l4"><a class="reference internal" href="tech/important-sphinx-files.html">Important Sphinx files</a></li>
-<li class="toctree-l4"><a class="reference internal" href="tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../docs/index.html#technical-guides">Technical Guides</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../docs/tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../docs/tech/important-sphinx-files.html">Important Sphinx files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../docs/tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
 </ul>
 </li>
 </ul>
@@ -182,7 +182,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../doxygen/index.html">Generate Doxygen</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Generate Doxygen</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
@@ -322,7 +322,7 @@
         
           <li><a href="../index.html">How-Tos</a> &raquo;</li>
         
-      <li>Documentation How-Tos</li>
+      <li>Generate Doxygen</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -339,30 +339,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="documentation-how-tos">
-<span id="docs-howtos"></span><h1>Documentation How-Tos<a class="headerlink" href="#documentation-how-tos" title="Permalink to this headline">¶</a></h1>
-<p>This guide has everything you need to know to begin writing, building, and
-deploying technical documentation using our Git/Sphinx/Read the Docs workflow.
-Start by learning how to clone and build this template on your local system.</p>
-<div class="section" id="build-guide">
-<h2>Build Guide<a class="headerlink" href="#build-guide" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="process/docbuild.html">Build the template locally</a></li>
-<li class="toctree-l1"><a class="reference internal" href="process/docker-build.html">Use Docker to build this Sphinx project</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="technical-guides">
-<span id="id1"></span><h2>Technical Guides<a class="headerlink" href="#technical-guides" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tech/GeneratedImagesExamples.html">Examples of Generated Images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tech/important-sphinx-files.html">Important Sphinx files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tech/pandocs-conversion.html">Pandocs Conversion Tutorial</a></li>
-</ul>
-</div>
-</div>
+  <div class="section" id="generate-doxygen">
+<span id="doxygen-howtos"></span><h1>Generate Doxygen<a class="headerlink" href="#generate-doxygen" title="Permalink to this headline">¶</a></h1>
+<p>Run <cite>doxygen</cite> in the root of the Navigation2 repository.
+It will generate a <cite>/doc/*</cite> directory containing the documentation.
+The documentation entrypoint in a browser is index.html.</p>
 </div>
 
 

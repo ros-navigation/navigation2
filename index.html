@@ -122,6 +122,11 @@
 <li class="toctree-l4"><a class="reference internal" href="howtos/build_instructions/build_docs/manual_build/specific_distro_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="howtos/build_instructions/build_docs/manual_build/docker.html">Navigation2 Docker</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="howtos/build_instructions/build_docs/manual_build/docker.html#building-docker-container">Building Docker Container</a></li>
+<li class="toctree-l4"><a class="reference internal" href="howtos/build_instructions/build_docs/manual_build/docker.html#using-dockerhub-container">Using DockerHub Container</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="howtos/build_instructions/build_docs/quick_start.html">Quickstart Using the Initial Setup Script</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="howtos/build_instructions/build_docs/quick_start.html#steps">Steps</a></li>
 <li class="toctree-l4"><a class="reference internal" href="howtos/build_instructions/build_docs/quick_start.html#options">Options</a></li>
@@ -176,6 +181,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="howtos/doxygen/index.html">Generate Doxygen</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
@@ -332,12 +338,15 @@
             
   <div class="section" id="lpn">
 <span id="documentation-home"></span><h1>ROS 2 Navigation System<a class="headerlink" href="#lpn" title="Permalink to this headline">¶</a></h1>
-<div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
-</div><div class="section" id="overview">
+<div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>The Navigation 2 project is a set of ROS2 components that help you build a robot that
-can drive around.</p>
+can drive around. The ROS 2 Navigation System is the framework that
+enables a robot to autonomously reach a goal state, such as a position
+and orientation relative to a map. Given a current pose, a map,
+and a goal, the navigation system generates a plan to reach the goal,
+and outputs commands to autonomously drive the robot,
+respecting any safety constraints and avoiding obstacles.</p>
 <p>It has tools to:</p>
 <ul class="simple">
 <li>load and store maps</li>
@@ -346,13 +355,16 @@ can drive around.</p>
 <li>control the robot as it follows the path and avoid any obstacles along the way</li>
 <li>convert sensor data into a costmap representation of the world</li>
 <li>build complicated robot behaviors using behavior trees</li>
+<li>Plugins to enable your own custom algorithms and behaviors</li>
 </ul>
 <p>These all work seemlessly together, so that, with a bit of customization for your
 robot, you can just give it a destination and off it go.</p>
-<p>Here you will find documentation on how to install and use Navigation 2 with a Turtlebot
+<p>Here you will find documentation on how to install and use Navigation 2 with an example robot, Turtlebot
 3, as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results.</p>
-<a class="reference internal image-reference" href="_images/architectural_diagram.png"><img alt="Navigation2 Block Diagram" src="_images/architectural_diagram.png" style="width: 1415px; height: 769px;" /></a>
+<div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+  <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
+</div><a class="reference internal image-reference" href="_images/architectural_diagram.png"><img alt="Navigation2 Block Diagram" src="_images/architectural_diagram.png" style="width: 708px; height: 400px;" /></a>
 <div class="section" id="sections">
 <h3>Sections<a class="headerlink" href="#sections" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
