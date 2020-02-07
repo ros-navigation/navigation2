@@ -4,12 +4,6 @@
 |LPN|
 *****
 
-.. raw:: html
-
-    <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-      <iframe width="560" height="315" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
-    </div>
-
 Overview
 ########
 
@@ -38,9 +32,15 @@ Here you will find documentation on how to install and use |PN| with an example 
 3, as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results.
 
+.. raw:: html
+
+    <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+      <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
+    </div>
+
 .. image:: images/architectural_diagram.png
-    :height: 769px
-    :width: 1415px
+    :height: 400px
+    :width: 708px
     :alt: Navigation2 Block Diagram
 
 Sections

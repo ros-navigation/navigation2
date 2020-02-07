@@ -4,9 +4,9 @@
 For detailed instructions on how to:
 - Build
 - Install
-- Tutorials
+- [Tutorials](https://ros-planning.github.io/navigation2/tutorials/index.html)
 - Configure
-- Contribute
+- [Contribute](https://ros-planning.github.io/navigation2/contribute/index.html)
 - Docker images
 
 Please visit our [documentation site](https://ros-planning.github.io/navigation2/).
