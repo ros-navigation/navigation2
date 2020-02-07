@@ -14,7 +14,7 @@ Please visit our [documentation site](https://ros-planning.github.io/navigation2
 | Service | Dashing | Eloquent | Master |
 | :---: | :---: | :---: | :---: |
 | ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/) | N/A |
-| Circle CI | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/dashing-devel.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/dashing-devel) | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/eloquent-devel.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/eloquent-devel) | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master) |
+| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master) |
 
 
 | Package     | Dashing Source | Dashing Debian | Eloquent Source | Eloquent Debian |
