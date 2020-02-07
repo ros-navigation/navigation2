@@ -180,31 +180,44 @@ ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
+bool ControllerServer::findControllerId(
+  const std::string & c_name,
+  std::string & current_controller)
+{
+  if (controllers_.find(c_name) == controllers_.end()) {
+    if (controllers_.size() == 1 && c_name.empty()) {
+      if (!single_controller_warning_given_) {
+        RCLCPP_WARN(get_logger(), "No controller was specified in action call."
+          " Server will use only plugin loaded %s. "
+          "This warning will appear once.", controller_ids_concat_.c_str());
+        single_controller_warning_given_ = true;
+      }
+      current_controller = controllers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
+        "which does not exist. Available controllers are %s.",
+        c_name.c_str(), controller_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    current_controller = c_name;
+  }
+
+  return true;
+}
+
 void ControllerServer::computeControl()
 {
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
     std::string c_name = action_server_->get_current_goal()->controller_id;
-
-    if (controllers_.find(c_name) == controllers_.end()) {
-      if (controllers_.size() == 1 && c_name.empty()) {
-        if (!single_controller_warning_given_) {
-          RCLCPP_WARN(get_logger(), "No controller was specified in action call."
-            " Server will use only plugin loaded %s. "
-            "This warning will appear once.", controller_ids_concat_.c_str());
-          single_controller_warning_given_ = true;
-        }
-        current_controller_ = controllers_.begin()->first;
-      } else {
-        RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
-          "which does not exist. Available controllers are %s.",
-          c_name.c_str(), controller_ids_concat_.c_str());
-        action_server_->terminate_current();
-        return;
-      }
+    std::string current_controller;
+    if (findControllerId(c_name, current_controller)) {
+      current_controller_ = current_controller;
     } else {
-      current_controller_ = c_name;
+      action_server_->terminate_current();
+      return;
     }
 
     setPlannerPath(action_server_->get_current_goal()->path);
@@ -295,7 +308,17 @@ void ControllerServer::updateGlobalPath()
 {
   if (action_server_->is_preempt_requested()) {
     RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
-    setPlannerPath(action_server_->accept_pending_goal()->path);
+    auto goal = action_server_->accept_pending_goal();
+    std::string current_controller;
+    if (findControllerId(goal->controller_id, current_controller)) {
+      current_controller_ = current_controller;
+    } else {
+      RCLCPP_INFO(get_logger(), "Terminating action, invalid controller %s requested.",
+        goal->controller_id);
+      action_server_->terminate_current();
+      return;
+    }
+    setPlannerPath(goal->path);
   }
 }
 

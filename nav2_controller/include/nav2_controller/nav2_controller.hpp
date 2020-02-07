@@ -124,6 +124,15 @@ protected:
   void computeControl();
 
   /**
+   * @brief Find the valid controller ID name for the given request
+   *
+   * @param c_name The requested controller name
+   * @param name Reference to the name to use for control if any valid available
+   * @return bool Whether it found a valid controller to use
+   */
+  bool findControllerId(const std::string & c_name, std::string & name);
+
+  /**
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
