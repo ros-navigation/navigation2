@@ -94,6 +94,7 @@ controller_server:
     FollowPath.acc_lim_x: 2.5
     FollowPath.acc_lim_y: 0.0
     FollowPath.acc_lim_theta: 3.2
+    FollowPath.decel_lim_x: -2.5
     FollowPath.decel_lim_y: 0.0
     FollowPath.decel_lim_theta: -3.2
     FollowPath.vx_samples: 20
@@ -179,9 +180,9 @@ planner_server:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
     planner_plugin_ids: ["GridBased"]
     use_sim_time: True
-    navfn.tolerance: 42.0
-    navfn.use_astar: false
-    navfn.allow_unknown: true
+    GridBased.tolerance: 2.0
+    GridBased.use_astar: false
+    GridBased.allow_unknown: true
 
 planner_server_rclcpp_node:
   ros__parameters:

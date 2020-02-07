@@ -95,6 +95,7 @@ controller_server:
     FollowPath.acc_lim_x: 2.5
     FollowPath.acc_lim_y: 0.0
     FollowPath.acc_lim_theta: 3.2
+    FollowPath.decel_lim_x: -2.5
     FollowPath.decel_lim_y: 0.0
     FollowPath.decel_lim_theta: -3.2
     FollowPath.vx_samples: 20
@@ -104,6 +105,7 @@ controller_server:
     FollowPath.linear_granularity: 0.05
     FollowPath.angular_granularity: 0.025
     FollowPath.transform_tolerance: 0.2
+    FollowPath.xy_goal_tolerance: 0.25
     FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     FollowPath.BaseObstacle.scale: 0.02
     FollowPath.PathAlign.scale: 0.0

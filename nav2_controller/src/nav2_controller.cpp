@@ -89,6 +89,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+      exit(-1);
     }
   }
 
@@ -307,7 +308,7 @@ void ControllerServer::computeAndPublishVelocity()
 void ControllerServer::updateGlobalPath()
 {
   if (action_server_->is_preempt_requested()) {
-    RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
+    RCLCPP_INFO(get_logger(), "Passing new path to controller.");
     auto goal = action_server_->accept_pending_goal();
     std::string current_controller;
     if (findControllerId(goal->controller_id, current_controller)) {
