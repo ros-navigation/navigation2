@@ -412,6 +412,10 @@ jobs:
     steps:
       - restore_build
       - test_build
+  test_rmw_connext_cpp:
+    <<: *release_test
+    environment:
+      RMW_IMPLEMENTATION: "rmw_connext_cpp"
   test_rmw_cyclonedds_cpp:
     <<: *release_test
     environment:
@@ -468,6 +472,9 @@ workflows:
           requires:
             - debug_build
       - release_build
+      - test_rmw_connext_cpp:
+          requires:
+            - release_build
       - test_rmw_cyclonedds_cpp:
           requires:
             - release_build
