@@ -81,7 +81,11 @@ public:
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
-    path = planners_["GridBased"]->createPlan(start, goal);
+    try {
+      path = planners_["GridBased"]->createPlan(start, goal);
+    } catch (...) {
+      return false;
+    }
     return true;
   }
 
@@ -108,7 +112,7 @@ enum class TaskStatus : int8_t
   RUNNING = 3,
 };
 
-class PlannerTester : public rclcpp::Node, public ::testing::Test
+class PlannerTester : public rclcpp::Node
 {
 public:
   using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;

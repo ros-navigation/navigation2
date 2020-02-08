@@ -123,7 +123,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
     base_transform_->child_frame_id = "base_link";
   }
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(1.0);
+  base_transform_->header.stamp = now() + rclcpp::Duration(1e9);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
