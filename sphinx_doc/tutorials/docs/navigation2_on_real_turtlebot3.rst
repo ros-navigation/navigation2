@@ -12,10 +12,7 @@ Overview
 ========
 
 This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a physical Turtlebot 3 robot.
-Before completing this tutorials, completing the :ref:`navigation2-with-turtlebot3-in-gazebo`. is highly recommended especially if you are new to ROS and Navigation2.
-
-This tutorial consists of two parts. In the first part, you learned how to use Turtlebot 3 robots in simulation (Gazebo).
-In this part, you will learn how to control a physical Turtlebot Waffle using Navigation2.
+Before completing this tutorials, completing :ref:`getting_started` is highly recommended especially if you are new to ROS and Navigation2.
 
 ``ROS2 Dashing`` and ``Navigation2 Dashing 0.2.4`` are used to create this tutorial.
 You should be able to do this tutorial using other Navigation2 versions as well.
@@ -27,7 +24,7 @@ Requirements
 ============
 
 You must install Navigation2, Turtlebot3.
-If you don't have them installed, please follow :ref:`navigation2-with-turtlebot3-in-gazebo`.
+If you don't have them installed, please follow :ref:`getting_started`.
 
 Tutorial Steps
 ==============
@@ -40,14 +37,12 @@ Run the following commands first whenever you open a new terminal during this tu
 - ``source /opt/ros/<ros2-distro>/setup.bash``
 - ``export TURTLEBOT3_MODEL=waffle``
 
-1- Launch Turtlebot 3 Robot State Publisher
--------------------------------------------
+1- Launch Turtlebot 3
+---------------------
 
-Launch Turtlebot 3 robot state publisher,
+You will need to launch your robot's interface,
 
-  ``ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time:=False``
-
-Note: use_sim_time is set to **False** because we're on a physical robot.
+  ``ros2 launch turtlebot3_bringup robot.launch.py  use_sim_time:=False``
 
 2- Launch Navigation2
 ---------------------

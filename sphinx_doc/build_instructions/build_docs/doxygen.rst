@@ -1,4 +1,4 @@
-.. _doxygen_howtos:
+.. _doxygen_build_instructions:
 
 Generate Doxygen
 ################
