@@ -2,12 +2,12 @@
 [![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
 For detailed instructions on how to:
-- Build
-- Install
+- [Build](https://ros-planning.github.io/navigation2/build_instructions/index.html)
+- [Install](https://ros-planning.github.io/navigation2/getting_started/index.html#installation)
 - [Tutorials](https://ros-planning.github.io/navigation2/tutorials/index.html)
-- Configure
+- [Configure](https://ros-planning.github.io/navigation2/configuration/index.html)
 - [Contribute](https://ros-planning.github.io/navigation2/contribute/index.html)
-- Docker images
+- [Docker images](https://ros-planning.github.io/navigation2/build_instructions/build_docs/manual_build/docker.html)
 
 Please visit our [documentation site](https://ros-planning.github.io/navigation2/).
 
