@@ -48,7 +48,7 @@ namespace dwb_plugins
 /**
  * @class SimpleGoalChecker
  * @brief Goal Checker plugin that only checks the position difference
- * 
+ *
  * This class can be stateful if the stateful parameter is set to true (which it is by default).
  * This means that the goal checker will not check if the xy position matches again once it is found to be true.
  */

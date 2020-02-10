@@ -65,7 +65,8 @@ void SimpleGoalChecker::initialize(
   nav2_util::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".stateful", rclcpp::ParameterValue(true));
 
   nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
@@ -75,7 +76,8 @@ void SimpleGoalChecker::initialize(
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-void SimpleGoalChecker::reset() {
+void SimpleGoalChecker::reset()
+{
   check_xy_ = true;
 }
 
@@ -89,9 +91,9 @@ bool SimpleGoalChecker::isGoalReached(
     if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
       return false;
     }
-  // We are within the window
-  // If we are stateful, change the state.
-   if (stateful_) {
+    // We are within the window
+    // If we are stateful, change the state.
+    if (stateful_) {
       check_xy_ = false;
     }
   }

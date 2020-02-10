@@ -84,7 +84,7 @@ public:
    * @param traj Trajectory to score
    * @return numeric score
    */
-  virtual double scoreRotation(const dwb_msgs::msg::Trajectory2D& traj);
+  virtual double scoreRotation(const dwb_msgs::msg::Trajectory2D & traj);
 
 private:
   bool in_window_;

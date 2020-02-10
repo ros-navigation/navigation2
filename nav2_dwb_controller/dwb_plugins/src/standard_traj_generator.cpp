@@ -73,7 +73,8 @@ void StandardTrajectoryGenerator::initialize(
   nav2_util::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".angular_granularity", rclcpp::ParameterValue(0.025));
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".include_last_point", rclcpp::ParameterValue(true));
 
   /*

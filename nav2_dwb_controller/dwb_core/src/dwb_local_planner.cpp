@@ -92,7 +92,8 @@ void DWBLocalPlanner::configure(
   declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
+  declare_parameter_if_not_declared(
+    node_, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     rclcpp::ParameterValue(true));
 
   std::string traj_generator_name;
@@ -108,7 +109,9 @@ void DWBLocalPlanner::configure(
   node_->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node_->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node_->get_parameter(dwb_plugin_name_ + ".goal_checker_name", goal_checker_name);
-  node_->get_parameter(dwb_plugin_name_ + ".short_circuit_trajectory_evaluation", short_circuit_trajectory_evaluation_);
+  node_->get_parameter(
+    dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
+    short_circuit_trajectory_evaluation_);
 
   pub_ = std::make_unique<DWBPublisher>(node_, dwb_plugin_name_);
   pub_->on_configure();
@@ -290,7 +293,7 @@ DWBLocalPlanner::isGoalReached(
 
   bool ret = goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
   if (ret) {
-    RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "Goal reached!");
+    RCLCPP_INFO(rclcpp::get_logger("DWBLocalPlanner"), "Goal reached!");
   }
   return ret;
 }

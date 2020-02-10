@@ -75,7 +75,8 @@ DWBPublisher::DWBPublisher(
   declare_parameter_if_not_declared(
     node_, plugin_name + ".publish_cost_grid_pc",
     rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(node_, plugin_name + ".marker_lifetime",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".marker_lifetime",
     rclcpp::ParameterValue(0.1));
 }
 

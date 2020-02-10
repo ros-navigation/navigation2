@@ -57,13 +57,16 @@ void RotateToGoalCritic::onInit()
     nh_,
     dwb_plugin_name_ + "." + name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-  double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(nh_,
-      dwb_plugin_name_ + "." + name_ + ".trans_stopped_velocity", 0.25);
+  double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(
+    nh_,
+    dwb_plugin_name_ + "." + name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
-  slowing_factor_ = nav_2d_utils::searchAndGetParam(nh_,
-      dwb_plugin_name_ + "." + name_ + ".slowing_factor", 5.0);
-  lookahead_time_ = nav_2d_utils::searchAndGetParam(nh_,
-      dwb_plugin_name_ + "." + name_ + ".lookahead_time", -1.0);
+  slowing_factor_ = nav_2d_utils::searchAndGetParam(
+    nh_,
+    dwb_plugin_name_ + "." + name_ + ".slowing_factor", 5.0);
+  lookahead_time_ = nav_2d_utils::searchAndGetParam(
+    nh_,
+    dwb_plugin_name_ + "." + name_ + ".lookahead_time", -1.0);
   reset();
 }
 
@@ -93,8 +96,7 @@ double RotateToGoalCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
     return 0.0;
   } else if (!rotating_) {
     double speed_sq = hypot_sq(traj.velocity.x, traj.velocity.y);
-    if (speed_sq >= current_xy_speed_sq_)
-    {
+    if (speed_sq >= current_xy_speed_sq_) {
       throw dwb_core::IllegalTrajectoryException(name_, "Not slowing down near goal.");
     }
     return speed_sq * slowing_factor_ + scoreRotation(traj);

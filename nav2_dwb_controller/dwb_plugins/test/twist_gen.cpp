@@ -297,7 +297,7 @@ TEST(TrajectoryGenerator, basic_no_last_point)
   gen.initialize(nh, "dwb");
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME/2);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME / 2);
   int n = res.poses.size();
   EXPECT_EQ(n, 3);
   ASSERT_GT(n, 0);
@@ -341,7 +341,7 @@ TEST(TrajectoryGenerator, holonomic)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], cmd.x*DEFAULT_SIM_TIME, cmd.y*DEFAULT_SIM_TIME, 0);
+  matchPose(res.poses[n - 1], cmd.x * DEFAULT_SIM_TIME, cmd.y * DEFAULT_SIM_TIME, 0);
 }
 
 TEST(TrajectoryGenerator, twisty)
@@ -363,7 +363,9 @@ TEST(TrajectoryGenerator, twisty)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], 0.5355173615993063, -0.29635287789821596, cmd.theta * DEFAULT_SIM_TIME);
+  matchPose(
+    res.poses[n - 1], 0.5355173615993063, -0.29635287789821596,
+    cmd.theta * DEFAULT_SIM_TIME);
 }
 
 TEST(TrajectoryGenerator, sim_time)

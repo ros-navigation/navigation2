@@ -41,6 +41,8 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
+#define EPSILON 1E-5
+
 using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
@@ -49,8 +51,6 @@ using std::placeholders::_1;
 
 namespace dwb_plugins
 {
-
-const double EPSILON = 1E-5;
 
 KinematicParameters::KinematicParameters()
 {

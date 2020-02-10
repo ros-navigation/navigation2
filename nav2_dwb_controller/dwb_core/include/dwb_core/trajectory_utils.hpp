@@ -49,7 +49,9 @@ namespace dwb_local_planner
  * Linearly searches through the poses. Once the poses time_offset is greater than the desired time_offset,
  * the search ends, since the poses have increasing time_offsets.
  */
-const geometry_msgs::msg::Pose2D& getClosestPose(const dwb_msgs::msg::Trajectory2D& trajectory, const double time_offset);
+const geometry_msgs::msg::Pose2D & getClosestPose(
+  const dwb_msgs::msg::Trajectory2D & trajectory,
+  const double time_offset);
 
 /**
  * @brief Helper function to create a pose with an exact time_offset by linearly interpolating between existing poses
@@ -58,7 +60,9 @@ const geometry_msgs::msg::Pose2D& getClosestPose(const dwb_msgs::msg::Trajectory
  * @return New Pose2D with interpolated values
  * @note If the given time offset is outside the bounds of the trajectory, the return pose will be either the first or last pose.
  */
-geometry_msgs::msg::Pose2D projectPose(const dwb_msgs::msg::Trajectory2D& trajectory, const double time_offset);
+geometry_msgs::msg::Pose2D projectPose(
+  const dwb_msgs::msg::Trajectory2D & trajectory,
+  const double time_offset);
 
 }  // namespace dwb_local_planner
 

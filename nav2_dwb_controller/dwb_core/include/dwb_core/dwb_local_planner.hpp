@@ -175,7 +175,8 @@ protected:
    *     and the saved global_plan_. Technically, it iterates to a pose on the path that is within prune_distance_
    *     of the robot and erases all poses before that.
    */
-  virtual nav_2d_msgs::msg::Path2D transformGlobalPlan(const nav_2d_msgs::msg::Pose2DStamped & pose);
+  virtual nav_2d_msgs::msg::Path2D transformGlobalPlan(
+    const nav_2d_msgs::msg::Pose2DStamped & pose);
   nav_2d_msgs::msg::Path2D global_plan_;  ///< Saved Global Plan
   bool prune_plan_;
   double prune_distance_;
