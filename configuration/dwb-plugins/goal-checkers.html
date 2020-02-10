@@ -1,0 +1,398 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Goal Checkers &mdash; Navigation 2 0.2.3 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/favicon-48x48.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'0.2.3',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tunable Parameters" href="../params/tunable-params.html" />
+    <link rel="prev" title="Trajectory Critics" href="trajectory-critics.html" />
+
+<link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Navigation 2
+          
+
+          
+            
+            <img src="../../_static/logo_white_200w.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#running-the-example">Running the Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#navigating">Navigating</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build Instructions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html">Build Navigation2 for a Specific Distribution</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html">Quickstart Using the Initial Setup Script</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html#steps">Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html">Navigation2 Docker</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html#building-docker-container">Building Docker Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html#using-dockerhub-container">Using DockerHub Container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/use_case_recommendations.html">Use Case Recommendations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/use_case_recommendations.html#developer">Developer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/use_case_recommendations.html#debugging">Debugging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/use_case_recommendations.html#build-system">Build System</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html">Build Troubleshooting Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#common-navigation2-dependencies-build-failures">Common Navigation2 Dependencies Build Failures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#reporting-issue">Reporting Issue</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html">Navigation2 on a Physical Turtlebot 3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#setup-your-enviroment-variables">0- Setup Your Enviroment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#launch-turtlebot-3">1- Launch Turtlebot 3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#launch-navigation2">2- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#launch-rviz">3-  Launch RVIZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#initialize-the-location-of-turtlebot-3">4- Initialize the Location of Turtlebot 3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#send-a-goal-pose">5-  Send a Goal Pose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_on_real_turtlebot3.html#videos">Videos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html">Navigation 2 With SLAM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#launch-robot-interfaces">0- Launch Robot Interfaces</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#launch-navigation2">1- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#launch-slam">2- Launch SLAM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_slam.html#working-with-slam">3- Working with SLAM</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html">Navigation2 With External Costmap Plugin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#costmap2d-and-stvl">Costmap2D and STVL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#setup">0- Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#install-stvl">1- Install STVL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#modify-navigation2-parameter">1- Modify Navigation2 Parameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#launch-navigation2">2- Launch Navigation2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#rviz">3-  RVIZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/docs/navigation2_with_stvl.html#video">Video</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Configuration Guidelines</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../configuring-the-controller.html">Configuring The Controller</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../configuring-the-controller.html#controller-server">Controller Server</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../configuring-the-controller.html#parameters">Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../configuring-the-controller.html#progress-checker">Progress Checker</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../configuring-the-controller.html#id2">Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../configuring-the-controller.html#dwb-controller">DWB Controller</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../configuring-the-controller.html#id3">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../configuring-the-controller.html#additional-parameters">Additional Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../configuring-the-controller.html#debug-parameters">Debug Parameters</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../configuring-the-controller.html#dwb-plugins">DWB Plugins</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="trajectory-generators.html">Trajectory Generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="trajectory-critics.html">Trajectory Critics</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Goal Checkers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../params/tunable-params.html">Tunable Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#amcl">AMCL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#controller-server">Controller Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#local-costmap">Local Costmap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#planner-server">Planner Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#global-costmap">Global Costmap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#map-server">Map Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#recovery-server">Recovery Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../params/tunable-params.html#bt-navigator">BT Navigator</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/index.html">Contributing to the Project</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#licensing">Licensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contribute/contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/contribute_guidelines.html#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contribute/doc_guidelines.html">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#headings">Headings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contribute/doc_guidelines.html#this-is-a-collapsible-section">This is a collapsible section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#content-highlighting">Content Highlighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#lists">Lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#multi-column-lists">Multi-column lists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#file-names-and-commands">File names and Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#non-ascii-characters">Non-ASCII Characters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#code-and-command-examples">Code and Command Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contribute/doc_guidelines.html#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Navigation 2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Configuration Guidelines</a> &raquo;</li>
+        
+          <li><a href="../configuring-the-controller.html">Configuring The Controller</a> &raquo;</li>
+        
+      <li>Goal Checkers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="goal-checkers">
+<span id="dwb-goal-checkers"></span><h1>Goal Checkers<a class="headerlink" href="#goal-checkers" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The parameters below are not properly scoped. The exact parameter names are
+likely to change in the near future</p>
+</div>
+<div class="section" id="common-parameters">
+<h2>Common Parameters<a class="headerlink" href="#common-parameters" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">xy_goal_tolerance:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">yaw_goal_tolerance:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="simple-goal-checker">
+<h2>Simple Goal Checker<a class="headerlink" href="#simple-goal-checker" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="stopped-goal-checker">
+<h2>Stopped Goal Checker<a class="headerlink" href="#stopped-goal-checker" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019
+      <span class="lastupdated">
+        Last updated on Feb 10, 2020.
+      </span>
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+  
+
+<script type="text/javascript" src="../../_static/tcs_theme.js"></script>
+
+
+
+</body>
+</html>

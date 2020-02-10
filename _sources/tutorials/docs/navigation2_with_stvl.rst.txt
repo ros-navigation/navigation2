@@ -39,7 +39,7 @@ Tutorial Steps
 0- Setup
 --------
 
-Follow the same process as in :ref:`navigation2-with-turtlebot3-in-gazebo` for installing and setting up a robot for hardware testing or simulation, as applicable. Ensure ROS2, Navigation2, and Gazebo are installed.
+Follow the same process as in :ref:`getting_started` for installing and setting up a robot for hardware testing or simulation, as applicable. Ensure ROS2, Navigation2, and Gazebo are installed.
 
 1- Install STVL
 ---------------
@@ -129,7 +129,7 @@ Note: Pluginlib plugins for other Navigation2 servers such as planning, recovery
 2- Launch Navigation2
 ---------------------
 
-Follow the same process as in :ref:`navigation2-with-turtlebot3-in-gazebo` to launch a simulated robot in gazebo with Navigation2.
+Follow the same process as in :ref:`getting_started` to launch a simulated robot in gazebo with Navigation2.
 Navigation2 is now using STVL as its 3D sensing costmap layer.
 
 3-  RVIZ
