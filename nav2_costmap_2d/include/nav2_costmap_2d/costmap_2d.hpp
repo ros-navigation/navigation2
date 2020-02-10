@@ -402,14 +402,16 @@ protected:
     // if x is dominant
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
-      bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
+      bresenham2D(
+        at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
         (unsigned int)(scale * abs_dx));
       return;
     }
 
     // otherwise y is dominant
     int error_x = abs_dy / 2;
-    bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
+    bresenham2D(
+      at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
       (unsigned int)(scale * abs_dy));
   }
 

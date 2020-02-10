@@ -47,7 +47,8 @@ void BaseObstacleCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
 
-  nav2_util::declare_parameter_if_not_declared(nh_,
+  nav2_util::declare_parameter_if_not_declared(
+    nh_,
     dwb_plugin_name_ + "." + name_ + ".sum_scores", rclcpp::ParameterValue(false));
   nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".sum_scores", sum_scores_);
 }

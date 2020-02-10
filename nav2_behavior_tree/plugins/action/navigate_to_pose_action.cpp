@@ -45,7 +45,8 @@ public:
     geometry_msgs::msg::Quaternion orientation;
 
     if (!getInput("position", position) || !getInput("orientation", orientation)) {
-      RCLCPP_ERROR(node_->get_logger(),
+      RCLCPP_ERROR(
+        node_->get_logger(),
         "NavigateToPoseAction: position or orientation not provided");
       return;
     }
@@ -57,7 +58,8 @@ public:
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({
+    return providedBasicPorts(
+      {
         BT::InputPort<geometry_msgs::msg::Point>("position", "Position"),
         BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "Orientation")
       });

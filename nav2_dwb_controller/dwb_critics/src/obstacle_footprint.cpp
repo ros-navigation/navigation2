@@ -66,7 +66,8 @@ bool ObstacleFootprintCritic::prepare(
 {
   footprint_spec_ = costmap_ros_->getRobotFootprint();
   if (footprint_spec_.size() == 0) {
-    RCLCPP_ERROR(rclcpp::get_logger("ObstacleFootprintCritic"),
+    RCLCPP_ERROR(
+      rclcpp::get_logger("ObstacleFootprintCritic"),
       "Footprint spec is empty, maybe missing call to setFootprint?");
     return false;
   }

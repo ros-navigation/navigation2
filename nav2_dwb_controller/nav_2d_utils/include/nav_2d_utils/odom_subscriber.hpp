@@ -68,15 +68,19 @@ public:
     std::string odom_topic;
     nh->get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
-      nh->create_subscription<nav_msgs::msg::Odometry>(odom_topic,
-        rclcpp::SystemDefaultsQoS(),
-        std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
+      nh->create_subscription<nav_msgs::msg::Odometry>(
+      odom_topic,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
 
-    nav2_util::declare_parameter_if_not_declared(nh,
+    nav2_util::declare_parameter_if_not_declared(
+      nh,
       "min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
-    nav2_util::declare_parameter_if_not_declared(nh,
+    nav2_util::declare_parameter_if_not_declared(
+      nh,
       "min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
-    nav2_util::declare_parameter_if_not_declared(nh,
+    nav2_util::declare_parameter_if_not_declared(
+      nh,
       "min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
 
     nh->get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);

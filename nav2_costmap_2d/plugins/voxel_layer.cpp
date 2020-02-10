@@ -199,7 +199,8 @@ void VoxelLayer::updateBounds(
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
-        touch(static_cast<double>(*iter_x), static_cast<double>(*iter_y),
+        touch(
+          static_cast<double>(*iter_x), static_cast<double>(*iter_y),
           min_x, min_y, max_x, max_y);
       }
     }
@@ -300,7 +301,8 @@ void VoxelLayer::raytraceFreespace(
   double oz = clearing_observation.origin_.z;
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_WARN(
+      node_->get_logger(),
       "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
       ox, oy, oz);
     return;
@@ -373,12 +375,14 @@ void VoxelLayer::raytraceFreespace(
       unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
 
       // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
-      voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
+      voxel_grid_.clearVoxelLineInMap(
+        sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
         costmap_,
         unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
         cell_raytrace_range);
 
-      updateRaytraceBounds(ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y,
+      updateRaytraceBounds(
+        ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y,
         max_x,
         max_y);
 
@@ -433,10 +437,12 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   unsigned int * voxel_map = voxel_grid_.getData();
 
   // copy the local window in the costmap to the local map
-  copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
+  copyMapRegion(
+    costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
     cell_size_x,
     cell_size_y);
-  copyMapRegion(voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x,
+  copyMapRegion(
+    voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x,
     cell_size_x,
     cell_size_y);
 
@@ -452,9 +458,11 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   int start_y = lower_left_y - cell_oy;
 
   // now we want to copy the overlapping information back into the map, but in its new location
-  copyMapRegion(local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
+  copyMapRegion(
+    local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
     cell_size_y);
-  copyMapRegion(local_voxel_map, 0, 0, cell_size_x, voxel_map, start_x, start_y, size_x_,
+  copyMapRegion(
+    local_voxel_map, 0, 0, cell_size_x, voxel_map, start_x, start_y, size_x_,
     cell_size_x,
     cell_size_y);
 

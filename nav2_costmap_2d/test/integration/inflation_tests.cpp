@@ -187,7 +187,8 @@ void TestNode::initNode(double inflation_radius)
   node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
   node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  node_->declare_parameter("unknown_cost_value",
+  node_->declare_parameter(
+    "unknown_cost_value",
     rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
@@ -385,7 +386,8 @@ TEST_F(TestNode, testInflation)
   layers.updateMap(0, 0, 0);
 
   // It and its 2 neighbors makes 3 obstacles
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
+  ASSERT_EQ(
+    countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
     countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 51u);
 
   // @todo Rewrite
@@ -398,7 +400,8 @@ TEST_F(TestNode, testInflation)
   // the origin to the target, clearing the point at <0, 0>,
   // but not over-writing the inflation of the obstacle
   // at <0, 1>
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
+  ASSERT_EQ(
+    countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
     countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 54u);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it

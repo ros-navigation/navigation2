@@ -785,7 +785,8 @@ TEST(costmap, testInflation) {
     unsigned int x, y;
     map.indexToCells(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.getIndex(x, y)), true);
-    ASSERT_EQ(map.getCost(x, y) == nav2_costmap_2d::LETHAL_OBSTACLE ||
+    ASSERT_EQ(
+      map.getCost(x, y) == nav2_costmap_2d::LETHAL_OBSTACLE ||
       map.getCost(x, y) == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE, true);
   }
 

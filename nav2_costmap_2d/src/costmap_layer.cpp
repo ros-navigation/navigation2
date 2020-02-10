@@ -56,7 +56,8 @@ void CostmapLayer::touch(
 void CostmapLayer::matchSize()
 {
   Costmap2D * master = layered_costmap_->getCostmap();
-  resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
+  resizeMap(
+    master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
     master->getOriginX(), master->getOriginY());
 }
 

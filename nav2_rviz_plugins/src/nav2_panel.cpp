@@ -185,13 +185,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_thread_ = new InitialThread(client_nav_, client_loc_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
-  QSignalTransition * activeSignal = new QSignalTransition(initial_thread_,
-      &InitialThread::activeSystem);
+  QSignalTransition * activeSignal = new QSignalTransition(
+    initial_thread_,
+    &InitialThread::activeSystem);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
 
-  QSignalTransition * inactiveSignal = new QSignalTransition(initial_thread_,
-      &InitialThread::inactiveSystem);
+  QSignalTransition * inactiveSignal = new QSignalTransition(
+    initial_thread_,
+    &InitialThread::inactiveSystem);
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
 
@@ -226,19 +228,23 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   navigation_action_client_ =
-    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
-      "NavigateToPose");
+    rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+    client_node_,
+    "NavigateToPose");
   waypoint_follower_action_client_ =
-    rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(client_node_,
-      "FollowWaypoints");
+    rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
+    client_node_,
+    "FollowWaypoints");
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
 
   wp_navigation_markers_pub_ =
-    client_node_->create_publisher<visualization_msgs::msg::MarkerArray>("waypoints",
-      rclcpp::QoS(1).transient_local());
+    client_node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "waypoints",
+    rclcpp::QoS(1).transient_local());
 
-  QObject::connect(&GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
+  QObject::connect(
+    &GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),                 // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
 }
 
@@ -263,10 +269,14 @@ void
 Nav2Panel::onPause()
 {
   QFuture<void> futureNav =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::pause,
       &client_nav_));
   QFuture<void> futureLoc =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::pause,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::pause,
       &client_loc_));
 }
 
@@ -274,10 +284,14 @@ void
 Nav2Panel::onResume()
 {
   QFuture<void> futureNav =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::resume,
       &client_nav_));
   QFuture<void> futureLoc =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::resume,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::resume,
       &client_loc_));
 }
 
@@ -285,10 +299,14 @@ void
 Nav2Panel::onStartup()
 {
   QFuture<void> futureNav =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       &client_nav_));
   QFuture<void> futureLoc =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       &client_loc_));
 }
 
@@ -296,10 +314,14 @@ void
 Nav2Panel::onShutdown()
 {
   QFuture<void> futureNav =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       &client_nav_));
   QFuture<void> futureLoc =
-    QtConcurrent::run(std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::reset,
+    QtConcurrent::run(
+    std::bind(
+      &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       &client_loc_));
   timer_.stop();
 }
@@ -308,7 +330,9 @@ void
 Nav2Panel::onCancel()
 {
   QFuture<void> future =
-    QtConcurrent::run(std::bind(&Nav2Panel::onCancelButtonPressed,
+    QtConcurrent::run(
+    std::bind(
+      &Nav2Panel::onCancelButtonPressed,
       this));
 }
 
@@ -429,7 +453,8 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   auto is_action_server_ready =
     waypoint_follower_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
-    RCLCPP_ERROR(client_node_->get_logger(), "FollowWaypoints action server is not available."
+    RCLCPP_ERROR(
+      client_node_->get_logger(), "FollowWaypoints action server is not available."
       " Is the initial pose set?");
     return;
   }
@@ -437,10 +462,12 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
 
-  RCLCPP_INFO(client_node_->get_logger(), "Sending a path of %zu waypoints:",
+  RCLCPP_INFO(
+    client_node_->get_logger(), "Sending a path of %zu waypoints:",
     waypoint_follower_goal_.poses.size());
   for (auto waypoint : waypoint_follower_goal_.poses) {
-    RCLCPP_DEBUG(client_node_->get_logger(),
+    RCLCPP_DEBUG(
+      client_node_->get_logger(),
       "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
   }
 
@@ -474,7 +501,8 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   auto is_action_server_ready =
     navigation_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
-    RCLCPP_ERROR(client_node_->get_logger(),
+    RCLCPP_ERROR(
+      client_node_->get_logger(),
       "FollowWaypoints action server is not available."
       " Is the initial pose set?");
     return;

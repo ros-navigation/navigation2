@@ -32,7 +32,8 @@ string sanitize_node_name(const string & potential_node_name)
   string node_name(potential_node_name);
   // read this as `replace` characters in `node_name` `if` not alphanumeric.
   // replace with '_'
-  replace_if(begin(node_name), end(node_name),
+  replace_if(
+    begin(node_name), end(node_name),
     [](auto c) {return !isalnum(c);},
     '_');
   return node_name;
@@ -59,12 +60,14 @@ std::string time_to_string(size_t len)
   auto timestring = to_string(timecount);
   if (timestring.length() >= len) {
     // if `timestring` is shorter, put it at the end of `output`
-    output.replace(0, len,
+    output.replace(
+      0, len,
       timestring,
       timestring.length() - len, len);
   } else {
     // if `output` is shorter, just copy in the end of `timestring`
-    output.replace(len - timestring.length(), timestring.length(),
+    output.replace(
+      len - timestring.length(), timestring.length(),
       timestring,
       0, timestring.length());
   }

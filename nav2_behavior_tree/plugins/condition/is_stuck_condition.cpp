@@ -45,9 +45,10 @@ public:
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-    odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("odom",
-        rclcpp::SystemDefaultsQoS(),
-        std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
+    odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
+      "odom",
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
     RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
 
@@ -134,7 +135,8 @@ public:
 
     // Detect if robot bumped into something by checking for abnormal deceleration
     if (current_accel_ < brake_accel_limit_) {
-      RCLCPP_DEBUG(node_->get_logger(), "Current deceleration is beyond brake limit."
+      RCLCPP_DEBUG(
+        node_->get_logger(), "Current deceleration is beyond brake limit."
         " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
 
       return true;

@@ -25,9 +25,11 @@ RecoveryServer::RecoveryServer()
 : nav2_util::LifecycleNode("nav2_recoveries", "", true),
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
-  declare_parameter("costmap_topic",
+  declare_parameter(
+    "costmap_topic",
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  declare_parameter("footprint_topic",
+  declare_parameter(
+    "footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
@@ -37,9 +39,11 @@ RecoveryServer::RecoveryServer()
     std::string("nav2_recoveries/BackUp"),
     std::string("nav2_recoveries/Wait")};
 
-  declare_parameter("plugin_names",
+  declare_parameter(
+    "plugin_names",
     rclcpp::ParameterValue(plugin_names));
-  declare_parameter("plugin_types",
+  declare_parameter(
+    "plugin_types",
     rclcpp::ParameterValue(plugin_types));
 }
 
@@ -86,12 +90,14 @@ RecoveryServer::loadRecoveryPlugins()
 
   for (uint i = 0; i != plugin_names_.size(); i++) {
     try {
-      RCLCPP_INFO(get_logger(), "Creating recovery plugin %s of type %s",
+      RCLCPP_INFO(
+        get_logger(), "Creating recovery plugin %s of type %s",
         plugin_names_[i].c_str(), plugin_types_[i].c_str());
       recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_types_[i]));
       recoveries_.back()->configure(node, plugin_names_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(get_logger(), "Failed to create recovery %s of type %s."
+      RCLCPP_FATAL(
+        get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),
         ex.what());
       exit(-1);

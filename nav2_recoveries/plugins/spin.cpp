@@ -45,19 +45,23 @@ Spin::~Spin()
 
 void Spin::onConfigure()
 {
-  nav2_util::declare_parameter_if_not_declared(node_,
+  nav2_util::declare_parameter_if_not_declared(
+    node_,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
   node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 
-  nav2_util::declare_parameter_if_not_declared(node_,
+  nav2_util::declare_parameter_if_not_declared(
+    node_,
     "max_rotational_vel", rclcpp::ParameterValue(1.0));
   node_->get_parameter("max_rotational_vel", max_rotational_vel_);
 
-  nav2_util::declare_parameter_if_not_declared(node_,
+  nav2_util::declare_parameter_if_not_declared(
+    node_,
     "min_rotational_vel", rclcpp::ParameterValue(0.4));
   node_->get_parameter("min_rotational_vel", min_rotational_vel_);
 
-  nav2_util::declare_parameter_if_not_declared(node_,
+  nav2_util::declare_parameter_if_not_declared(
+    node_,
     "rotational_acc_lim", rclcpp::ParameterValue(3.2));
   node_->get_parameter("rotational_acc_lim", rotational_acc_lim_);
 }
@@ -73,7 +77,8 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
   initial_yaw_ = tf2::getYaw(current_pose.pose.orientation);
 
   cmd_yaw_ = -command->target_yaw;
-  RCLCPP_INFO(node_->get_logger(), "Turning %0.2f for spin recovery.",
+  RCLCPP_INFO(
+    node_->get_logger(), "Turning %0.2f for spin recovery.",
     cmd_yaw_);
   return Status::SUCCEEDED;
 }

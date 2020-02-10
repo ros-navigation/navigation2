@@ -35,7 +35,8 @@ BackUp::~BackUp()
 
 void BackUp::onConfigure()
 {
-  nav2_util::declare_parameter_if_not_declared(node_,
+  nav2_util::declare_parameter_if_not_declared(
+    node_,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
   node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
@@ -43,7 +44,8 @@ void BackUp::onConfigure()
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
-    RCLCPP_INFO(node_->get_logger(), "Backing up in Y and Z not supported, "
+    RCLCPP_INFO(
+      node_->get_logger(), "Backing up in Y and Z not supported, "
       "will only move in X.");
   }
 

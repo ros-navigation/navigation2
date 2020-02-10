@@ -253,7 +253,8 @@ public:
       int error_y = abs_dx / 2;
       int error_z = abs_dx / 2;
 
-      bresenham3D(at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z,
+      bresenham3D(
+        at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z,
         offset_dx, offset_dy, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dx));
       return;
     }
@@ -263,7 +264,8 @@ public:
       int error_x = abs_dy / 2;
       int error_z = abs_dy / 2;
 
-      bresenham3D(at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z,
+      bresenham3D(
+        at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z,
         offset_dy, offset_dx, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dy));
       return;
     }
@@ -272,7 +274,8 @@ public:
     int error_x = abs_dz / 2;
     int error_y = abs_dz / 2;
 
-    bresenham3D(at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz,
+    bresenham3D(
+      at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz,
       offset_dx, offset_dy, offset, z_mask, (unsigned int)(scale * abs_dz));
   }
 

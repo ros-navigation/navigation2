@@ -170,7 +170,20 @@ class NavTester(Node):
 
     def shutdown(self):
         self.info_msg('Shutting down')
-        transition_service = 'lifecycle_manager/manage_nodes'
+        transition_service = 'lifecycle_manager_navigation/manage_nodes'
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        while not mgr_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg(transition_service + ' service not available, waiting...')
+
+        req = ManageLifecycleNodes.Request()
+        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        future = mgr_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        try:
+            future.result()
+        except Exception as e:
+            self.error_msg('Service call failed %r' % (e,))
+        transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(transition_service + ' service not available, waiting...')

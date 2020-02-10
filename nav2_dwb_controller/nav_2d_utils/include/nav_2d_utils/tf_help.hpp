@@ -72,11 +72,13 @@ bool transformPose(
     if ((rclcpp::Time(in_pose.header.stamp) - rclcpp::Time(transform.header.stamp)) >
       transform_tolerance)
     {
-      RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+      RCLCPP_ERROR(
+        rclcpp::get_logger("tf_help"),
         "Transform data too old when converting from %s to %s",
         in_pose.header.frame_id.c_str(),
         frame.c_str());
-      RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+      RCLCPP_ERROR(
+        rclcpp::get_logger("tf_help"),
         "Data time: %ds %uns, Transform time: %ds %uns",
         in_pose.header.stamp.sec, in_pose.header.stamp.nanosec,
         transform.header.stamp.sec, transform.header.stamp.nanosec);
@@ -86,7 +88,8 @@ bool transformPose(
       return true;
     }
   } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger("tf_help"),
+    RCLCPP_ERROR(
+      rclcpp::get_logger("tf_help"),
       "Exception in transformPose: %s", ex.what());
     return false;
   }

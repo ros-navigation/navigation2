@@ -105,8 +105,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  xml_string_ = std::string(std::istreambuf_iterator<char>(xml_file),
-      std::istreambuf_iterator<char>());
+  xml_string_ = std::string(
+    std::istreambuf_iterator<char>(xml_file),
+    std::istreambuf_iterator<char>());
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
@@ -249,7 +250,8 @@ BtNavigator::initializeGoalPose()
 {
   auto goal = action_server_->get_current_goal();
 
-  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
+  RCLCPP_INFO(
+    get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Update the goal pose on the blackboard

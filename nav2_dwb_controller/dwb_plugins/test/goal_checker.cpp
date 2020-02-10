@@ -63,11 +63,15 @@ void checkMacro(
   v.y = yv;
   v.theta = thetav;
   if (expected_result) {
-    EXPECT_TRUE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
-      nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_TRUE(
+      gc.isGoalReached(
+        nav_2d_utils::pose2DToPose(pose0),
+        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
   } else {
-    EXPECT_FALSE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
-      nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_FALSE(
+      gc.isGoalReached(
+        nav_2d_utils::pose2DToPose(pose0),
+        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
   }
 }
 

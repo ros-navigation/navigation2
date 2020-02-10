@@ -102,7 +102,8 @@ public:
     nh_ = nh;
     dwb_plugin_name_ = ns;
     if (!nh_->has_parameter(dwb_plugin_name_ + "." + name_ + ".scale")) {
-      nh_->declare_parameter(dwb_plugin_name_ + "." + name_ + ".scale",
+      nh_->declare_parameter(
+        dwb_plugin_name_ + "." + name_ + ".scale",
         rclcpp::ParameterValue(1.0));
     }
     nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
