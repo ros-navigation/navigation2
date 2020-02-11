@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2017, Locus Robotics
+ *  Copyright (c) 2018, Locus Robotics
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,47 +32,38 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
-#define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
+#ifndef DWB_CORE__TRAJECTORY_UTILS_HPP_
+#define DWB_CORE__TRAJECTORY_UTILS_HPP_
 
-#include <memory>
-#include <string>
+#include "dwb_msgs/msg/trajectory2_d.hpp"
 
-#include "dwb_plugins/standard_traj_generator.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-
-namespace dwb_plugins
+namespace dwb_local_planner
 {
+
 /**
- * @class LimitedAccelGenerator
- * @brief Limits the acceleration in the generated trajectories to a fraction of the simulated time.
+ * @brief Helper function to find a pose in the trajectory with a particular time time_offset
+ * @param trajectory The trajectory to search
+ * @param time_offset The desired time_offset
+ * @return reference to the pose that is closest to the particular time offset
+ *
+ * Linearly searches through the poses. Once the poses time_offset is greater than the desired time_offset,
+ * the search ends, since the poses have increasing time_offsets.
  */
-class LimitedAccelGenerator : public StandardTrajectoryGenerator
-{
-public:
-  void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
-    const std::string & plugin_name) override;
-  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
+const geometry_msgs::msg::Pose2D & getClosestPose(
+  const dwb_msgs::msg::Trajectory2D & trajectory,
+  const double time_offset);
 
-protected:
-  /**
-   * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits
-   *
-   * Unlike the StandardTrajectoryGenerator, the velocity remains constant in the LimitedAccelGenerator
-   *
-   * @param cmd_vel Desired velocity
-   * @param start_vel starting velocity
-   * @param dt amount of time in seconds
-   * @return cmd_vel
-   */
-  nav_2d_msgs::msg::Twist2D computeNewVelocity(
-    const nav_2d_msgs::msg::Twist2D & cmd_vel,
-    const nav_2d_msgs::msg::Twist2D & start_vel,
-    const double dt) override;
-  double acceleration_time_;
-  std::string plugin_name_;
-};
-}  // namespace dwb_plugins
+/**
+ * @brief Helper function to create a pose with an exact time_offset by linearly interpolating between existing poses
+ * @param trajectory The trajectory with pose and time offset information
+ * @param time_offset The desired time_offset
+ * @return New Pose2D with interpolated values
+ * @note If the given time offset is outside the bounds of the trajectory, the return pose will be either the first or last pose.
+ */
+geometry_msgs::msg::Pose2D projectPose(
+  const dwb_msgs::msg::Trajectory2D & trajectory,
+  const double time_offset);
 
-#endif  // DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
+}  // namespace dwb_local_planner
+
+#endif  // DWB_CORE__TRAJECTORY_UTILS_HPP_

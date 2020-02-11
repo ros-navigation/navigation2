@@ -45,6 +45,7 @@ add_library(dwb_core SHARED
   src/dwb_local_planner.cpp
   src/publisher.cpp
   src/illegal_trajectory_tracker.cpp
+  src/trajectory_utils.cpp
 )
 
 # prevent pluginlib from using boost

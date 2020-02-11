@@ -92,6 +92,9 @@ void DWBLocalPlanner::configure(
   declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    node_, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
+    rclcpp::ParameterValue(true));
 
   std::string traj_generator_name;
   std::string goal_checker_name;
@@ -106,6 +109,9 @@ void DWBLocalPlanner::configure(
   node_->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node_->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node_->get_parameter(dwb_plugin_name_ + ".goal_checker_name", goal_checker_name);
+  node_->get_parameter(
+    dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
+    short_circuit_trajectory_evaluation_);
 
   pub_ = std::make_unique<DWBPublisher>(node_, dwb_plugin_name_);
   pub_->on_configure();
@@ -285,9 +291,11 @@ DWBLocalPlanner::isGoalReached(
   local_start_pose = nav_2d_utils::pose2DToPoseStamped(local_start_pose2d);
   local_goal_pose = nav_2d_utils::pose2DToPoseStamped(local_goal_pose2d);
 
-  return goal_checker_->isGoalReached(
-    local_start_pose.pose,
-    local_goal_pose.pose, velocity);
+  bool ret = goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
+  if (ret) {
+    RCLCPP_INFO(rclcpp::get_logger("DWBLocalPlanner"), "Goal reached!");
+  }
+  return ret;
 }
 
 void
@@ -297,6 +305,9 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
   for (TrajectoryCritic::Ptr critic : critics_) {
     critic->reset();
   }
+
+  traj_generator_->reset();
+  goal_checker_->reset();
 
   pub_->publishGlobalPlan(path2d);
   global_plan_ = path2d;
@@ -486,7 +497,7 @@ DWBLocalPlanner::scoreTrajectory(
     cs.raw_score = critic_score;
     score.scores.push_back(cs);
     score.total += critic_score * cs.scale;
-    if (best_score > 0 && score.total > best_score) {
+    if (short_circuit_trajectory_evaluation_ && best_score > 0 && score.total > best_score) {
       // since we keep adding positives, once we are worse than the best, we will stay worse
       break;
     }

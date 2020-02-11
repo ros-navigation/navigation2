@@ -51,6 +51,7 @@ void checkMacro(
   double xv, double yv, double thetav,
   bool expected_result)
 {
+  gc.reset();
   geometry_msgs::msg::Pose2D pose0, pose1;
   pose0.x = x0;
   pose0.y = y0;

@@ -105,6 +105,14 @@ Parameters
 
 :RotateToGoal.xy_goal_tolerance:
 
+:RotateToGoal.stateful:
+
+:RotateToGoal.trans_stopped_velocity:
+
+:RotateToGoal.slowing_factor:
+
+:RotateToGoal.lookahead_time:
+
 .. rst-class:: content-collapse
 
 Additional Parameters

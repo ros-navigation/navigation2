@@ -142,6 +142,11 @@ Hosts the `DWB` controller.
         vy_samples: 5
         xy_goal_tolerance: 0.25
         yaw_goal_tolerance: 0.25
+        short_circuit_trajectory_evaluation: True
+        trans_stopped_velocity: 0.25
+        slowing_factor: 5.0
+        lookahead_time: -1.0
+        stateful: True
 
 
 .. rst-class:: content-collapse
