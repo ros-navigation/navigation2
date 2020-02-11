@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cmath>
 #include <dwb_core/trajectory_utils.hpp>
 #include <dwb_core/exceptions.hpp>
 #include <rclcpp/duration.hpp>
+#include <cmath>
 
 namespace dwb_local_planner
 {

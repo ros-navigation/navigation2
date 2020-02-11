@@ -281,7 +281,7 @@ TEST(TrajectoryGenerator, basic)
   matchTwist(res.velocity, forward);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
   int n = res.poses.size();
-  EXPECT_EQ(n, 3);
+  EXPECT_EQ(n, 4);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -303,7 +303,7 @@ TEST(TrajectoryGenerator, basic_no_last_point)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], 0.255, 0, 0);
+  matchPose(res.poses[n - 2], 0.255, 0, 0);
 }
 
 TEST(TrajectoryGenerator, too_slow)
@@ -318,7 +318,7 @@ TEST(TrajectoryGenerator, too_slow)
   matchTwist(res.velocity, cmd);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
   int n = res.poses.size();
-  EXPECT_EQ(n, 2);
+  EXPECT_EQ(n, 3);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -337,7 +337,7 @@ TEST(TrajectoryGenerator, holonomic)
   matchTwist(res.velocity, cmd);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
   int n = res.poses.size();
-  EXPECT_EQ(n, 3);
+  EXPECT_EQ(n, 4);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -359,7 +359,7 @@ TEST(TrajectoryGenerator, twisty)
   matchTwist(res.velocity, cmd);
   EXPECT_NEAR(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME, 1.0E-5);
   int n = res.poses.size();
-  EXPECT_EQ(n, 9);
+  EXPECT_EQ(n, 10);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -380,7 +380,7 @@ TEST(TrajectoryGenerator, sim_time)
   matchTwist(res.velocity, forward);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), sim_time);
   int n = res.poses.size();
-  EXPECT_EQ(n, 3);
+  EXPECT_EQ(n, 4);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -401,7 +401,7 @@ TEST(TrajectoryGenerator, accel)
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), 5.0);
-  ASSERT_EQ(res.poses.size(), 6u);
+  ASSERT_EQ(res.poses.size(), 7u);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.1, 0, 0);
   matchPose(res.poses[2], 0.3, 0, 0);
@@ -425,7 +425,7 @@ TEST(TrajectoryGenerator, dwa)
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
   EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), 5.0);
-  ASSERT_EQ(res.poses.size(), 6u);
+  ASSERT_EQ(res.poses.size(), 7u);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.3, 0, 0);
   matchPose(res.poses[2], 0.6, 0, 0);

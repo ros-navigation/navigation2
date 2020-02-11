@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_LOCAL_PLANNER_TRAJECTORY_UTILS_H
-#define DWB_LOCAL_PLANNER_TRAJECTORY_UTILS_H
+#ifndef DWB_CORE__TRAJECTORY_UTILS_HPP_
+#define DWB_CORE__TRAJECTORY_UTILS_HPP_
 
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 
@@ -66,4 +66,4 @@ geometry_msgs::msg::Pose2D projectPose(
 
 }  // namespace dwb_local_planner
 
-#endif  // DWB_LOCAL_PLANNER_TRAJECTORY_UTILS_H
+#endif  // DWB_CORE__TRAJECTORY_UTILS_HPP_
