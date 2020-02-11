@@ -36,7 +36,7 @@ BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_l
 
 BtStatus
 BehaviorTreeEngine::run(
-  std::unique_ptr<BT::Tree> & tree,
+  BT::Tree * tree,
   std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
