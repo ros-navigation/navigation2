@@ -58,7 +58,7 @@ def generate_launch_description():
 
     nav2_bringup = launch.actions.IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'nav2_bringup_launch.py')),
+            os.path.join(launch_dir, 'bringup_launch.py')),
         launch_arguments={'map': map_yaml_file,
                           'use_sim_time': 'True',
                           'autostart': 'False'}.items())

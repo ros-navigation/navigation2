@@ -85,7 +85,7 @@ def generate_launch_description():
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir,
-                                                       'nav2_localization_launch.py')),
+                                                       'localization_launch.py')),
             launch_arguments={'namespace': namespace,
                               'map': map_yaml_file,
                               'use_sim_time': use_sim_time,
@@ -94,7 +94,7 @@ def generate_launch_description():
                               'use_lifecycle_mgr': 'false'}.items()),
 
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
             launch_arguments={'namespace': namespace,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,

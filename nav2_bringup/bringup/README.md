@@ -47,7 +47,7 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 
 ```bash
 source /opt/ros/dashing/setup.bash
-ros2 launch nav2_bringup nav2_bringup_launch.py use_sim_time:=True autostart:=True \
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True \
 map:=<full/path/to/map.yaml>
 ```
 
@@ -73,7 +73,7 @@ To view the robot model in RViz:
 A convenience file is provided to launch Gazebo, RVIZ and Navigation2 using a single command:
 
 ```bash
-ros2 launch nav2_bringup nav2_tb3_simulation_launch.py <settings>
+ros2 launch nav2_bringup tb3_simulation_launch.py <settings>
 ```
 
 Where `<settings>` can used to replace any of the default options, for example:
@@ -98,7 +98,7 @@ export TURTLEBOT3_MODEL=waffle
 Also, a file for launching **two** robots with **independent** navigation stacks is provided:
 
 ```bash
-ros2 launch nav2_bringup nav2_multi_tb3_simulation_launch.py <settings>
+ros2 launch nav2_bringup multi_tb3_simulation_launch.py <settings>
 ```
 
 
@@ -120,7 +120,7 @@ ros2 launch nav2_bringup nav2_multi_tb3_simulation_launch.py <settings>
 
 ```bash
 source /opt/ros/dashing/setup.bash
-ros2 launch nav2_bringup nav2_bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy
+ros2 launch nav2_bringup bringup_launch.py map:=<full/path/to/map.yaml> map_type:=occupancy
 ```
 
 ### Terminal 2 : Launch RVIZ

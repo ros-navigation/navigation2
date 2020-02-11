@@ -136,7 +136,7 @@ def generate_launch_description():
         group = GroupAction([
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                        os.path.join(launch_dir, 'nav2_rviz_launch.py')),
+                        os.path.join(launch_dir, 'rviz_launch.py')),
                 condition=IfCondition(use_rviz),
                 launch_arguments={
                                   'namespace': TextSubstitution(text=robot['name']),
@@ -146,7 +146,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir,
                                                            'launch',
-                                                           'nav2_tb3_simulation_launch.py')),
+                                                           'tb3_simulation_launch.py')),
                 launch_arguments={'namespace': robot['name'],
                                   'use_namespace': 'True',
                                   'map': map_yaml_file,
