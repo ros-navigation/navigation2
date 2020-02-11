@@ -833,7 +833,7 @@ the most green and the worst being the most red.</td>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">publish_transformed_plan:</th></tr>
-<tr class="field-odd field"><td>&#160;</td><td class="field-body"><table border="1" class="first last docutils">
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><table border="1" class="first docutils">
 <colgroup>
 <col width="17%" />
 <col width="83%" />
@@ -853,6 +853,95 @@ local frame of reference. This is published on the
 </tbody>
 </table>
 </td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">short_circuit_trajectory_evaluation:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><table border="1" class="first docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>type</strong></td>
+<td>bool</td>
+</tr>
+<tr class="row-even"><td><strong>default</strong></td>
+<td>true</td>
+</tr>
+<tr class="row-odd"><td><strong>description</strong></td>
+<td>This parameter allows process to move forward if trajectories score by
+critics is just equal to the best score. As after this point it would be
+pointless to increse the score as it will always be more than best score.</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">trans_stopped_velocity:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><table border="1" class="first docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>type</strong></td>
+<td>double</td>
+</tr>
+<tr class="row-even"><td><strong>default</strong></td>
+<td>0.25</td>
+</tr>
+<tr class="row-odd"><td><strong>description</strong></td>
+<td>Minimal speed to check if the robot traj is if rotating near the goal.</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">slowing_factor:</th><td class="field-body"><table border="1" class="first docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>type</strong></td>
+<td>double</td>
+</tr>
+<tr class="row-even"><td><strong>default</strong></td>
+<td>5.0</td>
+</tr>
+<tr class="row-odd"><td><strong>description</strong></td>
+<td>If true, publishes the received path after it has been transformed into the
+local frame of reference. This is published on the
+<strong>transformed_global_plan</strong> topic and can be visualized in RViz</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">lookahead_time:</th><td class="field-body"><table border="1" class="first docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>type</strong></td>
+<td>double</td>
+</tr>
+<tr class="row-even"><td><strong>default</strong></td>
+<td>-1.0</td>
+</tr>
+<tr class="row-odd"><td><strong>description</strong></td>
+<td>If the <cite>lookahead_time</cite> parameter is negative, the pose evaluated will be
+the last pose in the trajectory, which is the same as DWA’s behavior. This
+is the default. Otherwise, a new pose will be projected using the
+dwb_local_planner::projectPose. By using a lookahead time shorter than
+sim_time, the critic will be less concerned about overshooting the goal yaw
+and thus will continue to turn faster for longer.</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">stateful:</th><td class="field-body"></td>
 </tr>
 </tbody>
 </table>
