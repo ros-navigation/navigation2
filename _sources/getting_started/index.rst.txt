@@ -51,7 +51,7 @@ Running the Example
 
    .. code-block:: bash
 
-      ros2 launch nav2_bringup nav2_simulation_launch.py
+      ros2 launch nav2_bringup tb3_simulation_launch.py
 
    This launch file will launch Navigation2 with the AMCL localizer in the
    ``turtlebot3_world`` world.
