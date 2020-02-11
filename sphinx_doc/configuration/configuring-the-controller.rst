@@ -317,6 +317,65 @@ Debug Parameters
   |                | **transformed_global_plan** topic and can be visualized in RViz            |
   +----------------+----------------------------------------------------------------------------+
 
+:short_circuit_trajectory_evaluation:
+  +----------------+----------------------------------------------------------------------------+
+  |**type**        | bool                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**default**     | true                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**description** | This parameter allows process to move forward if trajectories score by     |
+  |                | critics is just equal to the best score. As after this point it would be   |
+  |                | pointless to increse the score as it will always be more than best score.  | 
+  +----------------+----------------------------------------------------------------------------+
+
+:trans_stopped_velocity:
+  +----------------+----------------------------------------------------------------------------+
+  |**type**        | double                                                                     |
+  +----------------+----------------------------------------------------------------------------+
+  |**default**     | 0.25                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**description** | Minimal speed to check if the robot traj is if rotating near the goal.     |
+  +----------------+----------------------------------------------------------------------------+
+
+:slowing_factor:
+  +----------------+----------------------------------------------------------------------------+
+  |**type**        | double                                                                     |
+  +----------------+----------------------------------------------------------------------------+
+  |**default**     | 5.0                                                                        |
+  +----------------+----------------------------------------------------------------------------+
+  |**description** | If true, publishes the received path after it has been transformed into the|
+  |                | local frame of reference. This is published on the                         |
+  |                | **transformed_global_plan** topic and can be visualized in RViz            |
+  +----------------+----------------------------------------------------------------------------+
+
+:lookahead_time:
+  +----------------+----------------------------------------------------------------------------+
+  |**type**        | double                                                                     |
+  +----------------+----------------------------------------------------------------------------+
+  |**default**     | -1.0                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**description** | If the `lookahead_time` parameter is negative, the pose evaluated will be  |
+  |                | the last pose in the trajectory, which is the same as DWA's behavior. This |
+  |                | is the default. Otherwise, a new pose will be projected using the          |
+  |                | dwb_local_planner::projectPose. By using a lookahead time shorter than     |
+  |                | sim_time, the critic will be less concerned about overshooting the goal yaw|
+  |                | and thus will continue to turn faster for longer.                          |
+  +----------------+----------------------------------------------------------------------------+
+
+:stateful:
+  +----------------+----------------------------------------------------------------------------+
+  |**type**        | bool                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**default**     | true                                                                       |
+  +----------------+----------------------------------------------------------------------------+
+  |**description** | If the this parameter is set to true (which it is by default), once  |
+  |                | the desired cartesian difference is obtained, it will not check the        |
+  |                | cartesian difference again (until reset) and only check the yaw tolerance. |
+  |                | This handles cases where the robot may accidentally leave the desired      |
+  |                | `xy_goal_tolerance` while rotating to the desired yaw. If `stateful`       |
+  |                | is true, this won't force the robot to try to move closer to the goal      |
+  |                | again, and instead just rotate to the goal.                                |
+  +----------------+----------------------------------------------------------------------------+
 
 DWB Plugins
 ===========

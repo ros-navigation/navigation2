@@ -146,6 +146,7 @@ Hosts the `DWB` controller.
         trans_stopped_velocity: 0.25
         slowing_factor: 5.0
         lookahead_time: -1.0
+        stateful: True
 
 
 .. rst-class:: content-collapse

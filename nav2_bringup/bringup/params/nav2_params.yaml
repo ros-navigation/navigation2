@@ -117,6 +117,7 @@ controller_server:
     FollowPath.trans_stopped_velocity: 0.25
     FollowPath.slowing_factor: 5.0
     FollowPath.lookahead_time: -1.0
+    FollowPath.stateful: True
 
 controller_server_rclcpp_node:
   ros__parameters:
