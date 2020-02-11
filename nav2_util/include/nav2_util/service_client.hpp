@@ -64,7 +64,8 @@ public:
         service_name_.c_str());
     }
 
-    RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
+    RCLCPP_DEBUG(
+      node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 
@@ -91,7 +92,8 @@ public:
         service_name_.c_str());
     }
 
-    RCLCPP_DEBUG(node_->get_logger(), "%s service client: send async request",
+    RCLCPP_DEBUG(
+      node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 

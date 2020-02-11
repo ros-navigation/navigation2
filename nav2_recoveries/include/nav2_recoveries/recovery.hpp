@@ -97,8 +97,9 @@ public:
 
     node_->get_parameter("cycle_frequency", cycle_frequency_);
 
-    action_server_ = std::make_shared<ActionServer>(node_, recovery_name_,
-        std::bind(&Recovery::execute, this));
+    action_server_ = std::make_shared<ActionServer>(
+      node_, recovery_name_,
+      std::bind(&Recovery::execute, this));
 
     collision_checker_ = collision_checker;
 
@@ -155,8 +156,9 @@ protected:
     }
 
     // Log a message every second
-    auto timer = node_->create_wall_timer(1s,
-        [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
+    auto timer = node_->create_wall_timer(
+      1s,
+      [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
 
     rclcpp::Rate loop_rate(cycle_frequency_);
 
@@ -170,7 +172,8 @@ protected:
 
       // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
-        RCLCPP_ERROR(node_->get_logger(), "Received a preemption request for %s,"
+        RCLCPP_ERROR(
+          node_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();

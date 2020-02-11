@@ -48,6 +48,9 @@ namespace dwb_plugins
 /**
  * @class SimpleGoalChecker
  * @brief Goal Checker plugin that only checks the position difference
+ *
+ * This class can be stateful if the stateful parameter is set to true (which it is by default).
+ * This means that the goal checker will not check if the xy position matches again once it is found to be true.
  */
 class SimpleGoalChecker : public nav2_core::GoalChecker
 {
@@ -57,13 +60,14 @@ public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
     const std::string & plugin_name) override;
+  void reset() override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) override;
 
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
-
+  bool stateful_, check_xy_;
   // Cached squared xy_goal_tolerance_
   double xy_goal_tolerance_sq_;
 };

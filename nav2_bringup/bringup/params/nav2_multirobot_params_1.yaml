@@ -94,6 +94,7 @@ controller_server:
     FollowPath.acc_lim_x: 2.5
     FollowPath.acc_lim_y: 0.0
     FollowPath.acc_lim_theta: 3.2
+    FollowPath.decel_lim_x: -2.5
     FollowPath.decel_lim_y: 0.0
     FollowPath.decel_lim_theta: -3.2
     FollowPath.vx_samples: 20
@@ -102,16 +103,19 @@ controller_server:
     FollowPath.sim_time: 1.7
     FollowPath.linear_granularity: 0.05
     FollowPath.angular_granularity: 0.025
-    FollowPath.time_granularity: 0.05
-    FollowPath.xy_goal_tolerance: 0.25
     FollowPath.transform_tolerance: 0.2
     FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     FollowPath.BaseObstacle.scale: 0.02
-    FollowPath.PathAlign.scale: 10.0
-    FollowPath.GoalAlign.scale: 10.0
-    FollowPath.PathDist.scale: 3.0
-    FollowPath.GoalDist.scale: 4.0
-    FollowPath.RotateToGoal.scale: 2.0
+    FollowPath.PathAlign.scale: 0.0
+    FollowPath.GoalAlign.scale: 0.0
+    FollowPath.PathDist.scale: 32.0
+    FollowPath.GoalDist.scale: 24.0
+    FollowPath.RotateToGoal.scale: 32.0
+    FollowPath.short_circuit_trajectory_evaluation: True
+    FollowPath.trans_stopped_velocity: 0.25
+    FollowPath.slowing_factor: 5.0
+    FollowPath.lookahead_time: -1.0
+    FollowPath.stateful: True
 
 controller_server_rclcpp_node:
   ros__parameters:
@@ -181,9 +185,9 @@ planner_server:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
     planner_plugin_ids: ["GridBased"]
     use_sim_time: True
-    navfn.tolerance: 42.0
-    navfn.use_astar: false
-    navfn.allow_unknown: true
+    GridBased.tolerance: 2.0
+    GridBased.use_astar: false
+    GridBased.allow_unknown: true
 
 planner_server_rclcpp_node:
   ros__parameters:

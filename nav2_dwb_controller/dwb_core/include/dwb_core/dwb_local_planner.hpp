@@ -124,7 +124,7 @@ public:
    * @param best_score If positive, the threshold for early termination
    * @return The full scoring of the input trajectory
    */
-  dwb_msgs::msg::TrajectoryScore scoreTrajectory(
+  virtual dwb_msgs::msg::TrajectoryScore scoreTrajectory(
     const dwb_msgs::msg::Trajectory2D & traj,
     double best_score = -1);
 
@@ -140,7 +140,7 @@ public:
    * @param results   Output param, if not NULL, will be filled in with full evaluation results
    * @return          Best command
    */
-  nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
+  virtual nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
     const nav_2d_msgs::msg::Pose2DStamped & pose,
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
@@ -160,7 +160,7 @@ protected:
   /**
    * @brief Iterate through all the twists and find the best one
    */
-  dwb_msgs::msg::TrajectoryScore coreScoringAlgorithm(
+  virtual dwb_msgs::msg::TrajectoryScore coreScoringAlgorithm(
     const geometry_msgs::msg::Pose2D & pose,
     const nav_2d_msgs::msg::Twist2D velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
@@ -175,7 +175,8 @@ protected:
    *     and the saved global_plan_. Technically, it iterates to a pose on the path that is within prune_distance_
    *     of the robot and erases all poses before that.
    */
-  nav_2d_msgs::msg::Path2D transformGlobalPlan(const nav_2d_msgs::msg::Pose2DStamped & pose);
+  virtual nav_2d_msgs::msg::Path2D transformGlobalPlan(
+    const nav_2d_msgs::msg::Pose2DStamped & pose);
   nav_2d_msgs::msg::Path2D global_plan_;  ///< Saved Global Plan
   bool prune_plan_;
   double prune_distance_;
@@ -194,7 +195,7 @@ protected:
    * @brief Load the critic parameters from the namespace
    * @param name The namespace of this planner.
    */
-  void loadCritics();
+  virtual void loadCritics();
 
   void loadBackwardsCompatibleParameters();
 
@@ -216,6 +217,8 @@ protected:
   std::vector<TrajectoryCritic::Ptr> critics_;
 
   std::string dwb_plugin_name_;
+
+  bool short_circuit_trajectory_evaluation_;
 };
 
 }  // namespace dwb_core

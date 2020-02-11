@@ -123,7 +123,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
     base_transform_->child_frame_id = "base_link";
   }
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(1.0);
+  base_transform_->header.stamp = now() + rclcpp::Duration(1e9);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
@@ -160,7 +160,8 @@ void PlannerTester::loadDefaultMap()
   std::string file_path = "";
   char const * path = getenv("TEST_MAP");
   if (path == NULL) {
-    throw std::runtime_error("Path to map image file"
+    throw std::runtime_error(
+            "Path to map image file"
             " has not been specified in environment variable `TEST_MAP`.");
   } else {
     file_path = std::string(path);
@@ -175,7 +176,8 @@ void PlannerTester::loadDefaultMap()
         file_path, resolution, negate,
         occupancy_threshold, free_threshold, origin, mode));
   } catch (...) {
-    RCLCPP_ERROR(this->get_logger(),
+    RCLCPP_ERROR(
+      this->get_logger(),
       "Failed to load image from file: %s", file_path.c_str());
     throw;
   }
@@ -273,7 +275,8 @@ bool PlannerTester::defaultPlannerRandomTests(
   }
 
   if (using_fake_costmap_) {
-    RCLCPP_ERROR(this->get_logger(),
+    RCLCPP_ERROR(
+      this->get_logger(),
       "Randomized testing with hardcoded costmaps not implemented yet");
     return false;
   }
@@ -320,7 +323,8 @@ bool PlannerTester::defaultPlannerRandomTests(
     goal.pose.position.y = vals.second;
 
     if (!plannerTest(robot_position, goal, path)) {
-      RCLCPP_WARN(this->get_logger(), "Failed with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
+      RCLCPP_WARN(
+        this->get_logger(), "Failed with start at %0.2f, %0.2f and goal at %0.2f, %0.2f",
         robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
       ++num_fail;
     }
@@ -328,7 +332,8 @@ bool PlannerTester::defaultPlannerRandomTests(
   auto end = high_resolution_clock::now();
   auto elapsed = duration_cast<milliseconds>(end - start);
 
-  RCLCPP_INFO(this->get_logger(),
+  RCLCPP_INFO(
+    this->get_logger(),
     "Tested with %u tests. Planner failed on %u. Test time %u ms",
     number_tests, num_fail, elapsed.count());
 
@@ -400,7 +405,8 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
       static_cast<unsigned int>(std::round(pose.pose.position.y)));
 
     if (!collisionFree) {
-      RCLCPP_WARN(this->get_logger(), "Path has collision at (%.2f, %.2f)",
+      RCLCPP_WARN(
+        this->get_logger(), "Path has collision at (%.2f, %.2f)",
         pose.pose.position.x, pose.pose.position.y);
       printPath(path);
       return false;
@@ -445,10 +451,12 @@ bool PlannerTester::isWithinTolerance(
   }
   RCLCPP_WARN(this->get_logger(), "Path deviates from requested start and end points");
 
-  RCLCPP_DEBUG(this->get_logger(), "Requested path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
+  RCLCPP_DEBUG(
+    this->get_logger(), "Requested path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
     robot_position.x, robot_position.y, goal.pose.position.x, goal.pose.position.y);
 
-  RCLCPP_DEBUG(this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
+  RCLCPP_DEBUG(
+    this->get_logger(), "Computed path starts at (%.2f, %.2f) and ends at (%.2f, %.2f)",
     path_start.pose.position.x, path_start.pose.position.y,
     path_end.pose.position.x, path_end.pose.position.y);
 

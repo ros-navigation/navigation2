@@ -72,7 +72,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_configure(state);
   costmap_ = costmap_ros_->getCostmap();
 
-  RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
+  RCLCPP_DEBUG(
+    get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   tf_ = costmap_ros_->getTfBuffer();
@@ -82,7 +83,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   if (plugin_ids_.size() != plugin_types_.size()) {
-    RCLCPP_FATAL(get_logger(),
+    RCLCPP_FATAL(
+      get_logger(),
       "Planner plugin names and types sizes do not match!");
     exit(-1);
   }
@@ -91,12 +93,14 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     try {
       nav2_core::GlobalPlanner::Ptr planner =
         gp_loader_.createUniqueInstance(plugin_types_[i]);
-      RCLCPP_INFO(get_logger(), "Created global planner plugin %s of type %s",
+      RCLCPP_INFO(
+        get_logger(), "Created global planner plugin %s of type %s",
         plugin_ids_[i].c_str(), plugin_types_[i].c_str());
       planner->configure(node, plugin_ids_[i], tf_, costmap_ros_);
       planners_.insert({plugin_ids_[i], planner});
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
+      RCLCPP_FATAL(
+        get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
       exit(-1);
     }
@@ -110,9 +114,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_,
-      "compute_path_to_pose",
-      std::bind(&PlannerServer::computePlan, this));
+  action_server_ = std::make_unique<ActionServer>(
+    rclcpp_node_,
+    "compute_path_to_pose",
+    std::bind(&PlannerServer::computePlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -218,7 +223,8 @@ PlannerServer::computePlan()
       goal = action_server_->accept_pending_goal();
     }
 
-    RCLCPP_DEBUG(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    RCLCPP_DEBUG(
+      get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
@@ -228,27 +234,31 @@ PlannerServer::computePlan()
       if (planners_.size() == 1 && goal->planner_id.empty()) {
         if (!single_planner_warning_given_) {
           single_planner_warning_given_ = true;
-          RCLCPP_WARN(get_logger(), "No planners specified in action call. "
+          RCLCPP_WARN(
+            get_logger(), "No planners specified in action call. "
             "Server will use only plugin %s in server."
             " This warning will appear once.", planner_ids_concat_.c_str());
         }
         result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
       } else {
-        RCLCPP_ERROR(get_logger(), "planner %s is not a valid planner. "
+        RCLCPP_ERROR(
+          get_logger(), "planner %s is not a valid planner. "
           "Planner names are: %s", goal->planner_id.c_str(),
           planner_ids_concat_.c_str());
       }
     }
 
     if (result->path.poses.size() == 0) {
-      RCLCPP_WARN(get_logger(), "Planning algorithm %s failed to generate a valid"
+      RCLCPP_WARN(
+        get_logger(), "Planning algorithm %s failed to generate a valid"
         " path to (%.2f, %.2f)", goal->planner_id.c_str(),
         goal->pose.pose.position.x, goal->pose.pose.position.y);
       action_server_->terminate_current();
       return;
     }
 
-    RCLCPP_DEBUG(get_logger(),
+    RCLCPP_DEBUG(
+      get_logger(),
       "Found valid path of size %u to (%.2f, %.2f)",
       result->path.poses.size(), goal->pose.pose.position.x,
       goal->pose.pose.position.y);
@@ -260,7 +270,8 @@ PlannerServer::computePlan()
     action_server_->succeeded_current(result);
     return;
   } catch (std::exception & ex) {
-    RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
+    RCLCPP_WARN(
+      get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
     // TODO(orduno): provide information about fail error to parent task,
@@ -268,7 +279,8 @@ PlannerServer::computePlan()
     action_server_->terminate_current();
     return;
   } catch (...) {
-    RCLCPP_WARN(get_logger(), "Plan calculation failed, "
+    RCLCPP_WARN(
+      get_logger(), "Plan calculation failed, "
       "An unexpected error has occurred. The planner server"
       " may not be able to continue operating correctly.");
     // TODO(orduno): provide information about fail error to parent task,

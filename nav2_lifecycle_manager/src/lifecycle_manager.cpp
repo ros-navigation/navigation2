@@ -44,11 +44,13 @@ LifecycleManager::LifecycleManager()
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
 
-  manager_srv_ = create_service<ManageLifecycleNodes>(get_name() + std::string("/manage_nodes"),
-      std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
+  manager_srv_ = create_service<ManageLifecycleNodes>(
+    get_name() + std::string("/manage_nodes"),
+    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
 
-  is_active_srv_ = create_service<std_srvs::srv::Trigger>(get_name() + std::string("/is_active"),
-      std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
+  is_active_srv_ = create_service<std_srvs::srv::Trigger>(
+    get_name() + std::string("/is_active"),
+    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
 
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "_service_client", "--"});

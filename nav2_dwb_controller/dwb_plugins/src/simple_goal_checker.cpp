@@ -47,7 +47,11 @@ namespace dwb_plugins
 {
 
 SimpleGoalChecker::SimpleGoalChecker()
-: xy_goal_tolerance_(0.25), yaw_goal_tolerance_(0.25), xy_goal_tolerance_sq_(0.0625)
+: xy_goal_tolerance_(0.25),
+  yaw_goal_tolerance_(0.25),
+  stateful_(true),
+  check_xy_(true),
+  xy_goal_tolerance_sq_(0.0625)
 {
 }
 
@@ -55,28 +59,47 @@ void SimpleGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(nh,
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
     plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".stateful", rclcpp::ParameterValue(true));
 
   nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
   nh->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
+  nh->get_parameter(plugin_name + ".stateful", stateful_);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+}
+
+void SimpleGoalChecker::reset()
+{
+  check_xy_ = true;
 }
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist &)
 {
-  double dx = query_pose.position.x - goal_pose.position.x,
-    dy = query_pose.position.y - goal_pose.position.y;
-  if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
-    return false;
+  if (check_xy_) {
+    double dx = query_pose.position.x - goal_pose.position.x,
+      dy = query_pose.position.y - goal_pose.position.y;
+    if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
+      return false;
+    }
+    // We are within the window
+    // If we are stateful, change the state.
+    if (stateful_) {
+      check_xy_ = false;
+    }
   }
-  double dyaw = angles::shortest_angular_distance(tf2::getYaw(query_pose.orientation),
-      tf2::getYaw(goal_pose.orientation));
+  double dyaw = angles::shortest_angular_distance(
+    tf2::getYaw(query_pose.orientation),
+    tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 

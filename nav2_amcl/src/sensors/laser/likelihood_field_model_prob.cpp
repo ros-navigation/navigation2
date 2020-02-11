@@ -209,7 +209,8 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
     bool error = false;
 
     if (skipped_beam_count >= (beam_ind * self->beam_skip_error_threshold_)) {
-      fprintf(stderr,
+      fprintf(
+        stderr,
         "Over %f%% of the observations were not in the map - pf may have converged to wrong pose -"
         " integrating all observations\n",
         (100 * self->beam_skip_error_threshold_));

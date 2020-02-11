@@ -60,7 +60,8 @@ void LimitedAccelGenerator::initialize(
     if (controller_frequency > 0) {
       acceleration_time_ = 1.0 / controller_frequency;
     } else {
-      RCLCPP_WARN(rclcpp::get_logger("LimitedAccelGenerator"),
+      RCLCPP_WARN(
+        rclcpp::get_logger("LimitedAccelGenerator"),
         "A controller_frequency less than or equal to 0 has been set. "
         "Ignoring the parameter, assuming a rate of 20Hz");
       acceleration_time_ = 0.05;
@@ -74,25 +75,12 @@ void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & 
   velocity_iterator_->startNewIteration(current_velocity, acceleration_time_);
 }
 
-dwb_msgs::msg::Trajectory2D LimitedAccelGenerator::generateTrajectory(
-  const geometry_msgs::msg::Pose2D & start_pose,
-  const nav_2d_msgs::msg::Twist2D &,
-  const nav_2d_msgs::msg::Twist2D & cmd_vel)
+nav_2d_msgs::msg::Twist2D LimitedAccelGenerator::computeNewVelocity(
+  const nav_2d_msgs::msg::Twist2D & cmd_vel,
+  const nav_2d_msgs::msg::Twist2D & /*start_vel*/,
+  const double /*dt*/)
 {
-  dwb_msgs::msg::Trajectory2D traj;
-  traj.velocity = cmd_vel;
-  traj.duration = rclcpp::Duration::from_seconds(sim_time_);
-  geometry_msgs::msg::Pose2D pose = start_pose;
-
-  std::vector<double> steps = getTimeSteps(cmd_vel);
-  traj.poses.push_back(start_pose);
-  for (double dt : steps) {
-    //  update the position using the constant cmd_vel
-    pose = computeNewPosition(pose, cmd_vel, dt);
-    traj.poses.push_back(pose);
-  }
-
-  return traj;
+  return cmd_vel;
 }
 
 }  // namespace dwb_plugins

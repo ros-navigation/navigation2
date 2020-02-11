@@ -232,7 +232,8 @@ TEST(VelocityIterator, nonzero)
   initial.theta = 0.05;
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(initial);
   EXPECT_EQ(twists.size(), 2519u);
-  checkLimits(twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
+  checkLimits(
+    twists, 0.0, 0.225, -0.1, 0.045, -0.11000000000000003, 0.21,
     0.24622144504490268, 0.0, 0.1);
 }
 
@@ -268,14 +269,35 @@ void matchTwist(
   EXPECT_DOUBLE_EQ(a.theta, theta);
 }
 
+const double DEFAULT_SIM_TIME = 1.7;
+
 TEST(TrajectoryGenerator, basic)
 {
   auto nh = makeTestNode("basic");
   StandardTrajectoryGenerator gen;
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   gen.initialize(nh, "dwb");
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
+  int n = res.poses.size();
+  EXPECT_EQ(n, 4);
+  ASSERT_GT(n, 0);
+
+  matchPose(res.poses[0], origin);
+  matchPose(res.poses[n - 1], DEFAULT_SIM_TIME * forward.x, 0, 0);
+}
+
+TEST(TrajectoryGenerator, basic_no_last_point)
+{
+  auto nh = makeTestNode("basic_no_last_point");
+  StandardTrajectoryGenerator gen;
+  nh->set_parameters({rclcpp::Parameter("dwb.include_last_point", false)});
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
+  gen.initialize(nh, "dwb");
+  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
+  matchTwist(res.velocity, forward);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME / 2);
   int n = res.poses.size();
   EXPECT_EQ(n, 3);
   ASSERT_GT(n, 0);
@@ -288,14 +310,15 @@ TEST(TrajectoryGenerator, too_slow)
 {
   auto nh = makeTestNode("too_slow");
   StandardTrajectoryGenerator gen;
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   gen.initialize(nh, "dwb");
   nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.2;
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
   int n = res.poses.size();
-  EXPECT_EQ(n, 2);
+  EXPECT_EQ(n, 3);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
@@ -305,25 +328,28 @@ TEST(TrajectoryGenerator, holonomic)
 {
   auto nh = makeTestNode("holonomic");
   StandardTrajectoryGenerator gen;
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   gen.initialize(nh, "dwb");
   nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.3;
   cmd.y = 0.2;
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME);
   int n = res.poses.size();
-  EXPECT_EQ(n, 3);
+  EXPECT_EQ(n, 4);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 2], 0.255, 0.17, 0);
+  matchPose(res.poses[n - 1], cmd.x * DEFAULT_SIM_TIME, cmd.y * DEFAULT_SIM_TIME, 0);
 }
 
 TEST(TrajectoryGenerator, twisty)
 {
   auto nh = makeTestNode("twisty");
   StandardTrajectoryGenerator gen;
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
+  nh->set_parameters({rclcpp::Parameter("dwb.angular_granularity", 0.025)});
   gen.initialize(nh, "dwb");
   nav_2d_msgs::msg::Twist2D cmd;
   cmd.x = 0.3;
@@ -331,30 +357,34 @@ TEST(TrajectoryGenerator, twisty)
   cmd.theta = 0.111;
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, cmd, cmd);
   matchTwist(res.velocity, cmd);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 1.7);
+  EXPECT_NEAR(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME, 1.0E-5);
   int n = res.poses.size();
-  EXPECT_EQ(n, 9);
+  EXPECT_EQ(n, 10);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 2], 0.4656489295054273, -0.2649090438962528, 0.16511250000000002);
+  matchPose(
+    res.poses[n - 1], 0.5355173615993063, -0.29635287789821596,
+    cmd.theta * DEFAULT_SIM_TIME);
 }
 
 TEST(TrajectoryGenerator, sim_time)
 {
   auto nh = makeTestNode("sim_time");
-  nh->set_parameters({rclcpp::Parameter("dwb.sim_time", 2.5)});
+  const double sim_time = 2.5;
+  nh->set_parameters({rclcpp::Parameter("dwb.sim_time", sim_time)});
+  nh->set_parameters({rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 2.5);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), sim_time);
   int n = res.poses.size();
-  EXPECT_EQ(n, 3);
+  EXPECT_EQ(n, 4);
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 2], 0.375, 0, 0);
+  matchPose(res.poses[n - 2], sim_time * forward.x, 0, 0);
 }
 
 TEST(TrajectoryGenerator, accel)
@@ -370,13 +400,14 @@ TEST(TrajectoryGenerator, accel)
 
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 5.0);
-  ASSERT_EQ(res.poses.size(), 6u);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), 5.0);
+  ASSERT_EQ(res.poses.size(), 7u);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.1, 0, 0);
   matchPose(res.poses[2], 0.3, 0, 0);
   matchPose(res.poses[3], 0.6, 0, 0);
   matchPose(res.poses[4], 0.9, 0, 0);
+  matchPose(res.poses[5], 1.2, 0, 0);
 }
 
 TEST(TrajectoryGenerator, dwa)
@@ -393,13 +424,14 @@ TEST(TrajectoryGenerator, dwa)
 
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, zero, forward);
   matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.duration), 5.0);
-  ASSERT_EQ(res.poses.size(), 6u);
+  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), 5.0);
+  ASSERT_EQ(res.poses.size(), 7u);
   matchPose(res.poses[0], origin);
   matchPose(res.poses[1], 0.3, 0, 0);
   matchPose(res.poses[2], 0.6, 0, 0);
   matchPose(res.poses[3], 0.9, 0, 0);
   matchPose(res.poses[4], 1.2, 0, 0);
+  matchPose(res.poses[5], 1.5, 0, 0);
 }
 
 int main(int argc, char ** argv)

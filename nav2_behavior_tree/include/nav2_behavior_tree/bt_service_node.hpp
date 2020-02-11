@@ -46,11 +46,13 @@ public:
     service_client_ = node_->create_client<ServiceT>(service_name_);
 
     // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" service",
+    RCLCPP_INFO(
+      node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
     service_client_->wait_for_service();
 
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtServiceNode initialized",
+    RCLCPP_INFO(
+      node_->get_logger(), "\"%s\" BtServiceNode initialized",
       service_node_name_.c_str());
   }
 
@@ -85,12 +87,14 @@ public:
     auto future_result = service_client_->async_send_request(request_);
 
     rclcpp::executor::FutureReturnCode rc;
-    rc = rclcpp::spin_until_future_complete(node_,
-        future_result, server_timeout_);
+    rc = rclcpp::spin_until_future_complete(
+      node_,
+      future_result, server_timeout_);
     if (rc == rclcpp::executor::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::SUCCESS;
     } else if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
-      RCLCPP_WARN(node_->get_logger(),
+      RCLCPP_WARN(
+        node_->get_logger(),
         "Node timed out while executing service call to %s.", service_name_.c_str());
       on_server_timeout();
     }

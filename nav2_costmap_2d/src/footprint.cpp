@@ -54,16 +54,18 @@ void calculateMinAndMaxDistances(
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
     // check the distance from the robot center point to the first vertex
     double vertex_dist = distance(0.0, 0.0, footprint[i].x, footprint[i].y);
-    double edge_dist = distanceToLine(0.0, 0.0, footprint[i].x, footprint[i].y,
-        footprint[i + 1].x, footprint[i + 1].y);
+    double edge_dist = distanceToLine(
+      0.0, 0.0, footprint[i].x, footprint[i].y,
+      footprint[i + 1].x, footprint[i + 1].y);
     min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
     max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
   }
 
   // we also need to do the last vertex and the first vertex
   double vertex_dist = distance(0.0, 0.0, footprint.back().x, footprint.back().y);
-  double edge_dist = distanceToLine(0.0, 0.0, footprint.back().x, footprint.back().y,
-      footprint.front().x, footprint.front().y);
+  double edge_dist = distanceToLine(
+    0.0, 0.0, footprint.back().x, footprint.back().y,
+    footprint.front().x, footprint.front().y);
   min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
   max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
 }
@@ -176,16 +178,19 @@ bool makeFootprintFromString(
   std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
 
   if (error != "") {
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
     return false;
   }
 
   // convert vvf into points.
   if (vvf.size() < 3) {
-    RCLCPP_ERROR(rclcpp::get_logger(
+    RCLCPP_ERROR(
+      rclcpp::get_logger(
         "nav2_costmap_2d"),
       "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
     return false;
@@ -199,7 +204,8 @@ bool makeFootprintFromString(
       point.z = 0;
       footprint.push_back(point);
     } else {
-      RCLCPP_ERROR(rclcpp::get_logger(
+      RCLCPP_ERROR(
+        rclcpp::get_logger(
           "nav2_costmap_2d"),
         "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
         static_cast<int>(vvf[i].size()));

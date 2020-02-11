@@ -71,7 +71,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
 
   if (controller_types_.size() != controller_ids_.size()) {
-    RCLCPP_FATAL(get_logger(), "Size of controller names (%i) and "
+    RCLCPP_FATAL(
+      get_logger(), "Size of controller names (%i) and "
       "controller types (%i) are not the same!",
       static_cast<int>(controller_types_.size()),
       static_cast<int>(controller_ids_.size()));
@@ -82,13 +83,16 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     try {
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
-      RCLCPP_INFO(get_logger(), "Created controller : %s of type %s",
+      RCLCPP_INFO(
+        get_logger(), "Created controller : %s of type %s",
         controller_ids_[i].c_str(), controller_types_[i].c_str());
-      controller->configure(node, controller_ids_[i],
+      controller->configure(
+        node, controller_ids_[i],
         costmap_ros_->getTfBuffer(), costmap_ros_);
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+      exit(-1);
     }
   }
 
@@ -100,8 +104,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "follow_path",
-      std::bind(&ControllerServer::computeControl, this));
+  action_server_ = std::make_unique<ActionServer>(
+    rclcpp_node_, "follow_path",
+    std::bind(&ControllerServer::computeControl, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -180,31 +185,46 @@ ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
+bool ControllerServer::findControllerId(
+  const std::string & c_name,
+  std::string & current_controller)
+{
+  if (controllers_.find(c_name) == controllers_.end()) {
+    if (controllers_.size() == 1 && c_name.empty()) {
+      if (!single_controller_warning_given_) {
+        RCLCPP_WARN(
+          get_logger(), "No controller was specified in action call."
+          " Server will use only plugin loaded %s. "
+          "This warning will appear once.", controller_ids_concat_.c_str());
+        single_controller_warning_given_ = true;
+      }
+      current_controller = controllers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with controller name %s, "
+        "which does not exist. Available controllers are %s.",
+        c_name.c_str(), controller_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    current_controller = c_name;
+  }
+
+  return true;
+}
+
 void ControllerServer::computeControl()
 {
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
     std::string c_name = action_server_->get_current_goal()->controller_id;
-
-    if (controllers_.find(c_name) == controllers_.end()) {
-      if (controllers_.size() == 1 && c_name.empty()) {
-        if (!single_controller_warning_given_) {
-          RCLCPP_WARN(get_logger(), "No controller was specified in action call."
-            " Server will use only plugin loaded %s. "
-            "This warning will appear once.", controller_ids_concat_.c_str());
-          single_controller_warning_given_ = true;
-        }
-        current_controller_ = controllers_.begin()->first;
-      } else {
-        RCLCPP_ERROR(get_logger(), "FollowPath called with controller name %s, "
-          "which does not exist. Available controllers are %s.",
-          c_name.c_str(), controller_ids_concat_.c_str());
-        action_server_->terminate_current();
-        return;
-      }
+    std::string current_controller;
+    if (findControllerId(c_name, current_controller)) {
+      current_controller_ = current_controller;
     } else {
-      current_controller_ = c_name;
+      action_server_->terminate_current();
+      return;
     }
 
     setPlannerPath(action_server_->get_current_goal()->path);
@@ -239,7 +259,8 @@ void ControllerServer::computeControl()
       }
 
       if (!loop_rate.sleep()) {
-        RCLCPP_WARN(get_logger(), "Control loop missed its desired rate of %.4fHz",
+        RCLCPP_WARN(
+          get_logger(), "Control loop missed its desired rate of %.4fHz",
           controller_frequency_);
       }
     }
@@ -260,7 +281,8 @@ void ControllerServer::computeControl()
 
 void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 {
-  RCLCPP_DEBUG(get_logger(),
+  RCLCPP_DEBUG(
+    get_logger(),
     "Providing path to the controller %s", current_controller_);
   if (path.poses.empty()) {
     throw nav2_core::PlannerException("Invalid path, Path is empty.");
@@ -269,7 +291,8 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 
   auto end_pose = *(path.poses.end() - 1);
 
-  RCLCPP_DEBUG(get_logger(), "Path end point is (%.2f, %.2f)",
+  RCLCPP_DEBUG(
+    get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose.pose.position.x, end_pose.pose.position.y);
 }
 
@@ -284,8 +307,9 @@ void ControllerServer::computeAndPublishVelocity()
   progress_checker_->check(pose);
 
   auto cmd_vel_2d =
-    controllers_[current_controller_]->computeVelocityCommands(pose,
-      nav_2d_utils::twist2Dto3D(odom_sub_->getTwist()));
+    controllers_[current_controller_]->computeVelocityCommands(
+    pose,
+    nav_2d_utils::twist2Dto3D(odom_sub_->getTwist()));
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
@@ -294,8 +318,19 @@ void ControllerServer::computeAndPublishVelocity()
 void ControllerServer::updateGlobalPath()
 {
   if (action_server_->is_preempt_requested()) {
-    RCLCPP_INFO(get_logger(), "Preempting the goal. Passing the new path to the planner.");
-    setPlannerPath(action_server_->accept_pending_goal()->path);
+    RCLCPP_INFO(get_logger(), "Passing new path to controller.");
+    auto goal = action_server_->accept_pending_goal();
+    std::string current_controller;
+    if (findControllerId(goal->controller_id, current_controller)) {
+      current_controller_ = current_controller;
+    } else {
+      RCLCPP_INFO(
+        get_logger(), "Terminating action, invalid controller %s requested.",
+        goal->controller_id);
+      action_server_->terminate_current();
+      return;
+    }
+    setPlannerPath(goal->path);
   }
 }
 

@@ -183,7 +183,8 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
     const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response) -> void {
       if (node_->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-        RCLCPP_WARN(node_->get_logger(),
+        RCLCPP_WARN(
+          node_->get_logger(),
           "Received GetMap request but not in ACTIVE state, ignoring!");
         return;
       }
@@ -201,7 +202,8 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) -> void {
       // if not in ACTIVE state, ignore request
       if (node_->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-        RCLCPP_WARN(node_->get_logger(),
+        RCLCPP_WARN(
+          node_->get_logger(),
           "Received LoadMap request but not in ACTIVE state, ignoring!");
         return;
       }
@@ -215,12 +217,14 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
     };
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(topic_name_,
-      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    topic_name_,
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the occupancy grid from a file
-  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(load_map_service_name_,
-      load_map_callback);
+  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(
+    load_map_service_name_,
+    load_map_callback);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -263,7 +267,8 @@ void OccGridLoader::loadMapFromFile(const LoadParameters & loadParameters)
   Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
-  RCLCPP_INFO(node_->get_logger(), "Loading image_file: %s",
+  RCLCPP_INFO(
+    node_->get_logger(), "Loading image_file: %s",
     loadParameters.image_file_name.c_str());
   Magick::Image img(loadParameters.image_file_name);
 

@@ -41,6 +41,8 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
+#define EPSILON 1E-5
+
 using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
@@ -69,21 +71,27 @@ void KinematicParameters::initialize(
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_theta",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".max_vel_theta",
     rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_xy",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".min_speed_xy",
     rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_speed_xy",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".max_speed_xy",
     rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_speed_theta",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".min_speed_theta",
     rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_theta",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".acc_lim_theta",
     rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_theta",
+  declare_parameter_if_not_declared(
+    nh, plugin_name + ".decel_lim_theta",
     rclcpp::ParameterValue(0.0));
 
   nh->get_parameter(plugin_name + ".min_vel_x", min_vel_x_);
@@ -118,9 +126,9 @@ void KinematicParameters::initialize(
 bool KinematicParameters::isValidSpeed(double x, double y, double theta)
 {
   double vmag_sq = x * x + y * y;
-  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_) {return false;}
-  if (min_speed_xy_ >= 0.0 && vmag_sq < min_speed_xy_sq_ &&
-    min_speed_theta_ >= 0.0 && fabs(theta) < min_speed_theta_) {return false;}
+  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_ + EPSILON) {return false;}
+  if (min_speed_xy_ >= 0.0 && vmag_sq + EPSILON < min_speed_xy_sq_ &&
+    min_speed_theta_ >= 0.0 && fabs(theta) + EPSILON < min_speed_theta_) {return false;}
   if (vmag_sq == 0.0 && theta == 0.0) {return false;}
   return true;
 }

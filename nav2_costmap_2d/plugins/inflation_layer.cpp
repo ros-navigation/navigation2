@@ -144,7 +144,8 @@ InflationLayer::onFootprintChanged()
   computeCaches();
   need_reinflation_ = true;
 
-  RCLCPP_DEBUG(rclcpp::get_logger(
+  RCLCPP_DEBUG(
+    rclcpp::get_logger(
       "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
@@ -161,14 +162,16 @@ InflationLayer::updateCosts(
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  RCLCPP_FATAL_EXPRESSION(rclcpp::get_logger("nav2_costmap_2d"),
+  RCLCPP_FATAL_EXPRESSION(
+    rclcpp::get_logger("nav2_costmap_2d"),
     !inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
 
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
 
   if (seen_.size() != size_x * size_y) {
-    RCLCPP_WARN(rclcpp::get_logger(
+    RCLCPP_WARN(
+      rclcpp::get_logger(
         "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
   }

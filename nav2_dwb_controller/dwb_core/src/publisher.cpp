@@ -57,18 +57,27 @@ DWBPublisher::DWBPublisher(
   const std::string & plugin_name)
 : node_(node), plugin_name_(plugin_name)
 {
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_evaluation",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_evaluation",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_global_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_global_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_transformed_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_transformed_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_local_plan",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_local_plan",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_trajectories",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_trajectories",
     rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(node_, plugin_name + ".publish_cost_grid_pc",
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".publish_cost_grid_pc",
     rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node_, plugin_name + ".marker_lifetime",
+    rclcpp::ParameterValue(0.1));
 }
 
 nav2_util::CallbackReturn
@@ -88,7 +97,9 @@ DWBPublisher::on_configure()
   marker_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
   cost_grid_pc_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
 
-  prev_marker_count_ = 0;
+  double marker_lifetime;
+  node_->get_parameter(plugin_name_ + ".marker_lifetime", marker_lifetime);
+  marker_lifetime_ = rclcpp::Duration::from_seconds(marker_lifetime);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -160,9 +171,15 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
   m.pose.orientation.w = 1;
   m.scale.x = 0.002;
   m.color.a = 1.0;
+  m.lifetime = marker_lifetime_;
 
   double best_cost = results.twists[results.best_index].total;
   double worst_cost = results.twists[results.worst_index].total;
+  double denominator = worst_cost - best_cost;
+
+  if (std::fabs(denominator) < 1e-9) {
+    denominator = 1.0;
+  }
 
   unsigned currentValidId = 0;
   unsigned currentInvalidId = 0;
@@ -170,7 +187,7 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
   string invalidNamespace("InvalidTrajectories");
   for (unsigned int i = 0; i < results.twists.size(); i++) {
     const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
-    double displayLevel = (twist.total - best_cost) / (worst_cost - best_cost);
+    double displayLevel = (twist.total - best_cost) / denominator;
     if (twist.total >= 0) {
       m.color.r = displayLevel;
       m.color.g = 1.0 - displayLevel;
@@ -197,9 +214,6 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
     }
     ma.markers.push_back(m);
   }
-  addDeleteMarkers(ma, currentValidId, validNamespace);
-  addDeleteMarkers(ma, currentInvalidId, invalidNamespace);
-  prev_marker_count_ = max(currentValidId, currentInvalidId);
   marker_pub_->publish(ma);
 }
 
@@ -291,22 +305,6 @@ DWBPublisher::publishGenericPlan(
   if (!flag) {return;}
   nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
   pub.publish(path);
-}
-
-void
-DWBPublisher::addDeleteMarkers(
-  visualization_msgs::msg::MarkerArray & ma,
-  unsigned startingId,
-  string & ns
-)
-{
-  visualization_msgs::msg::Marker m;
-  m.action = m.DELETE;
-  m.ns = ns;
-  for (unsigned i = startingId; i < prev_marker_count_; i++) {
-    m.id = i;
-    ma.markers.push_back(m);
-  }
 }
 
 }  // namespace dwb_core

@@ -103,9 +103,11 @@ protected:
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
       "LifecycleRecoveryTestNode", rclcpp::NodeOptions());
-    node_lifecycle_->declare_parameter("costmap_topic",
+    node_lifecycle_->declare_parameter(
+      "costmap_topic",
       rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-    node_lifecycle_->declare_parameter("footprint_topic",
+    node_lifecycle_->declare_parameter(
+      "footprint_topic",
       rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
