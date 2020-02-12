@@ -26,6 +26,8 @@
 namespace nav2_util
 {
 
+void print_lifecycle_node_notification(const rclcpp_lifecycle::LifecycleNode * const node);
+
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 // The following is a temporary wrapper for rclcpp_lifecycle::LifecycleNode. This class
