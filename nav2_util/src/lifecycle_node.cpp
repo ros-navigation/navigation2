@@ -73,7 +73,8 @@ LifecycleNode::~LifecycleNode()
 
 void LifecycleNode::print_lifecycle_node_notification()
 {
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "\n\t%s lifecycle node launched. \n"
     "\tWaiting on external lifecycle transitions to activate\n"
     "\tSee https://design.ros2.org/articles/node_lifecycle.html for more information.", get_name());
