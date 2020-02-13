@@ -116,6 +116,8 @@ public:
   }
 
 protected:
+  void print_lifecycle_node_notification();
+
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
   bool use_rclcpp_node_;

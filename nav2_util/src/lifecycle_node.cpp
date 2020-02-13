@@ -57,6 +57,7 @@ LifecycleNode::LifecycleNode(
       "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
+  print_lifecycle_node_notification();
 }
 
 LifecycleNode::~LifecycleNode()
@@ -68,6 +69,15 @@ LifecycleNode::~LifecycleNode()
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
   }
+}
+
+void LifecycleNode::print_lifecycle_node_notification()
+{
+  RCLCPP_INFO(
+    get_logger(),
+    "\n\t%s lifecycle node launched. \n"
+    "\tWaiting on external lifecycle transitions to activate\n"
+    "\tSee https://design.ros2.org/articles/node_lifecycle.html for more information.", get_name());
 }
 
 }  // namespace nav2_util
