@@ -51,7 +51,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::string(get_name()) + std::string("_client_node"));
 
   nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
-    client_node_, "NavigateToPose");
+    client_node_, "navigate_to_pose");
 
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
@@ -242,7 +242,7 @@ WaypointFollower::goalResponseCallback(
   if (!goal_handle) {
     RCLCPP_ERROR(
       get_logger(),
-      "NavigateToPose client failed to send goal to server.");
+      "navigate_to_pose action client failed to send goal to server.");
     current_goal_status_ = ActionStatus::FAILED;
   }
 }
