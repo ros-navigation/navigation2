@@ -109,7 +109,7 @@ public:
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     debug_msg("Receiving a new goal");
 
-    if (is_active(current_handle_)) {
+    if (is_active(current_handle_) || is_running()) {
       debug_msg("An older goal is active, moving the new goal to a pending slot.");
 
       if (is_active(pending_handle_)) {
@@ -217,7 +217,9 @@ public:
 
   bool is_running()
   {
-    return execution_future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+    return execution_future_.valid() &&
+           (execution_future_.wait_for(std::chrono::milliseconds(0)) ==
+           std::future_status::timeout);
   }
 
   bool is_server_active()
