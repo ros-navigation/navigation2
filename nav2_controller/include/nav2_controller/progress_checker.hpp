@@ -16,6 +16,7 @@
 #define NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
@@ -33,7 +34,7 @@ public:
    * @brief Constructor of ProgressChecker
    * @param node Node pointer
    */
-  explicit ProgressChecker(const rclcpp::Node::SharedPtr & node);
+  explicit ProgressChecker(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
   /**
    * @brief Checks if the robot has moved compare to previous
    * pose
@@ -59,7 +60,7 @@ protected:
    */
   void reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose);
 
-  rclcpp::Node::SharedPtr nh_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr nh_;
 
   double radius_;
   rclcpp::Duration time_allowance_{0, 0};
