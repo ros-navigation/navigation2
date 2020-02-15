@@ -167,6 +167,31 @@ protected:
    */
   bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
 
+  /**
+   * @brief get the thresholded velocity
+   * @param velocity The current velocity from odometry
+   * @param threshold The minimum velocity to return non-zero
+   * @return double velocity value
+   */
+  double getThresholdedVelocity(double velocity, double threshold)
+  {
+    return (std::abs(velocity) > threshold) ? velocity : 0.0;
+  }
+
+  /**
+   * @brief get the thresholded Twist
+   * @param Twist The current Twist from odometry
+   * @return Twist Twist after thresholds applied
+   */
+  nav_2d_msgs::msg::Twist2D getThresholdedTwist(const nav_2d_msgs::msg::Twist2D & twist)
+  {
+    nav_2d_msgs::msg::Twist2D twist_thresh;
+    twist_thresh.x = getThresholdedVelocity(twist.x, min_x_velocity_threshold_);
+    twist_thresh.y = getThresholdedVelocity(twist.y, min_y_velocity_threshold_);
+    twist_thresh.theta = getThresholdedVelocity(twist.theta, min_theta_velocity_threshold_);
+    return twist_thresh;
+  }
+
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
@@ -184,6 +209,9 @@ protected:
   std::unique_ptr<ProgressChecker> progress_checker_;
 
   double controller_frequency_;
+  double min_x_velocity_threshold_;
+  double min_y_velocity_threshold_;
+  double min_theta_velocity_threshold_;
 
   // Whether we've published the single controller warning yet
   bool single_controller_warning_given_{false};
