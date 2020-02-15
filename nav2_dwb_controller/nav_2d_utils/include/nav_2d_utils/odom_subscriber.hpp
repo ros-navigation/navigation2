@@ -62,7 +62,7 @@ public:
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
   explicit OdomSubscriber(
-    nav2_util::LifecycleNode::SharedPtr & nh,
+    nav2_util::LifecycleNode::SharedPtr nh,
     std::string default_topic = "odom")
   {
     std::string odom_topic;
