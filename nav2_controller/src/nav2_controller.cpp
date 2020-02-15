@@ -68,7 +68,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  progress_checker_ = std::make_unique<ProgressChecker>(rclcpp_node_);
+  progress_checker_ = std::make_unique<ProgressChecker>(node);
 
   if (controller_types_.size() != controller_ids_.size()) {
     RCLCPP_FATAL(get_logger(), "Size of controller names (%i) and "
