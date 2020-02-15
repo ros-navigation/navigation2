@@ -117,8 +117,8 @@ public:
 
   std::shared_ptr<nav2_util::LifecycleNode> shared_from_this()
   {
-      return std::static_pointer_cast<nav2_util::LifecycleNode>(
-        rclcpp_lifecycle::LifecycleNode::shared_from_this());
+    return std::static_pointer_cast<nav2_util::LifecycleNode>(
+      rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
 protected:
