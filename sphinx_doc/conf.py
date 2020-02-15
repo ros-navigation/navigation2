@@ -172,8 +172,8 @@ html_show_sourcelink = False
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
 # bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# using the given strftime format (ei %b %d, %Y).
+html_last_updated_fmt = ''
 
 # -- Options for HTMLHelp output ------------------------------------------
 
