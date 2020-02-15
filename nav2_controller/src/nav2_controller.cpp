@@ -41,6 +41,10 @@ ControllerServer::ControllerServer()
   declare_parameter("controller_plugin_ids", default_id);
   declare_parameter("controller_plugin_types", default_type);
 
+  declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
+  declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
+  declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
+
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
@@ -62,6 +66,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("controller_plugin_ids", controller_ids_);
   get_parameter("controller_plugin_types", controller_types_);
   get_parameter("controller_frequency", controller_frequency_);
+
+  get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
+  get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
+  get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   costmap_ros_->on_configure(state);
@@ -306,10 +314,12 @@ void ControllerServer::computeAndPublishVelocity()
 
   progress_checker_->check(pose);
 
+  nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
+
   auto cmd_vel_2d =
     controllers_[current_controller_]->computeVelocityCommands(
     pose,
-    nav_2d_utils::twist2Dto3D(odom_sub_->getTwist()));
+    nav_2d_utils::twist2Dto3D(twist));
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
@@ -360,7 +370,8 @@ bool ControllerServer::isGoalReached()
     return false;
   }
 
-  geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(odom_sub_->getTwist());
+  nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
+  geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
   return controllers_[current_controller_]->isGoalReached(pose, velocity);
 }
 
