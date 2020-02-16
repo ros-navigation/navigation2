@@ -1,13 +1,13 @@
 .. _about:
 
+About and Contact
+#################
+
 .. toctree::
    :hidden:
 
    robots.rst
    ros1_comparison.rst
-
-About and Contact
-#################
 
 About
 *****
@@ -55,7 +55,7 @@ Our former leadership team includes:
 +----------------+-------------------+-----------------+---------------------+
 | Name           | Organization      | GitHub ID       | Role                |
 +================+===================+=================+=====================+
-| Matt Hansen    | Intel Corporation | mkhansen_ | Former Project Lead |
+| Matt Hansen    | Intel Corporation | mkhansen_       | Former Project Lead |
 +----------------+-------------------+-----------------+---------------------+
 | Brian Wilcox   | Intel Corporation | bpwilcox_       | Former Maintainer   |
 +----------------+-------------------+-----------------+---------------------+
