@@ -46,6 +46,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Robots Using" href="robots.html" />
 
 <link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
 
@@ -100,7 +101,7 @@
               
             
             
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../getting_started/index.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../getting_started/index.html#running-the-example">Running the Example</a></li>
@@ -251,8 +252,18 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="index.html">About Navigation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="index.html#contact">Contact</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">About and Contact</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#id1">About</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#contact">Contact</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="robots.html">Robots Using</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Navigation and Navigation 2 Comparison</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             
@@ -298,6 +309,8 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
+          <li><a href="index.html">About and Contact</a> &raquo;</li>
+        
       <li>Navigation and Navigation 2 Comparison</li>
     
     
@@ -330,15 +343,14 @@ The default plugins provided are ported from ROS1, namely: DWB, NavFn, and simil
 A new recovery for waiting a fixed duration was also added.</p>
 <p>All these changes make it possible to replace any of these nodes at launch/run time with any other algorithm that implements that same interface.
 See each package README.md for more details.</p>
-<a class="reference internal image-reference" href="../_images/move_base_compare_2.png"><img alt="Move Base -&gt; Navigation2 Overview" src="../_images/move_base_compare_2.png" style="width: 1024px;" /></a>
-</div>
+<a class="reference internal image-reference" href="../_images/move_base_compare_2.png"><img alt="Move Base -&gt; Navigation2 Overview" src="../_images/move_base_compare_2.png" style="width: 512px;" /></a>
 <div class="section" id="summary">
-<h1>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h1>
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>Ported packages:</p>
 <blockquote>
 <div><ul class="simple">
 <li>amcl: Ported to nav2_amcl</li>
 <li>map_server: Ported to nav2_map_server</li>
-<li>nav2_bt_navigator: replaces <code class="docutils literal notranslate"><span class="pre">move_base</span></code> state machine</li>
 <li>nav2_planner: Replaces global_planner, hosts <code class="docutils literal notranslate"><span class="pre">N</span></code> planner plugins</li>
 <li>nav2_controller: Replaces local_planner, hosts <code class="docutils literal notranslate"><span class="pre">N</span></code> controller plugins</li>
 <li>Navfn: Ported to nav2_navfn_planner</li>
@@ -347,9 +359,10 @@ See each package README.md for more details.</p>
 <li>costmap_2d: Ported as nav2_costmap_2d</li>
 </ul>
 </div></blockquote>
-<dl class="docutils">
-<dt>New packages:</dt>
-<dd><ul class="first last simple">
+<p>New packages:</p>
+<blockquote>
+<div><ul class="simple">
+<li>nav2_bt_navigator: replaces <code class="docutils literal notranslate"><span class="pre">move_base</span></code> state machine</li>
 <li>nav2_lifecycle_manager: Handles the server program lifecycles</li>
 <li>nav2_waypoint_follower: Can take in many waypoints to execute a complex task through</li>
 <li>nav2_system_tests: A set of integration tests for CI and basic tutorials in simulation</li>
@@ -357,8 +370,8 @@ See each package README.md for more details.</p>
 <li>nav2_experimental: Experimental (and incomplete) work for deep reinforement learning controllers</li>
 <li>navigation2_behavior_trees: wrappers for the behavior tree library to call ROS action servers</li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
+</div>
 </div>
 
 
