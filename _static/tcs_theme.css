@@ -2,7 +2,7 @@
 
 /* make the page width fill the window */
 .wy-nav-content {
-   max-width: none;
+   max-width: 1400px !important;
 }
 
 /* (temporarily) add an under development tagline to the bread crumb

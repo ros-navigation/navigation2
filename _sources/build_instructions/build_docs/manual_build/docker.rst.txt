@@ -1,7 +1,7 @@
 .. _docker:
 
-Navigation2 Docker
-******************
+Docker
+******
 
 There are 2 options for docker with Navigation2:
 building a container and using the DockerHub container.

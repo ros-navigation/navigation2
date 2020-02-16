@@ -1,7 +1,7 @@
 .. _navigation2-with-slam:
 
-Navigation 2 With SLAM
-**********************
+Navigating While Mapping (SLAM)
+*******************************
 
 - `Overview`_
 - `Requirements`_
