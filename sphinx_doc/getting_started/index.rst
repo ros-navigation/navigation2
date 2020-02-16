@@ -132,5 +132,5 @@ Navigating
       Turtlebot on its way to the goal.
 
 .. image:: images/navigation_with_recovery_behaviours.gif
-    :height: 640px
+    :height: 512px
     :alt: Navigation2 with Turtlebot 3 Demo

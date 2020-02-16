@@ -22,15 +22,16 @@ All these changes make it possible to replace any of these nodes at launch/run t
 See each package README.md for more details.
 
 .. image:: images/move_base_compare_2.png
-    :width: 1024px
+    :width: 512px
     :alt: Move Base -> Navigation2 Overview
 
 Summary
-#######
+*******
+
+Ported packages:
 
   * amcl: Ported to nav2_amcl
   * map_server: Ported to nav2_map_server
-  * nav2_bt_navigator: replaces ``move_base`` state machine
   * nav2_planner: Replaces global_planner, hosts ``N`` planner plugins
   * nav2_controller: Replaces local_planner, hosts ``N`` controller plugins
   * Navfn: Ported to nav2_navfn_planner
@@ -39,6 +40,8 @@ Summary
   * costmap_2d: Ported as nav2_costmap_2d
 
 New packages:
+
+  * nav2_bt_navigator: replaces ``move_base`` state machine
   * nav2_lifecycle_manager: Handles the server program lifecycles
   * nav2_waypoint_follower: Can take in many waypoints to execute a complex task through
   * nav2_system_tests: A set of integration tests for CI and basic tutorials in simulation
