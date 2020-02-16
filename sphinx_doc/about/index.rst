@@ -1,7 +1,10 @@
 .. _about:
 
-About Navigation
-################
+About and Contact
+#################
+
+About
+*****
 
 Navigation is a community effort to lower the barrier of entry of mobile robotics technology for all.
 This project is one of the flagship projects along with MoveIt that acts as an applications entry point and frameworks for ROS.
@@ -27,31 +30,37 @@ If you or your organization are interested in sponsoring Navigation or any work 
 
 Our current leadership team includes:
 
-+----------------+------------------+------------+--------------+
-| Name           | Organization     | GitHub ID  | Current Role |
-+================+==================+============+==============+
-| Steve Macenski | Samsung Research | `SteveMacenski <https://github.com/SteveMacenski>`_.  | Project Lead |
-+----------------+------------------+------------+--------------+
-| Carl Delsey | Intel Corporation | `crdelsey <https://github.com/crdelsey>`_.  | Maintainer |
-+----------------+------------------+------------+--------------+
-| Ruffin White | UC San Diego | `ruffsl <https://github.com/ruffsl>`_.  | CI Wizard |
-+----------------+------------------+------------+--------------+
++----------------+-------------------+-------------------------------------------------------+--------------+
+| Name           | Organization      | GitHub ID                                             | Current Role |
++================+===================+=======================================================+==============+
+| Steve Macenski | Samsung Research  | `SteveMacenski <https://github.com/SteveMacenski>`_.  | Project Lead |
++----------------+-------------------+-------------------------------------------------------+--------------+
+| Carl Delsey    | Intel Corporation | `crdelsey <https://github.com/crdelsey>`_.            | Maintainer   |
++----------------+-------------------+-------------------------------------------------------+--------------+
+| Ruffin White   | UC San Diego      | `ruffsl <https://github.com/ruffsl>`_.                | CI Wizard    |
++----------------+-------------------+-------------------------------------------------------+--------------+
 
 Our former leadership team includes:
 
-+----------------+------------------+------------+--------------+
-| Name           | Organization     | GitHub ID  | Role         |
-+================+==================+============+==============+
-| Matt Hansen | Intel Corporation | `mkhansen-intel <https://github.com/mkhansen-intel>`_.  | Former Project Lead |
-+----------------+------------------+------------+--------------+
-| Brian Wilcox | Intel Corporation | `bpwilcox <https://github.com/bpwilcox>`_.  | Former Maintainer |
-+----------------+------------------+------------+--------------+
++----------------+-------------------+---------------------------------------------------------+---------------------+
+| Name           | Organization      | GitHub ID                                               | Role                |
++================+===================+=========================================================+=====================+
+| Matt Hansen    | Intel Corporation | `mkhansen-intel <https://github.com/mkhansen-intel>`_.  | Former Project Lead |
++----------------+-------------------+---------------------------------------------------------+---------------------+
+| Brian Wilcox   | Intel Corporation | `bpwilcox <https://github.com/bpwilcox>`_.              | Former Maintainer   |
++----------------+-------------------+---------------------------------------------------------+---------------------+
 
 Contact
-#######
+*******
 
 If you are interested in contacting someone about Navigation, ROS2, or related projects, please email the project leader.
 We intentionally make our emails easy to find.
 If your inquiry relates to bugs or open-source feature requests, consider posting a ticket on our GitHub project.
 If your inquiry relates to configuration support or private feature development, reach out and we may be able to connect you with
 independent consultants or contractors that know this project well.
+
+.. toctree::
+   :hidden:
+
+   robots.rst
+   ros1_comparison.rst
