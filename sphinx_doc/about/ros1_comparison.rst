@@ -22,11 +22,10 @@ All these changes make it possible to replace any of these nodes at launch/run t
 See each package README.md for more details.
 
 .. image:: images/move_base_compare_2.png
-    :width: 512px
+    :width: 700px
     :alt: Move Base -> Navigation2 Overview
 
-Summary
-*******
+**In Summary:**
 
 Ported packages:
 
