@@ -128,8 +128,8 @@ class WaypointFollowerTest(Node):
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
         future = mgr_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
         try:
+            rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:
             self.error_msg('Service call failed %r' % (e,))
@@ -142,8 +142,8 @@ class WaypointFollowerTest(Node):
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
         future = mgr_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
         try:
+            rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:
             self.error_msg('Service call failed %r' % (e,))
