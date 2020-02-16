@@ -131,6 +131,6 @@ Navigating
 
       Turtlebot on its way to the goal.
 
-.. image:: images/Navigation2_with_Turtlebot3_in_Gazebo/navigation_with_recovery_behaviours.gif
+.. image:: images/navigation_with_recovery_behaviours.gif
     :height: 640px
     :alt: Navigation2 with Turtlebot 3 Demo

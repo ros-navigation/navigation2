@@ -1,7 +1,7 @@
 .. _navigation2-on-real-turtlebot3:
 
-Navigation2 on a Physical Turtlebot 3
-*************************************
+Navigating with a Physical Turtlebot 3
+**************************************
 
 - `Overview`_
 - `Requirements`_

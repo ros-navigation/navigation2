@@ -1,7 +1,7 @@
-.. _navigation2-on-real-turtlebot3:
+.. _stvl:
 
-Navigation2 With External Costmap Plugin
-****************************************
+(STVL) Using an External Costmap Plugin
+***************************************
 
 - `Overview`_
 - `Costmap2D and STVL`_
