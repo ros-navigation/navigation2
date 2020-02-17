@@ -68,6 +68,7 @@ lcov \
 
 # Remove files in the build subdirectory.
 # Those are generated files (like messages, services, etc)
+# And system tests, which are themselves all test artifacts
 lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/build/*" \
@@ -77,6 +78,8 @@ lcov \
     "${PWD}/*/nav2_msgs/*" \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/*/nav_2d_msgs/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_system_tests/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
   --rc lcov_branch_coverage=1
 
