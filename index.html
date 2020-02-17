@@ -131,12 +131,6 @@
 <li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/manual_build/docker.html#using-dockerhub-container">Using DockerHub Container</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="build_instructions/build_docs/use_case_recommendations.html">Use Case Recommendations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/use_case_recommendations.html#developer">Developer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/use_case_recommendations.html#debugging">Debugging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/use_case_recommendations.html#build-system">Build System</a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="build_instructions/build_docs/build_troubleshooting_guide.html">Build Troubleshooting Guide</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/build_troubleshooting_guide.html#common-navigation2-dependencies-build-failures">Common Navigation2 Dependencies Build Failures</a></li>
 <li class="toctree-l3"><a class="reference internal" href="build_instructions/build_docs/build_troubleshooting_guide.html#reporting-issue">Reporting Issue</a></li>
@@ -225,31 +219,13 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="contribute/index.html">Contributing to the Project</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="contribute/contribute_guidelines.html">Contribution Guidelines</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="contribute/contribute_guidelines.html#licensing">Licensing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/contribute_guidelines.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="contribute/contribute_guidelines.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute/index.html">Contribution Guidelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribute/index.html#licensing">Licensing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute/index.html#developer-certification-of-origin-dco">Developer Certification of Origin (DCO)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute/index.html#dco-sign-off-methods">DCO Sign-Off Methods</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/contribute_guidelines.html#prerequisites">Prerequisites</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="contribute/doc_guidelines.html">Documentation Guidelines</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#headings">Headings</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="contribute/doc_guidelines.html#this-is-a-collapsible-section">This is a collapsible section</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#content-highlighting">Content Highlighting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#lists">Lists</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#multi-column-lists">Multi-column lists</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#file-names-and-commands">File names and Commands</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#internal-cross-reference-linking">Internal Cross-Reference Linking</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#non-ascii-characters">Non-ASCII Characters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#code-and-command-examples">Code and Command Examples</a></li>
-<li class="toctree-l3"><a class="reference internal" href="contribute/doc_guidelines.html#tabs-spaces-and-indenting">Tabs, spaces, and indenting</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="contribute/index.html#prerequisites">Prerequisites</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="about/index.html">About and Contact</a><ul>
@@ -355,7 +331,7 @@ but plan to support Ackermann (car-like) robots as well in the near future.</p>
 <li>Manage the lifecycle of the servers (Nav2 Lifecycle Manager)</li>
 <li>Plugins to enable your own custom algorithms and behaviors (Nav2 Core)</li>
 </ul>
-<a class="reference internal image-reference" href="_images/architectural_diagram.png"><img alt="Navigation2 Block Diagram" src="_images/architectural_diagram.png" style="width: 708px; height: 400px;" /></a>
+<a class="reference internal image-reference" href="_images/architectural_diagram.png"><img alt="Navigation2 Block Diagram" class="align-center" src="_images/architectural_diagram.png" style="width: 700px;" /></a>
 <p>We also provide a set of starting plugins to get you going. NavFn computes the shortest path
 from a pose to a goal pose using A* or Dijkstra’s algorithm. DWB will use the DWA algorithm
 to compute a control effort to follow a path, with several plugins of its own for trajectory
@@ -367,19 +343,9 @@ lifecycle.</p>
 3 (TB3), as well as how to customize it for other robots, tune the behavior for better
 performance, as well as customize the internals for advanced results. Below is an example
 of the TB3 navigating in a small lounge.</p>
-<div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-  <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
-</div><div class="section" id="sections">
+<div class="section" id="sections">
 <h3>Sections<a class="headerlink" href="#sections" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build_instructions/index.html">Build Instructions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration/index.html">Configuration Guidelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contribute/index.html">Contributing to the Project</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about/index.html">About and Contact</a></li>
-</ul>
 </div>
 </div>
 </div>
@@ -396,7 +362,7 @@ of the TB3 navigating in a small lounge.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019
+        &copy; Copyright 2020
       <span class="lastupdated">
         Last updated on Feb 17, 2020.
       </span>

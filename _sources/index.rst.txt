@@ -42,8 +42,8 @@ It has tools to:
 - Plugins to enable your own custom algorithms and behaviors (Nav2 Core)
 
 .. image:: images/architectural_diagram.png
-    :height: 400px
-    :width: 708px
+    :width: 700px
+    :align: center
     :alt: Navigation2 Block Diagram
 
 We also provide a set of starting plugins to get you going. NavFn computes the shortest path
@@ -60,16 +60,17 @@ performance, as well as customize the internals for advanced results. Below is a
 of the TB3 navigating in a small lounge.
 
 .. raw:: html
-
-    <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-      <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allowfullscreen></iframe>
-    </div>
+    <h1 align="center">
+      <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="1" allowfullscreen></iframe>
+      </div>
+    </h1>
 
 Sections
 ********
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
 
    getting_started/index.rst
    build_instructions/index.rst
