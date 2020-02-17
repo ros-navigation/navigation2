@@ -6,7 +6,7 @@ Build Troubleshooting Guide
 Common Navigation2 Dependencies Build Failures
 ==============================================
 
-* Makse sure that .bashrc file has no ROS environment variables in it. Open new terminals and try to build the packages again.
+* Make sure that .bashrc file has no ROS environment variables in it. Open new terminals and try to build the packages again.
 
 * Make sure to run rosdep for the correct ROS 2 distribution.
   ``rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro>``

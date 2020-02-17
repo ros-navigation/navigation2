@@ -59,26 +59,24 @@ Running the Example
    a Gazebo instance with the Turtlebot3 URDF, and RVIZ.
 
    If everything has started correctly, you will see the RViz and Gazebo GUIs like
-   this.
+   this:
 
-   .. figure:: /images/rviz/rviz-not-started.png
-      :scale: 50%
+   .. image:: /images/rviz/rviz-not-started.png
+      :width: 40%
+      :align: center
       :alt: Initial appearance of RViz before hitting startup button
-
-      Initial appearance of RViz before hitting startup button, in unconfigured state.
-
-   .. figure:: /images/gazebo/gazebo_turtlebot1.png
-      :scale: 50%
+   .. image:: /images/gazebo/gazebo_turtlebot1.png
+      :width: 40%
+      :align: center
       :alt: Initial appearance of Gazebo with Turtlebot 3 world
-
-      Initial appearance of Gazebo with Turtlebot 3 world
 
 4. Click the "Startup" button in the bottom left corner of RViz. This will
    cause |PN| to change to the Active state. It should
    change appearance to show the map.
 
-   .. figure:: /images/rviz/rviz_initial.png
-      :scale: 50%
+   .. image:: /images/rviz/rviz_initial.png
+      :width: 700px
+      :align: center
       :alt: Initial appearance of RViz transitioning to the Active state
 
       Initial appearance of RViz transitioning to the Active state
@@ -95,8 +93,9 @@ Navigating
 
    If you are using the defaults so far, it should look like this.
 
-   .. figure:: /images/rviz/rviz-set-initial-pose.png
-      :scale: 50%
+   .. image:: /images/rviz/rviz-set-initial-pose.png
+      :width: 700px
+      :align: center
       :alt: Approximate starting location of Turtlebot
 
       Approximate starting location of Turtlebot
@@ -109,28 +108,32 @@ Navigating
    |PN| is fully active and ready to go. You should see the robot and particle
    cloud now.
 
-   .. figure:: /images/rviz/navstack-ready.png
-      :scale: 50%
+   .. image:: /images/rviz/navstack-ready.png
+      :width: 700px
+      :align: center
       :alt: |PN| is ready. Transforms and Costmap show in RViz.
 
       |PN| is ready. Transforms and Costmap show in RViz.
 
 2. Click the "Navigaton2 Goal" button and choose a destination.
 
-   .. figure:: /images/rviz/navigate-to-pose.png
-      :scale: 50%
+   .. image:: /images/rviz/navigate-to-pose.png
+      :width: 700px
+      :align: center
       :alt: Setting the goal pose in RViz.
 
       Setting the goal pose in RViz.
 
    Watch the robot go!
 
-   .. figure:: /images/rviz/navigating.png
-      :scale: 50%
+   .. image:: /images/rviz/navigating.png
+      :width: 700px
+      :align: center
       :alt: Turtlebot on its way to the goal.
 
       Turtlebot on its way to the goal.
 
 .. image:: images/navigation_with_recovery_behaviours.gif
-    :height: 512px
+    :width: 700px
     :alt: Navigation2 with Turtlebot 3 Demo
+    :align: center
