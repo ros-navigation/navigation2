@@ -19,10 +19,6 @@ The instructions to build **Navigation 2** and **Navigation 2 Dependencies**.
 
 !!!!
 
-:ref:`use-case-recommendations`
-
-!!!!
-
 :ref:`build-troubleshooting-guide`
 
 .. toctree::
@@ -32,5 +28,4 @@ The instructions to build **Navigation 2** and **Navigation 2 Dependencies**.
    build_docs/manual_build/specific_distro_build.rst
    build_docs/quick_start.rst
    build_docs/manual_build/docker.rst
-   build_docs/use_case_recommendations
    build_docs/build_troubleshooting_guide.rst

@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Navigation 2'
-copyright = u'2019'
+copyright = u'2020'
 author = u'Various'
 
 # The version info for the project you're documenting, acts as replacement for
