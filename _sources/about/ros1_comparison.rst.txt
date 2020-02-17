@@ -1,7 +1,7 @@
 .. _ros1_comparison:
 
-Navigation and Navigation 2 Comparison
-######################################
+ROS to ROS2 Navigation
+######################
 
 ``move_base`` has been split into multiple components.
 Rather than a single monolithic state machine, navigation 2 makes use of action servers and ROS2's

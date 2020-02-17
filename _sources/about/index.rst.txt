@@ -61,7 +61,7 @@ Our former leadership team includes:
 +----------------+-------------------+-----------------+---------------------+
 
 .. _mkhansen: https://github.com/mkhansen-intel
-.. _bpwilcox: https://github.com/bpwilcox>
+.. _bpwilcox: https://github.com/bpwilcox
 
 Contact
 *******
