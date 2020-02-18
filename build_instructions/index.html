@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Build Instructions &mdash; Navigation 2 0.2.3 documentation</title>
+  <title>Build and Install &mdash; Navigation 2 0.2.3 documentation</title>
   
 
   
@@ -109,7 +109,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../getting_started/index.html#navigating">Navigating</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Build Instructions</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build and Install</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="build_docs/manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="build_docs/manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
 <li class="toctree-l3"><a class="reference internal" href="build_docs/manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
@@ -150,12 +150,11 @@
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_on_real_turtlebot3.html#launch-rviz">3-  Launch RVIZ</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_on_real_turtlebot3.html#initialize-the-location-of-turtlebot-3">4- Initialize the Location of Turtlebot 3</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_on_real_turtlebot3.html#send-a-goal-pose">5-  Send a Goal Pose</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_on_real_turtlebot3.html#videos">Videos</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../tutorials/docs/navigation2_with_slam.html">Navigating While Mapping (SLAM)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/docs/navigation2_with_slam.html">(SLAM) Navigating While Mapping</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/docs/navigation2_with_slam.html#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/docs/navigation2_with_slam.html#requirements">Requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/docs/navigation2_with_slam.html#tutorial-steps">Tutorial Steps</a><ul>
@@ -176,7 +175,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_with_stvl.html#modify-navigation2-parameter">1- Modify Navigation2 Parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_with_stvl.html#launch-navigation2">2- Launch Navigation2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_with_stvl.html#rviz">3-  RVIZ</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../tutorials/docs/navigation2_with_stvl.html#video">Video</a></li>
 </ul>
 </li>
 </ul>
@@ -281,7 +279,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Build Instructions</li>
+      <li>Build and Install</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -298,23 +296,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="build-instructions">
-<span id="id1"></span><h1>Build Instructions<a class="headerlink" href="#build-instructions" title="Permalink to this headline">¶</a></h1>
-<p>The instructions to build <strong>Navigation 2</strong> and <strong>Navigation 2 Dependencies</strong>.</p>
+  <div class="section" id="build-and-install">
+<span id="build-instructions"></span><h1>Build and Install<a class="headerlink" href="#build-and-install" title="Permalink to this headline">¶</a></h1>
+<p><strong>Install Options</strong></p>
+<p>For ROS distributions after Crystal, Navigation2 and its dependencies are released as binaries.
+You may install it via the following to get the latest stable released version:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">ros-&lt;distro&gt;-navigation2</span> <span class="pre">ros-&lt;distro&gt;-nav2-bringup</span> <span class="pre">ros-&lt;distro&gt;-turtlebot3*</span></code></div></blockquote>
 <p><strong>Build Options</strong></p>
 <dl class="docutils">
-<dt>1- Manually Build From Source: Manual step by step method to build Navigation2</dt>
+<dt>Manually Build From Source</dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="build_docs/manual_build/master_build.html#master-build"><span class="std std-ref">Build Navigation2 Master Branch</span></a></li>
 <li><a class="reference internal" href="build_docs/manual_build/specific_distro_build.html#specific-distro-build"><span class="std std-ref">Build Navigation2 for a Specific Distribution</span></a></li>
 </ul>
 </dd>
-<dt>2- Quickstart Using Initial Setup Script: An automated method to build Navigation2 in a simple and easy way.</dt>
+<dt>Quickstart Using Setup Script</dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="build_docs/quick_start.html#quick-start"><span class="std std-ref">Quickstart Using the Initial Setup Script</span></a></li>
 </ul>
 </dd>
-<dt>3- Docker Containers</dt>
+<dt>Using Docker</dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="build_docs/manual_build/docker.html#docker"><span class="std std-ref">Docker</span></a></li>
 </ul>
@@ -339,7 +341,7 @@
     <p>
         &copy; Copyright 2020
       <span class="lastupdated">
-        Last updated on Feb 17, 2020.
+        Last updated on Feb 18, 2020.
       </span>
 
     </p>

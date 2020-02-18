@@ -63,12 +63,8 @@ Running the Example
 
    .. image:: /images/rviz/rviz-not-started.png
       :width: 40%
-      :align: center
-      :alt: Initial appearance of RViz before hitting startup button
    .. image:: /images/gazebo/gazebo_turtlebot1.png
       :width: 40%
-      :align: center
-      :alt: Initial appearance of Gazebo with Turtlebot 3 world
 
 4. Click the "Startup" button in the bottom left corner of RViz. This will
    cause |PN| to change to the Active state. It should

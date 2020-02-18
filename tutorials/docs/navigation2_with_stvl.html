@@ -47,7 +47,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Configuration Guidelines" href="../../configuration/index.html" />
-    <link rel="prev" title="Navigating While Mapping (SLAM)" href="navigation2_with_slam.html" />
+    <link rel="prev" title="(SLAM) Navigating While Mapping" href="navigation2_with_slam.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
 
@@ -109,7 +109,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#navigating">Navigating</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build Instructions</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build and Install</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
@@ -150,12 +150,11 @@
 <li class="toctree-l4"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#launch-rviz">3-  Launch RVIZ</a></li>
 <li class="toctree-l4"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#initialize-the-location-of-turtlebot-3">4- Initialize the Location of Turtlebot 3</a></li>
 <li class="toctree-l4"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#send-a-goal-pose">5-  Send a Goal Pose</a></li>
-<li class="toctree-l4"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#videos">Videos</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="navigation2_with_slam.html">Navigating While Mapping (SLAM)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="navigation2_with_slam.html">(SLAM) Navigating While Mapping</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#requirements">Requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#tutorial-steps">Tutorial Steps</a><ul>
@@ -176,7 +175,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#modify-navigation2-parameter">1- Modify Navigation2 Parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#launch-navigation2">2- Launch Navigation2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rviz">3-  RVIZ</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#video">Video</a></li>
 </ul>
 </li>
 </ul>
@@ -306,9 +304,13 @@
 <li><a class="reference internal" href="#overview">Overview</a></li>
 <li><a class="reference internal" href="#costmap2d-and-stvl">Costmap2D and STVL</a></li>
 <li><a class="reference internal" href="#tutorial-steps">Tutorial Steps</a></li>
-<li><a class="reference internal" href="#video">Video</a></li>
+<li><a href="#id1"><span class="problematic" id="id2">`Video`_</span></a></li>
 </ul>
-<div class="section" id="overview">
+<h1 align="center">
+  <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe width="700" height="450" src="https://www.youtube.com/embed/TGxb1OzgmNQ" frameborder="1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</h1><div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This tutorial shows how to load and use an external plugin.
 This example uses the <a class="reference external" href="https://github.com/SteveMacenski/spatio_temporal_voxel_layer/">Spatio Temporal Voxel Layer</a> (STVL) costmap <a class="reference external" href="http://wiki.ros.org/pluginlib/">pluginlib</a> plugin as an example.
@@ -421,9 +423,6 @@ Navigation2 is now using STVL as its 3D sensing costmap layer.</p>
 <p>With RViz open and <code class="docutils literal notranslate"><span class="pre">publish_voxel_map:</span> <span class="pre">true</span></code>, you can visualize the underlying data structure’s 3D grid using the <code class="docutils literal notranslate"><span class="pre">{local,</span> <span class="pre">global}_costmap/voxel_grid</span></code> topics.
 Note: It is recommended in RViz to set the <code class="docutils literal notranslate"><span class="pre">PointCloud2</span></code> Size to your voxel size and the style to <code class="docutils literal notranslate"><span class="pre">Boxes</span></code> with a neutral color for best visualization.</p>
 </div>
-<div class="section" id="video">
-<h3>Video<a class="headerlink" href="#video" title="Permalink to this headline">¶</a></h3>
-</div>
 </div>
 </div>
 
@@ -440,7 +439,7 @@ Note: It is recommended in RViz to set the <code class="docutils literal notrans
     <p>
         &copy; Copyright 2020
       <span class="lastupdated">
-        Last updated on Feb 17, 2020.
+        Last updated on Feb 18, 2020.
       </span>
 
     </p>

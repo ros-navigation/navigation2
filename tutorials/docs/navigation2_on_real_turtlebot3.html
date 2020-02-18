@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Navigating While Mapping (SLAM)" href="navigation2_with_slam.html" />
+    <link rel="next" title="(SLAM) Navigating While Mapping" href="navigation2_with_slam.html" />
     <link rel="prev" title="Tutorials" href="../index.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
@@ -109,7 +109,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#navigating">Navigating</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build Instructions</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build and Install</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
@@ -150,12 +150,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#launch-rviz">3-  Launch RVIZ</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#initialize-the-location-of-turtlebot-3">4- Initialize the Location of Turtlebot 3</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#send-a-goal-pose">5-  Send a Goal Pose</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#videos">Videos</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="navigation2_with_slam.html">Navigating While Mapping (SLAM)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="navigation2_with_slam.html">(SLAM) Navigating While Mapping</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#requirements">Requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_with_slam.html#tutorial-steps">Tutorial Steps</a><ul>
@@ -176,7 +175,6 @@
 <li class="toctree-l4"><a class="reference internal" href="navigation2_with_stvl.html#modify-navigation2-parameter">1- Modify Navigation2 Parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="navigation2_with_stvl.html#launch-navigation2">2- Launch Navigation2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="navigation2_with_stvl.html#rviz">3-  RVIZ</a></li>
-<li class="toctree-l4"><a class="reference internal" href="navigation2_with_stvl.html#video">Video</a></li>
 </ul>
 </li>
 </ul>
@@ -306,9 +304,13 @@
 <li><a class="reference internal" href="#overview">Overview</a></li>
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
 <li><a class="reference internal" href="#tutorial-steps">Tutorial Steps</a></li>
-<li><a class="reference internal" href="#videos">Videos</a></li>
+<li><a href="#id1"><span class="problematic" id="id2">`Videos`_</span></a></li>
 </ul>
-<div class="section" id="overview">
+<h1 align="center">
+  <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe width="700" height="450" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</h1><div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a physical Turtlebot 3 robot.
 Before completing this tutorials, completing <a class="reference internal" href="../../getting_started/index.html#getting-started"><span class="std std-ref">Getting Started</span></a> is highly recommended especially if you are new to ROS and Navigation2.</p>
@@ -367,8 +369,8 @@ Make sure <cite>use_sim time</cite> is set to <strong>False</strong>, because we
 <p>Now, you should see a shadow of Turtlebot 3 robot model in the center of the plot in Rviz.
 Click on the Start button (Bottom Left) if you set the auto_start parameter to false.
 Then, the map should appear in RViz.</p>
-<a class="reference internal image-reference" href="../../_images/rviz_after_launch_view.png"><img alt="RViz after launch, auto_start = False" class="align-center" src="../../_images/rviz_after_launch_view.png" style="width: 40%;" /></a>
-<a class="reference internal image-reference" href="../../_images/rviz_slam_map_view.png"><img alt="A map generated by using SLAM in RViz" class="align-center" src="../../_images/rviz_slam_map_view.png" style="width: 40%;" /></a>
+<a class="reference internal image-reference" href="../../_images/rviz_after_launch_view.png"><img alt="../../_images/rviz_after_launch_view.png" src="../../_images/rviz_after_launch_view.png" style="width: 40%;" /></a>
+<a class="reference internal image-reference" href="../../_images/rviz_slam_map_view.png"><img alt="../../_images/rviz_slam_map_view.png" src="../../_images/rviz_slam_map_view.png" style="width: 40%;" /></a>
 </div>
 <div class="section" id="initialize-the-location-of-turtlebot-3">
 <h3>4- Initialize the Location of Turtlebot 3<a class="headerlink" href="#initialize-the-location-of-turtlebot-3" title="Permalink to this headline">¶</a></h3>
@@ -390,9 +392,6 @@ You can send Turtlebot 3 a goal position and a goal orientation by using the <st
 <a class="reference internal image-reference" href="../../_images/rviz_robot_navigating.png"><img alt="Robot navigating in RViz" class="align-center" src="../../_images/rviz_robot_navigating.png" style="width: 700px;" /></a>
 <p>Now, you can see that Turtlebot 3 moves towards the goal position in the room. See the video below.</p>
 </div>
-<div class="section" id="videos">
-<h3>Videos<a class="headerlink" href="#videos" title="Permalink to this headline">¶</a></h3>
-</div>
 </div>
 </div>
 
@@ -409,7 +408,7 @@ You can send Turtlebot 3 a goal position and a goal orientation by using the <st
     <p>
         &copy; Copyright 2020
       <span class="lastupdated">
-        Last updated on Feb 17, 2020.
+        Last updated on Feb 18, 2020.
       </span>
 
     </p>
