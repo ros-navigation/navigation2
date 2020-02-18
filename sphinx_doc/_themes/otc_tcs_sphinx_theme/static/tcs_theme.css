@@ -5,6 +5,23 @@
    max-width: 1080px;
 }
 
+/* increase the size of the side bar from 300px default to 320px */
+.wy-nav-side {
+   width: 320px;
+}
+
+.wy-side-scroll {
+   width: 340px;
+}
+
+.wy-side-nav-search {
+   width: 320px;
+}
+
+.wy-menu-vertical {
+   width: 320px;
+}
+
 /* (temporarily) add an under development tagline to the bread crumb
 .wy-breadcrumbs::after {
    content: " (Content under development)";
