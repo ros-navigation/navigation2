@@ -6,13 +6,12 @@ Navigating with a Physical Turtlebot 3
 - `Overview`_
 - `Requirements`_
 - `Tutorial Steps`_
-- `Videos`_
 
 .. raw:: html
 
     <h1 align="center">
       <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-        <iframe width="700" height="450" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe width="700" height="450" src="https://www.youtube.com/embed/ZeCds7Sv-5Q?autoplay=1" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
     </h1>
 
@@ -89,9 +88,9 @@ Click on the Start button (Bottom Left) if you set the auto_start parameter to f
 Then, the map should appear in RViz.
 
 .. image:: images/Navigation2_on_real_Turtlebot3/rviz_after_launch_view.png
-    :width: 40%
+    :width: 48%
 .. image:: images/Navigation2_on_real_Turtlebot3/rviz_slam_map_view.png
-    :width: 40%
+    :width: 45%
 
 4- Initialize the Location of Turtlebot 3
 -----------------------------------------
