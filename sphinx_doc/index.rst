@@ -60,14 +60,12 @@ performance, as well as customize the internals for advanced results. Below is a
 of the TB3 navigating in a small lounge.
 
 .. raw:: html
+
     <h1 align="center">
       <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
         <iframe width="708" height="400" src="https://www.youtube.com/embed/ZeCds7Sv-5Q" frameborder="1" allowfullscreen></iframe>
       </div>
     </h1>
-
-Sections
-********
 
 .. toctree::
    :hidden:

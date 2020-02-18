@@ -8,6 +8,14 @@
 - `Tutorial Steps`_
 - `Video`_
 
+.. raw:: html
+
+    <h1 align="center">
+      <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe width="700" height="450" src="https://www.youtube.com/embed/TGxb1OzgmNQ" frameborder="1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </h1>
+
 Overview
 ========
 
@@ -137,13 +145,3 @@ Navigation2 is now using STVL as its 3D sensing costmap layer.
 
 With RViz open and ``publish_voxel_map: true``, you can visualize the underlying data structure's 3D grid using the ``{local, global}_costmap/voxel_grid`` topics.
 Note: It is recommended in RViz to set the ``PointCloud2`` Size to your voxel size and the style to ``Boxes`` with a neutral color for best visualization.
-
-Video
------
-
-.. raw:: html
-    <h1 align="center">
-      <div style="position: relative; padding-bottom: 0%; overflow: hidden; max-width: 100%; height: auto;">
-        <iframe width="700" height="450" src="https://www.youtube.com/embed/TGxb1OzgmNQ" frameborder="1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      </div>
-    </h1>

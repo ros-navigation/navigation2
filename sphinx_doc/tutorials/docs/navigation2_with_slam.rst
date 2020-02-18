@@ -1,6 +1,6 @@
 .. _navigation2-with-slam:
 
-Navigating While Mapping (SLAM)
+(SLAM) Navigating While Mapping
 *******************************
 
 - `Overview`_

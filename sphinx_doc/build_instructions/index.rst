@@ -1,20 +1,25 @@
 .. _build-instructions:
 
-Build Instructions
-##################
+Build and Install
+#################
 
-The instructions to build **Navigation 2** and **Navigation 2 Dependencies**.
+**Install Options**
+
+For ROS distributions after Crystal, Navigation2 and its dependencies are released as binaries.
+You may install it via the following to get the latest stable released version:
+
+  ``sudo apt install ros-<distro>-navigation2 ros-<distro>-nav2-bringup ros-<distro>-turtlebot3*``
 
 **Build Options**
 
-1- Manually Build From Source: Manual step by step method to build Navigation2
+Manually Build From Source
   - :ref:`master-build`
   - :ref:`specific-distro-build`
 
-2- Quickstart Using Initial Setup Script: An automated method to build Navigation2 in a simple and easy way.
+Quickstart Using Setup Script
   - :ref:`quick-start`
 
-3- Docker Containers
+Using Docker
   - :ref:`docker`
 
 !!!!
