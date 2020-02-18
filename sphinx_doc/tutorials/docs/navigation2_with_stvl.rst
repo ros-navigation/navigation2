@@ -6,7 +6,6 @@
 - `Overview`_
 - `Costmap2D and STVL`_
 - `Tutorial Steps`_
-- `Video`_
 
 .. raw:: html
 

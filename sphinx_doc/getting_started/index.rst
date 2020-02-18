@@ -62,9 +62,9 @@ Running the Example
    this:
 
    .. image:: /images/rviz/rviz-not-started.png
-      :width: 40%
+      :width: 45%
    .. image:: /images/gazebo/gazebo_turtlebot1.png
-      :width: 40%
+      :width: 46%
 
 4. Click the "Startup" button in the bottom left corner of RViz. This will
    cause |PN| to change to the Active state. It should
