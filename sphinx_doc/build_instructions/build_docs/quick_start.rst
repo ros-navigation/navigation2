@@ -6,9 +6,8 @@ Quickstart Using the Initial Setup Script
 Steps
 =====
 
-  - Install all ROS 2 dependencies from the `ROS2 Installation page <https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup>`_
-
-  - Ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
+Install all ROS 2 dependencies from the `ROS2 Installation page <https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup>`_.
+Ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
 
 
 .. code:: bash
@@ -22,7 +21,7 @@ Steps
 
 **Summary of what's being done**
 
-The ``initial_ros_setup.sh`` script downloads four ROS workspaces and then builds them in the correct order. The four workspaces are:
+The ``initial_ros_setup.sh`` script downloads three ROS workspaces and then builds them in the correct order. The three workspaces are:
 
 - **ROS 2 release**: This is the latest ROS 2 release as defined by the repos file found `here <https://github.com/ros2/ros2>`_
 - **ROS 2 dependencies**: This is a set of ROS 2 packages that aren't included in the ROS 2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS 2 release where Navigation2 uses a different version.

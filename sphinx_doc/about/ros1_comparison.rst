@@ -9,14 +9,16 @@ low-latency, reliable communication to separate ideas. A behavior tree is used t
 This allows Navigation2 to have highly configurable navigation behavior without programming by rearranging tasks
 in a behavior tree xml file.
 
-The *nav2_bt_navigator* replaces move_base at the top level, with an *Action* interface to call the planner and controller with a configurable tree-based action model.
-
-The *nav2_bt_navigator* itself is also an *Action Server* and can also be replaced with other implementations. It uses *Behavior Trees* to make it possible to have more complex state machines and to add in recovery behaviors as additional *Action Servers*.
+The *nav2_bt_navigator* replaces ``move_base`` at the top level, with an *Action* interface to complete a navigation task with a tree-based action model.
+It uses *Behavior Trees* to make it possible to have more complex state machines and to add in recovery behaviors as additional *Action Servers*.
+These behavior trees are configurable XMLs and we provide several starting examples.
 
 The planning, recovery, and controller servers are also action servers that the BT navigator can call to compute.
 All 3 servers can host many plugins of many algorithms each and individually called from the navigation behavior tree for specific behaviors.
 The default plugins provided are ported from ROS1, namely: DWB, NavFn, and similar recoveries such as spinning and clearing costmaps.
 A new recovery for waiting a fixed duration was also added.
+These servers are called from the BT navigator through their action servers to compute a result or complete a task.
+The state is maintained by the BT navigator behavior tree.
 
 All these changes make it possible to replace any of these nodes at launch/run time with any other algorithm that implements that same interface.
 See each package README.md for more details.
@@ -25,6 +27,8 @@ See each package README.md for more details.
     :align: center
     :width: 700px
     :alt: Move Base -> Navigation2 Overview
+
+Note: ``nav2_simple_navigator`` no longer exists, it has been replaced by ``nav2_bt_navigator``.
 
 **In Summary:**
 
