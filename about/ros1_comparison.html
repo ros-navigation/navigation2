@@ -131,6 +131,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/docker.html#using-dockerhub-container">Using DockerHub Container</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/doxygen.html">Generate Doxygen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/build_troubleshooting_guide.html">Build Troubleshooting Guide</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/build_troubleshooting_guide.html#common-navigation2-dependencies-build-failures">Common Navigation2 Dependencies Build Failures</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/build_troubleshooting_guide.html#reporting-issue">Reporting Issue</a></li>
@@ -304,15 +305,19 @@ Rather than a single monolithic state machine, navigation 2 makes use of action 
 low-latency, reliable communication to separate ideas. A behavior tree is used to orchestrate these tasks.
 This allows Navigation2 to have highly configurable navigation behavior without programming by rearranging tasks
 in a behavior tree xml file.</p>
-<p>The <em>nav2_bt_navigator</em> replaces move_base at the top level, with an <em>Action</em> interface to call the planner and controller with a configurable tree-based action model.</p>
-<p>The <em>nav2_bt_navigator</em> itself is also an <em>Action Server</em> and can also be replaced with other implementations. It uses <em>Behavior Trees</em> to make it possible to have more complex state machines and to add in recovery behaviors as additional <em>Action Servers</em>.</p>
+<p>The <em>nav2_bt_navigator</em> replaces <code class="docutils literal notranslate"><span class="pre">move_base</span></code> at the top level, with an <em>Action</em> interface to complete a navigation task with a tree-based action model.
+It uses <em>Behavior Trees</em> to make it possible to have more complex state machines and to add in recovery behaviors as additional <em>Action Servers</em>.
+These behavior trees are configurable XMLs and we provide several starting examples.</p>
 <p>The planning, recovery, and controller servers are also action servers that the BT navigator can call to compute.
 All 3 servers can host many plugins of many algorithms each and individually called from the navigation behavior tree for specific behaviors.
 The default plugins provided are ported from ROS1, namely: DWB, NavFn, and similar recoveries such as spinning and clearing costmaps.
-A new recovery for waiting a fixed duration was also added.</p>
+A new recovery for waiting a fixed duration was also added.
+These servers are called from the BT navigator through their action servers to compute a result or complete a task.
+The state is maintained by the BT navigator behavior tree.</p>
 <p>All these changes make it possible to replace any of these nodes at launch/run time with any other algorithm that implements that same interface.
 See each package README.md for more details.</p>
 <a class="reference internal image-reference" href="../_images/move_base_compare_2.png"><img alt="Move Base -&gt; Navigation2 Overview" class="align-center" src="../_images/move_base_compare_2.png" style="width: 700px;" /></a>
+<p>Note: <code class="docutils literal notranslate"><span class="pre">nav2_simple_navigator</span></code> no longer exists, it has been replaced by <code class="docutils literal notranslate"><span class="pre">nav2_bt_navigator</span></code>.</p>
 <p><strong>In Summary:</strong></p>
 <p>Ported packages:</p>
 <blockquote>
@@ -353,9 +358,6 @@ See each package README.md for more details.</p>
   <div role="contentinfo">
     <p>
         &copy; Copyright 2020
-      <span class="lastupdated">
-        Last updated on Feb 18, 2020.
-      </span>
 
     </p>
   </div> 
