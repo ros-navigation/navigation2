@@ -110,31 +110,38 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../build_instructions/index.html">Build and Install</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html">Build Navigation2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html#install-ros">Install ROS</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/specific_distro_build.html#id1">Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/index.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/index.html#build">Build</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/index.html#build-navigation2-for-released-distribution">Build Navigation2 For Released Distribution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#install-ros">Install ROS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#build-navigation2">Build Navigation2</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#build-ros-2-master">Build ROS 2 Master</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#build-navigation2-dependencies">Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/master_build.html#id1">Build Navigation2 Master</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/index.html#quickstart-using-the-initial-setup-script">Quickstart Using the Initial Setup Script</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#options">Options</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html">Quickstart Using the Initial Setup Script</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html#steps">Steps</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/quick_start.html#options">Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/index.html#manually-build-master">Manually Build Master</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#build-ros-2-master">Build ROS 2 Master</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#build-navigation2-dependencies">Build Navigation2 Dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/index.html#build-navigation2-master">Build Navigation2 Master</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html">Docker</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html#building-docker-container">Building Docker Container</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/manual_build/docker.html#using-dockerhub-container">Using DockerHub Container</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/doxygen.html">Generate Doxygen</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html">Build Troubleshooting Guide</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#common-navigation2-dependencies-build-failures">Common Navigation2 Dependencies Build Failures</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#reporting-issue">Reporting Issue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/index.html#docker">Docker</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/index.html#building-docker-container">Building Docker Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/index.html#using-dockerhub-container">Using DockerHub Container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/index.html#generate-doxygen">Generate Doxygen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../build_instructions/index.html#help">Help</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html">Build Troubleshooting Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#common-navigation2-dependencies-build-failures">Common Navigation2 Dependencies Build Failures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../build_instructions/build_docs/build_troubleshooting_guide.html#reporting-issue">Reporting Issue</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -316,12 +323,12 @@ This tutorial applies to both simulated and physical robots, but will be complet
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <p>You must install Navigation2, Turtlebot3, and SLAM Toolbox.
 If you don’t have them installed, please follow <a class="reference internal" href="../../getting_started/index.html#getting-started"><span class="std std-ref">Getting Started</span></a>.</p>
-<dl class="docutils">
-<dt>SLAM Toolbox can be installed via:</dt>
-<dd><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">ros-dashing-slam-toolbox</span></code></dd>
-<dt>or from built from source in your workspace with:</dt>
-<dd><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">-b</span> <span class="pre">dashing-devel</span> <span class="pre">git&#64;github.com:stevemacenski/slam_toolbox.git</span></code></dd>
-</dl>
+<p>SLAM Toolbox can be installed via:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">ros-dashing-slam-toolbox</span></code></div></blockquote>
+<p>or from built from source in your workspace with:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">-b</span> <span class="pre">dashing-devel</span> <span class="pre">git&#64;github.com:stevemacenski/slam_toolbox.git</span></code></div></blockquote>
 </div>
 <div class="section" id="tutorial-steps">
 <h2>Tutorial Steps<a class="headerlink" href="#tutorial-steps" title="Permalink to this headline">¶</a></h2>
