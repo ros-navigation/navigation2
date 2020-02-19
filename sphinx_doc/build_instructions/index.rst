@@ -4,7 +4,7 @@ Build and Install
 #################
 
 Install
-=======
+*******
 
 Navigation2 and its dependencies are released as binaries.
 You may install it via the following to get the latest stable released version:
@@ -12,7 +12,7 @@ You may install it via the following to get the latest stable released version:
   ``sudo apt install ros-<distro>-navigation2 ros-<distro>-nav2-bringup ros-<distro>-turtlebot3*``
 
 Build
-=====
+*****
 
 There are 3 ways to build Navigation2.
 Building for a specific released distribution (e.g. ``eloquent``, ``foxy``), build Navigation2 on master branch using a quickstart setup script, or building master branch manually.
@@ -138,7 +138,7 @@ The rest of this should look familiar.
   colcon build --symlink-install
 
 Docker
-======
+******
 
 
 There are 2 options for docker with Navigation2:
@@ -178,7 +178,7 @@ We allow for you to pull the latest docker image from the master branch at any t
 !!!!
 
 Generate Doxygen
-================
+****************
 
 Run ``doxygen`` in the root of the Navigation2 repository.
 It will generate a ``/doc/*`` directory containing the documentation.
@@ -187,7 +187,7 @@ The documentation entrypoint in a browser is index.html.
 !!!!
 
 Help
-====
+****
 
 :ref:`build-troubleshooting-guide`
 
