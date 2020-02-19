@@ -33,4 +33,5 @@ Using Docker
    build_docs/manual_build/specific_distro_build.rst
    build_docs/quick_start.rst
    build_docs/manual_build/docker.rst
+   build_docs/doxygen.rst
    build_docs/build_troubleshooting_guide.rst
