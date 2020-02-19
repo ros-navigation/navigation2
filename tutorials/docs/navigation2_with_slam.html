@@ -358,8 +358,9 @@ For this tutorial, we will use <a class="reference external" href="https://githu
 <div class="section" id="working-with-slam">
 <h3>3- Working with SLAM<a class="headerlink" href="#working-with-slam" title="Permalink to this headline">¶</a></h3>
 <p>Move your robot by requesting a goal through RViz or the ROS2 CLI, ie:</p>
-<blockquote>
-<div><code class="docutils literal notranslate"><span class="pre">ros2</span> <span class="pre">topic</span> <span class="pre">pub</span> <span class="pre">/move_base_simple/goal</span> <span class="pre">geometry_msgs/PoseStamped</span> <span class="pre">&quot;{header:</span> <span class="pre">{stamp:</span> <span class="pre">{sec:</span> <span class="pre">0},</span> <span class="pre">frame_id:</span> <span class="pre">'map'},</span> <span class="pre">pose:</span> <span class="pre">{position:</span> <span class="pre">{x:</span> <span class="pre">0.2,</span> <span class="pre">y:</span> <span class="pre">0.0,</span> <span class="pre">z:</span> <span class="pre">0.0},</span> <span class="pre">orientation:</span> <span class="pre">{w:</span> <span class="pre">1.0}}}&quot;</span></code></div></blockquote>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped <span class="s2">&quot;{header: {stamp: {sec: 0}, frame_id: &#39;map&#39;}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}&quot;</span>
+</pre></div>
+</div>
 <p>You should see the map update live! To save this map to file:</p>
 <blockquote>
 <div><code class="docutils literal notranslate"><span class="pre">ros2</span> <span class="pre">run</span> <span class="pre">nav2_map_server</span> <span class="pre">map_saver</span> <span class="pre">-f</span> <span class="pre">~/map</span></code></div></blockquote>
