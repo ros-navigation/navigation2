@@ -368,7 +368,7 @@ Debug Parameters
   +----------------+----------------------------------------------------------------------------+
   |**default**     | true                                                                       |
   +----------------+----------------------------------------------------------------------------+
-  |**description** | If the this parameter is set to true (which it is by default), once  |
+  |**description** | If the this parameter is set to true (which it is by default), once        |
   |                | the desired cartesian difference is obtained, it will not check the        |
   |                | cartesian difference again (until reset) and only check the yaw tolerance. |
   |                | This handles cases where the robot may accidentally leave the desired      |

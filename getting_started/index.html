@@ -110,16 +110,15 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../build_instructions/index.html">Build and Install</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html">Build Navigation2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html#install-ros">Install ROS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html#id1">Build Navigation2</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html">Build Navigation2 for a Specific Distribution</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/specific_distro_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html">Build Navigation2 Master</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#build-ros-2-master">Build ROS 2 Master</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#build-navigation2-dependencies">Build Navigation2 Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_instructions/build_docs/manual_build/master_build.html#id1">Build Navigation2 Master</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../build_instructions/build_docs/quick_start.html">Quickstart Using the Initial Setup Script</a><ul>
@@ -359,30 +358,38 @@ this:</p>
 <li><p class="first">Click the “Startup” button in the bottom left corner of RViz. This will
 cause Navigation 2 to change to the Active state. It should
 change appearance to show the map.</p>
+<a class="reference internal image-reference" href="../_images/rviz_initial.png"><img alt="Initial appearance of RViz transitioning to the Active state" class="align-center" src="../_images/rviz_initial.png" style="width: 700px;" /></a>
 </li>
 </ol>
 </div>
 <div class="section" id="navigating">
 <h2>Navigating<a class="headerlink" href="#navigating" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p class="first">After starting, the robot initially has no idea where it is. By default,
+<p>After starting, the robot initially has no idea where it is. By default,
 Navigation 2 waits for you to give it an approximate starting position. Take a look
 at where the robot is in the Gazebo world, and find that spot on the map. Set
 the initial pose by clicking the “2D Pose Estimate” button in RViz, and then
 down clicking on the map in that location. You set the orientation by dragging
 forward from the down click.</p>
-<p>If you are using the defaults so far, it should look like this.</p>
+<p>If you are using the defaults so far, the robot should look roughly like this.</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../_images/rviz-set-initial-pose.png"><img alt="Approximate starting location of Turtlebot" class="align-center" src="../_images/rviz-set-initial-pose.png" style="width: 700px;" /></a>
+</div></blockquote>
 <p>If you don’t get the location exactly right, that’s fine. Navigation 2 will refine
 the position as it navigates. You can also, click the “2D Pose
 Estimate” button and try again, if you prefer.</p>
-<p>Once you’ve set the initial pose, the trasform tree will be complete and
+<p>Once you’ve set the initial pose, the transform tree will be complete and
 Navigation 2 is fully active and ready to go. You should see the robot and particle
 cloud now.</p>
-</li>
-<li><p class="first">Click the “Navigaton2 Goal” button and choose a destination.</p>
-<p>Watch the robot go!</p>
-</li>
-</ol>
+<blockquote>
+<div><a class="reference internal image-reference" href="../_images/navstack-ready.png"><img alt="|PN| is ready. Transforms and Costmap show in RViz." class="align-center" src="../_images/navstack-ready.png" style="width: 700px;" /></a>
+</div></blockquote>
+<p>Next, click the “Navigaton2 Goal” button and choose a destination.
+This will call the BT navigator to go to that goal through an action server.
+You can pause (cancel) or reset the action through the navigation2 rviz plugin shown.</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../_images/navigate-to-pose.png"><img alt="Setting the goal pose in RViz." class="align-center" src="../_images/navigate-to-pose.png" style="width: 700px;" /></a>
+</div></blockquote>
+<p>Now watch the robot go!</p>
 <a class="reference internal image-reference" href="../_images/navigation_with_recovery_behaviours.gif"><img alt="Navigation2 with Turtlebot 3 Demo" class="align-center" src="../_images/navigation_with_recovery_behaviours.gif" style="width: 700px;" /></a>
 </div>
 </div>

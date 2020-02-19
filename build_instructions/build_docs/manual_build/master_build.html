@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Build Navigation2 Master Branch &mdash; Navigation 2 0.2.3 documentation</title>
+  <title>Build Navigation2 Master &mdash; Navigation 2 0.2.3 documentation</title>
   
 
   
@@ -46,8 +46,8 @@
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Build Navigation2 for a Specific Distribution" href="specific_distro_build.html" />
-    <link rel="prev" title="Build and Install" href="../../index.html" />
+    <link rel="next" title="Quickstart Using the Initial Setup Script" href="../quick_start.html" />
+    <link rel="prev" title="Build Navigation2" href="specific_distro_build.html" />
 
 <link rel="stylesheet" href="../../../_static/tcs_theme.css" type="text/css" />
 
@@ -110,16 +110,15 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Build and Install</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Build Navigation2 Master Branch</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specific_distro_build.html">Build Navigation2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="specific_distro_build.html#install-ros">Install ROS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="specific_distro_build.html#id1">Build Navigation2</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="specific_distro_build.html">Build Navigation2 for a Specific Distribution</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="specific_distro_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="specific_distro_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="specific_distro_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Build Navigation2 Master</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#build-ros-2-master">Build ROS 2 Master</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-navigation2-dependencies">Build Navigation2 Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Build Navigation2 Master</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../quick_start.html">Quickstart Using the Initial Setup Script</a><ul>
@@ -282,7 +281,7 @@
         
           <li><a href="../../index.html">Build and Install</a> &raquo;</li>
         
-      <li>Build Navigation2 Master Branch</li>
+      <li>Build Navigation2 Master</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -299,43 +298,48 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="build-navigation2-master-branch">
-<span id="master-build"></span><h1>Build Navigation2 Master Branch<a class="headerlink" href="#build-navigation2-master-branch" title="Permalink to this headline">¶</a></h1>
-<p>The instructions to build Navigation2 Master branch from source.</p>
-<div class="section" id="step-1-build-ros-2">
-<h2>Step 1- Build ROS 2<a class="headerlink" href="#step-1-build-ros-2" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference external" href="https://index.ros.org/doc/ros2/Installation">ROS2 Build Instructions</a></li>
-<li>When building ROS 2 from source, make sure that the <cite>ros2.repos</cite> file is from the <cite>master</cite> branch.</li>
-</ul>
+  <div class="section" id="build-navigation2-master">
+<span id="master-build"></span><h1>Build Navigation2 Master<a class="headerlink" href="#build-navigation2-master" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you’d rather use an automated method, all the steps here can be completed through <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code>.
+The steps to use this are outlined in <a class="reference internal" href="../quick_start.html#quick-start"><span class="std std-ref">Quickstart Using the Initial Setup Script</span></a>.</p>
 </div>
-<div class="section" id="step-2-build-navigation2-dependencies">
-<h2>Step 2- Build Navigation2 Dependencies<a class="headerlink" href="#step-2-build-navigation2-dependencies" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first">Source the setup.bash file in the ROS 2 build workspace.</p>
+<div class="section" id="build-ros-2-master">
+<h2>Build ROS 2 Master<a class="headerlink" href="#build-ros-2-master" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">When building ROS 2 from source, make sure that the <cite>ros2.repos</cite> file is from the <cite>master</cite> branch.</p>
+</div>
+<p>Build ROS2 master using the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation">build instructions</a> provided in the ROS2 documentation.</p>
+</div>
+<div class="section" id="build-navigation2-dependencies">
+<h2>Build Navigation2 Dependencies<a class="headerlink" href="#build-navigation2-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Since we’re not building for a released distribution, we must build the dependencies ourselves rather than using binaries.
+First, source the setup.bash file in the ROS 2 build workspace.</p>
 <blockquote>
-<div><p><code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">~/ros2_ws/install/setup.bash</span></code></p>
-</div></blockquote>
-</li>
-</ul>
-<p><strong>Build and install Navigation2 dependencies:</strong></p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/</span><span class="n">nav2_depend_ws</span><span class="o">/</span><span class="n">src</span>
+<div><code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">~/ros2_ws/install/setup.bash</span></code></div></blockquote>
+<p>Next, we’re going to get the <code class="docutils literal notranslate"><span class="pre">ros2_dependencies.repos</span></code> file from Navigation2.
+Then, use <code class="docutils literal notranslate"><span class="pre">vcs</span></code> to clone the repos and versions in it into a workspace.</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="n">ros2_ws</span><span class="o">/</span><span class="n">install</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">bash</span>
+<span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/</span><span class="n">nav2_depend_ws</span><span class="o">/</span><span class="n">src</span>
 <span class="n">cd</span> <span class="o">~/</span><span class="n">nav2_depend_ws</span>
 <span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">ros</span><span class="o">-</span><span class="n">planning</span><span class="o">/</span><span class="n">navigation2</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="n">ros2_dependencies</span><span class="o">.</span><span class="n">repos</span>
 <span class="n">vcs</span> <span class="kn">import</span> <span class="nn">src</span> <span class="o">&lt;</span> <span class="n">ros2_dependencies</span><span class="o">.</span><span class="n">repos</span>
-<span class="n">rosdep</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">q</span> <span class="o">--</span><span class="n">from</span><span class="o">-</span><span class="n">paths</span> <span class="n">src</span> <span class="o">--</span><span class="n">ignore</span><span class="o">-</span><span class="n">src</span> <span class="o">--</span><span class="n">rosdistro</span> <span class="n">eloquent</span>
 <span class="n">colcon</span> <span class="n">build</span> <span class="o">--</span><span class="n">symlink</span><span class="o">-</span><span class="n">install</span> <span class="o">--</span><span class="n">cmake</span><span class="o">-</span><span class="n">args</span> <span class="o">-</span><span class="n">DCMAKE_BUILD_TYPE</span><span class="o">=</span><span class="n">Release</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="step-3-build-navigation2">
-<h2>Step 3- Build Navigation2<a class="headerlink" href="#step-3-build-navigation2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h2>Build Navigation2 Master<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Finally, now that we have ROS2 master and the necessary dependencies, we can now build Navigation2 master itself.
+We’ll source the <code class="docutils literal notranslate"><span class="pre">nav2_depend_ws</span></code>, which will also source the ROS2 master build workspace packages, to build with dependencies.
+The rest of this should look familiar.</p>
 <div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="o">~/</span><span class="n">nav2_depend_ws</span><span class="o">/</span><span class="n">install</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">bash</span>
 <span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/</span><span class="n">navigation2_ws</span><span class="o">/</span><span class="n">src</span>
 <span class="n">cd</span> <span class="o">~/</span><span class="n">navigation2_ws</span><span class="o">/</span><span class="n">src</span>
 <span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">ros</span><span class="o">-</span><span class="n">planning</span><span class="o">/</span><span class="n">navigation2</span><span class="o">.</span><span class="n">git</span> <span class="o">--</span><span class="n">branch</span> <span class="n">master</span>
 <span class="n">cd</span> <span class="o">~/</span><span class="n">navigation2_ws</span>
-<span class="n">rosdep</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="o">-</span><span class="n">r</span> <span class="o">-</span><span class="n">q</span> <span class="o">--</span><span class="n">from</span><span class="o">-</span><span class="n">paths</span> <span class="n">src</span> <span class="o">--</span><span class="n">ignore</span><span class="o">-</span><span class="n">src</span> <span class="o">--</span><span class="n">rosdistro</span> <span class="n">eloquent</span>
 <span class="n">colcon</span> <span class="n">build</span> <span class="o">--</span><span class="n">symlink</span><span class="o">-</span><span class="n">install</span>
 </pre></div>
 </div>

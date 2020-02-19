@@ -47,7 +47,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Docker" href="manual_build/docker.html" />
-    <link rel="prev" title="Build Navigation2 for a Specific Distribution" href="manual_build/specific_distro_build.html" />
+    <link rel="prev" title="Build Navigation2 Master" href="manual_build/master_build.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
 
@@ -110,16 +110,15 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Build and Install</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="manual_build/master_build.html">Build Navigation2 Master Branch</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manual_build/specific_distro_build.html">Build Navigation2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="manual_build/specific_distro_build.html#install-ros">Install ROS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="manual_build/specific_distro_build.html#id1">Build Navigation2</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="manual_build/specific_distro_build.html">Build Navigation2 for a Specific Distribution</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/specific_distro_build.html#step-1-build-ros-2">Step 1- Build ROS 2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/specific_distro_build.html#step-2-build-navigation2-dependencies">Step 2- Build Navigation2 Dependencies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="manual_build/specific_distro_build.html#step-3-build-navigation2">Step 3- Build Navigation2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manual_build/master_build.html">Build Navigation2 Master</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#build-ros-2-master">Build ROS 2 Master</a></li>
+<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#build-navigation2-dependencies">Build Navigation2 Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="manual_build/master_build.html#id1">Build Navigation2 Master</a></li>
 </ul>
 </li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Quickstart Using the Initial Setup Script</a><ul>
@@ -303,12 +302,8 @@
 <span id="quick-start"></span><h1>Quickstart Using the Initial Setup Script<a class="headerlink" href="#quickstart-using-the-initial-setup-script" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="steps">
 <h2>Steps<a class="headerlink" href="#steps" title="Permalink to this headline">¶</a></h2>
-<blockquote>
-<div><ul class="simple">
-<li>Install all ROS 2 dependencies from the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup">ROS2 Installation page</a></li>
-<li>Ensure there are no ROS environment variables set in your terminal or <cite>.bashrc</cite> file before taking the steps below.*</li>
-</ul>
-</div></blockquote>
+<p>Install all ROS 2 dependencies from the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup">ROS2 Installation page</a>.
+Ensure there are no ROS environment variables set in your terminal or <cite>.bashrc</cite> file before taking the steps below.*</p>
 <div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">&lt;</span><span class="n">directory_for_workspaces</span><span class="o">&gt;</span>
 <span class="n">cd</span> <span class="o">&lt;</span><span class="n">directory_for_workspaces</span><span class="o">&gt;</span>
 <span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">ros</span><span class="o">-</span><span class="n">planning</span><span class="o">/</span><span class="n">navigation2</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="n">initial_ros_setup</span><span class="o">.</span><span class="n">sh</span>
@@ -317,7 +312,7 @@
 </pre></div>
 </div>
 <p><strong>Summary of what’s being done</strong></p>
-<p>The <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> script downloads four ROS workspaces and then builds them in the correct order. The four workspaces are:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">initial_ros_setup.sh</span></code> script downloads three ROS workspaces and then builds them in the correct order. The three workspaces are:</p>
 <ul class="simple">
 <li><strong>ROS 2 release</strong>: This is the latest ROS 2 release as defined by the repos file found <a class="reference external" href="https://github.com/ros2/ros2">here</a></li>
 <li><strong>ROS 2 dependencies</strong>: This is a set of ROS 2 packages that aren’t included in the ROS 2 release yet. However, you need them to be able to build Navigation2. This also includes packages that are part of the ROS 2 release where Navigation2 uses a different version.</li>

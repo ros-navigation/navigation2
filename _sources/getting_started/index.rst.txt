@@ -75,59 +75,46 @@ Running the Example
       :align: center
       :alt: Initial appearance of RViz transitioning to the Active state
 
-      Initial appearance of RViz transitioning to the Active state
-
 Navigating
 **********
 
-1. After starting, the robot initially has no idea where it is. By default,
-   |PN| waits for you to give it an approximate starting position. Take a look
-   at where the robot is in the Gazebo world, and find that spot on the map. Set
-   the initial pose by clicking the "2D Pose Estimate" button in RViz, and then
-   down clicking on the map in that location. You set the orientation by dragging
-   forward from the down click.
+After starting, the robot initially has no idea where it is. By default,
+|PN| waits for you to give it an approximate starting position. Take a look
+at where the robot is in the Gazebo world, and find that spot on the map. Set
+the initial pose by clicking the "2D Pose Estimate" button in RViz, and then
+down clicking on the map in that location. You set the orientation by dragging
+forward from the down click.
 
-   If you are using the defaults so far, it should look like this.
+If you are using the defaults so far, the robot should look roughly like this.
 
    .. image:: /images/rviz/rviz-set-initial-pose.png
       :width: 700px
       :align: center
       :alt: Approximate starting location of Turtlebot
 
-      Approximate starting location of Turtlebot
+If you don't get the location exactly right, that's fine. |PN| will refine
+the position as it navigates. You can also, click the "2D Pose
+Estimate" button and try again, if you prefer.
 
-   If you don't get the location exactly right, that's fine. |PN| will refine
-   the position as it navigates. You can also, click the "2D Pose
-   Estimate" button and try again, if you prefer.
-
-   Once you've set the initial pose, the trasform tree will be complete and
-   |PN| is fully active and ready to go. You should see the robot and particle
-   cloud now.
+Once you've set the initial pose, the transform tree will be complete and
+|PN| is fully active and ready to go. You should see the robot and particle
+cloud now.
 
    .. image:: /images/rviz/navstack-ready.png
       :width: 700px
       :align: center
       :alt: |PN| is ready. Transforms and Costmap show in RViz.
 
-      |PN| is ready. Transforms and Costmap show in RViz.
-
-2. Click the "Navigaton2 Goal" button and choose a destination.
+Next, click the "Navigaton2 Goal" button and choose a destination.
+This will call the BT navigator to go to that goal through an action server.
+You can pause (cancel) or reset the action through the navigation2 rviz plugin shown.
 
    .. image:: /images/rviz/navigate-to-pose.png
       :width: 700px
       :align: center
       :alt: Setting the goal pose in RViz.
 
-      Setting the goal pose in RViz.
-
-   Watch the robot go!
-
-   .. image:: /images/rviz/navigating.png
-      :width: 700px
-      :align: center
-      :alt: Turtlebot on its way to the goal.
-
-      Turtlebot on its way to the goal.
+Now watch the robot go!
 
 .. image:: images/navigation_with_recovery_behaviours.gif
     :width: 700px
