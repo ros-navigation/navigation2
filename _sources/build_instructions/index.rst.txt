@@ -48,8 +48,8 @@ Note: You need to change ``--rosdistro`` to the selected ROS 2 distribution name
 
 .. rst-class:: content-collapse
 
-Quickstart Using the Initial Setup Script
-=========================================
+Quickstart Build Master
+=======================
 
 Steps
 -----

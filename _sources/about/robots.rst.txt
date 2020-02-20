@@ -11,7 +11,7 @@ Click on the images below for a link to the drivers or navigation configurations
 +------------------------+------------------------+------------------------+
 |         |tb2|          +          |tb3|         |        |rover|         |
 +------------------------+------------------------+------------------------+
-|         |soon|         +         |soon|         +         |soon|         |
+|         |yunji|        +         |soon|         +         |soon|         |
 +------------------------+------------------------+------------------------+
 |         |soon|         +         |soon|         +         |soon|         |
 +------------------------+------------------------+------------------------+
@@ -33,6 +33,13 @@ Click on the images below for a link to the drivers or navigation configurations
     :align: middle
     :alt: Rover Robotics
     :target: https://github.com/RoverRobotics/openrover-ros2
+
+.. |yunji| image:: images/yunji.png
+    :width: 100%
+    :align: middle
+    :alt: Coming Soon
+    :target: https://en.yunjichina.com.cn/a/53.html
+
 
 .. |soon| image:: images/coming_soon.jpeg
     :width: 100%
