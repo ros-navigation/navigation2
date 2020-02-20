@@ -46,6 +46,7 @@ PlannerServer::PlannerServer()
   default_type.push_back("nav2_navfn_planner/NavfnPlanner");
   declare_parameter("planner_plugin_ids", default_id);
   declare_parameter("planner_plugin_types", default_type);
+  declare_parameter("robot_base_frame", "base_link");
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -80,6 +81,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   get_parameter("planner_plugin_ids", plugin_ids_);
   get_parameter("planner_plugin_types", plugin_types_);
+  get_parameter("robot_base_frame", robot_base_frame_);
   auto node = shared_from_this();
 
   if (plugin_ids_.size() != plugin_types_.size()) {
@@ -214,7 +216,7 @@ PlannerServer::computePlan()
     }
 
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, *tf_)) {
+    if (!nav2_util::getCurrentPose(start, *tf_, robot_base_frame_)) {
       return;
     }
 
