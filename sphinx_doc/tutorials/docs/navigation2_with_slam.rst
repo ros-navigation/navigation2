@@ -23,9 +23,11 @@ You must install Navigation2, Turtlebot3, and SLAM Toolbox.
 If you don't have them installed, please follow :ref:`getting_started`.
 
 SLAM Toolbox can be installed via:
+
   ``sudo apt install ros-dashing-slam-toolbox``
 
 or from built from source in your workspace with:
+
   ``git clone -b dashing-devel git@github.com:stevemacenski/slam_toolbox.git``
 
 
@@ -72,7 +74,9 @@ For this tutorial, we will use `SLAM Toolbox <https://github.com/SteveMacenski/s
 
 Move your robot by requesting a goal through RViz or the ROS2 CLI, ie:
 
-  ``ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"``
+.. code-block:: bash
+
+  ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
 
 You should see the map update live! To save this map to file:
 
