@@ -8,6 +8,9 @@ Writing a new Costmap2D plugin
 - `Tutorial Steps`_
 
 .. image:: images/Writing_new_Costmap2D_plugin/gradient_layer_preview.gif
+    :width: 700px
+    :align: center
+    :alt: Animated gif with gradient demo
 
 Overview
 ========
