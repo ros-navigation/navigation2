@@ -161,7 +161,7 @@ The export of plugin is performed by including ``pluginlib_export_plugin_descrip
 
   pluginlib_export_plugin_description_file(nav2_costmap_2d gradient_layer.xml)
 
-Plugin desription file is also should be added to ``package.xml``:
+Plugin description file is also should be added to ``package.xml``. ``costmap_2d`` is the package of the interface definition, for our case ``Layer``, and requires a path to the xml file:
 
 .. code-block:: text
 
