@@ -15,7 +15,7 @@ Writing a new Costmap2D plugin
 Overview
 ========
 
-This tutorial shows how to create your own simple `ROS plugin <http://wiki.ros.org/pluginlib>`_ for Costmap2D.
+This tutorial shows how to create your own simple `plugin <http://wiki.ros.org/pluginlib>`_ for Costmap2D.
 
 Before starting the tutorial, please check this `video <https://vimeo.com/106994708>`_ which contains information about Costmap2D layers design and plugins basic operational principals.
 
