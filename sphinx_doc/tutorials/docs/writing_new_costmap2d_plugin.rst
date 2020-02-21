@@ -130,7 +130,7 @@ The written plugin will be loaded in runtime as it's basic parent class and then
 
 In our example the ``nav2_gradient_costmap_plugin::GradientLayer`` plugin's class should be dynamically loaded as a ``nav2_costmap_2d::Layer`` basic class. For this the plugin should be registered as follows:
 
-1. Plugin's class should be registered with a basic type of loaded class. For this there is a special macro ``PLUGINLIB_EXPORT_CLASS`` should be added to any sorce-file composing the plugin library:
+1. Plugin's class should be registered with a basic type of loaded class. For this there is a special macro ``PLUGINLIB_EXPORT_CLASS`` should be added to any source-file composing the plugin library:
 
 .. code-block:: text
 
