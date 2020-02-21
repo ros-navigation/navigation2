@@ -240,3 +240,6 @@ Run Turtlebot3 simulation with enabled navigation2. Detailed instructuction how 
 Then goto RViz and click on the "2D Pose Estimate" button at the top and point the location on map as it was described in :ref:`getting_started`. Robot will be localized on map and the result should be as presented at picture below. There is could be seen the gradient costmap. There are also 2 noticeable things: dynamically updated by ``GradientLayer::updateCosts()`` costmap within its bounds and global path curved by gradient:
 
 .. image:: images/Writing_new_Costmap2D_plugin/gradient_layer_run.png
+    :width: 700px
+    :align: center
+    :alt: Image of gradient costmap used
