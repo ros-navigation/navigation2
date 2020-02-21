@@ -229,7 +229,6 @@ planner_server:
   ros__parameters:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
     planner_plugin_ids: ["GridBased"]
-    robot_base_frame: base_link
     use_sim_time: True
     GridBased.tolerance: 2.0
     GridBased.use_astar: false

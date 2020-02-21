@@ -117,7 +117,6 @@ protected:
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
   std::vector<std::string> plugin_ids_, plugin_types_;
   std::string planner_ids_concat_;
-  std::string robot_base_frame_;
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
