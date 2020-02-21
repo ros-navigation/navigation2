@@ -49,24 +49,23 @@ The basic class provides the set of virtual methods API for working with costmap
 | **Virtual method**   | **Method description**                                                     | **Requires override?**  |
 +----------------------+----------------------------------------------------------------------------+-------------------------+
 | onInitialize()       | Method is called at the end of plugin initialization. There is usually     | No                      |
-|                      | declarations of ROS parameters with its default values.                    |                         |
+|                      | declarations of ROS parameters. This is where any required initialization  |                         |
+|                      | should occur.                                                              |                         |
 +----------------------+----------------------------------------------------------------------------+-------------------------+
 | updateBounds()       | Method is called to ask the plugin: which area of costmap layer it needs   | Yes                     |
 |                      | to update. There are 3 input parameters of method: robot position and      |                         |
 |                      | orientation and 4 output parameters: pointers to window bounds.            |                         |
 |                      | These bounds are used for performance reasons: to update the area          |                         |
-|                      | inside window where is new info available, avoiding updates of whole       |                         |
+|                      | inside the window where is new info available, avoiding updates of whole   |                         |
 |                      | costmap on every iteration.                                                |                         |
-|                      |                                                                            |                         |
-|                      |                                                                            |                         |
 +----------------------+----------------------------------------------------------------------------+-------------------------+
 | updateCosts()        | Method is called each time when costmap re-calculation is required. It     | Yes                     |
 |                      | updates the costmap layer only within its bounds window. There are 4 input |                         |
 |                      | parameters of method: calculation window bounds and 1 output parameter:    |                         |
-|                      | reference to a resulting costmap ``master_grid``. To work with local       |                         |
-|                      | costmap layer and merge it with other costmap layers, please use           |                         |
-|                      | ``costmap_`` pointer instead (this is pointer to local costmap layer       |                         |
-|                      | grid) and then call one of updates methods: ``updateWithAddition()``,      |                         |
+|                      | reference to a resulting costmap ``master_grid``. The ``Layer`` class      |                         |
+|                      | provides the plugin with an internal costmap, ``costmap_``, for updates.   |                         |
+|                      | The ``master_grid`` should be updated with values within the window bounds |                         |
+|                      | using one of the following update methods: ``updateWithAddition()``,       |                         |
 |                      | ``updateWithMax()``, ``updateWithOverwrite()`` or                          |                         |
 |                      | ``updateWithTrueOverwrite()``.                                             |                         |
 +----------------------+----------------------------------------------------------------------------+-------------------------+
@@ -94,7 +93,7 @@ and sets ``need_recalculation_`` bounds recalculation indicator:
 
 2. ``GradientLayer::updateBounds()`` re-calculates window bounds if ``need_recalculation_`` is ``true`` and updates them regardless of ``need_recalculation_`` value.
 
-3. ``GradientLayer::updateCosts()`` - in this method the gradient is writing directly to the resulting costmap ``master_grid`` without merging with previous layers. This is equal to working with local ``costmap_`` and then calling ``updateWithTrueOverwrite()`` method. Here is the gradient making algorithm for master costmap: 
+3. ``GradientLayer::updateCosts()`` - in this method the gradient is writing directly to the resulting costmap ``master_grid`` without merging with previous layers. This is equal to working with internal ``costmap_`` and then calling ``updateWithTrueOverwrite()`` method. Here is the gradient making algorithm for master costmap:
 
 .. code-block:: c
 
