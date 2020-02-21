@@ -126,7 +126,7 @@ These parameters are defined in plugin's header file.
 2- Export and make GradientLayer plugin
 ---------------------------------------
 
-The written plugin will be loaded in runtime as it's basic parent class and then will be called by plugin handling modules (for costmap2d by ``LayeredCostmap``). This is not a well-known dynamic library loading mechanism. Instead of it the pluginlib opens a given plugin in run-time and provides methods from exported classes to be callable. The mechanism of class exporting tells pluginlib which basic class should be used during these calls. This allows to extend an application by plugins without knowing application source code or recompiling it.
+The written plugin will be loaded in runtime as it's basic parent class and then will be called by plugin handling modules (for costmap2d by ``LayeredCostmap``). Pluginlib opens a given plugin in run-time and provides methods from exported classes to be callable. The mechanism of class exporting tells pluginlib which basic class should be used during these calls. This allows to extend an application by plugins without knowing application source code or recompiling it.
 
 In our example the ``nav2_gradient_costmap_plugin::GradientLayer`` plugin's class should be dynamically loaded as a ``nav2_costmap_2d::Layer`` basic class. For this the plugin should be registered as follows:
 
