@@ -216,7 +216,7 @@ PlannerServer::computePlan()
     }
 
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, *tf_, "map", robot_base_frame_)) {
+    if (!nav2_util::getCurrentPose(start, *tf_, robot_base_frame_)) {
       return;
     }
 
