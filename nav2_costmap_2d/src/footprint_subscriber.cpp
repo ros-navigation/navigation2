@@ -55,7 +55,7 @@ FootprintSubscriber::FootprintSubscriber(
   node_logging_(node_logging),
   node_clock_(node_clock),
   topic_name_(topic_name),
-  footprint_timeout_(rclcpp::Duration(footprint_timeout, 0.))
+  footprint_timeout_(rclcpp::Duration::from_seconds(footprint_timeout))
 {
   footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(
     node_topics_,
