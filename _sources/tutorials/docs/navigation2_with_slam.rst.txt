@@ -76,7 +76,7 @@ Move your robot by requesting a goal through RViz or the ROS2 CLI, ie:
 
 .. code-block:: bash
 
-  ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
+  ros2 topic pub /goal_pose geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
 
 You should see the map update live! To save this map to file:
 
