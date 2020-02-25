@@ -72,16 +72,24 @@ public:
   }
 
 public slots:
-  void setInactive(){
-    current_state_ = "Inactive";
+  void setInactive() {
+    current_state_ = "Paused";
     status_->setText(current_state_);
-    led_status_->setColor(Qt::GlobalColor::gray);
+    led_status_->setColor(Qt::GlobalColor::blue);
     this->update();
   }
-  void setActive(){
+  void setActive() {
     current_state_ = "Active";
     status_->setText(current_state_);
     led_status_->setColor(Qt::GlobalColor::green);
+    this->update();
+  }
+  void setTimedOut() {
+    if(current_state_ == "Paused")
+        return;
+    current_state_ = "Inactive";
+    status_->setText(current_state_);
+    led_status_->setColor(Qt::GlobalColor::gray);
     this->update();
   }
 
