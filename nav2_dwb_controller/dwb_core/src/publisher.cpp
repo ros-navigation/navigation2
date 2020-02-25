@@ -214,8 +214,9 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
     }
     ma.markers.push_back(m);
   }
-  if (node_->count_subscribers(marker_pub_->get_topic_name()) > 0)
+  if (node_->count_subscribers(marker_pub_->get_topic_name()) > 0) {
     marker_pub_->publish(ma);
+  }
 }
 
 void
@@ -279,8 +280,9 @@ DWBPublisher::publishCostGrid(
   // TODO(crdelsey): convert pc to pc2
   // sensor_msgs::msg::PointCloud2 cost_grid_pc2;
   // convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
-  if (node_->count_subscribers(cost_grid_pc_pub_->get_topic_name()) > 0)
-  cost_grid_pc_pub_->publish(cost_grid_pc);
+  if (node_->count_subscribers(cost_grid_pc_pub_->get_topic_name()) > 0) {
+    cost_grid_pc_pub_->publish(cost_grid_pc);
+  }
 }
 
 void
@@ -308,8 +310,9 @@ DWBPublisher::publishGenericPlan(
 {
   if (!flag) {return;}
   nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
-  if (node_->count_subscribers(pub.get_topic_name()) > 0)
-  pub.publish(path);
+  if (node_->count_subscribers(pub.get_topic_name()) > 0) {
+    pub.publish(path);
+  }
 }
 
 }  // namespace dwb_core

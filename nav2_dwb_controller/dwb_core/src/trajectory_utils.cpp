@@ -37,7 +37,7 @@
 #include <rclcpp/duration.hpp>
 #include <cmath>
 
-namespace dwb_local_planner
+namespace dwb_core
 {
 const geometry_msgs::msg::Pose2D & getClosestPose(
   const dwb_msgs::msg::Trajectory2D & trajectory,
@@ -103,4 +103,4 @@ geometry_msgs::msg::Pose2D projectPose(
 }
 
 
-}  // namespace dwb_local_planner
+}  // namespace dwb_core

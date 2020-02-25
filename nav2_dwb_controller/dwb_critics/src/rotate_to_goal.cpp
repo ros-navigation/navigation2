@@ -119,7 +119,7 @@ double RotateToGoalCritic::scoreRotation(const dwb_msgs::msg::Trajectory2D & tra
 
   double end_yaw;
   if (lookahead_time_ >= 0.0) {
-    geometry_msgs::msg::Pose2D eval_pose = dwb_local_planner::projectPose(traj, lookahead_time_);
+    geometry_msgs::msg::Pose2D eval_pose = dwb_core::projectPose(traj, lookahead_time_);
     end_yaw = eval_pose.theta;
   } else {
     end_yaw = traj.poses.back().theta;
