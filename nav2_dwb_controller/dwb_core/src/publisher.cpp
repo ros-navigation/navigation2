@@ -148,7 +148,7 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
 {
   if (results == nullptr) {return;}
 
-  if (publish_evaluation_) {
+  if (publish_evaluation_ && (node_->count_subscribers(eval_pub_->get_topic_name()) > 0)) {
     eval_pub_->publish(*results);
   }
 
@@ -214,7 +214,8 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
     }
     ma.markers.push_back(m);
   }
-  marker_pub_->publish(ma);
+  if (node_->count_subscribers(marker_pub_->get_topic_name()) > 0)
+    marker_pub_->publish(ma);
 }
 
 void
@@ -226,7 +227,9 @@ DWBPublisher::publishLocalPlan(
 
   nav_msgs::msg::Path path =
     nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  local_pub_->publish(path);
+  if (node_->count_subscribers(local_pub_->get_topic_name()) > 0) {
+    local_pub_->publish(path);
+  }
 }
 
 void
@@ -261,7 +264,7 @@ DWBPublisher::publishCostGrid(
 
   for (TrajectoryCritic::Ptr critic : critics) {
     unsigned int channel_index = cost_grid_pc.channels.size();
-    critic->addGridScores(cost_grid_pc);
+    critic->addCriticVisualization(cost_grid_pc);
     if (channel_index == cost_grid_pc.channels.size()) {
       // No channels were added, so skip to next critic
       continue;
@@ -276,6 +279,7 @@ DWBPublisher::publishCostGrid(
   // TODO(crdelsey): convert pc to pc2
   // sensor_msgs::msg::PointCloud2 cost_grid_pc2;
   // convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
+  if (node_->count_subscribers(cost_grid_pc_pub_->get_topic_name()) > 0)
   cost_grid_pc_pub_->publish(cost_grid_pc);
 }
 
@@ -304,6 +308,7 @@ DWBPublisher::publishGenericPlan(
 {
   if (!flag) {return;}
   nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
+  if (node_->count_subscribers(pub.get_topic_name()) > 0)
   pub.publish(path);
 }
 
