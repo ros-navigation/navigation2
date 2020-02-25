@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ROS to ROS2 Navigation &mdash; Navigation 2 1.0.0 documentation</title>
+  <title>Navigation Plugins &mdash; Navigation 2 1.0.0 documentation</title>
   
 
   
@@ -46,7 +46,8 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Robots Using" href="robots.html" />
+    <link rel="next" title="Contribution Guidelines" href="../contribute/index.html" />
+    <link rel="prev" title="Tunable Parameters" href="../configuration/params/tunable-params.html" />
 
 <link rel="stylesheet" href="../_static/tcs_theme.css" type="text/css" />
 
@@ -236,12 +237,12 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Navigation Plugins</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../plugins/index.html#costmap-layers">Costmap Layers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../plugins/index.html#controllers">Controllers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../plugins/index.html#planners">Planners</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../plugins/index.html#recoveries">Recoveries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../plugins/index.html#behavior-tree-nodes">Behavior Tree Nodes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Navigation Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#costmap-layers">Costmap Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controllers">Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planners">Planners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recoveries">Recoveries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#behavior-tree-nodes">Behavior Tree Nodes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/index.html">Contribution Guidelines</a><ul>
@@ -253,11 +254,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../contribute/index.html#prerequisites">Prerequisites</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">About and Contact</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="robots.html">Robots Using</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">ROS to ROS2 Navigation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="index.html#id1">About</a></li>
-<li class="toctree-l2"><a class="reference internal" href="index.html#contact">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/index.html">About and Contact</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../about/robots.html">Robots Using</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../about/ros1_comparison.html">ROS to ROS2 Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../about/index.html#id1">About</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../about/index.html#contact">Contact</a></li>
 </ul>
 </li>
 </ul>
@@ -305,9 +306,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="index.html">About and Contact</a> &raquo;</li>
-        
-      <li>ROS to ROS2 Navigation</li>
+      <li>Navigation Plugins</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -324,52 +323,306 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="ros-to-ros2-navigation">
-<span id="ros1-comparison"></span><h1>ROS to ROS2 Navigation<a class="headerlink" href="#ros-to-ros2-navigation" title="Permalink to this headline">¶</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">move_base</span></code> has been split into multiple components.
-Rather than a single monolithic state machine, navigation 2 makes use of action servers and ROS2’s
-low-latency, reliable communication to separate ideas. A behavior tree is used to orchestrate these tasks.
-This allows Navigation2 to have highly configurable navigation behavior without programming by rearranging tasks
-in a behavior tree xml file.</p>
-<p>The <em>nav2_bt_navigator</em> replaces <code class="docutils literal notranslate"><span class="pre">move_base</span></code> at the top level, with an <em>Action</em> interface to complete a navigation task with a tree-based action model.
-It uses <em>Behavior Trees</em> to make it possible to have more complex state machines and to add in recovery behaviors as additional <em>Action Servers</em>.
-These behavior trees are configurable XMLs and we provide several starting examples.</p>
-<p>The planning, recovery, and controller servers are also action servers that the BT navigator can call to compute.
-All 3 servers can host many plugins of many algorithms each and individually called from the navigation behavior tree for specific behaviors.
-The default plugins provided are ported from ROS1, namely: DWB, NavFn, and similar recoveries such as spinning and clearing costmaps.
-A new recovery for waiting a fixed duration was also added.
-These servers are called from the BT navigator through their action servers to compute a result or complete a task.
-The state is maintained by the BT navigator behavior tree.</p>
-<p>All these changes make it possible to replace any of these nodes at launch/run time with any other algorithm that implements that same interface.
-See each package README.md for more details.</p>
-<a class="reference internal image-reference" href="../_images/move_base_compare_2.png"><img alt="Move Base -&gt; Navigation2 Overview" class="align-center" src="../_images/move_base_compare_2.png" style="width: 700px;" /></a>
-<p>Note: <code class="docutils literal notranslate"><span class="pre">nav2_simple_navigator</span></code> no longer exists, it has been replaced by <code class="docutils literal notranslate"><span class="pre">nav2_bt_navigator</span></code>.</p>
-<p><strong>In Summary:</strong></p>
-<p>Ported packages:</p>
-<blockquote>
-<div><ul class="simple">
-<li>amcl: Ported to nav2_amcl</li>
-<li>map_server: Ported to nav2_map_server</li>
-<li>nav2_planner: Replaces global_planner, hosts <code class="docutils literal notranslate"><span class="pre">N</span></code> planner plugins</li>
-<li>nav2_controller: Replaces local_planner, hosts <code class="docutils literal notranslate"><span class="pre">N</span></code> controller plugins</li>
-<li>Navfn: Ported to nav2_navfn_planner</li>
-<li>DWB: Replaces DWA and ported to ROS2 under nav2_dwb_controller metapackage</li>
-<li>nav_core: Ported as nav2_core with updates to interfaces</li>
-<li>costmap_2d: Ported as nav2_costmap_2d</li>
-</ul>
-</div></blockquote>
-<p>New packages:</p>
-<blockquote>
-<div><ul class="simple">
-<li>nav2_bt_navigator: replaces <code class="docutils literal notranslate"><span class="pre">move_base</span></code> state machine</li>
-<li>nav2_lifecycle_manager: Handles the server program lifecycles</li>
-<li>nav2_waypoint_follower: Can take in many waypoints to execute a complex task through</li>
-<li>nav2_system_tests: A set of integration tests for CI and basic tutorials in simulation</li>
-<li>nav2_rviz_plugins: An rviz plugin to control the Navigation2 servers, command, cancel, and navigation with</li>
-<li>nav2_experimental: Experimental (and incomplete) work for deep reinforement learning controllers</li>
-<li>navigation2_behavior_trees: wrappers for the behavior tree library to call ROS action servers</li>
-</ul>
-</div></blockquote>
+  <div class="section" id="navigation-plugins">
+<span id="plugins"></span><h1>Navigation Plugins<a class="headerlink" href="#navigation-plugins" title="Permalink to this headline">¶</a></h1>
+<p>There are a number of plugin interfaces for users to create their own custom applications or algorithms with.
+Namely, the costmap layer, planner, controller, behavior tree, and recovery plugins.
+A list of all known plugins are listed here below for ROS2 Navigation.
+If you know of a plugin, or you have created a new plugin, please consider submitting a pull request with that information.</p>
+<p>This file can be found and editted under <code class="docutils literal notranslate"><span class="pre">sphinx_docs/plugins/index.rst</span></code>.
+For tutorials on creating your own plugins, please see <a class="reference internal" href="../tutorials/docs/writing_new_costmap2d_plugin.html#writing-new-costmap2d-plugin"><span class="std std-ref">Writing a new Costmap2D plugin</span></a>.</p>
+<div class="section" id="costmap-layers">
+<h2>Costmap Layers<a class="headerlink" href="#costmap-layers" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="36%" />
+<col width="27%" />
+<col width="38%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_costmap_2d/plugins">Voxel Layer</a></td>
+<td>Eitan Marder-Eppstein</td>
+<td>Maintains persistant
+3D voxel layer using depth and
+laser sensor readings and
+raycasting to clear free space</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_costmap_2d/plugins">Static Layer</a></td>
+<td>Eitan Marder-Eppstein</td>
+<td>Gets static <code class="docutils literal notranslate"><span class="pre">map</span></code> and loads
+occupancy information into
+costmap</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_costmap_2d/plugins">Inflation Layer</a></td>
+<td>Eitan Marder-Eppstein</td>
+<td>Inflates lethal obstacles in
+costmap with exponential decay</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_costmap_2d/plugins">Obstacle Layer</a></td>
+<td>Eitan Marder-Eppstein</td>
+<td>Maintains persistent 2D costmap
+from 2D laser scans with
+raycasting to clear free space</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/SteveMacenski/spatio_temporal_voxel_layer/">Spatio-Temporal Voxel Layer</a></td>
+<td>Steve Macenski</td>
+<td>Maintains temporal 3D sparse
+volumetric voxel grid with decay
+through sensor models</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/SteveMacenski/nonpersistent_voxel_layer">Non-Persistent Voxel Layer</a></td>
+<td>Steve Macenski</td>
+<td>Maintains 3D occupancy grid
+consisting only of the most
+sets of measurements</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="controllers">
+<h2>Controllers<a class="headerlink" href="#controllers" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="25%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_dwb_controller">DWB Controller</a></td>
+<td>David Lu!!</td>
+<td>A highly configurable  DWA
+implementation with plugin
+interfaces</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/rst-tu-dortmund/teb_local_planner">TEB Controller</a></td>
+<td>Christoph Rösmann</td>
+<td>A MPC-like controller suitable
+for ackermann, differential, and
+holonomic robots.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="planners">
+<h2>Planners<a class="headerlink" href="#planners" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="44%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_navfn_planner">NavFn Planner</a></td>
+<td>Eitan Marder-Eppstein &amp; Kurt Konolige</td>
+<td>A navigation function
+using A* or Dijkstras
+expansion, assumes 2D
+holonomic particle</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="recoveries">
+<h2>Recoveries<a class="headerlink" href="#recoveries" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="28%" />
+<col width="30%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/blob/master/nav2_costmap_2d/src/clear_costmap_service.cpp">Clear Costmap</a></td>
+<td>Eitan Marder-Eppstein</td>
+<td>A service to clear the given
+costmap in case of incorrect
+perception or robot is stuck</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Spin</a></td>
+<td>Steve Macenski</td>
+<td>Rotate recovery of configurable
+angles to clear out free space
+and nudge robot out of potential
+local failures</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Back Up</a></td>
+<td>Brian Wilcox</td>
+<td>Back up recovery of configurable
+distance to back out of a
+situation where the robot is
+stuck</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Wait</a></td>
+<td>Steve Macenski</td>
+<td>Wait recovery with configurable
+time to wait in case of time
+based obstacle like human traffic
+or getting more sensor data</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="behavior-tree-nodes">
+<h2>Behavior Tree Nodes<a class="headerlink" href="#behavior-tree-nodes" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="44%" />
+<col width="21%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Action Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Back Up Action</a></td>
+<td>Michael Jeronimo</td>
+<td>Calls backup recovery action</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/blob/master/nav2_costmap_2d/src/clear_costmap_service.cpp">Clear Costmap Service</a></td>
+<td>Carl Delsey</td>
+<td>Calls clear costmap service</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Compute Path to Pose Action</a></td>
+<td>Michael Jeronimo</td>
+<td>Calls Nav2 planner server</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Follow Path Action</a></td>
+<td>Michael Jeronimo</td>
+<td>Calls Nav2 controller server</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Navigate to Pose Action</a></td>
+<td>Michael Jeronimo</td>
+<td>BT Node for other
+BehaviorTree.CPP BTs to call
+Navigation2 as a subtree action</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Reinitalize Global Localization Service</a></td>
+<td>Carl Delsey</td>
+<td>Reinitialize AMCL to a new pose</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Spin Action</a></td>
+<td>Carl Delsey</td>
+<td>Calls spin recovery action</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Wait Action</a></td>
+<td>Steve Macenski</td>
+<td>Calls wait recovery action</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="45%" />
+<col width="25%" />
+<col width="30%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Condition Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Goal Reached Condition</a></td>
+<td>Carl Delsey</td>
+<td>Checks if goal is
+reached within tol.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Initial Pose received Condition</a></td>
+<td>Carl Delsey</td>
+<td>Checks if initial pose
+has been set</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Is Stuck Condition</a></td>
+<td>Michael Jeronimo</td>
+<td>Checks if robot is
+making progress or
+stuck</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="30%" />
+<col width="25%" />
+<col width="45%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Decorator Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Rate Controller</a></td>
+<td>Michael Jeronimo</td>
+<td>Throttles child node to a given
+rate</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="28%" />
+<col width="30%" />
+<col width="42%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Control Plugin Name</th>
+<th class="head">Creator</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Pipeline Sequence</a></td>
+<td>Carl Delsey</td>
+<td>A variant of a sequence node that
+will re-tick previous children
+even if another child is running</td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Recovery</a></td>
+<td>Carl Delsey</td>
+<td>Node must contain 2 children
+and returns success if first
+succeeds. If first fails, the
+second will be ticked. If
+successful, it will retry the
+first and then return its value</td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins">Round Robin</a></td>
+<td>Mohammad Haghighipanah</td>
+<td>Will tick <code class="docutils literal notranslate"><span class="pre">i</span></code> th child until
+a result and move on to <code class="docutils literal notranslate"><span class="pre">i+1</span></code></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
