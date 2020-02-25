@@ -148,7 +148,7 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
 {
   if (results == nullptr) {return;}
 
-  if (publish_evaluation_ && (node_->count_subscribers(eval_pub_->get_topic_name()) > 0)) {
+  if (publish_evaluation_ && node_->count_subscribers(eval_pub_->get_topic_name()) > 0) {
     eval_pub_->publish(*results);
   }
 
@@ -158,63 +158,63 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
 void
 DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
-  if (!publish_trajectories_) {return;}
-  visualization_msgs::msg::MarkerArray ma;
-  visualization_msgs::msg::Marker m;
-
-  if (results.twists.size() == 0) {return;}
-
-  geometry_msgs::msg::Point pt;
-
-  m.header = results.header;
-  m.type = m.LINE_STRIP;
-  m.pose.orientation.w = 1;
-  m.scale.x = 0.002;
-  m.color.a = 1.0;
-  m.lifetime = marker_lifetime_;
-
-  double best_cost = results.twists[results.best_index].total;
-  double worst_cost = results.twists[results.worst_index].total;
-  double denominator = worst_cost - best_cost;
-
-  if (std::fabs(denominator) < 1e-9) {
-    denominator = 1.0;
-  }
-
-  unsigned currentValidId = 0;
-  unsigned currentInvalidId = 0;
-  string validNamespace("ValidTrajectories");
-  string invalidNamespace("InvalidTrajectories");
-  for (unsigned int i = 0; i < results.twists.size(); i++) {
-    const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
-    double displayLevel = (twist.total - best_cost) / denominator;
-    if (twist.total >= 0) {
-      m.color.r = displayLevel;
-      m.color.g = 1.0 - displayLevel;
-      m.color.b = 0;
-      m.color.a = 1.0;
-      m.ns = validNamespace;
-      m.id = currentValidId;
-      ++currentValidId;
-    } else {
-      m.color.r = 0;
-      m.color.g = 0;
-      m.color.b = 0;
-      m.color.a = 1.0;
-      m.ns = invalidNamespace;
-      m.id = currentInvalidId;
-      ++currentInvalidId;
-    }
-    m.points.clear();
-    for (unsigned int j = 0; j < twist.traj.poses.size(); ++j) {
-      pt.x = twist.traj.poses[j].x;
-      pt.y = twist.traj.poses[j].y;
-      pt.z = 0;
-      m.points.push_back(pt);
-    }
-    ma.markers.push_back(m);
-  }
   if (node_->count_subscribers(marker_pub_->get_topic_name()) > 0) {
+    if (!publish_trajectories_) {return;}
+    visualization_msgs::msg::MarkerArray ma;
+    visualization_msgs::msg::Marker m;
+
+    if (results.twists.size() == 0) {return;}
+
+    geometry_msgs::msg::Point pt;
+
+    m.header = results.header;
+    m.type = m.LINE_STRIP;
+    m.pose.orientation.w = 1;
+    m.scale.x = 0.002;
+    m.color.a = 1.0;
+    m.lifetime = marker_lifetime_;
+
+    double best_cost = results.twists[results.best_index].total;
+    double worst_cost = results.twists[results.worst_index].total;
+    double denominator = worst_cost - best_cost;
+
+    if (std::fabs(denominator) < 1e-9) {
+      denominator = 1.0;
+    }
+
+    unsigned currentValidId = 0;
+    unsigned currentInvalidId = 0;
+    string validNamespace("ValidTrajectories");
+    string invalidNamespace("InvalidTrajectories");
+    for (unsigned int i = 0; i < results.twists.size(); i++) {
+      const dwb_msgs::msg::TrajectoryScore & twist = results.twists[i];
+      double displayLevel = (twist.total - best_cost) / denominator;
+      if (twist.total >= 0) {
+        m.color.r = displayLevel;
+        m.color.g = 1.0 - displayLevel;
+        m.color.b = 0;
+        m.color.a = 1.0;
+        m.ns = validNamespace;
+        m.id = currentValidId;
+        ++currentValidId;
+      } else {
+        m.color.r = 0;
+        m.color.g = 0;
+        m.color.b = 0;
+        m.color.a = 1.0;
+        m.ns = invalidNamespace;
+        m.id = currentInvalidId;
+        ++currentInvalidId;
+      }
+      m.points.clear();
+      for (unsigned int j = 0; j < twist.traj.poses.size(); ++j) {
+        pt.x = twist.traj.poses[j].x;
+        pt.y = twist.traj.poses[j].y;
+        pt.z = 0;
+        m.points.push_back(pt);
+      }
+      ma.markers.push_back(m);
+    }
     marker_pub_->publish(ma);
   }
 }
