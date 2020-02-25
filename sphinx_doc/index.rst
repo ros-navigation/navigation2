@@ -10,7 +10,7 @@ Overview
 The Navigation 2 project is the spiritual successor of the ROS Navigation Stack.
 This project seeks to find a safe way to have a mobile robot move from point A to
 point B. This will complete dynamic path planning, compute velocities for motors,
-avoid obstacles, and structure recovery behaviors. To learn more about this project see  :ref:`about`.
+avoid obstacles, and structure recovery behaviors. To learn more about this project see :ref:`about`.
 
 Navigation 2 uses behavior trees to call modular servers to complete an action.
 An action can be to compute a path, control effort, recovery, or any other navigation
@@ -52,7 +52,7 @@ to compute a control effort to follow a path, with several plugins of its own fo
 critics. There are recovery behaviors included: waiting, spinning, clearing costmaps, and
 backing up. There are a set of BT plugins for calling these servers and computing conditions.
 Finally, there are a set of Rviz plugins for interacting with the stack and controlling the
-lifecycle.
+lifecycle. A list of all user-reported plugins can be found on :ref:`plugins`.
 
 Here is the documentation on how to install and use |PN| with an example robot, Turtlebot
 3 (TB3), as well as how to customize it for other robots, tune the behavior for better
@@ -74,5 +74,6 @@ of the TB3 navigating in a small lounge.
    build_instructions/index.rst
    tutorials/index.rst
    configuration/index.rst
+   plugins/index.rst
    contribute/index.rst
    about/index.rst
