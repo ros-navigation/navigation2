@@ -146,11 +146,13 @@ DWBPublisher::on_cleanup()
 void
 DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
-  if (publish_evaluation_ && node_->count_subscribers(eval_pub_->get_topic_name()) < 1) {return;}
+  if (node_->count_subscribers(eval_pub_->get_topic_name()) < 1) {return;}
 
   if (results == nullptr) {return;}
 
-  eval_pub_->publish(*results);
+  if (publish_evaluation_) {
+    eval_pub_->publish(*results);
+  }
 
   publishTrajectories(*results);
 }
@@ -228,8 +230,9 @@ DWBPublisher::publishLocalPlan(
 
   nav_msgs::msg::Path path =
     nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  if (node_->count_subscribers(local_pub_->get_topic_name()) < 1) {return;}
-  local_pub_->publish(path);
+  if (node_->count_subscribers(local_pub_->get_topic_name()) < 1) {
+    local_pub_->publish(path);
+  }
 }
 
 void
