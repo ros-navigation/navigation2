@@ -317,17 +317,6 @@ Debug Parameters
   |                | **transformed_global_plan** topic and can be visualized in RViz            |
   +----------------+----------------------------------------------------------------------------+
 
-:short_circuit_trajectory_evaluation:
-  +----------------+----------------------------------------------------------------------------+
-  |**type**        | bool                                                                       |
-  +----------------+----------------------------------------------------------------------------+
-  |**default**     | true                                                                       |
-  +----------------+----------------------------------------------------------------------------+
-  |**description** | This parameter allows process to move forward if trajectories score by     |
-  |                | critics is just equal to the best score. As after this point it would be   |
-  |                | pointless to increse the score as it will always be more than best score.  | 
-  +----------------+----------------------------------------------------------------------------+
-
 :trans_stopped_velocity:
   +----------------+----------------------------------------------------------------------------+
   |**type**        | double                                                                     |

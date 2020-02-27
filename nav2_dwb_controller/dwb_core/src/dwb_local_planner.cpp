@@ -109,9 +109,6 @@ void DWBLocalPlanner::configure(
   node_->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node_->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node_->get_parameter(dwb_plugin_name_ + ".goal_checker_name", goal_checker_name);
-  node_->get_parameter(
-    dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
-    short_circuit_trajectory_evaluation_);
 
   pub_ = std::make_unique<DWBPublisher>(node_, dwb_plugin_name_);
   pub_->on_configure();
@@ -426,11 +423,15 @@ DWBLocalPlanner::coreScoringAlgorithm(
     traj = traj_generator_->generateTrajectory(pose, velocity, twist);
 
     try {
-      dwb_msgs::msg::TrajectoryScore score = scoreTrajectory(traj, best.total);
+      dwb_msgs::msg::TrajectoryScore score = scoreTrajectory(traj);
       tracker.addLegalTrajectory();
       if (results) {
         results->twists.push_back(score);
       }
+
+      //RCLCPP_INFO(rclcpp::get_logger("DWBLocalPlanner"), "score: %lf x %lf y %lf theta %lf",
+      //    score.total, twist.x, twist.y, twist.theta);
+
       if (best.total < 0 || score.total < best.total) {
         best = score;
         if (results) {
@@ -477,8 +478,7 @@ DWBLocalPlanner::coreScoringAlgorithm(
 
 dwb_msgs::msg::TrajectoryScore
 DWBLocalPlanner::scoreTrajectory(
-  const dwb_msgs::msg::Trajectory2D & traj,
-  double best_score)
+  const dwb_msgs::msg::Trajectory2D & traj)
 {
   dwb_msgs::msg::TrajectoryScore score;
   score.traj = traj;
@@ -497,10 +497,6 @@ DWBLocalPlanner::scoreTrajectory(
     cs.raw_score = critic_score;
     score.scores.push_back(cs);
     score.total += critic_score * cs.scale;
-    if (short_circuit_trajectory_evaluation_ && best_score > 0 && score.total > best_score) {
-      // since we keep adding positives, once we are worse than the best, we will stay worse
-      break;
-    }
   }
 
   return score;

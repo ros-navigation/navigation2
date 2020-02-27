@@ -116,17 +116,11 @@ public:
   /**
    * @brief Score a given command. Can be used for testing.
    *
-   * Given a trajectory, calculate the score where lower scores are better.
-   * If the given (positive) score exceeds the best_score, calculation may be cut short, as the
-   * score can only go up from there.
-   *
    * @param traj Trajectory to check
-   * @param best_score If positive, the threshold for early termination
    * @return The full scoring of the input trajectory
    */
   virtual dwb_msgs::msg::TrajectoryScore scoreTrajectory(
-    const dwb_msgs::msg::Trajectory2D & traj,
-    double best_score = -1);
+    const dwb_msgs::msg::Trajectory2D & traj);
 
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
@@ -217,8 +211,6 @@ protected:
   std::vector<TrajectoryCritic::Ptr> critics_;
 
   std::string dwb_plugin_name_;
-
-  bool short_circuit_trajectory_evaluation_;
 };
 
 }  // namespace dwb_core
