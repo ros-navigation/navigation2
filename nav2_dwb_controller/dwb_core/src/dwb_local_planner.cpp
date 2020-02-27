@@ -428,10 +428,6 @@ DWBLocalPlanner::coreScoringAlgorithm(
       if (results) {
         results->twists.push_back(score);
       }
-
-      //RCLCPP_INFO(rclcpp::get_logger("DWBLocalPlanner"), "score: %lf x %lf y %lf theta %lf",
-      //    score.total, twist.x, twist.y, twist.theta);
-
       if (best.total < 0 || score.total < best.total) {
         best = score;
         if (results) {
