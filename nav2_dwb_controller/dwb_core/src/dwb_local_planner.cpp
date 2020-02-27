@@ -92,9 +92,6 @@ void DWBLocalPlanner::configure(
   declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
-    rclcpp::ParameterValue(true));
 
   std::string traj_generator_name;
   std::string goal_checker_name;
