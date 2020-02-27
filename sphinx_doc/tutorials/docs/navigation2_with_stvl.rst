@@ -39,7 +39,7 @@ STVL is another 3D perception plugin similar to the Voxel Layer.
 A more detailed overview of how it works can be found `here <https://github.com/SteveMacenski/spatio_temporal_voxel_layer/>`_, however it buffers 3D data from depth cameras, sonars, lidars, and more into a sparse volumetic world model and removes voxels over time proportional with a sensor model and time-based expiration.
 This can be especially useful for robots in highly dynamic envrionments and decreases the resource utilization for 3D sensor processing by up to 2x.
 STVL also treats 3D lidars and radars as first class citizens for support.
-The ROSCon talk for STVL can be found `here <https://vimeo.com/292699571>`_
+The ROSCon talk for STVL can be found `here <https://vimeo.com/292699571>`_.
 
 Tutorial Steps
 ==============

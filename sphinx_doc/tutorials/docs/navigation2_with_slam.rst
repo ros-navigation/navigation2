@@ -17,7 +17,7 @@ This tutorial applies to both simulated and physical robots, but will be complet
 Before completing this tutorial, completing the :ref:`getting_started`. is highly recommended especially if you are new to ROS and Navigation2.
 
 
-In this tutorial we'll be using SLAM Toolbox. More information can be found in the ROSCon talk for SLAM Toolbox. `video <https://vimeo.com/378682207>`_
+In this tutorial we'll be using SLAM Toolbox. More information can be found in the ROSCon talk for `SLAM Toolbox <https://vimeo.com/378682207>`_
 
 Requirements
 ============
