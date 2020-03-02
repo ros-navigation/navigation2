@@ -46,7 +46,8 @@ BtNavigator::BtNavigator()
     "nav2_rate_controller_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
-    "nav2_round_robin_node_bt_node"
+    "nav2_round_robin_node_bt_node",
+    "nav2_transform_available_condition_bt_node"
   };
 
   // Declare this node's parameters
