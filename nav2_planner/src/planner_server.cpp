@@ -214,7 +214,8 @@ PlannerServer::computePlan()
     }
 
     geometry_msgs::msg::PoseStamped start;
-    if (!nav2_util::getCurrentPose(start, *tf_)) {
+    if (!costmap_ros_->getRobotPose(start)) {
+      RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
       return;
     }
 

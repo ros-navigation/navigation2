@@ -62,7 +62,7 @@ author = u'Various'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-version = release = "0.2.3"
+version = release = "1.0.0"
 
 #
 # The short X.Y version.

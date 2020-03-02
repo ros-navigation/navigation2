@@ -3,7 +3,7 @@
    <br />
 .. |PN| replace:: Navigation 2
 
-.. |LPN| replace:: ROS 2 Navigation System
+.. |LPN| replace:: ROS 2 Navigation
 
 .. _project repo: https://github.com/ros-planning/navigation2
 

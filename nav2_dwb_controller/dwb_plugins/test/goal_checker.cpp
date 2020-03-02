@@ -135,6 +135,16 @@ public:
   }
 };
 
+TEST(VelocityIterator, goal_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  nav2_core::GoalChecker * gc = new SimpleGoalChecker;
+  gc->reset();
+  delete gc;
+  EXPECT_TRUE(true);
+}
+
 TEST(VelocityIterator, two_checks)
 {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");

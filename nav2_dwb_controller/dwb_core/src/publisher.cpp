@@ -146,6 +146,8 @@ DWBPublisher::on_cleanup()
 void
 DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
+  if (node_->count_subscribers(eval_pub_->get_topic_name()) < 1) {return;}
+
   if (results == nullptr) {return;}
 
   if (publish_evaluation_) {
@@ -158,6 +160,8 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
 void
 DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
+  if (node_->count_subscribers(marker_pub_->get_topic_name()) < 1) {return;}
+
   if (!publish_trajectories_) {return;}
   visualization_msgs::msg::MarkerArray ma;
   visualization_msgs::msg::Marker m;
@@ -226,7 +230,9 @@ DWBPublisher::publishLocalPlan(
 
   nav_msgs::msg::Path path =
     nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  local_pub_->publish(path);
+  if (node_->count_subscribers(local_pub_->get_topic_name()) < 1) {
+    local_pub_->publish(path);
+  }
 }
 
 void
@@ -234,6 +240,8 @@ DWBPublisher::publishCostGrid(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   const std::vector<TrajectoryCritic::Ptr> critics)
 {
+  if (node_->count_subscribers(cost_grid_pc_pub_->get_topic_name()) < 1) {return;}
+
   if (!publish_cost_grid_pc_) {return;}
 
   sensor_msgs::msg::PointCloud cost_grid_pc;
@@ -261,7 +269,7 @@ DWBPublisher::publishCostGrid(
 
   for (TrajectoryCritic::Ptr critic : critics) {
     unsigned int channel_index = cost_grid_pc.channels.size();
-    critic->addGridScores(cost_grid_pc);
+    critic->addCriticVisualization(cost_grid_pc);
     if (channel_index == cost_grid_pc.channels.size()) {
       // No channels were added, so skip to next critic
       continue;
@@ -302,6 +310,7 @@ DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
   rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
+  if (node_->count_subscribers(pub.get_topic_name()) < 1) {return;}
   if (!flag) {return;}
   nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
   pub.publish(path);
