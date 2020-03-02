@@ -161,6 +161,13 @@ Behavior Tree Nodes
 |                                    |                    | making progress or     |
 |                                    |                    | stuck                  |
 +------------------------------------+--------------------+------------------------+
+| `Transform Available Condition`_   |  Steve Macenski    | Checks if a TF         |
+|                                    |                    | transformation is      |
+|                                    |                    | available. When        |
+|                                    |                    | succeeds returns       |
+|                                    |                    | sucess for subsequent  |
+|                                    |                    | calls.                 |
++------------------------------------+--------------------+------------------------+
 
 .. _Goal Reached Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
 .. _Initial Pose received Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
