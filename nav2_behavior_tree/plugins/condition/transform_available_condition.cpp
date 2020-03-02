@@ -47,7 +47,8 @@ public:
     getInput("parent", parent_frame_);
 
     if (child_frame_.empty() || parent_frame_.empty()) {
-      RCLCPP_FATAL(node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
+      RCLCPP_FATAL(
+        node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
         child_frame_.c_str(), parent_frame_.c_str());
       exit(-1);
     }
