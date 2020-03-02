@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_bt_navigator/ros_topic_logger.hpp"
 
 namespace nav2_bt_navigator
 {
