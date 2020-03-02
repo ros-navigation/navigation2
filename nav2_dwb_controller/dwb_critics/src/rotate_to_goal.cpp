@@ -55,11 +55,11 @@ void RotateToGoalCritic::onInit()
 {
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(
     nh_,
-    dwb_plugin_name_ + "." + name_ + ".xy_goal_tolerance", 0.25);
+    dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
   double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(
     nh_,
-    dwb_plugin_name_ + "." + name_ + ".trans_stopped_velocity", 0.25);
+    dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
   slowing_factor_ = nav_2d_utils::searchAndGetParam(
     nh_,
