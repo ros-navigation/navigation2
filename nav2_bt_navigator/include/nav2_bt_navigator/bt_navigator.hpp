@@ -119,9 +119,6 @@ protected:
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
 
-  // The complete behavior tree that results from parsing the incoming XML
-  std::unique_ptr<BT::Tree> tree_;
-
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
 

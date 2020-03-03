@@ -35,7 +35,7 @@ public:
   virtual ~BehaviorTreeEngine() {}
 
   BtStatus run(
-    std::unique_ptr<BT::Tree> & tree,
+    BT::Tree * tree,
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
