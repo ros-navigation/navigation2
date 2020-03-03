@@ -96,7 +96,7 @@ public:
       RCLCPP_WARN(
         node_->get_logger(),
         "Node timed out while executing service call to %s.", service_name_.c_str());
-      on_server_timeout();
+      on_wait_for_result();
     }
     return BT::NodeStatus::FAILURE;
   }
@@ -109,7 +109,7 @@ public:
 
   // An opportunity to do something after
   // a timeout waiting for a result that hasn't been received yet
-  virtual void on_server_timeout()
+  virtual void on_wait_for_result()
   {
   }
 

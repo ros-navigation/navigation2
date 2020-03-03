@@ -87,7 +87,7 @@ public:
   }
 
   // Derived classes can override any of the following methods to hook into the
-  // processing for the action: on_tick, on_server_timeout, and on_success
+  // processing for the action: on_tick, on_wait_for_result, and on_success
 
   // Could do dynamic checks, such as getting updates to values on the blackboard
   virtual void on_tick()
@@ -96,7 +96,7 @@ public:
 
   // There can be many loop iterations per tick. Any opportunity to do something after
   // a timeout waiting for a result that hasn't been received yet
-  virtual void on_server_timeout()
+  virtual void on_wait_for_result()
   {
   }
 
@@ -112,7 +112,19 @@ public:
     on_tick();
 
 new_goal_received:
-    auto future_goal_handle = action_client_->async_send_goal(goal_);
+    goal_result_available_ = false;
+    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+    send_goal_options.result_callback =
+      [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
+        if (result.code != rclcpp_action::ResultCode::ABORTED)
+        {
+          goal_result_available_ = true;
+          result_ = result;
+        }
+      };
+
+    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
     {
@@ -124,28 +136,22 @@ new_goal_received:
       throw std::runtime_error("Goal was rejected by the action server");
     }
 
-    auto future_result = action_client_->async_get_result(goal_handle_);
-    rclcpp::executor::FutureReturnCode rc;
-    do {
-      rc = rclcpp::spin_until_future_complete(node_, future_result, server_timeout_);
-      if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
-        on_server_timeout();
+    while (rclcpp::ok() && !goal_result_available_) {
+      on_wait_for_result();
 
-        // We can handle a new goal if we're still executing
-        auto status = goal_handle_->get_status();
-        if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-          status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ))
-        {
-          goal_updated_ = false;
-          goto new_goal_received;
-        }
-
-        // Yield to any other CoroActionNodes (coroutines)
-        setStatusRunningAndYield();
+      auto status = goal_handle_->get_status();
+      if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+      {
+        goal_updated_ = false;
+        goto new_goal_received;
       }
-    } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
-    result_ = future_result.get();
+      // Yield to any other nodes
+      setStatusRunningAndYield();
+      rclcpp::spin_some(node_);
+    }
+
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
         on_success();
@@ -211,6 +217,7 @@ protected:
   // All ROS2 actions have a goal and a result
   typename ActionT::Goal goal_;
   bool goal_updated_{false};
+  bool goal_result_available_{false};
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
   typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
 
