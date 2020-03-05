@@ -39,7 +39,7 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
-class CheckOnlineThread;
+class InitialThread;
 
 /// Panel to interface to the nav2 stack
 class Nav2Panel : public rviz_common::Panel
@@ -103,25 +103,21 @@ private:
   nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
   nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
 
-  LifecycleStatusIndicator * client_nav_state_indicator_{nullptr};
-  LifecycleStatusIndicator * client_loc_state_indicator_{nullptr};
+  LifecycleStatusIndicator *client_nav_state_indicator_{nullptr};
+  LifecycleStatusIndicator *client_loc_state_indicator_{nullptr};
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
 
   QStateMachine state_machine_;
-  CheckOnlineThread * nav_online_thread_;
-  CheckOnlineThread * loc_online_thread_;
-  QTimer * nav_online_timer_;
-  QTimer * loc_online_timer_;
+  InitialThread * initial_thread_;
 
-  QState * offline_{nullptr};
-  QState * online_{nullptr};
+  QState * pre_initial_{nullptr};
   QState * initial_{nullptr};
   QState * idle_{nullptr};
   QState * reset_{nullptr};
   QState * paused_{nullptr};
-  QHistoryState * old_state_{nullptr};
+  QState * resumed_{nullptr};
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
@@ -146,40 +142,62 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;
 };
 
-class CheckOnlineThread : public QThread
+class InitialThread : public QThread
 {
   Q_OBJECT
 
 public:
   using SystemStatus = nav2_lifecycle_manager::SystemStatus;
 
-  explicit CheckOnlineThread(
-    nav2_lifecycle_manager::LifecycleManagerClient & client)
-  : client_(client)
+  explicit InitialThread(
+    nav2_lifecycle_manager::LifecycleManagerClient & client_nav,
+    nav2_lifecycle_manager::LifecycleManagerClient & client_loc)
+  : client_nav_(client_nav), client_loc_(client_loc)
   {}
 
   void run() override
   {
-    SystemStatus status = SystemStatus::TIMEOUT;
+    SystemStatus status_nav = SystemStatus::TIMEOUT;
+    SystemStatus status_loc = SystemStatus::TIMEOUT;
 
-    status = client_.is_active(std::chrono::seconds(1));
+    while (status_nav == SystemStatus::TIMEOUT) {
+      if (status_nav == SystemStatus::TIMEOUT) {
+        status_nav = client_nav_.is_active(std::chrono::seconds(1));
+      }
+    }
 
-    if (status == SystemStatus::ACTIVE) {
-      emit isActive();
-    } else if(status == SystemStatus::INACTIVE){
-      emit isInactive();
+    // try to communicate twice, might not actually be up if in SLAM mode
+    bool tried_loc_bringup_once = false;
+    while (status_loc == SystemStatus::TIMEOUT) {
+      status_loc = client_loc_.is_active(std::chrono::seconds(1));
+      if (tried_loc_bringup_once) {
+        break;
+      }
+      tried_loc_bringup_once = true;
+    }
+
+    if (status_nav == SystemStatus::ACTIVE) {
+      emit activeNavigation();
     } else {
-      emit timedOut();
+      emit inactiveNavigation();
+    }
+
+    if (status_loc == SystemStatus::ACTIVE) {
+      emit activeLocalization();
+    } else {
+      emit inactiveLocalization();
     }
   }
 
 signals:
-  void isActive();
-  void isInactive();
-  void timedOut();
+  void activeNavigation();
+  void inactiveNavigation();
+  void activeLocalization();
+  void inactiveLocalization();
 
 private:
-  nav2_lifecycle_manager::LifecycleManagerClient client_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
+  nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
 };
 
 }  // namespace nav2_rviz_plugins

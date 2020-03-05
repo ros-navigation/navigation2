@@ -55,21 +55,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * waypoint_goal_msg = "Start navigation";
   const char * cancel_waypoint_msg = "Cancel waypoint mode";
 
-  offline_ = new QState();
-  offline_->setObjectName("offline");
-  offline_->assignProperty(start_reset_button_, "text", "Startup");
-  offline_->assignProperty(start_reset_button_, "enabled", false);
+  pre_initial_ = new QState();
+  pre_initial_->setObjectName("pre_initial");
+  pre_initial_->assignProperty(start_reset_button_, "text", "Startup");
+  pre_initial_->assignProperty(start_reset_button_, "enabled", false);
 
-  offline_->assignProperty(pause_resume_button_, "text", "Pause");
-  offline_->assignProperty(pause_resume_button_, "enabled", false);
+  pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
+  pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
-  offline_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
-  offline_->assignProperty(navigation_mode_button_, "enabled", false);
+  pre_initial_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  pre_initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  online_ = new QState();
-  online_->setObjectName("online");
-
-  initial_ = new QState(online_);
+  initial_ = new QState();
   initial_->setObjectName("initial");
   initial_->assignProperty(start_reset_button_, "text", "Startup");
   initial_->assignProperty(start_reset_button_, "toolTip", startup_msg);
@@ -82,7 +79,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
   // State entered when navigate_to_pose action is not active
-  idle_ = new QState(online_);
+  idle_ = new QState();
   idle_->setObjectName("idle");
   idle_->assignProperty(start_reset_button_, "text", "Reset");
   idle_->assignProperty(start_reset_button_, "toolTip", shutdown_msg);
@@ -97,7 +94,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(navigation_mode_button_, "toolTip", single_goal_msg);
 
   // State entered when navigate_to_pose action is not active
-  accumulating_ = new QState(online_);
+  accumulating_ = new QState();
   accumulating_->setObjectName("accumulating");
   accumulating_->assignProperty(start_reset_button_, "text", "Reset");
   accumulating_->assignProperty(start_reset_button_, "toolTip", cancel_waypoint_msg);
@@ -111,18 +108,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(navigation_mode_button_, "enabled", true);
   accumulating_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
 
-  accumulated_ = new QState(online_);
+  accumulated_ = new QState();
 
   // State entered to cancel the navigate_to_pose action
-  canceled_ = new QState(online_);
+  canceled_ = new QState();
   canceled_->setObjectName("canceled");
 
   // State entered to reset the nav2 lifecycle nodes
-  reset_ = new QState(online_);
+  reset_ = new QState();
   reset_->setObjectName("reset");
 
   // State entered while the navigate_to_pose action is active
-  running_ = new QState(online_);
+  running_ = new QState();
   running_->setObjectName("running");
   running_->assignProperty(start_reset_button_, "text", "Cancel");
   running_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
@@ -132,11 +129,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   running_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
   running_->assignProperty(navigation_mode_button_, "enabled", false);
-
-  // History state saving old state for resuming state machine after paused_ state.
-  old_state_ = new QHistoryState(online_);
-
-  online_->setInitialState(initial_);
 
   // State entered when pause is requested
   paused_ = new QState();
@@ -148,15 +140,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
   paused_->assignProperty(pause_resume_button_, "enabled", true);
 
-  paused_->assignProperty(navigation_mode_button_, "text", "Start navigation");
+  paused_->assignProperty(navigation_mode_button_, "text", "Start navidation");
   paused_->assignProperty(navigation_mode_button_, "toolTip", resume_msg);
   paused_->assignProperty(navigation_mode_button_, "enabled", true);
+
+  // State entered to resume the nav2 lifecycle nodes
+  resumed_ = new QState();
+  resumed_->setObjectName("resuming");
 
   QObject::connect(initial_, SIGNAL(exited()), this, SLOT(onStartup()));
   QObject::connect(canceled_, SIGNAL(exited()), this, SLOT(onCancel()));
   QObject::connect(reset_, SIGNAL(exited()), this, SLOT(onShutdown()));
   QObject::connect(paused_, SIGNAL(entered()), this, SLOT(onPause()));
-  QObject::connect(paused_, SIGNAL(exited()), this, SLOT(onResume()));
+  QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
   QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
   QObject::connect(accumulated_, SIGNAL(entered()), this, SLOT(onAccumulated()));
 
@@ -164,19 +160,20 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
   idle_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
   running_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
+  paused_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
   idle_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulating_);
   accumulating_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulated_);
   accumulating_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
 
   // Internal state transitions
-  initial_->addTransition(initial_, SIGNAL(entered()), idle_);
   canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
   reset_->addTransition(reset_, SIGNAL(entered()), initial_);
+  resumed_->addTransition(resumed_, SIGNAL(entered()), idle_);
   accumulated_->addTransition(accumulated_, SIGNAL(entered()), idle_);
 
   // Pause/Resume button click transitions
-  online_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
-  paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), old_state_);
+  idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
+  paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), resumed_);
 
   // ROSAction Transitions
   ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
@@ -187,45 +184,41 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  nav_online_thread_ = new CheckOnlineThread(client_nav_);
-  loc_online_thread_ = new CheckOnlineThread(client_loc_);
-  nav_online_timer_ = new QTimer();
-  loc_online_timer_ = new QTimer();
+  initial_thread_ = new InitialThread(client_nav_, client_loc_);
+  connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
-  QObject::connect(nav_online_timer_, SIGNAL(timeout()), nav_online_thread_, SLOT(start()));
-  QObject::connect(nav_online_thread_, SIGNAL(isActive()), client_nav_state_indicator_, SLOT(setActive()));
-  QObject::connect(nav_online_thread_, SIGNAL(isInactive()), client_nav_state_indicator_, SLOT(setInactive()));
-  QObject::connect(nav_online_thread_, SIGNAL(timedOut()), client_nav_state_indicator_, SLOT(setTimedOut()));
-  QObject::connect(paused_, SIGNAL(entered()), client_nav_state_indicator_, SLOT(setInactive()));
-  QObject::connect(paused_, SIGNAL(exited()), client_nav_state_indicator_, SLOT(setActive()));
-
-  QObject::connect(loc_online_timer_, SIGNAL(timeout()), loc_online_thread_, SLOT(start()));
-  QObject::connect(loc_online_thread_, SIGNAL(isActive()), client_loc_state_indicator_, SLOT(setActive()));
-  QObject::connect(loc_online_thread_, SIGNAL(isInactive()), client_loc_state_indicator_, SLOT(setInactive()));
-  QObject::connect(loc_online_thread_, SIGNAL(timedOut()), client_loc_state_indicator_, SLOT(setTimedOut()));
-  QObject::connect(paused_, SIGNAL(entered()), client_loc_state_indicator_, SLOT(setInactive()));
-  QObject::connect(paused_, SIGNAL(exited()), client_loc_state_indicator_, SLOT(setActive()));
+  QObject::connect(initial_thread_, SIGNAL(activeNavigation()), client_nav_state_indicator_, SLOT(setActive()));
+  QObject::connect(initial_thread_, SIGNAL(inactiveNavigation()), client_nav_state_indicator_, SLOT(setInactive()));
+  QObject::connect(initial_thread_, SIGNAL(activeLocalization()), client_loc_state_indicator_, SLOT(setActive()));
+  QObject::connect(initial_thread_, SIGNAL(inactiveLocalization()), client_loc_state_indicator_, SLOT(setInactive()));
 
   QSignalTransition * activeSignal = new QSignalTransition(
-    nav_online_thread_,
-    &CheckOnlineThread::isActive);
-  activeSignal->setTargetState(online_);
-  offline_->addTransition(activeSignal);
+    initial_thread_,
+    &InitialThread::activeNavigation);
+  activeSignal->setTargetState(idle_);
+  pre_initial_->addTransition(activeSignal);
 
   QSignalTransition * inactiveSignal = new QSignalTransition(
-    nav_online_thread_,
-    &CheckOnlineThread::isInactive);
-  inactiveSignal->setTargetState(offline_);
-  online_->addTransition(inactiveSignal);
+    initial_thread_,
+    &InitialThread::inactiveNavigation);
+  inactiveSignal->setTargetState(initial_);
+  pre_initial_->addTransition(inactiveSignal);
 
-  state_machine_.addState(offline_);
-  state_machine_.addState(online_);
+  state_machine_.addState(pre_initial_);
+  state_machine_.addState(initial_);
+  state_machine_.addState(idle_);
+  state_machine_.addState(running_);
+  state_machine_.addState(canceled_);
+  state_machine_.addState(reset_);
   state_machine_.addState(paused_);
+  state_machine_.addState(resumed_);
+  state_machine_.addState(accumulating_);
+  state_machine_.addState(accumulated_);
 
-  state_machine_.setInitialState(offline_);
+  state_machine_.setInitialState(pre_initial_);
 
   // delay starting initial thread until state machine has started or a race occurs
-  QObject::connect(offline_, SIGNAL(entered()), this, SLOT(startThread()));
+  QObject::connect(&state_machine_, SIGNAL(started()), this, SLOT(startThread()));
   state_machine_.start();
 
   // Lay out the items in the panel
@@ -278,9 +271,7 @@ void
 Nav2Panel::startThread()
 {
   // start initial thread now that state machine is started
-  // check that servers are ready every 1 second.
-  nav_online_timer_->start(1000);
-  loc_online_timer_->start(1000);
+  initial_thread_->start();
 }
 
 void
@@ -326,9 +317,6 @@ Nav2Panel::onStartup()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       &client_loc_));
-
-  nav_online_timer_->setInterval(30000);
-  loc_online_timer_->setInterval(30000);
 }
 
 void
