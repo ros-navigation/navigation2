@@ -172,6 +172,7 @@ Behavior Tree Nodes
 .. _Goal Reached Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
 .. _Initial Pose received Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
 .. _Is Stuck Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
+.. _Transform Available Condition: https://github.com/ros-planning/navigation2/tree/master/nav2_recoveries/plugins
 
 +-----------------------+-------------------+----------------------------------+
 | Decorator Plugin Name |    Creator        |       Description                |
