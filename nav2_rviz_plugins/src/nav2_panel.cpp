@@ -38,8 +38,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   // Create the control button and its tooltip
 
-  client_nav_state_indicator_ = new LifecycleStatusIndicator("lifecycle_manager_navigation");
-  client_loc_state_indicator_ = new LifecycleStatusIndicator("lifecycle_manager_localization");
   start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
   navigation_mode_button_ = new QPushButton;
@@ -187,20 +185,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_thread_ = new InitialThread(client_nav_, client_loc_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
-  QObject::connect(initial_thread_, SIGNAL(activeNavigation()), client_nav_state_indicator_, SLOT(setActive()));
-  QObject::connect(initial_thread_, SIGNAL(inactiveNavigation()), client_nav_state_indicator_, SLOT(setInactive()));
-  QObject::connect(initial_thread_, SIGNAL(activeLocalization()), client_loc_state_indicator_, SLOT(setActive()));
-  QObject::connect(initial_thread_, SIGNAL(inactiveLocalization()), client_loc_state_indicator_, SLOT(setInactive()));
-
   QSignalTransition * activeSignal = new QSignalTransition(
     initial_thread_,
-    &InitialThread::activeNavigation);
+    &InitialThread::activeSystem);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
 
   QSignalTransition * inactiveSignal = new QSignalTransition(
     initial_thread_,
-    &InitialThread::inactiveNavigation);
+    &InitialThread::inactiveSystem);
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
 
@@ -223,8 +216,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->addWidget(client_nav_state_indicator_);
-  main_layout->addWidget(client_loc_state_indicator_);
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);

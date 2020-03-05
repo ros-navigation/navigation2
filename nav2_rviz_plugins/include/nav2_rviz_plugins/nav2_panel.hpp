@@ -25,7 +25,6 @@
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
-#include "nav2_rviz_plugins/lifecycle_status_indicator.hpp"
 #include "nav2_rviz_plugins/ros_action_qevent.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -103,8 +102,6 @@ private:
   nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
   nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
 
-  LifecycleStatusIndicator *client_nav_state_indicator_{nullptr};
-  LifecycleStatusIndicator *client_loc_state_indicator_{nullptr};
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
@@ -128,6 +125,7 @@ private:
   // navigation
   QState * accumulating_{nullptr};
   QState * accumulated_{nullptr};
+
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
 
   // Publish the visual markers with the waypoints
@@ -177,23 +175,15 @@ public:
     }
 
     if (status_nav == SystemStatus::ACTIVE) {
-      emit activeNavigation();
+      emit activeSystem();
     } else {
-      emit inactiveNavigation();
-    }
-
-    if (status_loc == SystemStatus::ACTIVE) {
-      emit activeLocalization();
-    } else {
-      emit inactiveLocalization();
+      emit inactiveSystem();
     }
   }
 
 signals:
-  void activeNavigation();
-  void inactiveNavigation();
-  void activeLocalization();
-  void inactiveLocalization();
+  void activeSystem();
+  void inactiveSystem();
 
 private:
   nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
