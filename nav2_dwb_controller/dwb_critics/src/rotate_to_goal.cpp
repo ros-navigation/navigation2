@@ -55,11 +55,11 @@ void RotateToGoalCritic::onInit()
 {
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(
     nh_,
-    dwb_plugin_name_ + "." + name_ + ".xy_goal_tolerance", 0.25);
+    dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
   double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(
     nh_,
-    dwb_plugin_name_ + "." + name_ + ".trans_stopped_velocity", 0.25);
+    dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
   slowing_factor_ = nav_2d_utils::searchAndGetParam(
     nh_,
@@ -119,7 +119,7 @@ double RotateToGoalCritic::scoreRotation(const dwb_msgs::msg::Trajectory2D & tra
 
   double end_yaw;
   if (lookahead_time_ >= 0.0) {
-    geometry_msgs::msg::Pose2D eval_pose = dwb_local_planner::projectPose(traj, lookahead_time_);
+    geometry_msgs::msg::Pose2D eval_pose = dwb_core::projectPose(traj, lookahead_time_);
     end_yaw = eval_pose.theta;
   } else {
     end_yaw = traj.poses.back().theta;

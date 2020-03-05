@@ -214,7 +214,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Create a thread to handle updating the map
-  stopped_ = false;
+  stopped_ = true;  // to active plugins
   stop_updates_ = false;
   map_update_thread_shutdown_ = false;
 

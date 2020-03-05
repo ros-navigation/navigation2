@@ -35,9 +35,10 @@
 #ifndef DWB_CORE__TRAJECTORY_UTILS_HPP_
 #define DWB_CORE__TRAJECTORY_UTILS_HPP_
 
+#include "rclcpp/rclcpp.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 
-namespace dwb_local_planner
+namespace dwb_core
 {
 
 /**
@@ -64,6 +65,6 @@ geometry_msgs::msg::Pose2D projectPose(
   const dwb_msgs::msg::Trajectory2D & trajectory,
   const double time_offset);
 
-}  // namespace dwb_local_planner
+}  // namespace dwb_core
 
 #endif  // DWB_CORE__TRAJECTORY_UTILS_HPP_

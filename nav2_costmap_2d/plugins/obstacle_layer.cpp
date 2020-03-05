@@ -201,6 +201,7 @@ void ObstacleLayer::onInitialize()
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub(
         new message_filters::Subscriber<sensor_msgs::msg::LaserScan>(
           rclcpp_node_, topic, custom_qos_profile));
+      sub->unsubscribe();
 
       std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> filter(
         new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(
@@ -228,6 +229,7 @@ void ObstacleLayer::onInitialize()
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub(
         new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(
           rclcpp_node_, topic, custom_qos_profile));
+      sub->unsubscribe();
 
       if (inf_is_valid) {
         RCLCPP_WARN(
@@ -600,6 +602,10 @@ ObstacleLayer::raytraceFreespace(
 void
 ObstacleLayer::activate()
 {
+  for (auto & notifier : observation_notifiers_) {
+    notifier->clear();
+  }
+
   // if we're stopped we need to re-subscribe to topics
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {

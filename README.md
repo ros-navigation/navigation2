@@ -7,6 +7,7 @@ For detailed instructions on how to:
 - [Install](https://ros-planning.github.io/navigation2/build_instructions/index.html#install)
 - [Tutorials](https://ros-planning.github.io/navigation2/tutorials/index.html)
 - [Configure](https://ros-planning.github.io/navigation2/configuration/index.html)
+- [Navigation Plugins](https://ros-planning.github.io/navigation2/plugins/index.html)
 - [Contribute](https://ros-planning.github.io/navigation2/contribute/index.html)
 
 Please visit our [documentation site](https://ros-planning.github.io/navigation2/).
