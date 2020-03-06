@@ -181,10 +181,13 @@ def main(argv=sys.argv[1:]):
 
     result = test.run()
     test.shutdown()
+    test.info_msg('Done Shutting Down.')
 
     if not result:
+        test.info_msg('Exiting failed')
         exit(1)
     else:
+        test.info_msg('Exiting passed')
         exit(0)
 
 
