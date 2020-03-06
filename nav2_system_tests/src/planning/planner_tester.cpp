@@ -67,10 +67,10 @@ void PlannerTester::activate()
   planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->onConfigure(state);
   publishRobotTransform();
-  planner_tester_->onActivate(state);
-
-  // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
+  rclcpp::Rate r(1);
+  r.sleep();
+  planner_tester_->onActivate(state);
 }
 
 void PlannerTester::deactivate()
