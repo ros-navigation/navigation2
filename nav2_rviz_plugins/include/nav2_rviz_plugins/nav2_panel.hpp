@@ -106,6 +106,9 @@ private:
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
 
+  QLabel * navigation_status_indicator_{nullptr};
+  QLabel * localization_status_indicator_{nullptr};
+
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
 
@@ -175,15 +178,23 @@ public:
     }
 
     if (status_nav == SystemStatus::ACTIVE) {
-      emit activeSystem();
+      emit navigationActive();
     } else {
-      emit inactiveSystem();
+      emit navigationInactive();
+    }
+
+    if (status_loc == SystemStatus::ACTIVE) {
+      emit localizationActive();
+    } else {
+      emit localizationInactive();
     }
   }
 
 signals:
-  void activeSystem();
-  void inactiveSystem();
+  void navigationActive();
+  void navigationInactive();
+  void localizationActive();
+  void localizationInactive();
 
 private:
   nav2_lifecycle_manager::LifecycleManagerClient client_nav_;

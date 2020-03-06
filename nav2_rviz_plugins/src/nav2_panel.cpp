@@ -41,6 +41,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
   navigation_mode_button_ = new QPushButton;
+  navigation_status_indicator_ = new QLabel;
+  localization_status_indicator_ = new QLabel;
 
   // Create the state machine used to present the proper control button states in the UI
 
@@ -52,6 +54,24 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * single_goal_msg = "Change to waypoint mode navigation";
   const char * waypoint_goal_msg = "Start navigation";
   const char * cancel_waypoint_msg = "Cancel waypoint mode";
+
+  const QString navigation_active("<table><tr><td width=100><b>Navigation:</b></td>"
+    "<td><font color=green>active</color></td></tr></table>");
+  const QString navigation_inactive("<table><tr><td width=100><b>Navigation:</b></td>"
+    "<td>inactive</td></tr></table>");
+  const QString navigation_unknown("<table><tr><td width=100><b>Navigation:</b></td>"
+    "<td>unknown</td></tr></table>");
+  const QString localization_active("<table><tr><td width=100><b>Localization:</b></td>"
+    "<td><font color=green>active</color></td></tr></table>");
+  const QString localization_inactive("<table><tr><td width=100><b>Localization:</b></td>"
+    "<td>inactive</td></tr></table>");
+  const QString localization_unknown("<table><tr><td width=100><b>Localization:</b></td>"
+    "<td>unknown</td></tr></table>");
+
+  navigation_status_indicator_->setText(navigation_unknown);
+  localization_status_indicator_->setText(localization_unknown);
+  navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  localization_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -187,15 +207,32 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   QSignalTransition * activeSignal = new QSignalTransition(
     initial_thread_,
-    &InitialThread::activeSystem);
+    &InitialThread::navigationActive);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
 
   QSignalTransition * inactiveSignal = new QSignalTransition(
     initial_thread_,
-    &InitialThread::inactiveSystem);
+    &InitialThread::navigationInactive);
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
+
+  QObject::connect(initial_thread_, &InitialThread::navigationActive,
+    [this, navigation_active] {
+      navigation_status_indicator_->setText(navigation_active);
+    });
+  QObject::connect(initial_thread_, &InitialThread::navigationInactive,
+    [this, navigation_inactive] {
+      navigation_status_indicator_->setText(navigation_inactive);
+    });
+  QObject::connect(initial_thread_, &InitialThread::localizationActive,
+    [this, localization_active] {
+      localization_status_indicator_->setText(localization_active);
+    });
+  QObject::connect(initial_thread_, &InitialThread::localizationInactive,
+    [this, localization_inactive] {
+      localization_status_indicator_->setText(localization_inactive);
+    });
 
   state_machine_.addState(pre_initial_);
   state_machine_.addState(initial_);
@@ -216,6 +253,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
+  main_layout->addWidget(navigation_status_indicator_);
+  main_layout->addWidget(localization_status_indicator_);
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
