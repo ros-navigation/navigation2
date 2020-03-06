@@ -75,5 +75,6 @@ of the TB3 navigating in a small lounge.
    tutorials/index.rst
    configuration/index.rst
    plugins/index.rst
+   migration/index.rst
    contribute/index.rst
    about/index.rst
