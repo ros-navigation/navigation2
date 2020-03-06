@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Samsung R&D Institute Russia
 // Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,56 +17,77 @@
 #define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 
 #include <string>
-#include "map_mode.hpp"
-#include "nav_msgs/srv/get_map.hpp"
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/srv/save_map.hpp"
+
+#include "mapio.hpp"
 
 namespace nav2_map_server
 {
 
 /**
  * @class nav2_map_server::MapSaver
- * @brief A class that writes map to a file from occpancy grid which is
- * subscribed from "/map" topic.
+ * @brief A class that provides map saving methods and services
  */
-class MapSaver : public rclcpp::Node
+class MapSaver : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the MapSaver
-   * @param options NodeOptions for the MapSaver
+   * @brief Constructor for the nav2_map_server::MapSaver
    */
-  explicit MapSaver(const rclcpp::NodeOptions & options);
+  MapSaver();
 
   /**
-   * @brief A Map callback function calls try_write_map_to_file method to
-   * write map data to a file.
-   * @param map Occupancy Grid message data
+   * @brief Destructor for the nav2_map_server::MapServer
    */
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map);
+  ~MapSaver();
 
   /**
-   * @brief Returns the promise as shared future
-   * @return a shared future copy of save_next_map_promise
+   * @brief Read a message from incoming map topic and save map to a file
+   * @param map_topic Incoming map topic name
+   * NOTE: map_topic could be updated during function execution.
+   * @param save_parameters Map saving parameters.
+   * NOTE: save_parameters could be updated during function execution.
+   * @return true of false
    */
-  std::shared_future<void> map_saved_future() {return save_next_map_promise.get_future().share();}
+  bool saveMapTopicToFile(std::string & map_topic, SaveParameters & save_parameters);
 
 protected:
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
+  // Lifecycle interfaces
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief Writes map data to file
-   * @param map Occupancy grid data
+   * @brief A callback function that receives map message from subscribed topic
+   * @param map Occupancy Grid message data
    */
-  void try_write_map_to_file(const nav_msgs::msg::OccupancyGrid & map);
+  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  std::promise<void> save_next_map_promise;
+  // The timeout for saving the map in service
+  std::shared_ptr<rclcpp::Duration> save_map_timeout_;
+  // Default values for map thresholds
+  int free_thresh_default_;
+  int occupied_thresh_default_;
 
-  std::string image_format;
-  std::string mapname_;
-  int threshold_occupied_;
-  int threshold_free_;
-  nav2_map_server::MapMode map_mode;
+  // The name of the service for saving a map from topic
+  const std::string save_map_service_name_{"save_map"};
+  // A service to save the map to a file at run time (SaveMap)
+  rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
+
+  // Map topic listener node
+  rclcpp::Node::SharedPtr map_listener_;
+
+  // Pointer to map message received in the subscription callback
+  nav_msgs::msg::OccupancyGrid::SharedPtr msg_;
+  // Indicator that map message was receiced
+  bool got_map_msg_;
 };
 
 }  // namespace nav2_map_server

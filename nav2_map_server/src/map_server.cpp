@@ -15,12 +15,10 @@
 #include "nav2_map_server/map_server.hpp"
 
 #include <fstream>
-#include <memory>
 #include <stdexcept>
 #include <string>
 
 #include "nav2_map_server/occ_grid_loader.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "yaml-cpp/yaml.h"
 
 using namespace std::chrono_literals;
@@ -35,6 +33,8 @@ MapServer::MapServer()
 
   // Declare the node parameters
   declare_parameter("yaml_filename");
+  declare_parameter("topic_name", "map");
+  declare_parameter("frame_id", "map");
 }
 
 MapServer::~MapServer()
@@ -68,9 +68,13 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
     map_type = "occupancy";
   }
 
+  std::string topic_name = get_parameter("topic_name").as_string();
+  std::string frame_id = get_parameter("frame_id").as_string();
+
   // Create the correct map loader for the specified map type
   if (map_type == "occupancy") {
-    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename);
+    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename,
+      topic_name, frame_id);
   } else {
     std::string msg = "Cannot load unknown map type: '" + map_type + "'";
     throw std::runtime_error(msg);

@@ -18,9 +18,9 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "nav2_map_server/occ_grid_loader.hpp"
 
 #include "map_mode.hpp"
+#include "mapio.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
@@ -29,6 +29,7 @@
 
 namespace nav2_map_server
 {
+
 /**
  * @class nav2_map_server::OccGridLoader
  * @brief Parses the map yaml file and creates a service and a publisher that
@@ -42,7 +43,8 @@ public:
    * @param node
    * @param Yaml_filename File that contains map data
    */
-  OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);
+  OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename,
+    std::string & topic_name, std::string & frame_id);
   /**
    * @brief Disabling the use of default or empty constructor
    */
@@ -51,6 +53,7 @@ public:
    * @brief Destructor for OccGridLoader
    */
   ~OccGridLoader();
+
   /**
    * @brief Load map and its parameters from the file
    * @param state Lifecycle Node's state
@@ -83,31 +86,22 @@ protected:
   // The name of the YAML file from which to get the conversion parameters
   std::string yaml_filename_;
 
-  typedef struct
-  {
-    std::string image_file_name;
-    double resolution{0};
-    std::vector<double> origin{0, 0, 0};
-    double free_thresh;
-    double occupied_thresh;
-    MapMode mode;
-    bool negate;
-  } LoadParameters;
+  /**
+   * @brief Load the map YAML, image from map file name and
+   * generate output response containing an OccupancyGrid.
+   * Update msg_ class variable.
+   * @param yaml_file name of input YAML file
+   * @param response Output response with loaded OccupancyGrid map
+   * @return true or false
+   */
+  bool loadMapResponseFromYaml(
+    const std::string & yaml_file,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   /**
-   * @brief Load and parse the given YAML file
-   * @param yaml_filename_ Name of the map file passed though parameter
-   * @throw YAML::Exception
+   * @brief Method correcting msg_ header when it belongs to instantiated object
    */
-  LoadParameters load_map_yaml(const std::string & yaml_filename_);
-
-  // Load the image and generate an OccupancyGrid
-  void loadMapFromFile(const LoadParameters & loadParameters);
-
-  // Load the map yaml and image from yaml file name
-  bool loadMapFromYaml(
-    std::string yaml_file,
-    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response = nullptr);
+  void updateMsgHeader();
 
   // A service to provide the occupancy grid (GetMap) and the message to return
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
@@ -121,17 +115,17 @@ protected:
   // The message to publish on the occupancy grid topic
   std::unique_ptr<nav_msgs::msg::OccupancyGrid> msg_;
 
-  // The frame ID used in the returned OccupancyGrid message
-  static constexpr const char * frame_id_{"map"};
-
-  // The name for the topic on which the map will be published
-  static constexpr const char * topic_name_{"map"};
-
   // The name of the service for getting a map
-  static constexpr const char * service_name_{"map"};
+  const std::string service_name_{"map"};
 
   // The name of the service for loading a map
-  static constexpr const char * load_map_service_name_{"load_map"};
+  const std::string load_map_service_name_{"load_map"};
+
+  // The name for the topic on which the map will be published
+  std::string topic_name_;
+
+  // The frame ID used in the returned OccupancyGrid message
+  std::string frame_id_;
 
   // Timer for republishing map
   rclcpp::TimerBase::SharedPtr timer_;

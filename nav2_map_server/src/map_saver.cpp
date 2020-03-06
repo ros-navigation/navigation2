@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Samsung R&D Institute Russia
  * Copyright 2019 Rover Robotics
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
@@ -30,221 +31,173 @@
 
 #include "nav2_map_server/map_saver.hpp"
 
-#include <cstdio>
-#include <fstream>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "Magick++.h"
-#include "nav2_map_server/map_mode.hpp"
-#include "nav_msgs/msg/occupancy_grid.h"
-#include "nav_msgs/srv/get_map.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "yaml-cpp/yaml.h"
+#include <stdexcept>
 
 namespace nav2_map_server
 {
-MapSaver::MapSaver(const rclcpp::NodeOptions & options)
-: Node("map_saver", options), save_next_map_promise{}
+MapSaver::MapSaver()
+: nav2_util::LifecycleNode("map_saver")
 {
-  Magick::InitializeMagick(nullptr);
-  {
-    mapname_ = declare_parameter("output_file_no_ext", "map");
-    if (mapname_ == "map") {
-      mapname_ += "_" + std::to_string(static_cast<int>(now().seconds()));
-    }
-    threshold_occupied_ = declare_parameter("threshold_occupied", 65);
-    if (100 < threshold_occupied_) {
-      throw std::runtime_error("Threshold_occupied must be 100 or less");
-    }
-    threshold_free_ = declare_parameter("threshold_free", 25);
-    if (threshold_free_ < 0) {
-      throw std::runtime_error("Free threshold must be 0 or greater");
-    }
-    if (threshold_occupied_ <= threshold_free_) {
-      throw std::runtime_error("Threshold_free must be smaller than threshold_occupied");
-    }
+  RCLCPP_INFO(get_logger(), "Creating");
 
-    std::string mode_str = declare_parameter("map_mode", "trinary");
-    try {
-      map_mode = map_mode_from_string(mode_str);
-    } catch (std::invalid_argument &) {
-      map_mode = MapMode::Trinary;
-      RCLCPP_WARN(
-        get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
-        mode_str.c_str());
-    }
+  save_map_timeout_ = std::make_shared<rclcpp::Duration>(
+    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
 
-    image_format = declare_parameter("image_format", map_mode == MapMode::Scale ? "png" : "pgm");
-    std::transform(
-      image_format.begin(), image_format.end(), image_format.begin(),
-      [](unsigned char c) {return std::tolower(c);});
-    const std::vector<std::string> BLESSED_FORMATS{"bmp", "pgm", "png"};
-    if (
-      std::find(BLESSED_FORMATS.begin(), BLESSED_FORMATS.end(), image_format) ==
-      BLESSED_FORMATS.end())
-    {
-      std::stringstream ss;
-      bool first = true;
-      for (auto & format_name : BLESSED_FORMATS) {
-        if (!first) {
-          ss << ", ";
-        }
-        ss << "'" << format_name << "'";
-        first = false;
-      }
-      RCLCPP_WARN(
-        get_logger(), "Requested image format '%s' is not one of the recommended formats: %s",
-        image_format.c_str(), ss.str().c_str());
-    }
-    const std::string FALLBACK_FORMAT = "png";
+  free_thresh_default_ = declare_parameter("free_thresh_default", 25),
+  occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 65);
 
-    try {
-      Magick::CoderInfo info(image_format);
-      if (!info.isWritable()) {
-        RCLCPP_WARN(
-          get_logger(), "Format '%s' is not writable. Using '%s' instead",
-          image_format.c_str(), FALLBACK_FORMAT.c_str());
-        image_format = FALLBACK_FORMAT;
-      }
-    } catch (Magick::ErrorOption & e) {
-      RCLCPP_WARN(
-        get_logger(), "Format '%s' is not usable. Using '%s' instead:\n%s",
-        image_format.c_str(), FALLBACK_FORMAT.c_str(), e.what());
-      image_format = FALLBACK_FORMAT;
-    }
-    if (
-      map_mode == MapMode::Scale &&
-      (image_format == "pgm" || image_format == "jpg" || image_format == "jpeg"))
-    {
-      RCLCPP_WARN(
-        get_logger(),
-        "Map mode 'scale' requires transparency, but format '%s' does not support it. Consider "
-        "switching image format to 'png'.",
-        image_format.c_str());
-    }
-
-    RCLCPP_INFO(get_logger(), "Waiting for the map");
-    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-      "map", rclcpp::SystemDefaultsQoS(),
-      std::bind(&MapSaver::mapCallback, this, std::placeholders::_1));
-  }
+  map_listener_ = rclcpp::Node::make_shared("map_listener");
 }
 
-void MapSaver::try_write_map_to_file(const nav_msgs::msg::OccupancyGrid & map)
+MapSaver::~MapSaver()
 {
-  auto logger = get_logger();
-  RCLCPP_INFO(
-    logger, "Received a %d X %d map @ %.3f m/pix", map.info.width, map.info.height,
-    map.info.resolution);
-
-  std::string mapdatafile = mapname_ + "." + image_format;
-  {
-    // should never see this color, so the initialization value is just for debugging
-    Magick::Image image({map.info.width, map.info.height}, "red");
-
-    // In scale mode, we need the alpha (matte) channel. Else, we don't.
-    // NOTE: GraphicsMagick seems to have trouble loading the alpha channel when saved with
-    // Magick::GreyscaleMatte, so we use TrueColorMatte instead.
-    image.type(map_mode == MapMode::Scale ? Magick::TrueColorMatteType : Magick::GrayscaleType);
-
-    // Since we only need to support 100 different pixel levels, 8 bits is fine
-    image.depth(8);
-
-    for (size_t y = 0; y < map.info.height; y++) {
-      for (size_t x = 0; x < map.info.width; x++) {
-        int8_t map_cell = map.data[map.info.width * (map.info.height - y - 1) + x];
-
-        Magick::Color pixel;
-
-        switch (map_mode) {
-          case MapMode::Trinary:
-            if (map_cell < 0 || 100 < map_cell) {
-              pixel = Magick::ColorGray(205 / 255.0);
-            } else if (map_cell <= threshold_free_) {
-              pixel = Magick::ColorGray(254 / 255.0);
-            } else if (threshold_occupied_ <= map_cell) {
-              pixel = Magick::ColorGray(0 / 255.0);
-            } else {
-              pixel = Magick::ColorGray(205 / 255.0);
-            }
-            break;
-          case MapMode::Scale:
-            if (map_cell < 0 || 100 < map_cell) {
-              pixel = Magick::ColorGray{0.5};
-              pixel.alphaQuantum(TransparentOpacity);
-            } else {
-              pixel = Magick::ColorGray{(100.0 - map_cell) / 100.0};
-            }
-            break;
-          case MapMode::Raw:
-            Magick::Quantum q;
-            if (map_cell < 0 || 100 < map_cell) {
-              q = MaxRGB;
-            } else {
-              q = map_cell / 255.0 * MaxRGB;
-            }
-            pixel = Magick::Color(q, q, q);
-            break;
-          default:
-            throw std::runtime_error("Invalid map mode");
-        }
-        image.pixelColor(x, y, pixel);
-      }
-    }
-
-    RCLCPP_INFO(logger, "Writing map occupancy data to %s", mapdatafile.c_str());
-    image.write(mapdatafile);
-  }
-
-  std::string mapmetadatafile = mapname_ + ".yaml";
-  {
-    std::ofstream yaml(mapmetadatafile);
-
-    geometry_msgs::msg::Quaternion orientation = map.info.origin.orientation;
-    tf2::Matrix3x3 mat(tf2::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
-    double yaw, pitch, roll;
-    mat.getEulerYPR(yaw, pitch, roll);
-
-    YAML::Emitter e;
-    e << YAML::Precision(3);
-    e << YAML::BeginMap;
-    e << YAML::Key << "image" << YAML::Value << mapdatafile;
-    e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(map_mode);
-    e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
-    e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
-      map.info.origin.position.y << yaw << YAML::EndSeq;
-    e << YAML::Key << "negate" << YAML::Value << 0;
-    e << YAML::Key << "occupied_thresh" << YAML::Value << threshold_occupied_ / 100.0;
-    e << YAML::Key << "free_thresh" << YAML::Value << threshold_free_ / 100.0;
-
-    if (!e.good()) {
-      RCLCPP_WARN(
-        logger, "YAML writer failed with an error %s. The map metadata may be invalid.",
-        e.GetLastError().c_str());
-    }
-
-    RCLCPP_INFO(logger, "Writing map metadata to %s", mapmetadatafile.c_str());
-    std::ofstream(mapmetadatafile) << e.c_str();
-  }
-  RCLCPP_INFO(logger, "Map saved");
+  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-void MapSaver::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
+nav2_util::CallbackReturn
+MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  auto current_promise = std::move(save_next_map_promise);
-  save_next_map_promise = std::promise<void>();
+  RCLCPP_INFO(get_logger(), "Configuring");
+  // Create SaveMap service callback handle
+  auto save_map_callback= [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) -> void {
+        // Set input arguments and call saveMapTopicToFile()
+        SaveParameters save_parameters;
+        save_parameters.map_file_name = request->map_url;
+        save_parameters.image_format = request->image_format;
+        save_parameters.free_thresh = request->free_thresh;
+        save_parameters.occupied_thresh = request->occupied_thresh;
+        try {
+          save_parameters.mode = map_mode_from_string(request->map_mode);
+        } catch (std::invalid_argument &) {
+          save_parameters.mode = MapMode::Trinary;
+          RCLCPP_WARN(
+            get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
+            request->map_mode.c_str());
+        }
+
+        std::string map_topic = request->map_topic;
+
+	response->result = saveMapTopicToFile(map_topic, save_parameters);
+    };
+
+  // Make name prefix for services
+  std::string service_prefix = get_name() + std::string("/");
+
+  // Create a service that saves the occupancy grid from map topic to a file
+  save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
+    service_prefix + save_map_service_name_,
+    save_map_callback);
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapSaver::on_activate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapSaver::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapSaver::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapSaver::on_error(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapSaver::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save_parameters)
+{
+  RCLCPP_INFO(get_logger(), "Saving map from %s topic to %s file",
+    map_topic.c_str(), save_parameters.map_file_name.c_str());
 
   try {
-    try_write_map_to_file(*map);
-    current_promise.set_value();
-  } catch (std::exception & e) {
-    RCLCPP_ERROR(get_logger(), "Failed to write map for reason: %s", e.what());
-    current_promise.set_exception(std::current_exception());
+    // Reset map receiving indicator
+    got_map_msg_ = false;
+
+    // Correct map_topic if necessary
+    if (map_topic == "") {
+      map_topic = "map";
+      RCLCPP_WARN(
+        get_logger(), "Map topic unspecified. Map messages will be read from %s topic",
+        map_topic.c_str());
+    }
+
+    // Set default for MapSaver node thresholds parameters
+    if (save_parameters.free_thresh == 0) {
+      RCLCPP_WARN(get_logger(),
+        "Free threshold unspecified. Setting it to default value: %i", free_thresh_default_);
+      save_parameters.free_thresh = free_thresh_default_;
+    }
+    if (save_parameters.occupied_thresh == 0) {
+      RCLCPP_WARN(get_logger(),
+        "Occupied threshold unspecified. Setting it to default value: %i", occupied_thresh_default_);
+      save_parameters.occupied_thresh = occupied_thresh_default_;
+    }
+
+    // Add new subscription for incoming map topic
+    auto map_sub = map_listener_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      map_topic, rclcpp::SystemDefaultsQoS(),
+      std::bind(&MapSaver::mapCallback, this, std::placeholders::_1));
+
+    rclcpp::Time start_time = now();
+    while (rclcpp::ok()) {
+      rclcpp::spin_some(map_listener_);
+
+      if ((now() - start_time) > *save_map_timeout_) {
+        RCLCPP_ERROR(get_logger(), "Failed to save the map: timeout");
+        return false;
+      }
+
+      if (got_map_msg_) {
+        // Map message received. Saving it to file
+        if (saveMapToFile(*msg_, save_parameters)) {
+          RCLCPP_INFO(get_logger(), "Map saved successfully");
+          return true;
+        } else {
+          RCLCPP_ERROR(get_logger(), "Failed to save the map");
+          return false;
+        }
+      }
+
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
+  } catch(std::exception & e) {
+    RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
+    return false;
   }
+
+  RCLCPP_ERROR(get_logger(), "This situation should never appear");
+  return false;
 }
+
+void MapSaver::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
+  msg_ = msg;
+  got_map_msg_ = true;
+}
+
 }  // namespace nav2_map_server
