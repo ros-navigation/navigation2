@@ -170,6 +170,8 @@ class NavTester(Node):
 
     def shutdown(self):
         self.info_msg('Shutting down')
+        self.action_client.destroy()
+
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
