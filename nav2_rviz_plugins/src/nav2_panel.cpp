@@ -217,19 +217,23 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   inactiveSignal->setTargetState(initial_);
   pre_initial_->addTransition(inactiveSignal);
 
-  QObject::connect(initial_thread_, &InitialThread::navigationActive,
+  QObject::connect(
+    initial_thread_, &InitialThread::navigationActive,
     [this, navigation_active] {
       navigation_status_indicator_->setText(navigation_active);
     });
-  QObject::connect(initial_thread_, &InitialThread::navigationInactive,
+  QObject::connect(
+    initial_thread_, &InitialThread::navigationInactive,
     [this, navigation_inactive] {
       navigation_status_indicator_->setText(navigation_inactive);
     });
-  QObject::connect(initial_thread_, &InitialThread::localizationActive,
+  QObject::connect(
+    initial_thread_, &InitialThread::localizationActive,
     [this, localization_active] {
       localization_status_indicator_->setText(localization_active);
     });
-  QObject::connect(initial_thread_, &InitialThread::localizationInactive,
+  QObject::connect(
+    initial_thread_, &InitialThread::localizationInactive,
     [this, localization_inactive] {
       localization_status_indicator_->setText(localization_inactive);
     });
