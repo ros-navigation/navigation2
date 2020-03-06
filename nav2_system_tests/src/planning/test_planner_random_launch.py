@@ -32,7 +32,8 @@ def main(argv=sys.argv[1:]):
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
         name='test_planner_random_node',
-        output='screen'
+        output='screen',
+        parameters=[{'use_sim_time': True}]
     )
 
     lts = LaunchTestService()
