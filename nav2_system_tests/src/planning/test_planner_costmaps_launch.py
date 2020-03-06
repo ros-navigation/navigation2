@@ -30,10 +30,9 @@ def main(argv=sys.argv[1:]):
     ld = LaunchDescription([])
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable],
+        cmd=[testExecutable, '--ros-args -p use_sim_time:=True'],
         name='test_planner_costmaps_node',
-        output='screen',
-        parameters=[{'use_sim_time': True}]
+        output='screen'
     )
 
     lts = LaunchTestService()

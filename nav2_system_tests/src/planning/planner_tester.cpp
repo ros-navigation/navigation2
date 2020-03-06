@@ -122,6 +122,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
     base_transform_->header.frame_id = "map";
     base_transform_->child_frame_id = "base_link";
   }
+  std::cout << now().nanoseconds() << std::endl;
 
   base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
   base_transform_->transform.translation.x = position.x;
