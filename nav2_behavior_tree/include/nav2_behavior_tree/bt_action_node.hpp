@@ -41,11 +41,6 @@ public:
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
 
-    // Get the required items from the blackboard
-    server_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
@@ -222,10 +217,6 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
-
-  // The timeout value while to use in the tick loop while waiting for
-  // a result from the server
-  std::chrono::milliseconds server_timeout_;
 };
 
 }  // namespace nav2_behavior_tree
