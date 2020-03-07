@@ -47,7 +47,7 @@ public:
     // Check if the goal has been updated
     if (config().blackboard->get<bool>("path_updated")) {
       // Reset the flag in the blackboard
-      config().blackboard->set("path_updated", false);
+      config().blackboard->set("path_updated", false);  // NOLINT
 
       // Grab the new goal and set the flag so that we send the new goal to
       // the action server on the next loop iteration

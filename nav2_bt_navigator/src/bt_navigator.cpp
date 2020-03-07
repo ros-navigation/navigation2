@@ -28,7 +28,8 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", true)
+: nav2_util::LifecycleNode("bt_navigator", "", true),
+  start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -55,6 +56,8 @@ BtNavigator::BtNavigator()
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
+  declare_parameter("global_frame", std::string("map"));
+  declare_parameter("robot_base_frame", std::string("base_link"));
 }
 
 BtNavigator::~BtNavigator()
@@ -98,6 +101,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
+  global_frame_ = get_parameter("global_frame").as_string();
+  robot_frame_ = get_parameter("robot_base_frame").as_string();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -111,6 +116,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Get the BT filename to use from the node parameter
   std::string bt_xml_filename;
@@ -217,6 +223,7 @@ BtNavigator::navigateToPose()
     };
 
   RosTopicLogger topic_logger(client_node_, tree_);
+  std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
       if (action_server_->is_preempt_requested()) {
@@ -225,6 +232,30 @@ BtNavigator::navigateToPose()
         initializeGoalPose();
       }
       topic_logger.flush();
+
+      // action server feedback (pose, duration of task,
+      // number of recoveries, and distance remaining to goal)
+      geometry_msgs::msg::TransformStamped transform;
+      geometry_msgs::msg::PoseStamped current_pose;
+      transform = tf_->lookupTransform(robot_frame_, global_frame_, tf2::TimePointZero);
+      current_pose.header = transform.header;
+      current_pose.pose.position.x = transform.transform.translation.x;
+      current_pose.pose.position.y = transform.transform.translation.y;
+      current_pose.pose.position.z = transform.transform.translation.z;
+      current_pose.pose.orientation = transform.transform.rotation;
+      feedback_msg->current_pose = current_pose;
+
+      geometry_msgs::msg::Point & c_pose = current_pose.pose.position;
+      geometry_msgs::msg::PoseStamped goal_pose;
+      blackboard_->get("goal", goal_pose);
+      feedback_msg->l2_distance_remaining = sqrt(
+        (c_pose.x - goal_pose.pose.position.x) * (c_pose.x - goal_pose.pose.position.x) +
+        (c_pose.y - goal_pose.pose.position.y) * (c_pose.y - goal_pose.pose.position.y));
+      int recovery_count = 0;
+      blackboard_->get<int>("number_recoveries", recovery_count);
+      feedback_msg->number_of_recoveries = recovery_count;
+      feedback_msg->navigation_time = now() - start_time_;
+      action_server_->publish_feedback(feedback_msg);
     };
 
   // Execute the BT that was previously created in the configure step
@@ -258,6 +289,8 @@ void
 BtNavigator::initializeGoalPose()
 {
   auto goal = action_server_->get_current_goal();
+  start_time_ = now();
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",

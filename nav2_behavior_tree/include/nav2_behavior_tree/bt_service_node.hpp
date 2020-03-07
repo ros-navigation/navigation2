@@ -36,6 +36,8 @@ public:
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
+    request_ = std::make_shared<typename ServiceT::Request>();
+
     // Get the required items from the blackboard
     server_timeout_ =
       config().blackboard->get<std::chrono::milliseconds>("server_timeout");
@@ -111,6 +113,11 @@ public:
       on_wait_for_result();
     }
     return BT::NodeStatus::FAILURE;
+  }
+
+  // Fill in service request with information if necessary
+  virtual void on_tick()
+  {
   }
 
   // An opportunity to do something after

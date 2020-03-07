@@ -46,6 +46,14 @@ public:
     goal_.time.sec = duration;
   }
 
+  void on_tick() override
+  {
+    int recovery_count = 0;
+    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+  }
+
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static BT::PortsList providedPorts()
   {

@@ -4,4 +4,7 @@ geometry_msgs/PoseStamped pose
 #result definition
 std_msgs/Empty result
 ---
-#feedback
+geometry_msgs/PoseStamped current_pose
+builtin_interfaces/Duration navigation_time
+int16 number_of_recoveries
+float32 l2_distance_remaining

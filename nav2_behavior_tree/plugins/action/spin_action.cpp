@@ -42,6 +42,14 @@ public:
     goal_.target_yaw = dist;
   }
 
+  void on_tick() override
+  {
+    int recovery_count = 0;
+    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+  }
+
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
