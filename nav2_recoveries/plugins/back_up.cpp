@@ -77,6 +77,11 @@ Status BackUp::onCycleUpdate()
     stopRobot();
     return Status::SUCCEEDED;
   }
+
+  auto feedback = std::make_shared<BackUpAction::Feedback>();
+  feedback->distance_traveled = distance;
+  action_server_->publish_feedback(feedback);
+
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   cmd_vel->linear.y = 0.0;

@@ -109,6 +109,10 @@ Status Spin::onCycleUpdate()
     return Status::SUCCEEDED;
   }
 
+  auto feedback = std::make_shared<SpinAction::Feedback>();
+  feedback->angular_distance_traveled = relative_yaw;
+  action_server_->publish_feedback(feedback);
+
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 

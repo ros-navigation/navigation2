@@ -4,4 +4,4 @@ float32 target_yaw
 #result definition
 std_msgs/Empty result
 ---
-#feedback
+float32 angular_distance_traveled
