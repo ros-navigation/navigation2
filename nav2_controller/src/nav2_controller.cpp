@@ -303,6 +303,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose.pose.position.x, end_pose.pose.position.y);
+  end_pose_ = end_pose.pose;
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -321,6 +322,13 @@ void ControllerServer::computeAndPublishVelocity()
     controllers_[current_controller_]->computeVelocityCommands(
     pose,
     nav_2d_utils::twist2Dto3D(twist));
+
+  std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
+  feedback->speed = cmd_vel_2d.twist.linear.x;
+  feedback->distance_to_goal = sqrt(
+    (end_pose_.position.x - pose.pose.position.x) * (end_pose_.position.x - pose.pose.position.x) +
+    (end_pose_.position.y - pose.pose.position.y) * (end_pose_.position.y - pose.pose.position.y));
+  action_server_->publish_feedback(feedback);
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
