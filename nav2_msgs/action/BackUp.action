@@ -5,4 +5,4 @@ float32 speed
 #result definition
 std_msgs/Empty result
 ---
-#feedback
+float32 distance_traveled
