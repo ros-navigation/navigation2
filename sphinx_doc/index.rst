@@ -72,6 +72,7 @@ of the TB3 navigating in a small lounge.
 
    getting_started/index.rst
    build_instructions/index.rst
+   concepts/index.rst
    tutorials/index.rst
    configuration/index.rst
    plugins/index.rst
