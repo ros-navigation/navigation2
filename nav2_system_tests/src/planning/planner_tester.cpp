@@ -68,7 +68,7 @@ void PlannerTester::activate()
   planner_tester_->onConfigure(state);
   publishRobotTransform();
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
-  rclcpp::Rate r(1);
+  rclcpp::Rate r(0.2);
   r.sleep();
   planner_tester_->onActivate(state);
 }
