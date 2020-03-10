@@ -53,14 +53,17 @@ void PlannerTester::activate()
   }
   is_active_ = true;
 
+  // Provide the robot pose transform
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
+  startRobotTransform();
+
   // Launch a thread to process the messages for this node
   spin_thread_ = std::make_unique<nav2_util::NodeThread>(this);
 
   // We start with a 10x10 grid with no obstacles
   costmap_ = std::make_unique<Costmap>(this);
   loadSimpleCostmap(TestCostmap::open_space);
-
-  startRobotTransform();
 
   // The navfn wrapper
   auto state = rclcpp_lifecycle::State();
@@ -101,9 +104,6 @@ PlannerTester::~PlannerTester()
 
 void PlannerTester::startRobotTransform()
 {
-  // Provide the robot pose transform
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
   robot_position.x = 1.0;
