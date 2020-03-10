@@ -33,7 +33,6 @@ TEST(testWithHundredRandomEndPoints, testWithHundredRandomEndPoints)
   auto obj = std::make_shared<PlannerTester>();
   obj->activate();
   obj->loadDefaultMap();
-  obj->loadDefaultMap();
 
   bool success = false;
   int num_tries = 3;
