@@ -53,11 +53,6 @@ void PlannerTester::activate()
   }
   is_active_ = true;
 
-  // Provide the robot pose transform
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-
-  startRobotTransform();
-
   // Launch a thread to process the messages for this node
   spin_thread_ = std::make_unique<nav2_util::NodeThread>(this);
 
@@ -65,7 +60,10 @@ void PlannerTester::activate()
   costmap_ = std::make_unique<Costmap>(this);
   loadSimpleCostmap(TestCostmap::open_space);
 
+  startRobotTransform();
+
   // The navfn wrapper
+  publishRobotTransform();
   auto state = rclcpp_lifecycle::State();
   planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->onConfigure(state);
@@ -104,6 +102,9 @@ PlannerTester::~PlannerTester()
 
 void PlannerTester::startRobotTransform()
 {
+  // Provide the robot pose transform
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
   robot_position.x = 1.0;
@@ -112,7 +113,7 @@ void PlannerTester::startRobotTransform()
 
   // Publish the transform periodically
   transform_timer_ = create_wall_timer(
-    100ms, std::bind(&PlannerTester::publishRobotTransform, this));
+    10ms, std::bind(&PlannerTester::publishRobotTransform, this));
 }
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
@@ -124,7 +125,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
   }
   std::cout << now().nanoseconds() << std::endl;
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
+  base_transform_->header.stamp = now() + rclcpp::Duration(100000000);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
