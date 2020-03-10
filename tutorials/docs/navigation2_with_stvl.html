@@ -146,6 +146,33 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Navigation Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/index.html#ros2">ROS2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#action-server">Action Server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#lifecycle-nodes">Lifecycle Nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/index.html#behavior-trees">Behavior Trees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/index.html#navigation-servers">Navigation Servers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#planner-controller-and-recovery-servers">Planner, Controller, and Recovery Servers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#planners">Planners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#controllers">Controllers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#recoveries">Recoveries</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/index.html#state-estimation">State Estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#standards">Standards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#global-positioning-localization-and-slam">Global Positioning: Localization and SLAM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#odometry">Odometry</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/index.html#environmental-representation">Environmental Representation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#costmaps-and-layers">Costmaps and Layers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/index.html#other-forms">Other Forms</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="navigation2_on_real_turtlebot3.html">Navigating with a Physical Turtlebot 3</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#overview">Overview</a></li>
@@ -365,10 +392,10 @@ Examples of included pluginlib plugins for Costmap2D are the Obstacle Layer, Vox
 <p>However, these are simply example plugins offered by the base implementation.
 Another available pluginlib plugin for Costmap2D in Navigation2 is STVL.</p>
 <p>STVL is another 3D perception plugin similar to the Voxel Layer.
-A more detailed overview of how it works can be found <a class="reference external" href="https://github.com/SteveMacenski/spatio_temporal_voxel_layer/">here</a>, however it buffers 3D data from depth cameras, sonars, lidars, and more into a sparse volumetic world model and removes voxels over time proportional with a sensor model and time-based expiration.
+A more detailed overview of how it works can be found <a class="reference external" href="https://github.com/SteveMacenski/spatio_temporal_voxel_layer/">in this repo</a>, however it buffers 3D data from depth cameras, sonars, lidars, and more into a sparse volumetic world model and removes voxels over time proportional with a sensor model and time-based expiration.
 This can be especially useful for robots in highly dynamic envrionments and decreases the resource utilization for 3D sensor processing by up to 2x.
 STVL also treats 3D lidars and radars as first class citizens for support.
-The ROSCon talk for STVL can be found <a class="reference external" href="https://vimeo.com/292699571">here</a>.</p>
+The ROSCon talk for STVL can be found <a class="reference external" href="https://vimeo.com/292699571">in this video</a>.</p>
 </div>
 <div class="section" id="tutorial-steps">
 <h2>Tutorial Steps<a class="headerlink" href="#tutorial-steps" title="Permalink to this headline">¶</a></h2>
