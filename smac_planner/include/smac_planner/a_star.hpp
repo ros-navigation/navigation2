@@ -17,9 +17,12 @@
 
 #include <vector>
 #include <iostream>
+#include <unordered_map>
+#include <memory>
+#include <queue>
 
-#include "smac_planner/conversion_utils.hpp"
-#include "smac_planner/pose.hpp"
+#include "smac_planner/node.hpp"
+#include "smac_planner/types.hpp"
 
 namespace smac_planner
 {
@@ -38,43 +41,67 @@ public:
   ~AStarAlgorithm();
 
   void initialize(
-    const double & travel_cost,
+    const float & travel_cost,
     const bool & allow_unknown,
-    const double & max_iterations);
+    const float & max_iterations);
 
-  bool createPath();
+  bool createPath(IndexPath & path);
 
-  void setCosts();
+  void setCosts(
+    const unsigned int & x,
+    const unsigned int & y,
+    unsigned char * costs);
 
-  void setGoal();
+  void setGoal(const unsigned int & value);
 
-  void setStart();
+  void setStart(const unsigned int & value);
+
+  bool backtracePath(Node * node, IndexPath & path);
 
 private:
-  Pose & getStart();
+  Node * & getStart();
 
-  Pose & getGoal();
+  Node * & getGoal();
 
-  double getCost(cont uint cell);
+  Node * & getNode();
 
-  double & getCellCost(const uint & cell);
+  void addNode(const float cost, Node * & node);
 
-  double getTraversalCost(const uint & lastCell, const uint & cell);
+  bool isGoal(const Node * node);
 
-  double getHeuristicCost(const uint & cell);
+  float & getCellCost(const unsigned int & cell);
 
-  int & getMaxIterations();
+  float & getTraversalCost(const unsigned int & lastCell, const unsigned int & cell);
 
-  std::vector<cell> getNeighbors(const uint & cell);
+  float getHeuristicCost(const unsigned int & cell);
 
-  double _travel_cost;
-  bool _traverse_unknown;
-  uint _max_iterations;
-  Pose _goal, _start;
+  NodeVector getNeighbors(const unsigned int & cell);
 
-  std::unique_ptr<CostGrid> _cost_grid;
-  std::unique_ptr<NodeQueue> _queue;
-}
+  bool areInputsValid();
+
+  unsigned int & getMaxIterations() {return max_iterations_;};
+  unsigned int & getSizeX() {return x_size_;};
+  unsigned int & getSizeY() {return y_size_;};
+  std::pair<unsigned int, unsigned int> getCoords(const unsigned int index)
+  {
+    const unsigned int x = index % getSizeX();
+    const unsigned int y = index / getSizeX();
+    return std::pair<unsigned int, unsigned int>(x, y);
+  }
+
+  float travel_cost_;
+  bool traverse_unknown_;
+  unsigned int max_iterations_;
+  unsigned int x_size_;
+  unsigned int y_size_;
+
+  Coordinates goal_coordinates_;
+  Node * start_;
+  Node * goal_;
+
+  std::unique_ptr<Graph> graph_;
+  std::unique_ptr<NodeQueue> queue_;
+};
 
 }  // namespace smac_planner
 

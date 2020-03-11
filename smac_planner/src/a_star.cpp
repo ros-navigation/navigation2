@@ -12,145 +12,251 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <cmath>
+#include <stdexcept>
 #include <vector>
-#include "nav2_smac_planner/a_star.hpp"
+#include <unordered_map>
+#include <memory>
+#include <queue>
+
+#include "smac_planner/a_star.hpp"
 
 namespace smac_planner
 {
 
+// for sampling on 3D: planner is given a pointer to an environmental rep
+// and one of the implementations is getCost(current pose) so it can do traveribility
+// then no copying over values to the algorithm.
+
+// look over navfn and make sure I have all the features or safties
+  // - neutral cost?
+  // - unknown space?
+  // - costed space that's nonlethal but also not just free
+
+// anytime A*
+
+// different data structures for graph
+//  // TODO try std::pair<unsigned int, unsigned int> and vector
 
 AStarAlgorithm::AStarAlgorithm()
-: _travel_cost(10.0), _traverse_unknown(true), _max_iterations(10000)
+: travel_cost_(10.0),
+  traverse_unknown_(true),
+  max_iterations_(10000),
+  start_(nullptr),
+  goal_(nullptr),
+  graph_(nullptr),
+  queue_(nullptr)
 {
-
 }
 
 AStarAlgorithm::~AStarAlgorithm()
 {
-  _cost_grid.reset();
+  graph_.reset();
+  queue_.reset();
+  start_ = nullptr;
+  goal_ = nullptr;
 }
 
 void AStarAlgorithm::initialize(
-  const double & travel_cost,
+  const float & travel_cost,
   const bool & allow_unknown,
-  const double & max_iterations)
+  const float & max_iterations)
 {
-  _travelCost = travelCost;
-  _traverseUnknown = allowUnknown;
-  _max_iterations = max_iterations;
+  graph_ = std::make_unique<Graph>();
+  queue_ = std::make_unique<NodeQueue>();
+  travel_cost_ = travel_cost;
+  traverse_unknown_ = allow_unknown;
+  max_iterations_ = max_iterations;
 }
 
-bool AStarAlgorithm::createPath()
+void AStarAlgorithm::setCosts(
+  const unsigned int & x,
+  const unsigned int & y,
+  unsigned char * costs)
 {
-  if (/*costmap size 0, no goal, start, or footprint*/) {
+  if (getSizeX() != x || getSizeY() != y) {
+    graph_->clear();
+  }
+
+  for (unsigned int i = 0; i != x * y; i++) {
+    graph_->insert({i, Node(costs[i], i)});
+  }
+}
+
+void AStarAlgorithm::setStart(const unsigned int & value)
+{
+  auto it = graph_->find(value);
+  if (it != graph_->end()) {
+    start_ = &(it->second);
+  } else {
+    start_ = nullptr;
+  }
+}
+
+void AStarAlgorithm::setGoal(const unsigned int & value)
+{
+  auto it = graph_->find(value);
+  if (it != graph_->end()) {
+    goal_ = &(it->second);
+    goal_coordinates_ = getCoords(goal_->getIndex());
+  } else {
+    goal_ = nullptr;
+    goal_coordinates_ = Coordinates();
+  }
+}
+
+bool AStarAlgorithm::areInputsValid()
+{
+  if (graph_->size() == 0) {
+    throw std::runtime_error("Failed to compute path, no costmap given.");
     return false;
   }
 
-  if (/*goal or start off map or on unkonwn and not enabled unknown*/) {
+  if (!start_ || !goal_) {
+    throw std::runtime_error("Failed to compute path, no valid start or goal given.");
     return false;
   }
 
-  queue_->push(0.0, & getStartNode()); // cost and starting node
+  // if (goal or start on unkonwn and not enabled unknown or footprint invalid) {
+  //   return false;
+  // }
 
-  // Open and Closed sets created when grid is populated with a costmap
-  // Add starting point to the open set
-  getStartNode().inOpenSet(true);
+  return true;
+}
 
-  uint iterations = 0;
+bool AStarAlgorithm::createPath(IndexPath & path)
+{
+  if (!areInputsValid()) {
+    return false;
+  }
+
+  // 0) Add starting point to the open set
+  addNode(0.0, getStart());
+
+  unsigned int iterations = 0;
   while (iterations < getMaxIterations()) {
     iterations++;
 
-    // 1) Pick Nbest from O s.t. min(f(nBest)) 
-    auto * node = getNextNode();
+    // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
+    Node * current_node = getNode();
 
-    // 2) Remove Nbest from O, into C
-    node->isOpenSet(false);
-    node->isClosedSet(true);
+    // 2) Mark Nbest as visited
+    current_node->visited();
 
-    // 3) Check if we're at the goal
-    if (isNodeGoal(node)) {
-      break;
+    // 3) Check if we're at the goal, backtrace if required
+    if (isGoal(current_node)) {
+      return backtracePath(current_node, path);
     }
 
-    // 4) Expand neighbors of Nbest not in C
-    auto neighbors = getNeighbors(node);
-    for (uint i = 0; i != neighbors) {
-      if (neighbors[i]->isOpenSet())
-      {
-        //   4.1) if Neighor in O: if lower cost, update back ptr
-      } else {
-        //   4.2) If not: add to O 
+    // 4) Expand neighbors of Nbest not visited
+    NodeVector neighbors = getNeighbors(current_node->getIndex());
+    for (NodeVector::iterator it = neighbors.begin(); it != neighbors.end(); ++it) {
+      Node * & neighbor = (*it);
+
+      // ** adding here would not allow for updating of visited items **
+      if (neighbor->wasVisited()) {
+        continue;
+      }
+
+      // 4.1) Compute the cost to go to this cell
+      const float g_cost = current_node->getAccumulatedCost() +
+        getTraversalCost(current_node->getIndex(), neighbor->getIndex());
+
+      // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
+      if (g_cost < neighbor->getAccumulatedCost()) {  // TODO How do we represent costmap cost?
+        neighbor->setAccumulatedCost(g_cost);
+        neighbor->last_node = current_node;
+        const float priority = g_cost + getHeuristicCost(neighbor->getIndex());
+
+        // 4.3) If not in queue, add it
+        // ** `!neighbor->wasVisited()` adding here would allow for updating of visited items **
+        if (!neighbor->isQueued()) {
+          neighbor->queued();
+          addNode(priority, neighbor);
+        }
       }
     }
   }
 
-  // 5) traceback path
-  if (iterations < getMaxIterations() && backTrace(/*???*/)) {
+  return false;
+}
+
+bool AStarAlgorithm::isGoal(const Node * node)
+{
+  return node == getGoal();
+}
+
+bool AStarAlgorithm::backtracePath(Node * node, IndexPath & path)
+{
+  if (!node->last_node) {
+    return false;
+  }
+
+  Node * current_node;
+  current_node = node;
+
+  while (current_node->last_node) {
+    path.push_back(current_node->getIndex());
+    current_node = current_node->last_node;
+  }
+
+  if (path.size() > 1) {
     return true;
   }
 
   return false;
 }
 
-void AStarAlgorithm::setCosts()
+Node * & AStarAlgorithm::getStart()
 {
-  if (/*sizes different*/) {
-    _cost_grid->resize(x, y);
-  }
-
-  for (/*each*/) {
-    _cost_grid->AddNode(i, cost);
-  }
+  return start_;
 }
 
-void AStarAlgorithm::setStart()
+Node * & AStarAlgorithm::getGoal()
 {
-
+  return goal_;
 }
 
-Pose & AStarAlgorithm::getStart()
+Node * & AStarAlgorithm::getNode()
 {
-  return _start;
+  Node * & node = queue_->top().second;
+  queue_->pop();
+  return node;
 }
 
-void AStarAlgorithm::setGoal()
+void AStarAlgorithm::addNode(const float cost, Node * & node)
 {
-
+  queue_->emplace(cost, node);
 }
 
-Pose & AStarAlgorithm::getGoal()
+float & AStarAlgorithm::getCellCost(const unsigned int & cell)
 {
-  return _goal;
+  return graph_->at(cell).getCost();
 }
 
-double AStarAlgorithm::getCost(cont uint & cell)
+float & AStarAlgorithm::getTraversalCost(
+  const unsigned int & /*lastCell*/,
+  const unsigned int & /*cell*/)
 {
-  // total cost of costs below
+  // Currently using a regular 2D grid, all traversal costs are the same
+  return travel_cost_;
 }
 
-double & AStarAlgorithm::getCellCost(const uint & cell)
+float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
 {
-  return _cost_grid->getCost(cell);
+  Coordinates cell_coords = getCoords(cell);
+  return hypot(goal_coordinates_.first - cell_coords.first,
+    goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
 }
 
-double AStarAlgorithm::getTraversalCost(const uint & lastCell, const uint & cell)
+NodeVector AStarAlgorithm::getNeighbors(const unsigned int & cell)
 {
-  return _travel_cost;
-}
+  (void)cell;
+  NodeVector neighbors;
+  // 8 connected, 4 connected, or otherwise (if valid) TODO
+  // if non-lethal obstacle
 
-uint & getMaxIterations()
-{
-  return _max_iterations;
-}
-
-double AStarAlgorithm::getHeuristicCost(const uint & cell)
-{
-  // distance metric
-}
-
-std::vector<cell> AStarAlgorithm::getNeighbors(const uint & cell)
-{
-  // 8 connected, or otherwise (if valid)
+  return neighbors;
 }
 
 }  // namespace smac_planner

@@ -46,7 +46,7 @@ set(dependencies
 
 add_library(${library_name} SHARED
   src/a_star.cpp
-  src/smac_planner.cpp
+  # src/smac_planner.cpp
 )
 
 ament_target_dependencies(${library_name}

@@ -19,11 +19,11 @@
 namespace smac_utils
 {
 
-inline fromROSCostmap() {}
+// inline fromROSCostmap(const Costmap2D::Costmap & costmap) {}
 
-inline fromROSFootprint() {}
+// // inline fromROSFootprint() {}
 
-inline fromROSPose() {}
+// inline fromROSPose() {}
 
 }  // namespace smac_utils
 
