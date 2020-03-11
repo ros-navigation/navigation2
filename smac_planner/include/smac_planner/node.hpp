@@ -25,7 +25,7 @@
 namespace smac_planner
 {
 
-class Node 
+class Node
 {
 public:
   Node(char cost_in, const unsigned int index)

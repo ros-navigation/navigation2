@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <memory>
 #include <queue>
+#include <utility>
 
 #include "smac_planner/node.hpp"
 #include "smac_planner/types.hpp"
@@ -37,7 +38,7 @@ namespace smac_planner
 class AStarAlgorithm
 {
 public:
-  AStarAlgorithm();
+  explicit AStarAlgorithm(const Neighborhood & neighborhood);
   ~AStarAlgorithm();
 
   void initialize(
@@ -63,11 +64,17 @@ private:
 
   Node * & getGoal();
 
-  Node * & getNode();
+  Node * getNode();
 
   void addNode(const float cost, Node * & node);
 
   bool isGoal(const Node * node);
+
+  bool isCellValid(const unsigned int & i, Graph::iterator & cell_it);
+
+  NodeVector getValidCells(
+    const std::vector<int> & lookup_table,
+    const unsigned int & cell);
 
   float & getCellCost(const unsigned int & cell);
 
@@ -79,9 +86,9 @@ private:
 
   bool areInputsValid();
 
-  unsigned int & getMaxIterations() {return max_iterations_;};
-  unsigned int & getSizeX() {return x_size_;};
-  unsigned int & getSizeY() {return y_size_;};
+  unsigned int & getMaxIterations() {return max_iterations_;}
+  unsigned int & getSizeX() {return x_size_;}
+  unsigned int & getSizeY() {return y_size_;}
   std::pair<unsigned int, unsigned int> getCoords(const unsigned int index)
   {
     const unsigned int x = index % getSizeX();
@@ -101,6 +108,8 @@ private:
 
   std::unique_ptr<Graph> graph_;
   std::unique_ptr<NodeQueue> queue_;
+
+  Neighborhood neighborhood_;
 };
 
 }  // namespace smac_planner

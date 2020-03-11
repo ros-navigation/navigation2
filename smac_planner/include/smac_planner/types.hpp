@@ -18,6 +18,7 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include <queue>
 
 #include "smac_planner/node.hpp"
 
@@ -44,6 +45,15 @@ struct NodeComparator
 
 typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
 
-}
+enum class Neighborhood
+{
+  UNKNOWN = 0,
+  VAN_NEUMANN = 1,
+  MOORE = 2
+};
+
+const double OCCUPIED = 254;
+
+}  // namespace smac_planner
 
 #endif  // SMAC_PLANNER__TYPES_HPP_
