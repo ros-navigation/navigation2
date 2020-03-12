@@ -32,69 +32,196 @@ namespace smac_planner
 // https://en.wikipedia.org/wiki/A*_search_algorithm
 // https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/AStar/a_star.py
 
-// add doxogen
 // add tests
 
+/**
+ * @class smac_planner::AStarAlgorithm
+ * @brief An A* implementation for planning in a costmap
+ */
 class AStarAlgorithm
 {
 public:
+  /**
+   * @brief A constructor for nav2_planner::PlannerServer
+   * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
+   */
   explicit AStarAlgorithm(const Neighborhood & neighborhood);
+
+  /**
+   * @brief A destructor for smac_planner::AStarAlgorithm
+   */
   ~AStarAlgorithm();
 
+  /**
+   * @brief Initialization of the planner with defaults
+   * @param travel_cost Cost to travel from adjacent cells to another
+   * @param allow_unknown Allow search in unknown space, good for navigation while mapping
+   * @param max_iterations Maximum number of iterations to use while expanding search
+   */
   void initialize(
     const float & travel_cost,
     const bool & allow_unknown,
     const float & max_iterations);
 
+  /**
+   * @brief Creating path from given costmap, start, and goal
+   * @param path Reference to a vector of indicies of generated path
+   * @return if plan was successful
+   */
   bool createPath(IndexPath & path);
 
+  /**
+   * @brief Set the costs of the graph
+   * @param x The total number of cells in the X direction
+   * @param y The total number of cells in the X direction
+   * @param costs unsigned char * to the costs in the graph
+   */
   void setCosts(
     const unsigned int & x,
     const unsigned int & y,
     unsigned char * costs);
 
+  /**
+   * @brief Set the goal for planning, as a cell index
+   * @param value The cell index of the goal
+   */
   void setGoal(const unsigned int & value);
 
+  /**
+   * @brief Set the starting pose for planning, as a cell index
+   * @param value The cell index of the start
+   */
   void setStart(const unsigned int & value);
 
-  bool backtracePath(Node * node, IndexPath & path);
+  /**
+   * @brief Set the starting pose for planning, as a cell index
+   * @param node Node pointer to the goal node to backtrace
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
+   */
+  bool backtracePath(Node * & node, IndexPath & path);
 
 private:
+  /**
+   * @brief Get pointer reference to starting node
+   * @return Node pointer reference to starting node
+   */
   Node * & getStart();
 
+  /**
+   * @brief Get pointer reference to goal node
+   * @return Node pointer reference to goal node
+   */
   Node * & getGoal();
 
+  /**
+   * @brief Get pointer to next goal in open set
+   * @return Node pointer reference to next heuristically scored node
+   */
   Node * getNode();
 
+  /**
+   * @brief Get pointer to next goal in open set
+   * @param cost The cost to sort into the open set of the node
+   * @param node Node pointer reference to add to open set
+   */
   void addNode(const float cost, Node * & node);
 
-  bool isGoal(const Node * node);
+  /**
+   * @brief Check if this node is the goal node
+   * @param node Node pointer to check if its the goal node
+   * @return if node is goal
+   */
+  bool isGoal(Node * & node);
 
+  /**
+   * @brief Check if this cell is valid
+   * @param i Node index
+   * @param cell_it Iterator reference of the cell
+   * @return whether this cell is valid and collision free
+   */
   bool isCellValid(const unsigned int & i, Graph::iterator & cell_it);
 
+  /**
+   * @brief Get a vector of valid node pointers from relative locations
+   * @param lookup_table Lookup table of values around cell to query
+   * @param cell Node index
+   * @return Vector of node pointers to valid cells
+   */
   NodeVector getValidCells(
     const std::vector<int> & lookup_table,
     const unsigned int & cell);
 
+  /**
+   * @brief Get cost of a cell from graph
+   * @param cell Node index
+   * @return Reference to cell cost
+   */
   float & getCellCost(const unsigned int & cell);
 
+  /**
+   * @brief Get cost of traversal between nodes
+   * @param cell Node index current
+   * @param cell Node index of new
+   * @return Reference traversal cost between the cells
+   */
   float & getTraversalCost(const unsigned int & lastCell, const unsigned int & cell);
 
+  /**
+   * @brief Get cost of heuristic of node
+   * @param cell Cell index current
+   * @param cell Cell index of new
+   * @return Heuristic cost between the cells
+   */
   float getHeuristicCost(const unsigned int & cell);
 
+  /**
+   * @brief Get a vector of neighbors around node
+   * @param cell Node index
+   * @return Vector of node pointers to neighbors
+   */
   NodeVector getNeighbors(const unsigned int & cell);
 
+  /**
+   * @brief Check if inputs to planner are valid
+   * @return Are valid
+   */
   bool areInputsValid();
 
+  /**
+   * @brief Get maximum number of iterations to plan
+   * @return Maximum iterations parameter
+   */
   unsigned int & getMaxIterations() {return max_iterations_;}
+
+  /**
+   * @brief Get size of graph in X
+   * @return Size in X
+   */
   unsigned int & getSizeX() {return x_size_;}
+
+  /**
+   * @brief Get size of graph in Y
+   * @return Size in Y
+   */
   unsigned int & getSizeY() {return y_size_;}
-  std::pair<unsigned int, unsigned int> getCoords(const unsigned int index)
+
+  /**
+   * @brief Get node coordinates from index
+   * @param index Index of node
+   * @return pair of XY coordinates
+   */
+  std::pair<unsigned int, unsigned int> getCoords(const unsigned int & index)
   {
     const unsigned int x = index % getSizeX();
     const unsigned int y = index / getSizeX();
     return std::pair<unsigned int, unsigned int>(x, y);
   }
+
+  /**
+   * @brief Clear hueristic queue of nodes to search
+   */
+  void clearQueue();
 
   float travel_cost_;
   bool traverse_unknown_;

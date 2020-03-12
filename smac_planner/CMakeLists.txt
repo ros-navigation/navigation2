@@ -46,17 +46,16 @@ set(dependencies
 
 add_library(${library_name} SHARED
   src/a_star.cpp
-  # src/smac_planner.cpp
+  src/smac_planner.cpp
 )
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-#pluginlib_export_plugin_description_file(nav2_core ${plugin_xml})
+pluginlib_export_plugin_description_file(nav2_core ${plugin_xml})
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
@@ -66,10 +65,6 @@ install(TARGETS ${library_name}
 
 install(DIRECTORY include/
   DESTINATION include/
-)
-
-install(FILES ${plugin_xml}
-  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

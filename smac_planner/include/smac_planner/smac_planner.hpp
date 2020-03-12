@@ -15,8 +15,51 @@
 #ifndef SMAC_PLANNER__SMAC_PLANNER_HPP_
 #define SMAC_PLANNER__SMAC_PLANNER_HPP_
 
+#include <memory>
+#include <vector>
+#include <string>
+
+#include "smac_planner/a_star.hpp"
+#include "nav2_core/global_planner.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
+
+// add doxogen
+
 namespace smac_planner
 {
+
+class SmacPlanner : public nav2_core::GlobalPlanner
+{
+public:
+  SmacPlanner();
+  ~SmacPlanner();
+
+  void configure(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+
+  void cleanup() override;
+
+  void activate() override;
+
+  void deactivate() override;
+
+  nav_msgs::msg::Path createPlan(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal) override;
+
+protected:
+  std::unique_ptr<AStarAlgorithm> a_star_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2_costmap_2d::Costmap2D * costmap_;
+  std::string global_frame_, name_;
+};
 
 }  // namespace smac_planner
 

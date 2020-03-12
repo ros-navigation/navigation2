@@ -25,8 +25,10 @@ namespace smac_planner
 {
 
 // for sampling on 3D: planner is given a pointer to an environmental rep
-// and one of the implementations is getCost(current pose) so it can do traveribility
-// then no copying over values to the algorithm.
+//   and one of the implementations is getCost(current pose) so it can do traveribility
+//   then no copying over values to the algorithm.
+//   and interface should be defined in nav2_core. 
+//   and include some getCost(current, next) for traversibility. would just be cost in 2D 
 
 // look over navfn and make sure I have all the features or safties
 // - neutral cost?
@@ -63,6 +65,14 @@ void AStarAlgorithm::initialize(
   const bool & allow_unknown,
   const float & max_iterations)
 {
+  if (graph_) {
+    graph_.reset();
+  }
+
+  if (queue_) {
+    queue_.reset();
+  }
+
   graph_ = std::make_unique<Graph>();
   queue_ = std::make_unique<NodeQueue>();
   travel_cost_ = travel_cost;
@@ -131,6 +141,8 @@ bool AStarAlgorithm::createPath(IndexPath & path)
     return false;
   }
 
+  clearQueue();
+
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
 
@@ -182,12 +194,12 @@ bool AStarAlgorithm::createPath(IndexPath & path)
   return false;
 }
 
-bool AStarAlgorithm::isGoal(const Node * node)
+bool AStarAlgorithm::isGoal(Node * & node)
 {
   return node == getGoal();
 }
 
-bool AStarAlgorithm::backtracePath(Node * node, IndexPath & path)
+bool AStarAlgorithm::backtracePath(Node * & node, IndexPath & path)
 {
   if (!node->last_node) {
     return false;
@@ -302,6 +314,13 @@ bool AStarAlgorithm::isCellValid(const unsigned int & i, Graph::iterator & cell_
   }
 
   return true;
+}
+
+void AStarAlgorithm::clearQueue()
+{
+  while (!queue_->empty()) {
+    queue_->pop();
+  }
 }
 
 }  // namespace smac_planner

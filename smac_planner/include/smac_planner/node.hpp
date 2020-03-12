@@ -20,8 +20,6 @@
 #include <queue>
 #include <limits>
 
-#include "smac_planner/conversion_utils.hpp"
-
 namespace smac_planner
 {
 

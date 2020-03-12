@@ -1,6 +1,6 @@
-# SMac Planner
+# Smac Planner
 
-The SMacPlanner is a plugin for the Nav2 Planner server.
+The SmacPlanner is a plugin for the Nav2 Planner server.
 
 ## Status
 
