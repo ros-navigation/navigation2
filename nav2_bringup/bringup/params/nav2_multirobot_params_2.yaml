@@ -64,6 +64,7 @@ bt_navigator:
     - nav2_rate_controller_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
+    - nav2_transform_available_condition_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -104,6 +105,9 @@ controller_server:
     FollowPath.linear_granularity: 0.05
     FollowPath.angular_granularity: 0.025
     FollowPath.transform_tolerance: 0.2
+    FollowPath.trans_stopped_velocity: 0.25
+    FollowPath.short_circuit_trajectory_evaluation: True
+    FollowPath.stateful: True
     FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     FollowPath.BaseObstacle.scale: 0.02
     FollowPath.PathAlign.scale: 0.0
@@ -111,11 +115,8 @@ controller_server:
     FollowPath.PathDist.scale: 32.0
     FollowPath.GoalDist.scale: 24.0
     FollowPath.RotateToGoal.scale: 32.0
-    FollowPath.short_circuit_trajectory_evaluation: True
-    FollowPath.trans_stopped_velocity: 0.25
-    FollowPath.slowing_factor: 5.0
-    FollowPath.lookahead_time: -1.0
-    FollowPath.stateful: True
+    FollowPath.RotateToGoal.slowing_factor: 5.0
+    FollowPath.RotateToGoal.lookahead_time: -1.0
 
 controller_server_rclcpp_node:
   ros__parameters:

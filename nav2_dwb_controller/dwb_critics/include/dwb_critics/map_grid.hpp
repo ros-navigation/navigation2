@@ -61,7 +61,7 @@ public:
   // Standard TrajectoryCritic Interface
   void onInit() override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
-  void addGridScores(sensor_msgs::msg::PointCloud & pc) override;
+  void addCriticVisualization(sensor_msgs::msg::PointCloud & pc) override;
   double getScale() const override {return costmap_->getResolution() * 0.5 * scale_;}
 
   // Helper Functions

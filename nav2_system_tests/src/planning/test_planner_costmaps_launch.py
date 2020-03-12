@@ -28,8 +28,9 @@ def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([])
+
     test1_action = ExecuteProcess(
-        cmd=[testExecutable],
+        cmd=[testExecutable, '--ros-args -p use_sim_time:=True'],
         name='test_planner_costmaps_node',
         output='screen'
     )

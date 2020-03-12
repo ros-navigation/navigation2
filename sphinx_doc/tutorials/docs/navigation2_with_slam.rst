@@ -14,7 +14,10 @@ This document explains how to use Navigation 2 with SLAM.
 The following steps show ROS 2 users how to generate occupancy grid maps and use Navigation 2 to move their robot around.
 This tutorial applies to both simulated and physical robots, but will be completed here on physical robot.
 
-Before completing this tutorials, completing the :ref:`getting_started`. is highly recommended especially if you are new to ROS and Navigation2.
+Before completing this tutorial, completing the :ref:`getting_started`. is highly recommended especially if you are new to ROS and Navigation2.
+
+
+In this tutorial we'll be using SLAM Toolbox. More information can be found in the `ROSCon talk for SLAM Toolbox <https://vimeo.com/378682207>`_
 
 Requirements
 ============
@@ -76,7 +79,7 @@ Move your robot by requesting a goal through RViz or the ROS2 CLI, ie:
 
 .. code-block:: bash
 
-  ros2 topic pub /move_base_simple/goal geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
+  ros2 topic pub /goal_pose geometry_msgs/PoseStamped "{header: {stamp: {sec: 0}, frame_id: 'map'}, pose: {position: {x: 0.2, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
 
 You should see the map update live! To save this map to file:
 

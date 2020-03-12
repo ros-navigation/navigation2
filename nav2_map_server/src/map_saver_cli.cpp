@@ -26,50 +26,59 @@ const char * USAGE_STRING{
   "  map_saver [--occ <threshold_occupied>] [--free <threshold_free>] [--fmt <image_format>] "
   "[--mode trinary/scale/raw] [-f <mapname>] [ROS remapping args]"};
 
+typedef enum {TYPE_STR, TYPE_INT} VAR_TYPE;
+struct cmd_struct
+{
+  const char * cmd;
+  const char * param_name;
+  VAR_TYPE type;
+};
+
 int main(int argc, char ** argv)
 {
+  const struct cmd_struct commands[] = {
+    {"-f", "output_file_no_ext", TYPE_STR},
+    {"--occ", "threshold_occupied", TYPE_INT},
+    {"--free", "threshold_free", TYPE_INT},
+    {"--mode", "map_mode", TYPE_STR},
+    {"--fmt", "image_format", TYPE_STR},
+  };
+
   rclcpp::init(argc, argv);
 
   auto logger = rclcpp::get_logger("map_saver_cli");
 
   std::vector<std::string> arguments(argv + 1, argv + argc);
   std::vector<rclcpp::Parameter> params_from_args;
+
+  size_t cmd_size = sizeof(commands) / sizeof(commands[0]);
+  size_t i;
   for (auto it = arguments.begin(); it != arguments.end(); it++) {
     if (*it == "-h" || *it == "--help") {
       std::cout << USAGE_STRING << std::endl;
+      rclcpp::shutdown();
       return 0;
-    } else if (*it == "-f") {
-      if (++it == arguments.end()) {
-        RCLCPP_WARN(logger, "Argument ignored: -f should be followed by a value.");
-        continue;
+    }
+    for (i = 0; i < cmd_size; i++) {
+      if (commands[i].cmd == *it) {
+        if ((it + 1) == arguments.end()) {
+          RCLCPP_ERROR(logger, "Wrong argument: %s should be followed by a value.", it->c_str());
+          rclcpp::shutdown();
+          return -1;
+        }
+        it++;
+        if (commands[i].type == TYPE_INT) {
+          params_from_args.emplace_back(commands[i].param_name, atoi(it->c_str()));
+        } else {
+          params_from_args.emplace_back(commands[i].param_name, *it);
+        }
+        break;
       }
-      params_from_args.emplace_back("output_file_no_ext", *it);
-    } else if (*it == "--occ") {
-      if (++it == arguments.end()) {
-        RCLCPP_WARN(logger, "Argument ignored: --occ should be followed by a value.");
-        continue;
-      }
-      params_from_args.emplace_back("threshold_occupied", atoi(it->c_str()));
-    } else if (*it == "--free") {
-      if (++it == arguments.end()) {
-        RCLCPP_WARN(logger, "Argument ignored: --free should be followed by a value.");
-        continue;
-      }
-      params_from_args.emplace_back("threshold_free", atoi(it->c_str()));
-    } else if (*it == "--mode") {
-      if (++it == arguments.end()) {
-        RCLCPP_WARN(logger, "Argument ignored: --mode should be followed by a value.");
-        continue;
-      }
-      params_from_args.emplace_back("map_mode", *it);
-    } else if (*it == "--fmt") {
-      if (++it == arguments.end()) {
-        RCLCPP_WARN(logger, "Argument ignored: --fmt should be followed by a value.");
-        continue;
-      }
-      params_from_args.emplace_back("image_format", *it);
-    } else {
-      RCLCPP_WARN(logger, "Ignoring unrecognized argument '%s'", it->c_str());
+    }
+    if (i == cmd_size) {
+      RCLCPP_ERROR(logger, "Wrong argument: %s", it->c_str());
+      rclcpp::shutdown();
+      return -1;
     }
   }
 

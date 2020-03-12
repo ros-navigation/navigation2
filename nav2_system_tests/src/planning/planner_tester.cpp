@@ -67,10 +67,10 @@ void PlannerTester::activate()
   planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->onConfigure(state);
   publishRobotTransform();
-  planner_tester_->onActivate(state);
-
-  // For visualization, we'll publish the map
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
+  rclcpp::Rate r(1);
+  r.sleep();
+  planner_tester_->onActivate(state);
 }
 
 void PlannerTester::deactivate()
@@ -112,7 +112,7 @@ void PlannerTester::startRobotTransform()
 
   // Publish the transform periodically
   transform_timer_ = create_wall_timer(
-    10ms, std::bind(&PlannerTester::publishRobotTransform, this));
+    100ms, std::bind(&PlannerTester::publishRobotTransform, this));
 }
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
@@ -122,8 +122,9 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
     base_transform_->header.frame_id = "map";
     base_transform_->child_frame_id = "base_link";
   }
+  std::cout << now().nanoseconds() << std::endl;
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(1e9);
+  base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;

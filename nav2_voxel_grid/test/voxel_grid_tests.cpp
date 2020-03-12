@@ -137,6 +137,16 @@ TEST(voxel_grid, basicMarkingAndClearing) {
      */
 }
 
+TEST(voxel_grid, InvalidSize) {
+  int size_x = 50, size_y = 10, size_z = 17;
+  int test_z = 16;
+  nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
+  vg.resize(size_x, size_y, test_z);
+  vg.resize(size_x, size_y, size_z);
+  EXPECT_TRUE(vg.getVoxelColumn(51, 10, 0, 0) == nav2_voxel_grid::VoxelStatus::UNKNOWN);
+  EXPECT_TRUE(vg.getVoxelColumn(50, 11, 0, 0) == nav2_voxel_grid::VoxelStatus::UNKNOWN);
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
