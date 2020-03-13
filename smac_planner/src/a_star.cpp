@@ -33,7 +33,7 @@ namespace smac_planner
 // look over navfn and make sure I have all the features or safties
 // - neutral cost?
 // - unknown space?
-// - costed space that's nonlethal but also not just free
+// - costed space that's nonlethal but also not just free -- actual costmap
 
 // anytime A*
 
@@ -132,6 +132,10 @@ bool AStarAlgorithm::areInputsValid()
   //   return false;
   // }
 
+  // if (start on occupied and therefore impossible [or goal, if no tolderance stuff])
+  //   return false;
+  // }
+
   return true;
 }
 
@@ -176,7 +180,7 @@ bool AStarAlgorithm::createPath(IndexPath & path)
         getTraversalCost(current_node->getIndex(), neighbor->getIndex());
 
       // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
-      if (g_cost < neighbor->getAccumulatedCost()) {  // TODO(stevemacenski) represent costmap cost
+      if (g_cost < neighbor->getAccumulatedCost()) {
         neighbor->setAccumulatedCost(g_cost);
         neighbor->last_node = current_node;
         const float priority = g_cost + getHeuristicCost(neighbor->getIndex());

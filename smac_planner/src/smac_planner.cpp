@@ -63,7 +63,7 @@ void SmacPlanner::configure(
     node_->get_logger(), "Configuring plugin %s of type SmacPlanner",
     name_.c_str());
 
-  bool allow_unknown /*, tolerance*/;  // TODO(stevemacenski) use tolerance?
+  bool allow_unknown /*, tolerance*/;
   int max_iterations;
   float travel_cost;
   std::string neighborhood_for_search;
