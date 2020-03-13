@@ -35,20 +35,51 @@ namespace smac_planner
 class SmacPlanner : public nav2_core::GlobalPlanner
 {
 public:
+
+  /**
+   * @brief constructor
+   */
   SmacPlanner();
+
+  /**
+   * @brief destructor
+   */
   ~SmacPlanner();
 
+  /**
+   * @brief Configuring plugin
+   * @param parent Lifecycle node pointer
+   * @param name Name of plugin map
+   * @param tf Shared ptr of TF2 buffer
+   * @param costmap_ros Costmap2DROS object
+   */
   void configure(
     rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
+
+  /**
+   * @brief Cleanup lifecycle node
+   */
   void cleanup() override;
 
+  /**
+   * @brief Activate lifecycle node
+   */
   void activate() override;
 
+  /**
+   * @brief Deactivate lifecycle node
+   */
   void deactivate() override;
 
+  /**
+   * @brief Creating a plan from start and goal poses
+   * @param start Start pose
+   * @param goal Goal pose
+   * @return nav2_msgs::Path of the generated path
+   */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
