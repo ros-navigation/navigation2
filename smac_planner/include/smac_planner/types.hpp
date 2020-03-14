@@ -31,7 +31,7 @@ typedef std::vector<Node *> NodeVector;
 
 typedef std::vector<unsigned int> IndexPath;
 
-typedef std::pair<unsigned int, unsigned int> Coordinates;
+typedef std::pair<float, float> Coordinates;
 
 typedef std::pair<float, Node *> NodeElement;
 
@@ -52,7 +52,21 @@ enum class Neighborhood
   MOORE = 2
 };
 
-const double OCCUPIED = 254;
+inline std::string toString(const Neighborhood & n)
+{
+  switch (n) {
+    case Neighborhood::VAN_NEUMANN:
+      return "Van Neumann";
+    case Neighborhood::MOORE:
+      return "Moore";
+    default:
+      return "Unknown";
+  }
+}
+
+const float UNKNOWN = 255;
+const float OCCUPIED = 254;
+const float INSCRIBED = 253;
 
 }  // namespace smac_planner
 

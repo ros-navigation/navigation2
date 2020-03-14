@@ -26,7 +26,7 @@ namespace smac_planner
 class Node
 {
 public:
-  Node(char cost_in, const unsigned int index)
+  Node(unsigned char cost_in, const unsigned int index)
   : last_node(nullptr),
     cell_cost(static_cast<float>(cost_in)),
     accumulated_cost(std::numeric_limits<float>::max()),

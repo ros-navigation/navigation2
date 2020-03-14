@@ -33,7 +33,6 @@ namespace smac_planner
 class SmacPlanner : public nav2_core::GlobalPlanner
 {
 public:
-
   /**
    * @brief constructor
    */

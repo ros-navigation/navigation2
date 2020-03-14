@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <memory>
 #include <queue>
+#include <algorithm>
 
 #include "smac_planner/a_star.hpp"
 
@@ -27,23 +28,27 @@ namespace smac_planner
 // for sampling on 3D: planner is given a pointer to an environmental rep
 //   and one of the implementations is getCost(current pose) so it can do traveribility
 //   then no copying over values to the algorithm.
-//   and interface should be defined in nav2_core. 
-//   and include some getCost(current, next) for traversibility. would just be cost in 2D 
+//   and interface should be defined in nav2_core.
+//   and include some getCost(current, next) for traversibility. would just be cost in 2D
 
 // look over navfn and make sure I have all the features or safties
 // - neutral cost?
-// - unknown space?
 // - costed space that's nonlethal but also not just free -- actual costmap
 
 // anytime A*
+
+// need to store accumulated cost?
 
 // different data structures for graph
 //  // TODO try std::pair<unsigned int, unsigned int> and vector
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
-: travel_cost_(10.0),
+: travel_cost_(0.0),
   traverse_unknown_(true),
-  max_iterations_(10000),
+  max_iterations_(0),
+  x_size_(0),
+  y_size_(0),
+  goal_coordinates_(Coordinates()),
   start_(nullptr),
   goal_(nullptr),
   graph_(nullptr),
@@ -63,7 +68,7 @@ AStarAlgorithm::~AStarAlgorithm()
 void AStarAlgorithm::initialize(
   const float & travel_cost,
   const bool & allow_unknown,
-  const float & max_iterations)
+  int & max_iterations)
 {
   if (graph_) {
     graph_.reset();
@@ -85,12 +90,15 @@ void AStarAlgorithm::setCosts(
   const unsigned int & y,
   unsigned char * costs)
 {
-  if (getSizeX() != x || getSizeY() != y) {
-    graph_->clear();
-  }
+  // if (getSizeX() != x || getSizeY() != y) { // TODO
+  graph_->clear();
+  // }
+
+  x_size_ = x;
+  y_size_ = y;
 
   for (unsigned int i = 0; i != x * y; i++) {
-    graph_->insert({i, Node(costs[i], i)});
+    graph_->insert({i, Node(costs[i], i)});  // TODO caching here retaining state ininvetently
   }
 }
 
@@ -128,11 +136,11 @@ bool AStarAlgorithm::areInputsValid()
     return false;
   }
 
-  // if (goal or start on unkonwn and not enabled unknown or footprint invalid) {
+  // if (footprint invalid) { TODO
   //   return false;
   // }
 
-  // if (start on occupied and therefore impossible [or goal, if no tolderance stuff])
+  // if (goal occupied, if no tolderance stuff) TODO
   //   return false;
   // }
 
@@ -149,9 +157,16 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
+  getStart()->setAccumulatedCost(0.0);
 
-  unsigned int iterations = 0;
-  while (iterations < getMaxIterations()) {
+  // Check if starting point is valid
+  Graph::iterator cell_iterator;
+  if (!isCellValid(getStart()->getIndex(), cell_iterator)) {
+    throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
+  }
+
+  int iterations = 0;
+  while (iterations < getMaxIterations() && !queue_->empty()) {
     iterations++;
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
@@ -167,11 +182,14 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
     // 4) Expand neighbors of Nbest not visited
     NodeVector neighbors = getNeighbors(current_node->getIndex());
+    std::cout << "Number of valid neighbors returned: " << neighbors.size() << std::endl;
+
     for (NodeVector::iterator it = neighbors.begin(); it != neighbors.end(); ++it) {
       Node * & neighbor = (*it);
 
-      // ** adding here would not allow for updating of visited items **
+      // ** adding here would not allow for updating of visited items TODO make decision on this or parameterize **
       if (neighbor->wasVisited()) {
+        std::cout << "it was visited, continuing" << std::endl;
         continue;
       }
 
@@ -181,13 +199,17 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
       // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
       if (g_cost < neighbor->getAccumulatedCost()) {
+        // std::cout << "it has a lower potential cost ("<< g_cost << "), updating" << std::endl;
         neighbor->setAccumulatedCost(g_cost);
         neighbor->last_node = current_node;
         const float priority = g_cost + getHeuristicCost(neighbor->getIndex());
 
         // 4.3) If not in queue, add it
         // ** `!neighbor->wasVisited()` adding here would allow for updating of visited items **
+
+        // TODO I'm not necessarily convinced this is working
         if (!neighbor->isQueued()) {
+          std::cout << "it was not in queue, adding with priority: " << priority << std::endl;
           neighbor->queued();
           addNode(priority, neighbor);
         }
@@ -262,40 +284,42 @@ float & AStarAlgorithm::getTraversalCost(
 float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
 {
   Coordinates cell_coords = getCoords(cell);
-  return hypot(goal_coordinates_.first - cell_coords.first,
+  return hypotf(goal_coordinates_.first - cell_coords.first,
            goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
 }
 
 NodeVector AStarAlgorithm::getNeighbors(const unsigned int & cell)
 {
   int size_x = static_cast<int>(getSizeX());
-  const std::vector<int> van_neumann_lookup = {1, -1, -size_x, size_x};
-  std::vector<int> moore_lookup = {
-    1, -1, -1 * size_x, size_x, -1 * size_x - 1,
-    -1 * size_x + 1, size_x - 1, size_x + 1};
+  int cell_i = static_cast<int>(cell);
+  const std::vector<int> van_neumann_neighborhood = {cell_i + 1, cell_i - 1,
+    cell_i - size_x, cell_i + size_x};
+  const std::vector<int> moore_neighborhood = {
+    cell_i + 1, cell_i - 1, cell_i - size_x, cell_i + size_x, cell_i - size_x - 1,
+    cell_i - size_x + 1, cell_i + size_x - 1, cell_i + size_x + 1};
 
   switch (neighborhood_) {
     case Neighborhood::UNKNOWN:
       throw std::runtime_error("Unkown neighborhood type selected.");
     case Neighborhood::VAN_NEUMANN:
-      // 4 connected
-      return getValidCells(van_neumann_lookup, cell);
+      return getValidCells(van_neumann_neighborhood);
     case Neighborhood::MOORE:
-      // 8 connected
-      return getValidCells(moore_lookup, cell);
+      return getValidCells(moore_neighborhood);
     default:
       throw std::runtime_error("Invalid neighborhood type selected.");
   }
 }
 
 NodeVector AStarAlgorithm::getValidCells(
-  const std::vector<int> & lookup_table,
-  const unsigned int & cell)
+  const std::vector<int> & lookup_table)
 {
   NodeVector neighbors;
   Graph::iterator cell_iterator;
+
   for (unsigned int i = 0; i != lookup_table.size(); i++) {
-    if (isCellValid(cell + lookup_table[i], cell_iterator)) {
+    if (lookup_table[i] > 0 && isCellValid(
+        static_cast<unsigned int>(lookup_table[i]), cell_iterator))
+    {
       neighbors.push_back(&cell_iterator->second);
     }
   }
@@ -312,8 +336,20 @@ bool AStarAlgorithm::isCellValid(const unsigned int & i, Graph::iterator & cell_
     return false;
   }
 
+  // off map, that didn't go below 0 or above Nx/Ny
+  // or surround map in a border of lethals? TODO
+  // if () {
+  //   return false;
+  // }
+
   // occupied cell
-  if (cell_it->second.getCost() == OCCUPIED) {
+  auto & cost = cell_it->second.getCost();
+  if (cost == OCCUPIED || cost == INSCRIBED) {
+    return false;
+  }
+
+  // unknown cell
+  if (cost == UNKNOWN && !traverse_unknown_) {
     return false;
   }
 
@@ -325,6 +361,29 @@ void AStarAlgorithm::clearQueue()
   while (!queue_->empty()) {
     queue_->pop();
   }
+}
+
+Coordinates AStarAlgorithm::getCoords(const unsigned int & index)
+{
+  float x = static_cast<float>(index % getSizeX());
+  float y = static_cast<float>(index / getSizeX());
+  return Coordinates(x, y);
+}
+
+
+int & AStarAlgorithm::getMaxIterations()
+{
+  return max_iterations_;
+}
+
+unsigned int & AStarAlgorithm::getSizeX()
+{
+  return x_size_;
+}
+
+unsigned int & AStarAlgorithm::getSizeY()
+{
+  return y_size_;
 }
 
 }  // namespace smac_planner

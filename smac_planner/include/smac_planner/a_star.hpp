@@ -61,7 +61,7 @@ public:
   void initialize(
     const float & travel_cost,
     const bool & allow_unknown,
-    const float & max_iterations);
+    int & max_iterations);
 
   /**
    * @brief Creating path from given costmap, start, and goal
@@ -149,8 +149,7 @@ private:
    * @return Vector of node pointers to valid cells
    */
   NodeVector getValidCells(
-    const std::vector<int> & lookup_table,
-    const unsigned int & cell);
+    const std::vector<int> & lookup_table);
 
   /**
    * @brief Get cost of a cell from graph
@@ -192,31 +191,26 @@ private:
    * @brief Get maximum number of iterations to plan
    * @return Maximum iterations parameter
    */
-  unsigned int & getMaxIterations() {return max_iterations_;}
+  int & getMaxIterations();
 
   /**
    * @brief Get size of graph in X
    * @return Size in X
    */
-  unsigned int & getSizeX() {return x_size_;}
+  unsigned int & getSizeX();
 
   /**
    * @brief Get size of graph in Y
    * @return Size in Y
    */
-  unsigned int & getSizeY() {return y_size_;}
+  unsigned int & getSizeY();
 
   /**
    * @brief Get node coordinates from index
    * @param index Index of node
    * @return pair of XY coordinates
    */
-  std::pair<unsigned int, unsigned int> getCoords(const unsigned int & index)
-  {
-    const unsigned int x = index % getSizeX();
-    const unsigned int y = index / getSizeX();
-    return std::pair<unsigned int, unsigned int>(x, y);
-  }
+  Coordinates getCoords(const unsigned int & index);
 
   /**
    * @brief Clear hueristic queue of nodes to search
@@ -225,7 +219,7 @@ private:
 
   float travel_cost_;
   bool traverse_unknown_;
-  unsigned int max_iterations_;
+  int max_iterations_;
   unsigned int x_size_;
   unsigned int y_size_;
 
