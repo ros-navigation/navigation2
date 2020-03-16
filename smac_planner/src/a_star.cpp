@@ -19,7 +19,7 @@
 #include <memory>
 #include <queue>
 #include <algorithm>
-
+#include <chrono>
 #include "smac_planner/a_star.hpp"
 
 namespace smac_planner
@@ -37,10 +37,13 @@ namespace smac_planner
 
 // anytime A*
 
-// need to store accumulated cost?
+// template all of AStarAlgorithm by NodeT. and then when we instantiate in plugin we give it. graph takes template arguement
+  // different plugins (A*, hybrid A*, etc) are different front ends (maybe plgun-plugins for 1? that seems too much though) but share this implementation.
+  // need to make API for this implementation to also take in nodes and edges to share in graph setCosts() a different alternative version, change this one to setGridCosts()
 
-// different data structures for graph
-//  // TODO try std::pair<unsigned int, unsigned int> and vector
+// once we start sampling, need to set (and check validity of) footprint.
+
+// different data structures for graph: vector may be faster.
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
 : travel_cost_(0.0),
@@ -68,7 +71,9 @@ AStarAlgorithm::~AStarAlgorithm()
 void AStarAlgorithm::initialize(
   const float & travel_cost,
   const bool & allow_unknown,
-  int & max_iterations)
+  int & max_iterations,
+  const float & tolerance,
+  const bool & revisit_neighbors)
 {
   if (graph_) {
     graph_.reset();
@@ -83,6 +88,8 @@ void AStarAlgorithm::initialize(
   travel_cost_ = travel_cost;
   traverse_unknown_ = allow_unknown;
   max_iterations_ = max_iterations;
+  tolerance_ = tolerance;
+  revisit_neighbors_ = revisit_neighbors;
 }
 
 void AStarAlgorithm::setCosts(
@@ -90,15 +97,17 @@ void AStarAlgorithm::setCosts(
   const unsigned int & y,
   unsigned char * costs)
 {
-  // if (getSizeX() != x || getSizeY() != y) { // TODO
-  graph_->clear();
-  // }
-
-  x_size_ = x;
-  y_size_ = y;
-
-  for (unsigned int i = 0; i != x * y; i++) {
-    graph_->insert({i, Node(costs[i], i)});  // TODO caching here retaining state ininvetently
+  if (getSizeX() != x || getSizeY() != y) {
+    x_size_ = x;
+    y_size_ = y;
+    graph_->clear();
+    for (unsigned int i = 0; i != x * y; i++) {
+      graph_->insert({i, Node(costs[i], i)});
+    }
+  } else {
+    for (unsigned int i = 0; i != x * y; i++) {
+      graph_->at(i).reset(costs[i], i);
+    }
   }
 }
 
@@ -136,13 +145,11 @@ bool AStarAlgorithm::areInputsValid()
     return false;
   }
 
-  // if (footprint invalid) { TODO
-  //   return false;
-  // }
-
-  // if (goal occupied, if no tolderance stuff) TODO
-  //   return false;
-  // }
+  Graph::iterator it;
+  if (tolerance_ && !isCellValid(goal_->getIndex(), it)) {
+    throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
+    return false;
+  }
 
   return true;
 }
@@ -177,19 +184,20 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
+      std::cout << "iterations: " << iterations << std::endl;
       return backtracePath(current_node, path);
     }
 
     // 4) Expand neighbors of Nbest not visited
     NodeVector neighbors = getNeighbors(current_node->getIndex());
-    std::cout << "Number of valid neighbors returned: " << neighbors.size() << std::endl;
 
     for (NodeVector::iterator it = neighbors.begin(); it != neighbors.end(); ++it) {
       Node * & neighbor = (*it);
 
-      // ** adding here would not allow for updating of visited items TODO make decision on this or parameterize **
-      if (neighbor->wasVisited()) {
-        std::cout << "it was visited, continuing" << std::endl;
+      if (neighbor->wasVisited() && !revisit_neighbors_) {
+        // NOTE(stevemacenski): if we expanded it, we dont need to add to search
+        // it again, because if heuristic is admissible and consistant, it cannot be
+        // adding option in case someone messes up or has a special situation.
         continue;
       }
 
@@ -199,17 +207,12 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
       // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
       if (g_cost < neighbor->getAccumulatedCost()) {
-        // std::cout << "it has a lower potential cost ("<< g_cost << "), updating" << std::endl;
         neighbor->setAccumulatedCost(g_cost);
         neighbor->last_node = current_node;
         const float priority = g_cost + getHeuristicCost(neighbor->getIndex());
 
         // 4.3) If not in queue, add it
-        // ** `!neighbor->wasVisited()` adding here would allow for updating of visited items **
-
-        // TODO I'm not necessarily convinced this is working
-        if (!neighbor->isQueued()) {
-          std::cout << "it was not in queue, adding with priority: " << priority << std::endl;
+        if (!neighbor->isQueued() && !neighbor->wasVisited()) {
           neighbor->queued();
           addNode(priority, neighbor);
         }
@@ -270,7 +273,7 @@ void AStarAlgorithm::addNode(const float cost, Node * & node)
 
 float & AStarAlgorithm::getCellCost(const unsigned int & cell)
 {
-  return graph_->at(cell).getCost();
+  return graph_->at(cell).getCost();  // TODO when using to work with costmap, see if I can can use cell_it from call below. That would make it so we dont look up twice in the data structure
 }
 
 float & AStarAlgorithm::getTraversalCost(
@@ -278,7 +281,7 @@ float & AStarAlgorithm::getTraversalCost(
   const unsigned int & /*cell*/)
 {
   // Currently using a regular 2D grid, all traversal costs are the same
-  return travel_cost_;
+  return travel_cost_;  // TODO why does make thing this 10 vs 1 make it no longer plan??
 }
 
 float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
@@ -336,11 +339,13 @@ bool AStarAlgorithm::isCellValid(const unsigned int & i, Graph::iterator & cell_
     return false;
   }
 
-  // off map, that didn't go below 0 or above Nx/Ny
-  // or surround map in a border of lethals? TODO
-  // if () {
-  //   return false;
-  // }
+  // NOTE(stevemacenski): Right now, we do not check if the cell has wrapped around
+  // the regular grid (e.g. your cell is on the edge of the costmap and i+1 
+  // goes to the other side). This check would add compute time and my assertion is
+  // that if you do wrap around, the heuristic will be so high it'll be added far
+  // in the queue that it will never be called if a valid path exists.
+  // This is intentionally un-included to increase speed, but be aware. If this causes
+  // trouble, please file a ticket and we can address it then.
 
   // occupied cell
   auto & cost = cell_it->second.getCost();

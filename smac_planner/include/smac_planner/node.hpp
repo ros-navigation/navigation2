@@ -23,10 +23,19 @@
 namespace smac_planner
 {
 
+/**
+ * @class smac_planner::Node
+ * @brief Node implementation for graph
+ */
 class Node
 {
 public:
-  Node(unsigned char cost_in, const unsigned int index)
+  /**
+   * @brief A constructor for smac_planner::Node
+   * @param cost_in The costmap cost at this node
+   * @param index The index of this node for self-reference
+   */
+  explicit Node(unsigned char & cost_in, const unsigned int index)
   : last_node(nullptr),
     cell_cost(static_cast<float>(cost_in)),
     accumulated_cost(std::numeric_limits<float>::max()),
@@ -36,52 +45,105 @@ public:
   {
   }
 
+  /**
+   * @brief A destructor for smac_planner::Node
+   */
   ~Node()
   {
     last_node = nullptr;
   }
 
+  /**
+   * @brief operator== for comparisons
+   * @param Node right hand side node reference
+   * @return If cell indicies are equal
+   */
   bool operator==(const Node & rhs)
   {
     return this->i == rhs.i;
   }
 
+  /**
+   * @brief Reset method for new search
+   * @param cost_in The costmap cost at this node
+   * @param index The index of this node for self-reference
+   */
+  void reset(const unsigned char & cost, const unsigned int index)
+  {
+    last_node = nullptr;
+    cell_cost = static_cast<float>(cost);
+    accumulated_cost = std::numeric_limits<float>::max();
+    i = index;
+    was_visited = false;
+    is_queued = false;
+  }
+
+  /**
+   * @brief Gets the accumulated cost at this node
+   * @return accumulated cost
+   */
   float & getAccumulatedCost()
   {
     return accumulated_cost;
   }
 
+  /**
+   * @brief Sets the accumulated cost at this node
+   * @param reference to accumulated cost
+   */
   void setAccumulatedCost(const float cost_in)
   {
     accumulated_cost = cost_in;
   }
 
+  /**
+   * @brief Gets the costmap cost at this node
+   * @return costmap cost
+   */
   float & getCost()
   {
     return cell_cost;
   }
 
+  /**
+   * @brief Gets if cell has been visited in search
+   * @param If cell was visited
+   */
   bool wasVisited()
   {
     return was_visited;
   }
 
+  /**
+   * @brief Sets if cell has been visited in search
+   */
   void visited()
   {
     was_visited = true;
     is_queued = false;
   }
 
+  /**
+   * @brief Gets if cell is currently queued in search
+   * @param If cell was queued
+   */
   bool isQueued()
   {
     return is_queued;
   }
 
+  /**
+   * @brief Sets if cell is currently queued in search
+   */
   void queued()
   {
     is_queued = true;
   }
 
+  /**
+   * @brief Gets cell index
+   * @return Reference to cell index
+   */
   unsigned int & getIndex()
   {
     return i;

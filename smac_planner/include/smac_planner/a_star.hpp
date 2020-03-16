@@ -32,8 +32,6 @@ namespace smac_planner
 // https://en.wikipedia.org/wiki/A*_search_algorithm
 // https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/AStar/a_star.py
 
-// add tests
-
 /**
  * @class smac_planner::AStarAlgorithm
  * @brief An A* implementation for planning in a costmap
@@ -57,11 +55,16 @@ public:
    * @param travel_cost Cost to travel from adjacent cells to another
    * @param allow_unknown Allow search in unknown space, good for navigation while mapping
    * @param max_iterations Maximum number of iterations to use while expanding search
+   * @param tolerance Tolerance to goal to return valid path if exact path cannot be computed
+   * @param revisit_neighbors Whether to revisit visited neighbors to reduce costs,
+   * comes at more compute time but smoother paths.
    */
   void initialize(
     const float & travel_cost,
     const bool & allow_unknown,
-    int & max_iterations);
+    int & max_iterations,
+    const float & tolerance,
+    const bool & revisit_neighbors);
 
   /**
    * @brief Creating path from given costmap, start, and goal
@@ -220,6 +223,8 @@ private:
   float travel_cost_;
   bool traverse_unknown_;
   int max_iterations_;
+  float tolerance_;
+  bool revisit_neighbors_;
   unsigned int x_size_;
   unsigned int y_size_;
 
