@@ -107,33 +107,33 @@ private:
    * @brief Get pointer reference to starting node
    * @return Node pointer reference to starting node
    */
-  Node * & getStart();
+  inline Node * & getStart();
 
   /**
    * @brief Get pointer reference to goal node
    * @return Node pointer reference to goal node
    */
-  Node * & getGoal();
+  inline Node * & getGoal();
 
   /**
    * @brief Get pointer to next goal in open set
    * @return Node pointer reference to next heuristically scored node
    */
-  Node * getNode();
+  inline Node * getNode();
 
   /**
    * @brief Get pointer to next goal in open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  void addNode(const float cost, Node * & node);
+  inline void addNode(const float cost, Node * & node);
 
   /**
    * @brief Check if this node is the goal node
    * @param node Node pointer to check if its the goal node
    * @return if node is goal
    */
-  bool isGoal(Node * & node);
+  inline bool isGoal(Node * & node);
 
   /**
    * @brief Check if this cell is valid
@@ -141,7 +141,7 @@ private:
    * @param cell_it Iterator reference of the cell
    * @return whether this cell is valid and collision free
    */
-  bool isCellValid(const unsigned int & i, Graph::iterator & cell_it);
+  inline bool isCellValid(const unsigned int & i, Graph::iterator & cell_it);
 
   /**
    * @brief Get a vector of valid node pointers from relative locations
@@ -149,7 +149,7 @@ private:
    * @param cell Node index
    * @param neighbors Vector of node pointers to valid cells
    */
-  void getValidCells(
+  inline void getValidCells(
     const std::vector<int> & lookup_table,
     NodeVector & neighbors);
 
@@ -158,7 +158,7 @@ private:
    * @param cell Node index
    * @return Reference to cell cost
    */
-  float & getCellCost(const unsigned int & cell);
+  inline float & getCellCost(const unsigned int & cell);
 
   /**
    * @brief Get cost of traversal between nodes
@@ -166,7 +166,7 @@ private:
    * @param cell Node index of new
    * @return Reference traversal cost between the cells
    */
-  float & getTraversalCost(const unsigned int & lastCell, const unsigned int & cell);
+  inline float & getTraversalCost(const unsigned int & lastCell, const unsigned int & cell);
 
   /**
    * @brief Get cost of heuristic of node
@@ -174,62 +174,62 @@ private:
    * @param cell Cell index of new
    * @return Heuristic cost between the cells
    */
-  float getHeuristicCost(const unsigned int & cell);
+  inline float getHeuristicCost(const unsigned int & cell);
 
   /**
    * @brief Get a vector of neighbors around node
    * @param cell Node index
    * @param neighbors Vector of node pointers to neighbors
    */
-  void getNeighbors(const unsigned int & cell, NodeVector & neighbors);
+  inline void getNeighbors(const unsigned int & cell, NodeVector & neighbors);
 
   /**
    * @brief Check if inputs to planner are valid
    * @return Are valid
    */
-  bool areInputsValid();
+  inline bool areInputsValid();
 
   /**
    * @brief Get maximum number of iterations to plan
    * @return Reference to Maximum iterations parameter
    */
-  int & getMaxIterations();
+  inline int & getMaxIterations();
 
   /**
    * @brief Get maximum number of on-approach iterations after within threshold 
    * @return Reference to Maximum on-appraoch iterations parameter
    */
-  int & getOnApproachMaxIterations();
+  inline int & getOnApproachMaxIterations();
 
   /**
    * @brief Get tolerance, in node cells
    * @return Reference to tolerance parameter
    */
-  float & getTolerance();
+  inline float & getTolerance();
 
   /**
    * @brief Get size of graph in X
    * @return Size in X
    */
-  unsigned int & getSizeX();
+  inline unsigned int & getSizeX();
 
   /**
    * @brief Get size of graph in Y
    * @return Size in Y
    */
-  unsigned int & getSizeY();
+  inline unsigned int & getSizeY();
 
   /**
    * @brief Get node coordinates from index
    * @param index Index of node
    * @return pair of XY coordinates
    */
-  Coordinates getCoords(const unsigned int & index);
+  inline Coordinates getCoords(const unsigned int & index);
 
   /**
    * @brief Clear hueristic queue of nodes to search
    */
-  void clearQueue();
+  inline void clearQueue();
 
   float travel_cost_;
   bool traverse_unknown_;

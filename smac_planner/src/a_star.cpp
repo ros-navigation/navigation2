@@ -35,15 +35,13 @@ namespace smac_planner
 
 // Feature complete
 // - neutral cost / costmap / minimum cost per step?
+// - optimization points (also, reduce copies, different data structures for graph: vector may be faster. What about queue?, inline methods?)
 
 // template all of AStarAlgorithm by NodeT. and then when we instantiate in plugin we give it. graph takes template arguement
   // different plugins (A*, hybrid A*, etc) are different front ends (maybe plgun-plugins for 1? that seems too much though) but share this implementation.
   // need to make API for this implementation to also take in nodes and edges to share in graph setCosts() a different alternative version, change this one to setGridCosts()
 
 // once we start sampling, need to set (and check validity of) footprint.
-
-// OPTIMIZATION different data structures for graph: vector may be faster. What about queue?
-// OPTIMIZATION reduce copies
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
 : travel_cost_(0.0),
@@ -254,8 +252,7 @@ bool AStarAlgorithm::backtracePath(Node * & node, IndexPath & path)
     return false;
   }
 
-  Node * current_node;
-  current_node = node;
+  Node * current_node = node;
 
   while (current_node->last_node) {
     path.push_back(current_node->getIndex());
@@ -397,9 +394,9 @@ void AStarAlgorithm::clearQueue()
 
 Coordinates AStarAlgorithm::getCoords(const unsigned int & index)
 {
-  float x = static_cast<float>(index % getSizeX());
-  float y = static_cast<float>(index / getSizeX());
-  return Coordinates(x, y);
+  return Coordinates(
+    static_cast<float>(index % getSizeX()),
+    static_cast<float>(index / getSizeX()));
 }
 
 
