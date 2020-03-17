@@ -104,13 +104,14 @@ void SmacPlanner::configure(
 
   bool allow_unknown;
   int max_iterations;
+  int max_on_approach_iterations;
   float travel_cost;
-  float tolerance;
   bool revisit_neighbors;
   std::string neighborhood_for_search;
+
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".tolerance", rclcpp::ParameterValue(0.0));
-  node_->get_parameter(name + ".tolerance", tolerance);
+    node_, name + ".tolerance", rclcpp::ParameterValue(0.25));
+  tolerance_ = static_cast<float>(node_->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".allow_unknown", allow_unknown);
@@ -123,9 +124,12 @@ void SmacPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".revisit_neighbors", rclcpp::ParameterValue(true)); /* TODO do CPU testing on large maps, paths seem permissible and similar CPU in short */
   node_->get_parameter(name + ".revisit_neighbors", revisit_neighbors);
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(200));
+  node_->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
 
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".neighborhood_for_saerch", rclcpp::ParameterValue(std::string("MOORE")));
+    node_, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
   node_->get_parameter(name + ".neighborhood_for_search", neighborhood_for_search);
   Neighborhood neighborhood;
   if (neighborhood_for_search == std::string("MOORE")) {
@@ -135,18 +139,24 @@ void SmacPlanner::configure(
   } else {
     neighborhood = Neighborhood::MOORE;
     RCLCPP_WARN(node_->get_logger(),
-      "Unable to get Neighborhood search type. Given %s, "
+      "Unable to get Neighborhood search type. Given '%s', "
       "valid options are MOORE and VAN_NEUMANN. Using MOORE as default",
       neighborhood_for_search.c_str());
   }
 
   a_star_ = std::make_unique<AStarAlgorithm>(neighborhood);
-  a_star_->initialize(travel_cost, allow_unknown, max_iterations, tolerance, revisit_neighbors);
+  a_star_->initialize(
+    travel_cost,
+    allow_unknown,
+    max_iterations,
+    revisit_neighbors,
+    max_on_approach_iterations);
 
   RCLCPP_INFO(
     node_->get_logger(), "Configured plugin %s of type SmacPlanner with "
-    "travel cost %.2f, tolerance %.2f, maximum iterations %i, and %s. Using neighorhood: %s.",
-    name_.c_str(), travel_cost, tolerance, max_iterations,
+    "travel cost %.2f, tolerance %.2f, maximum iterations %i, "
+    "max on appraoch iterations %i, and %s. Using neighorhood: %s.",
+    name_.c_str(), travel_cost, tolerance_, max_iterations, max_on_approach_iterations,
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
     toString(neighborhood).c_str());
 }
@@ -200,7 +210,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   IndexPath path;
   try {
-    if (!a_star_->createPath(path)) {
+    if (!a_star_->createPath(path, tolerance_ / static_cast<float>(costmap_->getResolution()))) {
       RCLCPP_WARN(
         node_->get_logger(),
         "%s: failed to create plan, exceeded maximum iterations or no valid path found.",

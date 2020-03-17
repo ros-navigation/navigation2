@@ -20,6 +20,8 @@
 #include <queue>
 #include <algorithm>
 #include <chrono>
+#include <limits>
+
 #include "smac_planner/a_star.hpp"
 
 namespace smac_planner
@@ -31,11 +33,8 @@ namespace smac_planner
 //   and interface should be defined in nav2_core.
 //   and include some getCost(current, next) for traversibility. would just be cost in 2D
 
-// look over navfn and make sure I have all the features or safties
-// - neutral cost?
-// - costed space that's nonlethal but also not just free -- actual costmap
-
-// anytime A*
+// Feature complete
+// - neutral cost / costmap / minimum cost per step?
 
 // template all of AStarAlgorithm by NodeT. and then when we instantiate in plugin we give it. graph takes template arguement
   // different plugins (A*, hybrid A*, etc) are different front ends (maybe plgun-plugins for 1? that seems too much though) but share this implementation.
@@ -43,7 +42,7 @@ namespace smac_planner
 
 // once we start sampling, need to set (and check validity of) footprint.
 
-// OPTIMIZATION different data structures for graph: vector may be faster.
+// OPTIMIZATION different data structures for graph: vector may be faster. What about queue?
 // OPTIMIZATION reduce copies
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
@@ -73,8 +72,8 @@ void AStarAlgorithm::initialize(
   const float & travel_cost,
   const bool & allow_unknown,
   int & max_iterations,
-  const float & tolerance,
-  const bool & revisit_neighbors)
+  const bool & revisit_neighbors,
+  const int & max_on_approach_iterations)
 {
   if (graph_) {
     graph_.reset();
@@ -89,8 +88,8 @@ void AStarAlgorithm::initialize(
   travel_cost_ = travel_cost;
   traverse_unknown_ = allow_unknown;
   max_iterations_ = max_iterations;
-  tolerance_ = tolerance;
   revisit_neighbors_ = revisit_neighbors;
+  max_on_approach_iterations_ = max_on_approach_iterations;
 }
 
 void AStarAlgorithm::setCosts(
@@ -149,7 +148,7 @@ bool AStarAlgorithm::areInputsValid()
 
   // Check if ending point is valid
   Graph::iterator it;
-  if (tolerance_ && !isCellValid(goal_->getIndex(), it)) {
+  if (getTolerance() < 0.001 && !isCellValid(goal_->getIndex(), it)) {
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
   }
 
@@ -161,12 +160,14 @@ bool AStarAlgorithm::areInputsValid()
   return true;
 }
 
-bool AStarAlgorithm::createPath(IndexPath & path)
+bool AStarAlgorithm::createPath(IndexPath & path, const float & tolerance)
 {
   if (!areInputsValid()) {
     return false;
   }
 
+  tolerance_ = tolerance;
+  best_heuristic_node_ = {std::numeric_limits<float>::max(), 0};
   clearQueue();
 
   // 0) Add starting point to the open set
@@ -179,6 +180,7 @@ bool AStarAlgorithm::createPath(IndexPath & path)
   float priority = 0.0;
   NodeVector neighbors;
   int iterations = 0;
+  int approach_iterations = 0;
   NodeVector::iterator neighbor_iterator;
 
   while (iterations < getMaxIterations() && !queue_->empty()) {
@@ -192,8 +194,15 @@ bool AStarAlgorithm::createPath(IndexPath & path)
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
-      // std::cout << "iterations: " << iterations << std::endl;
       return backtracePath(current_node, path);
+    }
+    else if (best_heuristic_node_.first < tolerance_) {
+      // Optimization: Let us find when in tolerance and refine within reason
+      approach_iterations++;
+      if (approach_iterations > getOnApproachMaxIterations() || iterations + 1 == getMaxIterations()) {
+        Node * node = & graph_->at(best_heuristic_node_.second);
+        return backtracePath(node, path);
+      }
     }
 
     // 4) Expand neighbors of Nbest not visited
@@ -222,7 +231,7 @@ bool AStarAlgorithm::createPath(IndexPath & path)
         neighbor->last_node = current_node;
         priority = g_cost + getHeuristicCost(neighbor->getIndex());
 
-        // 4.3) If not in queue, add it
+        // 4.3) If not in queue or visited, add it
         if (!neighbor->isQueued() && !neighbor->wasVisited()) {
           neighbor->queued();
           addNode(priority, neighbor);
@@ -298,8 +307,15 @@ float & AStarAlgorithm::getTraversalCost(
 float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
 {
   Coordinates cell_coords = getCoords(cell);
-  return hypotf(goal_coordinates_.first - cell_coords.first,
-           goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
+  float heuristic = hypotf(
+    goal_coordinates_.first - cell_coords.first,
+    goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
+
+  if (heuristic < best_heuristic_node_.first) {
+    best_heuristic_node_ = {heuristic, cell};
+  }
+
+  return heuristic;
 }
 
 void AStarAlgorithm::getNeighbors(const unsigned int & cell, NodeVector & neighbors)
@@ -391,6 +407,17 @@ int & AStarAlgorithm::getMaxIterations()
 {
   return max_iterations_;
 }
+
+int & AStarAlgorithm::getOnApproachMaxIterations()
+{
+  return max_on_approach_iterations_;
+}
+
+float & AStarAlgorithm::getTolerance()
+{
+  return tolerance_;
+}
+
 
 unsigned int & AStarAlgorithm::getSizeX()
 {

@@ -35,6 +35,8 @@ typedef std::pair<float, float> Coordinates;
 
 typedef std::pair<float, Node *> NodeElement;
 
+typedef std::pair<float, unsigned int> NodeHeuristicPair;
+
 struct NodeComparator
 {
   bool operator()(const NodeElement & a, const NodeElement & b) const

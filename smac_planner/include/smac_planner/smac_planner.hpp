@@ -87,6 +87,7 @@ protected:
   nav2_util::LifecycleNode::SharedPtr node_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string global_frame_, name_;
+  float tolerance_;
 };
 
 }  // namespace smac_planner
