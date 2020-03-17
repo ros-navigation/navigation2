@@ -149,10 +149,11 @@ private:
    * @brief Get a vector of valid node pointers from relative locations
    * @param lookup_table Lookup table of values around cell to query
    * @param cell Node index
-   * @return Vector of node pointers to valid cells
+   * @param neighbors Vector of node pointers to valid cells
    */
-  NodeVector getValidCells(
-    const std::vector<int> & lookup_table);
+  void getValidCells(
+    const std::vector<int> & lookup_table,
+    NodeVector & neighbors);
 
   /**
    * @brief Get cost of a cell from graph
@@ -180,9 +181,9 @@ private:
   /**
    * @brief Get a vector of neighbors around node
    * @param cell Node index
-   * @return Vector of node pointers to neighbors
+   * @param neighbors Vector of node pointers to neighbors
    */
-  NodeVector getNeighbors(const unsigned int & cell);
+  void getNeighbors(const unsigned int & cell, NodeVector & neighbors);
 
   /**
    * @brief Check if inputs to planner are valid

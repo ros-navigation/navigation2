@@ -43,7 +43,8 @@ namespace smac_planner
 
 // once we start sampling, need to set (and check validity of) footprint.
 
-// different data structures for graph: vector may be faster.
+// OPTIMIZATION different data structures for graph: vector may be faster.
+// OPTIMIZATION reduce copies
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
 : travel_cost_(0.0),
@@ -101,19 +102,20 @@ void AStarAlgorithm::setCosts(
     x_size_ = x;
     y_size_ = y;
     graph_->clear();
+    graph_->reserve(x * y);
     for (unsigned int i = 0; i != x * y; i++) {
-      graph_->insert({i, Node(costs[i], i)});
+      graph_->insert({i, Node(costs[i], i)});  // OPTIMIZATION: benchmark different methods here. emplace, reserve, resize, insert.
     }
   } else {
     for (unsigned int i = 0; i != x * y; i++) {
-      graph_->at(i).reset(costs[i], i);
+      graph_->at(i).reset(costs[i], i);  // OPTIMIZATION: benchmark if this actually saves me anything. Any way we can avoid the copy?
     }
   }
 }
 
 void AStarAlgorithm::setStart(const unsigned int & value)
 {
-  auto it = graph_->find(value);
+  auto it = graph_->find(value);  // OPTIMIZATION: see if at with exception handles or faster
   if (it != graph_->end()) {
     start_ = &(it->second);
   } else {
@@ -123,7 +125,7 @@ void AStarAlgorithm::setStart(const unsigned int & value)
 
 void AStarAlgorithm::setGoal(const unsigned int & value)
 {
-  auto it = graph_->find(value);
+  auto it = graph_->find(value);  // OPTIMIZATION: see if at with exception handles or faster
   if (it != graph_->end()) {
     goal_ = &(it->second);
     goal_coordinates_ = getCoords(goal_->getIndex());
@@ -135,20 +137,25 @@ void AStarAlgorithm::setGoal(const unsigned int & value)
 
 bool AStarAlgorithm::areInputsValid()
 {
+  // Check if graph was filled in
   if (graph_->size() == 0) {
     throw std::runtime_error("Failed to compute path, no costmap given.");
-    return false;
   }
 
+  // Check if points were filled in
   if (!start_ || !goal_) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
-    return false;
   }
 
+  // Check if ending point is valid
   Graph::iterator it;
   if (tolerance_ && !isCellValid(goal_->getIndex(), it)) {
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
-    return false;
+  }
+
+  // Check if starting point is valid
+  if (!isCellValid(getStart()->getIndex(), it)) {
+    throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
   }
 
   return true;
@@ -166,33 +173,37 @@ bool AStarAlgorithm::createPath(IndexPath & path)
   addNode(0.0, getStart());
   getStart()->setAccumulatedCost(0.0);
 
-  // Check if starting point is valid
-  Graph::iterator cell_iterator;
-  if (!isCellValid(getStart()->getIndex(), cell_iterator)) {
-    throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
-  }
-
+  // Optimization: preallocate all variables
+  Node * current_node;
+  float g_cost = 0.0;
+  float priority = 0.0;
+  NodeVector neighbors;
   int iterations = 0;
+  NodeVector::iterator neighbor_iterator;
+
   while (iterations < getMaxIterations() && !queue_->empty()) {
     iterations++;
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
-    Node * current_node = getNode();
+    current_node = getNode();
 
     // 2) Mark Nbest as visited
     current_node->visited();
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
-      std::cout << "iterations: " << iterations << std::endl;
+      // std::cout << "iterations: " << iterations << std::endl;
       return backtracePath(current_node, path);
     }
 
     // 4) Expand neighbors of Nbest not visited
-    NodeVector neighbors = getNeighbors(current_node->getIndex());
+    neighbors.clear();
+    getNeighbors(current_node->getIndex(), neighbors);
 
-    for (NodeVector::iterator it = neighbors.begin(); it != neighbors.end(); ++it) {
-      Node * & neighbor = (*it);
+    for (NodeVector::iterator neighbor_iterator = neighbors.begin();
+        neighbor_iterator != neighbors.end(); ++neighbor_iterator)
+    {
+      Node * & neighbor = (*neighbor_iterator);
 
       if (neighbor->wasVisited() && !revisit_neighbors_) {
         // NOTE(stevemacenski): if we expanded it, we dont need to add to search
@@ -202,14 +213,14 @@ bool AStarAlgorithm::createPath(IndexPath & path)
       }
 
       // 4.1) Compute the cost to go to this cell
-      const float g_cost = current_node->getAccumulatedCost() +
+      g_cost = current_node->getAccumulatedCost() +
         getTraversalCost(current_node->getIndex(), neighbor->getIndex());
 
       // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
       if (g_cost < neighbor->getAccumulatedCost()) {
         neighbor->setAccumulatedCost(g_cost);
         neighbor->last_node = current_node;
-        const float priority = g_cost + getHeuristicCost(neighbor->getIndex());
+        priority = g_cost + getHeuristicCost(neighbor->getIndex());
 
         // 4.3) If not in queue, add it
         if (!neighbor->isQueued() && !neighbor->wasVisited()) {
@@ -268,13 +279,13 @@ Node * AStarAlgorithm::getNode()
 
 void AStarAlgorithm::addNode(const float cost, Node * & node)
 {
-  queue_->emplace(cost, node);
+  queue_->emplace(cost, node);  //  OPTIMIZATION: make sure this is faster than just inserting
 }
 
 float & AStarAlgorithm::getCellCost(const unsigned int & cell)
 {
-  return graph_->at(cell).getCost();  // TODO when using to work with costmap, see if I can can use cell_it from call below. That would make it so we dont look up twice in the data structure
-}
+  return graph_->at(cell).getCost();  // TODO use cell costs in this
+}  // OPTIMIZATION: try to access data structure only 1 tie for each cell. We already have it from search.
 
 float & AStarAlgorithm::getTraversalCost(
   const unsigned int & /*lastCell*/,
@@ -291,9 +302,9 @@ float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
            goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
 }
 
-NodeVector AStarAlgorithm::getNeighbors(const unsigned int & cell)
+void AStarAlgorithm::getNeighbors(const unsigned int & cell, NodeVector & neighbors)
 {
-  int size_x = static_cast<int>(getSizeX());
+  int size_x = static_cast<int>(getSizeX());  // OPTIMIZATION: have these as class variables when size changes to reduce cost
   int cell_i = static_cast<int>(cell);
   const std::vector<int> van_neumann_neighborhood = {cell_i + 1, cell_i - 1,
     cell_i - size_x, cell_i + size_x};
@@ -305,18 +316,20 @@ NodeVector AStarAlgorithm::getNeighbors(const unsigned int & cell)
     case Neighborhood::UNKNOWN:
       throw std::runtime_error("Unkown neighborhood type selected.");
     case Neighborhood::VAN_NEUMANN:
-      return getValidCells(van_neumann_neighborhood);
+      getValidCells(van_neumann_neighborhood, neighbors);
+      break;
     case Neighborhood::MOORE:
-      return getValidCells(moore_neighborhood);
+      getValidCells(moore_neighborhood, neighbors);
+      break;
     default:
       throw std::runtime_error("Invalid neighborhood type selected.");
   }
 }
 
-NodeVector AStarAlgorithm::getValidCells(
-  const std::vector<int> & lookup_table)
+void AStarAlgorithm::getValidCells(
+  const std::vector<int> & lookup_table,
+  NodeVector & neighbors)
 {
-  NodeVector neighbors;
   Graph::iterator cell_iterator;
 
   for (unsigned int i = 0; i != lookup_table.size(); i++) {
@@ -326,13 +339,11 @@ NodeVector AStarAlgorithm::getValidCells(
       neighbors.push_back(&cell_iterator->second);
     }
   }
-
-  return neighbors;
 }
 
 bool AStarAlgorithm::isCellValid(const unsigned int & i, Graph::iterator & cell_it)
 {
-  cell_it = graph_->find(i);
+  cell_it = graph_->find(i);  // OPTIMIZATION: is 'at(i)' faster?
 
   // out of range
   if (cell_it == graph_->end()) {
