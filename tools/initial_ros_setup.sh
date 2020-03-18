@@ -26,7 +26,7 @@ for opt in "$@" ; do
     *)
       echo "Invalid option: $opt"
       echo "Valid options:"
-      echo "--no-ros2       Uses the binary distribution of ROS2 dashing"
+      echo "--no-ros2       Uses the binary distribution of ROS2 dashing or eloquent"
       echo "--download-only Skips the build step and only downloads the code"
       exit 1
     ;;
