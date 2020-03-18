@@ -47,7 +47,7 @@ public:
     getInput("controller_id", goal_.controller_id);
   }
 
-  void on_server_timeout() override
+  void on_wait_for_result() override
   {
     // Check if the goal has been updated
     if (config().blackboard->get<bool>("path_updated")) {
