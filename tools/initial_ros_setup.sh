@@ -4,11 +4,13 @@ ENABLE_BUILD=true
 ENABLE_ROS2=true
 
 if [ "$ROS2_DISTRO" = "" ]; then
-  export ROS2_DISTRO=dashing
+  export ROS2_DISTRO=eloquent
 fi
-if [ "$ROS2_DISTRO" != "dashing" ]; then
-  echo "ROS2_DISTRO variable must be set to dashing"
-  exit 1
+if [ "$ROS2_DISTRO" != "eloquent" ]; then
+  if [ "$ROS2_DISTRO" != "dashing" ]; then
+    echo "ROS2_DISTRO variable must be set to dashing or eloquent"
+    exit 1
+  fi
 fi
 
 for opt in "$@" ; do
