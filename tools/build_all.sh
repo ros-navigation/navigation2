@@ -10,10 +10,8 @@ if [ "$ROS2_DISTRO" = "" ]; then
   export ROS2_DISTRO=eloquent
 fi
 if [ "$ROS2_DISTRO" != "eloquent" ]; then
-  if [ "$ROS2_DISTRO" != "dashing" ]; then
-    echo "ROS2_DISTRO variable must be set to dashing or eloquent"
-    exit 1
-  fi
+  echo "ROS2_DISTRO variable must be set to eloquent"
+  exit 1
 fi
 
 set -e
