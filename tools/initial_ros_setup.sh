@@ -4,10 +4,10 @@ ENABLE_BUILD=true
 ENABLE_ROS2=true
 
 if [ "$ROS2_DISTRO" = "" ]; then
-  export ROS2_DISTRO=dashing
+  export ROS2_DISTRO=eloquent
 fi
-if [ "$ROS2_DISTRO" != "dashing" ]; then
-  echo "ROS2_DISTRO variable must be set to dashing"
+if [ "$ROS2_DISTRO" != "eloquent" ]; then
+  echo "ROS2_DISTRO variable must be set to eloquent"
   exit 1
 fi
 
@@ -24,7 +24,7 @@ for opt in "$@" ; do
     *)
       echo "Invalid option: $opt"
       echo "Valid options:"
-      echo "--no-ros2       Uses the binary distribution of ROS2 dashing"
+      echo "--no-ros2       Uses the binary distribution of ROS2 eloquent"
       echo "--download-only Skips the build step and only downloads the code"
       exit 1
     ;;
