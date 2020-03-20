@@ -149,15 +149,12 @@ new_goal_received:
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
         on_success();
-        setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
       case rclcpp_action::ResultCode::ABORTED:
-        setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
 
       case rclcpp_action::ResultCode::CANCELED:
-        setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
       default:
