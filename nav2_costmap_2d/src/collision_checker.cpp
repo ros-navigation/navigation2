@@ -51,7 +51,7 @@ bool CollisionChecker::isCollisionFree(
   const geometry_msgs::msg::Pose2D & pose)
 {
   try {
-    if (scorePose(pose) >= INSCRIBED_INFLATED_OBSTACLE) {
+    if (scorePose(pose) >= LETHAL_OBSTACLE) {
       return false;
     }
     return true;
