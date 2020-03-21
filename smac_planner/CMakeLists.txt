@@ -17,11 +17,13 @@ find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 nav2_package()
 
 include_directories(
   include
+  ${CERES_INCLUDES}
 )
 
 set(library_name smac_planner)
@@ -52,6 +54,8 @@ add_library(${library_name} SHARED
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+
+target_link_libraries(${library_name} ${CERES_LIBRARIES})
 
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 

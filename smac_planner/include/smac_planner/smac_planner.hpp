@@ -20,6 +20,7 @@
 #include <string>
 
 #include "smac_planner/a_star.hpp"
+#include "smac_planner/nonlinear_conjugate_gradient_smoother.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -83,11 +84,13 @@ public:
 
 protected:
   std::unique_ptr<AStarAlgorithm> a_star_;
+  std::unique_ptr<CGSmoother> smoother_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   nav2_util::LifecycleNode::SharedPtr node_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string global_frame_, name_;
   float tolerance_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr raw_plan_publisher_;
 };
 
 }  // namespace smac_planner

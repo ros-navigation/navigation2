@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-
-// tolerenace : in search check heurici if close enough to call it done
-//    keep going, but if fails, use that closest
-//    backing out from intended goal if bad
-// smoothing
-
 // INTO 3D / dynamics respecting
 //   graph no longer regular
 //   graph with quad tree? multiresolution?
@@ -55,21 +49,26 @@
 
 // benefits list:
 //  - for tolerance, only search once
-//  - we have inflation + dynamic processing: cached gradiant map not used
+//  - Against NavFns: we have inflation + dynamic processing: cached gradiant map not used
 //  - not searching then backtracing with grad descent for 2x go through
 //  - lower memory (?) and faster (?)
-//  - modern data structures
+//  - modern data structures & carefully optimized & generic for use in other planning problems
+//  - generic smoother that has applications to anything
 
-
-// no costmap in planning stage
+// no costmap in planning stage (?)
 //   In optimization as voronoi.
-//   Argument pulbic about it; we need to reevaluate our techniques for 2010 and use modern navigation (ei driving) methods. 
 //   Talk: see problem, A* general & fast, optimization, sampling, sparse.
+
+// hybrid A*, be more sparse in search, optimize, then CG upsample with validity checks (or spline fitting)
+// maybe do for A* too? faster search if courser resolution, then fitting faster as smaller, then upsampling with light weigh geometry
 
 #include <string>
 #include <memory>
 #include <vector>
 #include "smac_planner/smac_planner.hpp"
+
+// For getting times
+#define BENCHMARK_TESTING
 
 namespace smac_planner
 {
@@ -78,6 +77,7 @@ using namespace std;
 
 SmacPlanner::SmacPlanner()
 : a_star_(nullptr),
+  smoother_(nullptr),
   tf_(nullptr),
   node_(nullptr),
   costmap_(nullptr)
@@ -105,8 +105,9 @@ void SmacPlanner::configure(
   bool allow_unknown;
   int max_iterations;
   int max_on_approach_iterations;
-  float travel_cost;
+  float travel_cost_scale;
   bool revisit_neighbors;
+  bool smooth_path;
   std::string neighborhood_for_search;
 
   nav2_util::declare_parameter_if_not_declared(
@@ -119,14 +120,18 @@ void SmacPlanner::configure(
     node_, name + ".max_iterations", rclcpp::ParameterValue(2000)); /*TODO set reasoanble number, also, per request depending on length?*/
   node_->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".travel_cost", rclcpp::ParameterValue(1.0)); /*TODO must be 1 or less to be consistent and admissible*/
-  node_->get_parameter(name + ".travel_cost", travel_cost);
+    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(3.0));
+  node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".revisit_neighbors", rclcpp::ParameterValue(true)); /* TODO do CPU testing on large maps, paths seem permissible and similar CPU in short */
   node_->get_parameter(name + ".revisit_neighbors", revisit_neighbors);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(200));
   node_->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".smooth_path", rclcpp::ParameterValue(true)); /*TODO default false*/
+  node_->get_parameter(name + ".smooth_path", smooth_path);
+
 
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -146,17 +151,25 @@ void SmacPlanner::configure(
 
   a_star_ = std::make_unique<AStarAlgorithm>(neighborhood);
   a_star_->initialize(
-    travel_cost,
+    travel_cost_scale,
     allow_unknown,
     max_iterations,
     revisit_neighbors,
     max_on_approach_iterations);
 
+  if (smooth_path) {
+    smoother_ = std::make_unique<CGSmoother>();
+    smoother_->initialize(true /*debug logging*/);    
+  }
+
+  raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+
   RCLCPP_INFO(
     node_->get_logger(), "Configured plugin %s of type SmacPlanner with "
     "travel cost %.2f, tolerance %.2f, maximum iterations %i, "
-    "max on appraoch iterations %i, and %s. Using neighorhood: %s.",
-    name_.c_str(), travel_cost, tolerance_, max_iterations, max_on_approach_iterations,
+    "max on appraoch iterations %i, and %s. %s. Using neighorhood: %s.",
+    name_.c_str(), travel_cost_scale, tolerance_, max_iterations, max_on_approach_iterations,
+    revisit_neighbors ? "Sllowing to revisit neighbors" : "Not allowing revisit of neighbors",
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
     toString(neighborhood).c_str());
 }
@@ -166,6 +179,7 @@ void SmacPlanner::activate()
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type SmacPlanner",
     name_.c_str());
+  raw_plan_publisher_->on_activate();
 }
 
 void SmacPlanner::deactivate()
@@ -173,6 +187,7 @@ void SmacPlanner::deactivate()
   RCLCPP_INFO(
     node_->get_logger(), "Deactivating plugin %s of type SmacPlanner",
     name_.c_str());
+  raw_plan_publisher_->on_deactivate();
 }
 
 void SmacPlanner::cleanup()
@@ -181,17 +196,22 @@ void SmacPlanner::cleanup()
     node_->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
     name_.c_str());
   a_star_.reset();
+  raw_plan_publisher_.reset();
 }
 
 nav_msgs::msg::Path SmacPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+#ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
+#endif
+
+  unsigned char * char_costmap = costmap_->getCharMap();
   a_star_->setCosts(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY(),
-    costmap_->getCharMap());
+    char_costmap);
 
   unsigned int mx, my, index;
   costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
@@ -209,27 +229,37 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   pose.header = plan.header;
 
   IndexPath path;
+  int num_iterations = 0;
+  std::string error;
   try {
-    if (!a_star_->createPath(path, tolerance_ / static_cast<float>(costmap_->getResolution()))) {
-      RCLCPP_WARN(
-        node_->get_logger(),
-        "%s: failed to create plan, exceeded maximum iterations or no valid path found.",
-        name_.c_str());
-      return plan;
+    if (!a_star_->createPath(
+      path, num_iterations, tolerance_ / static_cast<float>(costmap_->getResolution())))
+    {
+      if (num_iterations < a_star_->getMaxIterations()) {
+        error = std::string("no valid path found.");
+      } else {
+        error = std::string("exceeded maximum iterations.");
+      }
     }
   } catch (const std::exception & e) {
+    error = std::string("invalid use: %s", e.what());
+  }
+
+  if (!error.empty()) {
     RCLCPP_WARN(
       node_->get_logger(),
-      "%s: failed to create plan, invalid use: %s", name_.c_str(), e.what());
+      "%s: failed to create plan, %s.",
+      name_.c_str(), error.c_str());
     return plan;
   }
 
+  std::vector<DoubleCoordinates> grid_coords(path.size());
+
   for (int i = path.size() - 1; i >= 0; --i) {
-    double world_x, world_y;
     unsigned int index_x, index_y;
+    double world_x, world_y;
     costmap_->indexToCells(path[i], index_x, index_y);
     costmap_->mapToWorld(index_x, index_y, world_x, world_y);
-
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
     pose.pose.position.z = 0.0;
@@ -238,11 +268,40 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     pose.pose.orientation.z = 0.0;
     pose.pose.orientation.w = 1.0;
     plan.poses.push_back(pose);
+    grid_coords.push_back(DoubleCoordinates(world_x, world_y));
   }
 
+  raw_plan_publisher_->publish(plan);
+  plan.poses.clear();
+
+  if (smoother_) {
+    if (!smoother_->smooth(grid_coords, char_costmap)) {
+      RCLCPP_WARN(
+        node_->get_logger(),
+        "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
+        name_.c_str());
+    }
+  }
+
+  plan.poses.clear();
+  std::vector<DoubleCoordinates>::const_iterator it;
+  for (it = grid_coords.begin(); it != grid_coords.end(); ++it) {
+    pose.pose.position.x = it->first;
+    pose.pose.position.y = it->second;
+    pose.pose.position.z = 0.0;
+    pose.pose.orientation.x = 0.0;
+    pose.pose.orientation.y = 0.0;
+    pose.pose.orientation.z = 0.0;
+    pose.pose.orientation.w = 1.0;
+    plan.poses.push_back(pose);
+  }
+
+#ifdef BENCHMARK_TESTING
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double> >(b-a);
-  cout << "It took " << time_span.count() << " seconds" <<  endl;
+  cout << "It took " << time_span.count() << " seconds with " << num_iterations << " iterations." <<  endl;
+#endif
+
   return plan;
 }
 

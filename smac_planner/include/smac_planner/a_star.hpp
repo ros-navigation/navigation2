@@ -36,7 +36,7 @@ class AStarAlgorithm
 {
 public:
   /**
-   * @brief A constructor for nav2_planner::PlannerServer
+   * @brief A constructor for smac_planner::PlannerServer
    * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
    */
   explicit AStarAlgorithm(const Neighborhood & neighborhood);
@@ -48,7 +48,7 @@ public:
 
   /**
    * @brief Initialization of the planner with defaults
-   * @param travel_cost Cost to travel from adjacent cells to another
+   * @param travel_cost_scale Cost to travel from adjacent nodes to another
    * @param allow_unknown Allow search in unknown space, good for navigation while mapping
    * @param max_iterations Maximum number of iterations to use while expanding search
    * @param revisit_neighbors Whether to revisit visited neighbors to reduce costs,
@@ -57,7 +57,7 @@ public:
    * comes at more compute time but smoother paths.
    */
   void initialize(
-    const float & travel_cost,
+    const float & travel_cost_scale,
     const bool & allow_unknown,
     int & max_iterations,
     const bool & revisit_neighbors,
@@ -66,41 +66,48 @@ public:
   /**
    * @brief Creating path from given costmap, start, and goal
    * @param path Reference to a vector of indicies of generated path
-   * @param tolerance Reference to tolerance in costmap cells
+   * @param num_iterations Reference to number of iterations to create plan
+   * @param tolerance Reference to tolerance in costmap nodes
    * @return if plan was successful
    */
-  bool createPath(IndexPath & path, const float & tolerance);
+  bool createPath(IndexPath & path, int & num_iterations, const float & tolerance);
 
   /**
    * @brief Set the costs of the graph
-   * @param x The total number of cells in the X direction
-   * @param y The total number of cells in the X direction
+   * @param x The total number of nodes in the X direction
+   * @param y The total number of nodes in the X direction
    * @param costs unsigned char * to the costs in the graph
    */
   void setCosts(
     const unsigned int & x,
     const unsigned int & y,
-    unsigned char * costs);
+    unsigned char * & costs);
 
   /**
-   * @brief Set the goal for planning, as a cell index
-   * @param value The cell index of the goal
+   * @brief Set the goal for planning, as a node index
+   * @param value The node index of the goal
    */
   void setGoal(const unsigned int & value);
 
   /**
-   * @brief Set the starting pose for planning, as a cell index
-   * @param value The cell index of the start
+   * @brief Set the starting pose for planning, as a node index
+   * @param value The node index of the start
    */
   void setStart(const unsigned int & value);
 
   /**
-   * @brief Set the starting pose for planning, as a cell index
+   * @brief Set the starting pose for planning, as a node index
    * @param node Node pointer to the goal node to backtrace
    * @param path Reference to a vector of indicies of generated path
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(Node * & node, IndexPath & path);
+
+  /**
+   * @brief Get maximum number of iterations to plan
+   * @return Reference to Maximum iterations parameter
+   */
+  int & getMaxIterations();
 
 private:
   /**
@@ -136,52 +143,52 @@ private:
   inline bool isGoal(Node * & node);
 
   /**
-   * @brief Check if this cell is valid
+   * @brief Check if this node is valid
    * @param i Node index
-   * @param cell_it Iterator reference of the cell
-   * @return whether this cell is valid and collision free
+   * @param node_it Iterator reference of the node
+   * @return whether this node is valid and collision free
    */
-  inline bool isCellValid(const unsigned int & i, Graph::iterator & cell_it);
+  inline bool isNodeValid(const unsigned int & i, Graph::iterator & node_it);
 
   /**
    * @brief Get a vector of valid node pointers from relative locations
-   * @param lookup_table Lookup table of values around cell to query
-   * @param cell Node index
-   * @param neighbors Vector of node pointers to valid cells
+   * @param lookup_table Lookup table of values around node to query
+   * @param node Node index
+   * @param neighbors Vector of node pointers to valid node
    */
-  inline void getValidCells(
+  inline void getValidNodes(
     const std::vector<int> & lookup_table,
     NodeVector & neighbors);
 
   /**
-   * @brief Get cost of a cell from graph
-   * @param cell Node index
-   * @return Reference to cell cost
+   * @brief Get cost of a node from graph
+   * @param node Node index
+   * @return Reference to node cost
    */
-  inline float & getCellCost(const unsigned int & cell);
+  inline float & getNodeCost(const unsigned int & node);
 
   /**
    * @brief Get cost of traversal between nodes
-   * @param cell Node index current
-   * @param cell Node index of new
-   * @return Reference traversal cost between the cells
+   * @param node Node index current
+   * @param node Node index of new
+   * @return Reference traversal cost between the nodes
    */
-  inline float & getTraversalCost(const unsigned int & lastCell, const unsigned int & cell);
+  inline float getTraversalCost(const unsigned int & lastNode, const unsigned int & node);
 
   /**
    * @brief Get cost of heuristic of node
-   * @param cell Cell index current
-   * @param cell Cell index of new
-   * @return Heuristic cost between the cells
+   * @param node Node index current
+   * @param node Node index of new
+   * @return Heuristic cost between the nodes
    */
-  inline float getHeuristicCost(const unsigned int & cell);
+  inline float getHeuristicCost(const unsigned int & node);
 
   /**
    * @brief Get a vector of neighbors around node
-   * @param cell Node index
+   * @param node Node index
    * @param neighbors Vector of node pointers to neighbors
    */
-  inline void getNeighbors(const unsigned int & cell, NodeVector & neighbors);
+  inline void getNeighbors(const unsigned int & node, NodeVector & neighbors);
 
   /**
    * @brief Check if inputs to planner are valid
@@ -190,19 +197,13 @@ private:
   inline bool areInputsValid();
 
   /**
-   * @brief Get maximum number of iterations to plan
-   * @return Reference to Maximum iterations parameter
-   */
-  inline int & getMaxIterations();
-
-  /**
    * @brief Get maximum number of on-approach iterations after within threshold 
    * @return Reference to Maximum on-appraoch iterations parameter
    */
   inline int & getOnApproachMaxIterations();
 
   /**
-   * @brief Get tolerance, in node cells
+   * @brief Get tolerance, in node nodes
    * @return Reference to tolerance parameter
    */
   inline float & getTolerance();
@@ -231,7 +232,7 @@ private:
    */
   inline void clearQueue();
 
-  float travel_cost_;
+  float travel_cost_scale_;
   bool traverse_unknown_;
   int max_iterations_;
   int max_on_approach_iterations_;

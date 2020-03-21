@@ -32,19 +32,27 @@ namespace smac_planner
 //   then no copying over values to the algorithm.
 //   and interface should be defined in nav2_core.
 //   and include some getCost(current, next) for traversibility. would just be cost in 2D
-
-// Feature complete
-// - neutral cost / costmap / minimum cost per step?
-// - optimization points (also, reduce copies, different data structures for graph: vector may be faster. What about queue?, inline methods?)
+//   get footprint, make sure its valid, and use for collision checking.
 
 // template all of AStarAlgorithm by NodeT. and then when we instantiate in plugin we give it. graph takes template arguement
+  // GOAL: to allow a single A* implementation to be used for any, even non-grid, search. To be then used for sparse graph and Hybrid A*
+
+  // what about getting traversal cost (I guess edge cost is stored?)
   // different plugins (A*, hybrid A*, etc) are different front ends (maybe plgun-plugins for 1? that seems too much though) but share this implementation.
   // need to make API for this implementation to also take in nodes and edges to share in graph setCosts() a different alternative version, change this one to setGridCosts()
+  // but what about the getting neighbors values -- will need ptr to structure in each node. Or on initialization, we give each their neighboring ptrs.
 
-// once we start sampling, need to set (and check validity of) footprint.
+
+
+// Feature complete:
+// - optimization points (also, reduce copies, different data structures for graph: vector may be faster. What about queue?, reduce static casts)
+// - benchmark relative to NavFn after fully featured, also learn gdb/valgrind to find where time is being taken to see if more improvements to be made
+// - smoothing
+// - readme (description (why + better), params, example images, metrics)
+// - add timer max time
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
-: travel_cost_(0.0),
+: travel_cost_scale_(0.0),
   traverse_unknown_(true),
   max_iterations_(0),
   x_size_(0),
@@ -67,7 +75,7 @@ AStarAlgorithm::~AStarAlgorithm()
 }
 
 void AStarAlgorithm::initialize(
-  const float & travel_cost,
+  const float & travel_cost_scale,
   const bool & allow_unknown,
   int & max_iterations,
   const bool & revisit_neighbors,
@@ -83,7 +91,7 @@ void AStarAlgorithm::initialize(
 
   graph_ = std::make_unique<Graph>();
   queue_ = std::make_unique<NodeQueue>();
-  travel_cost_ = travel_cost;
+  travel_cost_scale_ = travel_cost_scale;
   traverse_unknown_ = allow_unknown;
   max_iterations_ = max_iterations;
   revisit_neighbors_ = revisit_neighbors;
@@ -93,7 +101,7 @@ void AStarAlgorithm::initialize(
 void AStarAlgorithm::setCosts(
   const unsigned int & x,
   const unsigned int & y,
-  unsigned char * costs)
+  unsigned char * & costs)
 {
   if (getSizeX() != x || getSizeY() != y) {
     x_size_ = x;
@@ -146,19 +154,19 @@ bool AStarAlgorithm::areInputsValid()
 
   // Check if ending point is valid
   Graph::iterator it;
-  if (getTolerance() < 0.001 && !isCellValid(goal_->getIndex(), it)) {
+  if (getTolerance() < 0.001 && !isNodeValid(goal_->getIndex(), it)) {
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
   }
 
   // Check if starting point is valid
-  if (!isCellValid(getStart()->getIndex(), it)) {
+  if (!isNodeValid(getStart()->getIndex(), it)) {
     throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
   }
 
   return true;
 }
 
-bool AStarAlgorithm::createPath(IndexPath & path, const float & tolerance)
+bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float & tolerance)
 {
   if (!areInputsValid()) {
     return false;
@@ -174,10 +182,9 @@ bool AStarAlgorithm::createPath(IndexPath & path, const float & tolerance)
 
   // Optimization: preallocate all variables
   Node * current_node;
-  float g_cost = 0.0;
-  float priority = 0.0;
+  float g_cost;
+  float priority;
   NodeVector neighbors;
-  int iterations = 0;
   int approach_iterations = 0;
   NodeVector::iterator neighbor_iterator;
 
@@ -219,7 +226,7 @@ bool AStarAlgorithm::createPath(IndexPath & path, const float & tolerance)
         continue;
       }
 
-      // 4.1) Compute the cost to go to this cell
+      // 4.1) Compute the cost to go to this node
       g_cost = current_node->getAccumulatedCost() +
         getTraversalCost(current_node->getIndex(), neighbor->getIndex());
 
@@ -288,96 +295,103 @@ void AStarAlgorithm::addNode(const float cost, Node * & node)
   queue_->emplace(cost, node);  //  OPTIMIZATION: make sure this is faster than just inserting
 }
 
-float & AStarAlgorithm::getCellCost(const unsigned int & cell)
+float & AStarAlgorithm::getNodeCost(const unsigned int & node)
 {
-  return graph_->at(cell).getCost();  // TODO use cell costs in this
-}  // OPTIMIZATION: try to access data structure only 1 tie for each cell. We already have it from search.
+  return graph_->at(node).getCost();
+}  // OPTIMIZATION: try to access data structure only 1 tie for each node. We already have it from search.
 
-float & AStarAlgorithm::getTraversalCost(
-  const unsigned int & /*lastCell*/,
-  const unsigned int & /*cell*/)
+float AStarAlgorithm::getTraversalCost(
+  const unsigned int & /*lastNode*/,
+  const unsigned int & node)
 {
-  // Currently using a regular 2D grid, all traversal costs are the same
-  return travel_cost_;  // TODO why does make thing this 10 vs 1 make it no longer plan??
+  // if unknown is valid, treat like free space
+  float node_cost = getNodeCost(node);
+  if (traverse_unknown_ && node_cost == UNKNOWN) {
+    node_cost = FREE;
+  }
+
+  // range of values non-obstacle [0, 252].
+  // Must have non-zero cost so we add one to each for [1, 253].
+  return travel_cost_scale_ * ((node_cost + 1.0) / INSCRIBED);
 }
 
-float AStarAlgorithm::getHeuristicCost(const unsigned int & cell)
+float AStarAlgorithm::getHeuristicCost(const unsigned int & node)
 {
-  Coordinates cell_coords = getCoords(cell);
+  Coordinates node_coords = getCoords(node);
   float heuristic = hypotf(
-    goal_coordinates_.first - cell_coords.first,
-    goal_coordinates_.second - cell_coords.second);  // * static_cast<float>(COST_NEUTRAL);
+    goal_coordinates_.first - node_coords.first,
+    goal_coordinates_.second - node_coords.second);
 
   if (heuristic < best_heuristic_node_.first) {
-    best_heuristic_node_ = {heuristic, cell};
+    best_heuristic_node_ = {heuristic, node};
   }
 
   return heuristic;
 }
 
-void AStarAlgorithm::getNeighbors(const unsigned int & cell, NodeVector & neighbors)
+void AStarAlgorithm::getNeighbors(const unsigned int & node, NodeVector & neighbors)
 {
   int size_x = static_cast<int>(getSizeX());  // OPTIMIZATION: have these as class variables when size changes to reduce cost
-  int cell_i = static_cast<int>(cell);
-  const std::vector<int> van_neumann_neighborhood = {cell_i + 1, cell_i - 1,
-    cell_i - size_x, cell_i + size_x};
+  int node_i = static_cast<int>(node);
+  const std::vector<int> van_neumann_neighborhood = {node_i + 1, node_i - 1,
+    node_i - size_x, node_i + size_x};
   const std::vector<int> moore_neighborhood = {
-    cell_i + 1, cell_i - 1, cell_i - size_x, cell_i + size_x, cell_i - size_x - 1,
-    cell_i - size_x + 1, cell_i + size_x - 1, cell_i + size_x + 1};
+    node_i + 1, node_i - 1, node_i - size_x, node_i + size_x, node_i - size_x - 1,
+    node_i - size_x + 1, node_i + size_x - 1, node_i + size_x + 1};
 
   switch (neighborhood_) {
     case Neighborhood::UNKNOWN:
       throw std::runtime_error("Unkown neighborhood type selected.");
     case Neighborhood::VAN_NEUMANN:
-      getValidCells(van_neumann_neighborhood, neighbors);
+      getValidNodes(van_neumann_neighborhood, neighbors);
       break;
     case Neighborhood::MOORE:
-      getValidCells(moore_neighborhood, neighbors);
+      getValidNodes(moore_neighborhood, neighbors);
       break;
     default:
       throw std::runtime_error("Invalid neighborhood type selected.");
   }
 }
 
-void AStarAlgorithm::getValidCells(
+void AStarAlgorithm::getValidNodes(
   const std::vector<int> & lookup_table,
   NodeVector & neighbors)
 {
-  Graph::iterator cell_iterator;
+  Graph::iterator node_iterator;
 
   for (unsigned int i = 0; i != lookup_table.size(); i++) {
-    if (lookup_table[i] > 0 && isCellValid(
-        static_cast<unsigned int>(lookup_table[i]), cell_iterator))
+    if (lookup_table[i] > 0 && isNodeValid(
+        static_cast<unsigned int>(lookup_table[i]), node_iterator))
     {
-      neighbors.push_back(&cell_iterator->second);
+      neighbors.push_back(&node_iterator->second);
     }
   }
 }
 
-bool AStarAlgorithm::isCellValid(const unsigned int & i, Graph::iterator & cell_it)
+bool AStarAlgorithm::isNodeValid(const unsigned int & i, Graph::iterator & node_it)
 {
-  cell_it = graph_->find(i);  // OPTIMIZATION: is 'at(i)' faster?
+  node_it = graph_->find(i);  // OPTIMIZATION: is 'at(i)' faster?
 
   // out of range
-  if (cell_it == graph_->end()) {
+  if (node_it == graph_->end()) {
     return false;
   }
 
-  // NOTE(stevemacenski): Right now, we do not check if the cell has wrapped around
-  // the regular grid (e.g. your cell is on the edge of the costmap and i+1 
+  // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
+  // the regular grid (e.g. your node is on the edge of the costmap and i+1 
   // goes to the other side). This check would add compute time and my assertion is
   // that if you do wrap around, the heuristic will be so high it'll be added far
   // in the queue that it will never be called if a valid path exists.
   // This is intentionally un-included to increase speed, but be aware. If this causes
   // trouble, please file a ticket and we can address it then.
 
-  // occupied cell
-  auto & cost = cell_it->second.getCost();
+  // occupied node
+  auto & cost = node_it->second.getCost();
   if (cost == OCCUPIED || cost == INSCRIBED) {
     return false;
   }
 
-  // unknown cell
+  // unknown node
   if (cost == UNKNOWN && !traverse_unknown_) {
     return false;
   }
