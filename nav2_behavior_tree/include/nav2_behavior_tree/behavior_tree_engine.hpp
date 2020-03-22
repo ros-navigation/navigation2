@@ -49,7 +49,6 @@ public:
   {
     // this halt signal should propagate through the entire tree.
     root_node->halt();
-    root_node->setStatus(BT::NodeStatus::IDLE);
 
     // but, just in case...
     auto visitor = [](BT::TreeNode * node) {
@@ -57,7 +56,6 @@ public:
           if( action->status()==BT::NodeStatus::RUNNING) {
             action->halt();
           }
-          action->setStatus(BT::NodeStatus::IDLE);
         }
       };
     BT::applyRecursiveVisitor(root_node, visitor);
