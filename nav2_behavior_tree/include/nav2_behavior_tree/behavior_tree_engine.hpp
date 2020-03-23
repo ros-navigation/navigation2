@@ -49,13 +49,13 @@ public:
   {
     // this halt signal should propagate through the entire tree.
     root_node->halt();
+    root_node->setStatus(BT::NodeStatus::IDLE);
 
     // but, just in case...
     auto visitor = [](BT::TreeNode * node) {
-        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
-          if( action->status()==BT::NodeStatus::RUNNING) {
-            action->halt();
-          }
+        if( node->status()==BT::NodeStatus::RUNNING) {
+            node->halt();
+            node->setStatus(BT::NodeStatus::IDLE);
         }
       };
     BT::applyRecursiveVisitor(root_node, visitor);

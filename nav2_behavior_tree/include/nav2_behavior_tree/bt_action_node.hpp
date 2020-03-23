@@ -96,9 +96,10 @@ public:
   }
 
   // Called upon successful completion of the action. A derived class can override this
-  // method to put a value on the blackboard, for example
-  virtual void on_success()
+  // method to put a value on the blackboard, for example.
+  virtual BT::NodeStatus on_success()
   {
+    return BT::NodeStatus::SUCCESS;
   }
 
   // Called when a the action is aborted. By default, the node will return FAILURE.
@@ -157,8 +158,7 @@ public:
 
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        on_success();
-        return BT::NodeStatus::SUCCESS;
+        return on_success();
 
       case rclcpp_action::ResultCode::ABORTED:
         return on_aborted();
