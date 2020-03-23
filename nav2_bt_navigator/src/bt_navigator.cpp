@@ -226,6 +226,8 @@ BtNavigator::navigateToPose()
       topic_logger.flush();
     };
 
+  // Make sure that the Bt is not in a running state from a previous execution
+  bt_->haltAllActions(tree_.root_node);
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
 
@@ -243,7 +245,6 @@ BtNavigator::navigateToPose()
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       action_server_->terminate_all();
-      bt_->haltAllActions(tree_.root_node);
       break;
 
     default:

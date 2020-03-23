@@ -53,9 +53,9 @@ public:
 
     // but, just in case...
     auto visitor = [](BT::TreeNode * node) {
-        if( node->status()==BT::NodeStatus::RUNNING) {
-            node->halt();
-            node->setStatus(BT::NodeStatus::IDLE);
+        if( node->status() == BT::NodeStatus::RUNNING) {
+          node->halt();
+          node->setStatus(BT::NodeStatus::IDLE);
         }
       };
     BT::applyRecursiveVisitor(root_node, visitor);
