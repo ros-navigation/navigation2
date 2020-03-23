@@ -53,7 +53,7 @@ public:
 
     // but, just in case...
     auto visitor = [](BT::TreeNode * node) {
-        if( node->status() == BT::NodeStatus::RUNNING) {
+        if (node->status() == BT::NodeStatus::RUNNING) {
           node->halt();
           node->setStatus(BT::NodeStatus::IDLE);
         }

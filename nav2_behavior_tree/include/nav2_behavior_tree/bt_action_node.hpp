@@ -120,8 +120,7 @@ public:
   BT::NodeStatus tick() override
   {
     // first step to be done only at the beginning of the Action
-    if (status() == BT::NodeStatus::IDLE)
-    {
+    if (status() == BT::NodeStatus::IDLE) {
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 
@@ -138,7 +137,7 @@ public:
 
       auto goal_status = goal_handle_->get_status();
       if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-          goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
       {
         goal_updated_ = false;
         on_new_goal_received();
@@ -147,7 +146,7 @@ public:
       rclcpp::spin_some(node_);
 
       // check if, after invoking spin_some(), we finally received the result
-      if(!goal_result_available_){
+      if (!goal_result_available_) {
         // Yield this Action, returning RUNNING
         return BT::NodeStatus::RUNNING;
       }
