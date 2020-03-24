@@ -15,6 +15,7 @@
 #ifndef SMAC_PLANNER__NON_LINEAR_CONJUGATE_GRADIENT_SMOOTHER_HPP_
 #define SMAC_PLANNER__NON_LINEAR_CONJUGATE_GRADIENT_SMOOTHER_HPP_
 
+#include <cmath>
 #include <vector>
 #include <iostream>
 #include <unordered_map>
@@ -23,115 +24,35 @@
 #include <utility>
 
 #include "smac_planner/types.hpp"
+#include "smac_planner/smoother_cost_function.hpp"
 
 #include "ceres/ceres.h"
+#include "Eigen/Core"
 
-// doxogyn
-// inline
 // copies / optimization
 
 // hybridA* has a step after to interpolate up the resolution because sampling every  0.5-1m and dont want jerky motion
 // once doing Hybrid A* should downsample resolution of research for that.
 
-// differentation give exact derivatives for each term
+// should smooth term more
+//  - sparser so less messy
+//  - take larger neighborhood
+//  - be able to drop points and resample them up later
+//  - incentivize a shorter path (?)
+//  - non-L2 but also angle change between them?
+//  - take shorter-cuts and eliminate waypoints
+// I do suspect when doing the curvature term that should help a bit
 
-// do both CG and GD, and ceres to test
+// maybe we should be planning sparser, we just want to know that its possible to get through a space as a route, then more up to the controller to decide how it should follow that route
+// >> 5cm (10-15cm) jump points but at the same resolution. then optimizer to smooth, and then upsample.
+//  - optimization/upsample phase will still ensure valid non-collision path.
+//  - faster planning & faster optimization
+//  - original search with k-d tree / multiresolution to get a "we know we can", then the optimiziation, then the sampling. Approx. Cell decomposition
+
+// maybe quick heueristic: if i not in line with i-1, i+1, see if valid (same or lower cost), if so, do it. Mhm, might only work axially aligned?
 
 namespace smac_planner
 {
-
-// is there a way to have it be given the pt + 1 and pt - 1? I dont like this copy.
-// TODO why arent they moving much? Maybe setup problem wrong... hill climbing for many functions to solve for {b1,b2,b3,bN} variables, not each pair set of (X,Y)
-class HolonomicPathSmootherCostFunction : public ceres::SizedCostFunction<2, 1, 1>
-{
-public:
-  HolonomicPathSmootherCostFunction(
-    unsigned char * & cmap,
-    std::vector<DoubleCoordinates> * pts,
-    int i)
-  : costmap(cmap),
-    path(pts),
-    index(i)
-  {
-  }
-
-  virtual ~HolonomicPathSmootherCostFunction() {}
-
-  bool Evaluate(
-    double const * const * parameters,
-    double * residuals,
-    double ** jacobians) const override
-  {
-    const double & pt_x = parameters[0][0];
-    const double & pt_y = parameters[1][0];
-
-    const DoubleCoordinates & pt_minus = path->at(index - 1);
-    const DoubleCoordinates & pt_plus = path->at(index + 1);
-
-    DoubleCoordinates pt_minus_two;
-    if (index - 2 > 0) {
-      pt_minus_two = path->at(index - 2);
-    } else 
-    {
-      pt_minus_two = std::pair<double, double>(0.0, 0.0);
-    }
-
-    DoubleCoordinates pt_plus_two;
-    if (index + 2 < static_cast<int>(path->size())) {
-      pt_plus_two = path->at(index + 2);
-    } else 
-    {
-      pt_plus_two = std::pair<double, double>(0.0, 0.0);
-    }
-
-    double Ws = 1;
-
-    residuals[0] =
-      Ws * (pt_plus.first * pt_plus.first -
-      4 * pt_plus.first * pt_x +
-      2 * pt_plus.first * pt_minus.first +
-      4 * pt_x * pt_x -
-      4 * pt_x * pt_minus.first +
-      pt_minus.first * pt_minus.first);  // objective function value x
-    residuals[1] =
-      Ws * (pt_plus.second * pt_plus.second -
-      4 * pt_plus.second * pt_y +
-      2 * pt_plus.second * pt_minus.second +
-      4 * pt_y * pt_y -
-      4 * pt_y * pt_minus.second +
-      pt_minus.second * pt_minus.second);  // objective function value y
-
-    if (jacobians != NULL && jacobians[0] != NULL) {
-      jacobians[0][0] = Ws * (/*pt_minus_two.first*/ - 4 * pt_minus.first + 8 * pt_x - 4 * pt_plus.first /*+ pt_plus_two.first*/);  // x derivative
-      jacobians[1][0] = Ws * (/*pt_minus_two.second*/ - 4 * pt_minus.second + 8 * pt_y - 4 * pt_plus.second /*+ pt_plus_two.second*/);  // y derivative
-      /*
-       [planner_server-8] W0320 18:46:12.466234 16582 line_search.cc:726]:
-         Line search failed: Wolfe zoom phase passed a bracket which does not satisfy:
-         bracket_low.gradient * (bracket_high.x - bracket_low.x) < 0 [4.57437311e-10 !< 0] with initial_position: 
-         [x: 0.00000000e+00, value: 5.60751553e-02, gradient: -5.63590112e-04, value_is_valid: 1, gradient_is_valid: 1], 
-         bracket_low: [x: 1.00914504e+00, value: 4.59722852e-02, gradient: -5.19556079e-04, value_is_valid: 1, gradient_is_valid: 1],
-         bracket_high: [x: 1.00914416e+00, value: 4.59722933e-02, gradient: -5.19556115e-04, value_is_valid: 1, gradient_is_valid: 1],
-         the most likely cause of which is the cost function returning inconsistent gradient & function values.
-
-      if added the additional ones to gradient without updating residual
-      */
-      jacobians[0][1] = 0.0;  // TODO does this require?
-      jacobians[1][1] = 0.0;  // TODO does this require?
-    }
-
-/*
-Other errors:
-[planner_server-8] W0320 18:48:15.573891 16679 line_search.cc:758] Line search failed: Wolfe zoom bracket width: 7.87789e-10 too small with descent_direction_max_norm: 2.31001e-02.
-
-*/
-    return true;
-  }
-
-protected:
-  unsigned char * costmap;
-  std::vector<DoubleCoordinates> * path;
-  int index;
-};
 
 /**
  * @class smac_planner::CGSmoother
@@ -175,7 +96,7 @@ public:
     options_.max_num_iterations = 500; // 50 default
     options_.max_solver_time_in_seconds = 1.0; // 1e4 default
     // options_.num_threads = ; // 1 default for evaluating jacobian
-    // options_.function_tolerance = ; // 1e-6 deafult, maybe important?
+    options_.function_tolerance = 1e-6; // 1e-6 deafult, TODO results in warning 3
     // options_.gradient_tolerance = ; // 1e-10 default, maybe important?
     // options_.linear_solver_type = ; // maybe important?
     // options_.preconditioner_type = ; // 
@@ -195,20 +116,14 @@ public:
    * @brief Initialization of the smoother
    * @return If smoothing was successful
    */
-  bool smooth(std::vector<DoubleCoordinates> & path, unsigned char * & char_costmap)
+  bool smooth(std::vector<Eigen::Vector2d> & path, unsigned char * & char_costmap)
   {
     std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>();
 
-    // TODO remove when done.
-    std::vector<DoubleCoordinates> initial_path;
-    if (debug_) {
-      initial_path = path;      
-    }
-
     // populate our optimization problem
     for (uint i = 1; i != path.size() - 1; i++) {
-      ceres::CostFunction * cost_fn = new HolonomicPathSmootherCostFunction(char_costmap, & path, i);
-      problem->AddResidualBlock(cost_fn, nullptr, &path[i].first, &path[i].second);
+      ceres::CostFunction * cost_fn = new SmootherCostFunction(char_costmap, & path, i);
+      problem->AddResidualBlock(cost_fn, nullptr, & path[i][0], & path[i][1]);
     }
 
     // solve our optimization problem

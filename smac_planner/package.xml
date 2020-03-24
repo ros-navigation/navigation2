@@ -24,6 +24,8 @@
   <depend>nav2_core</depend>
   <depend>pluginlib</depend>
   <depend>libceres-dev</depend>
+  <depend>eigen3_cmake_module</depend>
+  <depend>eigen</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

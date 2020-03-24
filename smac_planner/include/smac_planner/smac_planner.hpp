@@ -82,6 +82,7 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
+
 protected:
   std::unique_ptr<AStarAlgorithm> a_star_;
   std::unique_ptr<CGSmoother> smoother_;
@@ -91,6 +92,7 @@ protected:
   std::string global_frame_, name_;
   float tolerance_;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr raw_plan_publisher_;
+  bool publish_raw_plan_;
 };
 
 }  // namespace smac_planner

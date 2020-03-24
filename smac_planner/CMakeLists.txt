@@ -18,8 +18,8 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
-
-nav2_package()
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include_directories(
   include
@@ -44,6 +44,7 @@ set(dependencies
   nav2_costmap_2d
   nav2_core
   pluginlib
+  eigen3_cmake_module
 )
 
 add_library(${library_name} SHARED
@@ -55,6 +56,7 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 target_link_libraries(${library_name} ${CERES_LIBRARIES})
 
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -78,5 +80,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(${dependencies} Eigen3)
 ament_package()

@@ -62,9 +62,12 @@
 // hybrid A*, be more sparse in search, optimize, then CG upsample with validity checks (or spline fitting)
 // maybe do for A* too? faster search if courser resolution, then fitting faster as smaller, then upsampling with light weigh geometry
 
+// TODO break up main planning function
+
 #include <string>
 #include <memory>
 #include <vector>
+#include "Eigen/Core"
 #include "smac_planner/smac_planner.hpp"
 
 // For getting times
@@ -131,7 +134,9 @@ void SmacPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".smooth_path", rclcpp::ParameterValue(true)); /*TODO default false*/
   node_->get_parameter(name + ".smooth_path", smooth_path);
-
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".publish_unsmoothed_plan", rclcpp::ParameterValue(true)); /*TODO default false*/
+  node_->get_parameter(name + ".publish_unsmoothed_plan", publish_raw_plan_);
 
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -162,7 +167,9 @@ void SmacPlanner::configure(
     smoother_->initialize(true /*debug logging*/);    
   }
 
-  raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  if (publish_raw_plan_) {
+    raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  }
 
   RCLCPP_INFO(
     node_->get_logger(), "Configured plugin %s of type SmacPlanner with "
@@ -179,7 +186,9 @@ void SmacPlanner::activate()
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type SmacPlanner",
     name_.c_str());
-  raw_plan_publisher_->on_activate();
+  if (publish_raw_plan_) {
+    raw_plan_publisher_->on_activate();    
+  }
 }
 
 void SmacPlanner::deactivate()
@@ -187,7 +196,9 @@ void SmacPlanner::deactivate()
   RCLCPP_INFO(
     node_->get_logger(), "Deactivating plugin %s of type SmacPlanner",
     name_.c_str());
-  raw_plan_publisher_->on_deactivate();
+  if (publish_raw_plan_) {
+    raw_plan_publisher_->on_deactivate();    
+  }
 }
 
 void SmacPlanner::cleanup()
@@ -196,7 +207,9 @@ void SmacPlanner::cleanup()
     node_->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
     name_.c_str());
   a_star_.reset();
-  raw_plan_publisher_.reset();
+  if (raw_plan_publisher_) {
+    raw_plan_publisher_.reset();    
+  }
 }
 
 nav_msgs::msg::Path SmacPlanner::createPlan(
@@ -227,6 +240,11 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   plan.header.frame_id = global_frame_;
   geometry_msgs::msg::PoseStamped pose;
   pose.header = plan.header;
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation.x = 0.0;
+  pose.pose.orientation.y = 0.0;
+  pose.pose.orientation.z = 0.0;
+  pose.pose.orientation.w = 1.0;
 
   IndexPath path;
   int num_iterations = 0;
@@ -253,47 +271,43 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     return plan;
   }
 
-  std::vector<DoubleCoordinates> grid_coords(path.size());
+  std::vector<Eigen::Vector2d> path_world;
+  path_world.reserve(path.size());
+  plan.poses.reserve(path.size());
 
   for (int i = path.size() - 1; i >= 0; --i) {
     unsigned int index_x, index_y;
     double world_x, world_y;
     costmap_->indexToCells(path[i], index_x, index_y);
     costmap_->mapToWorld(index_x, index_y, world_x, world_y);
-    pose.pose.position.x = world_x;
-    pose.pose.position.y = world_y;
-    pose.pose.position.z = 0.0;
-    pose.pose.orientation.x = 0.0;
-    pose.pose.orientation.y = 0.0;
-    pose.pose.orientation.z = 0.0;
-    pose.pose.orientation.w = 1.0;
-    plan.poses.push_back(pose);
-    grid_coords.push_back(DoubleCoordinates(world_x, world_y));
+    path_world.push_back(Eigen::Vector2d(world_x, world_y));
   }
 
-  raw_plan_publisher_->publish(plan);
-  plan.poses.clear();
+  if (publish_raw_plan_ && node_->count_subscribers(raw_plan_publisher_->get_topic_name())) {
+    std::vector<Eigen::Vector2d>::const_iterator it;
+    for (it = path_world.begin(); it != path_world.end(); ++it) {
+      pose.pose.position.x = it->operator[](0);
+      pose.pose.position.y = it->operator[](1);
+      plan.poses.push_back(pose);
+    }
+
+    raw_plan_publisher_->publish(plan);
+  }
 
   if (smoother_) {
-    if (!smoother_->smooth(grid_coords, char_costmap)) {
+    if (!smoother_->smooth(path_world, char_costmap)) {
       RCLCPP_WARN(
         node_->get_logger(),
         "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
         name_.c_str());
+      return plan;
     }
   }
 
-  plan.poses.clear();
-  std::vector<DoubleCoordinates>::const_iterator it;
-  for (it = grid_coords.begin(); it != grid_coords.end(); ++it) {
-    pose.pose.position.x = it->first;
-    pose.pose.position.y = it->second;
-    pose.pose.position.z = 0.0;
-    pose.pose.orientation.x = 0.0;
-    pose.pose.orientation.y = 0.0;
-    pose.pose.orientation.z = 0.0;
-    pose.pose.orientation.w = 1.0;
-    plan.poses.push_back(pose);
+  for (int i = 0; i != path_world.size(); i++) {
+    pose.pose.position.x = path_world[i][0];
+    pose.pose.position.y = path_world[i][1];
+    plan.poses[i] = pose;
   }
 
 #ifdef BENCHMARK_TESTING
