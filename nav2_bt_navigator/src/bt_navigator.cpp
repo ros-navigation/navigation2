@@ -226,10 +226,12 @@ BtNavigator::navigateToPose()
       topic_logger.flush();
     };
 
-  // Make sure that the Bt is not in a running state from a previous execution
-  bt_->haltAllActions(tree_.root_node);
+  
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  // Make sure that the Bt is not in a running state from a previous execution
+  // note: if all the ControlNodes are implemented correctly, this is not needed.
+  bt_->haltAllActions(tree_.root_node);
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
