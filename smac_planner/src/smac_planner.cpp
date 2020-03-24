@@ -55,15 +55,6 @@
 //  - modern data structures & carefully optimized & generic for use in other planning problems
 //  - generic smoother that has applications to anything
 
-// no costmap in planning stage (?)
-//   In optimization as voronoi.
-//   Talk: see problem, A* general & fast, optimization, sampling, sparse.
-
-// hybrid A*, be more sparse in search, optimize, then CG upsample with validity checks (or spline fitting)
-// maybe do for A* too? faster search if courser resolution, then fitting faster as smaller, then upsampling with light weigh geometry
-
-// TODO break up main planning function
-
 #include <string>
 #include <memory>
 #include <vector>
@@ -106,10 +97,11 @@ void SmacPlanner::configure(
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   bool allow_unknown;
-  int max_iterations;
+  int max_iterations;  // TODO should be for each plan not total. some metric proportional to distance and map size with generous margin
   int max_on_approach_iterations;
   float travel_cost_scale;
   bool revisit_neighbors;
+  bool debug_optimizer;
   bool smooth_path;
   std::string neighborhood_for_search;
 
@@ -132,11 +124,14 @@ void SmacPlanner::configure(
     node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(200));
   node_->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".smooth_path", rclcpp::ParameterValue(true)); /*TODO default false*/
+    node_, name + ".smooth_path", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".smooth_path", smooth_path);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".publish_unsmoothed_plan", rclcpp::ParameterValue(true)); /*TODO default false*/
   node_->get_parameter(name + ".publish_unsmoothed_plan", publish_raw_plan_);
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".debug_optimizer", rclcpp::ParameterValue(true)); /*TODO default false*/
+  node_->get_parameter(name + ".debug_optimizer", debug_optimizer);
 
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -164,7 +159,7 @@ void SmacPlanner::configure(
 
   if (smooth_path) {
     smoother_ = std::make_unique<CGSmoother>();
-    smoother_->initialize(true /*debug logging*/);    
+    smoother_->initialize(debug_optimizer);
   }
 
   if (publish_raw_plan_) {
@@ -220,17 +215,20 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   steady_clock::time_point a = steady_clock::now();
 #endif
 
+  // Set Costmap
   unsigned char * char_costmap = costmap_->getCharMap();
   a_star_->setCosts(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY(),
     char_costmap);
 
+  // Set starting point
   unsigned int mx, my, index;
   costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
   index = costmap_->getIndex(mx, my);
   a_star_->setStart(index);
 
+  // Set goal point
   costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
   index = costmap_->getIndex(mx, my);
   a_star_->setGoal(index);
@@ -246,6 +244,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
+  // Compute plan
   IndexPath path;
   int num_iterations = 0;
   std::string error;
@@ -259,8 +258,9 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
         error = std::string("exceeded maximum iterations.");
       }
     }
-  } catch (const std::exception & e) {
-    error = std::string("invalid use: %s", e.what());
+  } catch (const std::runtime_error & e) {
+    error = "invalid use: ";
+    error += e.what();
   }
 
   if (!error.empty()) {
@@ -281,20 +281,17 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     costmap_->indexToCells(path[i], index_x, index_y);
     costmap_->mapToWorld(index_x, index_y, world_x, world_y);
     path_world.push_back(Eigen::Vector2d(world_x, world_y));
+    pose.pose.position.x = world_x;
+    pose.pose.position.y = world_y;
+    plan.poses.push_back(pose);
   }
 
-  if (publish_raw_plan_ && node_->count_subscribers(raw_plan_publisher_->get_topic_name())) {
-    std::vector<Eigen::Vector2d>::const_iterator it;
-    for (it = path_world.begin(); it != path_world.end(); ++it) {
-      pose.pose.position.x = it->operator[](0);
-      pose.pose.position.y = it->operator[](1);
-      plan.poses.push_back(pose);
-    }
-
+  if (publish_raw_plan_ && node_->count_subscribers(raw_plan_publisher_->get_topic_name()) > 0) {
     raw_plan_publisher_->publish(plan);
   }
 
-  if (smoother_) {
+  // Smooth plan
+  if (smoother_ && path_world.size() > 5) {
     if (!smoother_->smooth(path_world, char_costmap)) {
       RCLCPP_WARN(
         node_->get_logger(),
@@ -302,6 +299,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
         name_.c_str());
       return plan;
     }
+  } else {
+    return plan;
   }
 
   for (int i = 0; i != path_world.size(); i++) {

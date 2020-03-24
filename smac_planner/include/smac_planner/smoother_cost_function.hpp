@@ -56,7 +56,7 @@ public:
   {
     pt_minus = & pts->at(i - 1);
     pt_plus = & pts->at(i + 1);
-    Wsmooth = 1;
+    Wsmooth = 0.2;
     Wcurve = 2.5;
   }
 
@@ -71,12 +71,12 @@ public:
     residuals[0] = 0.0;
 
     addSmoothingResidual(Wsmooth, pt, residuals[0]);
-    //addCurvatureResidual(Wcurve, pt, residuals[0]);
+    // addCurvatureResidual(Wcurve, pt, residuals[0]);
 
     if (jacobians != NULL && jacobians[0] != NULL) {
       jacobians[1][1] = jacobians[0][0] = jacobians[0][1] = jacobians[1][0] = 0.0;
       addSmoothingJacobian(Wsmooth, pt, jacobians[0][0], jacobians[1][0]);   
-      //addCurvatureJacobian(Wcurve, pt, jacobians[0][0], jacobians[1][0]);
+      // addCurvatureJacobian(Wcurve, pt, jacobians[0][0], jacobians[1][0]);
     }
 
     return true;

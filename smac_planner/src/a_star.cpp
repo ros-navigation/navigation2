@@ -167,7 +167,7 @@ bool AStarAlgorithm::areInputsValid()
 }
 
 bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float & tolerance)
-{
+{  
   if (!areInputsValid()) {
     return false;
   }

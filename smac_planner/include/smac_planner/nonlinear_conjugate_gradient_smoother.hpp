@@ -28,20 +28,7 @@
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
-
-// copies / optimization
-
-// hybridA* has a step after to interpolate up the resolution because sampling every  0.5-1m and dont want jerky motion
-// once doing Hybrid A* should downsample resolution of research for that.
-
-// should smooth term more
-//  - sparser so less messy
-//  - take larger neighborhood
-//  - be able to drop points and resample them up later
-//  - incentivize a shorter path (?)
-//  - non-L2 but also angle change between them?
-//  - take shorter-cuts and eliminate waypoints
-// I do suspect when doing the curvature term that should help a bit
+// doxogyn
 
 // maybe we should be planning sparser, we just want to know that its possible to get through a space as a route, then more up to the controller to decide how it should follow that route
 // >> 5cm (10-15cm) jump points but at the same resolution. then optimizer to smooth, and then upsample.
@@ -78,7 +65,7 @@ public:
     debug_ = debug;
 
     // Solver options
-    options_.minimizer_type = ceres::LINE_SEARCH;                              // TRUST_REGION, LINE_SEARCH
+    options_.minimizer_type = ceres::LINE_SEARCH;
     options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT; // LBFGS, BFGS, NONLINEAR_CONJUGATE_GRADIENT
     options_.line_search_type = ceres::WOLFE;                                  // WOLFE, ARMIJO (wolfe must be used for L/BFGS)
     options_.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;         // FLETCHER_REEVES, POLAK_RIBIERE, HESTENES_STIEFEL
@@ -94,9 +81,9 @@ public:
     // options_.line_search_sufficient_curvature_decrease = ;// 0.9 default
     // options_.max_line_search_step_expansion = ; // 10 default
     options_.max_num_iterations = 500; // 50 default
-    options_.max_solver_time_in_seconds = 1.0; // 1e4 default
+    options_.max_solver_time_in_seconds = 0.100; // 1e4 default. 100ms
     // options_.num_threads = ; // 1 default for evaluating jacobian
-    options_.function_tolerance = 1e-6; // 1e-6 deafult, TODO results in warning 3
+    // options_.function_tolerance = 1e-6; // 1e-6 deafult, TODO results in warning 3: also cuases a crash to specifically add??
     // options_.gradient_tolerance = ; // 1e-10 default, maybe important?
     // options_.linear_solver_type = ; // maybe important?
     // options_.preconditioner_type = ; // 
