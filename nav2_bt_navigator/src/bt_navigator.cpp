@@ -162,7 +162,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // TODO(orduno) Fix the race condition between the worker thread ticking the tree
   //              and the main thread resetting the resources, see #1344
-
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
@@ -225,7 +224,6 @@ BtNavigator::navigateToPose()
       }
       topic_logger.flush();
     };
-
   
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
