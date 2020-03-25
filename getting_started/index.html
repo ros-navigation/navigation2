@@ -366,8 +366,7 @@
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <p>This document will take you through the process of installing the Navigation 2 binaries
-and navigating a simulated Turtlebot 3 in the Gazebo simulator. We’ll use the
-Dashing version of ROS 2 and Ubuntu 18 for the standard installation options.</p>
+and navigating a simulated Turtlebot 3 in the Gazebo simulator.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">See the <a class="reference internal" href="../build_instructions/index.html#build-instructions"><span class="std std-ref">Build and Install</span></a> for other situations such as building from source or
@@ -382,16 +381,16 @@ continue working with this robot beyond the minimal example provided here.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p class="first">Install the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation/Dashing/#binary-packages">ROS 2 binary packages</a> as described in the official docs</p>
+<li><p class="first">Install the <a class="reference external" href="https://index.ros.org/doc/ros2/Installation/">ROS 2 binary packages</a> as described in the official docs</p>
 </li>
 <li><p class="first">Install the Navigation 2 packages using your operating system’s package manager:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros-dashing-navigation2
-sudo apt install ros-dashing-nav2-bringup
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros-&lt;ros2-distro&gt;-navigation2
+sudo apt install ros-&lt;ros2-distro&gt;-nav2-bringup
 </pre></div>
 </div>
 </li>
 <li><p class="first">Install the Turtlebot 3 packages:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros-dashing-turtlebot3*
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install ros-&lt;ros2-distro&gt;-turtlebot3*
 </pre></div>
 </div>
 </li>
@@ -403,9 +402,9 @@ sudo apt install ros-dashing-nav2-bringup
 <li><p class="first">Start a terminal in your GUI</p>
 </li>
 <li><p class="first">Set key environment variables:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /opt/ros/dashing/setup.bash
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /opt/ros/&lt;ros2-distro&gt;/setup.bash
 <span class="nb">export</span> <span class="nv">TURTLEBOT3_MODEL</span><span class="o">=</span>waffle
-<span class="nb">export</span> <span class="nv">GAZEBO_MODEL_PATH</span><span class="o">=</span><span class="nv">$GAZEBO_MODEL_PATH</span>:/opt/ros/dashing/share/turtlebot3_gazebo/models
+<span class="nb">export</span> <span class="nv">GAZEBO_MODEL_PATH</span><span class="o">=</span><span class="nv">$GAZEBO_MODEL_PATH</span>:/opt/ros/&lt;ros2-distro&gt;/share/turtlebot3_gazebo/models
 </pre></div>
 </div>
 </li>

@@ -37,12 +37,12 @@ We're going to create a new workspace, ``navigation2_ws``, clone our Navigation2
 
   mkdir -p ~/navigation2_ws/src
   cd ~/navigation2_ws/src
-  git clone https://github.com/ros-planning/navigation2.git --branch eloquent-devel
+  git clone https://github.com/ros-planning/navigation2.git --branch <ros2-distro>-devel
   cd ~/navigation2_ws
-  rosdep install -y -r -q --from-paths src --ignore-src --rosdistro eloquent
+  rosdep install -y -r -q --from-paths src --ignore-src --rosdistro <ros2-distro>
   colcon build --symlink-install
 
-Note: You need to change ``--rosdistro`` to the selected ROS 2 distribution name (e.g ``eloquent``).
+Note: You need to change ``--rosdistro`` to the selected ROS 2 distribution name (e.g ``eloquent``, ``foxy``).
 
 
 
@@ -54,7 +54,7 @@ Quickstart Build Master
 Steps
 -----
 
-Install all ROS 2 dependencies from the `ROS2 Installation page <https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Development-Setup>`_.
+Install all ROS 2 dependencies from the `ROS2 Installation page <https://index.ros.org/doc/ros2/Installation/>`_.
 Ensure there are no ROS environment variables set in your terminal or `.bashrc` file before taking the steps below.*
 
 

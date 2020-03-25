@@ -27,11 +27,11 @@ If you don't have them installed, please follow :ref:`getting_started`.
 
 SLAM Toolbox can be installed via:
 
-  ``sudo apt install ros-dashing-slam-toolbox``
+  ``sudo apt install ros-<ros2-distro>-slam-toolbox``
 
 or from built from source in your workspace with:
 
-  ``git clone -b dashing-devel git@github.com:stevemacenski/slam_toolbox.git``
+  ``git clone -b <ros2-distro>-devel git@github.com:stevemacenski/slam_toolbox.git``
 
 
 Tutorial Steps

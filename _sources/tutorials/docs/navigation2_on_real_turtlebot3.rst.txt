@@ -21,9 +21,6 @@ Overview
 This tutorial shows how to control and navigate Turtlebot 3 using the ROS2 Navigation2 on a physical Turtlebot 3 robot.
 Before completing this tutorials, completing :ref:`getting_started` is highly recommended especially if you are new to ROS and Navigation2.
 
-``ROS2 Dashing`` and ``Navigation2 Dashing 0.2.4`` are used to create this tutorial.
-You should be able to do this tutorial using other Navigation2 versions as well.
-
 This tutorial may take about 1 hour to complete. 
 It depends on your experience with ROS, robots, and what computer system you have.
 
