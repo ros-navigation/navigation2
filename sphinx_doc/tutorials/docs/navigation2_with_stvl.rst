@@ -52,7 +52,7 @@ Follow the same process as in :ref:`getting_started` for installing and setting 
 1- Install STVL
 ---------------
 
-STVL can be installed in ROS2 Dashing and Eloquent via the ROS Build Farm:
+STVL can be installed in ROS2 via the ROS Build Farm:
 
 - ``sudo apt install ros-<ros2-distro>-spatio-temporal-voxel-layer``
 
