@@ -30,6 +30,12 @@
 // inline
 // copies / optimization
 
+// [done] waypoint smoothing term (smoothing)
+// max curvature term (curvature)
+// smooth curvature term (new, me)
+// collision obsstacle term (collision)
+// smooth obstacle term (vornoi)
+
 /*
 Other errors:
 [planner_server-8] W0320 18:48:15.573891 16679 line_search.cc:758] Line search failed: Wolfe zoom bracket width: 7.87789e-10 too small with descent_direction_max_norm: 2.31001e-02.
@@ -71,12 +77,12 @@ public:
     residuals[0] = 0.0;
 
     addSmoothingResidual(Wsmooth, pt, residuals[0]);
-    // addCurvatureResidual(Wcurve, pt, residuals[0]);
+    addMaxCurvatureResidual(Wcurve, pt, residuals[0]);
 
     if (jacobians != NULL && jacobians[0] != NULL) {
       jacobians[1][1] = jacobians[0][0] = jacobians[0][1] = jacobians[1][0] = 0.0;
       addSmoothingJacobian(Wsmooth, pt, jacobians[0][0], jacobians[1][0]);   
-      // addCurvatureJacobian(Wcurve, pt, jacobians[0][0], jacobians[1][0]);
+      addMaxCurvatureJacobian(Wcurve, pt, jacobians[0][0], jacobians[1][0]);
     }
 
     return true;
@@ -98,30 +104,51 @@ public:
 
   inline void addSmoothingJacobian(const double & weight, const Eigen::Vector2d & pt, double & j0, double & j1) const
   {
-    j0 += weight * (- 4 * pt_minus->operator[](0) + 8 * pt[0] - 4 * pt_plus->operator[](0));  // x partial-derivative
-    j1 += weight * (- 4 * pt_minus->operator[](1) + 8 * pt[1] - 4 * pt_plus->operator[](1));  // y partial-derivative
+    j0 += weight * (- 4 * pt_minus->operator[](0) + 8 * pt[0] - 4 * pt_plus->operator[](0));  // xi x component of partial-derivative
+    j1 += weight * (- 4 * pt_minus->operator[](1) + 8 * pt[1] - 4 * pt_plus->operator[](1));  // xi y component of partial-derivative
   }
 
-  inline void addCurvatureResidual(const double & weight, const Eigen::Vector2d & pt, double & r) const
+  inline void addMaxCurvatureResidual(const double & weight, const Eigen::Vector2d & pt, double & r) const
   {
     const Eigen::Vector2d delta_xi(pt[0] - pt_minus->operator[](0), pt[1] - pt_minus->operator[](1));
     const Eigen::Vector2d delta_xi_p(pt_plus->operator[](0) - pt[0], pt_plus->operator[](1) - pt[1]); 
     const double & delta_xi_norm = delta_xi.norm();
     const double & delta_xi_p_norm = delta_xi_p.norm();
     const double & delta_xi_by_xi_p = delta_xi_norm * delta_xi_p_norm;
-    const double & delta_phi = std::max(-1.0, std::min(1.0, acos(delta_xi.dot(delta_xi_p) / delta_xi_by_xi_p)));
-    const double & turning_rad = delta_phi / delta_xi_norm;
+    const double & delta_phi_i = std::max(-1.0, std::min(1.0, acos(delta_xi.dot(delta_xi_p) / delta_xi_by_xi_p)));
+    const double & turning_rad = delta_phi_i / delta_xi_norm;
 
-    if (turning_rad > max_turning_radius) {
-      const double & diff = turning_rad - max_turning_radius;
-      r += weight * diff * diff;  // objective function value for quadratic penalty
+    if (turning_rad < max_turning_radius) {
+      return;
     }
+
+    const double & diff = turning_rad - max_turning_radius;
+    r += weight * diff * diff;  // objective function value for quadratic penalty
+    std::cout << "R: " << r << std::endl;
   }
 
-  inline void addCurvatureJacobian(const double & weight, const Eigen::Vector2d & pt, double & j0, double & j1) const
+  inline void addMaxCurvatureJacobian(const double & weight, const Eigen::Vector2d & pt, double & j0, double & j1) const
   {
-    // j0 += weight * ;  // x partial-derivative
-    // j1 += weight * ;  // y partial-derivative
+    const Eigen::Vector2d delta_xi(pt[0] - pt_minus->operator[](0), pt[1] - pt_minus->operator[](1));
+    const Eigen::Vector2d delta_xi_p(pt_plus->operator[](0) - pt[0], pt_plus->operator[](1) - pt[1]); 
+    const double & delta_xi_norm = delta_xi.norm();
+    const double & delta_xi_p_norm = delta_xi_p.norm();
+    const double & delta_xi_by_xi_p = delta_xi_norm * delta_xi_p_norm;
+    const double & delta_phi_i = std::max(-1.0, std::min(1.0, acos(delta_xi.dot(delta_xi_p) / delta_xi_by_xi_p)));
+    const double & turning_rad = delta_phi_i / delta_xi_norm;
+
+    if (turning_rad < max_turning_radius) {
+      return;
+    }
+
+    const double & partial_delta_phi_i_wrt_cost_delta_phi_i = -1 / std::sqrt(1 - std::pow(std::cos(delta_phi_i), 2));
+    const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
+    Eigen::Vector2d p1(1.0,0.0);//TODO
+    Eigen::Vector2d p2(0.0,1.0);//TODO
+    const Eigen::Vector2d jacobian = 2 * weight * (turning_rad - max_turning_radius) * (1 / delta_xi_norm * partial_delta_phi_i_wrt_cost_delta_phi_i * (-1 * p1 - p2) );//- (ones * delta_phi_i) / (delta_xi * delta_xi));
+    j0 += weight * jacobian[0];  // xi x component of partial-derivative
+    j1 += weight * jacobian[1];  // xi y component of partial-derivative
+    std::cout << "J: " << jacobian[0] << " " <<jacobian[1] << std::endl;
   }  
 
 protected:
@@ -130,7 +157,7 @@ protected:
   Eigen::Vector2d * pt_plus;
   double Wsmooth;
   double Wcurve;
-  double max_turning_radius = 1.0;
+  double max_turning_radius = 0.15151515151;  //1/r*1.1 TODO
 };
 
 }  // namespace smac_planner
