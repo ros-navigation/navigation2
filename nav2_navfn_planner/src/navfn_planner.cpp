@@ -257,7 +257,7 @@ NavfnPlanner::smoothApproachToGoal(
 {
   // Replace the last pose of the computed path if it's actually further away
   // to the second to last pose than the goal pose.
-  if (plan.poses.size() > 2) {
+  if (plan.poses.size() >= 2) {
     auto second_to_last_pose = plan.poses.end()[-2];
     auto last_pose = plan.poses.back();
     if (
