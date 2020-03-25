@@ -19,11 +19,7 @@
 
 .. |PP| replace:: https://github.com/ros-planning/navigation2/blob/master
 
-.. |Distro| replace:: Dashing
-
-.. |distro| replace:: dashing
-
-.. _`ROS 2 binary packages`: https://index.ros.org/doc/ros2/Installation/Dashing/#binary-packages
+.. _`ROS 2 binary packages`: https://index.ros.org/doc/ros2/Installation/
 
 .. _`official Turtlebot 3 manual`: http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2/#ros2
 

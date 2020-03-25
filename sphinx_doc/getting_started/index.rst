@@ -4,8 +4,7 @@ Getting Started
 ###############
 
 This document will take you through the process of installing the |PN| binaries
-and navigating a simulated Turtlebot 3 in the Gazebo simulator. We'll use the
-|Distro| version of ROS 2 and Ubuntu 18 for the standard installation options.
+and navigating a simulated Turtlebot 3 in the Gazebo simulator.
 
 .. note::
 
@@ -26,14 +25,14 @@ Installation
 
    .. code-block:: bash
 
-      sudo apt install ros-dashing-navigation2
-      sudo apt install ros-dashing-nav2-bringup
+      sudo apt install ros-<ros2-distro>-navigation2
+      sudo apt install ros-<ros2-distro>-nav2-bringup
 
 3. Install the Turtlebot 3 packages:
 
    .. code-block:: bash
 
-      sudo apt install ros-dashing-turtlebot3*
+      sudo apt install ros-<ros2-distro>-turtlebot3*
 
 Running the Example
 *******************
@@ -43,9 +42,9 @@ Running the Example
 
    .. code-block:: bash
 
-      source /opt/ros/dashing/setup.bash
+      source /opt/ros/<ros2-distro>/setup.bash
       export TURTLEBOT3_MODEL=waffle
-      export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/dashing/share/turtlebot3_gazebo/models
+      export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/<ros2-distro>/share/turtlebot3_gazebo/models
 
 3. In the same terminal, run
 
