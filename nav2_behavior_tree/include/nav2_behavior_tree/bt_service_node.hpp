@@ -85,7 +85,19 @@ public:
   {
     on_tick();
     auto future_result = service_client_->async_send_request(request_);
+    return check_future(future_result);
+  }
 
+  // Fill in service request with information if necessary
+  virtual void on_tick()
+  {
+    request_ = std::make_shared<typename ServiceT::Request>();
+  }
+
+  // Check the future and decide the status of Behaviortree
+  virtual BT::NodeStatus check_future(
+    std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
+  {
     rclcpp::executor::FutureReturnCode rc;
     rc = rclcpp::spin_until_future_complete(
       node_,
@@ -99,12 +111,6 @@ public:
       on_wait_for_result();
     }
     return BT::NodeStatus::FAILURE;
-  }
-
-  // Fill in service request with information if necessary
-  virtual void on_tick()
-  {
-    request_ = std::make_shared<typename ServiceT::Request>();
   }
 
   // An opportunity to do something after
