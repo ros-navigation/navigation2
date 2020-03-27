@@ -324,7 +324,7 @@ void ControllerServer::computeAndPublishVelocity()
     nav_2d_utils::twist2Dto3D(twist));
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
-  feedback->speed = cmd_vel_2d.twist.linear.x;
+  feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
   feedback->distance_to_goal = sqrt(
     (end_pose_.position.x - pose.pose.position.x) * (end_pose_.position.x - pose.pose.position.x) +
     (end_pose_.position.y - pose.pose.position.y) * (end_pose_.position.y - pose.pose.position.y));
