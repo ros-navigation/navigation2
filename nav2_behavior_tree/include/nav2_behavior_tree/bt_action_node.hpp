@@ -26,14 +26,14 @@ namespace nav2_behavior_tree
 {
 
 template<class ActionT>
-class BtActionNode : public BT::CoroActionNode
+class BtActionNode : public BT::ActionNodeBase
 {
 public:
   BtActionNode(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -96,66 +96,71 @@ public:
   }
 
   // Called upon successful completion of the action. A derived class can override this
-  // method to put a value on the blackboard, for example
-  virtual void on_success()
+  // method to put a value on the blackboard, for example.
+  virtual BT::NodeStatus on_success()
   {
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  // Called when a the action is aborted. By default, the node will return FAILURE.
+  // The user may override it to return another value, instead.
+  virtual BT::NodeStatus on_aborted()
+  {
+    return BT::NodeStatus::FAILURE;
+  }
+
+  // Called when a the action is cancelled. By default, the node will return SUCCESS.
+  // The user may override it to return another value, instead.
+  virtual BT::NodeStatus on_cancelled()
+  {
+    return BT::NodeStatus::SUCCESS;
   }
 
   // The main override required by a BT action
   BT::NodeStatus tick() override
   {
-    on_tick();
+    // first step to be done only at the beginning of the Action
+    if (status() == BT::NodeStatus::IDLE) {
+      // setting the status to RUNNING to notify the BT Loggers (if any)
+      setStatus(BT::NodeStatus::RUNNING);
 
-new_goal_received:
-    goal_result_available_ = false;
-    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
-    send_goal_options.result_callback =
-      [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
-        if (result.code != rclcpp_action::ResultCode::ABORTED) {
-          goal_result_available_ = true;
-          result_ = result;
-        }
-      };
+      // user defined callback
+      on_tick();
 
-    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
-
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
-    {
-      throw std::runtime_error("send_goal failed");
+      on_new_goal_received();
     }
 
-    goal_handle_ = future_goal_handle.get();
-    if (!goal_handle_) {
-      throw std::runtime_error("Goal was rejected by the action server");
-    }
-
-    while (rclcpp::ok() && !goal_result_available_) {
+    // The following code corresponds to the "RUNNING" loop
+    if (rclcpp::ok() && !goal_result_available_) {
+      // user defined callback. May modify the value of "goal_updated_"
       on_wait_for_result();
 
-      auto status = goal_handle_->get_status();
-      if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-        status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+      auto goal_status = goal_handle_->get_status();
+      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
       {
         goal_updated_ = false;
-        goto new_goal_received;
+        on_new_goal_received();
       }
 
-      // Yield to any other nodes
-      setStatusRunningAndYield();
       rclcpp::spin_some(node_);
+
+      // check if, after invoking spin_some(), we finally received the result
+      if (!goal_result_available_) {
+        // Yield this Action, returning RUNNING
+        return BT::NodeStatus::RUNNING;
+      }
     }
 
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        on_success();
-        return BT::NodeStatus::SUCCESS;
+        return on_success();
 
       case rclcpp_action::ResultCode::ABORTED:
-        return BT::NodeStatus::FAILURE;
+        return on_aborted();
 
       case rclcpp_action::ResultCode::CANCELED:
-        return BT::NodeStatus::SUCCESS;
+        return on_cancelled();
 
       default:
         throw std::logic_error("BtActionNode::Tick: invalid status value");
@@ -178,7 +183,6 @@ new_goal_received:
     }
 
     setStatus(BT::NodeStatus::IDLE);
-    CoroActionNode::halt();
   }
 
 protected:
@@ -200,6 +204,33 @@ protected:
     }
 
     return false;
+  }
+
+
+  void on_new_goal_received()
+  {
+    goal_result_available_ = false;
+    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+    send_goal_options.result_callback =
+      [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
+        if (result.code != rclcpp_action::ResultCode::ABORTED) {
+          goal_result_available_ = true;
+          result_ = result;
+        }
+      };
+
+    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      throw std::runtime_error("send_goal failed");
+    }
+
+    goal_handle_ = future_goal_handle.get();
+    if (!goal_handle_) {
+      throw std::runtime_error("Goal was rejected by the action server");
+    }
   }
 
   const std::string action_name_;

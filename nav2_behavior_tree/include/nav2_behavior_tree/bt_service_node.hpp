@@ -26,13 +26,13 @@ namespace nav2_behavior_tree
 {
 
 template<class ServiceT>
-class BtServiceNode : public BT::CoroActionNode
+class BtServiceNode : public BT::SyncActionNode
 {
 public:
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(service_node_name, conf), service_node_name_(service_node_name)
+  : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 

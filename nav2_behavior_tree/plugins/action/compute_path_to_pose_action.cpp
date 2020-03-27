@@ -47,7 +47,7 @@ public:
     getInput("planner_id", goal_.planner_id);
   }
 
-  void on_success() override
+  BT::NodeStatus on_success() override
   {
     setOutput("path", result_.result->path);
 
@@ -56,6 +56,7 @@ public:
     } else {
       config().blackboard->set("path_updated", true);
     }
+    return BT::NodeStatus::SUCCESS;
   }
 
   static BT::PortsList providedPorts()
