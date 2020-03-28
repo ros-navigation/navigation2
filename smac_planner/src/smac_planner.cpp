@@ -292,7 +292,10 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // Smooth plan
   if (smoother_ && path_world.size() > 5) {
-    if (!smoother_->smooth(path_world, char_costmap)) {
+    const MinimalCostmap mcmap(char_costmap, costmap_->getSizeInCellsX(),
+      costmap_->getSizeInCellsY(), costmap_->getOriginX(), costmap_->getOriginY(),
+      costmap_->getResolution());
+    if (!smoother_->smooth(path_world, & mcmap)) {
       RCLCPP_WARN(
         node_->get_logger(),
         "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
