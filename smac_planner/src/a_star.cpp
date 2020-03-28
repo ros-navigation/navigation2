@@ -42,12 +42,11 @@ namespace smac_planner
   // need to make API for this implementation to also take in nodes and edges to share in graph setCosts() a different alternative version, change this one to setGridCosts()
   // but what about the getting neighbors values -- will need ptr to structure in each node. Or on initialization, we give each their neighboring ptrs.
 
-
+// functions for setting costs as a graph or as a regular grid for search to support defined graphs (vornoi, PRM, network routing, etc)
 
 // Feature complete:
 // - optimization points (also, reduce copies, different data structures for graph: vector may be faster. What about queue?, reduce static casts)
 // - benchmark relative to NavFn after fully featured, also learn gdb/valgrind to find where time is being taken to see if more improvements to be made
-// - smoothing
 // - readme (description (why + better), params, example images, metrics)
 // - add timer max time
 

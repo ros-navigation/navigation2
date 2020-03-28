@@ -23,15 +23,25 @@
 #include <queue>
 #include <utility>
 
-// doxyogen
-// this is another argument for a costmap interface header
-
 namespace smac_planner
 {
 
+/**
+ * @class smac_planner::MinimalCostmap
+ * @brief A simplier costmap wrapper for simple operations
+ */
 class MinimalCostmap
 {
 public:
+  /**
+   * @brief A constructor for smac_planner::CGSmoother
+   * @param char_costmap A char * array of costs
+   * @param size_x Size of costmap in X
+   * @param size_Y Size of costmap in Y
+   * @param origin_x Origin of costmap in X
+   * @param origin_y Origin of costmap in Y
+   * @param resolution Resolution of costmap cells
+   */
   MinimalCostmap(
     unsigned char * & char_costmap,
     const unsigned int & size_x,
@@ -48,11 +58,25 @@ public:
   {
   }
 
+  /**
+   * @brief Get cost of cell indices
+   * @param mx Int map coords X
+   * @param my Int map coords Y
+   * @return cost
+   */
   inline double getCost(const int & mx, const int & my) const
   {
     return _char_costmap[getIndex(mx, my)];
   }
 
+  /**
+   * @brief Get map coordinates from world coordinates
+   * @param mx Int map coords X
+   * @param my Int map coords Y
+   * @param wy Double world coords X
+   * @param wy Double world coords Y
+   * @return if successful
+   */
   inline bool worldToMap(const double & wx, const double & wy, unsigned int & mx, unsigned int & my) const
   {
     if (wx < _origin_x || wy < _origin_y) {
@@ -69,21 +93,34 @@ public:
     return false;
   }
 
+  /**
+   * @brief Get index of char * from indices
+   * @param mx Int map coords X
+   * @param my Int map coords Y
+   * @return index
+   */
   inline unsigned int getIndex(const unsigned int & mx, const unsigned int & my) const
   {
     return my * _size_x + mx;
   }
 
+  /**
+   * @brief Get X size of map
+   * @return size
+   */
   inline unsigned int sizeX() const
   {
     return _size_x;
   }
 
+  /**
+   * @brief Get Y size of map
+   * @return size
+   */
   inline unsigned int sizeY() const
   {
     return _size_y;
   }
-
 
 protected:
   unsigned char * _char_costmap;

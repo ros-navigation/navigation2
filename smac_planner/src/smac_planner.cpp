@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+// maybe we should be planning sparser, we just want to know that its possible to get through a space as a route, then more up to the controller to decide how it should follow that route
+// >> 5cm (10-15cm) jump points but at the same resolution. then optimizer to smooth, and then upsample.
+//  - optimization/upsample phase will still ensure valid non-collision path.
+//  - faster planning & faster optimization
+//  - original search with k-d tree / multiresolution to get a "we know we can", then the optimiziation, then the sampling. Approx. Cell decomposition
+
 // INTO 3D / dynamics respecting
 //   graph no longer regular
 //   graph with quad tree? multiresolution?
@@ -54,6 +60,10 @@
 //  - lower memory (?) and faster (?)
 //  - modern data structures & carefully optimized & generic for use in other planning problems
 //  - generic smoother that has applications to anything
+//  - caching paths rather than recomputing needlessly if they're still good
+
+// total cost path caching
+// astar timeout, max duration
 
 #include <string>
 #include <memory>
@@ -292,7 +302,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // Smooth plan
   if (smoother_ && path_world.size() > 5) {
-    const MinimalCostmap mcmap(char_costmap, costmap_->getSizeInCellsX(),
+    MinimalCostmap mcmap(char_costmap, costmap_->getSizeInCellsX(),
       costmap_->getSizeInCellsY(), costmap_->getOriginX(), costmap_->getOriginY(),
       costmap_->getResolution());
     if (!smoother_->smooth(path_world, & mcmap)) {

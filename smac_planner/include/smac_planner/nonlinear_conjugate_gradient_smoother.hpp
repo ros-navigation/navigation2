@@ -29,12 +29,6 @@
 #include "ceres/ceres.h"
 #include "Eigen/Core"
 
-// maybe we should be planning sparser, we just want to know that its possible to get through a space as a route, then more up to the controller to decide how it should follow that route
-// >> 5cm (10-15cm) jump points but at the same resolution. then optimizer to smooth, and then upsample.
-//  - optimization/upsample phase will still ensure valid non-collision path.
-//  - faster planning & faster optimization
-//  - original search with k-d tree / multiresolution to get a "we know we can", then the optimiziation, then the sampling. Approx. Cell decomposition
-
 namespace smac_planner
 {
 
@@ -64,7 +58,7 @@ public:
     // Solver options
     // OPTIMIZATION tune parameters
     options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
-    options_.line_search_type = ceres::WOLFE;                                  // WOLFE, ARMIJO (wolfe must be used for L/BFGS)
+    options_.line_search_type = ceres::WOLFE;                                  // WOLFE, ARMIJO
     options_.nonlinear_conjugate_gradient_type = ceres::FLETCHER_REEVES;       // FLETCHER_REEVES, POLAK_RIBIERE, HESTENES_STIEFEL
     options_.line_search_interpolation_type = ceres::CUBIC;                    // CUBIC, QUADRATIC, BISECTION
     // options_.min_line_search_step_size = 1e-5;
@@ -90,7 +84,7 @@ public:
    * @brief Initialization of the smoother
    * @return If smoothing was successful
    */
-  bool smooth(std::vector<Eigen::Vector2d> & path, const MinimalCostmap * costmap)
+  bool smooth(std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap)
   {
 
     //OPTIMIZATION move this to planner to cut down on conversions
