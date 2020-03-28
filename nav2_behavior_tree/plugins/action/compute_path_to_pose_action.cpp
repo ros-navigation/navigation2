@@ -34,11 +34,6 @@ public:
     const BT::NodeConfiguration & conf)
   : BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
   {
-    std::string remapped_action_name;
-    if (getInput("server_name", remapped_action_name)) {
-      action_client_.reset();
-      createActionClient(remapped_action_name);
-    }
   }
 
   void on_tick() override
@@ -66,7 +61,6 @@ public:
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<std::string>("planner_id", ""),
-        BT::InputPort<std::string>("server_name", "")
       });
   }
 
