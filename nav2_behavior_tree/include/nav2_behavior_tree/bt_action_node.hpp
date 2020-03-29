@@ -41,6 +41,10 @@ public:
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
 
+    std::string remapped_action_name;
+    if (getInput("server_name", remapped_action_name)) {
+      action_name_ = remapped_action_name;
+    }
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
@@ -69,6 +73,7 @@ public:
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
+      BT::InputPort<std::string>("server_name", "Action server name"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout")
     };
     basic.insert(addition.begin(), addition.end());
@@ -233,7 +238,7 @@ protected:
     }
   }
 
-  const std::string action_name_;
+  std::string action_name_;
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
   // All ROS2 actions have a goal and a result
