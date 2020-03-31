@@ -92,17 +92,23 @@ param_t loadParameterWithDeprecation(
   const nav2_util::LifecycleNode::SharedPtr & nh, const std::string current_name,
   const std::string old_name, const param_t & default_value)
 {
-  param_t value = 0;
-  if (nh->get_parameter(current_name, value)) {
-    return value;
-  }
-  if (nh->get_parameter(old_name, value)) {
+  nav2_util::declare_parameter_if_not_declared(nh, current_name, rclcpp::ParameterValue(default_value));
+  nav2_util::declare_parameter_if_not_declared(nh, old_name, rclcpp::ParameterValue(default_value));
+
+  param_t current_name_value;
+  nh->get_parameter(current_name, current_name_value);
+  param_t old_name_value;
+  nh->get_parameter(old_name, old_name_value);
+
+  if (old_name_value != current_name_value && old_name_value != default_value) {
     RCLCPP_WARN(nh->get_logger(),
       "Parameter %s is deprecated. Please use the name %s instead.",
       old_name.c_str(), current_name.c_str());
-    return value;
+    // set both parameters to the same value
+    nh->set_parameters({rclcpp::Parameter(current_name, old_name_value)});
+    current_name_value = old_name_value;
   }
-  return default_value;
+  return current_name_value;
 }
 
 /**
