@@ -366,10 +366,10 @@ TEST(TrajectoryGenerator, twisty)
 
 TEST(TrajectoryGenerator, sim_time)
 {
+  const double sim_time = 2.5;
   auto nh = makeTestNode("sim_time",
     rclcpp::Parameter("dwb.sim_time", sim_time),
     rclcpp::Parameter("dwb.linear_granularity", 0.5)});
-  const double sim_time = 2.5;
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
