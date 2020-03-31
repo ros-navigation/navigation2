@@ -134,7 +134,9 @@ local_costmap:
       height: 3
       resolution: 0.05
       robot_radius: 0.22
-      inflation_layer.cost_scaling_factor: 3.0
+      inflation_layer:
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
       obstacle_layer:
         enabled: True
         scan:

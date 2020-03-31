@@ -66,7 +66,7 @@ public:
    */
   inline double getCost(const int & mx, const int & my) const
   {
-    return _char_costmap[getIndex(mx, my)];
+    return static_cast<double>(_char_costmap[getIndex(mx, my)]);
   }
 
   /**

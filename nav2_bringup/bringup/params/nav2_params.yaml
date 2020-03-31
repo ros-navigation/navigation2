@@ -141,6 +141,7 @@ local_costmap:
       robot_radius: 0.22
       inflation_layer:
         cost_scaling_factor: 3.0
+        inflation_radius: 0.55
       obstacle_layer:
         enabled: True
         observation_sources: scan
@@ -187,6 +188,9 @@ global_costmap:
       plugin_types: ["nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
       robot_radius: 0.22
       resolution: 0.05
+      inflation_layer:
+        cost_scaling_factor: 10.0
+        inflation_radius: 0.55
       obstacle_layer:
         enabled: True
         observation_sources: scan

@@ -64,6 +64,8 @@
 
 // total cost path caching
 // astar timeout, max duration
+// way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
+// maybe also ompl planner while I'm at it if I'm having the smoother https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp
 
 #include <string>
 #include <memory>
@@ -137,9 +139,6 @@ void SmacPlanner::configure(
     node_, name + ".smooth_path", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".smooth_path", smooth_path);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".publish_unsmoothed_plan", rclcpp::ParameterValue(true)); /*TODO default false*/
-  node_->get_parameter(name + ".publish_unsmoothed_plan", publish_raw_plan_);
-  nav2_util::declare_parameter_if_not_declared(
     node_, name + ".debug_optimizer", rclcpp::ParameterValue(true)); /*TODO default false*/
   node_->get_parameter(name + ".debug_optimizer", debug_optimizer);
 
@@ -172,9 +171,7 @@ void SmacPlanner::configure(
     smoother_->initialize(debug_optimizer);
   }
 
-  if (publish_raw_plan_) {
-    raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
-  }
+  raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
     node_->get_logger(), "Configured plugin %s of type SmacPlanner with "
@@ -191,9 +188,7 @@ void SmacPlanner::activate()
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type SmacPlanner",
     name_.c_str());
-  if (publish_raw_plan_) {
-    raw_plan_publisher_->on_activate();    
-  }
+  raw_plan_publisher_->on_activate();    
 }
 
 void SmacPlanner::deactivate()
@@ -201,9 +196,7 @@ void SmacPlanner::deactivate()
   RCLCPP_INFO(
     node_->get_logger(), "Deactivating plugin %s of type SmacPlanner",
     name_.c_str());
-  if (publish_raw_plan_) {
-    raw_plan_publisher_->on_deactivate();    
-  }
+  raw_plan_publisher_->on_deactivate();    
 }
 
 void SmacPlanner::cleanup()
@@ -212,9 +205,7 @@ void SmacPlanner::cleanup()
     node_->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
     name_.c_str());
   a_star_.reset();
-  if (raw_plan_publisher_) {
-    raw_plan_publisher_.reset();    
-  }
+  raw_plan_publisher_.reset();    
 }
 
 nav_msgs::msg::Path SmacPlanner::createPlan(
@@ -296,7 +287,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     plan.poses.push_back(pose);
   }
 
-  if (publish_raw_plan_ && node_->count_subscribers(raw_plan_publisher_->get_topic_name()) > 0) {
+  if (node_->count_subscribers(raw_plan_publisher_->get_topic_name()) > 0) {
     raw_plan_publisher_->publish(plan);
   }
 

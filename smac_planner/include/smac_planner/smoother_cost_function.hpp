@@ -28,25 +28,7 @@
 #include "smac_planner/types.hpp"
 #include "smac_planner/minimal_costmap.hpp"
 
-#define EPSILON 0.001  
-
-// [done] waypoint smoothing term (smoothing)
-// [done] max curvature term (curvature)
-// smooth curvature term (new, me)
-// collision obsstacle term (collision)
-// smooth obstacle term (vornoi)
-
-// TODO how to test each term and make sure wont/doesnt break?
-
-/*
-Other errors:
-[planner_server-8] W0320 18:48:15.573891 16679 line_search.cc:758] Line search failed: Wolfe zoom bracket width: 7.87789e-10 too small with descent_direction_max_norm: 2.31001e-02.
-[planner_server-8] Termination:                          FAILURE (Numerical failure in line search, failed to find a valid step size, (did not run out of iterations) using initial_step_size: 1.00000e+00, initial_cost: 2.85747e-04, initial_gradient: -1.44590e-06.)
-[planner_server-8] W0320 22:10:09.060544 26622 line_search.cc:584] Line search failed: Wolfe bracketing phase shrank bracket width: 3.22458e-06, to < tolerance: 1e-09, with descent_direction_max_norm: 0.000251634, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
-[planner_server-8] W0320 22:10:09.061851 26622 line_search.cc:726] Line search failed: Wolfe zoom phase passed a bracket which does not satisfy: bracket_low.gradient * (bracket_high.x - bracket_low.x) < 0 [1.91737173e-12 !< 0] with initial_position: [x: 0.00000000e+00, value: 2.85747015e-04, gradient: -1.44589730e-06, value_is_valid: 1, gradient_is_valid: 1], bracket_low: [x: 1.07133785e+00, value: 2.80767640e-04, gradient: -1.37853074e-06, value_is_valid: 1, gradient_is_valid: 1], bracket_high: [x: 1.07133646e+00, value: 2.80767646e-04, gradient: -1.37853083e-06, value_is_valid: 1, gradient_is_valid: 1], the most likely cause of which is the cost function returning inconsistent gradient & function values.
-[planner_server-8] W0320 22:10:09.063752 26622 line_search_minimizer.cc:318] Terminating: Numerical failure in line search, failed to find a valid step size, (did not run out of iterations) using initial_step_size: 1.00000e+00, initial_cost: 2.85747e-04, initial_gradient: -1.44590e-06.
-warning 3: [planner_server-8] W0323 14:01:33.240247 22652 line_search_direction.cc:86] Restarting non-linear conjugate gradients: 3.00844
-*/
+#define EPSILON 0.0001  
 
 namespace smac_planner
 {
@@ -83,6 +65,17 @@ struct CurvatureComputations
 };
 
 /**
+ * @struct smac_planner::CostComputations
+ * @brief Cache common computations between the cost terms to minimize recomputations
+ */
+struct CostComputations 
+{
+  double cost{0};
+  double gradx{0};
+  double grady{0};
+};
+
+/**
  * @struct smac_planner::UnconstrainedSmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
  * including curvature, smoothness, collision, and avoid obstacles.
@@ -97,11 +90,16 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
   UnconstrainedSmootherCostFunction(const int & num_points, MinimalCostmap * costmap)
   : _num_params(2 * num_points), _costmap(costmap)
   {
-    // help normalize this more
-    _Wsmooth = 200000.0;
+    // OPTIMIZATION help normalize this more, analyze, and tune
+    // here looks pretty good. {200000, 0.2, 1.0, 2.0, 1.0, 10.0}. need to smooth out turning angles and I think should be OK
+    _Wsmooth = 200000;// 800000.0; 200000
+    _Wcost = 0.2; //0.3; 0.2
+    _Wchange = 1.0;//45.0; //20 // TODO at least jacobian broken. w/o it, always curved. w/ it, blocky 90%
+
     _Wcurve = 2.0;
-    _Wcollision = 10.0;
-    _max_turning_radius = 10.0; // 5.0 is pretty smooth yo
+    _Wcollision = 1.0;
+
+    _max_turning_radius = 10.0; 
   }
 
   /**
@@ -114,7 +112,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
   virtual bool Evaluate(const double * parameters,
                         double * cost,
                         double * gradient) const {
-
     Eigen::Vector2d xi;
     Eigen::Vector2d xi_p1;
     Eigen::Vector2d xi_m1;
@@ -126,9 +123,11 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     unsigned int mx, my;
     bool valid_coords = true;
     double costmap_cost = 0.0;
+    double ki_m1 = 0;
 
     // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
+    CostComputations cost_params;
 
     for (uint i = 0; i != NumParameters() / 2; i++) {
       x_index = 2 * i;
@@ -144,10 +143,12 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       // compute cost
       addSmoothingResidual(_Wsmooth, xi, xi_p1, xi_m1, cost_raw);
       addMaxCurvatureResidual(_Wcurve, xi, xi_p1, xi_m1, curvature_params, cost_raw);
+      addTurningRateChangeResidual(_Wchange, curvature_params.turning_rad, ki_m1, cost_raw);
 
       if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
         costmap_cost = _costmap->getCost(mx, my);
-        addCollisionResidual(_Wcollision, costmap_cost, cost_raw);
+        addCollisionResidual(_Wcollision, costmap_cost, cost_params, cost_raw);
+        addCostResidual(_Wcost, costmap_cost, cost_params, cost_raw);
       }
 
     if (gradient != NULL) {
@@ -156,18 +157,24 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_Wsmooth, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
         addMaxCurvatureJacobian(_Wcurve, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
+        addTurningRateChangeJacobian(_Wchange, curvature_params.turning_rad, ki_m1, grad_x_raw, grad_y_raw);
 
         if (valid_coords) {
-          addCollisionJacobian(_Wcollision, mx, my, costmap_cost, grad_x_raw, grad_y_raw);          
+          addCollisionJacobian(_Wcollision, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
+          addCostJacobian(_Wcost, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
         }
 
         gradient[x_index] = grad_x_raw;
         gradient[y_index] = grad_y_raw;
       }
+
+      ki_m1 = curvature_params.turning_rad;
     }
 
+
     cost[0] = cost_raw;
-    std::cout << "Cost: " << cost[0] << " Cost Raw " << cost_raw << std::endl;
+
+    // std::cout << "Cost: " << cost[0] << std::endl;
 
     return true;
   }
@@ -200,6 +207,14 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       + 4 * pt.dot(pt)
       - 4 * pt.dot(pt_m)
       + pt_m.dot(pt_m));  // objective function value
+
+    // std::cout << "smoothing cost: " << weight * (
+      // pt_p.dot(pt_p)
+      // - 4 * pt_p.dot(pt)
+      // + 2 * pt_p.dot(pt_m)
+      // + 4 * pt.dot(pt)
+      // - 4 * pt.dot(pt_m)
+      // + pt_m.dot(pt_m)) << std::endl;
   }
 
   /**
@@ -271,6 +286,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     }
 
     r += weight * curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;  // objective function value
+    // std::cout << "curvautre cost: " << weight * curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax << std::endl;
   }
 
   /**
@@ -309,43 +325,31 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const Eigen::Vector2d jacobian = u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
     j0 += weight * jacobian[0];  // xi x component of partial-derivative
     j1 += weight * jacobian[1];  // xi y component of partial-derivative
-
-    // std::cout << std::endl;
-    // std::cout << "pt_m " << pt_m[0] << " " << pt_m[1] << std::endl;
-    // std::cout << "Delta Xi " << delta_xi[0] << " " << delta_xi[1] << std::endl;
-    // std::cout << "Delta Xi_p " << delta_xi_p[0] << " " << delta_xi_p[1] << std::endl;
-    // std::cout << "Delta Phi: " << delta_phi_i << " turn rad: " << turning_rad << " Max: " << max_turning_radius << std::endl;
-    // std::cout << "NormXi: " << delta_xi_norm << " NormXi+1: " << delta_xi_p_norm  << std::endl;
-    // std::cout << "pt: " << pt[0] <<  " " << pt[1] << std::endl;
-    // std::cout << "Neg P1+1: " << neg_pt_plus[0] <<  " " << neg_pt_plus[1] << std::endl;
-    // std::cout << "PDE: " << partial_delta_phi_i_wrt_cost_delta_phi_i << std::endl;
-    // std::cout << "P1: " << p1[0] <<  " " << p1[1] << std::endl;
-    // std::cout << "P2: " << p2[0] <<  " " << p2[1] << std::endl;
-    // std::cout << "U: " << u << std::endl;
-    // std::cout << "common_prefix: " << common_prefix << std::endl;
-    // std::cout << "common_suffix: " << common_suffix << std::endl;
-    // std::cout << "J: " << j0 << " " << j1 << std::endl;
-    // r = weight * (curvature_params.turning_rad - max_turning_radius) * (curvature_params.turning_rad - max_turning_radius);
-    // std::cout << "R: " << r << std::endl;
   }
 
   /**
    * @brief Cost function term for no collisions paths
    * @param weight Weight to apply to function
    * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
    * @param r Residual (cost) of term
    */
   inline void addCollisionResidual(
     const double & weight,
     const double & value,
+    CostComputations & params,
     double & r) const
   {
     if (value < INSCRIBED) {
       return;
     }
 
+    params.cost = -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);
+
     // cost is a good approximation for distance since there's a defined relationship
-    r += weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);  // objective function value
+    r += params.cost;  // objective function value
+
+    // std::cout << "Collision cost: " << params.cost << std::endl;
   }
 
   /**
@@ -354,6 +358,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @param mx Point Xi's x coordinate in map frame
    * @param mx Point Xi's y coordinate in map frame
    * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
    * @param j0 Gradient of X term
    * @param j1 Gradient of Y term
    */
@@ -362,6 +367,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const unsigned int & mx,
     const unsigned int & my,
     const double & value,
+    CostComputations & params,
     double & j0,
     double & j1) const
   {
@@ -369,53 +375,109 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       return;
     }
 
-    double left_one = 0.0;
-    double left_two = 0.0;
-    double right_one = 0.0;
-    double right_two = 0.0;
-    double up_one = 0.0;
-    double up_two = 0.0;
-    double down_one = 0.0;
-    double down_two = 0.0;
+    getCostmapGradient(mx, my, params);
 
-    if (mx < _costmap->sizeX()) {
-        right_one = _costmap->getCost(mx + 1, my);
-    }
-    if (mx + 1 < _costmap->sizeX()) {
-        right_two = _costmap->getCost(mx + 2, my);
-    }
-    if (mx > 0) {
-        left_one = _costmap->getCost(mx - 1, my);
-    }
-    if (mx - 1 > 0) {
-        left_two = _costmap->getCost(mx - 2, my);
-    }
-    if (my < _costmap->sizeY()) {
-        up_one = _costmap->getCost(mx, my + 1);
-    }
-    if (my + 1 < _costmap->sizeY()) {
-        up_two = _costmap->getCost(mx, my + 2);
-    }
-    if (my > 0) {
-        down_one = _costmap->getCost(mx, my - 1);
-    }
-    if (my - 1 > 0) {
-        left_two = _costmap->getCost(mx, my - 2);
-    }
-
-    // find unit vector that describes that direction
-    // via 5 point taylor series approximation for gradient at Xi
-    double gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
-    double grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
-    const double grad_mag = hypot(gradx, grady);
-    gradx /= grad_mag;
-    grady /= grad_mag;
-
-    const double & common_prefix = 2 * weight * (value - MAX_NON_OBSTACLE);
+    const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
 
     // cost is a good approximation for distance since there's a defined relationship
-    j0 += weight * common_prefix * gradx;  // xi x component of partial-derivative
-    j1 += weight * common_prefix * grady;  // xi y component of partial-derivative
+    j0 += common_prefix * params.gradx;  // xi x component of partial-derivative
+    j1 += common_prefix * params.grady;  // xi y component of partial-derivative
+  }
+
+  /**
+   * @brief Cost function term for steering away from costs
+   * @param weight Weight to apply to function
+   * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
+   * @param r Residual (cost) of term
+   */
+  inline void addCostResidual(
+    const double & weight,
+    const double & value,
+    CostComputations & params,
+    double & r) const
+  {
+    if (value == FREE || value == UNKNOWN) { //TODO should reformulate cost function to be a 1-X situation  
+      return;
+    }
+
+    if (params.cost != 0.0) {
+      r += params.cost;
+      // std::cout << "Cost costA " << params.cost << std::endl;
+    } else {
+      r += -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);  // objective function value
+      // std::cout << "Cost costB " << weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE) << std::endl;
+    }
+  }
+
+  /**
+   * @brief Cost function derivative term for steering away from costs
+   * @param weight Weight to apply to function
+   * @param mx Point Xi's x coordinate in map frame
+   * @param mx Point Xi's y coordinate in map frame
+   * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
+   * @param j0 Gradient of X term
+   * @param j1 Gradient of Y term
+   */
+  inline void addCostJacobian(
+    const double & weight,
+    const unsigned int & mx,
+    const unsigned int & my,
+    const double & value,
+    CostComputations & params,
+    double & j0,
+    double & j1) const
+  {
+    if (value == FREE || value == UNKNOWN) { //TODO should reformulate cost function to be a 1-X situation  
+      return;
+    }
+
+    if (params.gradx == 0.0 && params.grady == 0.0) {
+      getCostmapGradient(mx, my, params);
+    }
+
+    const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
+
+    j0 += common_prefix * params.gradx;  // xi x component of partial-derivative
+    j1 += common_prefix * params.grady;  // xi y component of partial-derivative
+  }
+
+  /**
+   * @brief Cost function term for steering angle change penalty
+   * @param weight Weight to apply to function
+   * @param ki Point Xi's steering angle change
+   * @param ki_m1 Point Xi-1's steering angle change
+   * @param r Residual (cost) of term
+   */
+  inline void addTurningRateChangeResidual(
+    const double & weight,
+    const double & ki,
+    const double & ki_m1,
+    double & r) const
+  {
+    r += weight * (ki * ki + ki_m1 * ki_m1 - 2 * ki * ki_m1);
+    // std::cout << "turning rate cost" << weight * (ki * ki + ki_m1 * ki_m1 - 2 * ki * ki_m1) << std::endl;
+
+  }
+
+  /**
+   * @brief Cost function derivative term for steering angle change penalty
+   * @param weight Weight to apply to function
+   * @param ki Point Xi's steering angle change
+   * @param ki_m1 Point Xi-1's steering angle change
+   * @param j0 Gradient of X term
+   * @param j1 Gradient of Y term
+   */
+  inline void addTurningRateChangeJacobian(
+    const double & weight,
+    const double & ki,
+    const double & ki_m1,
+    double & j0,
+    double & j1) const
+  {
+    j0 += 2 * weight * (ki - ki_m1);  //TODO this direction is bogus, maybe this is why local cusping because direction isnt right. term is scalar
+    j1 += 2 * weight * (ki - ki_m1);
   }
 
 protected:
@@ -436,10 +498,70 @@ protected:
     return (a - (b * a.dot(b) / b.squaredNorm())) / (a_norm * b_norm);
   }
 
+  /**
+   * @brief Computing the gradient of the costmap using 
+   * the 2 point numerical differentiation method
+   * @param mx Point Xi's x coordinate in map frame
+   * @param mx Point Xi's y coordinate in map frame
+   * @param params Params reference to store gradients
+   */
+  inline void getCostmapGradient(
+    const unsigned int mx,
+    const unsigned int my,
+    CostComputations & params) const
+  {
+    double left_one = 0.0;
+    double left_two = 0.0;
+    double right_one = 0.0;
+    double right_two = 0.0;
+    double up_one = 0.0;
+    double up_two = 0.0;
+    double down_one = 0.0;
+    double down_two = 0.0;
+
+    if (mx < _costmap->sizeX()) {
+      right_one = _costmap->getCost(mx + 1, my);
+    }
+    if (mx + 1 < _costmap->sizeX()) {
+      right_two = _costmap->getCost(mx + 2, my);
+    }
+    if (mx > 0) {
+      left_one = _costmap->getCost(mx - 1, my);
+    }
+    if (mx - 1 > 0) {
+      left_two = _costmap->getCost(mx - 2, my);
+    }
+    if (my < _costmap->sizeY()) {
+      up_one = _costmap->getCost(mx, my + 1);
+    }
+    if (my + 1 < _costmap->sizeY()) {
+      up_two = _costmap->getCost(mx, my + 2);
+    }
+    if (my > 0) {
+      down_one = _costmap->getCost(mx, my - 1);
+    }
+    if (my - 1 > 0) {
+      left_two = _costmap->getCost(mx, my - 2);
+    }
+
+    // find unit vector that describes that direction
+    // via 5 point taylor series approximation for gradient at Xi
+    params.gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
+    params.grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
+    const double grad_mag = hypot(params.gradx, params.grady);
+    if (grad_mag > EPSILON) {
+      params.gradx /= grad_mag;
+      params.grady /= grad_mag;     
+    }
+
+  }
+
   int _num_params;
   double _Wsmooth;
   double _Wcurve;
   double _Wcollision;
+  double _Wcost;
+  double _Wchange;
   double _max_turning_radius;
   MinimalCostmap * _costmap;
 };
@@ -447,40 +569,3 @@ protected:
 }  // namespace smac_planner
 
 #endif  // SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
-
-
-
-
-    // const Eigen::Vector2d jacobian = u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
-    // j0 += weight * jacobian[0];
-    // j1 += weight * jacobian[1];
-    // const Eigen::Vector2d jacobian_i_m = u * (common_prefix * p2 - (common_suffix * ones));
-    // const Eigen::Vector2d jacobian_i_p = u * common_prefix * p1;
-
-    // j0 += weight * (0.25 * jacobian_i_m[0] + 0.5 * jacobian_i[0] + 0.25 * jacobian_i_p[0]);  // xi x component of partial-derivative
-    // j1 += weight * (0.25 * jacobian_i_m[1] + 0.5 * jacobian_i[1] + 0.25 * jacobian_i_p[1]);  // xi y component of partial-derivative
-
-
-  // inline void addSmoothingResidual(const double & weight, const double & pt_x, const double & pt_y, double & r0, double & r1) const
-  // {
-  //   r0 +=
-  //     weight * (pt_plus->first * pt_plus->first -
-  //     4 * pt_plus->first * pt_x +
-  //     2 * pt_plus->first * pt_minus->first +
-  //     4 * pt_x * pt_x -
-  //     4 * pt_x * pt_minus->first +
-  //     pt_minus->first * pt_minus->first);  // objective function value x
-  //   r1 +=
-  //     weight * (pt_plus->second * pt_plus->second -
-  //     4 * pt_plus->second * pt_y +
-  //     2 * pt_plus->second * pt_minus->second +
-  //     4 * pt_y * pt_y -
-  //     4 * pt_y * pt_minus->second +
-  //     pt_minus->second * pt_minus->second);  // objective function value y
-  // }
-
-  // inline void addSmoothingJacobian(const double & weight, const double & pt_x, const double & pt_y, double & j0, double & j1) const
-  // {
-  //   j0 += weight * (/*pt_minus_two.first*/ - 4 * pt_minus->first + 8 * pt_x - 4 * pt_plus->first /*+ pt_plus_two.first*/);  // x derivative
-  //   j1 += weight * (/*pt_minus_two.second*/ - 4 * pt_minus->second + 8 * pt_y - 4 * pt_plus->second /*+ pt_plus_two.second*/);  // y derivative
-  // }
