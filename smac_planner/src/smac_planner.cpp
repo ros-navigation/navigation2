@@ -12,47 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-// maybe we should be planning sparser, we just want to know that its possible to get through a space as a route, then more up to the controller to decide how it should follow that route
-// >> 5cm (10-15cm) jump points but at the same resolution. then optimizer to smooth, and then upsample.
-//  - optimization/upsample phase will still ensure valid non-collision path.
-//  - faster planning & faster optimization
-//  - original search with k-d tree / multiresolution to get a "we know we can", then the optimiziation, then the sampling. Approx. Cell decomposition
-
-// INTO 3D / dynamics respecting
-//   graph no longer regular
-//   graph with quad tree? multiresolution?
-//   footprint / collision cehcking quickly (plugin?)
-//   plugin-based search criteria (4, 8, motion projection). or graph nodes has getNeighbors method with overridden implementation. the edges shuld be stored in teh graph but we dont here because its extra memory and we know the tructure to search. In general though, the graph should have that represented.
-//     then its just the node that is the plugin interface? have implementations for getNeighbors & inCollision
-//     I think that would make it so the same A* planner with different node implementations could support general A* and hybrid A* for circular and non-circular
-//     and the graph could be non-regular or non-grid (input though could generalize?)
-
-// INTO SPARSE
-//   graph without grid structure
-//   topographical
-//   PRM
-//   voronoi
-//   freespace planner + sparse channel planner (lanes)
-//   lane planners (find closest gateway to you and to goal, plan to closest gateway, use sparse graph serach to gateway near goal, exit to goal plan)
-//     mixing topographical with free space planners
-//     ROS plugin layer: look at map semantic labels to find the gateways, call the algorithm to do free place planning, call another alogrithm for non-grid network graph (?)
-//     maybe a PRM thought experiment would help to see if I could get them both to work with 1 implementation but 2 different graph nodes on input, since PRM is a less structured road-network graph
-
-// WHAT all should this do for release / tutorial
-//  - A* better than NavFn
-
-// WHAT all should this do for namesake?
-//  - A* better than NavFn
-//  - Plugins to support Hybrid sampling and collision checking
-//  - either: lane/topographical support. Meaning to have "go to X" or have "use lanes" on a sparse given network (similar to PRM with narative and way of representing it in map file)
-//      - if both: msg field for "use network", field for string of topographical name, param for metric on when to use network
-//      - assumption in lanes that straight field projections are feasible for the robot type (ei can follow straight line graph without getting stuck)
-//      - param to enable dynamic planning in network if required? Break out of network and do full freespace upon failure?
-//        - when? how? is this going to far down the rabbit hole to use-case specific?
-//        - should it try to free space navigate then to the next closest gateway and try again?
-//      - still allows for collision avoidance controller to deviate to get around stuff
-//      - topographical support for file format needed in both, so why not enable both? the "go to X" will require BT and navigation task changes too
-
 // benefits list:
 //  - for tolerance, only search once
 //  - Against NavFns: we have inflation + dynamic processing: cached gradiant map not used
@@ -61,7 +20,10 @@
 //  - modern data structures & carefully optimized & generic for use in other planning problems
 //  - generic smoother that has applications to anything
 //  - caching paths rather than recomputing needlessly if they're still good
+//  - network planner
+//  - non-circular footprints, diff/omni/ackermann, covering all classes of ground robots. circl diff/omni A*, ackerman hybrid, arbitrary diff/omni A* if relatively small, hybrid is large
 
+// TODOs
 // total cost path caching
 // astar timeout, max duration
 // way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
@@ -73,7 +35,6 @@
 #include "Eigen/Core"
 #include "smac_planner/smac_planner.hpp"
 
-// For getting times
 #define BENCHMARK_TESTING
 
 namespace smac_planner
@@ -131,6 +92,7 @@ void SmacPlanner::configure(
   node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".revisit_neighbors", rclcpp::ParameterValue(true)); /* TODO do CPU testing on large maps, paths seem permissible and similar CPU in short */
+      //bisualize heyristic search/score to figure out revisit neighbors param / quad area V. In rviz. 
   node_->get_parameter(name + ".revisit_neighbors", revisit_neighbors);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(200));

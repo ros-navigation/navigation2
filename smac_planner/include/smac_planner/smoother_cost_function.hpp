@@ -92,14 +92,17 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
   {
     // OPTIMIZATION help normalize this more, analyze, and tune
     // here looks pretty good. {200000, 0.2, 1.0, 2.0, 1.0, 10.0}. need to smooth out turning angles and I think should be OK
-    _Wsmooth = 200000;// 800000.0; 200000
-    _Wcost = 0.2; //0.3; 0.2
-    _Wchange = 1.0;//45.0; //20 // TODO at least jacobian broken. w/o it, always curved. w/ it, blocky 90%
+    // {2000000, 0.5, 5.0, 1.0 1.0 15.0 looks pretty good. Just eed to get the change term to look at a larger window}
+    _Wsmooth = 2000000.0; //200000;// 800000.0; 200000
+    _Wcost = 1.0; //0.2; // OLD TERM 0.3; 0.2
+    _Wcurve = 3.0;
 
-    _Wcurve = 2.0;
-    _Wcollision = 1.0;
+    _max_turning_radius = 1.0; // 15 43 deg ish at a 0.05 resolution. delta phi / delta x. 6 @10 cm
 
-    _max_turning_radius = 10.0; 
+    // preconitioning???
+    //maybe try reformatting this back into a normal NNLS problem? to use preconditioners?? Also XY in columns again??
+    // check signs consistent: https://en.wikipedia.org/wiki/Nonlinear_conjugate_gradient_method
+    // Not just convex and squared, but all terms go to 0 with conditions fulfilled
   }
 
   /**
@@ -123,7 +126,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     unsigned int mx, my;
     bool valid_coords = true;
     double costmap_cost = 0.0;
-    double ki_m1 = 0;
 
     // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
@@ -142,12 +144,10 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
 
       // compute cost
       addSmoothingResidual(_Wsmooth, xi, xi_p1, xi_m1, cost_raw);
-      addMaxCurvatureResidual(_Wcurve, xi, xi_p1, xi_m1, curvature_params, cost_raw);
-      addTurningRateChangeResidual(_Wchange, curvature_params.turning_rad, ki_m1, cost_raw);
+      addCurvatureResidual(_Wcurve, xi, xi_p1, xi_m1, curvature_params, cost_raw);
 
       if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
         costmap_cost = _costmap->getCost(mx, my);
-        addCollisionResidual(_Wcollision, costmap_cost, cost_params, cost_raw);
         addCostResidual(_Wcost, costmap_cost, cost_params, cost_raw);
       }
 
@@ -156,19 +156,15 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
         gradient[x_index] = 0.0;
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_Wsmooth, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
-        addMaxCurvatureJacobian(_Wcurve, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
-        addTurningRateChangeJacobian(_Wchange, curvature_params.turning_rad, ki_m1, grad_x_raw, grad_y_raw);
+        addCurvatureJacobian(_Wcurve, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
 
         if (valid_coords) {
-          addCollisionJacobian(_Wcollision, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
           addCostJacobian(_Wcost, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
         }
 
         gradient[x_index] = grad_x_raw;
         gradient[y_index] = grad_y_raw;
       }
-
-      ki_m1 = curvature_params.turning_rad;
     }
 
 
@@ -186,59 +182,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
   virtual int NumParameters() const { return _num_params; }
 
   /**
-   * @brief Cost function term for smooth paths
-   * @param weight Weight to apply to function
-   * @param pt Point Xi for evaluation
-   * @param pt Point Xi+1 for calculating Xi's cost
-   * @param pt Point Xi-1 for calculating Xi's cost
-   * @param r Residual (cost) of term
-   */
-  inline void addSmoothingResidual(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
-    double & r) const
-  {
-    r += weight * (
-      pt_p.dot(pt_p)
-      - 4 * pt_p.dot(pt)
-      + 2 * pt_p.dot(pt_m)
-      + 4 * pt.dot(pt)
-      - 4 * pt.dot(pt_m)
-      + pt_m.dot(pt_m));  // objective function value
-
-    // std::cout << "smoothing cost: " << weight * (
-      // pt_p.dot(pt_p)
-      // - 4 * pt_p.dot(pt)
-      // + 2 * pt_p.dot(pt_m)
-      // + 4 * pt.dot(pt)
-      // - 4 * pt.dot(pt_m)
-      // + pt_m.dot(pt_m)) << std::endl;
-  }
-
-  /**
-   * @brief Cost function derivative term for smooth paths
-   * @param weight Weight to apply to function
-   * @param pt Point Xi for evaluation
-   * @param pt Point Xi+1 for calculating Xi's cost
-   * @param pt Point Xi-1 for calculating Xi's cost
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addSmoothingJacobian(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
-    double & j0,
-    double & j1) const
-  {
-    j0 += weight * (- 4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);  // xi x component of partial-derivative
-    j1 += weight * (- 4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);  // xi y component of partial-derivative
-  }
-
-  /**
    * @brief Cost function term for maximum curved paths
    * @param weight Weight to apply to function
    * @param pt Point Xi for evaluation
@@ -247,7 +190,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @param curvature_params A struct to cache computations for the jacobian to use
    * @param r Residual (cost) of term
    */
-  inline void addMaxCurvatureResidual(
+  inline void addCurvatureResidual(
     const double & weight,
     const Eigen::Vector2d & pt,
     const Eigen::Vector2d & pt_p,
@@ -255,6 +198,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     CurvatureComputations & curvature_params,
     double & r) const
   {
+    curvature_params.valid = true;
     curvature_params.delta_xi = Eigen::Vector2d(pt[0] - pt_m[0], pt[1] - pt_m[1]);
     curvature_params.delta_xi_p = Eigen::Vector2d(pt_p[0] - pt[0], pt_p[1] - pt[1]); 
     curvature_params.delta_xi_norm = curvature_params.delta_xi.norm();
@@ -286,7 +230,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     }
 
     r += weight * curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;  // objective function value
-    // std::cout << "curvautre cost: " << weight * curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax << std::endl;
   }
 
   /**
@@ -299,7 +242,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @param j0 Gradient of X term
    * @param j1 Gradient of Y term
    */
-  inline void addMaxCurvatureJacobian(
+  inline void addCurvatureJacobian(
     const double & weight,
     const Eigen::Vector2d & pt,
     const Eigen::Vector2d & pt_p,
@@ -316,7 +259,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
     auto neg_pt_plus = -1 * pt_p;
     Eigen::Vector2d p1 = normalizedOrthogonalComplement(pt, neg_pt_plus, curvature_params.delta_xi_norm, curvature_params.delta_xi_p_norm);
-    Eigen::Vector2d p2 = normalizedOrthogonalComplement(neg_pt_plus, pt, curvature_params.delta_xi_norm, curvature_params.delta_xi_p_norm);
+    Eigen::Vector2d p2 = normalizedOrthogonalComplement(neg_pt_plus, pt, curvature_params.delta_xi_p_norm, curvature_params.delta_xi_norm);
 
     const double & u = 2 * curvature_params.ki_minus_kmax;
     const double & common_prefix = (-1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
@@ -325,63 +268,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const Eigen::Vector2d jacobian = u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
     j0 += weight * jacobian[0];  // xi x component of partial-derivative
     j1 += weight * jacobian[1];  // xi y component of partial-derivative
-  }
-
-  /**
-   * @brief Cost function term for no collisions paths
-   * @param weight Weight to apply to function
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param r Residual (cost) of term
-   */
-  inline void addCollisionResidual(
-    const double & weight,
-    const double & value,
-    CostComputations & params,
-    double & r) const
-  {
-    if (value < INSCRIBED) {
-      return;
-    }
-
-    params.cost = -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);
-
-    // cost is a good approximation for distance since there's a defined relationship
-    r += params.cost;  // objective function value
-
-    // std::cout << "Collision cost: " << params.cost << std::endl;
-  }
-
-  /**
-   * @brief Cost function derivative term for no collisions paths
-   * @param weight Weight to apply to function
-   * @param mx Point Xi's x coordinate in map frame
-   * @param mx Point Xi's y coordinate in map frame
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addCollisionJacobian(
-    const double & weight,
-    const unsigned int & mx,
-    const unsigned int & my,
-    const double & value,
-    CostComputations & params,
-    double & j0,
-    double & j1) const
-  {
-    if (value < INSCRIBED) {
-      return;
-    }
-
-    getCostmapGradient(mx, my, params);
-
-    const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
-
-    // cost is a good approximation for distance since there's a defined relationship
-    j0 += common_prefix * params.gradx;  // xi x component of partial-derivative
-    j1 += common_prefix * params.grady;  // xi y component of partial-derivative
   }
 
   /**
@@ -397,17 +283,11 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     CostComputations & params,
     double & r) const
   {
-    if (value == FREE || value == UNKNOWN) { //TODO should reformulate cost function to be a 1-X situation  
+    if (value == FREE || value == UNKNOWN) {
       return;
     }
 
-    if (params.cost != 0.0) {
-      r += params.cost;
-      // std::cout << "Cost costA " << params.cost << std::endl;
-    } else {
-      r += -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);  // objective function value
-      // std::cout << "Cost costB " << weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE) << std::endl;
-    }
+    r += -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);  // objective function value
   }
 
   /**
@@ -429,13 +309,11 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     double & j0,
     double & j1) const
   {
-    if (value == FREE || value == UNKNOWN) { //TODO should reformulate cost function to be a 1-X situation  
+    if (value == FREE || value == UNKNOWN) {
       return;
     }
 
-    if (params.gradx == 0.0 && params.grady == 0.0) {
-      getCostmapGradient(mx, my, params);
-    }
+    getCostmapGradient(mx, my, params);
 
     const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
 
@@ -443,44 +321,52 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     j1 += common_prefix * params.grady;  // xi y component of partial-derivative
   }
 
+protected:
   /**
-   * @brief Cost function term for steering angle change penalty
+   * @brief Cost function term for smooth paths
    * @param weight Weight to apply to function
-   * @param ki Point Xi's steering angle change
-   * @param ki_m1 Point Xi-1's steering angle change
+   * @param pt Point Xi for evaluation
+   * @param pt Point Xi+1 for calculating Xi's cost
+   * @param pt Point Xi-1 for calculating Xi's cost
    * @param r Residual (cost) of term
    */
-  inline void addTurningRateChangeResidual(
+  inline void addSmoothingResidual(
     const double & weight,
-    const double & ki,
-    const double & ki_m1,
+    const Eigen::Vector2d & pt,
+    const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & pt_m,
     double & r) const
   {
-    r += weight * (ki * ki + ki_m1 * ki_m1 - 2 * ki * ki_m1);
-    // std::cout << "turning rate cost" << weight * (ki * ki + ki_m1 * ki_m1 - 2 * ki * ki_m1) << std::endl;
-
+    r += weight * (
+      pt_p.dot(pt_p)
+      - 4 * pt_p.dot(pt)
+      + 2 * pt_p.dot(pt_m)
+      + 4 * pt.dot(pt)
+      - 4 * pt.dot(pt_m)
+      + pt_m.dot(pt_m));  // objective function value
   }
 
   /**
-   * @brief Cost function derivative term for steering angle change penalty
+   * @brief Cost function derivative term for smooth paths
    * @param weight Weight to apply to function
-   * @param ki Point Xi's steering angle change
-   * @param ki_m1 Point Xi-1's steering angle change
+   * @param pt Point Xi for evaluation
+   * @param pt Point Xi+1 for calculating Xi's cost
+   * @param pt Point Xi-1 for calculating Xi's cost
    * @param j0 Gradient of X term
    * @param j1 Gradient of Y term
    */
-  inline void addTurningRateChangeJacobian(
+  inline void addSmoothingJacobian(
     const double & weight,
-    const double & ki,
-    const double & ki_m1,
+    const Eigen::Vector2d & pt,
+    const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & pt_m,
     double & j0,
     double & j1) const
   {
-    j0 += 2 * weight * (ki - ki_m1);  //TODO this direction is bogus, maybe this is why local cusping because direction isnt right. term is scalar
-    j1 += 2 * weight * (ki - ki_m1);
+    j0 += weight * (- 4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);  // xi x component of partial-derivative
+    j1 += weight * (- 4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);  // xi y component of partial-derivative
   }
 
-protected:
   /**
    * @brief Computing the normalized orthogonal component of 2 vectors
    * @param a Vector
@@ -561,7 +447,6 @@ protected:
   double _Wcurve;
   double _Wcollision;
   double _Wcost;
-  double _Wchange;
   double _max_turning_radius;
   MinimalCostmap * _costmap;
 };

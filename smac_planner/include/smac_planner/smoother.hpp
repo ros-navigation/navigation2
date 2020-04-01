@@ -60,23 +60,23 @@ public:
     // General Params
 
     // OPTIMIZATION tune parameters
-    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT; // LBFGS/ BFGS NONLINEAR_CONJUGATE_GRADIENT
+    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT; // LBFGS BFGS NONLINEAR_CONJUGATE_GRADIENT STEEPEST_DESCENT (less resets but still not converging sometimes or with zero)
     options_.line_search_type = ceres::WOLFE;                                  // WOLFE, ARMIJO
     options_.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;         // FLETCHER_REEVES, POLAK_RIBIERE, HESTENES_STIEFEL
     options_.line_search_interpolation_type = ceres::CUBIC;                    // CUBIC, QUADRATIC, BISECTION
     options_.max_num_iterations = 500;                                         // 50 default
-    options_.max_solver_time_in_seconds = 0.100;                               // 1e4 default. 100ms
+    options_.max_solver_time_in_seconds = 1.5;                               // 1e4 default. 100ms
 
-    options_.min_line_search_step_size = 1e-5;
+    options_.min_line_search_step_size = 1e-5; //1e-9 default IN USE??
+    options_.max_num_line_search_step_size_iterations = 50;// 20 default
     // options_.line_search_sufficient_function_decrease = ;// 1e-4 default
     // options_.max_line_search_step_contraction = ; // 1e-3 default
     // options_.min_line_search_step_contraction = ; // 0.6 default
-    options_.max_num_line_search_step_size_iterations = 50;// 20 default
     // options_.max_num_line_search_direction_restarts = 20; // 5 default
     // options_.line_search_sufficient_curvature_decrease = 0.9;// 0.9 default
     // options_.max_line_search_step_expansion = 10; // 10 default
 
-    // options_.function_tolerance = 1e-6; // 1e-6 deafult, TODO results in warning 3: also cuases a crash to specifically add??
+    options_.function_tolerance = 1e-9; // 1e-6 deafult, TODO results in warning 3: also cuases a crash to specifically add??
     // options_.gradient_tolerance = ; // 1e-10 default, maybe important?
     options_.parameter_tolerance = 1e-15; // 1e-8  tol
 
@@ -86,6 +86,8 @@ public:
 
     if (debug_) {
       options_.minimizer_progress_to_stdout = true;
+    } else {
+      options_.logging_type = ceres::SILENT;
     }
   }
 

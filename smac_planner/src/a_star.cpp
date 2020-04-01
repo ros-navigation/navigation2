@@ -27,29 +27,6 @@
 namespace smac_planner
 {
 
-// for sampling on 3D: planner is given a pointer to an environmental rep
-//   and one of the implementations is getCost(current pose) so it can do traveribility
-//   then no copying over values to the algorithm.
-//   and interface should be defined in nav2_core.
-//   and include some getCost(current, next) for traversibility. would just be cost in 2D
-//   get footprint, make sure its valid, and use for collision checking.
-
-// template all of AStarAlgorithm by NodeT. and then when we instantiate in plugin we give it. graph takes template arguement
-  // GOAL: to allow a single A* implementation to be used for any, even non-grid, search. To be then used for sparse graph and Hybrid A*
-
-  // what about getting traversal cost (I guess edge cost is stored?)
-  // different plugins (A*, hybrid A*, etc) are different front ends (maybe plgun-plugins for 1? that seems too much though) but share this implementation.
-  // need to make API for this implementation to also take in nodes and edges to share in graph setCosts() a different alternative version, change this one to setGridCosts()
-  // but what about the getting neighbors values -- will need ptr to structure in each node. Or on initialization, we give each their neighboring ptrs.
-
-// functions for setting costs as a graph or as a regular grid for search to support defined graphs (vornoi, PRM, network routing, etc)
-
-// Feature complete:
-// - optimization points (also, reduce copies, different data structures for graph: vector may be faster. What about queue?, reduce static casts)
-// - benchmark relative to NavFn after fully featured, also learn gdb/valgrind to find where time is being taken to see if more improvements to be made
-// - readme (description (why + better), params, example images, metrics)
-// - add timer max time
-
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
 : travel_cost_scale_(0.0),
   traverse_unknown_(true),
@@ -85,7 +62,7 @@ void AStarAlgorithm::initialize(
   }
 
   if (queue_) {
-    queue_.reset();
+    queue_.reset();  // OPTIMIZATION TODO queue right DA?
   }
 
   graph_ = std::make_unique<Graph>();
