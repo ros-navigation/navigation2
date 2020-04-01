@@ -367,7 +367,7 @@ TEST(TrajectoryGenerator, twisty)
 TEST(TrajectoryGenerator, sim_time)
 {
   const double sim_time = 2.5;
-  auto nh = makeTestNode("sim_time",
+  auto nh = makeTestNode("sim_time", {
     rclcpp::Parameter("dwb.sim_time", sim_time),
     rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   StandardTrajectoryGenerator gen;
