@@ -67,9 +67,9 @@ public:
     options_.max_num_iterations = 500;                                         // 50 default
     options_.max_solver_time_in_seconds = 1.5;                               // 1e4 default. 100ms
 
-    options_.min_line_search_step_size = 1e-5; //1e-9 default IN USE??
+    options_.min_line_search_step_size = 1e-5; //50 did something //1e-9 default IN USE??
     options_.max_num_line_search_step_size_iterations = 50;// 20 default
-    // options_.line_search_sufficient_function_decrease = ;// 1e-4 default
+    options_.line_search_sufficient_function_decrease = 1e-50;// 1e-4 default
     // options_.max_line_search_step_contraction = ; // 1e-3 default
     // options_.min_line_search_step_contraction = ; // 0.6 default
     // options_.max_num_line_search_direction_restarts = 20; // 5 default
@@ -95,7 +95,7 @@ public:
    * @brief Initialization of the smoother
    * @return If smoothing was successful
    */
-  bool smooth(std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap)
+  bool smooth(std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap, const std::vector<double> params = std::vector<double>())
   {
 
     //OPTIMIZATION move this to planner to cut down on conversions
@@ -106,7 +106,7 @@ public:
     }
 
     ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(path.size(), costmap));
+    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(& path, path.size(), costmap, params));
     ceres::Solve(options_, problem, parameters, &summary);
 
     if (debug_) {

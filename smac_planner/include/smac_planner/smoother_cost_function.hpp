@@ -57,11 +57,11 @@ struct CurvatureComputations
 
   Eigen::Vector2d delta_xi;
   Eigen::Vector2d delta_xi_p;
-  double delta_xi_norm;
-  double delta_xi_p_norm;
-  double delta_phi_i;
-  double turning_rad;
-  double ki_minus_kmax;
+  double delta_xi_norm{0};
+  double delta_xi_p_norm{0};
+  double delta_phi_i{0};
+  double turning_rad{0};
+  double ki_minus_kmax{0};
 };
 
 /**
@@ -87,22 +87,37 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @param num_points Number of path points to consider
    * @param costmap A minimal costmap wrapper to get values for collision and obstacle avoidance
    */
-  UnconstrainedSmootherCostFunction(const int & num_points, MinimalCostmap * costmap)
-  : _num_params(2 * num_points), _costmap(costmap)
+  UnconstrainedSmootherCostFunction(std::vector<Eigen::Vector2d> * original_path, const int & num_points, MinimalCostmap * costmap, const std::vector<double> params = std::vector<double>())
+  : _original_path(original_path), _num_params(2 * num_points), _costmap(costmap)
   {
     // OPTIMIZATION help normalize this more, analyze, and tune
-    // here looks pretty good. {200000, 0.2, 1.0, 2.0, 1.0, 10.0}. need to smooth out turning angles and I think should be OK
-    // {2000000, 0.5, 5.0, 1.0 1.0 15.0 looks pretty good. Just eed to get the change term to look at a larger window}
-    _Wsmooth = 2000000.0; //200000;// 800000.0; 200000
-    _Wcost = 1.0; //0.2; // OLD TERM 0.3; 0.2
-    _Wcurve = 3.0;
+    if (params.size() < 1) {
+      _Wsmooth = 15000.0;
+      _Wcost = 0.0;
+      _Wcurve = 1.5;
+      _Wdist = 15000.0;
+    } else {
+      _Wsmooth = params[0];
+      _Wcost = params[1];
+      _Wcurve = params[2];
+      _Wdist = params[3];
+    }
 
-    _max_turning_radius = 1.0; // 15 43 deg ish at a 0.05 resolution. delta phi / delta x. 6 @10 cm
+    _max_turning_radius = 7.8; // 15 43 deg ish at a 0.05 resolution. delta phi / delta x. 5 @10 cm for 30 degrees. .78 is 45 deg. 6.5 is 37 deg
+    // try removing "u" from the curvature function, the cost-ed term sign change term, and lowering the magnitude of all the terms
 
     // preconitioning???
-    //maybe try reformatting this back into a normal NNLS problem? to use preconditioners?? Also XY in columns again??
     // check signs consistent: https://en.wikipedia.org/wiki/Nonlinear_conjugate_gradient_method
-    // Not just convex and squared, but all terms go to 0 with conditions fulfilled
+    // downsampling ppt to costmap resplution cells. Same with turning angle
+    //  CubicInterpolator
+    // opt problem 1 at a time and loop (oprimization outer loop not inner loop)
+
+    // pt 0 and N need to not be added or locked in. 
+
+//[planner_server-8] FAILED! try again.
+//[planner_server-8]    0: f: 6.391022e+02 d: 0.00e+00 g: 7.04e+199 h: 0.00e+00 s: 0.00e+00 e:  0 it: 3.45e-06 tt: 3.49e-06
+// D and h is zero but why is g +199?? look at this. A typical number is e3 or e4
+// this happens in all the failures (!)
   }
 
   /**
@@ -145,6 +160,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       // compute cost
       addSmoothingResidual(_Wsmooth, xi, xi_p1, xi_m1, cost_raw);
       addCurvatureResidual(_Wcurve, xi, xi_p1, xi_m1, curvature_params, cost_raw);
+      addDistanceResidual(_Wdist, xi, _original_path->at(i), cost_raw);
 
       if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
         costmap_cost = _costmap->getCost(mx, my);
@@ -157,6 +173,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_Wsmooth, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
         addCurvatureJacobian(_Wcurve, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
+        addDistanceJacobian(_Wdist, xi, _original_path->at(i), grad_x_raw, grad_y_raw);
 
         if (valid_coords) {
           addCostJacobian(_Wcost, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
@@ -266,8 +283,10 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const double & common_suffix = curvature_params.delta_phi_i / (curvature_params.delta_xi_norm * curvature_params.delta_xi_norm);
 
     const Eigen::Vector2d jacobian = u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
-    j0 += weight * jacobian[0];  // xi x component of partial-derivative
-    j1 += weight * jacobian[1];  // xi y component of partial-derivative
+    const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 - (common_suffix * ones));
+    const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
+    j0 += weight * (jacobian_im1[0] - 2 * jacobian[0] + jacobian_ip1[0]);  // xi x component of partial-derivative
+    j1 += weight * (jacobian_im1[1] - 2 * jacobian[1] + jacobian_ip1[1]);  // xi y component of partial-derivative      
   }
 
   /**
@@ -286,8 +305,12 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     if (value == FREE || value == UNKNOWN) {
       return;
     }
-
-    r += -1 * weight * (value * value - 2 * MAX_NON_OBSTACLE * value + MAX_NON_OBSTACLE * MAX_NON_OBSTACLE);  // objective function value
+    // negative term as we're incentivizing away from this
+    r += -1 * weight * (value - MAX_NON_OBSTACLE) * (value - MAX_NON_OBSTACLE);  // objective function value
+    //STEVE this seems to work too and all + signs? r += * weight * (value) * (value );  // objective function value
+    // STEVE r += weight * (value - 128) * (value - 128);  // objective function value
+    // makes residual positive like other terms. (but does it move down when further?) I think this incentives being near 128
+    // add another part of term like vornoid to attract outwards?
   }
 
   /**
@@ -315,10 +338,50 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
 
     getCostmapGradient(mx, my, params);
 
+    // negative term as we're incentivizing away from this
     const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
+    // STEVE this seems to work and all positive signs? const double & common_prefix = 2 * weight * (value);
+    // STEVE const double & common_prefix = 2 * weight * (value - 128);
 
     j0 += common_prefix * params.gradx;  // xi x component of partial-derivative
     j1 += common_prefix * params.grady;  // xi y component of partial-derivative
+  }
+
+  /**
+   * @brief Cost function derivative term for steering away changes in pose
+   * @param weight Weight to apply to function
+   * @param xi Point Xi for evaluation
+   * @param xi_original original point Xi for evaluation
+   * @param r Residual (cost) of term
+   */
+  inline void addDistanceResidual(
+    const double & weight,
+    const Eigen::Vector2d & xi,
+    const Eigen::Vector2d & xi_original,
+    double& r) const
+  {
+    r += weight * (xi - xi_original).dot(xi - xi_original);
+
+
+  }
+
+  /**
+   * @brief Cost function derivative term for steering away changes in pose
+   * @param weight Weight to apply to function
+   * @param xi Point Xi for evaluation
+   * @param xi_original original point Xi for evaluation
+   * @param j0 Gradient of X term
+   * @param j1 Gradient of Y term
+   */
+  inline void addDistanceJacobian(
+    const double & weight,
+    const Eigen::Vector2d & xi,
+    const Eigen::Vector2d & xi_original,
+    double & j0,
+    double & j1) const
+  {
+    j0 += weight * 2 * (xi[0] - xi_original[0]);
+    j1 += weight * 2 * (xi[1] - xi_original[1]);
   }
 
 protected:
@@ -398,12 +461,16 @@ protected:
   {
     double left_one = 0.0;
     double left_two = 0.0;
+    double left_three = 0.0;
     double right_one = 0.0;
     double right_two = 0.0;
+    double right_three = 0.0;
     double up_one = 0.0;
     double up_two = 0.0;
+    double up_three = 0.0;
     double down_one = 0.0;
     double down_two = 0.0;
+    double down_three = 0.0;
 
     if (mx < _costmap->sizeX()) {
       right_one = _costmap->getCost(mx + 1, my);
@@ -411,29 +478,52 @@ protected:
     if (mx + 1 < _costmap->sizeX()) {
       right_two = _costmap->getCost(mx + 2, my);
     }
+    if (mx + 2 < _costmap->sizeX()) {
+      right_three = _costmap->getCost(mx + 3, my);
+    }
+
     if (mx > 0) {
       left_one = _costmap->getCost(mx - 1, my);
     }
     if (mx - 1 > 0) {
       left_two = _costmap->getCost(mx - 2, my);
     }
+    if (mx - 2 > 0) {
+      left_three = _costmap->getCost(mx - 3, my);
+    }
+
     if (my < _costmap->sizeY()) {
       up_one = _costmap->getCost(mx, my + 1);
     }
     if (my + 1 < _costmap->sizeY()) {
       up_two = _costmap->getCost(mx, my + 2);
     }
+    if (my + 2 < _costmap->sizeY()) {
+      up_three = _costmap->getCost(mx, my + 3);
+    }
+
     if (my > 0) {
       down_one = _costmap->getCost(mx, my - 1);
     }
     if (my - 1 > 0) {
-      left_two = _costmap->getCost(mx, my - 2);
+      down_two = _costmap->getCost(mx, my - 2);
+    }
+    if (my - 2 > 0) {
+      down_three = _costmap->getCost(mx, my - 3);
     }
 
     // find unit vector that describes that direction
     // via 5 point taylor series approximation for gradient at Xi
-    params.gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
-    params.grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
+    // params.gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
+    // params.grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
+
+    // find unit vector that describes that direction
+    // via 7 point taylor series approximation for gradient at Xi
+
+    // TODO STEVE FUCK this is in costmap coordinates not map coordinates, need to convert.
+    // TODO signs?
+    params.gradx = (45 * up_one - 9 * up_two + up_three - 45* down_one + 9 * down_two - down_three) / 60;
+    params.grady = (45 * right_one - 9 * right_two + right_three - 45 * left_one + 9 * left_two - left_three) / 60;
     const double grad_mag = hypot(params.gradx, params.grady);
     if (grad_mag > EPSILON) {
       params.gradx /= grad_mag;
@@ -443,12 +533,14 @@ protected:
   }
 
   int _num_params;
-  double _Wsmooth;
-  double _Wcurve;
-  double _Wcollision;
-  double _Wcost;
-  double _max_turning_radius;
-  MinimalCostmap * _costmap;
+  double _Wsmooth{0};
+  double _Wcurve{0};
+  double _Wcollision{0};
+  double _Wcost{0};
+  double _Wdist{0};
+  double _max_turning_radius{0};
+  MinimalCostmap * _costmap{nullptr};
+  std::vector<Eigen::Vector2d> * _original_path{nullptr};
 };
 
 }  // namespace smac_planner
