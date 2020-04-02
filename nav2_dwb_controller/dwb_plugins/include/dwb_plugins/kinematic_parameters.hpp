@@ -45,11 +45,13 @@ namespace dwb_plugins
 {
 
 /**
- * @class KinematicParameters
- * @brief A class containing one representation of the robot's kinematics
+ * @struct KinematicParameters
+ * @brief A struct containing one representation of the robot's kinematics
  */
 struct KinematicParameters
 {
+  friend class KinematicsHandler;
+
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}
   inline double getAccX() {return acc_lim_x_;}
@@ -106,8 +108,6 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_{0};
   double max_speed_xy_sq_{0};
-
-  friend class KinematicsHandler;
 };
 
 /**
