@@ -48,10 +48,10 @@ class XYThetaIterator : public VelocityIterator
 {
 public:
   XYThetaIterator()
-  : kinematics_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
+  : kinematics_handler_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicParameters::Ptr kinematics,
+    KinematicsHandler::Ptr kinematics,
     const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
   bool hasMoreTwists() override;
@@ -61,7 +61,7 @@ protected:
   virtual bool isValidVelocity();
   void iterateToValidVelocity();
   int vx_samples_, vy_samples_, vtheta_samples_;
-  KinematicParameters::Ptr kinematics_;
+  KinematicsHandler::Ptr kinematics_handler_;
 
   std::shared_ptr<OneDVelocityIterator> x_it_, y_it_, th_it_;
 };

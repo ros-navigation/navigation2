@@ -45,14 +45,12 @@ namespace dwb_plugins
 {
 
 /**
- * @class KinematicParameters
- * @brief A class containing one representation of the robot's kinematics
+ * @struct KinematicParameters
+ * @brief A struct containing one representation of the robot's kinematics
  */
-class KinematicParameters
+struct KinematicParameters
 {
-public:
-  KinematicParameters();
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
+  friend class KinematicsHandler;
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}
@@ -90,8 +88,6 @@ public:
    */
   bool isValidSpeed(double x, double y, double theta);
 
-  using Ptr = std::shared_ptr<KinematicParameters>;
-
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
   double min_vel_x_{0};
@@ -112,14 +108,33 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_{0};
   double max_speed_xy_sq_{0};
+};
 
-  void reconfigureCB();
+/**
+ * @class KinematicsHandler
+ * @brief A class managing the representation of the robot's kinematics
+ */
+class KinematicsHandler
+{
+public:
+  KinematicsHandler();
+  ~KinematicsHandler();
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
+
+  inline KinematicParameters getKinematics() {return *kinematics_.load();}
+
+  bool isValidSpeed(double x, double y, double theta);
+
+  using Ptr = std::shared_ptr<KinematicsHandler>;
+
+protected:
+  std::atomic<KinematicParameters *> kinematics_;
 
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
   void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
-
+  void update_kinematics(KinematicParameters kinematics);
   std::string plugin_name_;
 };
 
