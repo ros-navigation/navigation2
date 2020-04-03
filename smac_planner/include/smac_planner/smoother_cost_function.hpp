@@ -27,53 +27,12 @@
 #include "Eigen/Core"
 #include "smac_planner/types.hpp"
 #include "smac_planner/minimal_costmap.hpp"
+#include "smac_planner/options.hpp"
 
 #define EPSILON 0.0001  
 
 namespace smac_planner
 {
-
-/**
- * @struct smac_planner::CurvatureComputations
- * @brief Cache common computations between the curvature terms to minimize recomputations
- */
-struct CurvatureComputations 
-{
-  /**
-   * @brief A constructor for smac_planner::CurvatureComputations
-   */
-  CurvatureComputations() {
-    valid = true;
-  }
-
-  bool valid;
-  /**
-   * @brief Check if result is valid for penalty
-   * @return is valid (non-nan, non-inf, and turning angle > max)
-   */
-  bool isValid() {
-    return valid;
-  }
-
-  Eigen::Vector2d delta_xi;
-  Eigen::Vector2d delta_xi_p;
-  double delta_xi_norm{0};
-  double delta_xi_p_norm{0};
-  double delta_phi_i{0};
-  double turning_rad{0};
-  double ki_minus_kmax{0};
-};
-
-/**
- * @struct smac_planner::CostComputations
- * @brief Cache common computations between the cost terms to minimize recomputations
- */
-struct CostComputations 
-{
-  double cost{0};
-  double gradx{0};
-  double grady{0};
-};
 
 /**
  * @struct smac_planner::UnconstrainedSmootherCostFunction
@@ -87,38 +46,55 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @param num_points Number of path points to consider
    * @param costmap A minimal costmap wrapper to get values for collision and obstacle avoidance
    */
-  UnconstrainedSmootherCostFunction(std::vector<Eigen::Vector2d> * original_path, const int & num_points, MinimalCostmap * costmap, const std::vector<double> params = std::vector<double>())
-  : _original_path(original_path), _num_params(2 * num_points), _costmap(costmap)
+  UnconstrainedSmootherCostFunction(
+    std::vector<Eigen::Vector2d> * original_path,
+    MinimalCostmap * costmap,
+    const SmootherParams & params)
+  : _original_path(original_path),
+    _num_params(2 * original_path->size()),
+    _costmap(costmap)
   {
-    // OPTIMIZATION help normalize this more, analyze, and tune
-    if (params.size() < 1) {
-      _Wsmooth = 15000.0;
-      _Wcost = 0.0;
-      _Wcurve = 1.5;
-      _Wdist = 15000.0;
-    } else {
-      _Wsmooth = params[0];
-      _Wcost = params[1];
-      _Wcurve = params[2];
-      _Wdist = params[3];
+    _Wsmooth = params.smooth_weight;
+    _Wcost = params.costmap_weight;
+    _Wcurve = params.curvature_weight;
+    _Wdist = params.distance_weight;
+
+    _max_turning_radius = params.max_curvature;
+
+    // TODO downsampling ppt to costmap resplution cells. Same with turning angle
+    //  TODO CubicInterpolator
+  }
+
+  /**
+   * @struct CurvatureComputations
+   * @brief Cache common computations between the curvature terms to minimize recomputations
+   */
+  struct CurvatureComputations 
+  {
+    /**
+     * @brief A constructor for smac_planner::CurvatureComputations
+     */
+    CurvatureComputations() {
+      valid = true;
     }
 
-    _max_turning_radius = 7.8; // 15 43 deg ish at a 0.05 resolution. delta phi / delta x. 5 @10 cm for 30 degrees. .78 is 45 deg. 6.5 is 37 deg
-    // try removing "u" from the curvature function, the cost-ed term sign change term, and lowering the magnitude of all the terms
+    bool valid;
+    /**
+     * @brief Check if result is valid for penalty
+     * @return is valid (non-nan, non-inf, and turning angle > max)
+     */
+    bool isValid() {
+      return valid;
+    }
 
-    // preconitioning???
-    // check signs consistent: https://en.wikipedia.org/wiki/Nonlinear_conjugate_gradient_method
-    // downsampling ppt to costmap resplution cells. Same with turning angle
-    //  CubicInterpolator
-    // opt problem 1 at a time and loop (oprimization outer loop not inner loop)
-
-    // pt 0 and N need to not be added or locked in. 
-
-//[planner_server-8] FAILED! try again.
-//[planner_server-8]    0: f: 6.391022e+02 d: 0.00e+00 g: 7.04e+199 h: 0.00e+00 s: 0.00e+00 e:  0 it: 3.45e-06 tt: 3.49e-06
-// D and h is zero but why is g +199?? look at this. A typical number is e3 or e4
-// this happens in all the failures (!)
-  }
+    Eigen::Vector2d delta_xi;
+    Eigen::Vector2d delta_xi_p;
+    double delta_xi_norm{0};
+    double delta_xi_p_norm{0};
+    double delta_phi_i{0};
+    double turning_rad{0};
+    double ki_minus_kmax{0};
+  };
 
   /**
    * @brief Smoother cost function evaluation
@@ -144,12 +120,13 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
 
     // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
-    CostComputations cost_params;
 
     for (uint i = 0; i != NumParameters() / 2; i++) {
       x_index = 2 * i;
       y_index = 2 * i + 1;
       if (i < 1 || i >= NumParameters() / 2 - 1) {
+        gradient[x_index] = 0.0;
+        gradient[y_index] = 0.0;
         continue; 
       }
 
@@ -164,7 +141,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
 
       if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
         costmap_cost = _costmap->getCost(mx, my);
-        addCostResidual(_Wcost, costmap_cost, cost_params, cost_raw);
+        addCostResidual(_Wcost, costmap_cost, cost_raw);
       }
 
     if (gradient != NULL) {
@@ -176,7 +153,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
         addDistanceJacobian(_Wdist, xi, _original_path->at(i), grad_x_raw, grad_y_raw);
 
         if (valid_coords) {
-          addCostJacobian(_Wcost, mx, my, costmap_cost, cost_params, grad_x_raw, grad_y_raw);
+          addCostJacobian(_Wcost, mx, my, costmap_cost, grad_x_raw, grad_y_raw);
         }
 
         gradient[x_index] = grad_x_raw;
@@ -184,10 +161,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       }
     }
 
-
     cost[0] = cost_raw;
-
-    // std::cout << "Cost: " << cost[0] << std::endl;
 
     return true;
   }
@@ -198,6 +172,144 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    */
   virtual int NumParameters() const { return _num_params; }
 
+  /**
+   * @brief Cost function term for steering away from costs
+   * @param weight Weight to apply to function
+   * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
+   * @param r Residual (cost) of term
+   */
+  inline void addCostResidual(
+    const double & weight,
+    const double & value,
+    double & r) const
+  {
+    if (value == FREE || value == UNKNOWN) {
+      return;
+    }
+    // negative term as we're incentivizing away from this
+    r += -1 * weight * (value - MAX_NON_OBSTACLE) * (value - MAX_NON_OBSTACLE);  // objective function value
+    //TODO STEVE this seems to work too and all + signs? r += * weight * (value) * (value );  // objective function value
+    // TODO STEVE r += weight * (value - 128) * (value - 128);  // objective function value
+    // makes residual positive like other terms. (but does it move down when further?) I think this incentives being near 128
+    // add another part of term like vornoid to attract outwards?
+  }
+
+  /**
+   * @brief Cost function derivative term for steering away from costs
+   * @param weight Weight to apply to function
+   * @param mx Point Xi's x coordinate in map frame
+   * @param mx Point Xi's y coordinate in map frame
+   * @param value Point Xi's cost'
+   * @param params computed values to reduce overhead
+   * @param j0 Gradient of X term
+   * @param j1 Gradient of Y term
+   */
+  inline void addCostJacobian(
+    const double & weight,
+    const unsigned int & mx,
+    const unsigned int & my,
+    const double & value,
+    double & j0,
+    double & j1) const
+  {
+    if (value == FREE || value == UNKNOWN) {
+      return;
+    }
+
+    const Eigen::Vector2d grad = getCostmapGradient(mx, my);
+
+    // negative term as we're incentivizing away from this
+    const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
+    // TODO STEVE this seems to work and all positive signs? const double & common_prefix = 2 * weight * (value);
+    // TODO STEVE const double & common_prefix = 2 * weight * (value - 128);
+
+    j0 += common_prefix * grad[0];  // xi x component of partial-derivative
+    j1 += common_prefix * grad[1];  // xi y component of partial-derivative
+  }
+
+  /**
+   * @brief Computing the gradient of the costmap using 
+   * the 2 point numerical differentiation method
+   * @param mx Point Xi's x coordinate in map frame
+   * @param mx Point Xi's y coordinate in map frame
+   * @param params Params reference to store gradients
+   */
+  inline Eigen::Vector2d getCostmapGradient(
+    const unsigned int mx,
+    const unsigned int my) const
+  {
+    double left_one = 0.0;
+    double left_two = 0.0;
+    double left_three = 0.0;
+    double right_one = 0.0;
+    double right_two = 0.0;
+    double right_three = 0.0;
+    double up_one = 0.0;
+    double up_two = 0.0;
+    double up_three = 0.0;
+    double down_one = 0.0;
+    double down_two = 0.0;
+    double down_three = 0.0;
+
+    if (mx < _costmap->sizeX()) {
+      right_one = _costmap->getCost(mx + 1, my);
+    }
+    if (mx + 1 < _costmap->sizeX()) {
+      right_two = _costmap->getCost(mx + 2, my);
+    }
+    if (mx + 2 < _costmap->sizeX()) {
+      right_three = _costmap->getCost(mx + 3, my);
+    }
+
+    if (mx > 0) {
+      left_one = _costmap->getCost(mx - 1, my);
+    }
+    if (mx - 1 > 0) {
+      left_two = _costmap->getCost(mx - 2, my);
+    }
+    if (mx - 2 > 0) {
+      left_three = _costmap->getCost(mx - 3, my);
+    }
+
+    if (my < _costmap->sizeY()) {
+      up_one = _costmap->getCost(mx, my + 1);
+    }
+    if (my + 1 < _costmap->sizeY()) {
+      up_two = _costmap->getCost(mx, my + 2);
+    }
+    if (my + 2 < _costmap->sizeY()) {
+      up_three = _costmap->getCost(mx, my + 3);
+    }
+
+    if (my > 0) {
+      down_one = _costmap->getCost(mx, my - 1);
+    }
+    if (my - 1 > 0) {
+      down_two = _costmap->getCost(mx, my - 2);
+    }
+    if (my - 2 > 0) {
+      down_three = _costmap->getCost(mx, my - 3);
+    }
+
+    // find unit vector that describes that direction
+    // via 5 point taylor series approximation for gradient at Xi
+    // params.gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
+    // params.grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
+
+    // find unit vector that describes that direction
+    // via 7 point taylor series approximation for gradient at Xi
+
+    // TODO STEVE FUCK this is in costmap coordinates not map coordinates, need to convert.
+    // TODO signs?
+    Eigen::Vector2d gradient;
+    gradient[0] = (45 * up_one - 9 * up_two + up_three - 45* down_one + 9 * down_two - down_three) / 60;
+    gradient[1] = (45 * right_one - 9 * right_two + right_three - 45 * left_one + 9 * left_two - left_three) / 60;
+    gradient.normalize();
+    return gradient;
+  }
+
+protected:
   /**
    * @brief Cost function term for maximum curved paths
    * @param weight Weight to apply to function
@@ -286,105 +398,9 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 - (common_suffix * ones));
     const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
     j0 += weight * (jacobian_im1[0] - 2 * jacobian[0] + jacobian_ip1[0]);  // xi x component of partial-derivative
-    j1 += weight * (jacobian_im1[1] - 2 * jacobian[1] + jacobian_ip1[1]);  // xi y component of partial-derivative      
+    j1 += weight * (jacobian_im1[1] - 2 * jacobian[1] + jacobian_ip1[1]);  // xi y component of partial-derivative
   }
 
-  /**
-   * @brief Cost function term for steering away from costs
-   * @param weight Weight to apply to function
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param r Residual (cost) of term
-   */
-  inline void addCostResidual(
-    const double & weight,
-    const double & value,
-    CostComputations & params,
-    double & r) const
-  {
-    if (value == FREE || value == UNKNOWN) {
-      return;
-    }
-    // negative term as we're incentivizing away from this
-    r += -1 * weight * (value - MAX_NON_OBSTACLE) * (value - MAX_NON_OBSTACLE);  // objective function value
-    //STEVE this seems to work too and all + signs? r += * weight * (value) * (value );  // objective function value
-    // STEVE r += weight * (value - 128) * (value - 128);  // objective function value
-    // makes residual positive like other terms. (but does it move down when further?) I think this incentives being near 128
-    // add another part of term like vornoid to attract outwards?
-  }
-
-  /**
-   * @brief Cost function derivative term for steering away from costs
-   * @param weight Weight to apply to function
-   * @param mx Point Xi's x coordinate in map frame
-   * @param mx Point Xi's y coordinate in map frame
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addCostJacobian(
-    const double & weight,
-    const unsigned int & mx,
-    const unsigned int & my,
-    const double & value,
-    CostComputations & params,
-    double & j0,
-    double & j1) const
-  {
-    if (value == FREE || value == UNKNOWN) {
-      return;
-    }
-
-    getCostmapGradient(mx, my, params);
-
-    // negative term as we're incentivizing away from this
-    const double & common_prefix = -2 * weight * (value - MAX_NON_OBSTACLE);
-    // STEVE this seems to work and all positive signs? const double & common_prefix = 2 * weight * (value);
-    // STEVE const double & common_prefix = 2 * weight * (value - 128);
-
-    j0 += common_prefix * params.gradx;  // xi x component of partial-derivative
-    j1 += common_prefix * params.grady;  // xi y component of partial-derivative
-  }
-
-  /**
-   * @brief Cost function derivative term for steering away changes in pose
-   * @param weight Weight to apply to function
-   * @param xi Point Xi for evaluation
-   * @param xi_original original point Xi for evaluation
-   * @param r Residual (cost) of term
-   */
-  inline void addDistanceResidual(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
-    double& r) const
-  {
-    r += weight * (xi - xi_original).dot(xi - xi_original);
-
-
-  }
-
-  /**
-   * @brief Cost function derivative term for steering away changes in pose
-   * @param weight Weight to apply to function
-   * @param xi Point Xi for evaluation
-   * @param xi_original original point Xi for evaluation
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addDistanceJacobian(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
-    double & j0,
-    double & j1) const
-  {
-    j0 += weight * 2 * (xi[0] - xi_original[0]);
-    j1 += weight * 2 * (xi[1] - xi_original[1]);
-  }
-
-protected:
   /**
    * @brief Cost function term for smooth paths
    * @param weight Weight to apply to function
@@ -431,6 +447,41 @@ protected:
   }
 
   /**
+   * @brief Cost function derivative term for steering away changes in pose
+   * @param weight Weight to apply to function
+   * @param xi Point Xi for evaluation
+   * @param xi_original original point Xi for evaluation
+   * @param r Residual (cost) of term
+   */
+  inline void addDistanceResidual(
+    const double & weight,
+    const Eigen::Vector2d & xi,
+    const Eigen::Vector2d & xi_original,
+    double& r) const
+  {
+    r += weight * (xi - xi_original).dot(xi - xi_original);  // objective function value
+  }
+
+  /**
+   * @brief Cost function derivative term for steering away changes in pose
+   * @param weight Weight to apply to function
+   * @param xi Point Xi for evaluation
+   * @param xi_original original point Xi for evaluation
+   * @param j0 Gradient of X term
+   * @param j1 Gradient of Y term
+   */
+  inline void addDistanceJacobian(
+    const double & weight,
+    const Eigen::Vector2d & xi,
+    const Eigen::Vector2d & xi_original,
+    double & j0,
+    double & j1) const
+  {
+    j0 += weight * 2 * (xi[0] - xi_original[0]);  // xi y component of partial-derivative
+    j1 += weight * 2 * (xi[1] - xi_original[1]);  // xi y component of partial-derivative
+  }
+
+  /**
    * @brief Computing the normalized orthogonal component of 2 vectors
    * @param a Vector
    * @param b Vector
@@ -445,91 +496,6 @@ protected:
     const double & b_norm) const
   {
     return (a - (b * a.dot(b) / b.squaredNorm())) / (a_norm * b_norm);
-  }
-
-  /**
-   * @brief Computing the gradient of the costmap using 
-   * the 2 point numerical differentiation method
-   * @param mx Point Xi's x coordinate in map frame
-   * @param mx Point Xi's y coordinate in map frame
-   * @param params Params reference to store gradients
-   */
-  inline void getCostmapGradient(
-    const unsigned int mx,
-    const unsigned int my,
-    CostComputations & params) const
-  {
-    double left_one = 0.0;
-    double left_two = 0.0;
-    double left_three = 0.0;
-    double right_one = 0.0;
-    double right_two = 0.0;
-    double right_three = 0.0;
-    double up_one = 0.0;
-    double up_two = 0.0;
-    double up_three = 0.0;
-    double down_one = 0.0;
-    double down_two = 0.0;
-    double down_three = 0.0;
-
-    if (mx < _costmap->sizeX()) {
-      right_one = _costmap->getCost(mx + 1, my);
-    }
-    if (mx + 1 < _costmap->sizeX()) {
-      right_two = _costmap->getCost(mx + 2, my);
-    }
-    if (mx + 2 < _costmap->sizeX()) {
-      right_three = _costmap->getCost(mx + 3, my);
-    }
-
-    if (mx > 0) {
-      left_one = _costmap->getCost(mx - 1, my);
-    }
-    if (mx - 1 > 0) {
-      left_two = _costmap->getCost(mx - 2, my);
-    }
-    if (mx - 2 > 0) {
-      left_three = _costmap->getCost(mx - 3, my);
-    }
-
-    if (my < _costmap->sizeY()) {
-      up_one = _costmap->getCost(mx, my + 1);
-    }
-    if (my + 1 < _costmap->sizeY()) {
-      up_two = _costmap->getCost(mx, my + 2);
-    }
-    if (my + 2 < _costmap->sizeY()) {
-      up_three = _costmap->getCost(mx, my + 3);
-    }
-
-    if (my > 0) {
-      down_one = _costmap->getCost(mx, my - 1);
-    }
-    if (my - 1 > 0) {
-      down_two = _costmap->getCost(mx, my - 2);
-    }
-    if (my - 2 > 0) {
-      down_three = _costmap->getCost(mx, my - 3);
-    }
-
-    // find unit vector that describes that direction
-    // via 5 point taylor series approximation for gradient at Xi
-    // params.gradx = (8.0 * up_one - up_two - 8.0 * down_one + down_two) / 12;
-    // params.grady = (8.0 * right_one - right_two - 8.0 * left_one + left_two) / 12;
-
-    // find unit vector that describes that direction
-    // via 7 point taylor series approximation for gradient at Xi
-
-    // TODO STEVE FUCK this is in costmap coordinates not map coordinates, need to convert.
-    // TODO signs?
-    params.gradx = (45 * up_one - 9 * up_two + up_three - 45* down_one + 9 * down_two - down_three) / 60;
-    params.grady = (45 * right_one - 9 * right_two + right_three - 45 * left_one + 9 * left_two - left_three) / 60;
-    const double grad_mag = hypot(params.gradx, params.grady);
-    if (grad_mag > EPSILON) {
-      params.gradx /= grad_mag;
-      params.grady /= grad_mag;     
-    }
-
   }
 
   int _num_params;

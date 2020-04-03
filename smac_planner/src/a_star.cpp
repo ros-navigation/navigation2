@@ -180,7 +180,9 @@ bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float 
     else if (best_heuristic_node_.first < tolerance_) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
-      if (approach_iterations > getOnApproachMaxIterations() || iterations + 1 == getMaxIterations()) {
+      if (approach_iterations > getOnApproachMaxIterations() ||
+        iterations + 1 == getMaxIterations())
+      {
         Node * node = & graph_->at(best_heuristic_node_.second);
         return backtracePath(node, path);
       }

@@ -278,7 +278,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double> >(b-a);
-  cout << "It took " << time_span.count() << " seconds with " << num_iterations << " iterations." <<  endl;
+  cout << "It took " << time_span.count() <<
+    " seconds with " << num_iterations << " iterations." <<  endl;
 #endif
 
   return plan;

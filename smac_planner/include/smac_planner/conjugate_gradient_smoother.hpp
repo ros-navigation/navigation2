@@ -30,6 +30,7 @@
 #include "Eigen/Core"
 
 // TODO separate server instance for smoothing if desireable
+// TODO separate tuning server instance for refining for your needs
 
 namespace smac_planner
 {
@@ -54,35 +55,34 @@ public:
   /**
    * @brief Initialization of the smoother
    */
-  void initialize(const bool & debug) {
-    debug_ = debug;
+  void initialize(const OptimizerParams params) {
+    debug_ = params.debug;
 
     // General Params
+    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
+    options_.line_search_type = ceres::WOLFE;
+    options_.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
+    options_.line_search_interpolation_type = ceres::CUBIC;
 
-    // OPTIMIZATION tune parameters
-    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT; // LBFGS BFGS NONLINEAR_CONJUGATE_GRADIENT STEEPEST_DESCENT (less resets but still not converging sometimes or with zero)
-    options_.line_search_type = ceres::WOLFE;                                  // WOLFE, ARMIJO
-    options_.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;         // FLETCHER_REEVES, POLAK_RIBIERE, HESTENES_STIEFEL
-    options_.line_search_interpolation_type = ceres::CUBIC;                    // CUBIC, QUADRATIC, BISECTION
-    options_.max_num_iterations = 500;                                         // 50 default
-    options_.max_solver_time_in_seconds = 1.5;                               // 1e4 default. 100ms
+    options_.max_num_iterations = params.max_iterations;
+    options_.max_solver_time_in_seconds = params.max_time;
 
-    options_.min_line_search_step_size = 1e-5; //50 did something //1e-9 default IN USE??
-    options_.max_num_line_search_step_size_iterations = 50;// 20 default
-    options_.line_search_sufficient_function_decrease = 1e-50;// 1e-4 default
-    // options_.max_line_search_step_contraction = ; // 1e-3 default
-    // options_.min_line_search_step_contraction = ; // 0.6 default
-    // options_.max_num_line_search_direction_restarts = 20; // 5 default
-    // options_.line_search_sufficient_curvature_decrease = 0.9;// 0.9 default
-    // options_.max_line_search_step_expansion = 10; // 10 default
+    options_.function_tolerance = params.fn_tol;
+    options_.gradient_tolerance = params.gradient_tol;
+    options_.parameter_tolerance = params.param_tol;
 
-    options_.function_tolerance = 1e-9; // 1e-6 deafult, TODO results in warning 3: also cuases a crash to specifically add??
-    // options_.gradient_tolerance = ; // 1e-10 default, maybe important?
-    options_.parameter_tolerance = 1e-15; // 1e-8  tol
-
-    // LBFGS/BFGS Params
-    // options_.max_lbfs_rank
-    // options_.use_approximate_eigenvalue_bfgs_scaling
+    options_.min_line_search_step_size = params.advanced.min_line_search_step_size;
+    options_.max_num_line_search_step_size_iterations =
+      params.advanced.max_num_line_search_step_size_iterations;
+    options_.line_search_sufficient_function_decrease =
+      params.advanced.line_search_sufficient_function_decrease;
+    options_.max_line_search_step_contraction = params.advanced.max_line_search_step_contraction;
+    options_.min_line_search_step_contraction = params.advanced.min_line_search_step_contraction;
+    options_.max_num_line_search_direction_restarts =
+      params.advanced.max_num_line_search_direction_restarts;
+    options_.line_search_sufficient_curvature_decrease =
+      params.advanced.line_search_sufficient_curvature_decrease;
+    options_.max_line_search_step_expansion = params.advanced.max_line_search_step_expansion;
 
     if (debug_) {
       options_.minimizer_progress_to_stdout = true;
@@ -93,12 +93,15 @@ public:
 
   /**
    * @brief Initialization of the smoother
+   * @param path Reference to path
+   * @param costmap Pointer to minimal costmap
+   * @param smoother parameters weights
    * @return If smoothing was successful
    */
-  bool smooth(std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap, const std::vector<double> params = std::vector<double>())
+  bool smooth(
+    std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap,
+    const SmootherParams & params)
   {
-
-    //OPTIMIZATION move this to planner to cut down on conversions
     double parameters[path.size() * 2];
     for (uint i = 0; i != path.size(); i++) {
       parameters[2 * i] = path[i][0];
@@ -106,7 +109,7 @@ public:
     }
 
     ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(& path, path.size(), costmap, params));
+    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(& path, costmap, params));
     ceres::Solve(options_, problem, parameters, &summary);
 
     if (debug_) {
@@ -117,7 +120,6 @@ public:
       return false;
     }
 
-    //OPTIMIZATION move this to planner to cut down on conversions
     for (uint i = 0; i != path.size(); i++) {
       path[i][0] = parameters[2 * i];
       path[i][1] = parameters[2 * i + 1];
