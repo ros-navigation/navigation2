@@ -290,6 +290,7 @@ float AStarAlgorithm::getTraversalCost(
 
   // range of values non-obstacle [0, 252].
   // Must have non-zero cost so we add one to each for [1, 253].
+  // TODO should I remap this? See navfn.hpp
   return travel_cost_scale_ * ((node_cost + 1.0) / INSCRIBED);
 }
 

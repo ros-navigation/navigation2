@@ -124,9 +124,9 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     for (uint i = 0; i != NumParameters() / 2; i++) {
       x_index = 2 * i;
       y_index = 2 * i + 1;
+      gradient[x_index] = 0.0;
+      gradient[y_index] = 0.0;
       if (i < 1 || i >= NumParameters() / 2 - 1) {
-        gradient[x_index] = 0.0;
-        gradient[y_index] = 0.0;
         continue; 
       }
 

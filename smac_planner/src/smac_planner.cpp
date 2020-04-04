@@ -79,16 +79,16 @@ void SmacPlanner::configure(
   std::string neighborhood_for_search;
 
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".tolerance", rclcpp::ParameterValue(0.25));
+    node_, name + ".tolerance", rclcpp::ParameterValue(0.125));
   tolerance_ = static_cast<float>(node_->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".max_iterations", rclcpp::ParameterValue(2000)); /*TODO set reasoanble number, also, per request depending on length?*/
+    node_, name + ".max_iterations", rclcpp::ParameterValue(20000)); /*TODO set reasoanble number, also, per request depending on length?*/
   node_->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(3.0));
+    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(7.0));
   node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".revisit_neighbors", rclcpp::ParameterValue(true)); /* TODO do CPU testing on large maps, paths seem permissible and similar CPU in short */

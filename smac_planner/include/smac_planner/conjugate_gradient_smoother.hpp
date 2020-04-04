@@ -58,9 +58,12 @@ public:
   void initialize(const OptimizerParams params) {
     debug_ = params.debug;
 
+    //google::SetVLOGLevel("*", 2);
+
     // General Params
-    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
+    options_.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;  // max_lbfgs_rank,use_approximate_eigenvalue_bfgs_scaling,  BFGS, LBFGS, NONLINEAR_CONJUGATE_GRADIENT
     options_.line_search_type = ceres::WOLFE;
+    // options_.use_approximate_eigenvalue_bfgs_scaling = true;  // alot more staable in converging legitly. 4 runs still helps alot tho
     options_.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
     options_.line_search_interpolation_type = ceres::CUBIC;
 
