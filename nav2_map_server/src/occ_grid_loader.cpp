@@ -41,6 +41,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "yaml-cpp/yaml.h"
 #include "nav2_util/geometry_utils.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 using namespace std::chrono_literals;
 
@@ -126,24 +127,31 @@ OccGridLoader::LoadParameters OccGridLoader::load_map_yaml(const std::string & y
   return loadParameters;
 }
 
-nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+bool OccGridLoader::loadMapFromYaml(
+  std::string yaml_file,
+  std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
-
-  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  if (yaml_file.empty()) {
+    RCLCPP_ERROR(node_->get_logger(), "YAML file name is empty, can't load!");
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+    return false;
+  }
+  RCLCPP_INFO(node_->get_logger(), "Loading yaml file: %s", yaml_file.c_str());
   LoadParameters loadParameters;
   try {
-    loadParameters = load_map_yaml(yaml_filename_);
+    loadParameters = load_map_yaml(yaml_file);
   } catch (YAML::Exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed processing YAML file %s at position (%d:%d) for reason: %s",
-      yaml_filename_.c_str(), e.mark.line, e.mark.column, e.what());
-    throw std::runtime_error("Failed to load map yaml file.");
+      yaml_file.c_str(), e.mark.line, e.mark.column, e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    return false;
   } catch (std::exception & e) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to parse map YAML loaded from file %s for reason: %s",
-      yaml_filename_.c_str(), e.what());
-    throw std::runtime_error("Failed to load map yaml file.");
+      yaml_file.c_str(), e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    return false;
   }
 
   try {
@@ -152,8 +160,20 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to load image file %s for reason: %s",
       loadParameters.image_file_name.c_str(), e.what());
+    response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
+    return false;
+  }
+  return true;
+}
 
-    throw std::runtime_error("Failed to load map image file.");
+nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
+
+  // initialize Occupancy Grid msg - needed by loadMapFromYaml
+  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  if (!loadMapFromYaml(yaml_filename_)) {
+    throw std::runtime_error("Failed to load map yaml file: " + yaml_filename_);
   }
 
   // Create a service callback handle
@@ -167,6 +187,32 @@ nav2_util::CallbackReturn OccGridLoader::on_configure(const rclcpp_lifecycle::St
 
   // Create a service that provides the occupancy grid
   occ_service_ = node_->create_service<nav_msgs::srv::GetMap>(service_name_, handle_occ_callback);
+
+    // Create the load_map service callback handle
+  auto load_map_callback = [this](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) -> void {
+      // // if not in ACTIVE state, ignore request
+      if (node_->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        RCLCPP_WARN(
+          node_->get_logger(),
+          "Received LoadMap request but not in ACTIVE state, ignoring!");
+        return;
+      }
+      RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Handling LoadMap request");
+      // Load from file
+      if (loadMapFromYaml(request->map_url, response)) {
+        // response->map = *msg_;
+        response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
+        occ_pub_->publish(*msg_);  // publish new map
+      }
+    };
+
+  // Create a service that loads the occupancy grid from a file
+  load_map_service_ = node_->create_service<nav2_msgs::srv::LoadMap>(
+    load_map_service_name_,
+    load_map_callback);
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
