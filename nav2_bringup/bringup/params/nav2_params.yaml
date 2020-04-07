@@ -232,12 +232,42 @@ map_server:
 
 planner_server:
   ros__parameters:
-    planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
+    planner_plugin_types: ["smac_planner/SmacPlanner"] #nav2_navfn_planner/NavfnPlanner #smac_planner/SmacPlanner 
     planner_plugin_ids: ["GridBased"]
+    GridBased.use_astar: true # navfn only
     use_sim_time: True
-    GridBased.tolerance: 2.0
-    GridBased.use_astar: false
-    GridBased.allow_unknown: true
+
+    GridBased:
+      tolerance: 0.5 # tolerance for planning if unable to reach exact pose, in meters
+      allow_unknown: false # allow traveling in unknown space
+      travel_cost_scale: 0.7 # [0,1] metric for how much you value staying out of higher-cost spaces (higher more adverse)
+      max_iterations: -1 # maximum total iterations to search for before returning
+      max_on_approach_iterations: 1000 # maximum number of iterations to attempt to reach goal once in tolerance
+      smooth_path: true # Whether to smooth searched path
+      neighborhood_for_search: "MOORE"  # 8 connected
+
+      smoother:
+        # smoother weights
+        smoother:
+          w_curve: 1.5
+          w_dist: 15000.0
+          w_smooth: 15000.0
+          w_cost: 0.0
+          max_curve: 7.8
+        # I do not recommend typical users mess with this other than max_time if they need it faster or slower to continue refining
+        optimizer:
+          max_time: 0.10
+          max_iterations: 500
+          debug_optimizer: false
+          gradient_tol: 1.0e-10
+          fn_tol: 1.0e-7
+          param_tol: 1.0e-15
+          advanced:
+            min_line_search_step_size: 1.0e-20
+            max_num_line_search_step_size_iterations: 50
+            line_search_sufficient_function_decrease: 1.0e-20
+            max_num_line_search_direction_restarts: 10
+            max_line_search_step_expansion: 50
 
 planner_server_rclcpp_node:
   ros__parameters:

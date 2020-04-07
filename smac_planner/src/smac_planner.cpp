@@ -32,8 +32,9 @@
 // total cost path caching
 // astar timeout, max duration
 // way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
-//  separate server instance for smoothing if desireable
+//   server  for smoothing alone
 //  separate tuning server instance for refining for your needs
+// inconsistent _param or param_ between files
 
 #include <string>
 #include <memory>
@@ -51,7 +52,6 @@ using namespace std;
 SmacPlanner::SmacPlanner()
 : a_star_(nullptr),
   smoother_(nullptr),
-  tf_(nullptr),
   node_(nullptr),
   costmap_(nullptr)
 {
@@ -70,7 +70,6 @@ void SmacPlanner::configure(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   node_ = parent;
-  tf_ = tf;
   costmap_ = costmap_ros->getCostmap();
   name_ = name;
   global_frame_ = costmap_ros->getGlobalFrameID();
@@ -79,10 +78,10 @@ void SmacPlanner::configure(
   int max_iterations;
   int max_on_approach_iterations;
   float travel_cost_scale;
-  bool debug_optimizer;
   bool smooth_path;
   std::string neighborhood_for_search;
 
+  // General planner params
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".tolerance", rclcpp::ParameterValue(0.125));
   tolerance_ = static_cast<float>(node_->get_parameter(name + ".tolerance").as_double());
@@ -93,7 +92,7 @@ void SmacPlanner::configure(
     node_, name + ".max_iterations", rclcpp::ParameterValue(-1)); /*TODO set reasoanble number, also, per request depending on length?*/
   node_->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(0.4));
+    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(0.7));
   node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
@@ -101,9 +100,6 @@ void SmacPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".smooth_path", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".smooth_path", smooth_path);
-  nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".debug_optimizer", rclcpp::ParameterValue(false)); /*TODO default false*/
-  node_->get_parameter(name + ".debug_optimizer", debug_optimizer);
 
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -236,11 +232,16 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     return plan;
   }
 
+  // Downsample to for smoothing
+  const int downsample_ratio = 2;
   std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(path.size());
-  plan.poses.reserve(path.size());
+  path_world.reserve(path.size() / downsample_ratio);
+  plan.poses.reserve(path.size() / downsample_ratio);
 
   for (int i = path.size() - 1; i >= 0; --i) {
+    if (i % downsample_ratio == 0) {
+      continue;
+    }
     unsigned int index_x, index_y;
     double world_x, world_y;
     costmap_->indexToCells(path[i], index_x, index_y);

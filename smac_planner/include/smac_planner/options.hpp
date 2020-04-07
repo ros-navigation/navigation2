@@ -15,6 +15,10 @@
 #ifndef SMAC_PLANNER__OPTIONS_HPP_
 #define SMAC_PLANNER__OPTIONS_HPP_
 
+#include <string>
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
+
 namespace smac_planner
 {
 
@@ -44,6 +48,38 @@ struct SmootherParams
     curvature_weight(curve),
     max_curvature(max_curve)
   {
+  }
+
+  /**
+   * @brief A constructor for smac_planner::SmootherParams
+   */
+  SmootherParams()
+  {
+  }
+
+  /**
+   * @brief Get params from ROS parameter
+   * @param node_ Ptr to node
+   * @param name Name of plugin
+   */
+  void get(nav2_util::LifecycleNode::SharedPtr node_, const std::string & name)
+  {
+    // Smoother params
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.smoother.w_curve", rclcpp::ParameterValue(1.5));
+    node_->get_parameter(name + ".smoother.smoother.w_curve", curvature_weight);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.smoother.w_cost", rclcpp::ParameterValue(0.0));
+    node_->get_parameter(name + ".smoother.smoother.w_cost", costmap_weight);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.smoother.w_dist", rclcpp::ParameterValue(15000.0));
+    node_->get_parameter(name + ".smoother.smoother.w_dist", distance_weight);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.smoother.w_smooth", rclcpp::ParameterValue(15000.0));
+    node_->get_parameter(name + ".smoother.smoother.w_smooth", smooth_weight);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.smoother.max_curve", rclcpp::ParameterValue(7.8));
+    node_->get_parameter(name + ".smoother.smoother.max_curve", max_curvature);
   }
 
   double smooth_weight{0.0};
@@ -88,7 +124,7 @@ struct OptimizerParams
     }
 
     double min_line_search_step_size;  // Ceres default: 1e-9
-    double max_num_line_search_step_size_iterations;  // Ceres default: 20
+    int max_num_line_search_step_size_iterations;  // Ceres default: 20
     double line_search_sufficient_function_decrease;  // Ceres default: 1e-4
     int max_num_line_search_direction_restarts;  // Ceres default: 5
 
@@ -97,6 +133,61 @@ struct OptimizerParams
     double line_search_sufficient_curvature_decrease;  // Ceres default: 0.9
     int max_line_search_step_expansion;  // Ceres default: 10
   };
+
+  /**
+   * @brief Get params from ROS parameter
+   * @param node_ Ptr to node
+   * @param name Name of plugin
+   */
+  void get(nav2_util::LifecycleNode::SharedPtr node_, const std::string & name)
+  {
+    // Optimizer params
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.param_tol", rclcpp::ParameterValue(1e-15));
+    node_->get_parameter(name + ".smoother.optimizer.param_tol", param_tol);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.fn_tol", rclcpp::ParameterValue(1e-7));
+    node_->get_parameter(name + ".smoother.optimizer.fn_tol", fn_tol);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.gradient_tol", rclcpp::ParameterValue(1e-10));
+    node_->get_parameter(name + ".smoother.optimizer.gradient_tol", gradient_tol);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.max_iterations", rclcpp::ParameterValue(500));
+    node_->get_parameter(name + ".smoother.optimizer.max_iterations", max_iterations);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.max_time", rclcpp::ParameterValue(0.100));
+    node_->get_parameter(name + ".smoother.optimizer.max_time", max_time);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.debug_optimizer", rclcpp::ParameterValue(false));
+    node_->get_parameter(name + ".smoother.optimizer.debug_optimizer", debug);
+
+    // Optimizer advanced params
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.advanced.min_line_search_step_size",
+      rclcpp::ParameterValue(1e-20));
+    node_->get_parameter(name + ".smoother.optimizer.advanced.min_line_search_step_size",
+      advanced.min_line_search_step_size);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.advanced.max_num_line_search_step_size_iterations",
+      rclcpp::ParameterValue(50));
+    node_->get_parameter(name + ".smoother.optimizer.advanced.max_num_line_search_step_size_iterations",
+      advanced.max_num_line_search_step_size_iterations);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.advanced.line_search_sufficient_function_decrease",
+      rclcpp::ParameterValue(1e-20));
+    node_->get_parameter(name + ".smoother.optimizer.advanced.line_search_sufficient_function_decrease",
+      advanced.line_search_sufficient_function_decrease);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.advanced.max_num_line_search_direction_restarts",
+      rclcpp::ParameterValue(10));
+    node_->get_parameter(name + ".smoother.optimizer.advanced.max_num_line_search_direction_restarts",
+      advanced.max_num_line_search_direction_restarts);
+    nav2_util::declare_parameter_if_not_declared(
+      node_, name + ".smoother.optimizer.advanced.max_line_search_step_expansion",
+      rclcpp::ParameterValue(50));
+    node_->get_parameter(name + ".smoother.optimizer.advanced.max_line_search_step_expansion",
+      advanced.max_line_search_step_expansion);
+  }
 
   bool debug;
   int max_iterations;  // Ceres default: 50

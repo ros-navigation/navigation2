@@ -3,7 +3,7 @@
 <package format="3">
   <name>smac_planner</name>
   <version>0.3.0</version>
-  <description>TODO</description>
+  <description>Smac global planning plugin</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
 
