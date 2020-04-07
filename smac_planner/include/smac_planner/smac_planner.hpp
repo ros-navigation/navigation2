@@ -20,7 +20,7 @@
 #include <string>
 
 #include "smac_planner/a_star.hpp"
-#include "smac_planner/conjugate_gradient_smoother.hpp"
+#include "smac_planner/nonlinear_conjugate_gradient_smoother.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -55,7 +55,6 @@ public:
     rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
-
 
   /**
    * @brief Cleanup lifecycle node

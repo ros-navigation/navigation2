@@ -13,8 +13,9 @@
 // limitations under the License. Reserved.
 
 // benefits list:
-//  - for tolerance, only search once
-//  - Against NavFns: we have inflation + dynamic processing: cached gradiant map not used
+//  - for tolerance, only search once (max iterations on appraoch meeting tolerance), if set tol low and iterations low then can use to actually compute to a scale before target
+//      e.g. compute for the next ~N meters only on way towards something 
+//  - Against NavFns: we have inflation + dynamic processing: cached gradiant map not used. reusibility, cannot be built on for nonholonomic
 //  - not searching then backtracing with grad descent for 2x go through
 //  - lower memory (?) and faster (?)
 //  - modern data structures & carefully optimized & generic for use in other planning problems
@@ -22,12 +23,17 @@
 //  - caching paths rather than recomputing needlessly if they're still good
 //  - network planner
 //  - non-circular footprints, diff/omni/ackermann, covering all classes of ground robots. circl diff/omni A*, ackerman hybrid, arbitrary diff/omni A* if relatively small, hybrid is large
+//  - dials for Astar quality (can be quick and dirty or slow and smooth) then dials for the optimizer to suit (quick once over, or really smooth out a jazzed path)
+//  - disable max iterations / tolerance with 0 / -1
+//  - Do low potential field in all areas -- this should be the new defacto-default (really should have been already but ppl ignore it). Footprint + inflation important
+//  - describe why and when on the 4 vs 8 connected
 
 // TODOs
 // total cost path caching
 // astar timeout, max duration
 // way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
-// maybe also ompl planner while I'm at it if I'm having the smoother https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp
+//  separate server instance for smoothing if desireable
+//  separate tuning server instance for refining for your needs
 
 #include <string>
 #include <memory>
@@ -70,10 +76,9 @@ void SmacPlanner::configure(
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   bool allow_unknown;
-  int max_iterations;  // TODO should be for each plan not total. some metric proportional to distance and map size with generous margin
+  int max_iterations;
   int max_on_approach_iterations;
   float travel_cost_scale;
-  bool revisit_neighbors;
   bool debug_optimizer;
   bool smooth_path;
   std::string neighborhood_for_search;
@@ -85,23 +90,19 @@ void SmacPlanner::configure(
     node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".max_iterations", rclcpp::ParameterValue(20000)); /*TODO set reasoanble number, also, per request depending on length?*/
+    node_, name + ".max_iterations", rclcpp::ParameterValue(-1)); /*TODO set reasoanble number, also, per request depending on length?*/
   node_->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(7.0));
+    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(0.4));
   node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".revisit_neighbors", rclcpp::ParameterValue(true)); /* TODO do CPU testing on large maps, paths seem permissible and similar CPU in short */
-      //bisualize heyristic search/score to figure out revisit neighbors param / quad area V. In rviz. 
-  node_->get_parameter(name + ".revisit_neighbors", revisit_neighbors);
-  nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(200));
+    node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node_->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".smooth_path", rclcpp::ParameterValue(true));
   node_->get_parameter(name + ".smooth_path", smooth_path);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".debug_optimizer", rclcpp::ParameterValue(true)); /*TODO default false*/
+    node_, name + ".debug_optimizer", rclcpp::ParameterValue(false)); /*TODO default false*/
   node_->get_parameter(name + ".debug_optimizer", debug_optimizer);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -158,7 +159,7 @@ void SmacPlanner::deactivate()
   RCLCPP_INFO(
     node_->get_logger(), "Deactivating plugin %s of type SmacPlanner",
     name_.c_str());
-  raw_plan_publisher_->on_deactivate();    
+  raw_plan_publisher_->on_deactivate();
 }
 
 void SmacPlanner::cleanup()
@@ -167,7 +168,8 @@ void SmacPlanner::cleanup()
     node_->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
     name_.c_str());
   a_star_.reset();
-  raw_plan_publisher_.reset();    
+  smoother_.reset();
+  raw_plan_publisher_.reset(); 
 }
 
 nav_msgs::msg::Path SmacPlanner::createPlan(

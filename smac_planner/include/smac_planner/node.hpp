@@ -109,7 +109,7 @@ public:
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  bool wasVisited()
+  bool & wasVisited()
   {
     return was_visited;
   }
@@ -127,7 +127,7 @@ public:
    * @brief Gets if cell is currently queued in search
    * @param If cell was queued
    */
-  bool isQueued()
+  bool & isQueued()
   {
     return is_queued;
   }

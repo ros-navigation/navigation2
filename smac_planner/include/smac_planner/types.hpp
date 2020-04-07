@@ -25,7 +25,7 @@
 namespace smac_planner
 {
 
-typedef std::unordered_map<unsigned int, Node> Graph;
+typedef std::vector<Node> Graph;
 
 typedef std::vector<Node *> NodeVector;
 

@@ -51,7 +51,6 @@ public:
    * @param travel_cost_scale Cost to travel from adjacent nodes to another
    * @param allow_unknown Allow search in unknown space, good for navigation while mapping
    * @param max_iterations Maximum number of iterations to use while expanding search
-   * @param revisit_neighbors Whether to revisit visited neighbors to reduce costs,
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
@@ -60,7 +59,6 @@ public:
     const float & travel_cost_scale,
     const bool & allow_unknown,
     int & max_iterations,
-    const bool & revisit_neighbors,
     const int & max_on_approach_iterations);
 
   /**
@@ -148,7 +146,7 @@ private:
    * @param node_it Iterator reference of the node
    * @return whether this node is valid and collision free
    */
-  inline bool isNodeValid(const unsigned int & i, Graph::iterator & node_it);
+  inline bool isNodeValid(const unsigned int & i, Node * & node_it);
 
   /**
    * @brief Get a vector of valid node pointers from relative locations
@@ -158,14 +156,8 @@ private:
    */
   inline void getValidNodes(
     const std::vector<int> & lookup_table,
+    const int & i,
     NodeVector & neighbors);
-
-  /**
-   * @brief Get cost of a node from graph
-   * @param node Node index
-   * @return Reference to node cost
-   */
-  inline float & getNodeCost(const unsigned int & node);
 
   /**
    * @brief Get cost of traversal between nodes
@@ -173,7 +165,7 @@ private:
    * @param node Node index of new
    * @return Reference traversal cost between the nodes
    */
-  inline float getTraversalCost(const unsigned int & lastNode, const unsigned int & node);
+  inline float getTraversalCost(Node * & lastNode, Node * & node);
 
   /**
    * @brief Get cost of heuristic of node
@@ -206,7 +198,7 @@ private:
    * @brief Get tolerance, in node nodes
    * @return Reference to tolerance parameter
    */
-  inline float & getTolerance();
+  inline float & getToleranceHeuristic();
 
   /**
    * @brief Get size of graph in X
@@ -233,11 +225,11 @@ private:
   inline void clearQueue();
 
   float travel_cost_scale_;
+  float neutral_cost_;
   bool traverse_unknown_;
   int max_iterations_;
   int max_on_approach_iterations_;
   float tolerance_;
-  bool revisit_neighbors_;
   unsigned int x_size_;
   unsigned int y_size_;
 
@@ -249,6 +241,8 @@ private:
   std::unique_ptr<NodeQueue> queue_;
 
   Neighborhood neighborhood_;
+  std::vector<int> van_neumann_neighborhood;
+  std::vector<int> moore_neighborhood;
 
   NodeHeuristicPair best_heuristic_node_;
 };
