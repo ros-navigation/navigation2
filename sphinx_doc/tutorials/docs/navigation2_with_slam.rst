@@ -85,7 +85,7 @@ You should see the map update live! To save this map to file:
 
   ``ros2 run nav2_map_server map_saver -f ~/map``
 
-.. image:: images/Navigation2_with_SLAM/navigation_with_slam.gif
+.. image:: images/Navigation2_with_SLAM/navigation2_with_slam.gif
     :width: 700px
     :alt: Navigation2 with SLAM
     :align: center
