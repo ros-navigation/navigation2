@@ -84,14 +84,17 @@ public:
 
 protected:
   std::unique_ptr<AStarAlgorithm> a_star_;
-  std::unique_ptr<CGSmoother> smoother_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::unique_ptr<Smoother> smoother_;
   nav2_util::LifecycleNode::SharedPtr node_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string global_frame_, name_;
   float tolerance_;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr raw_plan_publisher_;
-  bool publish_raw_plan_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug1_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug2_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug3_pub_;
+  SmootherParams smoother_params_;
+  OptimizerParams optimizer_params_;
 };
 
 }  // namespace smac_planner

@@ -130,27 +130,47 @@ void SmacPlanner::configure(
       neighborhood_for_search.c_str());
   }
 
+  if (max_on_approach_iterations <= 0) {
+    RCLCPP_INFO(node_->get_logger(), "On approach iteration selected as <= 0, "
+      "disabling tolerance and on approach iterations.");
+    max_on_approach_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (max_iterations <= 0) {
+    RCLCPP_INFO(node_->get_logger(), "maximum iteration selected as <= 0, "
+      "disabling maximum iterations.");
+    max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (travel_cost_scale > 1.0 || travel_cost_scale < 0.0) {
+    RCLCPP_FATAL(node_->get_logger(), "Travel cost scale must be between 0 and 1, exiting.");
+    exit(-1);
+  }
+
   a_star_ = std::make_unique<AStarAlgorithm>(neighborhood);
   a_star_->initialize(
     travel_cost_scale,
     allow_unknown,
     max_iterations,
-    revisit_neighbors,
     max_on_approach_iterations);
 
   if (smooth_path) {
-    smoother_ = std::make_unique<CGSmoother>();
-    smoother_->initialize(debug_optimizer);
+    smoother_ = std::make_unique<Smoother>();
+    optimizer_params_.get(node_, name);  // Get optimizer params        // TODO per-run with time left over
+    smoother_params_.get(node_, name);  // Get weights
+    smoother_->initialize(optimizer_params_);
   }
 
   raw_plan_publisher_ = node_->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  smoother_debug1_pub_= node_->create_publisher<nav_msgs::msg::Path>("debug1", 1);
+  smoother_debug2_pub_= node_->create_publisher<nav_msgs::msg::Path>("debug2", 1);
+  smoother_debug3_pub_= node_->create_publisher<nav_msgs::msg::Path>("debug3", 1);
 
   RCLCPP_INFO(
     node_->get_logger(), "Configured plugin %s of type SmacPlanner with "
     "travel cost %.2f, tolerance %.2f, maximum iterations %i, "
-    "max on appraoch iterations %i, and %s. %s. Using neighorhood: %s.",
+    "max on approach iterations %i, and %s. Using neighorhood: %s.",
     name_.c_str(), travel_cost_scale, tolerance_, max_iterations, max_on_approach_iterations,
-    revisit_neighbors ? "Sllowing to revisit neighbors" : "Not allowing revisit of neighbors",
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
     toString(neighborhood).c_str());
 }
@@ -160,7 +180,10 @@ void SmacPlanner::activate()
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type SmacPlanner",
     name_.c_str());
-  raw_plan_publisher_->on_activate();    
+  raw_plan_publisher_->on_activate();
+  smoother_debug1_pub_->on_activate();
+  smoother_debug2_pub_->on_activate();
+  smoother_debug3_pub_->on_activate();
 }
 
 void SmacPlanner::deactivate()
