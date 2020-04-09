@@ -28,27 +28,27 @@ namespace smac_planner
 {
 
 AStarAlgorithm::AStarAlgorithm(const Neighborhood & neighborhood)
-: travel_cost_scale_(0.0),
-  neutral_cost_(0.0),
-  traverse_unknown_(true),
-  max_iterations_(0),
-  x_size_(0),
-  y_size_(0),
-  goal_coordinates_(Coordinates()),
-  start_(nullptr),
-  goal_(nullptr),
-  graph_(nullptr),
-  queue_(nullptr),
-  neighborhood_(neighborhood)
+: _travel_cost_scale(0.0),
+  _neutral_cost(0.0),
+  _traverse_unknown(true),
+  _max_iterations(0),
+  _x_size(0),
+  _y_size(0),
+  _goal_coordinates(Coordinates()),
+  _start(nullptr),
+  _goal(nullptr),
+  _graph(nullptr),
+  _queue(nullptr),
+  _neighborhood(neighborhood)
 {
 }
 
 AStarAlgorithm::~AStarAlgorithm()
 {
-  graph_.reset();
-  queue_.reset();
-  start_ = nullptr;
-  goal_ = nullptr;
+  _graph.reset();
+  _queue.reset();
+  _start = nullptr;
+  _goal = nullptr;
 }
 
 void AStarAlgorithm::initialize(
@@ -57,21 +57,21 @@ void AStarAlgorithm::initialize(
   int & max_iterations,
   const int & max_on_approach_iterations)
 {
-  if (graph_) {
-    graph_.reset();
+  if (_graph) {
+    _graph.reset();
   }
 
-  if (queue_) {
-    queue_.reset();
+  if (_queue) {
+    _queue.reset();
   }
 
-  graph_ = std::make_unique<Graph>();
-  queue_ = std::make_unique<NodeQueue>();
-  travel_cost_scale_ = travel_cost_scale;
-  neutral_cost_ = 253.0 * (1.0 - travel_cost_scale_);
-  traverse_unknown_ = allow_unknown;
-  max_iterations_ = max_iterations;
-  max_on_approach_iterations_ = max_on_approach_iterations;
+  _graph = std::make_unique<Graph>();
+  _queue = std::make_unique<NodeQueue>();
+  _travel_cost_scale = travel_cost_scale;
+  _neutral_cost = 253.0 * (1.0 - _travel_cost_scale);
+  _traverse_unknown = allow_unknown;
+  _max_iterations = max_iterations;
+  _max_on_approach_iterations = max_on_approach_iterations;
 }
 
 void AStarAlgorithm::setCosts(
@@ -80,58 +80,58 @@ void AStarAlgorithm::setCosts(
   unsigned char * & costs)
 {
   if (getSizeX() != x || getSizeY() != y) {
-    x_size_ = x;
-    y_size_ = y;
-    int x_size_int = static_cast<int>(x_size_);
-    van_neumann_neighborhood = {
+    _x_size = x;
+    _y_size = y;
+    int x_size_int = static_cast<int>(_x_size);
+    _van_neumann_neighborhood = {
       -1, +1, -x_size_int, +x_size_int};
-    moore_neighborhood = {
+    _moore_neighborhood = {
       -1, +1, -x_size_int, +x_size_int, -x_size_int - 1,
       -x_size_int + 1, +x_size_int - 1, +x_size_int + 1};
-    graph_->clear();
-    graph_->reserve(x * y);
+    _graph->clear();
+    _graph->reserve(x * y);
     for (unsigned int i = 0; i != x * y; i++) {
-      graph_->push_back(Node(costs[i], i));
+      _graph->push_back(Node(costs[i], i));
     }
   } else {
     for (unsigned int i = 0; i != x * y; i++) {
       // Optimization: operator[] is used over at() for performance (no bound checking)
-      graph_->operator[](i).reset(costs[i], i);
+      _graph->operator[](i).reset(costs[i], i);
     }
   }
 }
 
 void AStarAlgorithm::setStart(const unsigned int & value)
 {
-  start_ = & graph_->operator[](value);
+  _start = & _graph->operator[](value);
 }
 
 void AStarAlgorithm::setGoal(const unsigned int & value)
 {
-  goal_ = & graph_->operator[](value);
-  goal_coordinates_ = getCoords(goal_->getIndex());
+  _goal = & _graph->operator[](value);
+  _goal_coordinates = getCoords(_goal->getIndex());
 }
 
 bool AStarAlgorithm::areInputsValid()
 {
   // Check if initialization was called
-  if (!graph_) {
+  if (!_graph) {
     throw std::runtime_error("Failed to compute path, initialization not called.");
   }
 
   // Check if graph was filled in
-  if (graph_->size() == 0) {
+  if (_graph->size() == 0) {
     throw std::runtime_error("Failed to compute path, no costmap given.");
   }
 
   // Check if points were filled in
-  if (!start_ || !goal_) {
+  if (!_start || !_goal) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
   // Check if ending point is valid
   Node * node;
-  if (getToleranceHeuristic() < 0.001 && !isNodeValid(goal_->getIndex(), node)) {
+  if (getToleranceHeuristic() < 0.001 && !isNodeValid(_goal->getIndex(), node)) {
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
   }
 
@@ -149,8 +149,8 @@ bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float 
     return false;
   }
 
-  tolerance_ = 2.0 * neutral_cost_ * tolerance;
-  best_heuristic_node_ = {std::numeric_limits<float>::max(), 0};
+  _tolerance = _neutral_cost * tolerance;
+  _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
 
   // 0) Add starting point to the open set
@@ -164,7 +164,7 @@ bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float 
   int approach_iterations = 0;
   NodeVector::iterator neighbor_iterator;
 
-  while (iterations < getMaxIterations() && !queue_->empty()) {
+  while (iterations < getMaxIterations() && !_queue->empty()) {
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
     current_node = getNode();
@@ -184,13 +184,13 @@ bool AStarAlgorithm::createPath(IndexPath & path, int & iterations, const float 
     if (isGoal(current_node)) {
       return backtracePath(current_node, path);
     }
-    else if (best_heuristic_node_.first < getToleranceHeuristic()) {
+    else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations > getOnApproachMaxIterations() ||
         iterations + 1 == getMaxIterations())
       {
-        Node * node = & graph_->operator[](best_heuristic_node_.second);
+        Node * node = & _graph->operator[](_best_heuristic_node.second);
         return backtracePath(node, path);
       }
     }
@@ -252,55 +252,51 @@ bool AStarAlgorithm::backtracePath(Node * & node, IndexPath & path)
 
 Node * & AStarAlgorithm::getStart()
 {
-  return start_;
+  return _start;
 }
 
 Node * & AStarAlgorithm::getGoal()
 {
-  return goal_;
+  return _goal;
 }
 
 Node * AStarAlgorithm::getNode()
 {
-  Node * node = queue_->top().second;
-  queue_->pop();
+  Node * node = _queue->top().second;
+  _queue->pop();
   return node;
 }
 
 void AStarAlgorithm::addNode(const float cost, Node * & node)
 {
-  queue_->emplace(cost, node);
+  _queue->emplace(cost, node);
 }
 
 float AStarAlgorithm::getTraversalCost(
-  Node * & /*lastNode*/,
+  Node * & last_node,
   Node * & node)
 {
-  // if unknown is valid, treat like free space
   float & node_cost = node->getCost();
-  if (traverse_unknown_ && node_cost == UNKNOWN) {
-    node_cost = FREE;
-  }
 
-  // rescale cost from [0, 253] to [neutral_cost, 253].
+  // rescale cost quadratically, makes search more convex
   // Higher the scale, the less cost for lengthwise expansion
-  return neutral_cost_ + travel_cost_scale_ * node_cost;
+  return _neutral_cost + _travel_cost_scale * node_cost * node_cost;
 }
 
 float AStarAlgorithm::getHeuristicCost(const unsigned int & node)
 {
   Coordinates node_coords = getCoords(node);
   float heuristic = hypotf(
-    goal_coordinates_.first - node_coords.first,
-    goal_coordinates_.second - node_coords.second) * 2.0 * neutral_cost_;
+    _goal_coordinates.first - node_coords.first,
+    _goal_coordinates.second - node_coords.second) * _neutral_cost;
   
-  // If we're close to the goal, we want to ensure we're not over estimating the heuristic
-  if (heuristic < getToleranceHeuristic()) {
-    heuristic / 2.0;
+  // If we're far from goal, we want to ensure we can speed it along
+  if (heuristic > getToleranceHeuristic()) {
+    heuristic *= _neutral_cost;
   }
 
-  if (heuristic < best_heuristic_node_.first) {
-    best_heuristic_node_ = {heuristic, node};
+  if (heuristic < _best_heuristic_node.first) {
+    _best_heuristic_node = {heuristic, node};
   }
 
   return heuristic;
@@ -310,7 +306,7 @@ void AStarAlgorithm::getNeighbors(const unsigned int & node, NodeVector & neighb
 {
   // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
   // space and then expand 8-connected, the first set of neighbors will be all cost
-  // neutral_cost_. Then its expansion will all be 2 * neutral_cost_ but now multiple
+  // _neutral_cost. Then its expansion will all be 2 * _neutral_cost but now multiple
   // nodes are touching that node so the last cell to update the back pointer wins.
   // Thusly, the ordering ends with the cardinal directions for both sets such that
   // behavior is consistent in large free spaces between them. 
@@ -321,14 +317,14 @@ void AStarAlgorithm::getNeighbors(const unsigned int & node, NodeVector & neighb
   // rather than a small inflation around the obstacles
   int node_i = static_cast<int>(node);
 
-  switch (neighborhood_) {
+  switch (_neighborhood) {
     case Neighborhood::UNKNOWN:
       throw std::runtime_error("Unkown neighborhood type selected.");
     case Neighborhood::VAN_NEUMANN:
-      getValidNodes(van_neumann_neighborhood, node_i, neighbors);
+      getValidNodes(_van_neumann_neighborhood, node_i, neighbors);
       break;
     case Neighborhood::MOORE:
-      getValidNodes(moore_neighborhood, node_i, neighbors);
+      getValidNodes(_moore_neighborhood, node_i, neighbors);
       break;
     default:
       throw std::runtime_error("Invalid neighborhood type selected.");
@@ -359,7 +355,7 @@ bool AStarAlgorithm::isNodeValid(const unsigned int & i, Node * & node)
     return false;
   }
 
-  node = & graph_->operator[](i);
+  node = & _graph->operator[](i);
 
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
   // the regular grid (e.g. your node is on the edge of the costmap and i+1 
@@ -376,7 +372,7 @@ bool AStarAlgorithm::isNodeValid(const unsigned int & i, Node * & node)
   }
 
   // unknown node
-  if (cost == UNKNOWN && !traverse_unknown_) {
+  if (cost == UNKNOWN && !_traverse_unknown) {
     return false;
   }
 
@@ -385,8 +381,8 @@ bool AStarAlgorithm::isNodeValid(const unsigned int & i, Node * & node)
 
 void AStarAlgorithm::clearQueue()
 {
-  while (!queue_->empty()) {
-    queue_->pop();
+  while (!_queue->empty()) {
+    _queue->pop();
   }
 }
 
@@ -399,27 +395,27 @@ Coordinates AStarAlgorithm::getCoords(const unsigned int & index)
 
 int & AStarAlgorithm::getMaxIterations()
 {
-  return max_iterations_;
+  return _max_iterations;
 }
 
 int & AStarAlgorithm::getOnApproachMaxIterations()
 {
-  return max_on_approach_iterations_;
+  return _max_on_approach_iterations;
 }
 
 float & AStarAlgorithm::getToleranceHeuristic()
 {
-  return tolerance_;
+  return _tolerance;
 }
 
 unsigned int & AStarAlgorithm::getSizeX()
 {
-  return x_size_;
+  return _x_size;
 }
 
 unsigned int & AStarAlgorithm::getSizeY()
 {
-  return y_size_;
+  return _y_size;
 }
 
 }  // namespace smac_planner

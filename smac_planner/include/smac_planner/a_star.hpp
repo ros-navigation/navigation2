@@ -224,27 +224,27 @@ private:
    */
   inline void clearQueue();
 
-  float travel_cost_scale_;
-  float neutral_cost_;
-  bool traverse_unknown_;
-  int max_iterations_;
-  int max_on_approach_iterations_;
-  float tolerance_;
-  unsigned int x_size_;
-  unsigned int y_size_;
+  float _travel_cost_scale;
+  float _neutral_cost;
+  bool _traverse_unknown;
+  int _max_iterations;
+  int _max_on_approach_iterations;
+  float _tolerance;
+  unsigned int _x_size;
+  unsigned int _y_size;
 
-  Coordinates goal_coordinates_;
-  Node * start_;
-  Node * goal_;
+  Coordinates _goal_coordinates;
+  Node * _start;
+  Node * _goal;
 
-  std::unique_ptr<Graph> graph_;
-  std::unique_ptr<NodeQueue> queue_;
+  std::unique_ptr<Graph> _graph;
+  std::unique_ptr<NodeQueue> _queue;
 
-  Neighborhood neighborhood_;
-  std::vector<int> van_neumann_neighborhood;
-  std::vector<int> moore_neighborhood;
+  Neighborhood _neighborhood;
+  std::vector<int> _van_neumann_neighborhood;
+  std::vector<int> _moore_neighborhood;
 
-  NodeHeuristicPair best_heuristic_node_;
+  NodeHeuristicPair _best_heuristic_node;
 };
 
 }  // namespace smac_planner

@@ -27,14 +27,18 @@
 //  - disable max iterations / tolerance with 0 / -1
 //  - Do low potential field in all areas -- this should be the new defacto-default (really should have been already but ppl ignore it). Footprint + inflation important
 //  - describe why and when on the 4 vs 8 connected
+//  - plots of pts that violate over iterations (curve, dist > thresh, smooth > dist, cost > thresh)
 
 // TODOs
 // total cost path caching
-// astar timeout, max duration
+// astar timeout, max duration, optimizer gets rest or until its set maximum
+// crashing
+
+// NOTES 
 // way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
 //   server  for smoothing alone
 //  separate tuning server instance for refining for your needs
-// inconsistent _param or param_ between files
+// if switching direction, discount all terms in hybrid in smoother
 
 #include <string>
 #include <memory>
@@ -48,6 +52,15 @@ namespace smac_planner
 {
 using namespace std::chrono;
 using namespace std;
+
+inline double squaredDistance(
+  const Eigen::Vector2d & p1,
+  const Eigen::Vector2d & p2)
+{
+  double dx = p1[0] - p2[0];
+  double dy = p1[1] - p2[1];
+  return dx * dx + dy * dy;
+}
 
 SmacPlanner::SmacPlanner()
 : a_star_(nullptr),
@@ -92,7 +105,7 @@ void SmacPlanner::configure(
     node_, name + ".max_iterations", rclcpp::ParameterValue(-1)); /*TODO set reasoanble number, also, per request depending on length?*/
   node_->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(0.7));
+    node_, name + ".travel_cost_scale", rclcpp::ParameterValue(0.8));
   node_->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));

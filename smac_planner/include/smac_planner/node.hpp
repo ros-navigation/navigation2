@@ -37,11 +37,11 @@ public:
    */
   explicit Node(unsigned char & cost_in, const unsigned int index)
   : last_node(nullptr),
-    cell_cost(static_cast<float>(cost_in)),
-    accumulated_cost(std::numeric_limits<float>::max()),
-    i(index),
-    was_visited(false),
-    is_queued(false)
+    _cell_cost(static_cast<float>(cost_in)),
+    _accumulated_cost(std::numeric_limits<float>::max()),
+    _i(index),
+    _was_visited(false),
+    _is_queued(false)
   {
   }
 
@@ -60,7 +60,7 @@ public:
    */
   bool operator==(const Node & rhs)
   {
-    return this->i == rhs.i;
+    return this->_i == rhs._i;
   }
 
   /**
@@ -71,11 +71,11 @@ public:
   void reset(const unsigned char & cost, const unsigned int index)
   {
     last_node = nullptr;
-    cell_cost = static_cast<float>(cost);
-    accumulated_cost = std::numeric_limits<float>::max();
-    i = index;
-    was_visited = false;
-    is_queued = false;
+    _cell_cost = static_cast<float>(cost);
+    _accumulated_cost = std::numeric_limits<float>::max();
+    _i = index;
+    _was_visited = false;
+    _is_queued = false;
   }
 
   /**
@@ -84,7 +84,7 @@ public:
    */
   float & getAccumulatedCost()
   {
-    return accumulated_cost;
+    return _accumulated_cost;
   }
 
   /**
@@ -93,7 +93,7 @@ public:
    */
   void setAccumulatedCost(const float cost_in)
   {
-    accumulated_cost = cost_in;
+    _accumulated_cost = cost_in;
   }
 
   /**
@@ -102,7 +102,7 @@ public:
    */
   float & getCost()
   {
-    return cell_cost;
+    return _cell_cost;
   }
 
   /**
@@ -111,7 +111,7 @@ public:
    */
   bool & wasVisited()
   {
-    return was_visited;
+    return _was_visited;
   }
 
   /**
@@ -119,8 +119,8 @@ public:
    */
   void visited()
   {
-    was_visited = true;
-    is_queued = false;
+    _was_visited = true;
+    _is_queued = false;
   }
 
   /**
@@ -129,7 +129,7 @@ public:
    */
   bool & isQueued()
   {
-    return is_queued;
+    return _is_queued;
   }
 
   /**
@@ -137,7 +137,7 @@ public:
    */
   void queued()
   {
-    is_queued = true;
+    _is_queued = true;
   }
 
   /**
@@ -146,17 +146,17 @@ public:
    */
   unsigned int & getIndex()
   {
-    return i;
+    return _i;
   }
 
   Node * last_node;
 
 private:
-  float cell_cost;
-  float accumulated_cost;
-  unsigned int i;
-  bool was_visited;
-  bool is_queued;
+  float _cell_cost;
+  float _accumulated_cost;
+  unsigned int _i;
+  bool _was_visited;
+  bool _is_queued;
 };
 
 }  // namespace smac_planner
