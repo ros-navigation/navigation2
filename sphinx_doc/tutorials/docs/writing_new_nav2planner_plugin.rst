@@ -76,10 +76,15 @@ In our planner, ``RRTConnect::configure()`` method sets member variables and ROS
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
+  // Parameter initialization
   nav2_util::declare_parameter_if_not_declared(node_, name_ + ".solve_time", rclcpp::ParameterValue(1.0));
   node_->get_parameter(name_ + ".solve_time", solve_time_);
   nav2_util::declare_parameter_if_not_declared(node_, name_ + ".max_trials", rclcpp::ParameterValue(4));
   node_->get_parameter(name_ + ".max_trials", max_trials_);
+  nav2_util::declare_parameter_if_not_declared(node_, name_ + ".collision_checking_resolution", rclcpp::ParameterValue(0.001));
+  node_->get_parameter(name_ + ".collision_checking_resolution", collision_checking_resolution_);
+  nav2_util::declare_parameter_if_not_declared(node_, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
+  node_->get_parameter(name_ + ".allow_unknown", allow_unknown_);
 
 and also, it sets OMPL variables such as bounds, setup settings and space validation.
 
