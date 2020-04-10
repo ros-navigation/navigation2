@@ -7,7 +7,7 @@ Writing a new planner plugin
 - `Requirements`_
 - `Tutorial Steps`_
 
-.. image:: images/Writing_new_Costmap2D_plugin/nav2_rrtconnect.gif
+.. image:: images/Writing_new_nav2planner_plugin/nav2_rrtconnect_gif.gif
     :width: 700px
     :align: center
     :alt: Animated gif with rrtconnect demo
@@ -172,7 +172,7 @@ with
 4- Run GradientLayer plugin
 ---------------------------
 
-Run Turtlebot3 simulation with enabled navigation2. Detailed instructuction how to make it are written at :ref:`getting_started`. Below is shortcut command for that:
+Run Turtlebot3 simulation with enabled navigation2. Detailed instruction how to make it are written at :ref:`getting_started`. Below is shortcut command for that:
 
 .. code-block:: bash
 
