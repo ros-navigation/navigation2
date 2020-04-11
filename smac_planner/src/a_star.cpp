@@ -91,7 +91,7 @@ void AStarAlgorithm::setCosts(
     _graph->clear();
     _graph->reserve(x * y);
     for (unsigned int i = 0; i != x * y; i++) {
-      _graph->push_back(Node(costs[i], i));
+      _graph->emplace_back(costs[i], i);
     }
   } else {
     for (unsigned int i = 0; i != x * y; i++) {
@@ -315,7 +315,7 @@ void AStarAlgorithm::getNeighbors(const unsigned int & node, NodeVector & neighb
   // 100 100 100   where lower-middle '100' is visited with same cost by both bottom '50' nodes
   // Therefore, it is valuable to have some low-potential across the entire map
   // rather than a small inflation around the obstacles
-  int node_i = static_cast<int>(node);
+  const int node_i = static_cast<int>(node);
 
   switch (_neighborhood) {
     case Neighborhood::UNKNOWN:
@@ -341,8 +341,7 @@ void AStarAlgorithm::getValidNodes(
 
   for (unsigned int i = 0; i != lookup_table.size(); i++) {
     index = node_i + lookup_table[i];
-    if (index > 0 && isNodeValid(
-        static_cast<unsigned int>(index), node))
+    if (index > 0 && isNodeValid(index, node))
     {
       neighbors.push_back(node);
     }
@@ -351,10 +350,6 @@ void AStarAlgorithm::getValidNodes(
 
 bool AStarAlgorithm::isNodeValid(const unsigned int & i, Node * & node)
 {
-  if (i == 0) {
-    return false;
-  }
-
   node = & _graph->operator[](i);
 
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around

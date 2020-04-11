@@ -123,13 +123,12 @@ public:
   }
 
 protected:
-  unsigned char * _char_costmap;
+  unsigned char * & _char_costmap;
   unsigned int _size_x;
   unsigned int _size_y;
   double _origin_x;
   double _origin_y;
   double _resolution;
-
 };
 
 }  // namespace smac_planner

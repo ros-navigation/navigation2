@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMOOTHER_HPP_
-#define SMAC_PLANNER__SMOOTHER_HPP_
+#ifndef SMAC_PLANNER__UPSAMPLER_HPP_
+#define SMAC_PLANNER__UPSAMPLER_HPP_
 
 #include <cmath>
 #include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <algorithm>
 #include <utility>
 
 #include "smac_planner/types.hpp"
-#include "smac_planner/smoother_cost_function.hpp"
+#include "smac_planner/upsampler_cost_function.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
@@ -31,22 +32,24 @@
 namespace smac_planner
 {
 
+// TODO reduce code duplication. there's very litle change here., maybe put smoother and upsampler together in an object?
+
 /**
- * @class smac_planner::Smoother
- * @brief A Conjugate Gradient 2D path smoother implementation
+ * @class smac_planner::Upsampler
+ * @brief A Conjugate Gradient 2D path upsampler implementation
  */
-class Smoother
+class Upsampler
 {
 public:
   /**
    * @brief A constructor for smac_planner::Smoother
    */
-  Smoother() {}
+  Upsampler() {}
 
   /**
    * @brief A destructor for smac_planner::Smoother
    */
-  ~Smoother() {}
+  ~Upsampler() {}
 
   /**
    * @brief Initialization of the smoother
@@ -90,24 +93,47 @@ public:
   }
 
   /**
-   * @brief Smoother method
+   * @brief Upsampling method
    * @param path Reference to path
-   * @param costmap Pointer to minimal costmap
-   * @param smoother parameters weights
+   * @param upsample parameters weights
+   * @param upsample_ratio upsample ratio
    * @return If smoothing was successful
    */
-  bool smooth(
-    std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap,
-    const SmootherParams & params)
+  bool upsample(
+    std::vector<Eigen::Vector2d> & path,
+    const SmootherParams & params,
+    const int & upsample_ratio)
   {
-    double parameters[path.size() * 2];
-    for (uint i = 0; i != path.size(); i++) {
-      parameters[2 * i] = path[i][0];
-      parameters[2 * i + 1] = path[i][1];
+    const int param_ratio = upsample_ratio * 2.0;
+    const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
+    double parameters[total_size];
+
+    // Linearly upsample initial poses for optimization
+    int pt;
+    int next_pt;
+    double dist_ratio;
+    double dist_x;
+    double dist_y;
+    double upsample_ratio_double = static_cast<double>(upsample_ratio);
+    for (uint i = 0; i != total_size / 2; i++) {
+      pt = i / upsample_ratio;
+      next_pt = pt + 1;
+
+      if (i % upsample_ratio == 0) {
+        parameters[param_ratio * pt] = path[pt][0];
+        parameters[param_ratio * pt + 1] = path[pt][1];
+        dist_x = path[next_pt][0] - path[pt][0];
+        dist_y = path[next_pt][1] - path[pt][1];
+      } else {
+        dist_ratio = static_cast<double>(i % upsample_ratio) / upsample_ratio_double;
+        parameters[2 * i] = dist_ratio * dist_x + path[pt][0];
+        parameters[2 * i + 1] = dist_ratio * dist_y + path[pt][1];
+      }
     }
 
+    // Solve the upsampling problem
     ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(& path, costmap, params));
+    ceres::GradientProblem problem(new UpsamplerCostFunction(path.size(), params, upsample_ratio));
     ceres::Solve(_options, problem, parameters, &summary);
 
     if (_debug) {
@@ -118,6 +144,7 @@ public:
       return false;
     }
 
+    path.resize(total_size / 2);
     for (uint i = 0; i != path.size(); i++) {
       path[i][0] = parameters[2 * i];
       path[i][1] = parameters[2 * i + 1];
@@ -133,4 +160,4 @@ private:
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMOOTHER_HPP_
+#endif  // SMAC_PLANNER__UPSAMPLER_HPP_

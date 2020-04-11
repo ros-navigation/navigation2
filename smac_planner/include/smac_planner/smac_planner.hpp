@@ -21,6 +21,7 @@
 
 #include "smac_planner/a_star.hpp"
 #include "smac_planner/smoother.hpp"
+#include "smac_planner/upsampler.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -81,20 +82,27 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
+  /**
+   * @brief Remove hooking at end of paths
+   * @param path Path to remove hooking from
+   */
+  void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
-  std::unique_ptr<AStarAlgorithm> a_star_;
-  std::unique_ptr<Smoother> smoother_;
-  nav2_util::LifecycleNode::SharedPtr node_;
-  nav2_costmap_2d::Costmap2D * costmap_;
-  std::string global_frame_, name_;
-  float tolerance_;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr raw_plan_publisher_;
+  std::unique_ptr<AStarAlgorithm> _a_star;
+  std::unique_ptr<Smoother> _smoother;
+  std::unique_ptr<Upsampler> _upsampler;
+  nav2_util::LifecycleNode::SharedPtr _node;
+  nav2_costmap_2d::Costmap2D * _costmap;
+  std::string _global_frame, _name;
+  float _tolerance;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug1_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug2_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug3_pub_;
-  SmootherParams smoother_params_;
-  OptimizerParams optimizer_params_;
+  SmootherParams _smoother_params;
+  OptimizerParams _optimizer_params;
+  int _sampling_ratio;
 };
 
 }  // namespace smac_planner

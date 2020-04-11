@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
-#define SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
+#ifndef SMAC_PLANNER__COST_FUNCTION_HPP_
+#define SMAC_PLANNER__COST_FUNCTION_HPP_
 
 #include <cmath>
 #include <vector>
@@ -34,32 +34,31 @@
 namespace smac_planner
 {
 
+// TODO reduce code duplication. there's very litle change here.
+
+// upsampler params TODO
+
+// curvature minimization ? TODO
+
 /**
- * @struct smac_planner::UnconstrainedSmootherCostFunction
- * @brief Cost function for path smoothing with multiple terms
+ * @struct smac_planner::UpsamplerCostFunction
+ * @brief Cost function for path upsampling with multiple terms
  * including curvature, smoothness, collision, and avoid obstacles.
  */
-class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
+class UpsamplerCostFunction : public ceres::FirstOrderFunction {
  public:
   /**
-   * @brief A constructor for smac_planner::UnconstrainedSmootherCostFunction
+   * @brief A constructor for smac_planner::UpsamplerCostFunction
    * @param num_points Number of path points to consider
-   * @param costmap A minimal costmap wrapper to get values for collision and obstacle avoidance
    */
-  UnconstrainedSmootherCostFunction(
-    std::vector<Eigen::Vector2d> * original_path,
-    MinimalCostmap * costmap,
-    const SmootherParams & params)
-  : _original_path(original_path),
-    _num_params(2 * original_path->size()),
-    _costmap(costmap)
+  UpsamplerCostFunction(
+    const int & path_size,
+    const SmootherParams & params,
+    const int & upsample_ratio)
+  : _num_params(2 * upsample_ratio * path_size),
+    _params(params),
+    _upsample_ratio(upsample_ratio)
   {
-    _Wsmooth = params.smooth_weight;
-    _Wcost = params.costmap_weight;
-    _Wcurve = params.curvature_weight;
-    _Wdist = params.distance_weight;
-
-    _max_turning_radius = params.max_curvature;
   }
 
   /**
@@ -111,9 +110,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
     double cost_raw = 0.0;
     double grad_x_raw = 0.0;
     double grad_y_raw = 0.0;
-    unsigned int mx, my;
-    bool valid_coords = true;
-    double costmap_cost = 0.0;
 
     // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
@@ -127,39 +123,29 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
         continue; 
       }
 
+      // Original points are locked in
+      if (i % _upsample_ratio == 0) {
+        continue;
+      }
+
       xi = Eigen::Vector2d(parameters[x_index], parameters[y_index]);
       xi_p1 = Eigen::Vector2d(parameters[x_index + 2], parameters[y_index + 2]);
       xi_m1 = Eigen::Vector2d(parameters[x_index - 2], parameters[y_index - 2]);
 
       // compute cost
-      addSmoothingResidual(_Wsmooth, xi, xi_p1, xi_m1, cost_raw);
-      addCurvatureResidual(_Wcurve, xi, xi_p1, xi_m1, curvature_params, cost_raw);
-      addDistanceResidual(_Wdist, xi, _original_path->at(i), cost_raw);
-
-      if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
-        costmap_cost = _costmap->getCost(mx, my);
-        addCostResidual(_Wcost, costmap_cost, cost_raw);
-      }
+      addSmoothingResidual(_params.smooth_weight, xi, xi_p1, xi_m1, cost_raw);
+      addCurvatureResidual(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, cost_raw);
 
     if (gradient != NULL) {
         // compute gradient
-        gradient[x_index] = 0.0;
-        gradient[y_index] = 0.0;
-        addSmoothingJacobian(_Wsmooth, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
-        addCurvatureJacobian(_Wcurve, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
-        addDistanceJacobian(_Wdist, xi, _original_path->at(i), grad_x_raw, grad_y_raw);
-
-        if (valid_coords) {
-          addCostJacobian(_Wcost, mx, my, costmap_cost, grad_x_raw, grad_y_raw);
-        }
-
+        addSmoothingJacobian(_params.smooth_weight, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
+        addCurvatureJacobian(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
         gradient[x_index] = grad_x_raw;
         gradient[y_index] = grad_y_raw;
       }
     }
 
     cost[0] = cost_raw;
-
     return true;
   }
 
@@ -168,131 +154,6 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
    * @return Number of parameters in cost function
    */
   virtual int NumParameters() const { return _num_params; }
-
-  /**
-   * @brief Cost function term for steering away from costs
-   * @param weight Weight to apply to function
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param r Residual (cost) of term
-   */
-  inline void addCostResidual(
-    const double & weight,
-    const double & value,
-    double & r) const
-  {
-    if (value == FREE) {
-      return;
-    }
-
-    // r += -1 * weight * (value - MAX_NON_OBSTACLE) * (value - MAX_NON_OBSTACLE);
-
-    // 65025.0 is 254.0 squared
-    r += weight * value * value/* / 65025.0*/;  // objective function value
-  }
-
-  /**
-   * @brief Cost function derivative term for steering away from costs
-   * @param weight Weight to apply to function
-   * @param mx Point Xi's x coordinate in map frame
-   * @param mx Point Xi's y coordinate in map frame
-   * @param value Point Xi's cost'
-   * @param params computed values to reduce overhead
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addCostJacobian(
-    const double & weight,
-    const unsigned int & mx,
-    const unsigned int & my,
-    const double & value,
-    double & j0,
-    double & j1) const
-  {
-    if (value == FREE) {
-      return;
-    }
-
-    const Eigen::Vector2d grad = getCostmapGradient(mx, my);
-
-    //const double & common_prefix = -2 * weight * abs(value - MAX_NON_OBSTACLE); 
-    const double common_prefix = 2 * weight * value/* / 254.0*/;
-    // TODO normalize
-    // TODO changing signs here doesn't seem to change anything (?) is it because both sides are pushing? try with less potential field to see if it attracts somewhere
-
-    j0 += common_prefix * grad[0];  // xi x component of partial-derivative
-    j1 += common_prefix * grad[1];  // xi y component of partial-derivative
-  }
-
-  /**
-   * @brief Computing the gradient of the costmap using 
-   * the 2 point numerical differentiation method
-   * @param mx Point Xi's x coordinate in map frame
-   * @param mx Point Xi's y coordinate in map frame
-   * @param params Params reference to store gradients
-   */
-  inline Eigen::Vector2d getCostmapGradient(
-    const unsigned int mx,
-    const unsigned int my) const
-  {
-    // find unit vector that describes that direction
-    // via 7 point taylor series approximation for gradient at Xi
-    Eigen::Vector2d gradient;
-
-    double l_1 = 0.0;
-    double l_2 = 0.0;
-    double l_3 = 0.0;
-    double r_1 = 0.0;
-    double r_2 = 0.0;
-    double r_3 = 0.0;
-
-    if (mx < _costmap->sizeX()) {
-      r_1 = _costmap->getCost(mx + 1, my);
-    }
-    if (mx + 1 < _costmap->sizeX()) {
-      r_2 = _costmap->getCost(mx + 2, my);
-    }
-    if (mx + 2 < _costmap->sizeX()) {
-      r_3 = _costmap->getCost(mx + 3, my);
-    }
-
-    if (mx > 0) {
-      l_1 = _costmap->getCost(mx - 1, my);
-    }
-    if (mx - 1 > 0) {
-      l_2 = _costmap->getCost(mx - 2, my);
-    }
-    if (mx - 2 > 0) {
-      l_3 = _costmap->getCost(mx - 3, my);
-    }
-
-    gradient[1] = (45 * r_1 - 9 * r_2 + r_3 - 45 * l_1 + 9 * l_2 - l_3) / 60;
-
-    if (my < _costmap->sizeY()) {
-      r_1 = _costmap->getCost(mx, my + 1);
-    }
-    if (my + 1 < _costmap->sizeY()) {
-      r_2 = _costmap->getCost(mx, my + 2);
-    }
-    if (my + 2 < _costmap->sizeY()) {
-      r_3 = _costmap->getCost(mx, my + 3);
-    }
-
-    if (my > 0) {
-      l_1 = _costmap->getCost(mx, my - 1);
-    }
-    if (my - 1 > 0) {
-      l_2 = _costmap->getCost(mx, my - 2);
-    }
-    if (my - 2 > 0) {
-      l_3 = _costmap->getCost(mx, my - 3);
-    }
-
-    gradient[0] = (45 * r_1 - 9 * r_2 + r_3 - 45 * l_1 + 9 * l_2 - l_3) / 60;
-
-    gradient.normalize();
-    return gradient;
-  }
 
 protected:
   /**
@@ -384,7 +245,7 @@ protected:
     curvature_params.delta_phi_i = std::acos(projection);
     curvature_params.turning_rad = curvature_params.delta_phi_i / curvature_params.delta_xi_norm;
 
-    curvature_params.ki_minus_kmax = curvature_params.turning_rad - _max_turning_radius;
+    curvature_params.ki_minus_kmax = curvature_params.turning_rad - _params.max_curvature;
 
     if (curvature_params.ki_minus_kmax <= EPSILON) {
       // Quadratic penalty need not apply
@@ -444,41 +305,6 @@ protected:
   }
 
   /**
-   * @brief Cost function derivative term for steering away changes in pose
-   * @param weight Weight to apply to function
-   * @param xi Point Xi for evaluation
-   * @param xi_original original point Xi for evaluation
-   * @param r Residual (cost) of term
-   */
-  inline void addDistanceResidual(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
-    double& r) const
-  {
-    r += weight * (xi - xi_original).dot(xi - xi_original);  // objective function value
-  }
-
-  /**
-   * @brief Cost function derivative term for steering away changes in pose
-   * @param weight Weight to apply to function
-   * @param xi Point Xi for evaluation
-   * @param xi_original original point Xi for evaluation
-   * @param j0 Gradient of X term
-   * @param j1 Gradient of Y term
-   */
-  inline void addDistanceJacobian(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
-    double & j0,
-    double & j1) const
-  {
-    j0 += weight * 2 * (xi[0] - xi_original[0]);  // xi y component of partial-derivative
-    j1 += weight * 2 * (xi[1] - xi_original[1]);  // xi y component of partial-derivative
-  }
-
-  /**
    * @brief Computing the normalized orthogonal component of 2 vectors
    * @param a Vector
    * @param b Vector
@@ -496,16 +322,10 @@ protected:
   }
 
   int _num_params;
-  double _Wsmooth{0};
-  double _Wcurve{0};
-  double _Wcollision{0};
-  double _Wcost{0};
-  double _Wdist{0};
-  double _max_turning_radius{0};
-  MinimalCostmap * _costmap{nullptr};
-  std::vector<Eigen::Vector2d> * _original_path{nullptr};
+  SmootherParams _params;
+  int _upsample_ratio;
 };
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
+#endif  // SMAC_PLANNER__COST_FUNCTION_HPP_
