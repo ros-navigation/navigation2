@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MAP_LOADER__VISIBILITY_CONTROL_H_
-#define MAP_LOADER__VISIBILITY_CONTROL_H_
+#ifndef NAV2_UTIL__MAP_LOADER__VISIBILITY_CONTROL_H_
+#define NAV2_UTIL__MAP_LOADER__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -46,4 +46,4 @@
   #define MAP_LOADER_PUBLIC_TYPE
 #endif
 
-#endif  // MAP_LOADER__VISIBILITY_CONTROL_H_
+#endif  // NAV2_UTIL__MAP_LOADER__VISIBILITY_CONTROL_H_

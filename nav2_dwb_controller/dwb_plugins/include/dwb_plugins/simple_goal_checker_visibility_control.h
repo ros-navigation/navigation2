@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DWB_PLUGINS_SIMPLE_GOAL_CHECKER__VISIBILITY_CONTROL_H_
-#define DWB_PLUGINS_SIMPLE_GOAL_CHECKER__VISIBILITY_CONTROL_H_
+#ifndef DWB_PLUGINS__SIMPLE_GOAL_CHECKER_VISIBILITY_CONTROL_H_
+#define DWB_PLUGINS__SIMPLE_GOAL_CHECKER_VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -46,4 +46,4 @@
   #define DWB_PLUGINS_SIMPLE_GOAL_CHECKER_PUBLIC_TYPE
 #endif
 
-#endif  // DWB_PLUGINS_SIMPLE_GOAL_CHECKER__VISIBILITY_CONTROL_H_
+#endif  // DWB_PLUGINS__SIMPLE_GOAL_CHECKER_VISIBILITY_CONTROL_H_

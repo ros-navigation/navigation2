@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV_2D_UTILS_CONVERSIONS__VISIBILITY_CONTROL_H_
-#define NAV_2D_UTILS_CONVERSIONS__VISIBILITY_CONTROL_H_
+#ifndef NAV_2D_UTILS__CONVERSIONS_VISIBILITY_CONTROL_H_
+#define NAV_2D_UTILS__CONVERSIONS_VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -46,4 +46,4 @@
   #define NAV_2D_UTILS_CONVERSIONS_PUBLIC_TYPE
 #endif
 
-#endif  // NAV_2D_UTILS_CONVERSIONS__VISIBILITY_CONTROL_H_
+#endif  // NAV_2D_UTILS__CONVERSIONS_VISIBILITY_CONTROL_H_
