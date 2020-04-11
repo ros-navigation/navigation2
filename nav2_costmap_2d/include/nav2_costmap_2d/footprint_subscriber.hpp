@@ -21,11 +21,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/client_visibility_control.h"
 
 namespace nav2_costmap_2d
 {
 
-class FootprintSubscriber
+class NAV2_COSTMAP_2D_CLIENT_PUBLIC FootprintSubscriber
 {
 public:
   FootprintSubscriber(

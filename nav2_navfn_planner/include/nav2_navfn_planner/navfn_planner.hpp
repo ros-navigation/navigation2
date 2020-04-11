@@ -27,6 +27,7 @@
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
+#include "nav2_navfn_planner/visibility_control.h"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -34,7 +35,7 @@
 namespace nav2_navfn_planner
 {
 
-class NavfnPlanner : public nav2_core::GlobalPlanner
+class NAV2_NAVFN_PLANNER_PUBLIC NavfnPlanner : public nav2_core::GlobalPlanner
 {
 public:
   NavfnPlanner();

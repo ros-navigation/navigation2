@@ -48,6 +48,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_costmap_2d/observation.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
@@ -55,7 +56,7 @@ namespace nav2_costmap_2d
  * @class ObservationBuffer
  * @brief Takes in point clouds from sensors, transforms them to the desired frame, and stores them
  */
-class ObservationBuffer
+class NAV2_COSTMAP_2D_PUBLIC ObservationBuffer
 {
 public:
   /**

@@ -16,6 +16,7 @@
 #define NAV2_UTIL__EXECUTION_TIMER_HPP_
 
 #include <chrono>
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {

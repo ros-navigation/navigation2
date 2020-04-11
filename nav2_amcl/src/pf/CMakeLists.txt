@@ -11,9 +11,11 @@ add_library(pf_lib SHARED
   pf_draw.c
 )
 
+target_compile_definitions(pf_lib PRIVATE "NAV2_AMCL_PF_BUILDING_DLL")
+
 install(TARGETS
   pf_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )

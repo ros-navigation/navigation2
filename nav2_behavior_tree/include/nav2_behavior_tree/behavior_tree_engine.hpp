@@ -22,13 +22,14 @@
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "behaviortree_cpp_v3/xml_parsing.h"
+#include "nav2_behavior_tree/visibility_control.h"
 
 namespace nav2_behavior_tree
 {
 
 enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
-class BehaviorTreeEngine
+class NAV2_BEHAVIOR_TREE_PUBLIC BehaviorTreeEngine
 {
 public:
   explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);

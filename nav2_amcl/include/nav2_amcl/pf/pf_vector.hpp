@@ -28,11 +28,12 @@
 #ifndef NAV2_AMCL__PF__PF_VECTOR_HPP_
 #define NAV2_AMCL__PF__PF_VECTOR_HPP_
 
+#include "nav2_amcl/pf/visibility_control.h"
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdio.h>
 
 // The basic vector
 typedef struct
@@ -49,34 +50,44 @@ typedef struct
 
 
 // Return a zero vector
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_vector_zero();
 
 // Check for NAN or INF in any component
+NAV2_AMCL_PF_PUBLIC
 int pf_vector_finite(pf_vector_t a);
 
 // Print a vector
+NAV2_AMCL_PF_PUBLIC
 void pf_vector_fprintf(pf_vector_t s, FILE * file, const char * fmt);
 
 // Simple vector addition
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_vector_add(pf_vector_t a, pf_vector_t b);
 
 // Simple vector subtraction
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_vector_sub(pf_vector_t a, pf_vector_t b);
 
 // Transform from local to global coords (a + b)
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_vector_coord_add(pf_vector_t a, pf_vector_t b);
 
 // Transform from global to local coords (a - b)
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_vector_coord_sub(pf_vector_t a, pf_vector_t b);
 
 
 // Return a zero matrix
+NAV2_AMCL_PF_PUBLIC
 pf_matrix_t pf_matrix_zero();
 
 // Check for NAN or INF in any component
+NAV2_AMCL_PF_PUBLIC
 int pf_matrix_finite(pf_matrix_t a);
 
 // Print a matrix
+NAV2_AMCL_PF_PUBLIC
 void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
 
 // Compute the matrix inverse.  Will also return the determinant,
@@ -85,6 +96,7 @@ void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
 
 // Decompose a covariance matrix [a] into a rotation matrix [r] and a
 // diagonal matrix [d] such that a = r * d * r^T.
+NAV2_AMCL_PF_PUBLIC
 void pf_matrix_unitary(pf_matrix_t * r, pf_matrix_t * d, pf_matrix_t a);
 
 #ifdef __cplusplus

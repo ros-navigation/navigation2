@@ -22,6 +22,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
@@ -38,7 +39,7 @@ enum class TestCostmap
 
 // Class for a single layered costmap initialized from an
 // occupancy grid representing the map.
-class Costmap
+class NAV2_UTIL_PUBLIC Costmap
 {
 public:
   typedef uint8_t CostValue;

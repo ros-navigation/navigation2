@@ -25,6 +25,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_waypoint_follower/visibility_control.h"
 
 namespace nav2_waypoint_follower
 {
@@ -42,7 +43,7 @@ enum class ActionStatus
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class WaypointFollower : public nav2_util::LifecycleNode
+class NAV2_WAYPOINT_FOLLOWER_PUBLIC WaypointFollower : public nav2_util::LifecycleNode
 {
 public:
   using ActionT = nav2_msgs::action::FollowWaypoints;

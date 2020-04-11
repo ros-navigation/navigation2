@@ -104,13 +104,16 @@ ament_target_dependencies(${executable_name}
 )
 
 install(TARGETS ${executable_name}
-                ${library_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS ${library_name}
                 nav2_backup_recovery
                 nav2_spin_recovery
                 nav2_wait_recovery
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

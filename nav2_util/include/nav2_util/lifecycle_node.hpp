@@ -22,6 +22,7 @@
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
@@ -33,7 +34,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 // to interface to classes, such as MessageFilter and TransformListener, that don't yet
 // support lifecycle nodes. Once we get the fixes into ROS2, this class will be removed.
 
-class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
+class NAV2_UTIL_PUBLIC LifecycleNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   LifecycleNode(

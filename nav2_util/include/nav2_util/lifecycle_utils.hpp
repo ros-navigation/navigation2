@@ -19,6 +19,7 @@
 #include <string>
 #include <chrono>
 #include "nav2_util/string_utils.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
@@ -33,7 +34,7 @@ namespace nav2_util
  *            service call.
  * \param[in] retries The number of times to try a state transition service call
  */
-void startup_lifecycle_nodes(
+void NAV2_UTIL_PUBLIC startup_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3);
@@ -42,7 +43,7 @@ void startup_lifecycle_nodes(
 /**
  * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
  */
-void startup_lifecycle_nodes(
+static void startup_lifecycle_nodes(
   const std::string & nodes,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3)
@@ -60,7 +61,7 @@ void startup_lifecycle_nodes(
  *            service call.
  * \param[in] retries The number of times to try a state transition service call
  */
-void reset_lifecycle_nodes(
+void NAV2_UTIL_PUBLIC reset_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3);
@@ -69,7 +70,7 @@ void reset_lifecycle_nodes(
 /**
  * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
  */
-void reset_lifecycle_nodes(
+static void reset_lifecycle_nodes(
   const std::string & nodes,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
   const int retries = 3)

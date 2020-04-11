@@ -47,6 +47,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
@@ -58,6 +59,7 @@ namespace nav2_costmap_2d
  * @param min_dist Output parameter of the minimum distance
  * @param max_dist Output parameter of the maximum distance
  */
+NAV2_COSTMAP_2D_PUBLIC
 void calculateMinAndMaxDistances(
   const std::vector<geometry_msgs::msg::Point> & footprint,
   double & min_dist, double & max_dist);
@@ -65,21 +67,25 @@ void calculateMinAndMaxDistances(
 /**
  * @brief Convert Point32 to Point
  */
+NAV2_COSTMAP_2D_PUBLIC
 geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt);
 
 /**
  * @brief Convert Point to Point32
  */
+NAV2_COSTMAP_2D_PUBLIC
 geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt);
 
 /**
  * @brief Convert vector of Points to Polygon msg
  */
+NAV2_COSTMAP_2D_PUBLIC
 geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts);
 
 /**
  * @brief Convert Polygon msg to vector of Points.
  */
+NAV2_COSTMAP_2D_PUBLIC
 std::vector<geometry_msgs::msg::Point> toPointVector(
   geometry_msgs::msg::Polygon::SharedPtr polygon);
 
@@ -91,6 +97,7 @@ std::vector<geometry_msgs::msg::Point> toPointVector(
  * @param  footprint_spec Basic shape of the footprint
  * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
 */
+NAV2_COSTMAP_2D_PUBLIC
 void transformFootprint(
   double x, double y, double theta,
   const std::vector<geometry_msgs::msg::Point> & footprint_spec,
@@ -104,6 +111,7 @@ void transformFootprint(
  * @param  footprint_spec Basic shape of the footprint
  * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
 */
+NAV2_COSTMAP_2D_PUBLIC
 void transformFootprint(
   double x, double y, double theta,
   const std::vector<geometry_msgs::msg::Point> & footprint_spec,
@@ -112,11 +120,13 @@ void transformFootprint(
 /**
  * @brief Adds the specified amount of padding to the footprint (in place)
  */
+NAV2_COSTMAP_2D_PUBLIC
 void padFootprint(std::vector<geometry_msgs::msg::Point> & footprint, double padding);
 
 /**
  * @brief Create a circular footprint from a given radius
  */
+NAV2_COSTMAP_2D_PUBLIC
 std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius);
 
 /**
@@ -125,6 +135,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius);
  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
  *
  */
+NAV2_COSTMAP_2D_PUBLIC
 bool makeFootprintFromString(
   const std::string & footprint_string,
   std::vector<geometry_msgs::msg::Point> & footprint);

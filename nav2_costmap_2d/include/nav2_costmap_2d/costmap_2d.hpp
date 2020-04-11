@@ -48,6 +48,7 @@
 #include <queue>
 #include <mutex>
 #include "geometry_msgs/msg/point.hpp"
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
@@ -63,7 +64,7 @@ struct MapLocation
  * @class Costmap2D
  * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
  */
-class Costmap2D
+class NAV2_COSTMAP_2D_PUBLIC Costmap2D
 {
   friend class CostmapTester;  // Need this for gtest to work correctly
 

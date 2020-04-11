@@ -80,12 +80,10 @@ target_include_directories(${library_name} PUBLIC
 
 target_link_libraries(${library_name}
   rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
 )
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-# TODO: Make this specific to this project (not rviz default plugins)
-target_compile_definitions(${library_name} PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
+target_compile_definitions(${library_name} PRIVATE "NAV2_RVIZ_PLUGINS_BUILDING_DLL")
 
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

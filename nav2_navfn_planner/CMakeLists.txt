@@ -55,12 +55,14 @@ ament_target_dependencies(${library_name}
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_compile_definitions(${library_name} PRIVATE "NAV2_NAVFN_PLANNER_BUILDING_DLL")
+
 pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

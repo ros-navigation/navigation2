@@ -27,11 +27,12 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
 
-bool getCurrentPose(
+bool NAV2_UTIL_PUBLIC getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   tf2_ros::Buffer & tf_buffer, const std::string global_frame = "map",
   const std::string robot_frame = "base_link", const double transform_timeout = 0.1);

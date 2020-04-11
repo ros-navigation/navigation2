@@ -22,6 +22,7 @@
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
 #include "nav2_amcl/map/map.hpp"
+#include "nav2_amcl/sensors/visibility_control.h"
 
 namespace nav2_amcl
 {
@@ -29,7 +30,7 @@ namespace nav2_amcl
 // Forward declarations
 class LaserData;
 
-class Laser
+class NAV2_AMCL_SENSORS_PUBLIC Laser
 {
 public:
   Laser(size_t max_beams, map_t * map);
@@ -51,7 +52,7 @@ protected:
   double ** temp_obs_;
 };
 
-class LaserData
+class NAV2_AMCL_SENSORS_PUBLIC LaserData
 {
 public:
   Laser * laser;
@@ -64,8 +65,7 @@ public:
   double(*ranges)[2];
 };
 
-
-class BeamModel : public Laser
+class NAV2_AMCL_SENSORS_PUBLIC BeamModel : public Laser
 {
 public:
   BeamModel(
@@ -81,7 +81,7 @@ private:
   double chi_outlier_;
 };
 
-class LikelihoodFieldModel : public Laser
+class NAV2_AMCL_SENSORS_PUBLIC LikelihoodFieldModel : public Laser
 {
 public:
   LikelihoodFieldModel(
@@ -93,7 +93,7 @@ private:
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
 };
 
-class LikelihoodFieldModelProb : public Laser
+class NAV2_AMCL_SENSORS_PUBLIC LikelihoodFieldModelProb : public Laser
 {
 public:
   LikelihoodFieldModelProb(

@@ -20,11 +20,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/behavior_tree_log.hpp"
 #include "nav2_msgs/msg/behavior_tree_status_change.h"
+#include "nav2_bt_navigator/visibility_control.h"
 
 namespace nav2_bt_navigator
 {
 
-class RosTopicLogger : public BT::StatusChangeLogger
+class NAV2_BT_NAVIGATOR_PUBLIC RosTopicLogger : public BT::StatusChangeLogger
 {
 public:
   RosTopicLogger(const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree);

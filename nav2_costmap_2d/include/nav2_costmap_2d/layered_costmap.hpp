@@ -45,6 +45,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
@@ -54,7 +55,7 @@ class Layer;
  * @class LayeredCostmap
  * @brief Instantiates different layer plugins and aggregates them into one score
  */
-class LayeredCostmap
+class NAV2_COSTMAP_2D_PUBLIC LayeredCostmap
 {
 public:
   /**

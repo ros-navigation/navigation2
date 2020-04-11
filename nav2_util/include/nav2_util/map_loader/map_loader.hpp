@@ -38,6 +38,7 @@
 #include <string>
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav2_util/map_loader/visibility_control.h"
 
 /** Map mode
  *  Default: TRINARY -
@@ -72,7 +73,7 @@ namespace map_loader
  * @throws std::runtime_error If the image file can't be loaded
  * */
 
-nav_msgs::msg::OccupancyGrid loadMapFromFile(
+nav_msgs::msg::OccupancyGrid MAP_LOADER_PUBLIC loadMapFromFile(
   const std::string image_file_name, const double resolution, const bool negate,
   const double occupancy_threshold, const double free_threshold,
   const geometry_msgs::msg::Twist origin, const MapMode mode = TRINARY);

@@ -14,6 +14,8 @@ add_library(voxel_grid SHARED
   src/voxel_grid.cpp
 )
 
+target_compile_definitions(voxel_grid PRIVATE "NAV2_VOXEL_GRID_BUILDING_DLL")
+
 set(dependencies
   rclcpp
 )
@@ -25,7 +27,7 @@ ament_target_dependencies(voxel_grid
 install(TARGETS voxel_grid
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

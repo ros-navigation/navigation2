@@ -28,6 +28,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "nav2_bt_navigator/visibility_control.h"
 
 namespace nav2_bt_navigator
 {
@@ -36,7 +37,7 @@ namespace nav2_bt_navigator
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class BtNavigator : public nav2_util::LifecycleNode
+class NAV2_BT_NAVIGATOR_PUBLIC BtNavigator : public nav2_util::LifecycleNode
 {
 public:
   /**

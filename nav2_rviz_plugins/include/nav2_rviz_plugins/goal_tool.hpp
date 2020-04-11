@@ -20,7 +20,7 @@
 #include <memory>
 
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
-#include "rviz_default_plugins/visibility_control.hpp"
+#include "nav2_rviz_plugins/visibility_control.h"
 
 namespace rviz_common
 {
@@ -36,7 +36,7 @@ class StringProperty;
 namespace nav2_rviz_plugins
 {
 
-class RVIZ_DEFAULT_PLUGINS_PUBLIC GoalTool : public rviz_default_plugins::tools::PoseTool
+class NAV2_RVIZ_PLUGINS_PUBLIC GoalTool : public rviz_default_plugins::tools::PoseTool
 {
   Q_OBJECT
 

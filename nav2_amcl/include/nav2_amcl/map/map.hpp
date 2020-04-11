@@ -29,6 +29,7 @@
 #define NAV2_AMCL__MAP__MAP_HPP_
 
 #include <stdint.h>
+#include "nav2_amcl/map/visibility_control.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,21 +83,26 @@ typedef struct
  **************************************************************************/
 
 // Create a new (empty) map
+NAV2_AMCL_MAP_PUBLIC
 map_t * map_alloc(void);
 
 // Destroy a map
+NAV2_AMCL_MAP_PUBLIC
 void map_free(map_t * map);
 
 // Get the cell at the given point
+NAV2_AMCL_MAP_PUBLIC
 map_cell_t * map_get_cell(map_t * map, double ox, double oy, double oa);
 
 // Load an occupancy map
+NAV2_AMCL_MAP_PUBLIC
 int map_load_occ(map_t * map, const char * filename, double scale, int negate);
 
 // Load a wifi signal strength map
 // int map_load_wifi(map_t *map, const char *filename, int index);
 
 // Update the cspace distances
+NAV2_AMCL_MAP_PUBLIC
 void map_update_cspace(map_t * map, double max_occ_dist);
 
 
@@ -105,6 +111,7 @@ void map_update_cspace(map_t * map, double max_occ_dist);
  **************************************************************************/
 
 // Extract a single range reading from the map
+NAV2_AMCL_MAP_PUBLIC
 double map_calc_range(map_t * map, double ox, double oy, double oa, double max_range);
 
 
@@ -113,12 +120,15 @@ double map_calc_range(map_t * map, double ox, double oy, double oa, double max_r
  **************************************************************************/
 
 // Draw the occupancy grid
+NAV2_AMCL_MAP_PUBLIC
 void map_draw_occ(map_t * map, struct _rtk_fig_t * fig);
 
 // Draw the cspace map
+NAV2_AMCL_MAP_PUBLIC
 void map_draw_cspace(map_t * map, struct _rtk_fig_t * fig);
 
 // Draw a wifi map
+NAV2_AMCL_MAP_PUBLIC
 void map_draw_wifi(map_t * map, struct _rtk_fig_t * fig, int index);
 
 

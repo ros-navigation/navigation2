@@ -57,6 +57,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
+#include "nav2_costmap_2d/visibility_control.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -69,7 +70,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS : public nav2_util::LifecycleNode
+class NAV2_COSTMAP_2D_PUBLIC Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**

@@ -9,6 +9,8 @@ add_library(${library_name} SHARED
   node_thread.cpp
 )
 
+target_compile_definitions(${library_name} PRIVATE "NAV2_UTIL_BUILDING_DLL")
+
 ament_target_dependencies(${library_name}
   rclcpp
   nav2_msgs
@@ -38,10 +40,14 @@ target_include_directories(dump_params PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(dump_params ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 install(TARGETS
-  ${library_name}
   lifecycle_bringup
   dump_params
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS
+  ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )

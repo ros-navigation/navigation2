@@ -20,11 +20,12 @@
 #include <string>
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
+#include "nav2_amcl/motion_model/visibility_control.h"
 
 namespace nav2_amcl
 {
 
-class MotionModel
+class NAV2_AMCL_MOTION_MODEL_PUBLIC MotionModel
 {
 public:
   virtual ~MotionModel() = default;
@@ -35,7 +36,7 @@ public:
     double alpha3, double alpha4, double alpha5);
 };
 
-class OmniMotionModel : public MotionModel
+class NAV2_AMCL_MOTION_MODEL_PUBLIC OmniMotionModel : public MotionModel
 {
 public:
   OmniMotionModel(double alpha1, double alpha2, double alpha3, double alpha4, double alpha5);
@@ -49,7 +50,7 @@ private:
   double alpha5_;
 };
 
-class DifferentialMotionModel : public MotionModel
+class NAV2_AMCL_MOTION_MODEL_PUBLIC DifferentialMotionModel : public MotionModel
 {
 public:
   DifferentialMotionModel(double alpha1, double alpha2, double alpha3, double alpha4);

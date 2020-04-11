@@ -45,6 +45,7 @@ set(dependencies
 add_library(${library_name} SHARED
   src/behavior_tree_engine.cpp
 )
+target_compile_definitions(${library_name} PRIVATE "NAV2_BEHAVIOR_TREE_BUILDING_DLL")
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -110,7 +111,7 @@ install(TARGETS ${library_name}
                 ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

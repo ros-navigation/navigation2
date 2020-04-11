@@ -27,6 +27,8 @@ add_library(${library_name} SHARED
   src/lifecycle_manager_client.cpp
 )
 
+target_compile_definitions(${library_name} PRIVATE "NAV2_LIFECYCLE_MANAGER_BUILDING_DLL")
+
 set(dependencies
   geometry_msgs
   lifecycle_msgs
@@ -58,10 +60,14 @@ ament_target_dependencies(lifecycle_manager
 
 install(TARGETS
   lifecycle_manager
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/ DESTINATION include/)

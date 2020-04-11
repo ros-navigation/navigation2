@@ -50,6 +50,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "dwb_core/visibility_control.h"
 
 namespace dwb_core
 {
@@ -58,7 +59,7 @@ namespace dwb_core
  * @class DWBLocalPlanner
  * @brief Plugin-based flexible controller
  */
-class DWBLocalPlanner : public nav2_core::Controller
+class DWB_CORE_PUBLIC DWBLocalPlanner : public nav2_core::Controller
 {
 public:
   /**

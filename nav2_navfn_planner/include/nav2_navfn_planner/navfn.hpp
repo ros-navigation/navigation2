@@ -43,6 +43,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <nav2_navfn_planner/visibility_control.h>
 
 namespace nav2_navfn_planner
 {
@@ -90,6 +91,7 @@ namespace nav2_navfn_planner
 Returns length of plan if found, and fills an array with x,y interpolated
 positions at about 1/2 cell resolution; else returns 0.
 */
+NAV2_NAVFN_PLANNER_PUBLIC
 int create_nav_plan_astar(
   const COSTTYPE * costmap, int nx, int ny,
   int * goal, int * start,
@@ -100,7 +102,7 @@ int create_nav_plan_astar(
  * @brief Navigation function class. Holds buffers for costmap, navfn map. Maps are pixel-based.
  *  Origin is upper left, x is right, y is down.
  */
-class NavFn
+class NAV2_NAVFN_PLANNER_PUBLIC NavFn
 {
 public:
   /**

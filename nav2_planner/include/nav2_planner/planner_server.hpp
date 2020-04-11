@@ -36,6 +36,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
+#include "nav2_planner/visibility_control.h"
 
 namespace nav2_planner
 {
@@ -44,7 +45,7 @@ namespace nav2_planner
  * @brief An action server implements the behavior tree's ComputePathToPose
  * interface and hosts various plugins of different algorithms to compute plans.
  */
-class PlannerServer : public nav2_util::LifecycleNode
+class NAV2_PLANNER_PUBLIC PlannerServer : public nav2_util::LifecycleNode
 {
 public:
   /**

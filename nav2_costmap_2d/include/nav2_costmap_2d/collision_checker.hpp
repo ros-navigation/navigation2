@@ -27,6 +27,7 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_costmap_2d/client_visibility_control.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -36,7 +37,7 @@ namespace nav2_costmap_2d
 {
 typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
-class CollisionChecker
+class NAV2_COSTMAP_2D_CLIENT_PUBLIC CollisionChecker
 {
 public:
   CollisionChecker(

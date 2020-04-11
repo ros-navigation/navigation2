@@ -51,6 +51,7 @@ add_library(nav2_costmap_2d_core SHARED
 
 # prevent pluginlib from using boost
 target_compile_definitions(nav2_costmap_2d_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(nav2_costmap_2d_core PRIVATE "NAV2_COSTMAP_2D_BUILDING_DLL")
 
 set(dependencies
   geometry_msgs
@@ -90,6 +91,7 @@ ament_target_dependencies(layers
 target_link_libraries(layers
   nav2_costmap_2d_core
 )
+target_compile_definitions(layers PRIVATE "NAV2_COSTMAP_2D_LAYERS_BUILDING_DLL")
 
 add_library(nav2_costmap_2d_client SHARED
   src/footprint_subscriber.cpp
@@ -104,6 +106,7 @@ ament_target_dependencies(nav2_costmap_2d_client
 target_link_libraries(nav2_costmap_2d_client
   nav2_costmap_2d_core
 )
+target_compile_definitions(nav2_costmap_2d_client PRIVATE "NAV2_COSTMAP_2D_CLIENT_BUILDING_DLL")
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
 target_link_libraries(nav2_costmap_2d_markers
@@ -126,19 +129,16 @@ ament_target_dependencies(nav2_costmap_2d
 
 target_link_libraries(nav2_costmap_2d
   nav2_costmap_2d_core
-  layers
 )
 
-install(TARGETS
-  nav2_costmap_2d_core
-  nav2_costmap_2d
-  layers
-  nav2_costmap_2d_client
-  nav2_costmap_2d_markers
-  nav2_costmap_2d_cloud
+install(TARGETS nav2_costmap_2d nav2_costmap_2d_markers nav2_costmap_2d_cloud
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS nav2_costmap_2d_core layers nav2_costmap_2d_client
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(FILES costmap_plugins.xml

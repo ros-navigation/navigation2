@@ -28,10 +28,15 @@
 #ifndef NAV2_AMCL__PF__PF_KDTREE_HPP_
 #define NAV2_AMCL__PF__PF_KDTREE_HPP_
 
+#include "nav2_amcl/pf/visibility_control.h"
+
 #ifdef INCLUDE_RTKGUI
 #include <rtk.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Info for a node in the tree
 typedef struct pf_kdtree_node
@@ -76,32 +81,44 @@ typedef struct
 
 
 // Create a tree
+NAV2_AMCL_PF_PUBLIC
 extern pf_kdtree_t * pf_kdtree_alloc(int max_size);
 
 // Destroy a tree
+NAV2_AMCL_PF_PUBLIC
 extern void pf_kdtree_free(pf_kdtree_t * self);
 
 // Clear all entries from the tree
+NAV2_AMCL_PF_PUBLIC
 extern void pf_kdtree_clear(pf_kdtree_t * self);
 
 // Insert a pose into the tree
+NAV2_AMCL_PF_PUBLIC
 extern void pf_kdtree_insert(pf_kdtree_t * self, pf_vector_t pose, double value);
 
 // Cluster the leaves in the tree
+NAV2_AMCL_PF_PUBLIC
 extern void pf_kdtree_cluster(pf_kdtree_t * self);
 
 // Determine the probability estimate for the given pose
+NAV2_AMCL_PF_PUBLIC
 extern double pf_kdtree_get_prob(pf_kdtree_t * self, pf_vector_t pose);
 
 // Determine the cluster label for the given pose
+NAV2_AMCL_PF_PUBLIC
 extern int pf_kdtree_get_cluster(pf_kdtree_t * self, pf_vector_t pose);
 
 
 #ifdef INCLUDE_RTKGUI
 
 // Draw the tree
+NAV2_AMCL_PF_PUBLIC
 extern void pf_kdtree_draw(pf_kdtree_t * self, rtk_fig_t * fig);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif  // NAV2_AMCL__PF__PF_KDTREE_HPP_

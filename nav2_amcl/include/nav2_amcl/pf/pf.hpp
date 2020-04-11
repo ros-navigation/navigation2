@@ -30,6 +30,7 @@
 
 #include "nav2_amcl/pf/pf_vector.hpp"
 #include "nav2_amcl/pf/pf_kdtree.hpp"
+#include "nav2_amcl/pf/visibility_control.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,59 +139,75 @@ typedef struct _pf_t
 
 
 // Create a new filter
+NAV2_AMCL_PF_PUBLIC
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
   pf_init_model_fn_t random_pose_fn, void * random_pose_data);
 
 // Free an existing filter
+NAV2_AMCL_PF_PUBLIC
 void pf_free(pf_t * pf);
 
 // Initialize the filter using a guassian
+NAV2_AMCL_PF_PUBLIC
 void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov);
 
 // Initialize the filter using some model
+NAV2_AMCL_PF_PUBLIC
 void pf_init_model(pf_t * pf, pf_init_model_fn_t init_fn, void * init_data);
 
 // Update the filter with some new action
+NAV2_AMCL_PF_PUBLIC
 void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_data);
 
 // Update the filter with some new sensor observation
+NAV2_AMCL_PF_PUBLIC
 void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_data);
 
 // Resample the distribution
+NAV2_AMCL_PF_PUBLIC
 void pf_update_resample(pf_t * pf);
 
 // Compute the CEP statistics (mean and variance).
+NAV2_AMCL_PF_PUBLIC
 void pf_get_cep_stats(pf_t * pf, pf_vector_t * mean, double * var);
 
 // Compute the statistics for a particular cluster.  Returns 0 if
 // there is no such cluster.
+NAV2_AMCL_PF_PUBLIC
 int pf_get_cluster_stats(
   pf_t * pf, int cluster, double * weight,
   pf_vector_t * mean, pf_matrix_t * cov);
 
 // Re-compute the cluster statistics for a sample set
+NAV2_AMCL_PF_PUBLIC
 void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set);
 
 
 // Display the sample set
+NAV2_AMCL_PF_PUBLIC
 void pf_draw_samples(pf_t * pf, struct _rtk_fig_t * fig, int max_samples);
 
 // Draw the histogram (kdtree)
+NAV2_AMCL_PF_PUBLIC
 void pf_draw_hist(pf_t * pf, struct _rtk_fig_t * fig);
 
 // Draw the CEP statistics
+NAV2_AMCL_PF_PUBLIC
 void pf_draw_cep_stats(pf_t * pf, struct _rtk_fig_t * fig);
 
 // Draw the cluster statistics
+NAV2_AMCL_PF_PUBLIC
 void pf_draw_cluster_stats(pf_t * pf, struct _rtk_fig_t * fig);
 
 // calculate if the particle filter has converged -
 // and sets the converged flag in the current set and the pf
+NAV2_AMCL_PF_PUBLIC
 int pf_update_converged(pf_t * pf);
 
 // sets the current set and pf converged values to zero
+NAV2_AMCL_PF_PUBLIC
 void pf_init_converged(pf_t * pf);
 
 #ifdef __cplusplus

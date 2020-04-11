@@ -37,6 +37,8 @@ add_library(${library_name} SHARED
   src/map_saver.cpp
   src/map_mode.cpp)
 
+target_compile_definitions(${library_name} PRIVATE "NAV2_MAP_SERVER_BUILDING_DLL")
+
 set(map_server_dependencies
   rclcpp
   rclcpp_lifecycle
@@ -73,10 +75,13 @@ target_include_directories(${library_name} SYSTEM PRIVATE
 target_link_libraries(${library_name}
   ${GRAPHICSMAGICKCPP_LIBRARIES})
 
-install(TARGETS ${map_server_executable} ${library_name} ${map_saver_executable}
+install(TARGETS ${map_server_executable} ${map_saver_executable}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+  RUNTIME DESTINATION bin)
 
 install(DIRECTORY include/
   DESTINATION include/)

@@ -29,6 +29,8 @@ add_library(${library_name} SHARED
   src/waypoint_follower.cpp
 )
 
+target_compile_definitions(${library_name} PRIVATE "NAV2_WAYPOINT_FOLLOWER_BUILDING_DLL")
+
 set(dependencies
   rclcpp
   rclcpp_action
@@ -49,10 +51,14 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

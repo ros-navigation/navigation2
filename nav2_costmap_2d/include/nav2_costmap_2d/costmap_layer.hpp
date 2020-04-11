@@ -41,11 +41,12 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
 
-class CostmapLayer : public Layer, public Costmap2D
+class NAV2_COSTMAP_2D_PUBLIC CostmapLayer : public Layer, public Costmap2D
 {
 public:
   CostmapLayer()

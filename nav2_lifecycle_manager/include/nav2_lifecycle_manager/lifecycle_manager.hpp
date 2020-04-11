@@ -26,6 +26,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "nav2_lifecycle_manager/visibility_control.h"
 
 namespace nav2_lifecycle_manager
 {
@@ -37,7 +38,7 @@ using nav2_msgs::srv::ManageLifecycleNodes;
  * Navigation2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
-class LifecycleManager : public rclcpp::Node
+class NAV2_LIFECYCLE_MANAGER_PUBLIC LifecycleManager : public rclcpp::Node
 {
 public:
   /**

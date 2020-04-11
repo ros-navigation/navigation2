@@ -44,6 +44,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/layers_visibility_control.h"
 
 namespace nav2_costmap_2d
 {
@@ -72,7 +73,7 @@ public:
   unsigned int src_x_, src_y_;
 };
 
-class InflationLayer : public Layer
+class NAV2_COSTMAP_2D_LAYERS_PUBLIC InflationLayer : public Layer
 {
 public:
   InflationLayer();

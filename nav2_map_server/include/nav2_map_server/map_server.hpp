@@ -17,6 +17,7 @@
 
 #include <memory>
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_map_server/visibility_control.h"
 
 namespace nav2_map_server
 {
@@ -26,7 +27,7 @@ namespace nav2_map_server
  * @brief This class on activate, loads the OccGridLoader node to start map
  * server from the yaml file which is being passed as parameter.
  */
-class MapServer : public nav2_util::LifecycleNode
+class NAV2_MAP_SERVER_PUBLIC MapServer : public nav2_util::LifecycleNode
 {
 public:
   /**

@@ -17,6 +17,8 @@
 
 #include <string>
 #include <vector>
+#include "nav2_map_server/visibility_control.h"
+
 namespace nav2_map_server
 {
 /**
@@ -57,6 +59,7 @@ enum class MapMode
  * @return String identifier of the given map mode
  * @throw std::invalid_argument if the given value is not a defined map mode
  */
+NAV2_MAP_SERVER_PUBLIC
 const char * map_mode_to_string(MapMode map_mode);
 
 /**
@@ -65,6 +68,7 @@ const char * map_mode_to_string(MapMode map_mode);
  * @throw std::invalid_argument if the name does not name a map mode
  * @return map mode corresponding to the string
  */
+NAV2_MAP_SERVER_PUBLIC
 MapMode map_mode_from_string(std::string map_mode_name);
 }  // namespace nav2_map_server
 

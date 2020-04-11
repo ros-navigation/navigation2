@@ -34,6 +34,7 @@ add_library(${library_name} SHARED
   src/bt_navigator.cpp
   src/ros_topic_logger.cpp
 )
+target_compile_definitions(${library_name} PRIVATE "NAV2_BT_NAVIGATOR_BUILDING_DLL")
 
 set(dependencies
   rclcpp
@@ -60,10 +61,14 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

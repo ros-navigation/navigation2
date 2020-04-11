@@ -18,11 +18,12 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
 
-class NodeThread
+class NAV2_UTIL_PUBLIC NodeThread
 {
 public:
   explicit NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base);

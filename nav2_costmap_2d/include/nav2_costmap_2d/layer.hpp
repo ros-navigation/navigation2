@@ -46,12 +46,13 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/visibility_control.h"
 
 namespace nav2_costmap_2d
 {
 class LayeredCostmap;
 
-class Layer  // TODO(mjeronimo): public nav2_util::LifecycleHelperInterface
+class NAV2_COSTMAP_2D_PUBLIC Layer  // TODO(mjeronimo): public nav2_util::LifecycleHelperInterface
 {
 public:
   Layer();

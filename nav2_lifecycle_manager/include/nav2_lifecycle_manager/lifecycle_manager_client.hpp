@@ -26,6 +26,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "nav2_lifecycle_manager/visibility_control.h"
 
 namespace nav2_lifecycle_manager
 {
@@ -39,7 +40,7 @@ enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
  * @brief The LifecycleManagerClient sends requests to the LifecycleManager to
  * control the lifecycle state of the navigation modules.
  */
-class LifecycleManagerClient
+class NAV2_LIFECYCLE_MANAGER_PUBLIC LifecycleManagerClient
 {
 public:
   /**

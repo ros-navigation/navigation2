@@ -29,6 +29,7 @@
 #define NAV2_AMCL__PF__PF_PDF_HPP_
 
 #include "nav2_amcl/pf/pf_vector.hpp"
+#include "nav2_amcl/pf/visibility_control.h"
 
 // #include <gsl/gsl_rng.h>
 // #include <gsl/gsl_randist.h>
@@ -60,9 +61,11 @@ typedef struct
 
 
 // Create a gaussian pdf
+NAV2_AMCL_PF_PUBLIC
 pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx);
 
 // Destroy the pdf
+NAV2_AMCL_PF_PUBLIC
 void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf);
 
 // Compute the value of the pdf at some point [z].
@@ -72,9 +75,11 @@ void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf);
 // deviation sigma.
 // We use the polar form of the Box-Muller transformation, explained here:
 //   http://www.taygeta.com/random/gaussian.html
+NAV2_AMCL_PF_PUBLIC
 double pf_ran_gaussian(double sigma);
 
 // Generate a sample from the pdf.
+NAV2_AMCL_PF_PUBLIC
 pf_vector_t pf_pdf_gaussian_sample(pf_pdf_gaussian_t * pdf);
 
 #ifdef __cplusplus

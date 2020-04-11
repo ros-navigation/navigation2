@@ -20,6 +20,7 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
+#include "nav2_util/lifecycle_utils.hpp"
 
 using std::string;
 using lifecycle_msgs::msg::Transition;

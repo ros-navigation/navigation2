@@ -47,6 +47,7 @@ add_library(dwb_core SHARED
   src/illegal_trajectory_tracker.cpp
   src/trajectory_utils.cpp
 )
+target_compile_definitions(dwb_core PRIVATE "DWB_CORE_BUILDING_DLL")
 
 # prevent pluginlib from using boost
 target_compile_definitions(dwb_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -58,7 +59,7 @@ ament_target_dependencies(dwb_core
 install(TARGETS dwb_core
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

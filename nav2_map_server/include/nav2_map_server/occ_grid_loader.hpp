@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_map_server/visibility_control.h"
 
 #include "map_mode.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -34,7 +35,7 @@ namespace nav2_map_server
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides occupancy grid
  */
-class OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
+class NAV2_MAP_SERVER_PUBLIC OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 {
 public:
   /**

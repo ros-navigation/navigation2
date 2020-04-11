@@ -19,11 +19,12 @@
 #include "nav2_util/service_client.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
+#include "nav2_util/visibility_control.h"
 
 namespace nav2_util
 {
 
-class ClearEntirelyCostmapServiceClient
+class NAV2_UTIL_PUBLIC ClearEntirelyCostmapServiceClient
   : public nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:

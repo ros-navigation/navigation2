@@ -45,6 +45,7 @@
 #include <limits.h>
 #include <algorithm>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_voxel_grid/visibility_control.h"
 
 /**
  * @class VoxelGrid
@@ -62,7 +63,7 @@ enum VoxelStatus
   MARKED = 2,
 };
 
-class VoxelGrid
+class NAV2_VOXEL_GRID_PUBLIC VoxelGrid
 {
 public:
   /**

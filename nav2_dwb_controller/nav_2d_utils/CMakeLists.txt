@@ -31,6 +31,7 @@ include_directories(
 
 add_library(conversions SHARED
   src/conversions.cpp)
+target_compile_definitions(conversions PRIVATE "NAV_2D_UTILS_CONVERSIONS_BUILDING_DLL")
 
 ament_target_dependencies(conversions
   ${dependencies}
@@ -38,6 +39,7 @@ ament_target_dependencies(conversions
 
 add_library(path_ops SHARED
   src/path_ops.cpp)
+target_compile_definitions(path_ops PRIVATE "NAV_2D_UTILS_PATH_OPS_BUILDING_DLL")
 
 ament_target_dependencies(path_ops
   ${dependencies}
@@ -46,7 +48,7 @@ ament_target_dependencies(path_ops
 install(TARGETS conversions path_ops
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION lib/${PROJECT_NAME}
+        RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/
         DESTINATION include/

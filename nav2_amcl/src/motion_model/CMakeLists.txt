@@ -3,6 +3,7 @@ add_library(motions_lib SHARED
   differential_motion_model.cpp
   motion_model.cpp
 )
+target_compile_definitions(motions_lib PRIVATE "NAV2_AMCL_MOTION_MODEL_BUILDING_DLL")
 target_link_libraries(motions_lib pf_lib)
 ament_target_dependencies(motions_lib
   nav2_util
@@ -12,5 +13,5 @@ install(TARGETS
   motions_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )

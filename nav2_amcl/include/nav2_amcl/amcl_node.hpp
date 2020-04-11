@@ -39,6 +39,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "nav2_amcl/visibility_control.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -51,7 +52,7 @@
 namespace nav2_amcl
 {
 
-class AmclNode : public nav2_util::LifecycleNode
+class NAV2_AMCL_PUBLIC AmclNode : public nav2_util::LifecycleNode
 {
 public:
   AmclNode();

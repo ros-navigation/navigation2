@@ -41,6 +41,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_core/goal_checker.hpp"
+#include "dwb_plugins/simple_goal_checker_visibility_control.h"
 
 namespace dwb_plugins
 {
@@ -52,7 +53,7 @@ namespace dwb_plugins
  * This class can be stateful if the stateful parameter is set to true (which it is by default).
  * This means that the goal checker will not check if the xy position matches again once it is found to be true.
  */
-class SimpleGoalChecker : public nav2_core::GoalChecker
+class DWB_PLUGINS_SIMPLE_GOAL_CHECKER_PUBLIC SimpleGoalChecker : public nav2_core::GoalChecker
 {
 public:
   SimpleGoalChecker();

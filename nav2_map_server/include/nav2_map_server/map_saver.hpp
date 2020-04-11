@@ -19,6 +19,7 @@
 #include "map_mode.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_map_server/visibility_control.h"
 
 namespace nav2_map_server
 {
@@ -28,7 +29,7 @@ namespace nav2_map_server
  * @brief A class that writes map to a file from occpancy grid which is
  * subscribed from "/map" topic.
  */
-class MapSaver : public rclcpp::Node
+class NAV2_MAP_SERVER_PUBLIC MapSaver : public rclcpp::Node
 {
 public:
   /**
