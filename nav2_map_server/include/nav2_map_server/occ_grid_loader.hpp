@@ -36,7 +36,7 @@ namespace nav2_map_server
  * provides occupancy grid
  */
 class NAV2_MAP_SERVER_PUBLIC
-  OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
+    OccGridLoader : public rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 {
 public:
   /**
