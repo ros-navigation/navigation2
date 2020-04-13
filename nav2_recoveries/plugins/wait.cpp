@@ -24,7 +24,6 @@ namespace nav2_recoveries
 Wait::Wait()
 : Recovery<WaitAction>()
 {
-  duration_.sec = 0.0;
 }
 
 Wait::~Wait()
@@ -33,15 +32,22 @@ Wait::~Wait()
 
 Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> command)
 {
-  duration_ = command->time;
+  run_end_ = std::chrono::steady_clock::now() + rclcpp::Duration(command->time).to_chrono<std::chrono::nanoseconds>();
   return Status::SUCCEEDED;
 }
 
 Status Wait::onCycleUpdate()
 {
-  rclcpp::sleep_for(
-    rclcpp::Duration(duration_).to_chrono<std::chrono::nanoseconds>());
-  return Status::SUCCEEDED;
+  auto current_point = std::chrono::steady_clock::now();
+  auto time_left = std::chrono::duration_cast<std::chrono::nanoseconds>(run_end_ - current_point).count();
+
+  if (time_left > 0) {
+    return Status::RUNNING;
+  }
+  else {
+    rclcpp::sleep_for(std::chrono::milliseconds(100));
+    return Status::SUCCEEDED;
+  }
 }
 
 }  // namespace nav2_recoveries
