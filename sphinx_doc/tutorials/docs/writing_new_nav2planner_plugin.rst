@@ -7,6 +7,11 @@ Writing a new planner plugin
 - `Requirements`_
 - `Tutorial Steps`_
 
+.. image:: images/Writing_new_nav2planner_plugin/nav2_straightline_gif.gif
+    :width: 700px
+    :align: center
+    :alt: Animated gif with gradient demo
+
 Overview
 ========
 
@@ -27,7 +32,7 @@ Tutorial Steps
 --------------------------------
 
 We will create a simple straight line planner.
-The annotated code in this tutorial can be found in `navigation_tutorials <https://github.com/ros-planning/navigation2_tutorials>`_ repository as the ``nav2_rrtconnect_plugin``
+The annotated code in this tutorial can be found in `navigation_tutorials <https://github.com/ros-planning/navigation2_tutorials>`_ repository as the ``nav2_straightline_planner``
 This package can be a considered as a reference for writing planner plugin.
 
 Our example plugin inherits from the base class ``nav2_core::GlobalPlanner``. The base class provides 5 pure virtual methods to implement a planner plugin. The plugin will be used by the planner server to compute trajectories.
@@ -60,7 +65,7 @@ Lets learn more about the methods needed to write a planner plugin.
 
 For this tutorial, we will be using methods ``StraightLine::configure()`` and ``StraightLine::createPlan()`` to create straight line planner.
 
-In our planner, ``StraightLine::configure()`` method sets member variables and ROS parameters,
+In planners, ``configure()`` method must set member variables from ROS parameters and any initialization required,
 
 .. code-block:: c++
 
@@ -74,7 +79,7 @@ In our planner, ``StraightLine::configure()`` method sets member variables and R
   nav2_util::declare_parameter_if_not_declared(node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
   node_->get_parameter(name_ + ".interpolation_resolution", interpolation_resolution_);
 
-In ``StraightLine::createPlan()`` method, straight line planner is called using start pose and goal pose to solve the global path planning problem. Upon succeding, it converts the path to the ``nav_msgs::msg::Path`` and returns to the caller which is planner server instance. Below annotation shows the implementation of this method.
+In ``createPlan()`` method, we need to create a path from the given start to goal poses. The ``StraightLine::createPlan()`` is called using start pose and goal pose to solve the global path planning problem. Upon succeeding, it converts the path to the ``nav_msgs::msg::Path`` and returns to the planner server. Below annotation shows the implementation of this method.
 
 .. code-block:: c++
 
@@ -98,23 +103,26 @@ In ``StraightLine::createPlan()`` method, straight line planner is called using 
   global_path.poses.clear();
   global_path.header.stamp = node_->now();
   global_path.header.frame_id = global_frame_;
-  global_path.poses.push_back(start);
   // calculating the number of loops for current value of interpolation_resolution_
-  int total_number_of_loop = std::abs(goal.pose.position.x - start.pose.position.x)/interpolation_resolution_;
-
-  double current_x = start.pose.position.x + interpolation_resolution_;
+  int total_number_of_loop = std::hypot(
+    goal.pose.position.x - start.pose.position.x,
+    goal.pose.position.y - start.pose.position.y) /
+    interpolation_resolution_;
+  double x_increment = (goal.pose.position.x - start.pose.position.x) / total_number_of_loop;
+  double y_increment = (goal.pose.position.y - start.pose.position.y) / total_number_of_loop;
 
   for (int i = 0; i < total_number_of_loop; ++i) {
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = current_x;
-    pose.pose.position.y = interpolate(start, goal, current_x);
+    pose.pose.position.x = start.pose.position.x + x_increment * i;
+    pose.pose.position.y = start.pose.position.y + y_increment * i;
     pose.pose.position.z = 0.0;
     pose.pose.orientation.x = 0.0;
     pose.pose.orientation.y = 0.0;
     pose.pose.orientation.z = 0.0;
     pose.pose.orientation.w = 1.0;
+    pose.header.stamp = node_->now();
+    pose.header.frame_id = global_frame_;
     global_path.poses.push_back(pose);
-    current_x += interpolation_resolution_;
   }
 
   global_path.poses.push_back(goal);
