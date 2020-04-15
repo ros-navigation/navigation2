@@ -128,7 +128,7 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
 
       // compute cost
       addSmoothingResidual(_params.smooth_weight, xi, xi_p1, xi_m1, cost_raw);
-      addCurvatureResidual(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, cost_raw);
+      addCurvatureResidual(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, cost_raw);  //TODO retune from fix
       addDistanceResidual(_params.distance_weight, xi, _original_path->at(i), cost_raw);
 
       if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
@@ -298,19 +298,21 @@ protected:
     Eigen::Vector2d p2 = normalizedOrthogonalComplement(
       neg_pt_plus, pt, curvature_params.delta_xi_p_norm, curvature_params.delta_xi_norm);
 
-    // const double & u = 2 * curvature_params.ki_minus_kmax;
+    const double & u = 2 * curvature_params.ki_minus_kmax;
     const double & common_prefix =
-      (-1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
+      (1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
     const double & common_suffix = curvature_params.delta_phi_i /
       (curvature_params.delta_xi_norm * curvature_params.delta_xi_norm);
 
-    const Eigen::Vector2d jacobian =  (common_prefix * (-p1 - p2) - (common_suffix * ones));
-    const Eigen::Vector2d jacobian_im1 = (common_prefix * p2 - (common_suffix * ones));
-    const Eigen::Vector2d jacobian_ip1 = (common_prefix * p1);
+    const Eigen::Vector2d jacobian =  u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
+    const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 + (common_suffix * ones));
+    const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
+    // j0 += weight * jacobian[0]; // TODO try with the prior xi-1 and xi+1s
+    // j1 += weight * jacobian[1];
     j0 += weight *
-      (jacobian_im1[0] + 2 * jacobian[0] + jacobian_ip1[0]);  // xi x component of partial-derivative
+      (jacobian_im1[0] + 2 * jacobian[0] + jacobian_ip1[0]);  // xi x component of partial-derivative  // TODO I think better without this?
     j1 += weight *
-      (jacobian_im1[1] + 2 * jacobian[1] + jacobian_ip1[1]);  // xi y component of partial-derivative
+      (jacobian_im1[1] + 2 * jacobian[1] + jacobian_ip1[1]);  // xi y component of partial-derivative  // Maybe reflects issue in not using xi-1/+1's
   }
 
   /**

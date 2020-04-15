@@ -32,6 +32,7 @@
 //  - describe why and when on the 4 vs 8 connected
 //  - plots of pts that violate over iterations (curve, dist > thresh, smooth > dist, cost > thresh)
 // - Need to boil down statements about why I did this, clear benefits, and drawbacks of current approaches / solutions
+//  - Identified 3 math errors of Thrun
 
 // astar timeout, max duration, optimizer gets rest or until its set maximum. Test time before/after A* but not in it, that would slow down. if over, send log warning like DWB
 
