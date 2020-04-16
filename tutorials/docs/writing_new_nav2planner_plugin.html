@@ -46,6 +46,8 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Configuration Guidelines" href="../../configuration/index.html" />
+    <link rel="prev" title="Writing a new Costmap2D plugin" href="writing_new_costmap2d_plugin.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
 
@@ -100,7 +102,7 @@
               
             
             
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/index.html">Getting Started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../getting_started/index.html#running-the-example">Running the Example</a></li>
@@ -171,7 +173,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">Tutorials</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="navigation2_on_real_turtlebot3.html">Navigating with a Physical Turtlebot 3</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="navigation2_on_real_turtlebot3.html#requirements">Requirements</a></li>
@@ -219,6 +221,18 @@
 <li class="toctree-l4"><a class="reference internal" href="writing_new_costmap2d_plugin.html#export-and-make-gradientlayer-plugin">2- Export and make GradientLayer plugin</a></li>
 <li class="toctree-l4"><a class="reference internal" href="writing_new_costmap2d_plugin.html#enable-the-plugin-in-costmap2d">3- Enable the plugin in Costmap2D</a></li>
 <li class="toctree-l4"><a class="reference internal" href="writing_new_costmap2d_plugin.html#run-gradientlayer-plugin">4- Run GradientLayer plugin</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Writing a new planner plugin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#creating-a-new-planner-plugin">1- Creating a new Planner Plugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#exporting-the-planner-plugin">2- Exporting the planner plugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pass-the-plugin-name-through-params-file">3- Pass the plugin name through params file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#run-straightline-plugin">4- Run StraightLine plugin</a></li>
 </ul>
 </li>
 </ul>
@@ -344,6 +358,8 @@
     
       <li><a href="../../index.html">Docs</a> &raquo;</li>
         
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
       <li>Writing a new planner plugin</li>
     
     
@@ -368,7 +384,7 @@
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
 <li><a class="reference internal" href="#tutorial-steps">Tutorial Steps</a></li>
 </ul>
-<a class="reference internal image-reference" href="tutorials/docs/images/Writing_new_nav2planner_plugin/nav2_straightline_gif.gif"><img alt="Animated gif with gradient demo" class="align-center" src="tutorials/docs/images/Writing_new_nav2planner_plugin/nav2_straightline_gif.gif" style="width: 700px;" /></a>
+<a class="reference internal image-reference" href="../../_images/nav2_straightline_gif.gif"><img alt="Animated gif with gradient demo" class="align-center" src="../../_images/nav2_straightline_gif.gif" style="width: 700px;" /></a>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This tutorial shows how to create you own planner plugin.</p>

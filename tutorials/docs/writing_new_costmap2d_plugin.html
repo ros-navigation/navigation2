@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Configuration Guidelines" href="../../configuration/index.html" />
+    <link rel="next" title="Writing a new planner plugin" href="writing_new_nav2planner_plugin.html" />
     <link rel="prev" title="(STVL) Using an External Costmap Plugin" href="navigation2_with_stvl.html" />
 
 <link rel="stylesheet" href="../../_static/tcs_theme.css" type="text/css" />
@@ -221,6 +221,18 @@
 <li class="toctree-l4"><a class="reference internal" href="#export-and-make-gradientlayer-plugin">2- Export and make GradientLayer plugin</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#enable-the-plugin-in-costmap2d">3- Enable the plugin in Costmap2D</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#run-gradientlayer-plugin">4- Run GradientLayer plugin</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="writing_new_nav2planner_plugin.html">Writing a new planner plugin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_new_nav2planner_plugin.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_new_nav2planner_plugin.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_new_nav2planner_plugin.html#tutorial-steps">Tutorial Steps</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="writing_new_nav2planner_plugin.html#creating-a-new-planner-plugin">1- Creating a new Planner Plugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="writing_new_nav2planner_plugin.html#exporting-the-planner-plugin">2- Exporting the planner plugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="writing_new_nav2planner_plugin.html#pass-the-plugin-name-through-params-file">3- Pass the plugin name through params file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="writing_new_nav2planner_plugin.html#run-straightline-plugin">4- Run StraightLine plugin</a></li>
 </ul>
 </li>
 </ul>
@@ -503,7 +515,7 @@ using one of the following update methods: <code class="docutils literal notrans
 PLUGINLIB_EXPORT_CLASS(nav2_gradient_costmap_plugin::GradientLayer, nav2_costmap_2d::Layer)
 </pre></div>
 </div>
-<p>This part is usually placed at the end of cpp-file where the plugin class was written (in our example <code class="docutils literal notranslate"><span class="pre">gradient_layer.cpp</span></code>).</p>
+<p>This part is usually placed at the end of cpp-file where the plugin class was written (in our example <code class="docutils literal notranslate"><span class="pre">gradient_layer.cpp</span></code>). It is good practice to place these lines at the end of the file but technically, you can also place at the top.</p>
 <ol class="arabic simple" start="2">
 <li>Plugin’s inormation should be stored to plugin description file. This is done by using separate XML (in our example <code class="docutils literal notranslate"><span class="pre">gradient_plugins.xml</span></code>) in the plugin’s package. This file contains information about:</li>
 </ol>
