@@ -79,8 +79,8 @@ class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction {
       return valid;
     }
 
-    Eigen::Vector2d delta_xi;
-    Eigen::Vector2d delta_xi_p;
+    Eigen::Vector2d delta_xi{0.0,0.0};
+    Eigen::Vector2d delta_xi_p{0.0,0.0};
     double delta_xi_norm{0};
     double delta_xi_p_norm{0};
     double delta_phi_i{0};
@@ -304,8 +304,10 @@ protected:
     const double & common_suffix = curvature_params.delta_phi_i /
       (curvature_params.delta_xi_norm * curvature_params.delta_xi_norm);
 
-    const Eigen::Vector2d jacobian =  u * (common_prefix * (-p1 - p2) - (common_suffix * ones));
-    const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 + (common_suffix * ones));
+    const Eigen::Vector2d & d_delta_xi_d_xi = curvature_params.delta_xi / curvature_params.delta_xi_norm;
+
+    const Eigen::Vector2d jacobian =  u * (common_prefix * (-p1 - p2) - (common_suffix * d_delta_xi_d_xi));
+    const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
     const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
     // j0 += weight * jacobian[0]; // TODO try with the prior xi-1 and xi+1s
     // j1 += weight * jacobian[1];

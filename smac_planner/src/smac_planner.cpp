@@ -33,6 +33,11 @@
 //  - plots of pts that violate over iterations (curve, dist > thresh, smooth > dist, cost > thresh)
 // - Need to boil down statements about why I did this, clear benefits, and drawbacks of current approaches / solutions
 //  - Identified 3 math errors of Thrun
+//  - show and explain derivations on smoother / upsampler. Show and explain hybrid stuff
+// Lets look at what we ahve here:
+//   We have A* path smoothed to kinematic paramrters. Even without explicit modelling of ackermann or limited curvature kinematics, you can get it here. In fact, while a little hand wavey, if you plan in a full potential field with default settings, it steers intentionally in the center of spaces. If that space is built for a robot or vehicle (eg road, or aisle, or open space, or office) then you’re pseduo-promised that the curvature can be valid for your vehicle. Now the then the boundry conditions (initial and final state) are not. For alot of cases thats sufficient bc of an intelligent local planner based on dublin curves or something, but if not, we have a full hybrid A* as well. 
+//   Ex of robot to limit curvature: industrial for max speed without dumping load, ackermann, legged to prop forward to minimize slow down for off acis motion, diff to not whip around
+//  Show path, no map -- Show term smoothing, lovely, no map -- Then map, welp, thats useless
 
 // astar timeout, max duration, optimizer gets rest or until its set maximum. Test time before/after A* but not in it, that would slow down. if over, send log warning like DWB
 
@@ -335,7 +340,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
     // Upsample path
     if (_upsampler) {
-      if(!_upsampler->upsample(path_world, _smoother_params, _sampling_ratio))
+      if(!_upsampler->upsample(path_world, _smoother_params, 2))  // TODO _sampling_ratio
       {
         RCLCPP_WARN(
           _node->get_logger(),

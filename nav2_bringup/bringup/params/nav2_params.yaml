@@ -244,25 +244,29 @@ planner_server:
       max_iterations: -1                # maximum total iterations to search for before returning
       max_on_approach_iterations: 1000  # maximum number of iterations to attempt to reach goal once in tolerance
       smooth_path: true                 # Whether to smooth searched path
+      upsample_path: true               # Whether to upsample path after smoothing, recommend off unless controller requires
       neighborhood_for_search: "MOORE"  # 8 connected
 
       smoother:
+        sampling_ratio: 4
         # smoother weights
         # need to create weights for common resolutions (2.5, 5, 10)
         smoother:
           w_curve: 30.0 #3.0 # range 0 - 50
-          w_dist: 0.0 #300 #
+          w_dist: 0.0 #300 w/0 cost
           w_smooth: 15000.0 #15000
           w_cost: 0.025
-          max_curve: 4.0         # translates to |delta angle| / |delta distance|, where distance is ~2x costmap resolution
+          max_curve: 2.0         # translates to |delta angle| / |delta distance|, where distance is ~2x costmap resolution
+          cost_scaling_factor: 1.0 # this should match the inflation layer's parameter
           # 7.8 in 5cm resolution (45 deg / 10cm)
           # 4.0 in 10cm resolution (45 deg / 20 cm)
+          # 
 
         # I do not recommend typical users mess with this other than max_time if it can use more time or needs to be faster
         optimizer:
           max_time: 0.10         # 100ms
           max_iterations: 500    # max iterations, though shouldn't hit this in under 100ms, but don't want this to be the limiter
-          debug_optimizer: true
+          debug_optimizer: false
           gradient_tol: 1.0e-10
           fn_tol: 1.0e-20
           param_tol: 1.0e-15

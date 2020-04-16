@@ -104,58 +104,136 @@ public:
     const SmootherParams & params,
     const int & upsample_ratio)
   {
-    const int param_ratio = upsample_ratio * 2.0;
-    const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
-    double parameters[total_size];
+    // const int param_ratio = upsample_ratio * 2.0;
+    // const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
+    // double parameters[total_size];
 
-    // Linearly upsample initial poses for optimization
-    int pt;
-    int next_pt;
-    double dist_ratio;
-    double dist_x;
-    double dist_y;
-    double upsample_ratio_double = static_cast<double>(upsample_ratio);
-    for (uint i = 0; i != total_size / 2; i++) {
-      pt = i / upsample_ratio;
-      next_pt = pt + 1;
+    // // Linearly distribute initial poses for optimization
+    // int pt;
+    // int next_pt;
+    // double dist_ratio;
+    // double dist_x;
+    // double dist_y;
+    // double upsample_ratio_double = static_cast<double>(upsample_ratio);
+    // for (uint i = 0; i != total_size / 2; i++) {
+    //   pt = i / upsample_ratio;
+    //   next_pt = pt + 1;
 
-      if (i % upsample_ratio == 0) {
-        parameters[param_ratio * pt] = path[pt][0];
-        parameters[param_ratio * pt + 1] = path[pt][1];
-        dist_x = path[next_pt][0] - path[pt][0];
-        dist_y = path[next_pt][1] - path[pt][1];
-      } else {
-        dist_ratio = static_cast<double>(i % upsample_ratio) / upsample_ratio_double;
-        parameters[2 * i] = dist_ratio * dist_x + path[pt][0];
-        parameters[2 * i + 1] = dist_ratio * dist_y + path[pt][1];
-      }
+    //   if (i % upsample_ratio == 0) {
+    //     parameters[param_ratio * pt] = path[pt][0];
+    //     parameters[param_ratio * pt + 1] = path[pt][1];
+    //     dist_x = path[next_pt][0] - path[pt][0];
+    //     dist_y = path[next_pt][1] - path[pt][1];
+    //   } else {
+    //     // TRY LINEAR INTERPOLATION
+    //     dist_ratio = static_cast<double>(i % upsample_ratio) / upsample_ratio_double;
+
+    //     // TRY ADDING PERTURBATION
+    //     // Eigen::Vector2d ppt = path[next_pt] - path[pt];
+    //     // double swap_ppt_1 = ppt[0];
+    //     // ppt[0] = -ppt[1];
+    //     // ppt[1] = swap_ppt_1; // TODO direction
+    //     // if ((path[next_pt] - path[pt]).dot(path[pt] -  path[pt - 1]) > 0) { 
+    //     //   ppt *= -1;
+    //     // }
+    //     // TODO amount?
+    //     // TODO distribution?
+
+    //     // TRY FINDING INTERSECTION POINTS
+    //     // Eigen::Vector2d & xim1 = path[pt - 1];
+    //     // Eigen::Vector2d & xi = path[pt];
+    //     // Eigen::Vector2d & xip1 = path[pt + 1];
+    //     // Eigen::Vector2d & xip2 = path[pt + 2];
+    //     // double lambda = ((xim1[0] - xi[0]) * (xip2[1] - xim1[1]) - (xim1[1] - xi[1]) * (xip2[0] - xim1[0])) / ((xim1[1] - xi[1]) * (xip2[0] - xip1[0]) - (xip2[1] - xip1[1]) * (xim1[0] - xi[0]));
+    //     // Eigen::Vector2d ppt_pt = xip2 + lambda * (xip2 - xip1);
+
+
+    //     parameters[2 * i] = dist_ratio * dist_x + path[pt][0]; // //0
+    //     parameters[2 * i + 1] = dist_ratio * dist_y + path[pt][1]; //0
+    //   }
+    // }
+
+    // // Solve the upsampling problem
+    // ceres::GradientProblemSolver::Summary summary;
+    // ceres::GradientProblem problem(new UpsamplerCostFunction(path.size(), params, upsample_ratio));
+    // ceres::Solve(_options, problem, parameters, &summary);
+
+    // if (_debug) {
+    //   std::cout << summary.FullReport() << '\n';
+    // }
+
+    // if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost <= 0.0) {
+    //   return false;
+    // }
+
+    // path.resize(total_size / 2);
+    // for (uint i = 0; i != path.size(); i++) {
+    //   path[i][0] = parameters[2 * i];
+    //   path[i][1] = parameters[2 * i + 1];
+    // }
+    
+    // TODO all here 2x
+    std::vector<Eigen::Vector2d> path_new;
+    for (int i = 0; i != path.size() - 1; i++) {  // -1 to remove last one from having some after
+      path_new.push_back(path[i]); 
+      double dist_x = path[i+1][0] - path[i][0];
+      double dist_y = path[i+1][1] - path[i][1];
+      Eigen::Vector2d pt_interpolated4(0.25 * dist_x + path[i][0], 0.25 * dist_y + path[i][1]);
+      Eigen::Vector2d pt_interpolated8(0.5 * dist_x + path[i][0], 0.5 * dist_y + path[i][1]);
+      Eigen::Vector2d pt_interpolated12(0.75 * dist_x + path[i][0], 0.75 * dist_y + path[i][1]);
+      path_new.push_back(pt_interpolated8);
     }
 
-    // Solve the upsampling problem
-    ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UpsamplerCostFunction(path.size(), params, upsample_ratio));
-    ceres::Solve(_options, problem, parameters, &summary);
+    std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>(); 
+    for (uint i = 1; i != path_new.size() - 1; i++) {
+      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new, params, 2, i);
+      problem->AddResidualBlock(cost_fn, nullptr, &path_new[i][0], &path_new[i][1]);
+      // TODO locking term doesnt do anything since there's no feedback update between terms. middle terms are just stuck
+    }
+
+    ceres::Solver::Summary summary;
+    _options.minimizer_type = ceres::LINE_SEARCH;
+    ceres::Solve(_options, problem.get(), &summary);
+
+    // TODO all here 4x
+    std::vector<Eigen::Vector2d> path_new2;
+    for (int i = 0; i != path_new.size() - 1; i++) {
+      path_new2.push_back(path_new[i]); 
+      double dist_x = path_new[i+1][0] - path_new[i][0];
+      double dist_y = path_new[i+1][1] - path_new[i][1];
+      Eigen::Vector2d pt_interpolated8(0.5 * dist_x + path_new[i][0], 0.5 * dist_y + path_new[i][1]);
+      path_new2.push_back(pt_interpolated8);
+    }
+
+    std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>(); 
+    for (uint i = 1; i != path_new2.size() - 1; i++) {
+      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new2, params, 4, i);
+      problem2->AddResidualBlock(cost_fn, nullptr, &path_new2[i][0], &path_new2[i][1]);
+    }
+
+    ceres::Solve(_options, problem2.get(), &summary);
+
+    // TODO value of 3rd optimization?
+    std::unique_ptr<ceres::Problem> problem3 = std::make_unique<ceres::Problem>(); 
+    for (uint i = 1; i != path_new2.size() - 1; i++) {
+      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new2, params, 4, i);
+      problem3->AddResidualBlock(cost_fn, nullptr, &path_new2[i][0], &path_new2[i][1]);
+    }
+
+    ceres::Solve(_options, problem3.get(), &summary);
+
 
     if (_debug) {
       std::cout << summary.FullReport() << '\n';
     }
-
-    if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost <= 0.0) {
-      return false;
-    }
-
-    path.resize(total_size / 2);
-    for (uint i = 0; i != path.size(); i++) {
-      path[i][0] = parameters[2 * i];
-      path[i][1] = parameters[2 * i + 1];
-    }
+    path = path_new2;
 
     return true;
   }
 
 private:
   bool _debug;
-  ceres::GradientProblemSolver::Options _options;
+  ceres::Solver::Options _options;
 };
 
 }  // namespace smac_planner
