@@ -139,7 +139,7 @@ In our example the ``nav2_gradient_costmap_plugin::GradientLayer`` plugin's clas
   #include "pluginlib/class_list_macros.hpp"
   PLUGINLIB_EXPORT_CLASS(nav2_gradient_costmap_plugin::GradientLayer, nav2_costmap_2d::Layer)
 
-This part is usually placed at the end of cpp-file where the plugin class was written (in our example ``gradient_layer.cpp``). 
+This part is usually placed at the end of cpp-file where the plugin class was written (in our example ``gradient_layer.cpp``). It is good practice to place these lines at the end of the file but technically, you can also place at the top.
 
 2. Plugin's inormation should be stored to plugin description file. This is done by using separate XML (in our example ``gradient_plugins.xml``) in the plugin's package. This file contains information about:
 
