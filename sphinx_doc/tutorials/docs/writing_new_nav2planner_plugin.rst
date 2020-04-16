@@ -1,6 +1,6 @@
 .. _writing_new_nav2planner_plugin:
 
-Writing a new planner plugin
+Writing a New Planner Plugin
 ****************************
 
 - `Overview`_
@@ -149,7 +149,7 @@ Coming to our tutorial, class ``nav2_straightline_planner::StraightLine`` is loa
 
 Note that it requires pluginlib to export out plugin's class. Pluginlib would provide as macro ``PLUGINLIB_EXPORT_CLASS`` which does all the work of exporting.
 
-It is good practice to place this lines at the end of the file but in practice you can also write at the top.
+It is good practice to place these lines at the end of the file but technically, you can also write at the top.
 
 2. Next step would be to create plugin's description file in the root directory of the package. For example, ``global_planner_plugin.xml`` file in our tutorial package. This file contains following information
 

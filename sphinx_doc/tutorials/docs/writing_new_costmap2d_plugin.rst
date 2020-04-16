@@ -1,6 +1,6 @@
 .. _writing_new_costmap2d_plugin:
 
-Writing a new Costmap2D plugin
+Writing a New Costmap2D Plugin
 ******************************
 
 - `Overview`_
