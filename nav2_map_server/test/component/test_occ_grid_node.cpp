@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <rclcpp/rclcpp.hpp>
+#include <string>
 #include <memory>
 
 #include "test_constants/test_constants.h"
@@ -43,8 +44,9 @@ public:
   TestNode()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
+    map_server_node_name_ = "map_server";
     lifecycle_client_ =
-      std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
+      std::make_shared<nav2_util::LifecycleServiceClient>(map_server_node_name_, node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
 
@@ -81,6 +83,7 @@ public:
   }
 
 protected:
+  std::string map_server_node_name_;
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
@@ -89,7 +92,8 @@ TEST_F(TestNode, GetMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  auto client = node_->create_client<nav_msgs::srv::GetMap>("map");
+  auto client = node_->create_client<nav_msgs::srv::GetMap>(
+    "/" + map_server_node_name_ + "/map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -109,7 +113,8 @@ TEST_F(TestNode, LoadMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -130,7 +135,8 @@ TEST_F(TestNode, LoadMapNull)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -146,7 +152,8 @@ TEST_F(TestNode, LoadMapInvalidYaml)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -162,7 +169,8 @@ TEST_F(TestNode, LoadMapInvalidImage)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());

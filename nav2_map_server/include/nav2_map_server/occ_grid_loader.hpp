@@ -43,7 +43,8 @@ public:
    * @param node
    * @param Yaml_filename File that contains map data
    */
-  OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename,
+  OccGridLoader(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename,
     std::string & topic_name, std::string & frame_id);
   /**
    * @brief Disabling the use of default or empty constructor

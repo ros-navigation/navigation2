@@ -14,12 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 import launch_ros.actions
+
 
 def generate_launch_description():
     # Parameters
@@ -35,7 +32,7 @@ def generate_launch_description():
             package='nav2_map_server',
             node_executable='map_saver_server',
             output='screen',
-            emulate_tty=True, # https://github.com/ros2/launch/issues/188
+            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'save_map_timeout': save_map_timeout},
                         {'free_thresh_default': free_thresh_default},
                         {'occupied_thresh_default': occupied_thresh_default}])
@@ -45,7 +42,7 @@ def generate_launch_description():
             node_executable='lifecycle_manager',
             node_name='lifecycle_manager',
             output='screen',
-            emulate_tty=True, # https://github.com/ros2/launch/issues/188
+            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])

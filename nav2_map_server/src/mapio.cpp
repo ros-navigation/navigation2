@@ -34,6 +34,8 @@
 
 #include <libgen.h>
 #include <iostream>
+#include <string>
+#include <vector>
 #include <fstream>
 #include <stdexcept>
 
@@ -114,7 +116,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [mapio]: free_thresh: " << load_parameters.free_thresh << std::endl;
   std::cout << "[DEBUG] [mapio]: occupied_thresh: " << load_parameters.occupied_thresh << std::endl;
   std::cout << "[DEBUG] [mapio]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
-  std::cout << "[DEBUG] [mapio]: negate: " << load_parameters.negate << std::endl;
+  std::cout << "[DEBUG] [mapio]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
   return load_parameters;
 }
@@ -126,7 +128,8 @@ void loadMapFromFile(
   Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
-  std::cout << "[INFO] [mapio]: Loading image_file: " << load_parameters.image_file_name << std::endl;
+  std::cout << "[INFO] [mapio]: Loading image_file: " <<
+    load_parameters.image_file_name << std::endl;
   Magick::Image img(load_parameters.image_file_name);
 
   // Copy the image data into the map structure
@@ -263,15 +266,16 @@ bool loadMapFromYaml(
  * NOTE: save_parameters could be updated during function execution.
  * @throw std::exception in case of inconsistent parameters
  */
-void checkSaveParameters(SaveParameters & save_parameters) {
-
+void checkSaveParameters(SaveParameters & save_parameters)
+{
   // Magick must me initialized before any activity with images
   Magick::InitializeMagick(nullptr);
 
   // Checking map file name
   if (save_parameters.map_file_name == "") {
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
-    save_parameters.map_file_name = "map_" + std::to_string(static_cast<int>(clock.now().seconds()));
+    save_parameters.map_file_name = "map_" +
+      std::to_string(static_cast<int>(clock.now().seconds()));
     std::cout << "[WARN] [mapio]: Map file unspecified. Map will be saved to " <<
       save_parameters.map_file_name << " file" << std::endl;
   }
@@ -296,7 +300,8 @@ void checkSaveParameters(SaveParameters & save_parameters) {
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.occupied_thresh <= save_parameters.free_thresh) {
-    std::cerr << "[ERROR] [mapio]: Threshold_free must be smaller than threshold_occupied" << std::endl;
+    std::cerr << "[ERROR] [mapio]: Threshold_free must be smaller than threshold_occupied" <<
+      std::endl;
     throw std::runtime_error("Incorrect thresholds");
   }
 
@@ -344,14 +349,16 @@ void checkSaveParameters(SaveParameters & save_parameters) {
   } catch (Magick::ErrorOption & e) {
     std::cout <<
       "[WARN] [mapio]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
-      FALLBACK_FORMAT << "' instead:" << std::endl <<  e.what()<< std::endl;
+      FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
     save_parameters.image_format = FALLBACK_FORMAT;
   }
 
   // Checking map mode
   if (
     save_parameters.mode == MapMode::Scale &&
-    (save_parameters.image_format == "pgm" || save_parameters.image_format == "jpg" || save_parameters.image_format == "jpeg"))
+    (save_parameters.image_format == "pgm" ||
+    save_parameters.image_format == "jpg" ||
+    save_parameters.image_format == "jpeg"))
   {
     std::cout <<
       "[WARN] [mapio]: Map mode 'scale' requires transparency, but format '" <<
@@ -366,7 +373,9 @@ void checkSaveParameters(SaveParameters & save_parameters) {
  * @param save_parameters Map saving parameters
  * @throw std::expection in case of problem
  */
-void tryWriteMapToFile(const nav_msgs::msg::OccupancyGrid & map, const SaveParameters & save_parameters)
+void tryWriteMapToFile(
+  const nav_msgs::msg::OccupancyGrid & map,
+  const SaveParameters & save_parameters)
 {
   std::cout <<
     "[INFO] [mapio]: Received a " << map.info.width << " X " << map.info.height << " map @ " <<
@@ -380,7 +389,9 @@ void tryWriteMapToFile(const nav_msgs::msg::OccupancyGrid & map, const SaveParam
     // In scale mode, we need the alpha (matte) channel. Else, we don't.
     // NOTE: GraphicsMagick seems to have trouble loading the alpha channel when saved with
     // Magick::GreyscaleMatte, so we use TrueColorMatte instead.
-    image.type(save_parameters.mode == MapMode::Scale ? Magick::TrueColorMatteType : Magick::GrayscaleType);
+    image.type(
+      save_parameters.mode == MapMode::Scale ?
+      Magick::TrueColorMatteType : Magick::GrayscaleType);
 
     // Since we only need to support 100 different pixel levels, 8 bits is fine
     image.depth(8);

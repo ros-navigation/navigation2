@@ -14,9 +14,10 @@
 
 #include "nav2_map_server/map_server.hpp"
 
+#include <string>
+#include <memory>
 #include <fstream>
 #include <stdexcept>
-#include <string>
 
 #include "nav2_map_server/occ_grid_loader.hpp"
 #include "yaml-cpp/yaml.h"
@@ -73,8 +74,8 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the correct map loader for the specified map type
   if (map_type == "occupancy") {
-    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename,
-      topic_name, frame_id);
+    map_loader_ = std::make_unique<OccGridLoader>(
+      shared_from_this(), yaml_filename, topic_name, frame_id);
   } else {
     std::string msg = "Cannot load unknown map type: '" + map_type + "'";
     throw std::runtime_error(msg);

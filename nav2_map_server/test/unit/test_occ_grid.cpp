@@ -67,7 +67,8 @@ class TestMapLoader : public nav2_map_server::OccGridLoader
   FRIEND_TEST(MapLoaderTest, loadInvalidFile);
 
 public:
-  explicit TestMapLoader(nav2_util::LifecycleNode::SharedPtr node, std::string yaml_filename,
+  explicit TestMapLoader(
+    nav2_util::LifecycleNode::SharedPtr node, std::string yaml_filename,
     std::string topic_name, std::string frame_id)
   : OccGridLoader(node, yaml_filename, topic_name, frame_id)
   {

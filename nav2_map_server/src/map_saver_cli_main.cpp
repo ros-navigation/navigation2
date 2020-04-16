@@ -23,7 +23,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-using namespace nav2_map_server;
+using namespace nav2_map_server;  // NOLINT
 
 const char * USAGE_STRING{
   "Usage:\n"
@@ -41,7 +41,8 @@ const char * USAGE_STRING{
   "NOTE: --ros-args should be passed at the end of command line"};
 
 
-typedef enum {
+typedef enum
+{
   COMMAND_MAP_TOPIC,
   COMMAND_MAP_FILE_NAME,
   COMMAND_IMAGE_FORMAT,
@@ -116,7 +117,8 @@ int main(int argc, char ** argv)
               save_parameters.mode = map_mode_from_string(*it);
             } catch (std::invalid_argument &) {
               save_parameters.mode = MapMode::Trinary;
-              RCLCPP_WARN(logger,
+              RCLCPP_WARN(
+                logger,
                 "Map mode parameter not recognized: %s, using default value (trinary)",
                 it->c_str());
             }
@@ -135,10 +137,11 @@ int main(int argc, char ** argv)
   int retcode;
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
-    if (map_saver->saveMapTopicToFile(map_topic, save_parameters))
+    if (map_saver->saveMapTopicToFile(map_topic, save_parameters)) {
       retcode = 0;
-    else
+    } else {
       retcode = 1;
+    }
   } catch (std::exception & e) {
     RCLCPP_ERROR(logger, "Unexpected problem appear: %s", e.what());
     retcode = -1;

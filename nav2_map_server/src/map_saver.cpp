@@ -31,6 +31,8 @@
 
 #include "nav2_map_server/map_saver.hpp"
 
+#include <string>
+#include <memory>
 #include <stdexcept>
 
 namespace nav2_map_server
@@ -59,28 +61,28 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
   // Create SaveMap service callback handle
-  auto save_map_callback= [this](
+  auto save_map_callback = [this](
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) -> void {
-        // Set input arguments and call saveMapTopicToFile()
-        SaveParameters save_parameters;
-        save_parameters.map_file_name = request->map_url;
-        save_parameters.image_format = request->image_format;
-        save_parameters.free_thresh = request->free_thresh;
-        save_parameters.occupied_thresh = request->occupied_thresh;
-        try {
-          save_parameters.mode = map_mode_from_string(request->map_mode);
-        } catch (std::invalid_argument &) {
-          save_parameters.mode = MapMode::Trinary;
-          RCLCPP_WARN(
-            get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
-            request->map_mode.c_str());
-        }
+      // Set input arguments and call saveMapTopicToFile()
+      SaveParameters save_parameters;
+      save_parameters.map_file_name = request->map_url;
+      save_parameters.image_format = request->image_format;
+      save_parameters.free_thresh = request->free_thresh;
+      save_parameters.occupied_thresh = request->occupied_thresh;
+      try {
+        save_parameters.mode = map_mode_from_string(request->map_mode);
+      } catch (std::invalid_argument &) {
+        save_parameters.mode = MapMode::Trinary;
+        RCLCPP_WARN(
+          get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
+          request->map_mode.c_str());
+      }
 
-        std::string map_topic = request->map_topic;
+      std::string map_topic = request->map_topic;
 
-	response->result = saveMapTopicToFile(map_topic, save_parameters);
+      response->result = saveMapTopicToFile(map_topic, save_parameters);
     };
 
   // Make name prefix for services
@@ -131,7 +133,8 @@ MapSaver::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save_parameters)
 {
-  RCLCPP_INFO(get_logger(), "Saving map from %s topic to %s file",
+  RCLCPP_INFO(
+    get_logger(), "Saving map from %s topic to %s file",
     map_topic.c_str(), save_parameters.map_file_name.c_str());
 
   try {
@@ -148,13 +151,17 @@ bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save
 
     // Set default for MapSaver node thresholds parameters
     if (save_parameters.free_thresh == 0) {
-      RCLCPP_WARN(get_logger(),
-        "Free threshold unspecified. Setting it to default value: %i", free_thresh_default_);
+      RCLCPP_WARN(
+        get_logger(),
+        "Free threshold unspecified. Setting it to default value: %i",
+        free_thresh_default_);
       save_parameters.free_thresh = free_thresh_default_;
     }
     if (save_parameters.occupied_thresh == 0) {
-      RCLCPP_WARN(get_logger(),
-        "Occupied threshold unspecified. Setting it to default value: %i", occupied_thresh_default_);
+      RCLCPP_WARN(
+        get_logger(),
+        "Occupied threshold unspecified. Setting it to default value: %i",
+        occupied_thresh_default_);
       save_parameters.occupied_thresh = occupied_thresh_default_;
     }
 
@@ -185,7 +192,7 @@ bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save
 
       rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
-  } catch(std::exception & e) {
+  } catch (std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
     return false;
   }

@@ -16,6 +16,7 @@
 #include <random>
 #include <tuple>
 #include <utility>
+#include <vector>
 #include <memory>
 #include <iostream>
 #include <chrono>

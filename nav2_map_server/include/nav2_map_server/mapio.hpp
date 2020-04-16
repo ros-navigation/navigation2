@@ -29,7 +29,8 @@
 namespace nav2_map_server
 {
 
-struct LoadParameters {
+struct LoadParameters
+{
   std::string image_file_name;
   double resolution{0};
   std::vector<double> origin{0, 0, 0};
@@ -71,7 +72,8 @@ bool loadMapFromYaml(
 
 /* Map output part */
 
-struct SaveParameters {
+struct SaveParameters
+{
   std::string map_file_name{""};
   std::string image_format{""};
   int free_thresh{0};

@@ -31,6 +31,8 @@
 
 #include "nav2_map_server/occ_grid_loader.hpp"
 
+#include <string>
+#include <memory>
 #include <stdexcept>
 
 #include "yaml-cpp/yaml.h"
