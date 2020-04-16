@@ -79,6 +79,8 @@ In planners, ``configure()`` method must set member variables from ROS parameter
   nav2_util::declare_parameter_if_not_declared(node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(0.1));
   node_->get_parameter(name_ + ".interpolation_resolution", interpolation_resolution_);
 
+Here, ``name_ + ".interpolation_resolution"`` is fetching the ROS parameters ``interpolation_resolution`` which is specific to our planner. Navigation2 allows loading of multiple plugins and to keep things organized each plugin is mapped to some ID/name. Now if we want to retrieve the parameters for that specific plugin, we use ``<mapped_name_of_plugin>.<name_of_parameter>`` as done in the above snippet. For example, our example planner is mapped to the name "GridBased" and to retrieve the ``interpolation_resolution`` parameter which is specific to "GridBased", we used ``Gridbased.interpolation_resolution``. In other words, ``GridBased`` is used as a namespace for plugin-specific parameters. We will see more on this when we discuss the parameters file (or params file).
+
 In ``createPlan()`` method, we need to create a path from the given start to goal poses. The ``StraightLine::createPlan()`` is called using start pose and goal pose to solve the global path planning problem. Upon succeeding, it converts the path to the ``nav_msgs::msg::Path`` and returns to the planner server. Below annotation shows the implementation of this method.
 
 .. code-block:: c++
@@ -210,6 +212,8 @@ with
     planner_plugin_ids: ["GridBased"]
     use_sim_time: True
     GridBased.interpolation_resolution: 0.1
+
+In the above snippet, you can observe the mapping of our ``nav2_straightline_planner/StraightLine`` planner to its id ``GridBased``. To pass plugin-specific parameters we have used ``<plugin_id>.<plugin_specific_parameter>``.
 
 4- Run StraightLine plugin
 ---------------------------
