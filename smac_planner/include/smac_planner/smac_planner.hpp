@@ -102,7 +102,7 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr smoother_debug3_pub_;
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
-  int _sampling_ratio;
+  int _upsampling_ratio;
 };
 
 }  // namespace smac_planner

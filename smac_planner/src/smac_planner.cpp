@@ -126,8 +126,8 @@ void SmacPlanner::configure(
     _node, name + ".upsample_path", rclcpp::ParameterValue(false));
   _node->get_parameter(name + ".upsample_path", upsample_path);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".smoother.sampling_ratio", rclcpp::ParameterValue(4));
-  _node->get_parameter(name + ".smoother.sampling_ratio", _sampling_ratio);
+    _node, name + ".smoother.upsampling_ratio", rclcpp::ParameterValue(2));
+  _node->get_parameter(name + ".smoother.upsampling_ratio", _upsampling_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".neighborhood_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -162,6 +162,12 @@ void SmacPlanner::configure(
     exit(-1);
   }
 
+  if (_upsampling_ratio != 2 && _upsampling_ratio != 4) {
+    RCLCPP_WARN(_node->get_logger(),
+      "Upsample ratio set to %i, only 2 and 4 are valid. Defaulting to 2.", _upsampling_ratio);
+    _upsampling_ratio = 2;
+  }
+
   _a_star = std::make_unique<AStarAlgorithm>(neighborhood);
   _a_star->initialize(
     travel_cost_scale,
@@ -175,7 +181,7 @@ void SmacPlanner::configure(
     _smoother_params.get(_node.get(), name);  // Get weights
     _smoother->initialize(_optimizer_params);
 
-    if (upsample_path) {
+    if (upsample_path && _upsampling_ratio > 0) {
       _upsampler = std::make_unique<Upsampler>();
       _upsampler->initialize(_optimizer_params);
     }
@@ -291,12 +297,14 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   }
 
   // Convert to world coordinates and downsample path for smoothing if necesssary
+  // We're going to downsample by 4x to give terms room to move.
+  const int downsample_ratio = 4;
   std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(path.size() / _sampling_ratio);
-  plan.poses.reserve(path.size() / _sampling_ratio);
+  path_world.reserve(path.size() / downsample_ratio);
+  plan.poses.reserve(path.size() / downsample_ratio);
 
   for (int i = path.size() - 1; i >= 0; --i) {
-    if (_smoother && i % _sampling_ratio != 0) {
+    if (_smoother && i % downsample_ratio != 0) {
       continue;
     }
     unsigned int index_x, index_y;

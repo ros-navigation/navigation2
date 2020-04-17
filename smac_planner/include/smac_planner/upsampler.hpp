@@ -25,6 +25,7 @@
 
 #include "smac_planner/types.hpp"
 #include "smac_planner/upsampler_cost_function.hpp"
+#include "smac_planner/upsampler_cost_function_nlls.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
@@ -42,17 +43,17 @@ class Upsampler
 {
 public:
   /**
-   * @brief A constructor for smac_planner::Smoother
+   * @brief A constructor for smac_planner::Upsampler
    */
   Upsampler() {}
 
   /**
-   * @brief A destructor for smac_planner::Smoother
+   * @brief A destructor for smac_planner::Upsampler
    */
   ~Upsampler() {}
 
   /**
-   * @brief Initialization of the smoother
+   * @brief Initialization of the Upsampler
    */
   void initialize(const OptimizerParams params) {
     _debug = params.debug;
@@ -97,143 +98,117 @@ public:
    * @param path Reference to path
    * @param upsample parameters weights
    * @param upsample_ratio upsample ratio
-   * @return If smoothing was successful
+   * @return If Upsampler was successful
    */
   bool upsample(
     std::vector<Eigen::Vector2d> & path,
     const SmootherParams & params,
     const int & upsample_ratio)
   {
-    // const int param_ratio = upsample_ratio * 2.0;
-    // const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
-    // double parameters[total_size];
+    if (upsample_ratio != 2 && upsample_ratio != 4) {
+      // invalid inputs
+      return false;
+    }
 
-    // // Linearly distribute initial poses for optimization
-    // int pt;
-    // int next_pt;
-    // double dist_ratio;
-    // double dist_x;
-    // double dist_y;
-    // double upsample_ratio_double = static_cast<double>(upsample_ratio);
-    // for (uint i = 0; i != total_size / 2; i++) {
-    //   pt = i / upsample_ratio;
-    //   next_pt = pt + 1;
+    const int param_ratio = upsample_ratio * 2.0;
+    const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
+    double parameters[total_size];
 
-    //   if (i % upsample_ratio == 0) {
-    //     parameters[param_ratio * pt] = path[pt][0];
-    //     parameters[param_ratio * pt + 1] = path[pt][1];
-    //     dist_x = path[next_pt][0] - path[pt][0];
-    //     dist_y = path[next_pt][1] - path[pt][1];
-    //   } else {
-    //     // TRY LINEAR INTERPOLATION
-    //     dist_ratio = static_cast<double>(i % upsample_ratio) / upsample_ratio_double;
+    // Linearly distribute initial poses for optimization
+    // TODO generalize for 2x and 4x
+    unsigned int next_pt;
+    Eigen::Vector2d interpolated;
+    std::vector<Eigen::Vector2d> temp_path;  // TODO
+    for (unsigned int pt = 0; pt != path.size() - 1; pt++) {
+      next_pt = pt + 1;
+      interpolated = (path[next_pt] + path[pt]) / 2.0;
 
-    //     // TRY ADDING PERTURBATION
-    //     // Eigen::Vector2d ppt = path[next_pt] - path[pt];
-    //     // double swap_ppt_1 = ppt[0];
-    //     // ppt[0] = -ppt[1];
-    //     // ppt[1] = swap_ppt_1; // TODO direction
-    //     // if ((path[next_pt] - path[pt]).dot(path[pt] -  path[pt - 1]) > 0) { 
-    //     //   ppt *= -1;
-    //     // }
-    //     // TODO amount?
-    //     // TODO distribution?
+      parameters[param_ratio * pt] = path[pt][0];
+      parameters[param_ratio * pt + 1] = path[pt][1];
+      temp_path.push_back(path[pt]);
 
-    //     // TRY FINDING INTERSECTION POINTS
-    //     // Eigen::Vector2d & xim1 = path[pt - 1];
-    //     // Eigen::Vector2d & xi = path[pt];
-    //     // Eigen::Vector2d & xip1 = path[pt + 1];
-    //     // Eigen::Vector2d & xip2 = path[pt + 2];
-    //     // double lambda = ((xim1[0] - xi[0]) * (xip2[1] - xim1[1]) - (xim1[1] - xi[1]) * (xip2[0] - xim1[0])) / ((xim1[1] - xi[1]) * (xip2[0] - xip1[0]) - (xip2[1] - xip1[1]) * (xim1[0] - xi[0]));
-    //     // Eigen::Vector2d ppt_pt = xip2 + lambda * (xip2 - xip1);
+      parameters[param_ratio * pt + 2] = interpolated[0];
+      parameters[param_ratio * pt + 3] = interpolated[1];  
+      temp_path.push_back(interpolated);
+    }
+
+    parameters[total_size - 2] = path.back()[0];
+    parameters[total_size - 1] = path.back()[1];
+    temp_path.push_back(path.back());
+
+    // Solve the upsampling problem
+    ceres::GradientProblemSolver::Summary summary;
+    ceres::GradientProblem problem(new UpsamplerCostFunction(temp_path, params, upsample_ratio));
+    ceres::Solve(_options, problem, parameters, &summary);
 
 
-    //     parameters[2 * i] = dist_ratio * dist_x + path[pt][0]; // //0
-    //     parameters[2 * i + 1] = dist_ratio * dist_y + path[pt][1]; //0
+    path.resize(total_size / 2);
+    for (uint i = 0; i != total_size / 2; i++) {
+      path[i][0] = parameters[2 * i];
+      path[i][1] = parameters[2 * i + 1];
+    }
+
+    // std::vector<Eigen::Vector2d> path_double_sampled;
+    // for (int i = 0; i != path.size() - 1; i++) {  // last term should not be upsampled
+    //   path_double_sampled.push_back(path[i]); 
+    //   path_double_sampled.push_back((path[i+1] + path[i]) / 2);
+    // }
+
+    // std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>(); 
+    // for (uint i = 1; i != path_double_sampled.size() - 1; i++) {
+    //   ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_double_sampled, params, 2, i);
+    //   problem->AddResidualBlock(cost_fn, nullptr, &path_double_sampled[i][0], &path_double_sampled[i][1]);
+    //   // locking initial coordinates unnecessary since there's no update between terms in NLLS API
+    // }
+
+    // ceres::Solver::Summary summary;
+    // _options.minimizer_type = ceres::LINE_SEARCH;
+    // ceres::Solve(_options, problem.get(), &summary);
+
+    // if (upsample_ratio == 4) {
+    //   std::vector<Eigen::Vector2d> path_quad_sampled;
+    //   for (int i = 0; i != path_double_sampled.size() - 1; i++) {
+    //     path_quad_sampled.push_back(path_double_sampled[i]); 
+    //     path_quad_sampled.push_back((path_double_sampled[i+1] + path_double_sampled[i]) / 2.0);
     //   }
+
+    //   std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>(); 
+    //   for (uint i = 1; i != path_quad_sampled.size() - 1; i++) {
+    //     ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_quad_sampled, params, 4, i);
+    //     problem2->AddResidualBlock(cost_fn, nullptr, &path_quad_sampled[i][0], &path_quad_sampled[i][1]);
+    //   }
+
+    //   ceres::Solve(_options, problem2.get(), &summary);
+
+    //   ////////// TODO value of 3rd optimization? //////////
+    //   std::unique_ptr<ceres::Problem> problem3 = std::make_unique<ceres::Problem>(); 
+    //   for (uint i = 1; i != path_quad_sampled.size() - 1; i++) {
+    //     ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_quad_sampled, params, 4, i);
+    //     problem3->AddResidualBlock(cost_fn, nullptr, &path_quad_sampled[i][0], &path_quad_sampled[i][1]);
+    //   }
+
+    //   ceres::Solve(_options, problem3.get(), &summary);
+    //   ////////// TODO value of 3rd optimization? //////////
+
+    //   path = path_quad_sampled;
+    // } else {
+    //   path = path_double_sampled;
     // }
-
-    // // Solve the upsampling problem
-    // ceres::GradientProblemSolver::Summary summary;
-    // ceres::GradientProblem problem(new UpsamplerCostFunction(path.size(), params, upsample_ratio));
-    // ceres::Solve(_options, problem, parameters, &summary);
-
-    // if (_debug) {
-    //   std::cout << summary.FullReport() << '\n';
-    // }
-
-    // if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost <= 0.0) {
-    //   return false;
-    // }
-
-    // path.resize(total_size / 2);
-    // for (uint i = 0; i != path.size(); i++) {
-    //   path[i][0] = parameters[2 * i];
-    //   path[i][1] = parameters[2 * i + 1];
-    // }
-    
-    // TODO all here 2x
-    std::vector<Eigen::Vector2d> path_new;
-    for (int i = 0; i != path.size() - 1; i++) {  // -1 to remove last one from having some after
-      path_new.push_back(path[i]); 
-      double dist_x = path[i+1][0] - path[i][0];
-      double dist_y = path[i+1][1] - path[i][1];
-      Eigen::Vector2d pt_interpolated4(0.25 * dist_x + path[i][0], 0.25 * dist_y + path[i][1]);
-      Eigen::Vector2d pt_interpolated8(0.5 * dist_x + path[i][0], 0.5 * dist_y + path[i][1]);
-      Eigen::Vector2d pt_interpolated12(0.75 * dist_x + path[i][0], 0.75 * dist_y + path[i][1]);
-      path_new.push_back(pt_interpolated8);
-    }
-
-    std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>(); 
-    for (uint i = 1; i != path_new.size() - 1; i++) {
-      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new, params, 2, i);
-      problem->AddResidualBlock(cost_fn, nullptr, &path_new[i][0], &path_new[i][1]);
-      // TODO locking term doesnt do anything since there's no feedback update between terms. middle terms are just stuck
-    }
-
-    ceres::Solver::Summary summary;
-    _options.minimizer_type = ceres::LINE_SEARCH;
-    ceres::Solve(_options, problem.get(), &summary);
-
-    // TODO all here 4x
-    std::vector<Eigen::Vector2d> path_new2;
-    for (int i = 0; i != path_new.size() - 1; i++) {
-      path_new2.push_back(path_new[i]); 
-      double dist_x = path_new[i+1][0] - path_new[i][0];
-      double dist_y = path_new[i+1][1] - path_new[i][1];
-      Eigen::Vector2d pt_interpolated8(0.5 * dist_x + path_new[i][0], 0.5 * dist_y + path_new[i][1]);
-      path_new2.push_back(pt_interpolated8);
-    }
-
-    std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>(); 
-    for (uint i = 1; i != path_new2.size() - 1; i++) {
-      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new2, params, 4, i);
-      problem2->AddResidualBlock(cost_fn, nullptr, &path_new2[i][0], &path_new2[i][1]);
-    }
-
-    ceres::Solve(_options, problem2.get(), &summary);
-
-    // TODO value of 3rd optimization?
-    std::unique_ptr<ceres::Problem> problem3 = std::make_unique<ceres::Problem>(); 
-    for (uint i = 1; i != path_new2.size() - 1; i++) {
-      ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_new2, params, 4, i);
-      problem3->AddResidualBlock(cost_fn, nullptr, &path_new2[i][0], &path_new2[i][1]);
-    }
-
-    ceres::Solve(_options, problem3.get(), &summary);
-
 
     if (_debug) {
       std::cout << summary.FullReport() << '\n';
     }
-    path = path_new2;
+
+    if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost <= 0.0) {
+      return false;
+    }
 
     return true;
   }
 
 private:
   bool _debug;
-  ceres::Solver::Options _options;
+  ceres::GradientProblemSolver::Options _options;
 };
 
 }  // namespace smac_planner
