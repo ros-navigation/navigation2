@@ -144,6 +144,7 @@ private:
   void halt() override
   {
     ControlNode::haltChildren(1);
+    setStatus(BT::NodeStatus::IDLE);
     current_child_idx_ = 0;
     retry_count_ = 0;
   }
