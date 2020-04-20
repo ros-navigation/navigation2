@@ -173,12 +173,14 @@ protected:
       // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
-          node_->get_logger(), "Received a preemption request for %s,"
-          " however feature is currently not implemented. Aborting and stopping.",
+          node_->get_logger(), "Received a preemption request for %s,",
           recovery_name_.c_str());
-        stopRobot();
-        action_server_->terminate_current();
-        return;
+        action_server_->accept_pending_goal();
+        if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
+          RCLCPP_INFO(node_->get_logger(), "Preemption failed for %s", recovery_name_.c_str());
+          action_server_->terminate_current();
+          return;
+        }
       }
 
       switch (onCycleUpdate()) {
