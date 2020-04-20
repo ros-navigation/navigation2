@@ -143,7 +143,7 @@ private:
 
   void halt() override
   {
-    ControlNode::halt();
+    ControlNode::haltChildren(1);
     current_child_idx_ = 0;
     retry_count_ = 0;
   }
