@@ -7,8 +7,8 @@ string map_url
 string image_format
 # Map modes: trinary, scale or raw
 string map_mode
-# Thresholds. Values in range of [0..100]
-uint8 free_thresh
-uint8 occupied_thresh
+# Thresholds. Values in range of [0.0 .. 1.0]
+float32 free_thresh
+float32 occupied_thresh
 ---
 bool result

@@ -1,6 +1,5 @@
-/* Copyright (c) 2020 Samsung R&D Institute Russia
- * Copyright 2019 Rover Robotics
- * Copyright 2018 Brian Gerkey
+/* Copyright 2019 Rover Robotics
+ * Copyright 2010 Brian Gerkey
  * Copyright (c) 2008, Willow Garage, Inc.
  *
  * All rights reserved.
@@ -30,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "nav2_map_server/mapio.hpp"
+#include "nav2_map_server/map_io.hpp"
 
 #include <libgen.h>
 #include <iostream>
@@ -109,14 +108,15 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
-  std::cout << "[DEBUG] [mapio]: resolution: " << load_parameters.resolution << std::endl;
-  std::cout << "[DEBUG] [mapio]: origin[0]: " << load_parameters.origin[0] << std::endl;
-  std::cout << "[DEBUG] [mapio]: origin[1]: " << load_parameters.origin[1] << std::endl;
-  std::cout << "[DEBUG] [mapio]: origin[2]: " << load_parameters.origin[2] << std::endl;
-  std::cout << "[DEBUG] [mapio]: free_thresh: " << load_parameters.free_thresh << std::endl;
-  std::cout << "[DEBUG] [mapio]: occupied_thresh: " << load_parameters.occupied_thresh << std::endl;
-  std::cout << "[DEBUG] [mapio]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
-  std::cout << "[DEBUG] [mapio]: negate: " << load_parameters.negate << std::endl;  //NOLINT
+  std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
+  std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
+  std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
+  std::cout << "[DEBUG] [map_io]: origin[2]: " << load_parameters.origin[2] << std::endl;
+  std::cout << "[DEBUG] [map_io]: free_thresh: " << load_parameters.free_thresh << std::endl;
+  std::cout << "[DEBUG] [map_io]: occupied_thresh: " << load_parameters.occupied_thresh <<
+    std::endl;
+  std::cout << "[DEBUG] [map_io]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
+  std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
   return load_parameters;
 }
@@ -128,7 +128,7 @@ void loadMapFromFile(
   Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
-  std::cout << "[INFO] [mapio]: Loading image_file: " <<
+  std::cout << "[INFO] [map_io]: Loading image_file: " <<
     load_parameters.image_file_name << std::endl;
   Magick::Image img(load_parameters.image_file_name);
 
@@ -216,46 +216,46 @@ void loadMapFromFile(
   msg.header.stamp = clock.now();
 
   std::cout <<
-    "[DEBUG] [mapio]: Read map " << load_parameters.image_file_name << ": " << msg.info.width <<
+    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name << ": " << msg.info.width <<
     " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
 
   map = msg;
 }
 
-bool loadMapFromYaml(
+LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map)
 {
   if (yaml_file.empty()) {
-    std::cerr << "[ERROR] [mapio]: YAML file name is empty, can't load!" << std::endl;
-    return false;
+    std::cerr << "[ERROR] [map_io]: YAML file name is empty, can't load!" << std::endl;
+    return MAP_DOES_NOT_EXIST;
   }
-  std::cout << "[INFO] [mapio]: Loading yaml file: " << yaml_file << std::endl;
+  std::cout << "[INFO] [map_io]: Loading yaml file: " << yaml_file << std::endl;
   LoadParameters load_parameters;
   try {
     load_parameters = loadMapYaml(yaml_file);
   } catch (YAML::Exception & e) {
     std::cerr <<
-      "[ERROR] [mapio]: Failed processing YAML file " << yaml_file << " at position (" <<
+      "[ERROR] [map_io]: Failed processing YAML file " << yaml_file << " at position (" <<
       e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
-    return false;
+    return INVALID_MAP_METADATA;
   } catch (std::exception & e) {
     std::cerr <<
-      "[ERROR] [mapio]: Failed to parse map YAML loaded from file " << yaml_file <<
+      "[ERROR] [map_io]: Failed to parse map YAML loaded from file " << yaml_file <<
       " for reason: " << e.what() << std::endl;
-    return false;
+    return INVALID_MAP_METADATA;
   }
 
   try {
     loadMapFromFile(load_parameters, map);
   } catch (std::exception & e) {
     std::cerr <<
-      "[ERROR] [mapio]: Failed to load image file " << load_parameters.image_file_name <<
+      "[ERROR] [map_io]: Failed to load image file " << load_parameters.image_file_name <<
       " for reason: " << e.what() << std::endl;
-    return false;
+    return INVALID_MAP_DATA;
   }
 
-  return true;
+  return LOAD_MAP_SUCCESS;
 }
 
 // === Map output part ===
@@ -276,31 +276,31 @@ void checkSaveParameters(SaveParameters & save_parameters)
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
     save_parameters.map_file_name = "map_" +
       std::to_string(static_cast<int>(clock.now().seconds()));
-    std::cout << "[WARN] [mapio]: Map file unspecified. Map will be saved to " <<
+    std::cout << "[WARN] [map_io]: Map file unspecified. Map will be saved to " <<
       save_parameters.map_file_name << " file" << std::endl;
   }
 
   // Checking thresholds
-  if (save_parameters.occupied_thresh == 0) {
-    save_parameters.occupied_thresh = 65;
-    std::cout << "[WARN] [mapio]: Occupied threshold unspecified. Setting it to default value: " <<
+  if (save_parameters.occupied_thresh == 0.0) {
+    save_parameters.occupied_thresh = 0.65;
+    std::cout << "[WARN] [map_io]: Occupied threshold unspecified. Setting it to default value: " <<
       save_parameters.occupied_thresh << std::endl;
   }
-  if (save_parameters.free_thresh == 0) {
-    save_parameters.free_thresh = 25;
-    std::cout << "[WARN] [mapio]: Free threshold unspecified. Setting it to default value: 25" <<
+  if (save_parameters.free_thresh == 0.0) {
+    save_parameters.free_thresh = 0.25;
+    std::cout << "[WARN] [map_io]: Free threshold unspecified. Setting it to default value: " <<
       save_parameters.free_thresh << std::endl;
   }
-  if (100 < save_parameters.occupied_thresh) {
-    std::cerr << "[ERROR] [mapio]: Threshold_occupied must be 100 or less" << std::endl;
+  if (1.0 < save_parameters.occupied_thresh) {
+    std::cerr << "[ERROR] [map_io]: Threshold_occupied must be 1.0 or less" << std::endl;
     throw std::runtime_error("Incorrect thresholds");
   }
-  if (save_parameters.free_thresh < 0) {
-    std::cerr << "[ERROR] [mapio]: Free threshold must be 0 or greater" << std::endl;
+  if (save_parameters.free_thresh < 0.0) {
+    std::cerr << "[ERROR] [map_io]: Free threshold must be 0.0 or greater" << std::endl;
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.occupied_thresh <= save_parameters.free_thresh) {
-    std::cerr << "[ERROR] [mapio]: Threshold_free must be smaller than threshold_occupied" <<
+    std::cerr << "[ERROR] [map_io]: Threshold_free must be smaller than threshold_occupied" <<
       std::endl;
     throw std::runtime_error("Incorrect thresholds");
   }
@@ -308,7 +308,7 @@ void checkSaveParameters(SaveParameters & save_parameters)
   // Checking image format
   if (save_parameters.image_format == "") {
     save_parameters.image_format = save_parameters.mode == MapMode::Scale ? "png" : "pgm";
-    std::cout << "[WARN] [mapio]: Image format unspecified. Setting it to: " <<
+    std::cout << "[WARN] [map_io]: Image format unspecified. Setting it to: " <<
       save_parameters.image_format << std::endl;
   }
 
@@ -333,7 +333,7 @@ void checkSaveParameters(SaveParameters & save_parameters)
       first = false;
     }
     std::cout <<
-      "[WARN] [mapio]: Requested image format '" << save_parameters.image_format <<
+      "[WARN] [map_io]: Requested image format '" << save_parameters.image_format <<
       "' is not one of the recommended formats: " << ss.str() << std::endl;
   }
   const std::string FALLBACK_FORMAT = "png";
@@ -342,13 +342,13 @@ void checkSaveParameters(SaveParameters & save_parameters)
     Magick::CoderInfo info(save_parameters.image_format);
     if (!info.isWritable()) {
       std::cout <<
-        "[WARN] [mapio]: Format '" << save_parameters.image_format <<
+        "[WARN] [map_io]: Format '" << save_parameters.image_format <<
         "' is not writable. Using '" << FALLBACK_FORMAT << "' instead" << std::endl;
       save_parameters.image_format = FALLBACK_FORMAT;
     }
   } catch (Magick::ErrorOption & e) {
     std::cout <<
-      "[WARN] [mapio]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
+      "[WARN] [map_io]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
       FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
     save_parameters.image_format = FALLBACK_FORMAT;
   }
@@ -361,7 +361,7 @@ void checkSaveParameters(SaveParameters & save_parameters)
     save_parameters.image_format == "jpeg"))
   {
     std::cout <<
-      "[WARN] [mapio]: Map mode 'scale' requires transparency, but format '" <<
+      "[WARN] [map_io]: Map mode 'scale' requires transparency, but format '" <<
       save_parameters.image_format <<
       "' does not support it. Consider switching image format to 'png'." << std::endl;
   }
@@ -378,7 +378,7 @@ void tryWriteMapToFile(
   const SaveParameters & save_parameters)
 {
   std::cout <<
-    "[INFO] [mapio]: Received a " << map.info.width << " X " << map.info.height << " map @ " <<
+    "[INFO] [map_io]: Received a " << map.info.width << " X " << map.info.height << " map @ " <<
     map.info.resolution << " m/pix" << std::endl;
 
   std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
@@ -396,6 +396,9 @@ void tryWriteMapToFile(
     // Since we only need to support 100 different pixel levels, 8 bits is fine
     image.depth(8);
 
+    int free_thresh_int = std::rint(save_parameters.free_thresh * 100.0);
+    int occupied_thresh_int = std::rint(save_parameters.occupied_thresh * 100.0);
+
     for (size_t y = 0; y < map.info.height; y++) {
       for (size_t x = 0; x < map.info.width; x++) {
         int8_t map_cell = map.data[map.info.width * (map.info.height - y - 1) + x];
@@ -406,9 +409,9 @@ void tryWriteMapToFile(
           case MapMode::Trinary:
             if (map_cell < 0 || 100 < map_cell) {
               pixel = Magick::ColorGray(205 / 255.0);
-            } else if (map_cell <= save_parameters.free_thresh) {
+            } else if (map_cell <= free_thresh_int) {
               pixel = Magick::ColorGray(254 / 255.0);
-            } else if (save_parameters.occupied_thresh <= map_cell) {
+            } else if (occupied_thresh_int <= map_cell) {
               pixel = Magick::ColorGray(0 / 255.0);
             } else {
               pixel = Magick::ColorGray(205 / 255.0);
@@ -432,14 +435,14 @@ void tryWriteMapToFile(
             pixel = Magick::Color(q, q, q);
             break;
           default:
-            std::cerr << "[ERROR] [mapio]: Map mode should be Trinary, Scale or Raw" << std::endl;
+            std::cerr << "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
             throw std::runtime_error("Invalid map mode");
         }
         image.pixelColor(x, y, pixel);
       }
     }
 
-    std::cout << "[INFO] [mapio]: Writing map occupancy data to " << mapdatafile << std::endl;
+    std::cout << "[INFO] [map_io]: Writing map occupancy data to " << mapdatafile << std::endl;
     image.write(mapdatafile);
   }
 
@@ -461,30 +464,35 @@ void tryWriteMapToFile(
     e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
       map.info.origin.position.y << yaw << YAML::EndSeq;
     e << YAML::Key << "negate" << YAML::Value << 0;
-    e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh / 100.0;
-    e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh / 100.0;
+    e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
+    e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
 
     if (!e.good()) {
       std::cout <<
-        "[WARN] [mapio]: YAML writer failed with an error " << e.GetLastError() <<
+        "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
         ". The map metadata may be invalid." << std::endl;
     }
 
-    std::cout << "[INFO] [mapio]: Writing map metadata to " << mapmetadatafile << std::endl;
+    std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
     std::ofstream(mapmetadatafile) << e.c_str();
   }
-  std::cout << "[INFO] [mapio]: Map saved" << std::endl;
+  std::cout << "[INFO] [map_io]: Map saved" << std::endl;
 }
 
-bool saveMapToFile(const nav_msgs::msg::OccupancyGrid & map, SaveParameters & save_parameters)
+bool saveMapToFile(
+  const nav_msgs::msg::OccupancyGrid & map,
+  const SaveParameters & save_parameters)
 {
+  // Local copy of SaveParameters that might be modified by checkSaveParameters()
+  SaveParameters save_parameters_loc = save_parameters;
+
   try {
     // Checking map parameters for consistency
-    checkSaveParameters(save_parameters);
+    checkSaveParameters(save_parameters_loc);
 
-    tryWriteMapToFile(map, save_parameters);
+    tryWriteMapToFile(map, save_parameters_loc);
   } catch (std::exception & e) {
-    std::cout << "[ERROR] [mapio]: Failed to write map for reason: " << e.what() << std::endl;
+    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
     return false;
   }
   return true;

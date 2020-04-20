@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Samsung R&D Institute Russia
+// Copyright (c) 2020 Samsung Research Russia
 // Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

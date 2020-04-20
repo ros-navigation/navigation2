@@ -1,54 +1,38 @@
-/*
- * Copyright (c) 2020 Samsung R&D Institute Russia
- * Copyright 2019 Rover Robotics
- * Copyright (c) 2008, Willow Garage, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <ORGANIZATION> nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2020 Samsung Research Russia
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "nav2_map_server/map_saver.hpp"
 
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <functional>
+
+using namespace std::placeholders;
 
 namespace nav2_map_server
 {
 MapSaver::MapSaver()
-: nav2_util::LifecycleNode("map_saver")
+: nav2_util::LifecycleNode("map_saver", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
     std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
 
-  free_thresh_default_ = declare_parameter("free_thresh_default", 25),
-  occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 65);
-
-  map_listener_ = rclcpp::Node::make_shared("map_listener");
+  free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
+  occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
 }
 
 MapSaver::~MapSaver()
@@ -60,38 +44,14 @@ nav2_util::CallbackReturn
 MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-  // Create SaveMap service callback handle
-  auto save_map_callback = [this](
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
-    std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) -> void {
-      // Set input arguments and call saveMapTopicToFile()
-      SaveParameters save_parameters;
-      save_parameters.map_file_name = request->map_url;
-      save_parameters.image_format = request->image_format;
-      save_parameters.free_thresh = request->free_thresh;
-      save_parameters.occupied_thresh = request->occupied_thresh;
-      try {
-        save_parameters.mode = map_mode_from_string(request->map_mode);
-      } catch (std::invalid_argument &) {
-        save_parameters.mode = MapMode::Trinary;
-        RCLCPP_WARN(
-          get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
-          request->map_mode.c_str());
-      }
-
-      std::string map_topic = request->map_topic;
-
-      response->result = saveMapTopicToFile(map_topic, save_parameters);
-    };
 
   // Make name prefix for services
-  std::string service_prefix = get_name() + std::string("/");
+  const std::string service_prefix = get_name() + std::string("/");
 
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
-    save_map_callback);
+    std::bind(&MapSaver::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -131,57 +91,91 @@ MapSaver::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save_parameters)
+void MapSaver::saveMapCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+  std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response)
 {
+  // Set input arguments and call saveMapTopicToFile()
+  SaveParameters save_parameters;
+  save_parameters.map_file_name = request->map_url;
+  save_parameters.image_format = request->image_format;
+  save_parameters.free_thresh = request->free_thresh;
+  save_parameters.occupied_thresh = request->occupied_thresh;
+  try {
+    save_parameters.mode = map_mode_from_string(request->map_mode);
+  } catch (std::invalid_argument &) {
+    save_parameters.mode = MapMode::Trinary;
+    RCLCPP_WARN(
+      get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
+      request->map_mode.c_str());
+  }
+
+  response->result = saveMapTopicToFile(request->map_topic, save_parameters);
+}
+
+bool MapSaver::saveMapTopicToFile(
+  const std::string & map_topic,
+  const SaveParameters & save_parameters)
+{
+  // Local copies of map_topic and save_parameters that could be changed
+  std::string map_topic_loc = map_topic;
+  SaveParameters save_parameters_loc = save_parameters;
+
   RCLCPP_INFO(
-    get_logger(), "Saving map from %s topic to %s file",
-    map_topic.c_str(), save_parameters.map_file_name.c_str());
+    get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
+    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
-    // Reset map receiving indicator
-    got_map_msg_ = false;
+    // Pointer to map message received in the subscription callback
+    nav_msgs::msg::OccupancyGrid::SharedPtr map_msg = nullptr;
 
-    // Correct map_topic if necessary
-    if (map_topic == "") {
-      map_topic = "map";
+    // Correct map_topic_loc if necessary
+    if (map_topic_loc == "") {
+      map_topic_loc = "map";
       RCLCPP_WARN(
-        get_logger(), "Map topic unspecified. Map messages will be read from %s topic",
-        map_topic.c_str());
+        get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
+        map_topic_loc.c_str());
     }
 
     // Set default for MapSaver node thresholds parameters
-    if (save_parameters.free_thresh == 0) {
+    if (save_parameters_loc.free_thresh == 0.0) {
       RCLCPP_WARN(
         get_logger(),
-        "Free threshold unspecified. Setting it to default value: %i",
+        "Free threshold unspecified. Setting it to default value: %f",
         free_thresh_default_);
-      save_parameters.free_thresh = free_thresh_default_;
+      save_parameters_loc.free_thresh = free_thresh_default_;
     }
-    if (save_parameters.occupied_thresh == 0) {
+    if (save_parameters_loc.occupied_thresh == 0.0) {
       RCLCPP_WARN(
         get_logger(),
-        "Occupied threshold unspecified. Setting it to default value: %i",
+        "Occupied threshold unspecified. Setting it to default value: %f",
         occupied_thresh_default_);
-      save_parameters.occupied_thresh = occupied_thresh_default_;
+      save_parameters_loc.occupied_thresh = occupied_thresh_default_;
     }
 
-    // Add new subscription for incoming map topic
-    auto map_sub = map_listener_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&MapSaver::mapCallback, this, std::placeholders::_1));
+    // A callback function that receives map message from subscribed topic
+    auto mapCallback = [&map_msg](
+      const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
+        map_msg = msg;
+      };
+
+    // Add new subscription for incoming map topic.
+    // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
+    // as a map listener.
+    auto map_sub = rclcpp_node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      map_topic_loc, rclcpp::SystemDefaultsQoS(), mapCallback);
 
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
-      rclcpp::spin_some(map_listener_);
-
       if ((now() - start_time) > *save_map_timeout_) {
         RCLCPP_ERROR(get_logger(), "Failed to save the map: timeout");
         return false;
       }
 
-      if (got_map_msg_) {
+      if (map_msg) {
         // Map message received. Saving it to file
-        if (saveMapToFile(*msg_, save_parameters)) {
+        if (saveMapToFile(*map_msg, save_parameters_loc)) {
           RCLCPP_INFO(get_logger(), "Map saved successfully");
           return true;
         } else {
@@ -199,12 +193,6 @@ bool MapSaver::saveMapTopicToFile(std::string & map_topic, SaveParameters & save
 
   RCLCPP_ERROR(get_logger(), "This situation should never appear");
   return false;
-}
-
-void MapSaver::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
-{
-  msg_ = msg;
-  got_map_msg_ = true;
 }
 
 }  // namespace nav2_map_server

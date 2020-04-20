@@ -1,4 +1,3 @@
-// Copyright (c) 2020 Samsung R&D Institute Russia
 // Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +14,8 @@
 
 /* OccupancyGrid map input-output library */
 
-#ifndef NAV2_MAP_SERVER__MAPIO_HPP_
-#define NAV2_MAP_SERVER__MAPIO_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_IO_HPP_
+#define NAV2_MAP_SERVER__MAP_IO_HPP_
 
 #include <string>
 #include <vector>
@@ -39,6 +38,14 @@ struct LoadParameters
   MapMode mode;
   bool negate;
 };
+
+typedef enum
+{
+  LOAD_MAP_SUCCESS,
+  MAP_DOES_NOT_EXIST,
+  INVALID_MAP_METADATA,
+  INVALID_MAP_DATA
+} LOAD_MAP_STATUS;
 
 /**
  * @brief Load and parse the given YAML file
@@ -63,9 +70,9 @@ void loadMapFromFile(
  * generate an OccupancyGrid
  * @param yaml_file Name of input YAML file
  * @param map Output loaded map
- * @return true or false
+ * @return status of map loaded
  */
-bool loadMapFromYaml(
+LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map);
 
@@ -76,8 +83,8 @@ struct SaveParameters
 {
   std::string map_file_name{""};
   std::string image_format{""};
-  int free_thresh{0};
-  int occupied_thresh{0};
+  double free_thresh{0.0};
+  double occupied_thresh{0.0};
   MapMode mode{MapMode::Trinary};
 };
 
@@ -85,13 +92,12 @@ struct SaveParameters
  * @brief Write OccupancyGrid map to file
  * @param map OccupancyGrid map data
  * @param save_parameters Map saving parameters.
- * NOTE: save_parameters could be updated during function execution.
  * @return true or false
  */
 bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
-  SaveParameters & save_parameters);
+  const SaveParameters & save_parameters);
 
 }  // namespace nav2_map_server
 
-#endif  // NAV2_MAP_SERVER__MAPIO_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_IO_HPP_

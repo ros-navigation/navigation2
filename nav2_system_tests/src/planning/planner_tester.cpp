@@ -26,7 +26,7 @@
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_map_server/map_mode.hpp"
-#include "nav2_map_server/mapio.hpp"
+#include "nav2_map_server/map_io.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;

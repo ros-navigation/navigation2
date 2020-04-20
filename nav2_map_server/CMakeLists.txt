@@ -34,20 +34,19 @@ add_executable(${map_saver_cli_executable}
 add_executable(${map_saver_server_executable}
   src/map_saver_server_main.cpp)
 
-set(mapio_library_name mapio)
+set(map_io_library_name map_io)
 
 set(library_name ${map_server_executable}_core)
 
-add_library(${mapio_library_name} SHARED
+add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
-  src/mapio.cpp)
+  src/map_io.cpp)
 
 add_library(${library_name} SHARED
-  src/occ_grid_loader.cpp
   src/map_server.cpp
   src/map_saver.cpp)
 
-set(mapio_dependencies
+set(map_io_dependencies
   yaml_cpp_vendor
   nav_msgs
   nav2_util
@@ -80,11 +79,11 @@ ament_target_dependencies(${map_saver_server_executable}
 ament_target_dependencies(${library_name}
   ${map_server_dependencies})
 
-ament_target_dependencies(${mapio_library_name}
-  ${mapio_dependencies})
+ament_target_dependencies(${map_io_library_name}
+  ${map_io_dependencies})
 
 target_link_libraries(${library_name}
-  ${mapio_library_name})
+  ${map_io_library_name})
 
 target_link_libraries(${map_server_executable}
   ${library_name})
@@ -95,13 +94,13 @@ target_link_libraries(${map_saver_cli_executable}
 target_link_libraries(${map_saver_server_executable}
   ${library_name})
 
-target_include_directories(${mapio_library_name} SYSTEM PRIVATE
+target_include_directories(${map_io_library_name} SYSTEM PRIVATE
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 
-target_link_libraries(${mapio_library_name}
+target_link_libraries(${map_io_library_name}
   ${GRAPHICSMAGICKCPP_LIBRARIES})
 
-install(TARGETS ${map_server_executable} ${library_name} ${mapio_library_name}
+install(TARGETS ${map_server_executable} ${library_name} ${map_io_library_name}
   ${map_saver_cli_executable} ${map_saver_server_executable}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -125,6 +124,6 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(
   ${library_name}
-  ${mapio_library_name}
+  ${map_io_library_name}
 )
 ament_package()

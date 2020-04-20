@@ -40,7 +40,6 @@ const char * USAGE_STRING{
   "\n"
   "NOTE: --ros-args should be passed at the end of command line"};
 
-
 typedef enum
 {
   COMMAND_MAP_TOPIC,
@@ -57,7 +56,19 @@ struct cmd_struct
   COMMAND_TYPE command_type;
 };
 
-int main(int argc, char ** argv)
+typedef enum
+{
+  ARGUMENTS_INVALID,
+  ARGUMENTS_VALID,
+  HELP_MESSAGE
+} ARGUMENTS_STATUS;
+
+// Arguments parser
+// Input parameters: logger, argc, argv
+// Output parameters: map_topic, save_parameters
+ARGUMENTS_STATUS parse_arguments(
+  const rclcpp::Logger & logger, int argc, char ** argv,
+  std::string & map_topic, SaveParameters & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -68,22 +79,16 @@ int main(int argc, char ** argv)
     {"--fmt", COMMAND_IMAGE_FORMAT},
   };
 
-  rclcpp::init(argc, argv);
-
-  auto logger = rclcpp::get_logger("map_saver_cli");
-
   std::vector<std::string> arguments(argv + 1, argv + argc);
   std::vector<rclcpp::Parameter> params_from_args;
-  SaveParameters save_parameters;
-  std::string map_topic = "map";
+
 
   size_t cmd_size = sizeof(commands) / sizeof(commands[0]);
   size_t i;
   for (auto it = arguments.begin(); it != arguments.end(); it++) {
     if (*it == "-h" || *it == "--help") {
       std::cout << USAGE_STRING << std::endl;
-      rclcpp::shutdown();
-      return 0;
+      return HELP_MESSAGE;
     }
     if (*it == "--ros-args") {
       break;
@@ -92,8 +97,7 @@ int main(int argc, char ** argv)
       if (commands[i].cmd == *it) {
         if ((it + 1) == arguments.end()) {
           RCLCPP_ERROR(logger, "Wrong argument: %s should be followed by a value.", it->c_str());
-          rclcpp::shutdown();
-          return -1;
+          return ARGUMENTS_INVALID;
         }
         it++;
         switch (commands[i].command_type) {
@@ -129,11 +133,34 @@ int main(int argc, char ** argv)
     }
     if (i == cmd_size) {
       RCLCPP_ERROR(logger, "Wrong argument: %s", it->c_str());
-      rclcpp::shutdown();
-      return -1;
+      return ARGUMENTS_INVALID;
     }
   }
 
+  return ARGUMENTS_VALID;
+}
+
+int main(int argc, char ** argv)
+{
+  // ROS2 init
+  rclcpp::init(argc, argv);
+  auto logger = rclcpp::get_logger("map_saver_cli");
+
+  // Parse CLI-arguments
+  SaveParameters save_parameters;
+  std::string map_topic = "map";
+  switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
+    case ARGUMENTS_INVALID:
+      rclcpp::shutdown();
+      return -1;
+    case HELP_MESSAGE:
+      rclcpp::shutdown();
+      return 0;
+    case ARGUMENTS_VALID:
+      break;
+  }
+
+  // Call saveMapTopicToFile()
   int retcode;
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
@@ -147,6 +174,7 @@ int main(int argc, char ** argv)
     retcode = -1;
   }
 
+  // Exit
   rclcpp::shutdown();
   return retcode;
 }

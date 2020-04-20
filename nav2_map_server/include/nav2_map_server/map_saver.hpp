@@ -1,5 +1,4 @@
-// Copyright (c) 2020 Samsung R&D Institute Russia
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Samsung Research Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +22,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
 
-#include "mapio.hpp"
+#include "map_io.hpp"
 
 namespace nav2_map_server
 {
@@ -48,46 +47,72 @@ public:
   /**
    * @brief Read a message from incoming map topic and save map to a file
    * @param map_topic Incoming map topic name
-   * NOTE: map_topic could be updated during function execution.
    * @param save_parameters Map saving parameters.
-   * NOTE: save_parameters could be updated during function execution.
    * @return true of false
    */
-  bool saveMapTopicToFile(std::string & map_topic, SaveParameters & save_parameters);
+  bool saveMapTopicToFile(
+    const std::string & map_topic,
+    const SaveParameters & save_parameters);
 
 protected:
-  // Lifecycle interfaces
+  /**
+   * @brief Sets up map saving service
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when node switched to active state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when node switched to inactive state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when it is required node clean-up
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in Shutdown state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when Error is raised
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief A callback function that receives map message from subscribed topic
-   * @param map Occupancy Grid message data
+   * @brief Map saving service callback
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
    */
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void saveMapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;
   // Default values for map thresholds
-  int free_thresh_default_;
-  int occupied_thresh_default_;
+  double free_thresh_default_;
+  double occupied_thresh_default_;
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
   // A service to save the map to a file at run time (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
-
-  // Map topic listener node
-  rclcpp::Node::SharedPtr map_listener_;
-
-  // Pointer to map message received in the subscription callback
-  nav_msgs::msg::OccupancyGrid::SharedPtr msg_;
-  // Indicator that map message was receiced
-  bool got_map_msg_;
 };
 
 }  // namespace nav2_map_server

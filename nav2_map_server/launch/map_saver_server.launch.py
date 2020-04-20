@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 Samsung R&D Institute Russia
+# Copyright (c) 2020 Samsung Research Russia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ def generate_launch_description():
     use_sim_time = True
     autostart = True
     save_map_timeout = 2000
-    free_thresh_default = 25
-    occupied_thresh_default = 65
+    free_thresh_default = 0.25
+    occupied_thresh_default = 0.65
 
     # Nodes launching commands
-    start_map_server_service_cmd = launch_ros.actions.Node(
+    start_map_saver_server_cmd = launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_saver_server',
             output='screen',
@@ -49,7 +49,7 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    ld.add_action(start_map_server_service_cmd)
+    ld.add_action(start_map_saver_server_cmd)
     ld.add_action(start_lifecycle_manager_cmd)
 
     return ld

@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "test_constants/test_constants.h"
-#include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_map_server/map_server.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 #include  "nav2_msgs/srv/load_map.hpp"
 
