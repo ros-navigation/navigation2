@@ -83,6 +83,12 @@ public:
     }
     try {
       path = planners_["GridBased"]->createPlan(start, goal);
+      // The situation when createPlan() did not throw any exception
+      // does not guarantee that plan was created correctly.
+      // So it should be checked additionally that path is correct.
+      if (!path.poses.size()) {
+        return false;
+      }
     } catch (...) {
       return false;
     }
