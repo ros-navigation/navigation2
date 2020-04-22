@@ -168,8 +168,6 @@ private:
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);
 
-  void setParamCallbacks();
-
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_;
   unsigned int cell_inflation_radius_;

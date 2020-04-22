@@ -50,7 +50,6 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/parameter_events_subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"
@@ -280,8 +279,6 @@ protected:
 
   // Parameters
   void getParameters();
-  void paramEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & event);
-
   bool always_send_full_costmap_{false};
   std::string footprint_;
   float footprint_padding_{0};
@@ -307,8 +304,6 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
-
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
 };
 
 }  // namespace nav2_costmap_2d

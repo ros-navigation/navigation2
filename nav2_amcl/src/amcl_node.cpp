@@ -194,20 +194,13 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   initParameters();
-  if (always_reset_initial_pose_) {
-    initial_pose_is_known_ = false;
-  }
   initTransforms();
-  initPubSub();
   initMessageFilters();
+  initPubSub();
   initServices();
   initOdometry();
   initParticleFilter();
   initLaserScan();
-
-  param_subscriber_ = std::make_shared<nav2_util::ParameterEventsSubscriber>(shared_from_this());
-  param_subscriber_->set_event_callback(
-    std::bind(&AmclNode::parameterEventCallback, this, std::placeholders::_1));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -348,15 +341,6 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-AmclNode::parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::SharedPtr & /*event*/)
-{
-  initParameters();
-  initMessageFilters();
-  initOdometry();
-  initParticleFilter();
 }
 
 void
@@ -1056,6 +1040,10 @@ AmclNode::initParameters()
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
   }
+
+  if (always_reset_initial_pose_) {
+    initial_pose_is_known_ = false;
+  }
 }
 
 void
@@ -1175,6 +1163,9 @@ AmclNode::initTransforms()
 void
 AmclNode::initMessageFilters()
 {
+  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
+
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
 
@@ -1202,9 +1193,6 @@ AmclNode::initPubSub()
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
-
-  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
-    rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 }
 
 void
@@ -1237,9 +1225,7 @@ AmclNode::initOdometry()
     init_cov_[1] = last_published_pose_.pose.covariance[7];
     init_cov_[2] = last_published_pose_.pose.covariance[35];
   }
-  if (motion_model_) {
-    motion_model_.reset();
-  }
+
   motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(nav2_amcl::MotionModel::createMotionModel(
         robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
 
@@ -1249,11 +1235,6 @@ AmclNode::initOdometry()
 void
 AmclNode::initParticleFilter()
 {
-  if (pf_ != nullptr) {
-    pf_free(pf_);
-    pf_ = nullptr;
-  }
-
   // Create the particle filter
   pf_ = pf_alloc(min_particles_, max_particles_, alpha_slow_, alpha_fast_,
       (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,

@@ -46,7 +46,6 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/parameter_events_subscriber.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -65,8 +64,7 @@ public:
     tf2_ros::Buffer * tf,
     nav2_util::LifecycleNode::SharedPtr node,
     rclcpp::Node::SharedPtr client_node,
-    rclcpp::Node::SharedPtr rclcpp_node,
-    std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber = nullptr);
+    rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
   virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
   virtual void reset() = 0;
@@ -137,8 +135,6 @@ protected:
   nav2_util::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
-  std::shared_ptr<nav2_util::ParameterEventsSubscriber> param_subscriber_;
-  std::vector<nav2_util::ParameterEventsCallbackHandle::SharedPtr> callback_handles_;
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
@@ -154,8 +150,6 @@ protected:
 
   // Names of the parameters declared on the ROS node
   std::unordered_set<std::string> local_params_;
-
-  std::recursive_mutex mutex_;
 
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;
