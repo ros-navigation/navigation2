@@ -1,0 +1,5 @@
+<library path="nav2_ompl_planner_plugin">
+	<class name="nav2_ompl_planner/OMPLPlanner" type="nav2_ompl_planner::OMPLPlanner" base_class_type="nav2_core::GlobalPlanner">
+	  <description>This is an example plugin which produces global path utilizing OMPL's implemented planning Algorithm.</description>
+	</class>
+</library>
