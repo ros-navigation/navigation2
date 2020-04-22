@@ -100,11 +100,6 @@ public:
   {
   }
 
-  // Can be overwritten to trigger specific behaviours when a new goal is sent to the BtNavigator
-  virtual void on_goal_preempted()
-  {
-  }
-
   // Called upon successful completion of the action. A derived class can override this
   // method to put a value on the blackboard, for example.
   virtual BT::NodeStatus on_success()
@@ -144,12 +139,6 @@ public:
     if (rclcpp::ok() && !goal_result_available_) {
       // user defined callback. May modify the value of "goal_updated_"
       on_wait_for_result();
-
-      // Check if the navigation goal has been updated
-      if (config().blackboard->get<bool>("goal_preempted")) {
-        config().blackboard->set("goal_preempted", false);
-        on_goal_preempted();
-      }
 
       auto goal_status = goal_handle_->get_status();
       if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||

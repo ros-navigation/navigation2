@@ -34,10 +34,6 @@ public:
     const BT::NodeConfiguration & conf)
   : BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
   {
-  }
-
-  void on_tick() override
-  {
     int duration;
     getInput("wait_duration", duration);
     if (duration <= 0) {
@@ -48,12 +44,6 @@ public:
     }
 
     goal_.time.sec = duration;
-  }
-  void on_goal_preempted() override
-  {
-    // Stop the wait if a new goal has been preempted.
-    goal_.time.sec = 0;
-    goal_updated_ = true;
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method

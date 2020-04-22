@@ -37,19 +37,9 @@ public:
     const BT::NodeConfiguration & conf)
   : BtActionNode<nav2_msgs::action::Spin>(xml_tag_name, action_name, conf)
   {
-  }
-
-  void on_tick() override
-  {
     double dist;
     getInput("spin_dist", dist);
     goal_.target_yaw = dist;
-  }
-
-  void on_goal_preempted() override
-  {
-    goal_.target_yaw = 0;
-    goal_updated_ = true;
   }
 
   static BT::PortsList providedPorts()

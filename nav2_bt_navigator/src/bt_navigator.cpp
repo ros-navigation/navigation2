@@ -109,7 +109,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
-  blackboard_->set<bool>("goal_preempted", false); // NOLINT
 
   // Get the BT filename to use from the node parameter
   std::string bt_xml_filename;
@@ -222,7 +221,6 @@ BtNavigator::navigateToPose()
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
-        blackboard_->set("goal_preempted", true);
       }
       topic_logger.flush();
     };
