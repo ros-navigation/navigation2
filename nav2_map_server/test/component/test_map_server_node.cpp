@@ -15,12 +15,13 @@
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <rclcpp/rclcpp.hpp>
+#include <string>
 #include <memory>
 
 #include "test_constants/test_constants.h"
-#include "nav2_map_server/occ_grid_loader.hpp"
+#include "nav2_map_server/map_server.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
-#include  "nav2_msgs/srv/load_map.hpp"
+#include "nav2_msgs/srv/load_map.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -43,8 +44,9 @@ public:
   TestNode()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
+    map_server_node_name_ = "map_server";
     lifecycle_client_ =
-      std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
+      std::make_shared<nav2_util::LifecycleServiceClient>(map_server_node_name_, node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
 
@@ -81,35 +83,46 @@ public:
   }
 
 protected:
+  // Check that map_msg corresponds to reference pattern
+  // Input: map_msg
+  void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
+  {
+    ASSERT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
+    ASSERT_EQ(map_msg.info.width, g_valid_image_width);
+    ASSERT_EQ(map_msg.info.height, g_valid_image_height);
+    for (unsigned int i = 0; i < map_msg.info.width * map_msg.info.height; i++) {
+      ASSERT_EQ(g_valid_image_content[i], map_msg.data[i]);
+    }
+  }
+
+  std::string map_server_node_name_;
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
 
+// Send map getting service request and verify obtained OccupancyGrid
 TEST_F(TestNode, GetMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  auto client = node_->create_client<nav_msgs::srv::GetMap>("map");
+  auto client = node_->create_client<nav_msgs::srv::GetMap>(
+    "/" + map_server_node_name_ + "/map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
   ASSERT_TRUE(client->wait_for_service());
 
   auto resp = send_request<nav_msgs::srv::GetMap>(node_, client, req);
 
-  ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);
-  ASSERT_EQ(resp->map.info.width, g_valid_image_width);
-  ASSERT_EQ(resp->map.info.height, g_valid_image_height);
-
-  for (unsigned int i = 0; i < resp->map.info.width * resp->map.info.height; i++) {
-    ASSERT_EQ(g_valid_image_content[i], resp->map.data[i]);
-  }
+  verifyMapMsg(resp->map);
 }
 
+// Send map loading service request and verify obtained OccupancyGrid
 TEST_F(TestNode, LoadMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -118,19 +131,16 @@ TEST_F(TestNode, LoadMap)
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
-  ASSERT_FLOAT_EQ(resp->map.info.resolution, g_valid_image_res);
-  ASSERT_EQ(resp->map.info.height, g_valid_image_height);
-
-  for (unsigned int i = 0; i < resp->map.info.width * resp->map.info.height; i++) {
-    ASSERT_EQ(g_valid_image_content[i], resp->map.data[i]);
-  }
+  verifyMapMsg(resp->map);
 }
 
+// Send map loading service request without specifying which map to load
 TEST_F(TestNode, LoadMapNull)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -142,11 +152,13 @@ TEST_F(TestNode, LoadMapNull)
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST);
 }
 
+// Send map loading service request with non-existing yaml file
 TEST_F(TestNode, LoadMapInvalidYaml)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -158,11 +170,13 @@ TEST_F(TestNode, LoadMapInvalidYaml)
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA);
 }
 
+// Send map loading service request with yaml file containing non-existing map
 TEST_F(TestNode, LoadMapInvalidImage)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap>("load_map");
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/" + map_server_node_name_ + "/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());

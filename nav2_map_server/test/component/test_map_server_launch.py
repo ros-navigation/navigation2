@@ -33,7 +33,7 @@ def main(argv=sys.argv[1:]):
     ])
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_occ_grid_node',
+        name='test_map_server_node',
     )
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
