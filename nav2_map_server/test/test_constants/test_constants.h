@@ -46,7 +46,10 @@ extern const char * g_valid_yaml_file;
 extern const char * g_tmp_dir;
 
 extern const double g_valid_image_res;
+// *INDENT-OFF*
+// Uncrustify may incorrectly guide to add extra spaces in < double > during CI tests
 extern const std::vector<double> g_valid_origin;
+// *INDENT-ON*
 extern const double g_default_free_thresh;
 extern const double g_default_occupied_thresh;
 

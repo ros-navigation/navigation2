@@ -26,13 +26,13 @@ set(map_saver_cli_executable map_saver_cli)
 set(map_saver_server_executable map_saver_server)
 
 add_executable(${map_server_executable}
-  src/map_server_main.cpp)
+  src/map_server/main.cpp)
 
 add_executable(${map_saver_cli_executable}
-  src/map_saver_cli_main.cpp)
+  src/map_saver/main_cli.cpp)
 
 add_executable(${map_saver_server_executable}
-  src/map_saver_server_main.cpp)
+  src/map_saver/main_server.cpp)
 
 set(map_io_library_name map_io)
 
@@ -43,8 +43,8 @@ add_library(${map_io_library_name} SHARED
   src/map_io.cpp)
 
 add_library(${library_name} SHARED
-  src/map_server.cpp
-  src/map_saver.cpp)
+  src/map_server/map_server.cpp
+  src/map_saver/map_saver.cpp)
 
 set(map_io_dependencies
   yaml_cpp_vendor
