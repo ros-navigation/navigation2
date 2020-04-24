@@ -295,6 +295,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#general">General</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#server-updates">Server Updates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#new-plugins">New Plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#map-server-re-work">Map Server Re-Work</a></li>
 </ul>
 </li>
 </ul>
@@ -413,6 +414,16 @@ All plugins will be expected to look up parameters in the namespace of its given
 These behavior tree nodes are now BT plugins and dynamically loadable at run-time using behavior tree cpp v3.
 See <code class="docutils literal notranslate"><span class="pre">nav2_behavior_tree</span></code> for a full listing, or <a class="reference internal" href="../plugins/index.html#plugins"><span class="std std-ref">Navigation Plugins</span></a> for the current list of behavior tree plugins and their descriptions.
 These plugins are set as default in the <code class="docutils literal notranslate"><span class="pre">nav2_bt_navigator</span></code> but may be overrided by the <code class="docutils literal notranslate"><span class="pre">bt_plugins</span></code> parameter to include your specific plugins.</p>
+</div>
+<div class="section" id="map-server-re-work">
+<h2>Map Server Re-Work<a class="headerlink" href="#map-server-re-work" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">map_saver</span></code> was re-worked and divided into 2 parts: CLI and server.
+CLI part is a command-line tool that listens incoming map topic, saves map once into a file and finishes its work. This part is remained to be almost untouched: CLI executable was renamed from <code class="docutils literal notranslate"><span class="pre">map_saver</span></code> to <code class="docutils literal notranslate"><span class="pre">map_saver_cli</span></code> without changing its functionality.
+Server is a new part. It spins in the background and can be used to save map continuously through a <code class="docutils literal notranslate"><span class="pre">save_map</span></code> service. By each service request it tries to listen incoming map topic, receive a message from it and write obtained map into a file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">map_server</span></code> was dramatically simplified and cleaned-up. <code class="docutils literal notranslate"><span class="pre">OccGridLoader</span></code> was merged with <code class="docutils literal notranslate"><span class="pre">MapServer</span></code> class as it is intended to work only with one <code class="docutils literal notranslate"><span class="pre">OccupancyGrid</span></code> type of messages in foreseeable future.</p>
+<p>Map Server now has new <code class="docutils literal notranslate"><span class="pre">map_io</span></code> dynamic library. All functions saving/loading <code class="docutils literal notranslate"><span class="pre">OccupancyGrid</span></code> messages were moved from <code class="docutils literal notranslate"><span class="pre">map_server</span></code> and <code class="docutils literal notranslate"><span class="pre">map_saver</span></code> here. These functions could be easily called from any part of external ROS2 code even if Map Server node was not started.</p>
+<p><code class="docutils literal notranslate"><span class="pre">map_loader</span></code> was completely removed from <code class="docutils literal notranslate"><span class="pre">nav2_util</span></code>. All its functionality already present in <code class="docutils literal notranslate"><span class="pre">map_io</span></code>. Please use it in your code instead.</p>
+<p>Please refer to the <a class="reference external" href="https://github.com/ros-planning/navigation2/issues/1010">original GitHub ticket</a> and <a class="reference external" href="https://github.com/ros-planning/navigation2/blob/master/nav2_map_server/README.md">Map Server README</a> for more information.</p>
 </div>
 </div>
 

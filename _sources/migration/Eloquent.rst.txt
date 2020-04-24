@@ -42,3 +42,18 @@ Many new behavior tree nodes were added.
 These behavior tree nodes are now BT plugins and dynamically loadable at run-time using behavior tree cpp v3.
 See ``nav2_behavior_tree`` for a full listing, or :ref:`plugins` for the current list of behavior tree plugins and their descriptions. 
 These plugins are set as default in the ``nav2_bt_navigator`` but may be overrided by the ``bt_plugins`` parameter to include your specific plugins.
+
+Map Server Re-Work
+******************
+
+``map_saver`` was re-worked and divided into 2 parts: CLI and server.
+CLI part is a command-line tool that listens incoming map topic, saves map once into a file and finishes its work. This part is remained to be almost untouched: CLI executable was renamed from ``map_saver`` to ``map_saver_cli`` without changing its functionality.
+Server is a new part. It spins in the background and can be used to save map continuously through a ``save_map`` service. By each service request it tries to listen incoming map topic, receive a message from it and write obtained map into a file.
+
+``map_server`` was dramatically simplified and cleaned-up. ``OccGridLoader`` was merged with ``MapServer`` class as it is intended to work only with one ``OccupancyGrid`` type of messages in foreseeable future.
+
+Map Server now has new ``map_io`` dynamic library. All functions saving/loading ``OccupancyGrid`` messages were moved from ``map_server`` and ``map_saver`` here. These functions could be easily called from any part of external ROS2 code even if Map Server node was not started.
+
+``map_loader`` was completely removed from ``nav2_util``. All its functionality already present in ``map_io``. Please use it in your code instead.
+
+Please refer to the `original GitHub ticket <https://github.com/ros-planning/navigation2/issues/1010>`_ and `Map Server README <https://github.com/ros-planning/navigation2/blob/master/nav2_map_server/README.md>`_ for more information.
