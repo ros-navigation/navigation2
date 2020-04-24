@@ -46,13 +46,12 @@ These plugins are set as default in the ``nav2_bt_navigator`` but may be overrid
 Map Server Re-Work
 ******************
 
-Map Server now has new MapIO dynamic library. All map input-output functionality was moved from ``map_server`` and ``map_saver`` here. MapIO contains loading/saving functions working with ``OccupancyGrid`` messages: ``loadMapYaml()``, ``loadMapFromFile()``, ``loadMapFromYaml()`` and ``saveMapToFile()``. These functions could be easily called from any part of external ROS2 code even if Map Server node was not started.
-MapIO library is designed to be replaceable by a new IO library working with ``OccupancyGrid`` maps, e.g. by library with new map encoding method or any other library supporting costmaps, multifloor maps, etc...
-
-``map_saver`` was re-worked and divided into 2 parts: CLI and server. CLI part remained to be almost untouched. CLI executable was renamed from ``map_saver`` to ``map_saver_cli`` without changing its functionality. As previously, it is saving the map into a file through command-line interface. Server is a new part added to serve incoming ``save_map`` service requests. By each request it tries to listen incoming map topic, receive a message from it and write obtained map into a file.
+``map_saver`` was re-worked and divided into 2 parts: CLI and server.
+CLI part is a command-line tool that listens incoming map topic, saves map once into a file and finishes its work. This part is remained to be almost untouched: CLI executable was renamed from ``map_saver`` to ``map_saver_cli`` without changing its functionality.
+Server is a new part. It spins in the background and can be used to save map continuously through a ``save_map`` service. By each service request it tries to listen incoming map topic, receive a message from it and write obtained map into a file.
 
 ``map_server`` was dramatically simplified and cleaned-up. ``OccGridLoader`` was merged with ``MapServer`` class as it is intended to work only with one ``OccupancyGrid`` type of messages in foreseeable future.
 
-``map_loader`` was completely removed from ``nav2_util``. All its functionality already present in MapIO library. Please use MapIO in your code instead.
+``map_loader`` was completely removed from ``nav2_util``. All its functionality already present in ``map_io`` library. Please use it in your code instead.
 
 Please refer to the `original GitHub ticket <https://github.com/ros-planning/navigation2/issues/1010>`_ and `Map Server README <https://github.com/ros-planning/navigation2/blob/master/nav2_map_server/README.md>`_ for more information.
