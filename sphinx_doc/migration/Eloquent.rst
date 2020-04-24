@@ -52,6 +52,8 @@ Server is a new part. It spins in the background and can be used to save map con
 
 ``map_server`` was dramatically simplified and cleaned-up. ``OccGridLoader`` was merged with ``MapServer`` class as it is intended to work only with one ``OccupancyGrid`` type of messages in foreseeable future.
 
-``map_loader`` was completely removed from ``nav2_util``. All its functionality already present in ``map_io`` library. Please use it in your code instead.
+Map Server now has new ``map_io`` dynamic library. All functions saving/loading ``OccupancyGrid`` messages were moved from ``map_server`` and ``map_saver`` here. These functions could be easily called from any part of external ROS2 code even if Map Server node was not started.
+
+``map_loader`` was completely removed from ``nav2_util``. All its functionality already present in ``map_io``. Please use it in your code instead.
 
 Please refer to the `original GitHub ticket <https://github.com/ros-planning/navigation2/issues/1010>`_ and `Map Server README <https://github.com/ros-planning/navigation2/blob/master/nav2_map_server/README.md>`_ for more information.
