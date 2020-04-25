@@ -97,7 +97,7 @@ DWBPublisher::on_configure()
   marker_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
   cost_grid_pc_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
 
-  double marker_lifetime;
+  double marker_lifetime = 0.0;
   node_->get_parameter(plugin_name_ + ".marker_lifetime", marker_lifetime);
   marker_lifetime_ = rclcpp::Duration::from_seconds(marker_lifetime);
 
