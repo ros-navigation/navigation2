@@ -36,6 +36,8 @@ public:
   : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    std::string node_namespace;
+    node_namespace = node_->get_namespace();
 
     // Get the required items from the blackboard
     server_timeout_ =
@@ -44,6 +46,10 @@ public:
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
+    // Append namespace to the action name
+    if(node_namespace.c_str()) {
+      service_name_ = node_namespace + "/" + service_name_;
+    }
     service_client_ = node_->create_client<ServiceT>(service_name_);
 
     // Make a request for the service without parameter
