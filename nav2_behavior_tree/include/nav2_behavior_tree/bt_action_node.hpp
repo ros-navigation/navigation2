@@ -36,6 +36,8 @@ public:
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    std::string node_namespace;
+    node_namespace = node_->get_namespace();
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -44,6 +46,10 @@ public:
     std::string remapped_action_name;
     if (getInput("server_name", remapped_action_name)) {
       action_name_ = remapped_action_name;
+    }
+    // Append namespace to the action name
+    if(node_namespace.c_str()) {
+      action_name_ = node_namespace + "/" + action_name_;
     }
     createActionClient(action_name_);
 
