@@ -31,9 +31,11 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(ompl REQUIRED)
 
 include_directories(
   include
+  ${OMPL_INCLUDE_DIRS}
 )
 
 set(library_name ${PROJECT_NAME}_plugin)
@@ -53,6 +55,7 @@ set(dependencies
   nav2_costmap_2d
   nav2_core
   pluginlib
+  ompl
 )
 
 add_library(${library_name} SHARED

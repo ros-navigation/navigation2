@@ -3,7 +3,7 @@
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2020 Shivang Patel
- * 
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,11 @@
 #include <string>
 #include <memory>
 
+#include "ompl/base/State.h"
+#include "ompl/base/StateSpace.h"
+#include "ompl/geometric/SimpleSetup.h"
+#include "ompl/geometric/planners/rrt/RRTstar.h"
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -51,6 +56,8 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/collision_checker.hpp"
 
 namespace nav2_ompl_planner
 {
@@ -81,7 +88,20 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
+  // Sets planner
+  template<typename Planner>
+  void setPlanner()
+  {
+    ss_->setPlanner(std::make_shared<Planner>(ss_->getSpaceInformation()));
+  }
+
+  // Waypoint conversion
+  geometry_msgs::msg::PoseStamped convertWaypoints(const ompl::base::State & state);
+
 private:
+  // State validity checker
+  bool isStateValid(const ompl::base::State * state);
+
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
@@ -91,8 +111,29 @@ private:
   // Global Costmap
   nav2_costmap_2d::Costmap2D * costmap_;
 
+  //
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+
+  //
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+
   // The global frame of the costmap
   std::string global_frame_, name_;
+
+  // Setup Ptr
+  ompl::geometric::SimpleSetupPtr ss_;
+
+  // State Space Ptr
+  ompl::base::StateSpacePtr ompl_state_space_;
+
+  //
+  bool allow_unknown_;
+
+  double solve_time_;
+
+  double collision_checking_resolution_;
+
+  std::string planner_name_;
 };
 
 }  // namespace nav2_ompl_planner
