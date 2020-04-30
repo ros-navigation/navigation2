@@ -47,7 +47,8 @@ protected:
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double cmd_yaw_;
-  double initial_yaw_;
+  double prev_yaw_;
+  double relative_yaw_;
   double simulate_ahead_time_;
 };
 
