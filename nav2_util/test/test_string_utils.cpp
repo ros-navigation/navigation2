@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 #include "nav2_util/string_utils.hpp"
 #include "gtest/gtest.h"
 
