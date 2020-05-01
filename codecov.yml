@@ -2,4 +2,5 @@ fixes:
   - "src/navigation2/::"
 
 ignore:
-  - "*/**/test/*"  # ignore package test directories
+  - "*/**/test/*"  # ignore package test directories, e.g. nav2_dwb_controller/costmap_queue/tests
+  - "**/test/*" # ignore package  test directories, e.g. nav2_costmap_2d/tests
