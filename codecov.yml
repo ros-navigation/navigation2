@@ -1,2 +1,5 @@
 fixes:
   - "src/navigation2/::"
+
+ignore:
+  - "*/**/test/*"  # ignore package test directories
