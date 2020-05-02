@@ -34,10 +34,12 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
-namespace nav2_system_tests {
+namespace nav2_system_tests
+{
 
-class SpinRecoveryTester {
- public:
+class SpinRecoveryTester
+{
+public:
   using Spin = nav2_msgs::action::Spin;
   using GoalHandleSpin = rclcpp_action::ClientGoalHandle<Spin>;
 
@@ -45,18 +47,20 @@ class SpinRecoveryTester {
   ~SpinRecoveryTester();
 
   // Runs a single test with given target yaw
-  bool defaultSpinRecoveryTest(float target_yaw,
-                               double tolerance = 0.1);
+  bool defaultSpinRecoveryTest(
+    float target_yaw,
+    double tolerance = 0.1);
 
   void activate();
 
   void deactivate();
 
-  bool isActive() const {
+  bool isActive() const
+  {
     return is_active_;
   }
 
- private:
+private:
   void sendInitialPose();
 
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);

@@ -15,8 +15,6 @@
 #include <string>
 #include <random>
 #include <tuple>
-#include <utility>
-#include <vector>
 #include <memory>
 #include <iostream>
 #include <chrono>
@@ -28,38 +26,42 @@
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
 
-namespace nav2_system_tests {
+namespace nav2_system_tests
+{
 
 SpinRecoveryTester::SpinRecoveryTester()
-    : is_active_(false),
-      initial_pose_received_(false) {
-
+: is_active_(false),
+  initial_pose_received_(false)
+{
   node_ = rclcpp::Node::make_shared("spin_recovery_test");
 
   tf_buffer_.reset(new tf2_ros::Buffer(node_->get_clock()));
   tf_listener_.reset(new tf2_ros::TransformListener(*tf_buffer_));
 
   client_ptr_ = rclcpp_action::create_client<Spin>(
-      node_->get_node_base_interface(),
-      node_->get_node_graph_interface(),
-      node_->get_node_logging_interface(),
-      node_->get_node_waitables_interface(),
-      "spin");
+    node_->get_node_base_interface(),
+    node_->get_node_graph_interface(),
+    node_->get_node_logging_interface(),
+    node_->get_node_waitables_interface(),
+    "spin");
 
   publisher_ =
-      node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+    node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&SpinRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+    "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&SpinRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
 }
 
-SpinRecoveryTester::~SpinRecoveryTester() {
-  if (is_active_)
+SpinRecoveryTester::~SpinRecoveryTester()
+{
+  if (is_active_) {
     deactivate();
+  }
 }
 
-void SpinRecoveryTester::activate() {
+void SpinRecoveryTester::activate()
+{
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
     return;
@@ -91,7 +93,8 @@ void SpinRecoveryTester::activate() {
   is_active_ = true;
 }
 
-void SpinRecoveryTester::deactivate() {
+void SpinRecoveryTester::deactivate()
+{
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
   }
@@ -99,9 +102,9 @@ void SpinRecoveryTester::deactivate() {
 }
 
 bool SpinRecoveryTester::defaultSpinRecoveryTest(
-    const float target_yaw,
-    const double tolerance) {
-
+  const float target_yaw,
+  const double tolerance)
+{
   if (!is_active_) {
     RCLCPP_ERROR(node_->get_logger(), "Not activated");
     return false;
@@ -125,7 +128,8 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS) {
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
     RCLCPP_ERROR(node_->get_logger(), "send goal call failed :(");
     return false;
   }
@@ -141,7 +145,8 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS) {
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
     RCLCPP_ERROR(node_->get_logger(), "get result call failed :(");
     return false;
   }
@@ -149,12 +154,16 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   rclcpp_action::ClientGoalHandle<Spin>::WrappedResult wrapped_result = result_future.get();
 
   switch (wrapped_result.code) {
-    case rclcpp_action::ResultCode::SUCCEEDED:break;
-    case rclcpp_action::ResultCode::ABORTED:RCLCPP_ERROR(node_->get_logger(), "Goal was aborted");
+    case rclcpp_action::ResultCode::SUCCEEDED: break;
+    case rclcpp_action::ResultCode::ABORTED: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal was aborted");
       return false;
-    case rclcpp_action::ResultCode::CANCELED:RCLCPP_ERROR(node_->get_logger(), "Goal was canceled");
+    case rclcpp_action::ResultCode::CANCELED: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal was canceled");
       return false;
-    default:RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
+    default: RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
       return false;
   }
 
@@ -167,21 +176,23 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   }
 
   double goal_yaw = angles::normalize_angle(
-      tf2::getYaw(initial_pose.pose.orientation) + target_yaw);
+    tf2::getYaw(initial_pose.pose.orientation) + target_yaw);
   double dyaw = angles::shortest_angular_distance(
-      goal_yaw, tf2::getYaw(current_pose.pose.orientation));
+    goal_yaw, tf2::getYaw(current_pose.pose.orientation));
 
   if (fabs(dyaw) > tolerance) {
-    RCLCPP_ERROR(node_->get_logger(),
-                 "Angular distance from goal is %lf (tolerance %lf)",
-                 fabs(dyaw), tolerance);
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "Angular distance from goal is %lf (tolerance %lf)",
+      fabs(dyaw), tolerance);
     return false;
   }
 
   return true;
 }
 
-void SpinRecoveryTester::sendInitialPose() {
+void SpinRecoveryTester::sendInitialPose()
+{
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
   pose.header.stamp = rclcpp::Time();
@@ -204,7 +215,8 @@ void SpinRecoveryTester::sendInitialPose() {
 }
 
 void SpinRecoveryTester::amclPoseCallback(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr) {
+  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
+{
   initial_pose_received_ = true;
 }
 

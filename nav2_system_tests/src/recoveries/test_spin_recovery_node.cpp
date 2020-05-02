@@ -13,13 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <gtest/gtest.h>
-#include <memory>
-#include <vector>
 #include <cmath>
 #include <tuple>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_utils.hpp"
 
 #include "spin_recovery_tester.hpp"
 
@@ -27,27 +24,32 @@ using namespace std::chrono_literals;
 
 using nav2_system_tests::SpinRecoveryTester;
 
-class SpinRecoveryTestFixture : public ::testing::TestWithParam<std::tuple<float, float> > {
- public:
-  static void SetUpTestCase() {
+class SpinRecoveryTestFixture
+  : public ::testing::TestWithParam<std::tuple<float, float>>
+{
+public:
+  static void SetUpTestCase()
+  {
     spin_recovery_tester = new SpinRecoveryTester();
     if (!spin_recovery_tester->isActive()) {
       spin_recovery_tester->activate();
     }
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestCase()
+  {
     delete spin_recovery_tester;
     spin_recovery_tester = nullptr;
   }
 
- protected:
-  static SpinRecoveryTester *spin_recovery_tester;
+protected:
+  static SpinRecoveryTester * spin_recovery_tester;
 };
 
-SpinRecoveryTester *SpinRecoveryTestFixture::spin_recovery_tester = nullptr;
+SpinRecoveryTester * SpinRecoveryTestFixture::spin_recovery_tester = nullptr;
 
-TEST_P(SpinRecoveryTestFixture, testSpinRecovery) {
+TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
+{
   float target_yaw = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
 
@@ -63,15 +65,18 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery) {
   EXPECT_EQ(true, success);
 }
 
-INSTANTIATE_TEST_CASE_P(SpinRecoveryTests,
-                        SpinRecoveryTestFixture,
-                        ::testing::Values(std::make_tuple(M_PIf32, 0.1),
-                                          std::make_tuple(-M_PI_2f32, 0.1),
-                                          std::make_tuple(-2.0 * M_PIf32, 0.1),
-                                          std::make_tuple(4.0 * M_PIf32, 0.15),
-                                          std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15)), );
+INSTANTIATE_TEST_CASE_P(
+  SpinRecoveryTests,
+  SpinRecoveryTestFixture,
+  ::testing::Values(
+    std::make_tuple(M_PIf32, 0.1),
+    std::make_tuple(-M_PI_2f32, 0.1),
+    std::make_tuple(-2.0 * M_PIf32, 0.1),
+    std::make_tuple(4.0 * M_PIf32, 0.15),
+    std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15)), );
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   ::testing::InitGoogleTest(&argc, argv);
 
   // initialize ROS
