@@ -36,6 +36,7 @@ class TestAmclPose : public ::testing::Test
 {
 public:
   TestAmclPose()
+  : testPose_(std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>())
   {
     pose_callback_ = false;
     initTestPose();
@@ -53,7 +54,7 @@ public:
     subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&TestAmclPose::amcl_pose_callback, this, _1));
-    initial_pose_pub_->publish(testPose_);
+    initial_pose_pub_->publish(*testPose_);
   }
 
   bool defaultAmclTest();
@@ -72,7 +73,7 @@ private:
   }
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
-  geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
+  std::unique_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> testPose_;
   double amcl_pose_x;
   double amcl_pose_y;
   bool pose_callback_;
@@ -81,15 +82,15 @@ private:
 
 bool TestAmclPose::defaultAmclTest()
 {
-  initial_pose_pub_->publish(testPose_);
+  initial_pose_pub_->publish(*testPose_);
   while (!pose_callback_) {
     // TODO(mhpanah): Initial pose should only be published once.
-    initial_pose_pub_->publish(testPose_);
+    initial_pose_pub_->publish(*testPose_);
     std::this_thread::sleep_for(1s);
     rclcpp::spin_some(node);
   }
-  if (std::abs(amcl_pose_x - testPose_.pose.pose.position.x) < tol_ &&
-    std::abs(amcl_pose_y - testPose_.pose.pose.position.y) < tol_)
+  if (std::abs(amcl_pose_x - testPose_->pose.pose.position.x) < tol_ &&
+    std::abs(amcl_pose_y - testPose_->pose.pose.position.y) < tol_)
   {
     return true;
   } else {
@@ -99,21 +100,21 @@ bool TestAmclPose::defaultAmclTest()
 
 void TestAmclPose::initTestPose()
 {
-  testPose_.header.frame_id = "map";
-  testPose_.header.stamp = rclcpp::Time();
-  testPose_.pose.pose.position.x = -2.0;
-  testPose_.pose.pose.position.y = -0.5;
-  testPose_.pose.pose.position.z = 0.0;
-  testPose_.pose.pose.orientation.x = 0.0;
-  testPose_.pose.pose.orientation.y = 0.0;
-  testPose_.pose.pose.orientation.z = 0.0;
-  testPose_.pose.pose.orientation.w = 1.0;
+  testPose_->header.frame_id = "map";
+  testPose_->header.stamp = rclcpp::Time();
+  testPose_->pose.pose.position.x = -2.0;
+  testPose_->pose.pose.position.y = -0.5;
+  testPose_->pose.pose.position.z = 0.0;
+  testPose_->pose.pose.orientation.x = 0.0;
+  testPose_->pose.pose.orientation.y = 0.0;
+  testPose_->pose.pose.orientation.z = 0.0;
+  testPose_->pose.pose.orientation.w = 1.0;
   for (int i = 0; i < 35; i++) {
-    testPose_.pose.covariance[i] = 0.0;
+    testPose_->pose.covariance[i] = 0.0;
   }
-  testPose_.pose.covariance[0] = 0.08;
-  testPose_.pose.covariance[7] = 0.08;
-  testPose_.pose.covariance[35] = 0.05;
+  testPose_->pose.covariance[0] = 0.08;
+  testPose_->pose.covariance[7] = 0.08;
+  testPose_->pose.covariance[35] = 0.05;
 }
 
 TEST_F(TestAmclPose, SimpleAmclTest)

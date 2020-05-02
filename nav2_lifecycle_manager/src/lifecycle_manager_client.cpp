@@ -17,6 +17,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav2_util/geometry_utils.hpp"
@@ -110,19 +111,19 @@ void
 LifecycleManagerClient::set_initial_pose(double x, double y, double theta)
 {
   const double PI = 3.141592653589793238463;
-  geometry_msgs::msg::PoseWithCovarianceStamped pose;
+  auto pose = std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
-  pose.header.frame_id = "map";
-  pose.header.stamp = node_->now();
-  pose.pose.pose.position.x = x;
-  pose.pose.pose.position.y = y;
-  pose.pose.pose.position.z = 0.0;
-  pose.pose.pose.orientation = orientationAroundZAxis(theta);
-  pose.pose.covariance[6 * 0 + 0] = 0.5 * 0.5;
-  pose.pose.covariance[6 * 1 + 1] = 0.5 * 0.5;
-  pose.pose.covariance[6 * 5 + 5] = PI / 12.0 * PI / 12.0;
+  pose->header.frame_id = "map";
+  pose->header.stamp = node_->now();
+  pose->pose.pose.position.x = x;
+  pose->pose.pose.position.y = y;
+  pose->pose.pose.position.z = 0.0;
+  pose->pose.pose.orientation = orientationAroundZAxis(theta);
+  pose->pose.covariance[6 * 0 + 0] = 0.5 * 0.5;
+  pose->pose.covariance[6 * 1 + 1] = 0.5 * 0.5;
+  pose->pose.covariance[6 * 5 + 5] = PI / 12.0 * PI / 12.0;
 
-  initial_pose_publisher_->publish(pose);
+  initial_pose_publisher_->publish(std::move(pose));
 }
 
 bool

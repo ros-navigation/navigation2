@@ -132,17 +132,17 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
   }
 
   {
-    sensor_msgs::msg::PointCloud cloud;
-    cloud.points.resize(num_marked);
-    cloud.channels.resize(1);
-    cloud.channels[0].values.resize(num_marked);
-    cloud.channels[0].name = "rgb";
-    cloud.header.frame_id = frame_id;
-    cloud.header.stamp = stamp;
+    auto cloud = std::make_unique<sensor_msgs::msg::PointCloud>();
+    cloud->points.resize(num_marked);
+    cloud->channels.resize(1);
+    cloud->channels[0].values.resize(num_marked);
+    cloud->channels[0].name = "rgb";
+    cloud->header.frame_id = frame_id;
+    cloud->header.stamp = stamp;
 
-    sensor_msgs::msg::ChannelFloat32 & chan = cloud.channels[0];
+    sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
     for (uint32_t i = 0; i < num_marked; ++i) {
-      geometry_msgs::msg::Point32 & p = cloud.points[i];
+      geometry_msgs::msg::Point32 & p = cloud->points[i];
       float & cval = chan.values[i];
       Cell & c = g_marked[i];
 
@@ -159,21 +159,21 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
       memcpy(&cval, &col, sizeof col);
     }
 
-    pub_marked->publish(cloud);
+    pub_marked->publish(std::move(cloud));
   }
 
   {
-    sensor_msgs::msg::PointCloud cloud;
-    cloud.points.resize(num_unknown);
-    cloud.channels.resize(1);
-    cloud.channels[0].values.resize(num_unknown);
-    cloud.channels[0].name = "rgb";
-    cloud.header.frame_id = frame_id;
-    cloud.header.stamp = stamp;
+    auto cloud = std::make_unique<sensor_msgs::msg::PointCloud>();
+    cloud->points.resize(num_unknown);
+    cloud->channels.resize(1);
+    cloud->channels[0].values.resize(num_unknown);
+    cloud->channels[0].name = "rgb";
+    cloud->header.frame_id = frame_id;
+    cloud->header.stamp = stamp;
 
-    sensor_msgs::msg::ChannelFloat32 & chan = cloud.channels[0];
+    sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
     for (uint32_t i = 0; i < num_unknown; ++i) {
-      geometry_msgs::msg::Point32 & p = cloud.points[i];
+      geometry_msgs::msg::Point32 & p = cloud->points[i];
       float & cval = chan.values[i];
       Cell & c = g_unknown[i];
 
@@ -190,7 +190,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
       memcpy(&cval, &col, sizeof col);
     }
 
-    pub_unknown->publish(cloud);
+    pub_unknown->publish(std::move(cloud));
   }
 
   timer.end();

@@ -170,7 +170,9 @@ void Costmap2DPublisher::publishCostmap()
 {
   if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
     prepareCostmap();
-    costmap_raw_pub_->publish(costmap_raw_);
+
+    auto costmap_raw_ptr = std::make_unique<nav2_msgs::msg::Costmap>(std::move(costmap_raw_));
+    costmap_raw_pub_->publish(std::move(costmap_raw_ptr));
   }
   float resolution = costmap_->getResolution();
 
@@ -182,28 +184,29 @@ void Costmap2DPublisher::publishCostmap()
   {
     if (node_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
       prepareGrid();
-      costmap_pub_->publish(grid_);
+      auto grid_ptr = std::make_unique<nav_msgs::msg::OccupancyGrid>(std::move(grid_));
+      costmap_pub_->publish(std::move(grid_ptr));
     }
   } else if (x0_ < xn_) {
     if (node_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
       std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
       // Publish Just an Update
-      map_msgs::msg::OccupancyGridUpdate update;
-      update.header.stamp = rclcpp::Time();
-      update.header.frame_id = global_frame_;
-      update.x = x0_;
-      update.y = y0_;
-      update.width = xn_ - x0_;
-      update.height = yn_ - y0_;
-      update.data.resize(update.width * update.height);
+      auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+      update->header.stamp = rclcpp::Time();
+      update->header.frame_id = global_frame_;
+      update->x = x0_;
+      update->y = y0_;
+      update->width = xn_ - x0_;
+      update->height = yn_ - y0_;
+      update->data.resize(update->width * update->height);
       unsigned int i = 0;
       for (unsigned int y = y0_; y < yn_; y++) {
         for (unsigned int x = x0_; x < xn_; x++) {
           unsigned char cost = costmap_->getCost(x, y);
-          update.data[i++] = cost_translation_table_[cost];
+          update->data[i++] = cost_translation_table_[cost];
         }
       }
-      costmap_update_pub_->publish(update);
+      costmap_update_pub_->publish(std::move(update));
     }
   }
 

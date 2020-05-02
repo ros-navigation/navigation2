@@ -38,6 +38,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -163,7 +164,7 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
   if (node_->count_subscribers(marker_pub_->get_topic_name()) < 1) {return;}
 
   if (!publish_trajectories_) {return;}
-  visualization_msgs::msg::MarkerArray ma;
+  auto ma = std::make_unique<visualization_msgs::msg::MarkerArray>();
   visualization_msgs::msg::Marker m;
 
   if (results.twists.size() == 0) {return;}
@@ -216,9 +217,9 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
       pt.z = 0;
       m.points.push_back(pt);
     }
-    ma.markers.push_back(m);
+    ma->markers.push_back(m);
   }
-  marker_pub_->publish(ma);
+  marker_pub_->publish(std::move(ma));
 }
 
 void
@@ -228,10 +229,13 @@ DWBPublisher::publishLocalPlan(
 {
   if (!publish_local_plan_) {return;}
 
-  nav_msgs::msg::Path path =
-    nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
+  auto path =
+    std::make_unique<nav_msgs::msg::Path>(
+    nav_2d_utils::poses2DToPath(
+      traj.poses, header.frame_id,
+      header.stamp));
   if (node_->count_subscribers(local_pub_->get_topic_name()) < 1) {
-    local_pub_->publish(path);
+    local_pub_->publish(std::move(path));
   }
 }
 
@@ -244,21 +248,21 @@ DWBPublisher::publishCostGrid(
 
   if (!publish_cost_grid_pc_) {return;}
 
-  sensor_msgs::msg::PointCloud cost_grid_pc;
-  cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
-  cost_grid_pc.header.stamp = node_->now();
+  auto cost_grid_pc = std::make_unique<sensor_msgs::msg::PointCloud>();
+  cost_grid_pc->header.frame_id = costmap_ros->getGlobalFrameID();
+  cost_grid_pc->header.stamp = node_->now();
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
-  cost_grid_pc.points.resize(size_x * size_y);
+  cost_grid_pc->points.resize(size_x * size_y);
   unsigned int i = 0;
   for (unsigned int cy = 0; cy < size_y; cy++) {
     for (unsigned int cx = 0; cx < size_x; cx++) {
       costmap->mapToWorld(cx, cy, x_coord, y_coord);
-      cost_grid_pc.points[i].x = x_coord;
-      cost_grid_pc.points[i].y = y_coord;
+      cost_grid_pc->points[i].x = x_coord;
+      cost_grid_pc->points[i].y = y_coord;
       i++;
     }
   }
@@ -268,23 +272,23 @@ DWBPublisher::publishCostGrid(
   totals.values.resize(size_x * size_y, 0.0);
 
   for (TrajectoryCritic::Ptr critic : critics) {
-    unsigned int channel_index = cost_grid_pc.channels.size();
-    critic->addCriticVisualization(cost_grid_pc);
-    if (channel_index == cost_grid_pc.channels.size()) {
+    unsigned int channel_index = cost_grid_pc->channels.size();
+    critic->addCriticVisualization(*cost_grid_pc);
+    if (channel_index == cost_grid_pc->channels.size()) {
       // No channels were added, so skip to next critic
       continue;
     }
     double scale = critic->getScale();
     for (i = 0; i < size_x * size_y; i++) {
-      totals.values[i] += cost_grid_pc.channels[channel_index].values[i] * scale;
+      totals.values[i] += cost_grid_pc->channels[channel_index].values[i] * scale;
     }
   }
-  cost_grid_pc.channels.push_back(totals);
+  cost_grid_pc->channels.push_back(totals);
 
   // TODO(crdelsey): convert pc to pc2
   // sensor_msgs::msg::PointCloud2 cost_grid_pc2;
   // convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
-  cost_grid_pc_pub_->publish(cost_grid_pc);
+  cost_grid_pc_pub_->publish(std::move(cost_grid_pc));
 }
 
 void
@@ -312,8 +316,8 @@ DWBPublisher::publishGenericPlan(
 {
   if (node_->count_subscribers(pub.get_topic_name()) < 1) {return;}
   if (!flag) {return;}
-  nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
-  pub.publish(path);
+  auto path = std::make_unique<nav_msgs::msg::Path>(nav_2d_utils::pathToPath(plan));
+  pub.publish(std::move(path));
 }
 
 }  // namespace dwb_core

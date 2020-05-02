@@ -441,13 +441,13 @@ Costmap2DROS::updateMap()
       const double yaw = tf2::getYaw(pose.pose.orientation);
       layered_costmap_->updateMap(x, y, yaw);
 
-      geometry_msgs::msg::PolygonStamped footprint;
-      footprint.header.frame_id = global_frame_;
-      footprint.header.stamp = now();
-      transformFootprint(x, y, yaw, padded_footprint_, footprint);
+      auto footprint = std::make_unique<geometry_msgs::msg::PolygonStamped>();
+      footprint->header.frame_id = global_frame_;
+      footprint->header.stamp = now();
+      transformFootprint(x, y, yaw, padded_footprint_, *footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
-      footprint_pub_->publish(footprint);
+      footprint_pub_->publish(std::move(footprint));
       initialized_ = true;
     }
   }

@@ -207,24 +207,25 @@ void VoxelLayer::updateBounds(
   }
 
   if (publish_voxel_) {
-    nav2_msgs::msg::VoxelGrid grid_msg;
+    auto grid_msg = std::make_unique<nav2_msgs::msg::VoxelGrid>();
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
-    grid_msg.size_x = voxel_grid_.sizeX();
-    grid_msg.size_y = voxel_grid_.sizeY();
-    grid_msg.size_z = voxel_grid_.sizeZ();
-    grid_msg.data.resize(size);
-    memcpy(&grid_msg.data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
+    grid_msg->size_x = voxel_grid_.sizeX();
+    grid_msg->size_y = voxel_grid_.sizeY();
+    grid_msg->size_z = voxel_grid_.sizeZ();
+    grid_msg->data.resize(size);
+    memcpy(&grid_msg->data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
 
-    grid_msg.origin.x = origin_x_;
-    grid_msg.origin.y = origin_y_;
-    grid_msg.origin.z = origin_z_;
+    grid_msg->origin.x = origin_x_;
+    grid_msg->origin.y = origin_y_;
+    grid_msg->origin.z = origin_z_;
 
-    grid_msg.resolutions.x = resolution_;
-    grid_msg.resolutions.y = resolution_;
-    grid_msg.resolutions.z = z_resolution_;
-    grid_msg.header.frame_id = global_frame_;
-    grid_msg.header.stamp = node_->now();
-    voxel_pub_->publish(grid_msg);
+    grid_msg->resolutions.x = resolution_;
+    grid_msg->resolutions.y = resolution_;
+    grid_msg->resolutions.z = z_resolution_;
+    grid_msg->header.frame_id = global_frame_;
+    grid_msg->header.stamp = node_->now();
+
+    voxel_pub_->publish(std::move(grid_msg));
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
@@ -400,7 +401,8 @@ void VoxelLayer::raytraceFreespace(
     clearing_endpoints_.header.frame_id = global_frame_;
     clearing_endpoints_.header.stamp = clearing_observation.cloud_->header.stamp;
 
-    clearing_endpoints_pub_->publish(clearing_endpoints_);
+    auto cloud_msg = std::make_unique<sensor_msgs::msg::PointCloud>(std::move(clearing_endpoints_));
+    clearing_endpoints_pub_->publish(std::move(cloud_msg));
   }
 }
 

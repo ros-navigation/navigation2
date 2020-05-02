@@ -18,6 +18,7 @@
 #include <thread>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "spin.hpp"
 #pragma GCC diagnostic push
@@ -106,21 +107,21 @@ Status Spin::onCycleUpdate()
   double vel = sqrt(2 * rotational_acc_lim_ * relative_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_yaw_ < 0 ? cmd_vel.angular.z = -vel : cmd_vel.angular.z = vel;
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  cmd_yaw_ < 0 ? cmd_vel->angular.z = -vel : cmd_vel->angular.z = vel;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(relative_yaw, cmd_vel, pose2d)) {
+  if (!isCollisionFree(relative_yaw, *cmd_vel, pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 
-  vel_pub_->publish(cmd_vel);
+  vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
 }

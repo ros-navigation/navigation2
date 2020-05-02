@@ -111,31 +111,31 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     }
   }
 
-  visualization_msgs::msg::Marker m;
-  m.header.frame_id = frame_id;
-  m.header.stamp = stamp;
-  m.ns = g_node->get_namespace();
-  m.id = 0;
-  m.type = visualization_msgs::msg::Marker::CUBE_LIST;
-  m.action = visualization_msgs::msg::Marker::ADD;
-  m.pose.orientation.w = 1.0;
-  m.scale.x = x_res;
-  m.scale.y = y_res;
-  m.scale.z = z_res;
-  m.color.r = g_colors_r[nav2_voxel_grid::MARKED];
-  m.color.g = g_colors_g[nav2_voxel_grid::MARKED];
-  m.color.b = g_colors_b[nav2_voxel_grid::MARKED];
-  m.color.a = g_colors_a[nav2_voxel_grid::MARKED];
-  m.points.resize(num_markers);
+  auto m = std::make_unique<visualization_msgs::msg::Marker>();
+  m->header.frame_id = frame_id;
+  m->header.stamp = stamp;
+  m->ns = g_node->get_namespace();
+  m->id = 0;
+  m->type = visualization_msgs::msg::Marker::CUBE_LIST;
+  m->action = visualization_msgs::msg::Marker::ADD;
+  m->pose.orientation.w = 1.0;
+  m->scale.x = x_res;
+  m->scale.y = y_res;
+  m->scale.z = z_res;
+  m->color.r = g_colors_r[nav2_voxel_grid::MARKED];
+  m->color.g = g_colors_g[nav2_voxel_grid::MARKED];
+  m->color.b = g_colors_b[nav2_voxel_grid::MARKED];
+  m->color.a = g_colors_a[nav2_voxel_grid::MARKED];
+  m->points.resize(num_markers);
   for (uint32_t i = 0; i < num_markers; ++i) {
     Cell & c = g_cells[i];
-    geometry_msgs::msg::Point & p = m.points[i];
+    geometry_msgs::msg::Point & p = m->points[i];
     p.x = c.x;
     p.y = c.y;
     p.z = c.z;
   }
 
-  pub->publish(m);
+  pub->publish(std::move(m));
 
   timer.end();
   RCLCPP_INFO(
