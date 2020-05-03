@@ -61,6 +61,7 @@ InflationLayer::InflationLayer()
   inscribed_radius_(0),
   cost_scaling_factor_(0),
   inflate_unknown_(false),
+  inflate_around_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
   cached_costs_(nullptr),
@@ -79,11 +80,13 @@ InflationLayer::onInitialize()
   declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
   declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
+  declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
   node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
   node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+  node_->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
 
   current_ = true;
   seen_.clear();
@@ -203,7 +206,7 @@ InflationLayer::updateCosts(
     for (int i = min_i; i < max_i; i++) {
       int index = master_grid.getIndex(i, j);
       unsigned char cost = master_array[index];
-      if (cost == LETHAL_OBSTACLE) {
+      if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
         obs_bin.push_back(CellData(index, i, j, i, j));
       }
     }
