@@ -207,7 +207,7 @@ InflationLayer::updateCosts(
       int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
       if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        obs_bin.emplace_back(index, i, j, i, j);
+        obs_bin.push_back(CellData(index, i, j, i, j));
       }
     }
   }
