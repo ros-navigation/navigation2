@@ -230,7 +230,7 @@ DWBPublisher::publishLocalPlan(
 
   nav_msgs::msg::Path path =
     nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  if (node_->count_subscribers(local_pub_->get_topic_name()) < 1) {
+  if (node_->count_subscribers(local_pub_->get_topic_name()) > 0) {
     local_pub_->publish(path);
   }
 }
