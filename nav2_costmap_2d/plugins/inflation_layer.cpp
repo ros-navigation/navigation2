@@ -163,9 +163,11 @@ InflationLayer::updateCosts(
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  RCLCPP_FATAL_EXPRESSION(
-    rclcpp::get_logger("nav2_costmap_2d"),
-    !inflation_cells_.empty(), "The inflation list must be empty at the beginning of inflation");
+  for (auto & dist:inflation_cells_) {
+    RCLCPP_FATAL_EXPRESSION(
+      rclcpp::get_logger("nav2_costmap_2d"),
+      !dist.empty(), "The inflation list must be empty at the beginning of inflation");
+  }
 
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
@@ -199,7 +201,7 @@ InflationLayer::updateCosts(
   // with a notable performance boost
 
   // Start with lethal obstacles: by definition distance is 0.0
-  std::vector<CellData> & obs_bin = inflation_cells_[0.0];
+  auto & obs_bin = inflation_cells_[0];
   for (int j = min_j; j < max_j; j++) {
     for (int i = min_i; i < max_i; i++) {
       int index = static_cast<int>(master_grid.getIndex(i, j));
@@ -213,11 +215,11 @@ InflationLayer::updateCosts(
   // Process cells by increasing distance; new cells are appended to the
   // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  std::map<double, std::vector<CellData>>::iterator bin;
-  for (bin = inflation_cells_.begin(); bin != inflation_cells_.end(); ++bin) {
-    for (auto & cell : bin->second) {
-      // process all cells at distance dist_bin.first
-      unsigned int index = cell.index_;
+  for (const auto & dist_bin: inflation_cells_) {
+    for (std::size_t i = 0; i < dist_bin.size(); ++i) {
+      // Do not use iterator or for-range based loops to iterate though dist_bin, since it's size might
+      // change when a new cell is enqueued, invalidating all iterators
+      unsigned int index = dist_bin[i].index_;
 
       // ignore if already visited
       if (seen_[index]) {
@@ -226,10 +228,10 @@ InflationLayer::updateCosts(
 
       seen_[index] = true;
 
-      unsigned int mx = cell.x_;
-      unsigned int my = cell.y_;
-      unsigned int sx = cell.src_x_;
-      unsigned int sy = cell.src_y_;
+      unsigned int mx = dist_bin[i].x_;
+      unsigned int my = dist_bin[i].y_;
+      unsigned int sx = dist_bin[i].src_x_;
+      unsigned int sy = dist_bin[i].src_y_;
 
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
@@ -258,7 +260,10 @@ InflationLayer::updateCosts(
     }
   }
 
-  inflation_cells_.clear();
+  for (auto & dist:inflation_cells_) {
+    dist.clear();
+    dist.reserve(200);
+  }
 }
 
 /**
@@ -286,8 +291,11 @@ InflationLayer::enqueue(
       return;
     }
 
+    const unsigned int r = cell_inflation_radius_ + 2;
+
     // push the cell data onto the inflation list and mark
-    inflation_cells_[distance].emplace_back(index, mx, my, src_x, src_y);
+    inflation_cells_[distance_matrix_[mx - src_x + r][my - src_y + r]].emplace_back(
+      index, mx, my, src_x, src_y);
   }
 }
 
@@ -319,6 +327,53 @@ InflationLayer::computeCaches()
       cached_costs_[i * cache_length_ + j] = computeCost(cached_distances_[i * cache_length_ + j]);
     }
   }
+
+  int max_dist = generateIntegerDistances();
+  inflation_cells_.clear();
+  inflation_cells_.resize(max_dist + 1);
+  for (auto & dist : inflation_cells_) {
+    dist.reserve(200);
+  }
+}
+
+int
+InflationLayer::generateIntegerDistances()
+{
+  const int r = cell_inflation_radius_ + 2;
+  const int size = r * 2 + 1;
+
+  std::vector<std::pair<int, int>> points;
+
+  for (int y = -r; y <= r; y++) {
+    for (int x = -r; x <= r; x++) {
+      if (x * x + y * y <= r * r) {
+        points.emplace_back(x, y);
+      }
+    }
+  }
+
+  std::sort(
+    points.begin(), points.end(),
+    [](const std::pair<int, int> & a, const std::pair<int, int> & b) -> bool {
+      return a.first * a.first + a.second * a.second < b.first * b.first + b.second * b.second;
+    }
+  );
+
+  std::vector<std::vector<int>> distance_matrix(size, std::vector<int>(size, 0));
+  std::pair<int, int> last = {0, 0};
+  int level = 0;
+  for (auto const & p : points) {
+    if (p.first * p.first + p.second * p.second !=
+      last.first * last.first + last.second * last.second)
+    {
+      level++;
+    }
+    distance_matrix[p.first + r][p.second + r] = level;
+    last = p;
+  }
+
+  distance_matrix_ = distance_matrix;
+  return level;
 }
 
 }  // namespace nav2_costmap_2d

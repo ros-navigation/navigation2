@@ -102,14 +102,14 @@ public:
   inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
-    double euclidean_distance = distance * resolution_;
     if (distance == 0) {
       cost = LETHAL_OBSTACLE;
-    } else if (euclidean_distance <= inscribed_radius_) {
+    } else if (distance * resolution_ <= inscribed_radius_) {
       cost = INSCRIBED_INFLATED_OBSTACLE;
     } else {
       // make sure cost falls off by Euclidean distance
-      double factor = exp(-1.0 * cost_scaling_factor_ * (euclidean_distance - inscribed_radius_));
+      double factor =
+        exp(-1.0 * cost_scaling_factor_ * (distance * resolution_ - inscribed_radius_));
       cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
@@ -155,6 +155,8 @@ private:
 
   void computeCaches();
 
+  int generateIntegerDistances();
+
   unsigned int cellDistance(double world_dist)
   {
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
@@ -168,7 +170,7 @@ private:
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_;
-  std::map<double, std::vector<CellData>> inflation_cells_;
+  std::vector<std::vector<CellData>> inflation_cells_;
 
   double resolution_;
 
@@ -176,6 +178,7 @@ private:
 
   std::vector<unsigned char> cached_costs_;
   std::vector<double> cached_distances_;
+  std::vector<std::vector<int>> distance_matrix_;
   unsigned int cache_length_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
