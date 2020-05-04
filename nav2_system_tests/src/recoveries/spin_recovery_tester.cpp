@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Sarthak Mittal
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ SpinRecoveryTester::SpinRecoveryTester()
 {
   node_ = rclcpp::Node::make_shared("spin_recovery_test");
 
-  tf_buffer_.reset(new tf2_ros::Buffer(node_->get_clock()));
-  tf_listener_.reset(new tf2_ros::TransformListener(*tf_buffer_));
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   client_ptr_ = rclcpp_action::create_client<Spin>(
     node_->get_node_base_interface(),

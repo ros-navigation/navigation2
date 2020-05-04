@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Sarthak Mittal
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,8 +69,10 @@ INSTANTIATE_TEST_CASE_P(
   SpinRecoveryTests,
   SpinRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(M_PIf32, 0.1),
+    std::make_tuple(-M_PIf32 / 6.0, 0.1),
+    std::make_tuple(M_PI_4f32, 0.1),
     std::make_tuple(-M_PI_2f32, 0.1),
+    std::make_tuple(M_PIf32, 0.1),
     std::make_tuple(-2.0 * M_PIf32, 0.1),
     std::make_tuple(4.0 * M_PIf32, 0.15),
     std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15)), );
