@@ -64,7 +64,7 @@ public:
    * @return
    */
   CellData(double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy)
-  : index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
+  : index_(static_cast<unsigned int>(i)), x_(x), y_(y), src_x_(sx), src_y_(sy)
   {
   }
   unsigned int index_;
@@ -77,24 +77,21 @@ class InflationLayer : public Layer
 public:
   InflationLayer();
 
-  virtual ~InflationLayer() = default;
+  ~InflationLayer() override = default;
 
-  virtual void onInitialize();
-  virtual void updateBounds(
+  void onInitialize() override;
+  void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
     double * max_x,
-    double * max_y);
-  virtual void updateCosts(
+    double * max_y) override;
+  void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
-    int min_i, int min_j, int max_i, int max_j);
-  virtual bool isDiscretized()
-  {
-    return true;
-  }
-  virtual void matchSize();
+    int min_i, int min_j, int max_i, int max_j) override;
 
-  virtual void reset()
+  void matchSize() override;
+
+  void reset() override
   {
     matchSize();
   }
@@ -105,21 +102,21 @@ public:
   inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
+    double euclidean_distance = distance * resolution_;
     if (distance == 0) {
       cost = LETHAL_OBSTACLE;
-    } else if (distance * resolution_ <= inscribed_radius_) {
+    } else if (euclidean_distance <= inscribed_radius_) {
       cost = INSCRIBED_INFLATED_OBSTACLE;
     } else {
       // make sure cost falls off by Euclidean distance
-      double euclidean_distance = distance * resolution_;
       double factor = exp(-1.0 * cost_scaling_factor_ * (euclidean_distance - inscribed_radius_));
-      cost = (unsigned char)((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+      cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
   }
 
 protected:
-  virtual void onFootprintChanged();
+  void onFootprintChanged() override;
 
 private:
   /**
@@ -130,10 +127,12 @@ private:
    * @param src_y The y coordinate of the source cell
    * @return
    */
-  inline double distanceLookup(int mx, int my, int src_x, int src_y)
+  inline double distanceLookup(
+    unsigned int mx, unsigned int my, unsigned int src_x,
+    unsigned int src_y)
   {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
+    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
+    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
     return cached_distances_[dx * cache_length_ + dy];
   }
 
@@ -145,10 +144,12 @@ private:
    * @param src_y The y coordinate of the source cell
    * @return
    */
-  inline unsigned char costLookup(int mx, int my, int src_x, int src_y)
+  inline unsigned char costLookup(
+    unsigned int mx, unsigned int my, unsigned int src_x,
+    unsigned int src_y)
   {
-    unsigned int dx = abs(mx - src_x);
-    unsigned int dy = abs(my - src_y);
+    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
+    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
     return cached_costs_[dx * cache_length_ + dy];
   }
 

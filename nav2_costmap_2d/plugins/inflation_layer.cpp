@@ -37,7 +37,6 @@
  *********************************************************************/
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
-#include <algorithm>
 #include <limits>
 #include <map>
 #include <vector>
@@ -184,10 +183,10 @@ InflationLayer::updateCosts(
   // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
   // up to that distance outside the box can still influence the costs
   // stored in cells inside the box.
-  min_i -= cell_inflation_radius_;
-  min_j -= cell_inflation_radius_;
-  max_i += cell_inflation_radius_;
-  max_j += cell_inflation_radius_;
+  min_i -= static_cast<int>(cell_inflation_radius_);
+  min_j -= static_cast<int>(cell_inflation_radius_);
+  max_i += static_cast<int>(cell_inflation_radius_);
+  max_j += static_cast<int>(cell_inflation_radius_);
 
   min_i = std::max(0, min_i);
   min_j = std::max(0, min_j);
@@ -203,10 +202,10 @@ InflationLayer::updateCosts(
   std::vector<CellData> & obs_bin = inflation_cells_[0.0];
   for (int j = min_j; j < max_j; j++) {
     for (int i = min_i; i < max_i; i++) {
-      int index = master_grid.getIndex(i, j);
+      int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
       if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        obs_bin.push_back(CellData(index, i, j, i, j));
+        obs_bin.emplace_back(index, i, j, i, j);
       }
     }
   }
@@ -216,10 +215,8 @@ InflationLayer::updateCosts(
   // can overtake previously inserted but farther away cells
   std::map<double, std::vector<CellData>>::iterator bin;
   for (bin = inflation_cells_.begin(); bin != inflation_cells_.end(); ++bin) {
-    for (unsigned int i = 0; i < bin->second.size(); ++i) {
+    for (auto & cell : bin->second) {
       // process all cells at distance dist_bin.first
-      const CellData & cell = bin->second[i];
-
       unsigned int index = cell.index_;
 
       // ignore if already visited
@@ -290,7 +287,7 @@ InflationLayer::enqueue(
     }
 
     // push the cell data onto the inflation list and mark
-    inflation_cells_[distance].push_back(CellData(index, mx, my, src_x, src_y));
+    inflation_cells_[distance].emplace_back(index, mx, my, src_x, src_y);
   }
 }
 
