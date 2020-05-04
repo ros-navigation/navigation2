@@ -65,10 +65,10 @@ InflationLayer::InflationLayer()
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
   cache_length_(0),
-  last_min_x_(-std::numeric_limits<float>::max()),
-  last_min_y_(-std::numeric_limits<float>::max()),
-  last_max_x_(std::numeric_limits<float>::max()),
-  last_max_y_(std::numeric_limits<float>::max())
+  last_min_x_(std::numeric_limits<double>::lowest()),
+  last_min_y_(std::numeric_limits<double>::lowest()),
+  last_max_x_(std::numeric_limits<double>::max()),
+  last_max_y_(std::numeric_limits<double>::max())
 {
 }
 
@@ -116,13 +116,11 @@ InflationLayer::updateBounds(
     last_min_y_ = *min_y;
     last_max_x_ = *max_x;
     last_max_y_ = *max_y;
-    // For some reason when I make these -<double>::max() it does not
-    // work with Costmap2D::worldToMapEnforceBounds(), so I'm using
-    // -<float>::max() instead.
-    *min_x = -std::numeric_limits<float>::max();
-    *min_y = -std::numeric_limits<float>::max();
-    *max_x = std::numeric_limits<float>::max();
-    *max_y = std::numeric_limits<float>::max();
+
+    *min_x = std::numeric_limits<double>::lowest();
+    *min_y = std::numeric_limits<double>::lowest();
+    *max_x = std::numeric_limits<double>::max();
+    *max_y = std::numeric_limits<double>::max();
     need_reinflation_ = false;
   } else {
     double tmp_min_x = last_min_x_;
