@@ -64,8 +64,7 @@ InflationLayer::InflationLayer()
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
-  cached_costs_(nullptr),
-  cached_distances_(nullptr),
+  cache_length_(0),
   last_min_x_(-std::numeric_limits<float>::max()),
   last_min_y_(-std::numeric_limits<float>::max()),
   last_max_x_(std::numeric_limits<float>::max()),
@@ -90,6 +89,8 @@ InflationLayer::onInitialize()
 
   current_ = true;
   seen_.clear();
+  cached_distances_.clear();
+  cached_costs_.clear();
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
@@ -302,54 +303,26 @@ InflationLayer::computeCaches()
     return;
   }
 
+  cache_length_ = cell_inflation_radius_ + 2;
+
   // based on the inflation radius... compute distance and cost caches
   if (cell_inflation_radius_ != cached_cell_inflation_radius_) {
-    deleteKernels();
+    cached_costs_.resize(cache_length_ * cache_length_);
+    cached_distances_.resize(cache_length_ * cache_length_);
 
-    cached_costs_ = new unsigned char *[cell_inflation_radius_ + 2];
-    cached_distances_ = new double *[cell_inflation_radius_ + 2];
-
-    for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
-      cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 2];
-      cached_distances_[i] = new double[cell_inflation_radius_ + 2];
-      for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
-        cached_distances_[i][j] = hypot(i, j);
+    for (unsigned int i = 0; i < cache_length_; ++i) {
+      for (unsigned int j = 0; j < cache_length_; ++j) {
+        cached_distances_[i * cache_length_ + j] = hypot(i, j);
       }
     }
 
     cached_cell_inflation_radius_ = cell_inflation_radius_;
   }
 
-  for (unsigned int i = 0; i <= cell_inflation_radius_ + 1; ++i) {
-    for (unsigned int j = 0; j <= cell_inflation_radius_ + 1; ++j) {
-      cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
+  for (unsigned int i = 0; i < cache_length_; ++i) {
+    for (unsigned int j = 0; j < cache_length_; ++j) {
+      cached_costs_[i * cache_length_ + j] = computeCost(cached_distances_[i * cache_length_ + j]);
     }
-  }
-}
-
-void
-InflationLayer::deleteKernels()
-{
-  if (cached_distances_ != NULL) {
-    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
-      if (cached_distances_[i]) {
-        delete[] cached_distances_[i];
-      }
-    }
-    if (cached_distances_) {
-      delete[] cached_distances_;
-    }
-    cached_distances_ = NULL;
-  }
-
-  if (cached_costs_ != NULL) {
-    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
-      if (cached_costs_[i]) {
-        delete[] cached_costs_[i];
-      }
-    }
-    delete[] cached_costs_;
-    cached_costs_ = NULL;
   }
 }
 

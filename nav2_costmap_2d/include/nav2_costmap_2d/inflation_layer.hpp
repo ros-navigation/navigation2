@@ -77,10 +77,7 @@ class InflationLayer : public Layer
 public:
   InflationLayer();
 
-  virtual ~InflationLayer()
-  {
-    deleteKernels();
-  }
+  virtual ~InflationLayer() = default;
 
   virtual void onInitialize();
   virtual void updateBounds(
@@ -137,7 +134,7 @@ private:
   {
     unsigned int dx = abs(mx - src_x);
     unsigned int dy = abs(my - src_y);
-    return cached_distances_[dx][dy];
+    return cached_distances_[dx * cache_length_ + dy];
   }
 
   /**
@@ -152,12 +149,10 @@ private:
   {
     unsigned int dx = abs(mx - src_x);
     unsigned int dy = abs(my - src_y);
-    return cached_costs_[dx][dy];
+    return cached_costs_[dx * cache_length_ + dy];
   }
 
   void computeCaches();
-  void deleteKernels();
-  void inflate_area(int min_i, int min_j, int max_i, int max_j, unsigned char * master_grid);
 
   unsigned int cellDistance(double world_dist)
   {
@@ -178,8 +173,9 @@ private:
 
   std::vector<bool> seen_;
 
-  unsigned char ** cached_costs_;
-  double ** cached_distances_;
+  std::vector<unsigned char> cached_costs_;
+  std::vector<double> cached_distances_;
+  unsigned int cache_length_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   // Indicates that the entire costmap should be reinflated next time around.
