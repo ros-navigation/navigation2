@@ -266,6 +266,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
   particlecloud_pub_->on_activate();
+  particlecloudwithweights_pub_->on_activate();
 
   first_pose_sent_ = false;
 
@@ -301,6 +302,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particlecloud_pub_->on_deactivate();
+  particlecloudwithweights_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -333,6 +335,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // PubSub
   pose_pub_.reset();
   particlecloud_pub_.reset();
+  particlecloudwithweights_pub_.reset();
 
   // Odometry
   motion_model_.reset();
@@ -852,17 +855,27 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 {
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {return;}
+
+  nav2_msgs::msg::ParticleCloud cloud_with_weights_msg;
+  cloud_with_weights_msg.header.stamp = this->now();
+  cloud_with_weights_msg.header.frame_id = global_frame_id_;
+  cloud_with_weights_msg.particles.resize(set->sample_count);
+
   geometry_msgs::msg::PoseArray cloud_msg;
   cloud_msg.header.stamp = this->now();
   cloud_msg.header.frame_id = global_frame_id_;
   cloud_msg.poses.resize(set->sample_count);
+
   for (int i = 0; i < set->sample_count; i++) {
     cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
     cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
     cloud_msg.poses[i].position.z = 0;
     cloud_msg.poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
+    cloud_with_weights_msg.particles[i].pose = cloud_msg.poses[i];
+    cloud_with_weights_msg.particles[i].weight = set->samples[i].weight;
   }
   particlecloud_pub_->publish(cloud_msg);
+  particlecloudwithweights_pub_->publish(cloud_with_weights_msg);
 }
 
 bool
@@ -1240,6 +1253,10 @@ AmclNode::initPubSub()
 
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>(
     "particlecloud",
+    rclcpp::SensorDataQoS());
+
+  particlecloudwithweights_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
+    "particlecloudwithweights",
     rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
