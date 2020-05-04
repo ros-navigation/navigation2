@@ -102,10 +102,9 @@ public:
   inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
-    double euclidean_distance = distance * resolution_;
     if (distance == 0) {
       cost = LETHAL_OBSTACLE;
-    } else if (euclidean_distance <= inscribed_radius_) {
+    } else if (distance * resolution_ <= inscribed_radius_) {
       cost = INSCRIBED_INFLATED_OBSTACLE;
     } else {
       // make sure cost falls off by Euclidean distance
