@@ -336,44 +336,30 @@ InflationLayer::computeCaches()
   }
 }
 
-int
-InflationLayer::generateIntegerDistances()
+void
+InflationLayer::deleteKernels()
 {
-  const int r = cell_inflation_radius_ + 2;
-  const int size = r * 2 + 1;
-
-  std::vector<std::pair<int, int>> points;
-
-  for (int y = -r; y <= r; y++) {
-    for (int x = -r; x <= r; x++) {
-      if (x * x + y * y <= r * r) {
-        points.emplace_back(x, y);
+  if (cached_distances_ != NULL) {
+    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
+      if (cached_distances_[i]) {
+        delete[] cached_distances_[i];
       }
     }
+    if (cached_distances_) {
+      delete[] cached_distances_;
+    }
+    cached_distances_ = NULL;
   }
 
-  std::sort(
-    points.begin(), points.end(),
-    [](const std::pair<int, int> & a, const std::pair<int, int> & b) -> bool {
-      return a.first * a.first + a.second * a.second < b.first * b.first + b.second * b.second;
+  if (cached_costs_ != NULL) {
+    for (unsigned int i = 0; i <= cached_cell_inflation_radius_ + 1; ++i) {
+      if (cached_costs_[i]) {
+        delete[] cached_costs_[i];
+      }
     }
-  );
-
-  std::vector<std::vector<int>> distance_matrix(size, std::vector<int>(size, 0));
-  std::pair<int, int> last = {0, 0};
-  int level = 0;
-  for (auto const & p : points) {
-    if (p.first * p.first + p.second * p.second !=
-      last.first * last.first + last.second * last.second)
-    {
-      level++;
-    }
-    distance_matrix[p.first + r][p.second + r] = level;
-    last = p;
+    delete[] cached_costs_;
+    cached_costs_ = NULL;
   }
-
-  distance_matrix_ = distance_matrix;
-  return level;
 }
 
 }  // namespace nav2_costmap_2d
