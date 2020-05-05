@@ -107,85 +107,93 @@ void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher&
 } */
 
 // prepare grid_ message for publication.
-void Costmap2DPublisher::prepareGrid()
+std::unique_ptr<nav_msgs::msg::OccupancyGrid> Costmap2DPublisher::prepareGrid()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  double resolution = costmap_->getResolution();
+  grid_resolution = costmap_->getResolution();
+  grid_width = costmap_->getSizeInCellsX();
+  grid_height = costmap_->getSizeInCellsY();
 
-  grid_.header.frame_id = global_frame_;
-  grid_.header.stamp = rclcpp::Time();
+  auto grid_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
-  grid_.info.resolution = resolution;
+  grid_->header.frame_id = global_frame_;
+  grid_->header.stamp = rclcpp::Time();
 
-  grid_.info.width = costmap_->getSizeInCellsX();
-  grid_.info.height = costmap_->getSizeInCellsY();
+  grid_->info.resolution = grid_resolution;
+
+  grid_->info.width = grid_width;
+  grid_->info.height = grid_height;
 
   double wx, wy;
   costmap_->mapToWorld(0, 0, wx, wy);
-  grid_.info.origin.position.x = wx - resolution / 2;
-  grid_.info.origin.position.y = wy - resolution / 2;
-  grid_.info.origin.position.z = 0.0;
-  grid_.info.origin.orientation.w = 1.0;
+  grid_->info.origin.position.x = wx - grid_resolution / 2;
+  grid_->info.origin.position.y = wy - grid_resolution / 2;
+  grid_->info.origin.position.z = 0.0;
+  grid_->info.origin.orientation.w = 1.0;
   saved_origin_x_ = costmap_->getOriginX();
   saved_origin_y_ = costmap_->getOriginY();
 
-  grid_.data.resize(grid_.info.width * grid_.info.height);
+  grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < grid_.data.size(); i++) {
-    grid_.data[i] = cost_translation_table_[data[i]];
+  for (unsigned int i = 0; i < grid_->data.size(); i++) {
+    grid_->data[i] = cost_translation_table_[data[i]];
   }
+
+  return std::move(grid_);
 }
 
-void Costmap2DPublisher::prepareCostmap()
+std::unique_ptr<nav2_msgs::msg::Costmap> Costmap2DPublisher::prepareCostmap()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   double resolution = costmap_->getResolution();
 
-  costmap_raw_.header.frame_id = global_frame_;
-  costmap_raw_.header.stamp = node_->now();
+  auto costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
 
-  costmap_raw_.metadata.layer = "master";
-  costmap_raw_.metadata.resolution = resolution;
+  costmap_raw_->header.frame_id = global_frame_;
+  costmap_raw_->header.stamp = node_->now();
 
-  costmap_raw_.metadata.size_x = costmap_->getSizeInCellsX();
-  costmap_raw_.metadata.size_y = costmap_->getSizeInCellsY();
+  costmap_raw_->metadata.layer = "master";
+  costmap_raw_->metadata.resolution = resolution;
+
+  costmap_raw_->metadata.size_x = costmap_->getSizeInCellsX();
+  costmap_raw_->metadata.size_y = costmap_->getSizeInCellsY();
 
   double wx, wy;
   costmap_->mapToWorld(0, 0, wx, wy);
-  costmap_raw_.metadata.origin.position.x = wx - resolution / 2;
-  costmap_raw_.metadata.origin.position.y = wy - resolution / 2;
-  costmap_raw_.metadata.origin.position.z = 0.0;
-  costmap_raw_.metadata.origin.orientation.w = 1.0;
+  costmap_raw_->metadata.origin.position.x = wx - resolution / 2;
+  costmap_raw_->metadata.origin.position.y = wy - resolution / 2;
+  costmap_raw_->metadata.origin.position.z = 0.0;
+  costmap_raw_->metadata.origin.orientation.w = 1.0;
 
-  costmap_raw_.data.resize(costmap_raw_.metadata.size_x * costmap_raw_.metadata.size_y);
+  costmap_raw_->data.resize(costmap_raw_->metadata.size_x * costmap_raw_->metadata.size_y);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < costmap_raw_.data.size(); i++) {
-    costmap_raw_.data[i] = data[i];
+  for (unsigned int i = 0; i < costmap_raw_->data.size(); i++) {
+    costmap_raw_->data[i] = data[i];
   }
+
+  return std::move(costmap_raw_);
 }
 
 void Costmap2DPublisher::publishCostmap()
 {
   if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
-    prepareCostmap();
+    auto costmap_raw_ = prepareCostmap();
 
-    auto costmap_raw_ptr = std::make_unique<nav2_msgs::msg::Costmap>(std::move(costmap_raw_));
-    costmap_raw_pub_->publish(std::move(costmap_raw_ptr));
+    costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
   float resolution = costmap_->getResolution();
 
-  if (always_send_full_costmap_ || grid_.info.resolution != resolution ||
-    grid_.info.width != costmap_->getSizeInCellsX() ||
-    grid_.info.height != costmap_->getSizeInCellsY() ||
+  if (always_send_full_costmap_ || grid_resolution != resolution ||
+    grid_width != costmap_->getSizeInCellsX() ||
+    grid_height != costmap_->getSizeInCellsY() ||
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
     if (node_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
-      prepareGrid();
-      auto grid_ptr = std::make_unique<nav_msgs::msg::OccupancyGrid>(std::move(grid_));
-      costmap_pub_->publish(std::move(grid_ptr));
+      auto grid_ = prepareGrid();
+      costmap_pub_->publish(std::move(grid_));
     }
   } else if (x0_ < xn_) {
     if (node_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {

@@ -290,6 +290,8 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
+  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud>();
+
   size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
     clearing_observation.cloud_->width;
   if (clearing_observation_cloud_size == 0) {
@@ -311,8 +313,8 @@ void VoxelLayer::raytraceFreespace(
 
   bool publish_clearing_points = (node_->count_subscribers("clearing_endpoints") > 0);
   if (publish_clearing_points) {
-    clearing_endpoints_.points.clear();
-    clearing_endpoints_.points.reserve(clearing_observation_cloud_size);
+    clearing_endpoints_->points.clear();
+    clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
   }
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
@@ -392,17 +394,16 @@ void VoxelLayer::raytraceFreespace(
         point.x = wpx;
         point.y = wpy;
         point.z = wpz;
-        clearing_endpoints_.points.push_back(point);
+        clearing_endpoints_->points.push_back(point);
       }
     }
   }
 
   if (publish_clearing_points) {
-    clearing_endpoints_.header.frame_id = global_frame_;
-    clearing_endpoints_.header.stamp = clearing_observation.cloud_->header.stamp;
+    clearing_endpoints_->header.frame_id = global_frame_;
+    clearing_endpoints_->header.stamp = clearing_observation.cloud_->header.stamp;
 
-    auto cloud_msg = std::make_unique<sensor_msgs::msg::PointCloud>(std::move(clearing_endpoints_));
-    clearing_endpoints_pub_->publish(std::move(cloud_msg));
+    clearing_endpoints_pub_->publish(std::move(clearing_endpoints_));
   }
 }
 
