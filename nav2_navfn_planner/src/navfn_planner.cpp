@@ -274,39 +274,6 @@ NavfnPlanner::smoothApproachToGoal(
 }
 
 bool
-NavfnPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
-{
-  // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(
-    costmap_->getSizeInCellsX(),
-    costmap_->getSizeInCellsY());
-
-  planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
-
-  unsigned int mx, my;
-  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
-    return false;
-  }
-
-  int map_start[2];
-  map_start[0] = 0;
-  map_start[1] = 0;
-
-  int map_goal[2];
-  map_goal[0] = mx;
-  map_goal[1] = my;
-
-  planner_->setStart(map_start);
-  planner_->setGoal(map_goal);
-
-  if (use_astar_) {
-    return planner_->calcNavFnAstar();
-  }
-
-  return planner_->calcNavFnDijkstra();
-}
-
-bool
 NavfnPlanner::getPlanFromPotential(
   const geometry_msgs::msg::Pose & goal,
   nav_msgs::msg::Path & plan)
