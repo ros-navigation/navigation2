@@ -4,3 +4,4 @@ fixes:
 ignore:
   - "*/**/test/*"  # ignore package test directories, e.g. nav2_dwb_controller/costmap_queue/tests
   - "*/test/**/*" # ignore package  test directories, e.g. nav2_costmap_2d/tests
+  - "**/test_*.*" # ignore files startin with test_ e.g.  nav2_map_server/test/test_constants.cpp 
