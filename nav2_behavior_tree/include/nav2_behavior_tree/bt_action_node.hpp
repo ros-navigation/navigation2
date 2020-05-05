@@ -49,7 +49,7 @@ public:
       action_name_ = remapped_action_name;
     }
     // Append namespace to the action name
-    if(node_namespace.c_str()) {
+    if(node_namespace != "/") {
       action_name_ = node_namespace + "/" + action_name_;
     }
     createActionClient(action_name_);

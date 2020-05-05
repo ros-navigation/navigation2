@@ -47,7 +47,7 @@ public:
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
     // Append namespace to the action name
-    if(node_namespace.c_str()) {
+    if(node_namespace != "/") {
       service_name_ = node_namespace + "/" + service_name_;
     }
     service_client_ = node_->create_client<ServiceT>(service_name_);
