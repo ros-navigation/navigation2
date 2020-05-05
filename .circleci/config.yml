@@ -397,10 +397,10 @@ workflows:
             - release_build
   nightly:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
+      # - debug_build
+      # - debug_test:
+      #     requires:
+      #       - debug_build
       - release_build
       # - test_rmw_connext_cpp:
       #     requires:
