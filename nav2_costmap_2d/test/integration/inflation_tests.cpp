@@ -129,7 +129,7 @@ void TestNode::validatePointInflation(
     bin != m.end(); ++bin)
   {
     for (unsigned int i = 0; i < bin->second.size(); ++i) {
-      const CellData & cell = bin->second[i];
+      const CellData cell = bin->second[i];
       if (!seen[cell.index_]) {
         seen[cell.index_] = true;
         unsigned int dx = (cell.x_ > cell.src_x_) ? cell.x_ - cell.src_x_ : cell.src_x_ - cell.x_;
