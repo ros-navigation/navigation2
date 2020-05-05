@@ -236,7 +236,7 @@ TEST_F(RecoveryTest, testingSequentialFailures)
 
 TEST(RecoveryTest, basicConstruction)
 {
-  ASSERT_NO_THROW(recovery_server::RecoveryServer);
+  ASSERT_NO_THROW(recovery_server::RecoveryServer());
   SUCCEED();
 }
 
