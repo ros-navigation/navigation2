@@ -164,24 +164,19 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Alpha: 1
-      Arrow Length: 0.019999999552965164
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz_default_plugins/PoseArray
+      Class: nav2_rviz_plugins/ParticleCloudDisplay
       Color: 0; 180; 0
       Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
+      Max Arrow Length: 0.10000000149011612
+      Min Arrow Length: 0.019999999552965164
       Name: Amcl Particle Swarm
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: <robot_namespace>/particlecloud
+        Value: <robot_namespace>/particle_cloud
       Value: true
     - Class: rviz_common/Group
       Displays:
