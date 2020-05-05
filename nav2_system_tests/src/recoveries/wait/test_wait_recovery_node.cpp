@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Samsung Research
 // Copyright (c) 2020 Sarthak Mittal
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,45 +19,44 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "spin_recovery_tester.hpp"
+#include "wait_recovery_tester.hpp"
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::SpinRecoveryTester;
+using nav2_system_tests::WaitRecoveryTester;
 
-class SpinRecoveryTestFixture
+class WaitRecoveryTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
 {
 public:
   static void SetUpTestCase()
   {
-    spin_recovery_tester = new SpinRecoveryTester();
-    if (!spin_recovery_tester->isActive()) {
-      spin_recovery_tester->activate();
+    wait_recovery_tester = new WaitRecoveryTester();
+    if (!wait_recovery_tester->isActive()) {
+      wait_recovery_tester->activate();
     }
   }
 
   static void TearDownTestCase()
   {
-    delete spin_recovery_tester;
-    spin_recovery_tester = nullptr;
+    delete wait_recovery_tester;
+    wait_recovery_tester = nullptr;
   }
 
 protected:
-  static SpinRecoveryTester * spin_recovery_tester;
+  static WaitRecoveryTester * wait_recovery_tester;
 };
 
-SpinRecoveryTester * SpinRecoveryTestFixture::spin_recovery_tester = nullptr;
+WaitRecoveryTester * WaitRecoveryTestFixture::wait_recovery_tester = nullptr;
 
-TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
+TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
 {
-  float target_yaw = std::get<0>(GetParam());
-  float tolerance = std::get<1>(GetParam());
+  float wait_time = std::get<0>(GetParam());
 
   bool success = false;
   int num_tries = 3;
   for (int i = 0; i != num_tries; i++) {
-    success = success || spin_recovery_tester->defaultSpinRecoveryTest(target_yaw, tolerance);
+    success = success || wait_recovery_tester->recoveryTest(wait_time);
     if (success) {
       break;
     }
@@ -66,16 +66,12 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
 }
 
 INSTANTIATE_TEST_CASE_P(
-  SpinRecoveryTests,
-  SpinRecoveryTestFixture,
+  WaitRecoveryTests,
+  WaitRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(-M_PIf32 / 6.0, 0.1),
-    std::make_tuple(M_PI_4f32, 0.1),
-    std::make_tuple(-M_PI_2f32, 0.1),
-    std::make_tuple(M_PIf32, 0.1),
-    std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15),
-    std::make_tuple(-2.0 * M_PIf32, 0.1),
-    std::make_tuple(4.0 * M_PIf32, 0.15)), );
+    std::make_tuple(1.0, 0.0),
+    std::make_tuple(2.0, 0.0),
+    std::make_tuple(5.0, 0.0)), );
 
 int main(int argc, char ** argv)
 {
