@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef RECOVERIES__SPIN_RECOVERY_TESTER_HPP_
-#define RECOVERIES__SPIN_RECOVERY_TESTER_HPP_
+#ifndef RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_
+#define RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -86,4 +86,4 @@ private:
 
 }  // namespace nav2_system_tests
 
-#endif  // RECOVERIES__SPIN_RECOVERY_TESTER_HPP_
+#endif  // RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_

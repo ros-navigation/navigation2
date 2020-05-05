@@ -68,8 +68,9 @@ TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
 INSTANTIATE_TEST_CASE_P(
   WaitRecoveryTests,
   WaitRecoveryTestFixture,
-  ::testing::Values(std::make_tuple(0.5, 0.0),
+  ::testing::Values(
     std::make_tuple(1.0, 0.0),
+    std::make_tuple(2.0, 0.0),
     std::make_tuple(5.0, 0.0)), );
 
 int main(int argc, char ** argv)
