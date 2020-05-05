@@ -42,6 +42,19 @@ RUN apt-get update && apt-get install -q -y \
       lcov \
     && rm -rf /var/lib/apt/lists/*
 
+# TODO: clean up once libgazebo11-dev released into ros2 repo
+# https://github.com/ros-infrastructure/reprepro-updater/pull/75
+# https://github.com/ros/rosdistro/pull/24646
+# setup keys
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D2486D2DD83DB69272AFE98867170598AF249743
+# setup sources.list
+RUN . /etc/os-release \
+    && echo "deb http://packages.osrfoundation.org/gazebo/$ID-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-latest.list
+# install gazebo packages
+RUN apt-get update && apt-get install -q -y --no-install-recommends \
+      libgazebo11-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # install underlay dependencies
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
@@ -50,6 +63,10 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --ignore-src \
+      --skip-keys " \
+        gazebo11 \
+        libgazebo11-dev \
+      " \
     && rm -rf /var/lib/apt/lists/*
 
 # build underlay source
@@ -75,6 +92,10 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --from-paths src \
         $UNDERLAY_WS/src \
       --ignore-src \
+      --skip-keys " \
+        gazebo11 \
+        libgazebo11-dev \
+      " \
     && rm -rf /var/lib/apt/lists/*
 
 # build overlay source

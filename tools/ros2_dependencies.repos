@@ -10,7 +10,10 @@ repositories:
   ros-simulation/gazebo_ros_pkgs:
     type: git
     url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-    version: ros2
+    # TODO: Revert after support for Gazebo v11 is merged
+    # https://github.com/ros-simulation/gazebo_ros_pkgs/pull/1093
+    # version: ros2
+    version: gazebo11_foxy
   ros-perception/image_common:
     type: git
     url: https://github.com/ros-perception/image_common.git
