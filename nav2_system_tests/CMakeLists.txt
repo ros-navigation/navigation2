@@ -21,6 +21,7 @@ find_package(rclpy REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(nav2_planner REQUIRED)
 find_package(navigation2)
+find_package(angles REQUIRED)
 
 nav2_package()
 
@@ -41,6 +42,7 @@ set(dependencies
   rclpy
   nav2_planner
   nav2_navfn_planner
+  angles
 )
 
 if(BUILD_TESTING)
@@ -55,6 +57,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/system)
   add_subdirectory(src/updown)
   add_subdirectory(src/waypoint_follower)
+  add_subdirectory(src/recoveries)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
 endif()
