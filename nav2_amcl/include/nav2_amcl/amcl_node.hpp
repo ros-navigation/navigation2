@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "std_msgs/msg/float64_multi_array.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
@@ -121,7 +120,7 @@ protected:
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
-    particlecloudwithweights_pub_;
+    particle_cloud_pub_;
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
 

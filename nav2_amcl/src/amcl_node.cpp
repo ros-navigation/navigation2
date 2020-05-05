@@ -266,7 +266,12 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
   particlecloud_pub_->on_activate();
-  particlecloudwithweights_pub_->on_activate();
+  particle_cloud_pub_->on_activate();
+
+  RCLCPP_WARN(
+    get_logger(),
+    "Publishing the particle cloud as geometry_msgs/PoseArray msg is deprecated, "
+    "will be published as nav2_msgs/ParticleCloud in the future");
 
   first_pose_sent_ = false;
 
@@ -302,7 +307,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particlecloud_pub_->on_deactivate();
-  particlecloudwithweights_pub_->on_deactivate();
+  particle_cloud_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -335,7 +340,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // PubSub
   pose_pub_.reset();
   particlecloud_pub_.reset();
-  particlecloudwithweights_pub_.reset();
+  particle_cloud_pub_.reset();
 
   // Odometry
   motion_model_.reset();
@@ -875,7 +880,7 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
     cloud_with_weights_msg.particles[i].weight = set->samples[i].weight;
   }
   particlecloud_pub_->publish(cloud_msg);
-  particlecloudwithweights_pub_->publish(cloud_with_weights_msg);
+  particle_cloud_pub_->publish(cloud_with_weights_msg);
 }
 
 bool
@@ -1255,8 +1260,8 @@ AmclNode::initPubSub()
     "particlecloud",
     rclcpp::SensorDataQoS());
 
-  particlecloudwithweights_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
-    "particlecloudwithweights",
+  particle_cloud_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
+    "particle_cloud",
     rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
