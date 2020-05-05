@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Samsung Research
 // Copyright (c) 2020 Sarthak Mittal
 // Copyright (c) 2018 Intel Corporation
 //
