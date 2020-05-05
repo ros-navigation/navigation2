@@ -402,9 +402,9 @@ workflows:
           requires:
             - debug_build
       - release_build
-      - test_rmw_connext_cpp:
-          requires:
-            - release_build
+      # - test_rmw_connext_cpp:
+      #     requires:
+      #       - release_build
       - test_rmw_cyclonedds_cpp:
           requires:
             - release_build
