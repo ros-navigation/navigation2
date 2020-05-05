@@ -45,7 +45,7 @@ RUN apt-get update && apt-get install -q -y \
 # install underlay dependencies
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
-COPY --from=cacher /tmp/$UNDERLAY_WS/src ./src
+COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
@@ -53,7 +53,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build underlay source
-COPY --from=cacher $UNDERLAY_WS/src ./src
+COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -69,7 +69,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # install overlay dependencies
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS
-COPY --from=cacher /tmp/$OVERLAY_WS/src ./src
+COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
@@ -78,7 +78,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     && rm -rf /var/lib/apt/lists/*
 
 # build overlay source
-COPY --from=cacher $OVERLAY_WS/src ./src
+COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
