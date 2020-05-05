@@ -25,6 +25,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_recoveries/recovery.hpp"
 #include "nav2_msgs/action/dummy_recovery.hpp"
+#include "nav2_recoveries/recovery_server.hpp"
 
 using nav2_recoveries::Recovery;
 using nav2_recoveries::Status;
@@ -229,6 +230,13 @@ TEST_F(RecoveryTest, testingSequentialFailures)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
+}
+
+
+TEST(RecoveryTest, basicConstruction)
+{
+  ASSERT_NO_THROW(recovery_server::RecoveryServer);
   SUCCEED();
 }
 
