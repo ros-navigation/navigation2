@@ -234,24 +234,6 @@ protected:
   std::shared_ptr<ActionTestNode> node_;
 };
 
-TEST_F(ActionTest, test_handle_goal_deactivated)
-{
-  node_->deactivate_server();
-  auto goal = Fibonacci::Goal();
-  goal.order = 12;
-
-  // Send the goal
-  auto future_goal_handle = node_->action_client_->async_send_goal(goal);
-  EXPECT_EQ(
-    rclcpp::spin_until_future_complete(
-      node_,
-      future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
-
-  node_->activate_server();
-
-  SUCCEED();
-}
-
 TEST_F(ActionTest, test_simple_action)
 {
   // The goal for this invocation
@@ -511,6 +493,24 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   }
 
   EXPECT_EQ(sum, 1);
+  SUCCEED();
+}
+
+TEST_F(ActionTest, test_handle_goal_deactivated)
+{
+  node_->deactivate_server();
+  auto goal = Fibonacci::Goal();
+  goal.order = 12;
+
+  // Send the goal
+  auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(
+      node_,
+      future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+
+  node_->activate_server();
+
   SUCCEED();
 }
 
