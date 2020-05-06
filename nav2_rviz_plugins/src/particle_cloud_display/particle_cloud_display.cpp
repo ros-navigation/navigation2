@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2012, Willow Garage, Inc.
  * Copyright (c) 2018, Bosch Software Innovations GmbH.
- * Copyright (c) 2020, Sarthak Mittal
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +43,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_rviz_plugins/particle_cloud_display.hpp"
+#include "nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp"
 
 #include <memory>
 #include <string>
@@ -63,7 +62,7 @@
 #include "rviz_rendering/objects/arrow.hpp"
 #include "rviz_rendering/objects/axes.hpp"
 
-#include "nav2_rviz_plugins/flat_weighted_arrows_array.hpp"
+#include "nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp"
 
 namespace nav2_rviz_plugins
 {

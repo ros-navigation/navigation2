@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2012, Willow Garage, Inc.
  * Copyright (c) 2018, Bosch Software Innovations GmbH.
- * Copyright (c) 2020, Sarthak Mittal
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,9 +53,6 @@
 
 #include "rviz_rendering/objects/shape.hpp"
 #include "rviz_common/message_filter_display.hpp"
-
-// TODO(botteroa): Originally the display extended the MessageFilterDisplay. Revisit when available.
-// #include "rviz_common/message_filter_display.hpp"
 
 namespace Ogre
 {

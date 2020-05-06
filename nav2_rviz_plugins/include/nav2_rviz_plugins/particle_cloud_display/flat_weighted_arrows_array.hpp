@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2012, Willow Garage, Inc.
  * Copyright (c) 2018, Bosch Software Innovations GmbH.
- * Copyright (c) 2020, Sarthak Mittal
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +54,7 @@
 #include <OgreVector3.h>
 #include <OgreQuaternion.h>
 
-#include "nav2_rviz_plugins/particle_cloud_display.hpp"
+#include "nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp"
 
 namespace nav2_rviz_plugins
 {
