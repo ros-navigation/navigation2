@@ -105,6 +105,11 @@ public:
     on_activate(state);
   }
 
+  void onDeactivate(const rclcpp_lifecycle::State & state)
+  {
+    on_deactivate(state);
+  }
+
   void onConfigure(const rclcpp_lifecycle::State & state)
   {
     on_configure(state);
