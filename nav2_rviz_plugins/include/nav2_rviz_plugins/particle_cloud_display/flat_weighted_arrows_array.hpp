@@ -43,8 +43,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RVIZ_PLUGINS__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
-#define NAV2_RVIZ_PLUGINS__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
+#ifndef NAV2_RVIZ_PLUGINS__PARTICLE_CLOUD_DISPLAY__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
+#define NAV2_RVIZ_PLUGINS__PARTICLE_CLOUD_DISPLAY__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
 
 #include <vector>
 
@@ -91,4 +91,4 @@ private:
 
 }  // namespace nav2_rviz_plugins
 
-#endif  // NAV2_RVIZ_PLUGINS__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
+#endif  // NAV2_RVIZ_PLUGINS__PARTICLE_CLOUD_DISPLAY__FLAT_WEIGHTED_ARROWS_ARRAY_HPP_
