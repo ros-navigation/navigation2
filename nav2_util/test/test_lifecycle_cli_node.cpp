@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <vector>
 #include "gtest/gtest.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_utils.hpp"
