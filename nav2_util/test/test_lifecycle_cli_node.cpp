@@ -17,6 +17,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <string>
 #include "gtest/gtest.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_utils.hpp"
@@ -86,17 +87,17 @@ TEST(LifeycleCLI, fails_no_node_name)
   SUCCEED();
 }
 
-// TEST(LifeycleCLI, succeeds_node_name)
-// {
-//   Handle handle;
-//   auto rc = system("ros2 run nav2_util lifecycle_bringup nav2_test_cli");
-//   sleep(1);
-//   // check node moved
-//   (void)rc;
-//   EXPECT_EQ(handle.node->activated, true);
-//   std::vector<std::string> nodes = {"nav2_test_cli"};
-//   nav2_util::reset_lifecycle_nodes(nodes);
-//   SUCCEED();
-// }
+TEST(LifeycleCLI, succeeds_node_name)
+{
+  Handle handle;
+  auto rc = system("ros2 run nav2_util lifecycle_bringup nav2_test_cli");
+  sleep(1);
+  // check node moved
+  (void)rc;
+  EXPECT_EQ(handle.node->activated, true);
+  std::vector<std::string> nodes = {"nav2_test_cli"};
+  nav2_util::reset_lifecycle_nodes(nodes);
+  SUCCEED();
+}
 
 #endif  // NAV2_UTIL__TEST__TEST_LIFECYCLE_CLI_NODE_HPP_
