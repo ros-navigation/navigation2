@@ -152,7 +152,8 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
   if (results == nullptr) {return;}
 
   if (publish_evaluation_) {
-    eval_pub_->publish(*results);
+    auto msg = std::make_unique<dwb_msgs::msg::LocalPlanEvaluation>(*results);
+    eval_pub_->publish(std::move(msg));
   }
 
   publishTrajectories(*results);

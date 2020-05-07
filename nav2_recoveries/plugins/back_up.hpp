@@ -38,7 +38,7 @@ public:
 protected:
   bool isCollisionFree(
     const double & distance,
-    std::unique_ptr<geometry_msgs::msg::Twist> & cmd_vel,
+    geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
 
   void onConfigure() override;

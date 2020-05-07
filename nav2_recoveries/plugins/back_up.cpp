@@ -88,7 +88,7 @@ Status BackUp::onCycleUpdate()
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(distance, cmd_vel, pose2d)) {
+  if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
@@ -101,7 +101,7 @@ Status BackUp::onCycleUpdate()
 
 bool BackUp::isCollisionFree(
   const double & distance,
-  std::unique_ptr<geometry_msgs::msg::Twist> & cmd_vel,
+  geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
