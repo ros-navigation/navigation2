@@ -24,11 +24,13 @@ A Behavior Tree consists of control flow nodes, such as fallback, sequence, para
 
 ## Navigation Behavior Trees
 
-The BT Navigator package has two sample XML-based descriptions of BTs.  These trees are [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).  The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
+The BT Navigator package has three sample XML-based descriptions of BTs.  
+These trees are [navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml), [navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml) and [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).  
+The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
 
-### Navigate with Replanning
+### Navigate with Replanning (time-based)
 
-[navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default controller, the nav2_dwb_controller, implements path following at a rate of 10Hz.
+[navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default controller, the nav2_dwb_controller, implements path following at a rate of 10Hz.
 
 ```XML
 <root main_tree_to_execute="MainTree">
@@ -67,6 +69,8 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 #### Decorator Nodes
 * RateController: A custom control flow node, which throttles down the tick rate.  This custom node has only one child and its tick rate is defined with a pre-defined frequency that the user can set.  This node returns RUNNING when it is not ticking its child. Currently, in the navigation, the `RateController` is used to tick the  `ComputePathToPose` and `GoalReached` node at 1 Hz.
 
+* DistanceController: A custom control flow node, which controls the tick rate based on the distance traveled.  This custom node has only one child. The user can set the distance after which the planner should replan a new path.  This node returns RUNNING when it is not ticking its child. Currently, in navigation, the `DistanceController` is used to tick the  `ComputePathToPose` and `GoalReached` node after every 0.5 meters.
+
 #### Condition Nodes
 * GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked.
 
@@ -82,7 +86,7 @@ The navigate with replanning BT first ticks the `RateController` node which spec
 
 ### Navigate with replanning and simple recovery actions
 
-With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below.
+With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning_time.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below.
 
 <img src="./doc/parallel_w_recovery.png" title="" width="95%" align="middle">
 <br/>

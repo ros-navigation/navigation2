@@ -37,10 +37,11 @@ public:
     const std::string & name,
     const BT::NodeConfiguration & conf)
   : BT::DecoratorNode(name, conf),
-    initialized_(false),
     distance_(1.0)
   {
     getInput("distance", distance_);
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
@@ -49,13 +50,6 @@ public:
     return {
       BT::InputPort<double>("distance", 1.0, "Distance")
     };
-  }
-
-  void initialize()
-  {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-    initialized_ = true;
   }
 
 private:
@@ -75,8 +69,6 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  bool initialized_;
-
   geometry_msgs::msg::PoseStamped start_pose_;
   double distance_;
 };
@@ -85,10 +77,6 @@ static bool first_time{false};
 
 inline BT::NodeStatus DistanceController::tick()
 {
-  if (!initialized_) {
-    initialize();
-  }
-
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
@@ -126,7 +114,6 @@ inline BT::NodeStatus DistanceController::tick()
 
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        // reset starting pose to current pose
         if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
           RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
           return BT::NodeStatus::FAILURE;
