@@ -12,7 +12,7 @@
     <description>The Navigation2 rviz panel.</description>
   </class>
 
-  <class name="nav2_rviz_plugins/ParticleCloudDisplay"
+  <class name="nav2_rviz_plugins/ParticleCloud"
          type="nav2_rviz_plugins::ParticleCloudDisplay"
          base_class_type="rviz_common::Display">
     <description>The Particle Cloud rviz display.</description>

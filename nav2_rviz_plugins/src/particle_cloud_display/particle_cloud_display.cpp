@@ -97,7 +97,7 @@ ParticleCloudDisplay::ParticleCloudDisplay(
 }
 
 ParticleCloudDisplay::ParticleCloudDisplay()
-: min_length_(0.02f), max_length_(0.1f)
+: min_length_(0.02f), max_length_(0.3f)
 {
   initializeProperties();
 
