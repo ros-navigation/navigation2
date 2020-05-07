@@ -41,6 +41,8 @@
 #include <algorithm>
 #include <cassert>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"

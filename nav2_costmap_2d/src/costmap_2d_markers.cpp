@@ -38,6 +38,8 @@
  *********************************************************************/
 #include <string>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"

@@ -40,6 +40,7 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
 #include "nav2_costmap_2d/cost_values.hpp"
 
@@ -107,14 +108,14 @@ void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher&
 } */
 
 // prepare grid_ message for publication.
-std::unique_ptr<nav_msgs::msg::OccupancyGrid> Costmap2DPublisher::prepareGrid()
+void Costmap2DPublisher::prepareGrid()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   grid_resolution = costmap_->getResolution();
   grid_width = costmap_->getSizeInCellsX();
   grid_height = costmap_->getSizeInCellsY();
 
-  auto grid_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  grid_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   grid_->header.frame_id = global_frame_;
   grid_->header.stamp = rclcpp::Time();
@@ -139,16 +140,14 @@ std::unique_ptr<nav_msgs::msg::OccupancyGrid> Costmap2DPublisher::prepareGrid()
   for (unsigned int i = 0; i < grid_->data.size(); i++) {
     grid_->data[i] = cost_translation_table_[data[i]];
   }
-
-  return std::move(grid_);
 }
 
-std::unique_ptr<nav2_msgs::msg::Costmap> Costmap2DPublisher::prepareCostmap()
+void Costmap2DPublisher::prepareCostmap()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   double resolution = costmap_->getResolution();
 
-  auto costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
+  costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
 
   costmap_raw_->header.frame_id = global_frame_;
   costmap_raw_->header.stamp = node_->now();
@@ -172,15 +171,12 @@ std::unique_ptr<nav2_msgs::msg::Costmap> Costmap2DPublisher::prepareCostmap()
   for (unsigned int i = 0; i < costmap_raw_->data.size(); i++) {
     costmap_raw_->data[i] = data[i];
   }
-
-  return std::move(costmap_raw_);
 }
 
 void Costmap2DPublisher::publishCostmap()
 {
   if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
-    auto costmap_raw_ = prepareCostmap();
-
+    prepareCostmap();
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
   float resolution = costmap_->getResolution();
@@ -192,7 +188,7 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_y_ != costmap_->getOriginY())
   {
     if (node_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
-      auto grid_ = prepareGrid();
+      prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
   } else if (x0_ < xn_) {

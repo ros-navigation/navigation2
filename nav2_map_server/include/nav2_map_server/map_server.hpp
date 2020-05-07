@@ -142,7 +142,7 @@ protected:
   std::string frame_id_;
 
   // The message to publish on the occupancy grid topic
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> msg_;
+  nav_msgs::msg::OccupancyGrid msg_;
 };
 
 }  // namespace nav2_map_server

@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_util/costmap.hpp"
@@ -294,7 +295,8 @@ PlannerServer::computePlan()
 void
 PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 {
-  plan_publisher_->publish(path);
+  auto msg = std::make_unique<nav_msgs::msg::Path>(path);
+  plan_publisher_->publish(std::move(msg));
 }
 
 }  // namespace nav2_planner

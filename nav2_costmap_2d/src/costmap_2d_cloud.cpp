@@ -27,6 +27,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
