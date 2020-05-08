@@ -22,6 +22,7 @@
 #include <cmath>
 
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 
@@ -66,7 +67,8 @@ inline BT::NodeStatus DistanceController::tick()
   }
 
   // Get euclidean distance
-  auto travelled = euclidean_distance(start_pose_, current_pose);
+  auto travelled = nav2_util::geometry_utils::euclideanDistance(
+    start_pose_.pose.position, current_pose.pose.position);
 
   // The child gets ticked the first time through and every time the threshold
   // distance is crossed. In addition, once the child begins to run, it is

@@ -88,29 +88,6 @@ BT::NodeConfiguration * DistanceControllerTestFixture::config_ = nullptr;
 nav2_behavior_tree::DistanceController * DistanceControllerTestFixture::node_ = nullptr;
 nav2_behavior_tree::DummyNode * DistanceControllerTestFixture::dummy_node_ = nullptr;
 
-TEST_F(DistanceControllerTestFixture, test_initial_status_is_idle)
-{
-  EXPECT_EQ(node_->status(), BT::NodeStatus::IDLE);
-}
-
-TEST_F(DistanceControllerTestFixture, test_failure_when_child_is_idle)
-{
-  dummy_node_->setStatus(BT::NodeStatus::IDLE);
-  EXPECT_EQ(node_->executeTick(), BT::NodeStatus::FAILURE);
-}
-
-TEST_F(DistanceControllerTestFixture, test_failure_when_child_fails)
-{
-  dummy_node_->setStatus(BT::NodeStatus::FAILURE);
-  EXPECT_EQ(node_->executeTick(), BT::NodeStatus::FAILURE);
-}
-
-TEST_F(DistanceControllerTestFixture, test_running_when_child_is_running)
-{
-  dummy_node_->setStatus(BT::NodeStatus::RUNNING);
-  EXPECT_EQ(node_->executeTick(), BT::NodeStatus::RUNNING);
-}
-
 TEST_F(DistanceControllerTestFixture, test_behavior)
 {
   EXPECT_EQ(node_->status(), BT::NodeStatus::IDLE);
@@ -120,33 +97,20 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
   geometry_msgs::msg::PoseStamped pose;
-  pose.pose.position.x = 0.5;
+  pose.pose.position.x = 0;
   pose.pose.position.y = 0;
-  pose.pose.position.z = 0;
-  pose.pose.orientation.x = 0;
-  pose.pose.orientation.y = 0;
-  pose.pose.orientation.z = 0;
   pose.pose.orientation.w = 1;
 
   double traveled = 0;
-
-  transform_handler_->updateRobotPose(pose.pose);
-
-  // Wait for transforms to actually update
-  while (traveled < 0.1) {
-    if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {
-      traveled = std::sqrt(
-        pose.pose.position.x * pose.pose.position.x + pose.pose.position.y * pose.pose.position.y);
-    }
-    EXPECT_EQ(node_->executeTick(), BT::NodeStatus::RUNNING);
-  }
-
-  for (int i = 1; i < 10; i++) {
-    pose.pose.position.x = i * 1.1;
+  for (int i = 1; i <= 20; i++) {
+    pose.pose.position.x = i * 0.51;
     transform_handler_->updateRobotPose(pose.pose);
 
     // Wait for transforms to actually update
-    while (traveled < i) {
+    // updated pose is i * 0.55
+    // we wait fot the traveled distance to reach a value > i * 0.5
+    // we can assume the current transform has been updated at this point
+    while (traveled < i * 0.5) {
       if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {
         traveled = std::sqrt(
           pose.pose.position.x * pose.pose.position.x +
@@ -156,8 +120,12 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
 
     dummy_node_->setStatus(BT::NodeStatus::SUCCESS);
 
-    EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
-    EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
+    if (i % 2) {
+      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::RUNNING);
+    } else {
+      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
+      EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
+    }
   }
 }
 

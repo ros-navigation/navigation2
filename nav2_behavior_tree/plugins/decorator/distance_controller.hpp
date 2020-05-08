@@ -45,16 +45,6 @@ public:
 private:
   BT::NodeStatus tick() override;
 
-  double euclidean_distance(
-    const geometry_msgs::msg::PoseStamped & pose1,
-    const geometry_msgs::msg::PoseStamped & pose2)
-  {
-    const double dx = pose1.pose.position.x - pose2.pose.position.x;
-    const double dy = pose1.pose.position.y - pose2.pose.position.y;
-    const double dz = pose1.pose.position.z - pose2.pose.position.z;
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
