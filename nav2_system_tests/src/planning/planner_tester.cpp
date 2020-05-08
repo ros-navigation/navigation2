@@ -86,6 +86,7 @@ void PlannerTester::deactivate()
   spin_thread_.reset();
 
   auto state = rclcpp_lifecycle::State();
+  planner_tester_->onDeactivate(state);
   planner_tester_->onCleanup(state);
 
   map_timer_.reset();

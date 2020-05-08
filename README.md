@@ -10,7 +10,7 @@ For detailed instructions on how to:
 - [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
 - [Contribute](https://navigation.ros.org/contribute/index.html)
 
-Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](navigation2.slack.com).
+Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://navigation2.slack.com).
 
 | Service | Dashing | Eloquent | Master |
 | :---: | :---: | :---: | :---: |
