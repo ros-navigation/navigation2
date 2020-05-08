@@ -1,4 +1,3 @@
-// Copyright (c) 2019 Intel Corporation
 // Copyright (c) 2020 Shivang Patel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
-#define NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
+#ifndef NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_
+#define NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_
 
 #include <string>
 #include <vector>
@@ -36,39 +35,18 @@
 
 namespace nav2_costmap_2d
 {
-
-class CollisionChecker : public CollisionBase
+class CollisionFootprint : public CollisionBase
 {
 public:
-  CollisionChecker(
-    CostmapSubscriber & costmap_sub,
-    FootprintSubscriber & footprint_sub,
-    tf2_ros::Buffer & tf,
-    std::string name = "collision_checker",
-    std::string global_frame = "map");
-
-  ~CollisionChecker() = default;
-
-  // Returns the obstacle footprint score for a particular pose
-  double scorePose(const geometry_msgs::msg::Pose2D & pose);
-  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
-
-protected:
-  double pointCost(int x, int y) const override;
-  void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
+  CollisionFootprint(std::shared_ptr<Costmap2D> costmap);
+  double footprintCostWithPose(double x, double y, double theta, const Footprint footprint);
   void worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) override;
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
+  double pointCost(int x, int y) const override;
 
+private:
   std::shared_ptr<Costmap2D> costmap_;
-
-  // Name used for logging
-  std::string name_;
-  std::string global_frame_;
-  tf2_ros::Buffer & tf_;
-  CostmapSubscriber & costmap_sub_;
-  FootprintSubscriber & footprint_sub_;
 };
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
+#endif  // NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_

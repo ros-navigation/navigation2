@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Shivang Patel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,15 +36,12 @@ CollisionChecker::CollisionChecker(
   tf2_ros::Buffer & tf,
   std::string name,
   std::string global_frame)
-: name_(name),
+: CollisionBase(),
+  name_(name),
   global_frame_(global_frame),
   tf_(tf),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub)
-{
-}
-
-CollisionChecker::~CollisionChecker()
 {
 }
 
@@ -107,52 +105,6 @@ Footprint CollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose
   return footprint;
 }
 
-double CollisionChecker::footprintCost(const Footprint footprint)
-{
-  // now we really have to lay down the footprint in the costmap_ grid
-  unsigned int x0, x1, y0, y1;
-  double footprint_cost = 0.0;
-
-  // we need to rasterize each line in the footprint
-  for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
-    // get the cell coord of the first point
-    worldToMap(footprint[i].x, footprint[i].y, x0, y0);
-
-    // get the cell coord of the second point
-    worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1);
-
-    footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
-  }
-
-  // we also need to connect the first point in the footprint to the last point
-  // get the cell coord of the last point
-  worldToMap(footprint.back().x, footprint.back().y, x0, y0);
-
-  // get the cell coord of the first point
-  worldToMap(footprint.front().x, footprint.front().y, x1, y1);
-
-  footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
-
-  // if all line costs are legal... then we can return that the footprint is legal
-  return footprint_cost;
-}
-
-double CollisionChecker::lineCost(int x0, int x1, int y0, int y1) const
-{
-  double line_cost = 0.0;
-  double point_cost = -1.0;
-
-  for (nav2_util::LineIterator line(x0, y0, x1, y1); line.isValid(); line.advance()) {
-    point_cost = pointCost(line.getX(), line.getY());   // Score the current point
-
-    if (line_cost < point_cost) {
-      line_cost = point_cost;
-    }
-  }
-
-  return line_cost;
-}
-
 double CollisionChecker::pointCost(int x, int y) const
 {
   unsigned char cost = costmap_->getCost(x, y);
@@ -185,5 +137,6 @@ void CollisionChecker::unorientFootprint(
   transformFootprint(-x, -y, 0, oriented_footprint, temp);
   transformFootprint(0, 0, -theta, temp, reset_footprint);
 }
+
 
 }  // namespace nav2_costmap_2d
