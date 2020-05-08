@@ -32,41 +32,13 @@ The user may use any of these sample trees or develop a more complex tree which 
 
 [navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml) implements basic navigation by continuously computing and updating the path at a rate of 1Hz. The default controller, the nav2_dwb_controller, implements path following at a rate of 10Hz.
 
-```XML
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <Sequence name="root">
-      <RateController hz="1.0">
-        <Fallback>
-          <GoalReached/>
-          <ComputePathToPose goal="${goal}" planner_id="GridBased"/>
-        </Fallback>
-      </RateController>
-      <FollowPath path="${path}" controller_id="FollowPath"/>
-    </Sequence>
-  </BehaviorTree>
-</root>
-```
+![Navigation with time based replanning](./doc/navigate_w_replanning_time.png)
 
 ### Navigate with Replanning (distace-based)
 
 [navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml) implements basic navigation by continuously computing and updating the path after every 1 meter distance traveled by the robot.
 
-```XML
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <Sequence name="root">
-      <DistanceController distance="1.0">
-        <Fallback>
-          <GoalReached/>
-          <ComputePathToPose goal="${goal}" planner_id="GridBased"/>
-        </Fallback>
-      </DistanceController>
-      <FollowPath path="${path}" controller_id="FollowPath"/>
-    </Sequence>
-  </BehaviorTree>
-</root>
-```
+![Navigation with distance based replanning](./doc/navigate_w_replanning_distance.png)
 
 #### Navigate with replanning is composed of the following custom decorator, condition, control and action nodes:
 
