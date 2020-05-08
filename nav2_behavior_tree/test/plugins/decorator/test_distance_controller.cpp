@@ -22,8 +22,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../transform_handler.hpp"
-#include "../../dummy_tree_node.hpp"
+#include "../../test_transform_handler.hpp"
+#include "../../test_dummy_tree_node.hpp"
 #include "../../../plugins/decorator/distance_controller.hpp"
 
 class DistanceControllerTestFixture : public ::testing::Test

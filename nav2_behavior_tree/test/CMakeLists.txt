@@ -1,6 +1,5 @@
 ament_add_gtest(test_decorator_distance_controller
-  plugins/decorator/distance_controller_test.cpp
-  transform_handler.cpp
+  plugins/decorator/test_distance_controller.cpp
 )
 
 target_link_libraries(test_decorator_distance_controller

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DUMMY_TREE_NODE_HPP_
-#define DUMMY_TREE_NODE_HPP_
+#ifndef TEST_DUMMY_TREE_NODE_HPP_
+#define TEST_DUMMY_TREE_NODE_HPP_
 
 #include <behaviortree_cpp_v3/basic_types.h>
 #include <behaviortree_cpp_v3/action_node.h>
@@ -51,4 +51,4 @@ public:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // DUMMY_TREE_NODE_HPP_
+#endif  // TEST_DUMMY_TREE_NODE_HPP_

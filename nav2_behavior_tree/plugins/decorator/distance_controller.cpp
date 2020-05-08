@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__DISTANCE_CONTROLLER_HPP_
-#define NAV2_BEHAVIOR_TREE__DISTANCE_CONTROLLER_HPP_
-
 #include <chrono>
 #include <string>
 #include <memory>
@@ -108,6 +105,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceController>("DistanceController");
 }
-
-
-#endif  // NAV2_BEHAVIOR_TREE__DISTANCE_CONTROLLER_HPP_
