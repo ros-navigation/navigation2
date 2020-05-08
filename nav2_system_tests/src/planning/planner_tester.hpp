@@ -50,7 +50,7 @@ public:
   void printCostmap()
   {
     // print costmap for debug
-    for (uint i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
+    for (size_t i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
       if (i % costmap_->getSizeInCellsX() == 0) {
         std::cout << "" << std::endl;
       }

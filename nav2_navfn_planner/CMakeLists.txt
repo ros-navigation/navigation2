@@ -60,7 +60,7 @@ pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
