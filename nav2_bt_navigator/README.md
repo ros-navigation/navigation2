@@ -48,8 +48,27 @@ The user may use any of these sample trees or develop a more complex tree which 
 </root>
 ```
 
-Navigate with replanning is composed of the following custom decorator, condition,
-contro and action nodes:
+### Navigate with Replanning (distace-based)
+
+[navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml) implements basic navigation by continuously computing and updating the path after every 1 meter distance traveled by the robot.
+
+```XML
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root">
+      <DistanceController distance="1.0">
+        <Fallback>
+          <GoalReached/>
+          <ComputePathToPose goal="${goal}" planner_id="GridBased"/>
+        </Fallback>
+      </DistanceController>
+      <FollowPath path="${path}" controller_id="FollowPath"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
+```
+
+#### Navigate with replanning is composed of the following custom decorator, condition, control and action nodes:
 
 #### Control Nodes
 * PipelineSequence: This is a variant of a Sequence Node. When this node is ticked,
