@@ -18,6 +18,7 @@
 #include <thread>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "spin.hpp"
 #pragma GCC diagnostic push
@@ -111,28 +112,28 @@ Status Spin::onCycleUpdate()
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.angular.z = copysign(vel, cmd_yaw_);
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  cmd_vel->angular.z = copysign(vel, cmd_yaw_);
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel, pose2d)) {
+  if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 
-  vel_pub_->publish(cmd_vel);
+  vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
 }
 
 bool Spin::isCollisionFree(
   const double & relative_yaw,
-  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
@@ -141,7 +142,7 @@ bool Spin::isCollisionFree(
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
 
   while (cycle_count < max_cycle_count) {
-    sim_position_change = cmd_vel.angular.z * (cycle_count / cycle_frequency_);
+    sim_position_change = cmd_vel->angular.z * (cycle_count / cycle_frequency_);
     pose2d.theta += sim_position_change;
     cycle_count++;
 

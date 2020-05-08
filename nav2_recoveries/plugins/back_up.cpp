@@ -15,6 +15,7 @@
 #include <chrono>
 #include <ctime>
 #include <memory>
+#include <utility>
 
 #include "back_up.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -77,30 +78,30 @@ Status BackUp::onCycleUpdate()
     return Status::SUCCEEDED;
   }
   // TODO(mhpanah): cmd_vel value should be passed as a parameter
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-  command_x_ < 0 ? cmd_vel.linear.x = -command_speed_ : cmd_vel.linear.x = command_speed_;
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  cmd_vel->linear.y = 0.0;
+  cmd_vel->angular.z = 0.0;
+  command_x_ < 0 ? cmd_vel->linear.x = -command_speed_ : cmd_vel->linear.x = command_speed_;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(distance, cmd_vel, pose2d)) {
+  if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
   }
 
-  vel_pub_->publish(cmd_vel);
+  vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
 }
 
 bool BackUp::isCollisionFree(
   const double & distance,
-  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
@@ -110,7 +111,7 @@ bool BackUp::isCollisionFree(
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
 
   while (cycle_count < max_cycle_count) {
-    sim_position_change = cmd_vel.linear.x * (cycle_count / cycle_frequency_);
+    sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
     pose2d.x += sim_position_change;
     cycle_count++;
 
