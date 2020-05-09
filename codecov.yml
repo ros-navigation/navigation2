@@ -1,3 +1,11 @@
+parsers:
+  lcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
 fixes:
   - "src/navigation2/::"
 
