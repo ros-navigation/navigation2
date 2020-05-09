@@ -120,12 +120,7 @@ references:
                       rm -rf build install log
                       colcon build \
                         --symlink-install \
-                        --mixin << parameters.mixins >> \
-                        --cmake-args \
-                          --no-warn-unused-cli \
-                          -DCMAKE_CXX_FLAGS=" \
-                            -Wno-error=deprecated-declarations \
-                          "
+                        --mixin << parameters.mixins >>
                       rm -f build_failed
                     fi
               - save_to_cache:
