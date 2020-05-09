@@ -27,10 +27,6 @@
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
-#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
