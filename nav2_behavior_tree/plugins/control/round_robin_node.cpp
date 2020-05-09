@@ -46,11 +46,11 @@ public:
           current_child_idx_ = 0;
         }
 
-        haltChildren(0);
+        ControlNode::haltChildren();
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:
-        haltChildren(0);
+        ControlNode::haltChildren();
         return BT::NodeStatus::FAILURE;
 
       case BT::NodeStatus::RUNNING:
