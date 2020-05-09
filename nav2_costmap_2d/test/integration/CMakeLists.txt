@@ -10,7 +10,7 @@ target_link_libraries(footprint_tests_exec
 )
 
 ament_add_gtest_executable(test_collision_checker_exec
-  test_collision_checker.cpp
+  test_costmap_topic_collision_checker.cpp
 )
 ament_target_dependencies(test_collision_checker_exec
   ${dependencies}

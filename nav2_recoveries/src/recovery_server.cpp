@@ -71,7 +71,7 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
     shared_from_this(), footprint_topic, 1.0);
-  collision_checker_ = std::make_shared<nav2_costmap_2d::CollisionChecker>(
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), "odom");
 
   this->get_parameter("plugin_names", plugin_names_);

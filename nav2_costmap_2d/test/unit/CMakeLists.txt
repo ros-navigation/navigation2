@@ -3,7 +3,7 @@ target_link_libraries(array_parser_test
   nav2_costmap_2d_core
 )
 
-ament_add_gtest(collision_footprint_test collision_footprint_test.cpp)
+ament_add_gtest(collision_footprint_test footprint_collision_checker_test.cpp)
 target_link_libraries(collision_footprint_test
-  nav2_costmap_2d_standalone
+  nav2_costmap_2d_core
 )

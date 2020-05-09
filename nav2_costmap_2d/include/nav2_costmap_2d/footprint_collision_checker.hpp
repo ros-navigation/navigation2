@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivang Patel
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Modified by: Shivang Patel (shivaang14@gmail.com)
 
-#ifndef NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_
-#define NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_
+#ifndef NAV2_COSTMAP_2D__FOOTPRINT_COLLISION_CHECKER_HPP_
+#define NAV2_COSTMAP_2D__FOOTPRINT_COLLISION_CHECKER_HPP_
 
 #include <string>
 #include <vector>
@@ -24,9 +26,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_costmap_2d/collision_base.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/robot_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -35,18 +34,24 @@
 
 namespace nav2_costmap_2d
 {
-class CollisionFootprint : public CollisionBase
+typedef std::vector<geometry_msgs::msg::Point> Footprint;
+
+class FootprintCollisionChecker
 {
 public:
-  CollisionFootprint(std::shared_ptr<Costmap2D> costmap);
-  double footprintCostWithPose(double x, double y, double theta, const Footprint footprint);
-  void worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) override;
-  double pointCost(int x, int y) const override;
+  FootprintCollisionChecker();
+  explicit FootprintCollisionChecker(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap);
+  double footprintCost(const Footprint footprint);
+  double footprintCostAtPose(double x, double y, double theta, const Footprint footprint);
+  double lineCost(int x0, int x1, int y0, int y1) const;
+  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
+  double pointCost(int x, int y) const;
+  void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap);
 
 private:
-  std::shared_ptr<Costmap2D> costmap_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 };
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COLLISION_FOOTPRINT_HPP_
+#endif  // NAV2_COSTMAP_2D__FOOTPRINT_COLLISION_CHECKER_HPP_

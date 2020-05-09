@@ -47,6 +47,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/costmap_layer.cpp
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
+  src/footprint_collision_checker.cpp
 )
 
 # prevent pluginlib from using boost
@@ -94,8 +95,7 @@ target_link_libraries(layers
 add_library(nav2_costmap_2d_client SHARED
   src/footprint_subscriber.cpp
   src/costmap_subscriber.cpp
-  src/collision_checker.cpp
-  src/collision_base.cpp
+  src/costmap_topic_collision_checker.cpp
 )
 
 ament_target_dependencies(nav2_costmap_2d_client
@@ -103,19 +103,6 @@ ament_target_dependencies(nav2_costmap_2d_client
 )
 
 target_link_libraries(nav2_costmap_2d_client
-  nav2_costmap_2d_core
-)
-
-add_library(nav2_costmap_2d_standalone SHARED
-  src/collision_footprint.cpp
-  src/collision_base.cpp
-)
-
-ament_target_dependencies(nav2_costmap_2d_standalone
-  ${dependencies}
-)
-
-target_link_libraries(nav2_costmap_2d_standalone
   nav2_costmap_2d_core
 )
 
@@ -179,7 +166,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(layers nav2_costmap_2d_core nav2_costmap_2d_client nav2_costmap_2d_standalone)
+ament_export_libraries(layers nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()
