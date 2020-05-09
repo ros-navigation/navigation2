@@ -104,9 +104,7 @@ bool FootprintCollisionChecker::worldToMap(
 
 double FootprintCollisionChecker::pointCost(int x, int y) const
 {
-  auto value = costmap_->getCost(x, y);
-  RCLCPP_INFO(rclcpp::get_logger("TEST"), "CALLED: [%d, %d] %f", x, y, value);
-  return value;
+  return costmap_->getCost(x, y);
 }
 
 void FootprintCollisionChecker::setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
