@@ -1,5 +1,5 @@
 parsers:
-  lcov:
+  gcov:
     branch_detection:
       conditional: no
       loop: no
