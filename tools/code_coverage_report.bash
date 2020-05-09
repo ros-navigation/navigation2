@@ -43,20 +43,20 @@ mkdir -p $LCOVDIR
 lcov --capture --initial \
   --directory build \
   --output-file ${LCOVDIR}/initial_coverage.info \
-  --rc lcov_branch_coverage=1
+  --rc lcov_branch_coverage=0
 
 # Capture executed code data.
 lcov --capture \
   --directory build \
   --output-file ${LCOVDIR}/test_coverage.info \
-  --rc lcov_branch_coverage=1
+  --rc lcov_branch_coverage=0
 
 # Combine the initial zero-coverage report with the executed lines report.
 lcov \
   --add-tracefile ${LCOVDIR}/initial_coverage.info \
   --add-tracefile ${LCOVDIR}/test_coverage.info \
   --output-file ${LCOVDIR}/full_coverage.info \
-  --rc lcov_branch_coverage=1
+  --rc lcov_branch_coverage=0
 
 # Only include files that are within this workspace.
 # (eg filter out stdio.h etc)
@@ -64,7 +64,7 @@ lcov \
   --extract ${LCOVDIR}/full_coverage.info \
     "${PWD}/*" \
   --output-file ${LCOVDIR}/workspace_coverage.info \
-  --rc lcov_branch_coverage=1
+  --rc lcov_branch_coverage=0
 
 # Remove files in the build subdirectory.
 # Those are generated files (like messages, services, etc)
@@ -81,7 +81,7 @@ lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/*/nav2_system_tests/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
-  --rc lcov_branch_coverage=1
+  --rc lcov_branch_coverage=0
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   bash <(curl -s https://codecov.io/bash) \
@@ -89,6 +89,5 @@ if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
     -R src/navigation2
 elif [ $COVERAGE_REPORT_VIEW = genhtml ]; then
   genhtml ${LCOVDIR}/project_coverage.info \
-    --output-directory ${LCOVDIR}/html \
-    --branch-coverage -p ${PWD}
+    --output-directory ${LCOVDIR}/html
 fi
