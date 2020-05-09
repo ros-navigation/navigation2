@@ -2,42 +2,42 @@
 # It also expects to be contained in the /navigation2 root folder for file copy
 #
 # Example build command:
-# export CMAKE_BUILD_TYPE=Debug
+# export FROM_IMAGE="ros:foxy"
+# export OVERLAY_MIXINS="release ccache"
 # docker build -t nav2:release_branch \
-#   --build-arg FROM_IMAGE=dashing \
-#   --build-arg CMAKE_BUILD_TYPE \
+#   --build-arg FROM_IMAGE \
+#   --build-arg OVERLAY_MIXINS \
 #   -f Dockerfile.release_branch ./
 
-ARG FROM_IMAGE=dashing
-FROM ros:$FROM_IMAGE
+ARG FROM_IMAGE=ros:foxy
+ARG OVERLAY_WS=/opt/overlay_ws
+
+FROM $FROM_IMAGE
 
 RUN rosdep update
 
-# copy ros package repo
-ENV NAV2_WS /opt/nav2_ws
-RUN mkdir -p $NAV2_WS/src
-WORKDIR $NAV2_WS/src
-COPY ./ navigation2/
+# copy overlay source
+ARG OVERLAY_WS
+WORKDIR $OVERLAY_WS/src
+COPY ./ ./navigation2
 
-# install navigation2 package dependencies
-WORKDIR $NAV2_WS
+# install overlay dependencies
+WORKDIR $OVERLAY_WS
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    apt-get update && \
-    rosdep install -q -y \
-      --from-paths \
-        src \
+    apt-get update && rosdep install -q -y \
+      --from-paths src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# build navigation2 package source
-ARG CMAKE_BUILD_TYPE=Release
+# build overlay source
+ARG OVERLAY_MIXINS="release ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
-      --cmake-args \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+      --mixin $OVERLAY_MIXINS
 
-# source navigation2 workspace from entrypoint
-RUN sed --in-place --expression \
-      '$isource "$NAV2_WS/install/setup.bash"' \
+# source overlay from entrypoint
+ENV OVERLAY_WS $OVERLAY_WS
+RUN sed --in-place \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
