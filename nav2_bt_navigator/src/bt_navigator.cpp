@@ -174,7 +174,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   plugin_lib_names_.clear();
   xml_string_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_.root_node);
+  bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
@@ -229,7 +229,7 @@ BtNavigator::navigateToPose()
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.root_node);
+  bt_->haltAllActions(tree_.rootNode());
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
