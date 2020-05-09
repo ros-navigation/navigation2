@@ -87,3 +87,16 @@ ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
+
+# ARG RUN_TESTS
+# ARG FAIL_ON_TEST_FAILURE
+# RUN if [ -z "$RUN_TESTS" ]; then \
+#         colcon test \
+#           --mixin $OVERLAY_MIXINS \
+#           --ctest-args --test-regex "test_.*"; \
+#         if [ -z "$FAIL_ON_TEST_FAILURE" ]; then \
+#             colcon test-result; \
+#         else \
+#             colcon test-result || true; \
+#         fi \
+#     fi
