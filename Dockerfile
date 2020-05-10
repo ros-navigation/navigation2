@@ -65,10 +65,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
       --event-handlers console_direct+ \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+    || if [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+        exit 1; \
+      fi
 
 # install overlay dependencies
 ARG OVERLAY_WS
@@ -91,10 +90,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+    || if [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+        exit 1; \
+      fi
 
 # source overlay from entrypoint
 ENV UNDERLAY_WS $UNDERLAY_WS

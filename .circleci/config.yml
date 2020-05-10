@@ -103,16 +103,17 @@ _commands:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
                   command: |
-                    if [ -d install ] && [ ! -f build_failed ]
+                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished)
+                    BUILD_FAILED=$(colcon list --packages-select-build-failed)
+                    if [ -n "$BUILD_UNFINISHED" ] || [ -n "$BUILD_FAILED" ]
                     then
-                      echo "Skipping Build"
-                    else
                       . << parameters.underlay >>/install/setup.sh
                       rm -rf build install log
                       colcon build \
                         --symlink-install \
                         --mixin << parameters.mixins >>
-                      rm -f build_failed
+                    else
+                      echo "Skipping Build"
                     fi
               - save_to_cache:
                   key: << parameters.key >>
