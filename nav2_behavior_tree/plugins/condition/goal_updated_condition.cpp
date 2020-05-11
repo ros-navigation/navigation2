@@ -39,15 +39,16 @@ public:
   {
     if (status() == BT::NodeStatus::IDLE) {
       goal_ = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-      setStatus(BT::NodeStatus::FAILURE);
-    } else {
-      auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-      if (goal_ != current_goal) {
-        goal_ = current_goal;
-        setStatus(BT::NodeStatus::SUCCESS);
-      }
+      return BT::NodeStatus::FAILURE;
     }
-    return status();
+
+    auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
+    if (goal_ != current_goal) {
+      goal_ = current_goal;
+      return BT::NodeStatus::SUCCESS;
+    }
+
+    return BT::NodeStatus::FAILURE;
   }
 
   static BT::PortsList providedPorts()

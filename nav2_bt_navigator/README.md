@@ -60,7 +60,9 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 
 * Recovery: This is a control flow type node with two children.  It returns success if and only if the first child returns success. The second child will be executed only if the first child returns failure.  The second child is responsible for recovery actions such as re-initializing system or other recovery behaviors. If the recovery behaviors are succeeded, then the first child will be executed again.  The user can specify how many times the recovery actions should be taken before returning failure. The figure below depicts a simple recovery node.
 
-<img src="./doc/recovery_node.png" title="" width="40%" align="middle">
+<p align="center">
+<img src="./doc/recovery_node.png" title="" width="40%">
+</p>
 <br/>
 
 
@@ -75,31 +77,51 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 
 The graphical version of this Behavior Tree:
 
-<img src="./doc/simple_parallel.png" title="" width="65%" align="middle">
+<p align="center">
+<img src="./doc/simple_parallel.png" title="" width="40%">
+</p>
 <br/>
 
 The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_id` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
 
 ### Navigate with replanning and simple recovery actions
 
-With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps and `spin`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below.
+With the recovery node, simple recoverable navigation with replanning can be implemented by utilizing the [navigate_w_replanning.xml](behavior_trees/navigate_w_replanning.xml) and a sequence of recovery actions. Our custom behavior actions for recovery are:  `clearEntirelyCostmapServiceRequest` for both global and local costmaps, `spin` and `wait`. A graphical version of this simple recoverable Behavior Tree is depicted in the figure below.
 
-<img src="./doc/parallel_w_recovery.png" title="" width="95%" align="middle">
+<p align="center">
+<img src="./doc/parallel_w_recovery.png" title="" width="95%">
+</p>
 <br/>
 
 
 This tree is currently our default tree in the stack and the xml file is located here: [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).
 
-## Multi-Scope Recoveries
+
+#### Recovery behaviours and condition nodes
+The recovery behaviours can be grouped with condition nodes to be able to react to changes in the environment. In the default tree in the stack, the recovery actions are cancelled when the a new navigation goal is set thanks to the following structure:
+
+<p align="center">
+<img src="./doc/recovery_w_goal_updated.png" title="" width="40%">
+</p>
+
+Using a reactive fallback control node, the recovery actions can be interrupted if a new goal is sent to the bt_navigator. Similar structures can be used to add other conditions that can cancel the recoveries if necessary, such as timeouts.
+
+
+#### Multi-Scope Recoveries
 Scope-based failure handling: Utilizing Behavior Trees with a recovery node allows one to handle failures at multiple scopes. With this capability, any action in a large system can be constructed with specific recovery actions suitable for that action. Thus, failures in these actions can be handled locally within the scope. With such design, a system can be recovered at multiple levels based on the nature of the failure. Higher level recovery actions could be recovery actions such as re-initializing the system, re-calibrating the robot, bringing the system to a good known state, etc.
 
 ### Navigate with replanning and simple Multi-Scope Recoveries
 In the navigation stack, multi-scope recovery actions are implemented for each module.  Currently, the recovery actions for the Global planner are: Clear Entire Global Costmap and Wait.  The recovery actions for the Local planner are: Clear Entire Local Costmap and Spin; the recovery actions for the system level is just Wait. The figure below highlights a simple multi-scope recovery handling for the navigation task.  With this tree, if the Global Planner fails, the ClearEntireCostmap which is the first recovery action for this module will be ticked, then the ComputePathToPose will be ticked again. If the ComputePathToPose fails again, the Wait which is the second recovery action for this module will be ticked. After trying the second recovery action, the ComputePathToPose will be ticked again. These actions can be repeated n times until ComputePathToPose succeeds.  If the ComputePathToPose fails and the Global Planner cannot be recovered locally, the higher-level recovery actions will be ticked.  In this simple example, our higher-level recovery action is just a longer wait. The same strategy is applied to the Local Planner. If the Local Planner fails, the tree will first tick the ClearEntireCostmap and then if it fails again the tree will tick the Spin.
 
-<img src="./doc/parallel_w_round_robin_recovery.png" title="" width="95%" align="middle">
 <br/>
 
+<p align="center">
+<img src="./doc/parallel_w_round_robin_recovery.png" title="" width="95%">
+</p>
+
 This tree currently is not our default tree in the stack. The xml file is located here: [navigate_w_replanning_and_round_robin_recovery.xml](behavior_trees/navigate_w_replanning_and_round_robin_recovery.xml).
+
+<br/>
 
 ## Open Issues
 
