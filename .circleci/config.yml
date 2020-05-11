@@ -74,6 +74,10 @@ references:
                 rosdep install -q -y \
                   --from-paths src \
                   --ignore-src \
+                  --skip-keys " \
+                    gazebo11 \
+                    libgazebo11-dev \
+                  " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
@@ -276,10 +280,6 @@ references:
       file: lcov/project_coverage.info
       flags: project
       when: always
-  install_deployment_key: &install_deployment_key
-    add_ssh_keys:
-      fingerprints:
-        - "0e:8e:90:bf:3d:a9:04:d9:04:b4:62:38:a5:3b:90:7d"
 
 commands:
   <<: *common_commands
@@ -393,14 +393,14 @@ workflows:
             - release_build
   nightly:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
+      # - debug_build
+      # - debug_test:
+      #     requires:
+      #       - debug_build
       - release_build
-      - test_rmw_connext_cpp:
-          requires:
-            - release_build
+      # - test_rmw_connext_cpp:
+      #     requires:
+      #       - release_build
       - test_rmw_cyclonedds_cpp:
           requires:
             - release_build

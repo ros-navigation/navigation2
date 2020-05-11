@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
@@ -346,8 +347,8 @@ void ControllerServer::updateGlobalPath()
 
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
-  auto cmd_vel = velocity.twist;
-  vel_publisher_->publish(cmd_vel);
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(velocity.twist);
+  vel_publisher_->publish(std::move(cmd_vel));
 }
 
 void ControllerServer::publishZeroVelocity()

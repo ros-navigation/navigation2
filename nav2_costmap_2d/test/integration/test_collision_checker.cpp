@@ -128,12 +128,15 @@ public:
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
     // Add Static Layer
-    auto slayer = addStaticLayer(*layers_, *tf_buffer_, shared_from_this());
+    std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
+    addStaticLayer(*layers_, *tf_buffer_, shared_from_this(), slayer);
+
     while (!slayer->isCurrent()) {
       rclcpp::spin_some(this->get_node_base_interface());
     }
     // Add Inflation Layer
-    addInflationLayer(*layers_, *tf_buffer_, shared_from_this());
+    std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
+    addInflationLayer(*layers_, *tf_buffer_, shared_from_this(), ilayer);
 
     return nav2_util::CallbackReturn::SUCCESS;
   }

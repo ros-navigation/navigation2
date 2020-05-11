@@ -21,6 +21,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -203,12 +204,12 @@ protected:
 
   void stopRobot()
   {
-    geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
-    cmd_vel.linear.y = 0.0;
-    cmd_vel.angular.z = 0.0;
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+    cmd_vel->linear.x = 0.0;
+    cmd_vel->linear.y = 0.0;
+    cmd_vel->angular.z = 0.0;
 
-    vel_pub_->publish(cmd_vel);
+    vel_pub_->publish(std::move(cmd_vel));
   }
 };
 

@@ -151,8 +151,10 @@ private:
   // Service for getting the costmaps
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
 
-  nav_msgs::msg::OccupancyGrid grid_;
-  nav2_msgs::msg::Costmap costmap_raw_;
+  float grid_resolution;
+  unsigned int grid_width, grid_height;
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> grid_;
+  std::unique_ptr<nav2_msgs::msg::Costmap> costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.
   static char * cost_translation_table_;
 };

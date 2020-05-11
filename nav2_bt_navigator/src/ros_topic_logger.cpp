@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <utility>
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 #include "tf2_ros/buffer_interface.h"
@@ -21,7 +22,7 @@ namespace nav2_bt_navigator
 
 RosTopicLogger::RosTopicLogger(
   const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree)
-: StatusChangeLogger(tree.root_node), ros_node_(ros_node)
+: StatusChangeLogger(tree.rootNode()), ros_node_(ros_node)
 {
   log_pub_ = ros_node_->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
     "behavior_tree_log",
@@ -56,10 +57,10 @@ void RosTopicLogger::callback(
 void RosTopicLogger::flush()
 {
   if (event_log_.size() > 0) {
-    nav2_msgs::msg::BehaviorTreeLog log_msg;
-    log_msg.timestamp = ros_node_->now();
-    log_msg.event_log = event_log_;
-    log_pub_->publish(log_msg);
+    auto log_msg = std::make_unique<nav2_msgs::msg::BehaviorTreeLog>();
+    log_msg->timestamp = ros_node_->now();
+    log_msg->event_log = event_log_;
+    log_pub_->publish(std::move(log_msg));
     event_log_.clear();
   }
 }
