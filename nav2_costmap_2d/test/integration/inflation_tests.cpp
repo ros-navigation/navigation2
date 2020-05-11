@@ -72,12 +72,12 @@ public:
   void validatePointInflation(
     unsigned int mx, unsigned int my,
     nav2_costmap_2d::Costmap2D * costmap,
-    nav2_costmap_2d::InflationLayer * ilayer,
+    std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer,
     double inflation_radius);
 
   void initNode(double inflation_radius);
 
-  void waitForMap(nav2_costmap_2d::StaticLayer * slayer);
+  void waitForMap(std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer);
 
 protected:
   nav2_util::LifecycleNode::SharedPtr node_;
@@ -106,7 +106,7 @@ std::vector<Point> TestNode::setRadii(
   return polygon;
 }
 
-void TestNode::waitForMap(nav2_costmap_2d::StaticLayer * slayer)
+void TestNode::waitForMap(std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer)
 {
   while (!slayer->isCurrent()) {
     rclcpp::spin_some(node_->get_node_base_interface());
@@ -117,7 +117,7 @@ void TestNode::waitForMap(nav2_costmap_2d::StaticLayer * slayer)
 void TestNode::validatePointInflation(
   unsigned int mx, unsigned int my,
   nav2_costmap_2d::Costmap2D * costmap,
-  nav2_costmap_2d::InflationLayer * ilayer,
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer,
   double inflation_radius)
 {
   bool * seen = new bool[costmap->getSizeInCellsX() * costmap->getSizeInCellsY()];
@@ -206,7 +206,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
   //               circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
@@ -234,7 +234,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   // circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
@@ -260,8 +260,8 @@ TEST_F(TestNode, testCostFunctionCorrectness)
   //               circumscribed radius = 8.0
   std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
+  auto ilayer = addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   addObservation(olayer, 50, 50, MAX_Z);
@@ -331,8 +331,8 @@ TEST_F(TestNode, testInflationOrderCorrectness)
   //               circumscribed radius = 3.1
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
-  nav2_costmap_2d::InflationLayer * ilayer = addInflationLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
+  auto ilayer = addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
   // Add two diagonal cells, they would induce problems under the
@@ -360,7 +360,7 @@ TEST_F(TestNode, testInflation)
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
   auto slayer = addStaticLayer(layers, tf, node_);
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
@@ -433,7 +433,7 @@ TEST_F(TestNode, testInflation2)
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
   auto slayer = addStaticLayer(layers, tf, node_);
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 
@@ -464,7 +464,7 @@ TEST_F(TestNode, testInflation3)
   // 1 2 3
   std::vector<Point> polygon = setRadii(layers, 1, 1.75);
 
-  nav2_costmap_2d::ObstacleLayer * olayer = addObstacleLayer(layers, tf, node_);
+  auto olayer = addObstacleLayer(layers, tf, node_);
   addInflationLayer(layers, tf, node_);
   layers.setFootprint(polygon);
 

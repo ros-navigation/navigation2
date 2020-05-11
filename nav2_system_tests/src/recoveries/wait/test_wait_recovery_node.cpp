@@ -71,7 +71,8 @@ INSTANTIATE_TEST_CASE_P(
   ::testing::Values(
     std::make_tuple(1.0, 0.0),
     std::make_tuple(2.0, 0.0),
-    std::make_tuple(5.0, 0.0)), );
+    std::make_tuple(5.0, 0.0)),
+  testing::PrintToStringParamName());
 
 int main(int argc, char ** argv)
 {
