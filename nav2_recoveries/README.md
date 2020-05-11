@@ -8,16 +8,10 @@ The `nav2_recoveries` package implements, as the name suggests, a module for exe
 
 The package defines:
 - A `Recovery` template which is used as a base class to implement specific recovery.
-- The `BackUp`, `Spin` and `Stop` recoveries.
 
 ## Overview
 
 *Recovery* define simple predictable movements that components can leverage for defining more complex behavior. For example, `nav2` uses recoveries for executing recovery behaviors, such as the ones defined on the [BtNavigator](../nav2_bt_navigator/README.md##Recovery-Behavior-Trees).
-
-Currently the package provides the following recoveries:
-- **Spin** performs an in-place rotation by a given angle.
-- **Back Up** performs an linear translation by a given distance.
-- **Stop** brings the robot to a stationary state.
 
 ## Implementation
 
