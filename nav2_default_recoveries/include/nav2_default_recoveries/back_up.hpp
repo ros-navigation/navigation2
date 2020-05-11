@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
-#define NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
+#ifndef NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_
+#define NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_
 
 #include <chrono>
 #include <memory>
@@ -55,4 +55,4 @@ protected:
 
 }  // namespace nav2_recoveries
 
-#endif  // NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
+#endif  // NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_

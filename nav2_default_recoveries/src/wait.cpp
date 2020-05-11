@@ -16,7 +16,7 @@
 #include <chrono>
 #include <memory>
 
-#include "wait.hpp"
+#include "nav2_default_recoveries/wait.hpp"
 
 namespace nav2_recoveries
 {

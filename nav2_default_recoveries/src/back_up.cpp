@@ -17,7 +17,7 @@
 #include <memory>
 #include <utility>
 
-#include "back_up.hpp"
+#include "nav2_default_recoveries/back_up.hpp"
 #include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;

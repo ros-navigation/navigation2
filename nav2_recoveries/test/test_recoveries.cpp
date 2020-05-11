@@ -98,7 +98,7 @@ protected:
   RecoveryTest() {SetUp();}
   ~RecoveryTest() {}
 
-  void SetUp()
+  void SetUp() override
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
@@ -157,7 +157,7 @@ protected:
     auto future_goal = client_->async_send_goal(goal);
 
     if (rclcpp::spin_until_future_complete(node_lifecycle_, future_goal) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       std::cout << "failed sending goal" << std::endl;
       // failed sending the goal
