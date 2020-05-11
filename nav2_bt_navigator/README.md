@@ -97,7 +97,7 @@ With the recovery node, simple recoverable navigation with replanning can be imp
 This tree is currently our default tree in the stack and the xml file is located here: [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).
 
 
-#### Halting recoveries on navigation goal preemption
+#### Halting recoveries on navigation goal (Preemption reference design)
 In general, the recovery behaviours should be halted when the navigation goal is preempted. In the default tree in the stack, this behaviour is accomplished using a condition node checking the global navigation goal and a reactive fallback controll node:
 
 <p align="center">
