@@ -104,7 +104,7 @@ In general, the recovery behaviours and any other long running process should be
 <img src="./doc/recovery_w_goal_updated.png" title="" width="40%">
 </p>
 
-This way, the recovery actions can be interrupted if a new goal is sent to the bt_navigator. Adding other condition nodes to this structure, it is possible to halt the recoveries in other cases (e.g, giving a time limit for their execution). This is the recommended structure for halting a node or tree branch under specific conditions. Please notice that the order of definition of the nodes in the xml file can alter the behaviour of this structure, and that all conditions should be placed before the recovery behaviour node or branch.
+This way, the recovery actions can be interrupted if a new goal is sent to the bt_navigator. Adding other condition nodes to this structure, it is possible to halt the recoveries in other cases (e.g, giving a time limit for their execution). This is the recommended design pattern for preempting a node or tree branch under specific conditions such as a new navigation request. Please notice that the order of definition of the nodes in the xml file can alter the behaviour of this structure, and that all conditions should be placed before the recovery behaviour node or branch.
 
 
 #### Multi-Scope Recoveries
