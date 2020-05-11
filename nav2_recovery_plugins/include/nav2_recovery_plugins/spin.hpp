@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DEFAULT_RECOVERIES__SPIN_HPP_
-#define NAV2_DEFAULT_RECOVERIES__SPIN_HPP_
+#ifndef NAV2_RECOVERY_PLUGINS__SPIN_HPP_
+#define NAV2_RECOVERY_PLUGINS__SPIN_HPP_
 
 #include <chrono>
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recovery/recovery.hpp"
 #include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 using SpinAction = nav2_msgs::action::Spin;
 
@@ -52,6 +52,6 @@ protected:
   double simulate_ahead_time_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
-#endif  // NAV2_DEFAULT_RECOVERIES__SPIN_HPP_
+#endif  // NAV2_RECOVERY_PLUGINS__SPIN_HPP_

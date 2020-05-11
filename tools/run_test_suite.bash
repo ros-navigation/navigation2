@@ -5,10 +5,10 @@ set -ex
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  # gets the directory of this script
 
 # Skip flaky tests. Nav2 system tests will be run later.
-colcon test --packages-skip nav2_system_tests nav2_recoveries
+colcon test --packages-skip nav2_system_tests nav2_recovery
 
-# run the stable tests in nav2_recoveries
-colcon test --packages-select nav2_recoveries --ctest-args --exclude-regex "test_recoveries"
+# run the stable tests in nav2_recovery
+colcon test --packages-select nav2_recovery --ctest-args --exclude-regex "test_recovery"
 
 # run the linters in nav2_system_tests. They only need to be run once.
 colcon test --packages-select nav2_system_tests --ctest-args --exclude-regex "test_.*"  # run the linters

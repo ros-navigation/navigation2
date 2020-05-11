@@ -25,8 +25,8 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/recovery.hpp"
 
-#ifndef NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
-#define NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
+#ifndef NAV2_RECOVERY__RECOVERY_SERVER_HPP_
+#define NAV2_RECOVERY__RECOVERY_SERVER_HPP_
 
 namespace recovery_server
 {
@@ -64,4 +64,4 @@ protected:
 
 }  // namespace recovery_server
 
-#endif  // NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
+#endif  // NAV2_RECOVERY__RECOVERY_SERVER_HPP_

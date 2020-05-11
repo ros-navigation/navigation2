@@ -17,12 +17,12 @@
 #include <memory>
 #include <utility>
 
-#include "nav2_default_recoveries/back_up.hpp"
+#include "nav2_recovery_plugins/back_up.hpp"
 #include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 
 BackUp::BackUp()
@@ -126,7 +126,7 @@ bool BackUp::isCollisionFree(
   return true;
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::BackUp, nav2_core::Recovery)
+PLUGINLIB_EXPORT_CLASS(nav2_recovery::BackUp, nav2_core::Recovery)

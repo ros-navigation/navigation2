@@ -20,8 +20,8 @@
   <exec_depend>nav2_dwb_controller</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
-  <exec_depend>nav2_recoveries</exec_depend>
-  <exec_depend>nav2_default_recoveries</exec_depend>
+  <exec_depend>nav2_recovery</exec_depend>
+  <exec_depend>nav2_recovery_plugins</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_navfn_planner</exec_depend>

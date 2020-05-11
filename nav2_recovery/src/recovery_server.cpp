@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "nav2_recoveries/recovery_server.hpp"
+#include "nav2_recovery/recovery_server.hpp"
 
 namespace recovery_server
 {
 
 RecoveryServer::RecoveryServer()
-: nav2_util::LifecycleNode("nav2_recoveries", "", true),
+: nav2_util::LifecycleNode("nav2_recovery", "", true),
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
   declare_parameter(
@@ -35,9 +35,9 @@ RecoveryServer::RecoveryServer()
 
   std::vector<std::string> plugin_names{std::string("spin"),
     std::string("back_up"), std::string("wait")};
-  std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/BackUp"),
-    std::string("nav2_recoveries/Wait")};
+  std::vector<std::string> plugin_types{std::string("nav2_recovery/Spin"),
+    std::string("nav2_recovery/BackUp"),
+    std::string("nav2_recovery/Wait")};
 
   declare_parameter(
     "plugin_names",

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_recoveries</name>
+  <name>nav2_recovery_plugins</name>
   <version>0.3.4</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
@@ -12,16 +12,17 @@
   <build_depend>nav2_common</build_depend>
 
   <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_action</build_depend>
+  <build_depend>nav2_recovery</build_depend>
   <build_depend>nav2_util</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>tf2</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav2_core</build_depend>
   <build_depend>pluginlib</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_action</exec_depend>
+  <exec_depend>nav2_recovery</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
@@ -34,5 +35,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/recovery_plugins.xml" />
   </export>
 </package>

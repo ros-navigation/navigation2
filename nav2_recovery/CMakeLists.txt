@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_recoveries)
+project(nav2_recovery)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -18,8 +18,8 @@ include_directories(
   include
 )
 
-set(library_name recoveries_server_core)
-set(executable_name recoveries_server)
+set(library_name recovery_server_core)
+set(executable_name recovery_server)
 
 set(dependencies
   rclcpp

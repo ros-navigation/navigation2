@@ -16,9 +16,9 @@
 #include <chrono>
 #include <memory>
 
-#include "nav2_default_recoveries/wait.hpp"
+#include "nav2_recovery_plugins/wait.hpp"
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 
 Wait::Wait()
@@ -50,7 +50,7 @@ Status Wait::onCycleUpdate()
   }
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Wait, nav2_core::Recovery)
+PLUGINLIB_EXPORT_CLASS(nav2_recovery::Wait, nav2_core::Recovery)

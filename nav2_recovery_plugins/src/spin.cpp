@@ -20,7 +20,7 @@
 #include <memory>
 #include <utility>
 
-#include "nav2_default_recoveries/spin.hpp"
+#include "nav2_recovery_plugins/spin.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -31,7 +31,7 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 
 Spin::Spin()
@@ -157,7 +157,7 @@ bool Spin::isCollisionFree(
   return true;
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Spin, nav2_core::Recovery)
+PLUGINLIB_EXPORT_CLASS(nav2_recovery::Spin, nav2_core::Recovery)

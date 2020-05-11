@@ -16,15 +16,15 @@
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/recovery_server.hpp"
+#include "nav2_recovery/recovery_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto recoveries_node = std::make_shared<recovery_server::RecoveryServer>();
+  auto recovery_node = std::make_shared<recovery_server::RecoveryServer>();
 
-  rclcpp::spin(recoveries_node->get_node_base_interface());
+  rclcpp::spin(recovery_node->get_node_base_interface());
   rclcpp::shutdown();
 
   return 0;

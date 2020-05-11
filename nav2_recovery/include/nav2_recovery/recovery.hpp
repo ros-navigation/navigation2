@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__RECOVERY_HPP_
-#define NAV2_RECOVERIES__RECOVERY_HPP_
+#ifndef NAV2_RECOVERY__RECOVERY_HPP_
+#define NAV2_RECOVERY__RECOVERY_HPP_
 
 #include <memory>
 #include <string>
@@ -31,7 +31,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_core/recovery.hpp"
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 
 enum class Status : int8_t
@@ -213,6 +213,6 @@ protected:
   }
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
-#endif  // NAV2_RECOVERIES__RECOVERY_HPP_
+#endif  // NAV2_RECOVERY__RECOVERY_HPP_

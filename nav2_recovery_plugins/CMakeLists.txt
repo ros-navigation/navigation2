@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_default_recoveries)
+project(nav2_recovery_plugins)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_recoveries REQUIRED)
+find_package(nav2_recovery REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -23,7 +23,7 @@ include_directories(
 set(dependencies
   rclcpp
   std_msgs
-  nav2_recoveries
+  nav2_recovery
   nav2_util
   nav2_msgs
   tf2
@@ -34,22 +34,22 @@ set(dependencies
 )
 
 # plugins
-add_library(nav2_default_recoveries SHARED
+add_library(nav2_recovery_plugins SHARED
   src/spin.cpp
   src/back_up.cpp
   src/wait.cpp
 )
 
-ament_target_dependencies(nav2_default_recoveries
+ament_target_dependencies(nav2_recovery_plugins
   ${dependencies}
 )
 
 # prevent pluginlib from using boost
-target_compile_definitions(nav2_default_recoveries PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(nav2_recovery_plugins PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core recovery_plugins.xml)
 
-install(TARGETS nav2_default_recoveries
+install(TARGETS nav2_recovery_plugins
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -70,5 +70,5 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2_default_recoveries)
+ament_export_libraries(nav2_recovery_plugins)
 ament_package()

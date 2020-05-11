@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_
-#define NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_
+#ifndef NAV2_RECOVERY_PLUGINS__BACK_UP_HPP_
+#define NAV2_RECOVERY_PLUGINS__BACK_UP_HPP_
 
 #include <chrono>
 #include <memory>
 
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recovery/recovery.hpp"
 #include "nav2_msgs/action/back_up.hpp"
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 using BackUpAction = nav2_msgs::action::BackUp;
 
@@ -53,6 +53,6 @@ protected:
   double simulate_ahead_time_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
-#endif  // NAV2_DEFAULT_RECOVERIES__BACK_UP_HPP_
+#endif  // NAV2_RECOVERY_PLUGINS__BACK_UP_HPP_

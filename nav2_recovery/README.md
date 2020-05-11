@@ -1,10 +1,6 @@
-**Warning**: As with the rest of `nav2`, this package is still in development and only works with Turtlebot 3 at the moment. Currently collision avoidance has not been integrated. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
+# Recovery
 
----
-
-# Recoveries
-
-The `nav2_recoveries` package implements, as the name suggests, a module for executing simple controlled robot movements such as rotating on its own axis or moving linearly.
+The `nav2_recovery` package implements, as the name suggests, a module for executing simple controlled robot movements such as rotating on its own axis or moving linearly.
 
 The package defines:
 - A `Recovery` template which is used as a base class to implement specific recovery.
@@ -106,7 +102,7 @@ For using recoveries within a behavior tree such as [bt_navigator](../nav2_bt_na
 
 - Check for collision before executing a recovery. Issues [379](https://github.com/ros-planning/navigation2/issues/379) and [533](https://github.com/ros-planning/navigation2/issues/533).
 - Remove the stop recovery, move the funcionality to the robot class. Issue [575](https://github.com/ros-planning/navigation2/issues/575)
-- Consider moving `nav2_recoveries` altogether to the `nav2_robot` package. Issue [378](https://github.com/ros-planning/navigation2/issues/378).
+- Consider moving `nav2_recovery` altogether to the `nav2_robot` package. Issue [378](https://github.com/ros-planning/navigation2/issues/378).
 - Depending on the feedback from the community we might want to develop this package to include a wide variety of recoveries (arcs) to support all kinds of task, navigation (lattice-based), docking, etc.
 - Define smooth transitions between motions. Issue [411](https://github.com/ros-planning/navigation2/issues/411).
 - Make the existing recoveries configurable for other robots.

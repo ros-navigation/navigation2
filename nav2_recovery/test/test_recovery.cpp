@@ -23,11 +23,11 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recovery/recovery.hpp"
 #include "nav2_msgs/action/dummy_recovery.hpp"
 
-using nav2_recoveries::Recovery;
-using nav2_recoveries::Status;
+using nav2_recovery::Recovery;
+using nav2_recovery::Status;
 using RecoveryAction = nav2_msgs::action::DummyRecovery;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<RecoveryAction>;
 

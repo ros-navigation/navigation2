@@ -76,7 +76,7 @@ void WaitRecoveryTester::activate()
     rclcpp::spin_some(node_);
   }
 
-  // Wait for lifecycle_manager_navigation to activate recoveries_server
+  // Wait for lifecycle_manager_navigation to activate recovery_server
   std::this_thread::sleep_for(10s);
 
   if (!client_ptr_) {

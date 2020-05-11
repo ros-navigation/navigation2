@@ -65,7 +65,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 
 | BT Node   |      Type      |  Description |
 |----------|:-------------|------|
-| Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. |
+| Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recovery module implements the BackUp action server. |
 | ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
 | FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. The server address can be remapped using the `server_name` input port. |
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
@@ -75,7 +75,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 | RateController | Decorator | A node that throttles the tick rate for its child. The tick rate can be supplied to the node as a parameter. The node returns RUNNING when it is not ticking its child. Currently, in the navigation stack, the `RateController` is used to adjust the rate at which the `ComputePathToPose` and `GoalReached` nodes are ticked. |
 | RandomCrawl | Action | This BT action invokes the RandomCrawl ROS2 action server, which is implemented by the nav2_experimental/nav2_rl/nav2_turtlebot3_rl (in the nav2_experimental branch) experimental module. The RandomCrawl action server will direct the robot to randomly navigate its environment without hitting any obstacles. |
 | RecoveryNode | Control | The RecoveryNode is a control flow node with two children.  It returns SUCCESS if and only if the first child returns SUCCESS. The second child will be executed only if the first child returns FAILURE. If the second child SUCCEEDS, then the first child will be executed again. The user can specify how many times the recovery actions should be taken before returning FAILURE. In nav2, the RecoveryNode is included in Behavior Trees to implement recovery actions upon failures.
-| Spin | Action | Invokes the Spin ROS2 action server, which is implemented by the nav2_recoveries module. This action is using in nav2 Behavior Trees as a recovery behavior. |
+| Spin | Action | Invokes the Spin ROS2 action server, which is implemented by the nav2_recovery module. This action is using in nav2 Behavior Trees as a recovery behavior. |
 | PipelineSequence | Control | Ticks the first child till it succeeds, then ticks the first and second children till the second one succeeds. It then ticks the first, second, and third children until the third succeeds, and so on, and so on. If at any time a child returns RUNNING, that doesn't change the behavior. If at any time a child returns FAILURE, that stops all children and returns FAILURE overall.|
 
 For more information about the behavior tree nodes that are available in the default BehaviorTreeCPP library, see documentation here: https://www.behaviortree.dev/bt_basics/

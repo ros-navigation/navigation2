@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_DEFAULT_RECOVERIES__WAIT_HPP_
-#define NAV2_DEFAULT_RECOVERIES__WAIT_HPP_
+#ifndef NAV2_RECOVERY_PLUGINS__WAIT_HPP_
+#define NAV2_RECOVERY_PLUGINS__WAIT_HPP_
 
 #include <chrono>
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recovery/recovery.hpp"
 #include "nav2_msgs/action/wait.hpp"
 
-namespace nav2_recoveries
+namespace nav2_recovery
 {
 using WaitAction = nav2_msgs::action::Wait;
 
@@ -40,6 +40,6 @@ protected:
   std::chrono::time_point<std::chrono::steady_clock> wait_end_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_recovery
 
-#endif  // NAV2_DEFAULT_RECOVERIES__WAIT_HPP_
+#endif  // NAV2_RECOVERY_PLUGINS__WAIT_HPP_

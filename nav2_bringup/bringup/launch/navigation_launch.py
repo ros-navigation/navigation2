@@ -36,7 +36,7 @@ def generate_launch_description():
 
     lifecycle_nodes = ['controller_server',
                        'planner_server',
-                       'recoveries_server',
+                       'recovery_server',
                        'bt_navigator',
                        'waypoint_follower']
 
@@ -110,9 +110,9 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
-            package='nav2_recoveries',
-            node_executable='recoveries_server',
-            node_name='recoveries_server',
+            package='nav2_recovery',
+            node_executable='recovery_server',
+            node_name='recovery_server',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
             remappings=remappings),
