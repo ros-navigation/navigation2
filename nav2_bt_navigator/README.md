@@ -98,7 +98,7 @@ This tree is currently our default tree in the stack and the xml file is located
 
 
 #### Halting recoveries on navigation goal (Preemption reference design)
-In general, the recovery behaviours should be halted when the navigation goal is preempted. In the default tree in the stack, this behaviour is accomplished using a condition node checking the global navigation goal and a reactive fallback controll node:
+In general, the recovery behaviours and any other long running process should be stopped when the navigation goal is issued (e.g. preemption). In the default tree in the stack, this behaviour is accomplished using a condition node checking the global navigation goal and a reactive fallback controller node:
 
 <p align="center">
 <img src="./doc/recovery_w_goal_updated.png" title="" width="40%">
