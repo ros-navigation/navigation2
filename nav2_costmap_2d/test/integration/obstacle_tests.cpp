@@ -327,7 +327,9 @@ TEST_F(TestNode, testMultipleAdditions) {
 TEST_F(TestNode, testRepeatedResets) {
   tf2_ros::Buffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-  addStaticLayer(layers, tf, node_);
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
+  addStaticLayer(layers, tf, node_, slayer);
 
   // TODO(orduno) Add obstacle layer
 
