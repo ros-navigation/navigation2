@@ -81,7 +81,6 @@ inline BT::NodeStatus DistanceController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
           RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
           return BT::NodeStatus::FAILURE;
@@ -90,7 +89,6 @@ inline BT::NodeStatus DistanceController::tick()
 
       case BT::NodeStatus::FAILURE:
       default:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
     }
   }

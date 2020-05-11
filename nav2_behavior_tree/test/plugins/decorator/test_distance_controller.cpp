@@ -92,7 +92,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
 {
   EXPECT_EQ(node_->status(), BT::NodeStatus::IDLE);
 
-  dummy_node_->setStatus(BT::NodeStatus::SUCCESS);
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
@@ -118,7 +118,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
       }
     }
 
-    dummy_node_->setStatus(BT::NodeStatus::SUCCESS);
+    dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
 
     if (i % 2) {
       EXPECT_EQ(node_->executeTick(), BT::NodeStatus::RUNNING);

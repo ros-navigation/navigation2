@@ -34,6 +34,11 @@ public:
   {
   }
 
+  void changeStatus(BT::NodeStatus status)
+  {
+    setStatus(status);
+  }
+
   BT::NodeStatus executeTick() override
   {
     return tick();
