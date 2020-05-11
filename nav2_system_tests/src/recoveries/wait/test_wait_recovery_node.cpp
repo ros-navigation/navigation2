@@ -16,6 +16,8 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <tuple>
+#include <string>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -24,6 +26,14 @@
 using namespace std::chrono_literals;
 
 using nav2_system_tests::WaitRecoveryTester;
+
+std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
+{
+  std::string name = std::to_string(std::abs(std::get<0>(param.param))) + "_" + std::to_string(
+    std::get<1>(param.param));
+  name.erase(std::remove(name.begin(), name.end(), '.'), name.end());
+  return name;
+}
 
 class WaitRecoveryTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
@@ -72,7 +82,7 @@ INSTANTIATE_TEST_CASE_P(
     std::make_tuple(1.0, 0.0),
     std::make_tuple(2.0, 0.0),
     std::make_tuple(5.0, 0.0)),
-  testing::PrintToStringParamName());
+  testNameGenerator);
 
 int main(int argc, char ** argv)
 {
