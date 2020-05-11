@@ -50,7 +50,7 @@ public:
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));  // allow node to start up
+    std::this_thread::sleep_for(std::chrono::seconds(10));  // allow node to start up
     const std::chrono::seconds timeout(5);
     lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE, timeout);
     lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, timeout);
