@@ -97,14 +97,14 @@ With the recovery node, simple recoverable navigation with replanning can be imp
 This tree is currently our default tree in the stack and the xml file is located here: [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).
 
 
-#### Recovery behaviours and condition nodes
-The recovery behaviours can be grouped with condition nodes to be able to react to changes in the environment. In the default tree in the stack, the recovery actions are cancelled when the a new navigation goal is set thanks to the following structure:
+#### Halting recoveries on navigation goal preemption
+In general, the recovery behaviours should be halted when the navigation goal is preempted. In the default tree in the stack, this behaviour is accomplished using a condition node checking the global navigation goal and a reactive fallback controll node:
 
 <p align="center">
 <img src="./doc/recovery_w_goal_updated.png" title="" width="40%">
 </p>
 
-Using a reactive fallback control node, the recovery actions can be interrupted if a new goal is sent to the bt_navigator. Similar structures can be used to add other conditions that can cancel the recoveries if necessary, such as timeouts.
+This way, the recovery actions can be interrupted if a new goal is sent to the bt_navigator. Adding other condition nodes to this structure, it is possible to halt the recoveries in other cases (e.g, giving a time limit for their execution). This is the recommended structure for halting a node or tree branch under specific conditions. Please notice that the order of definition of the nodes in the xml file can alter the behaviour of this structure, and that all conditions should be placed before the recovery behaviour node or branch.
 
 
 #### Multi-Scope Recoveries
