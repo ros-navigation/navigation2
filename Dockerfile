@@ -16,8 +16,8 @@ FROM $FROM_IMAGE AS cacher
 # clone underlay source
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
-COPY ./tools/ros2_dependencies.repos ../
-RUN vcs import ./ < ../ros2_dependencies.repos && \
+COPY ./tools/underlay.repos ../
+RUN vcs import ./ < ../underlay.repos && \
     find ./ -name ".git" | xargs rm -rf
 
 # copy overlay source

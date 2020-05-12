@@ -193,16 +193,16 @@ _steps:
       name: Post Checkout
       command: |
         if ! cmp \
-          $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-          $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
+          $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+          $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
         then
           echo "Cleaning Underlay"
           rm -rf $UNDERLAY_WS/*
-          cp $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-            $UNDERLAY_WS/ros2_dependencies.repos
+          cp $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+            $UNDERLAY_WS/underlay.repos
           mkdir -p $UNDERLAY_WS/src
           vcs import $UNDERLAY_WS/src \
-            < $UNDERLAY_WS/ros2_dependencies.repos
+            < $UNDERLAY_WS/underlay.repos
         fi
   install_underlay_dependencies: &install_underlay_dependencies
     install_dependencies:
