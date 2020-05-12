@@ -1,8 +1,13 @@
-# This dockerfile expects to be contained in the /navigation2 root folder for file copy
+# syntax=docker/dockerfile:experimental
+
+# Use experimental buildkit for faster builds
+# https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md
+# Use `--progress=plain` to use plane stdout for docker build
 #
 # Example build command:
 # This determines which version of the ROS2 code base to pull
 # export ROS2_BRANCH=main
+# export DOCKER_BUILDKIT=1
 # docker build \
 #   --tag nav2:source \
 #   --file source.Dockerfile ../
@@ -33,8 +38,7 @@ ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
 COPY ./tools/ros2_dependencies.repos ../
 RUN vcs import ./ < ../ros2_dependencies.repos && \
-    find ./ -name ".git" | xargs rm -rf && \
-    colcon list --names-only | cat > ../packages.txt
+    find ./ -name ".git" | xargs rm -rf
 
 # copy overlay source
 ARG OVERLAY_WS
@@ -62,14 +66,20 @@ RUN mkdir -p /tmp/opt && \
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
 
+# edit apt for caching
+RUN cp /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+      > /etc/apt/apt.conf.d/docker-clean
+
 # install packages
-RUN apt-get update && apt-get install -q -y \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt-get update && apt-get install -q -y \
       ccache \
       libasio-dev \
       libtinyxml2-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rosdep update
 
-RUN rosdep update
 ENV ROS_VERSION=2 \
     ROS_PYTHON_VERSION=3
 
@@ -77,19 +87,21 @@ ENV ROS_VERSION=2 \
 WORKDIR $ROS2_WS
 COPY --from=cacher /tmp/$ROS2_WS ./
 COPY ./tools/skip_keys.txt /tmp/
-RUN apt-get update && rosdep install -q -y \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt-get update && rosdep install -q -y \
       --from-paths src \
       --ignore-src \
       --skip-keys \
-        "$(cat /tmp/skip_keys.txt | xargs)" \
-    && rm -rf /var/lib/apt/lists/*
+        "$(cat /tmp/skip_keys.txt | xargs)"
 
-# # build ros2 source
-# COPY --from=cacher $ROS2_WS ./
-# ARG ROS2_MIXINS="release ccache"
-# RUN colcon build \
-#       --symlink-install \
-#       --mixin $ROS2_MIXINS
+# build ros2 source
+COPY --from=cacher $ROS2_WS ./
+ARG ROS2_MIXINS="release ccache"
+RUN --mount=type=cache,target=/root/.ccache \
+    colcon build \
+      --symlink-install \
+      --mixin $ROS2_MIXINS
 
 # # install underlay dependencies
 # ARG UNDERLAY_WS
