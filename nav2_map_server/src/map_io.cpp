@@ -55,6 +55,10 @@ char * dirname(char * path)
   static const char dot[] = ".";
   char * last_slash;
 
+  if (path == NULL) {
+    return path;
+  }
+
   /* Find last '/'.  */
   last_slash = path != NULL ? strrchr(path, '/') : NULL;
 
