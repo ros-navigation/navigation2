@@ -92,8 +92,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --ignore-src \
-      --skip-keys \
-        "$(cat /tmp/skip_keys.txt | xargs)"
+      --skip-keys " \
+        $(cat /tmp/skip_keys.txt | xargs) \
+        "
 
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
