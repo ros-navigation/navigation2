@@ -62,7 +62,7 @@ char * dirname(char * path)
   /* Find last '/'.  */
   last_slash = path != NULL ? strrchr(path, '/') : NULL;
 
-  if (last_slash == path) {
+  if (last_slash != NULL && last_slash == path) {
     /* The last slash is the first character in the string.  We have to
        return "/".  */
     ++last_slash;
