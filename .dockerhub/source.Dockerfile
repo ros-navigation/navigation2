@@ -4,9 +4,8 @@
 # This determines which version of the ROS2 code base to pull
 # export ROS2_BRANCH=main
 # docker build \
-#   --no-cache \
-#   --tag nav2:full_ros_build \
-#   --file full_ros_build.Dockerfile ./
+#   --tag nav2:source \
+#   --file source.Dockerfile ../
 #
 # Omit the `--no-cache` if you know you don't need to break the cache.
 # We're only building on top of a ros2 devel image to get the basics
@@ -15,154 +14,152 @@
 # everything from source in one big workspace.
 
 ARG FROM_IMAGE=osrf/ros2:devel
+ARG UNDERLAY_WS=/opt/underlay_ws
+ARG OVERLAY_WS=/opt/overlay_ws
 
 # multi-stage for caching
-FROM $FROM_IMAGE AS cache
+FROM $FROM_IMAGE AS cacher
+
+# clone ros2 source
+ARG ROS2_BRANCH=master
+ARG ROS2_REPO=https://github.com/ros2/ros2.git
+WORKDIR $ROS2_WS/src
+RUN git clone $ROS2_REPO -b $ROS2_BRANCH && \
+    vcs import ./ < ros2/ros2.repos && \
+    find ./ -name ".git" | xargs rm -rf
 
 # clone underlay source
-ENV UNDERLAY_WS /opt/underlay_ws
-RUN mkdir -p $UNDERLAY_WS/src
-WORKDIR $UNDERLAY_WS
-COPY ./tools/ros2_dependencies.repos ./
-RUN vcs import src < ros2_dependencies.repos
+ARG UNDERLAY_WS
+WORKDIR $UNDERLAY_WS/src
+COPY ./tools/ros2_dependencies.repos ../
+RUN vcs import ./ < ../ros2_dependencies.repos && \
+    find ./ -name ".git" | xargs rm -rf && \
+    colcon list --names-only | cat > ../packages.txt
 
 # copy overlay source
-ENV OVERLAY_WS /opt/overlay_ws
-RUN mkdir -p $OVERLAY_WS/src
-WORKDIR $OVERLAY_WS
-COPY ./ src/navigation2
+ARG OVERLAY_WS
+WORKDIR $OVERLAY_WS/src
+COPY ./ ./ros-planning/navigation2
+RUN colcon list --names-only | cat > ../packages.txt
+
+# remove skiped packages
+WORKDIR /opt
+RUN find ./ \
+      -name "AMENT_IGNORE" -o \
+      -name "CATKIN_IGNORE" -o \
+      -name "COLCON_IGNORE" \
+      | xargs dirname | xargs rm -rf || true && \
+    colcon list --paths-only \
+      --packages-skip-up-to  \
+        $(cat $OVERLAY_WS/packages.txt | xargs) \
+      | xargs rm -rf
 
 # copy manifests for caching
-WORKDIR /opt
-RUN find ./ -name "package.xml" | \
-      xargs cp --parents -t /tmp && \
-    find ./ -name "COLCON_IGNORE" | \
-      xargs cp --parents -t /tmp
+RUN mkdir -p /tmp/opt && \
+    find ./ -name "package.xml" | \
+      xargs cp --parents -t /tmp/opt
 
 # multi-stage for building
-FROM $FROM_IMAGE AS build
+FROM $FROM_IMAGE AS builder
 
 # install packages
 RUN apt-get update && apt-get install -q -y \
+      ccache \
       libasio-dev \
       libtinyxml2-dev \
-      wget \
     && rm -rf /var/lib/apt/lists/*
 
-ARG ROS2_BRANCH=main
-ENV ROS2_BRANCH=$ROS2_BRANCH
+RUN rosdep update
 ENV ROS_VERSION=2 \
     ROS_PYTHON_VERSION=3
 
+# install ros2 dependencies
 WORKDIR $ROS2_WS
-
-# get ros2 source code
-RUN wget https://raw.githubusercontent.com/ros2/ros2/$ROS2_BRANCH/ros2.repos \
-    && vcs import src < ros2.repos
-
-# get skip keys
-COPY ./tools/skip_keys.txt ./
-
-RUN rosdep update
-
-# copy underlay manifests
-COPY --from=cache /tmp/underlay_ws src/underlay
-RUN cd src/underlay && colcon list --names-only | \
-      cat > packages.txt && \
-    cd ../../ && colcon list --names-only \
-      --packages-up-to \
-        $(cat src/underlay/packages.txt | xargs) | \
-          cat > packages.txt
-
-# install underlay dependencies
-RUN apt-get update && rosdep install -y \
+COPY --from=cacher /tmp/$ROS2_WS ./
+COPY ./tools/skip_keys.txt /tmp/
+RUN apt-get update && rosdep install -q -y \
       --from-paths src \
       --ignore-src \
       --skip-keys \
-        "$(cat skip_keys.txt | xargs)" \
-      src/underlay \
+        "$(cat /tmp/skip_keys.txt | xargs)" \
     && rm -rf /var/lib/apt/lists/*
 
-# build ros2 source
-ARG ROS2_MIXINS="release"
-RUN colcon build \
-      --symlink-install \
-      --mixin \
-        $ROS2_MIXINS \
-      --packages-up-to \
-        $(cat src/underlay/packages.txt | xargs) \
-      --packages-skip \
-        $(cat src/underlay/packages.txt | xargs) \
-      --cmake-args --no-warn-unused-cli
+# # build ros2 source
+# COPY --from=cacher $ROS2_WS ./
+# ARG ROS2_MIXINS="release ccache"
+# RUN colcon build \
+#       --symlink-install \
+#       --mixin $ROS2_MIXINS
 
-# copy underlay source
-COPY --from=cache /opt/underlay_ws src/underlay
+# # install underlay dependencies
+# ARG UNDERLAY_WS
+# WORKDIR $UNDERLAY_WS
+# COPY --from=cacher /tmp/$UNDERLAY_WS ./
+# RUN . $ROS2_WS/install/setup.sh && \
+#     apt-get update && rosdep install -q -y \
+#       --from-paths src \
+#       --ignore-src \
+#       --skip-keys " \
+#         gazebo11 \
+#         libgazebo11-dev \
+#       " \
+#     && rm -rf /var/lib/apt/lists/*
 
-# build underlay source
-ARG UNDERLAY_MIXINS="release"
-RUN colcon build \
-      --symlink-install \
-      --mixin \
-        $UNDERLAY_MIXINS \
-      --packages-up-to \
-        $(cat src/underlay/packages.txt | xargs) \
-      --packages-skip-build-finished \
-      --cmake-args --no-warn-unused-cli
+# # build underlay source
+# COPY --from=cacher $UNDERLAY_WS ./
+# ARG UNDERLAY_MIXINS="release ccache"
+# ARG FAIL_ON_BUILD_FAILURE=True
+# RUN . $ROS2_WS/install/setup.sh && \
+#     colcon build \
+#       --symlink-install \
+#       --mixin $UNDERLAY_MIXINS \
+#       --event-handlers console_direct+ \
+#     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
-# copy overlay manifests
-COPY --from=cache /tmp/overlay_ws src/overlay
-RUN cd src/overlay && colcon list --names-only | \
-      cat > packages.txt && \
-    cd ../../ && colcon list --names-only \
-      --packages-up-to \
-        $(cat src/overlay/packages.txt | xargs) | \
-          cat > packages.txt
+# # install overlay dependencies
+# ARG OVERLAY_WS
+# WORKDIR $OVERLAY_WS
+# COPY --from=cacher /tmp/$OVERLAY_WS ./
+# RUN . $UNDERLAY_WS/install/setup.sh && \
+#     apt-get update && rosdep install -q -y \
+#       --from-paths src \
+#         $UNDERLAY_WS/src \
+#       --ignore-src \
+#       --skip-keys " \
+#         gazebo11 \
+#         libgazebo11-dev \
+#       " \
+#     && rm -rf /var/lib/apt/lists/*
 
-# install overlay dependencies
-RUN apt-get update && rosdep install -y \
-      --from-paths src \
-      --ignore-src \
-      --skip-keys \
-        "$(cat skip_keys.txt | xargs)" \
-      src/overlay \
-    && rm -rf /var/lib/apt/lists/*
+# # build overlay source
+# COPY --from=cacher $OVERLAY_WS ./
+# ARG OVERLAY_MIXINS="release ccache"
+# RUN . $UNDERLAY_WS/install/setup.sh && \
+#     colcon build \
+#       --symlink-install \
+#       --mixin $OVERLAY_MIXINS \
+#     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
-# build ros2 source
-RUN colcon build \
-      --symlink-install \
-      --mixin \
-        $ROS2_MIXINS \
-      --packages-up-to \
-        $(cat src/overlay/packages.txt | xargs) \
-      --packages-skip \
-        $(cat src/overlay/packages.txt | xargs) \
-      --packages-skip-build-finished \
-      --cmake-args --no-warn-unused-cli
+# # source overlay from entrypoint
+# ENV UNDERLAY_WS $UNDERLAY_WS
+# ENV OVERLAY_WS $OVERLAY_WS
+# RUN sed --in-place \
+#       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
+#       /ros_entrypoint.sh
 
-# copy overlay source
-COPY --from=cache /opt/overlay_ws src/overlay
 
-# build overlay source
-ARG OVERLAY_MIXINS="build-testing-on release"
-RUN colcon build \
-      --symlink-install \
-      --mixin \
-        $OVERLAY_MIXINS \
-      --packages-up-to \
-        $(cat src/overlay/packages.txt | xargs) \
-      --packages-skip-build-finished \
-      --cmake-args --no-warn-unused-cli
 
-# test overlay source
-ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE
-RUN if [ ! -z "$RUN_TESTS" ]; then \
-        colcon test \
-          --packages-select \
-            $(cat src/overlay/packages.txt | xargs); \
-        if [ ! -z "$FAIL_ON_TEST_FAILURE" ]; then \
-            colcon test-result; \
-        else \
-            colcon test-result || true; \
-        fi \
-    fi
+
+# # test overlay source
+# ARG RUN_TESTS
+# ARG FAIL_ON_TEST_FAILURE
+# RUN if [ ! -z "$RUN_TESTS" ]; then \
+#         colcon test \
+#           --packages-select \
+#             $(cat src/overlay/packages.txt | xargs); \
+#         if [ ! -z "$FAIL_ON_TEST_FAILURE" ]; then \
+#             colcon test-result; \
+#         else \
+#             colcon test-result || true; \
+#         fi \
+#     fi
