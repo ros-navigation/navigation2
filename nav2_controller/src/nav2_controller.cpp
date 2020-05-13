@@ -88,7 +88,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     exit(-1);
   }
 
-  for (uint i = 0; i != controller_types_.size(); i++) {
+  for (size_t i = 0; i != controller_types_.size(); i++) {
     try {
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
@@ -105,7 +105,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (uint i = 0; i != controller_ids_.size(); i++) {
+  for (size_t i = 0; i != controller_ids_.size(); i++) {
     controller_ids_concat_ += controller_ids_[i] + std::string(" ");
   }
 

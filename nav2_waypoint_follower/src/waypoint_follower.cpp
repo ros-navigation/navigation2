@@ -126,7 +126,7 @@ WaypointFollower::followWaypoints()
     static_cast<int>(goal->poses.size()));
 
   rclcpp::Rate r(loop_rate_);
-  uint goal_index = 0;
+  uint32_t goal_index = 0;
   bool new_goal = true;
 
   while (rclcpp::ok()) {

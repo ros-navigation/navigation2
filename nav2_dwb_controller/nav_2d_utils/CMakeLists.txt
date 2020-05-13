@@ -46,7 +46,7 @@ ament_target_dependencies(path_ops
 install(TARGETS conversions path_ops
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION lib/${PROJECT_NAME}
+        RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/
         DESTINATION include/

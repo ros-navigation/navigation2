@@ -25,7 +25,7 @@ ament_target_dependencies(voxel_grid
 install(TARGETS voxel_grid
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

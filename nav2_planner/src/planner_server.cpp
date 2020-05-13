@@ -90,7 +90,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     exit(-1);
   }
 
-  for (uint i = 0; i != plugin_types_.size(); i++) {
+  for (size_t i = 0; i != plugin_types_.size(); i++) {
     try {
       nav2_core::GlobalPlanner::Ptr planner =
         gp_loader_.createUniqueInstance(plugin_types_[i]);
@@ -107,7 +107,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (uint i = 0; i != plugin_types_.size(); i++) {
+  for (size_t i = 0; i != plugin_types_.size(); i++) {
     planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
   }
 
