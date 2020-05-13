@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
-TEST(collision_footprint, footprintCostWithPose)
+TEST(collision_footprint, test_basic)
 {
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
@@ -46,7 +46,7 @@ TEST(collision_footprint, footprintCostWithPose)
   EXPECT_NEAR(value, 0.0, 0.001);
 }
 
-TEST(collision_footprint, pointCost)
+TEST(collision_footprint, test_point_cost)
 {
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
@@ -58,7 +58,7 @@ TEST(collision_footprint, pointCost)
   EXPECT_NEAR(value, 0.0, 0.001);
 }
 
-TEST(collision_footprint, worldToMap)
+TEST(collision_footprint, test_world_to_map)
 {
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
@@ -74,40 +74,7 @@ TEST(collision_footprint, worldToMap)
   EXPECT_NEAR(value, 0.0, 0.001);
 }
 
-TEST(collision_footprint, footprintCostWithPoseObstacle)
-{
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
-    std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
-
-  for (unsigned int i = 45; i <= 65; ++i) {
-    for (unsigned int j = 45; j <= 65; ++j) {
-      costmap_->setCost(i, j, 254);
-    }
-  }
-
-  geometry_msgs::msg::Point p1;
-  p1.x = -0.5;
-  p1.y = 0.0;
-  geometry_msgs::msg::Point p2;
-  p2.x = 0.0;
-  p2.y = 0.5;
-  geometry_msgs::msg::Point p3;
-  p3.x = 0.5;
-  p3.y = 0.0;
-  geometry_msgs::msg::Point p4;
-  p4.x = 0.0;
-  p4.y = -0.5;
-
-  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
-
-  nav2_costmap_2d::FootprintCollisionChecker collision_checker(costmap_);
-
-  auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
-
-  EXPECT_NEAR(value, 254.0, 0.001);
-}
-
-TEST(collision_footprint, footprintCostWithPoseWithMovement)
+TEST(collision_footprint, test_footprint_at_pose_with_movement)
 {
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 254);
@@ -145,7 +112,7 @@ TEST(collision_footprint, footprintCostWithPoseWithMovement)
   EXPECT_NEAR(down_value, 254.0, 0.001);
 }
 
-TEST(collision_footprint, footprintCostWithPoseCheckingPointAndLine)
+TEST(collision_footprint, test_point_and_line_cost)
 {
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.10000, 0, 0.0, 0.0);
