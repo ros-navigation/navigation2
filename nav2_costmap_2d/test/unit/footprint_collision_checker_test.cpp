@@ -144,3 +144,38 @@ TEST(collision_footprint, footprintCostWithPoseWithMovement)
   auto down_value = collision_checker.footprintCostAtPose(5.0, 5.2, 0.0, footprint);
   EXPECT_NEAR(down_value, 254.0, 0.001);
 }
+
+TEST(collision_footprint, footprintCostWithPoseCheckingPointAndLine)
+{
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
+    std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.10000, 0, 0.0, 0.0);
+
+  costmap_->setCost(62, 50, 254);
+  costmap_->setCost(39, 60, 254);
+
+  geometry_msgs::msg::Point p1;
+  p1.x = -1.0;
+  p1.y = 1.0;
+  geometry_msgs::msg::Point p2;
+  p2.x = 1.0;
+  p2.y = 1.0;
+  geometry_msgs::msg::Point p3;
+  p3.x = 1.0;
+  p3.y = -1.0;
+  geometry_msgs::msg::Point p4;
+  p4.x = -1.0;
+  p4.y = -1.0;
+
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+
+  nav2_costmap_2d::FootprintCollisionChecker collision_checker(costmap_);
+
+  auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
+  EXPECT_NEAR(value, 0.0, 0.001);
+
+  auto left_value = collision_checker.footprintCostAtPose(4.9, 5.0, 0.0, footprint);
+  EXPECT_NEAR(left_value, 254.0, 0.001);
+
+  auto right_value = collision_checker.footprintCostAtPose(double(5.20000), 5.0, 0.0, footprint);
+  EXPECT_NEAR(right_value, 254.0, 0.001);
+}
