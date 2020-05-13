@@ -85,16 +85,16 @@ double CostmapTopicCollisionChecker::scorePose(
   return collision_checker_.footprintCost(getFootprint(pose));
 }
 
-Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
+Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & /*pose*/)
 {
   Footprint footprint;
   if (!footprint_sub_.getFootprint(footprint)) {
     throw CollisionCheckerException("Current footprint not available.");
   }
 
-  Footprint footprint_spec;
-  unorientFootprint(footprint, footprint_spec);
-  transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
+  // Footprint footprint_spec;
+  // unorientFootprint(footprint, footprint_spec);
+  // transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
 
   return footprint;
 }
