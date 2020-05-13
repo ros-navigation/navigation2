@@ -190,10 +190,6 @@ AmclNode::AmclNode()
 
   add_parameter(
     "transform_tolerance", rclcpp::ParameterValue(1.0),
-    "Waiting duration in seconds for transform (tf) data to be available.");
-
-  add_parameter(
-    "transform_publish_shift", rclcpp::ParameterValue(1.0),
     "Time with which to post-date the transform that is published, to indicate that this transform "
     "is valid into the future");
 
@@ -720,7 +716,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
-        tf2::TimePoint transform_expiration = stamp + transform_publish_shift_;
+        tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
         sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
@@ -732,7 +728,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       // Nothing changed, so we'll just republish the last transform, to keep
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-        transform_publish_shift_;
+        transform_tolerance_;
       sendMapToOdomTransform(transform_expiration);
     }
   }
@@ -1056,7 +1052,6 @@ AmclNode::initParameters()
 {
   double save_pose_rate;
   double tmp_tol;
-  double tmp_tf_shift;
 
   get_parameter("alpha1", alpha1_);
   get_parameter("alpha2", alpha2_);
@@ -1093,7 +1088,6 @@ AmclNode::initParameters()
   get_parameter("sigma_hit", sigma_hit_);
   get_parameter("tf_broadcast", tf_broadcast_);
   get_parameter("transform_tolerance", tmp_tol);
-  get_parameter("transform_publish_shift", tmp_tf_shift);
   get_parameter("update_min_a", a_thresh_);
   get_parameter("update_min_d", d_thresh_);
   get_parameter("z_hit", z_hit_);
@@ -1105,7 +1099,6 @@ AmclNode::initParameters()
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-  transform_publish_shift_ = tf2::durationFromSec(tmp_tf_shift);
 
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
   base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);

@@ -243,8 +243,7 @@ protected:
   tf2::Duration save_pose_period_;
   double sigma_hit_;
   bool tf_broadcast_;
-  tf2::Duration transform_tolerance_; // tf timeout duration
-  tf2::Duration transform_publish_shift_; // post-date the transform that is published, this was formerly called transform_tolerance_
+  tf2::Duration transform_tolerance_;
   double a_thresh_;
   double d_thresh_;
   double z_hit_;
