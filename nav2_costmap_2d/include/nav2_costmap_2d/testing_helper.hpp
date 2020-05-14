@@ -98,8 +98,8 @@ void addObstacleLayer(
 }
 
 void addObservation(
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> & olayer, double x, double y, double z = 0.0,
-  double ox = 0.0, double oy = 0.0, double oz = MAX_Z)
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer, double x, double y, double z = 0.0,
+  double ox = 0.0, double oy = 0.0, double oz = MAX_Z, bool marking = true, bool clearing = true)
 {
   sensor_msgs::msg::PointCloud2 cloud;
   sensor_msgs::PointCloud2Modifier modifier(cloud);
@@ -119,7 +119,7 @@ void addObservation(
 
   // obstacle range = raytrace range = 100.0
   nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);
-  olayer->addStaticObservation(obs, true, true);
+  olayer->addStaticObservation(obs, marking, clearing);
 }
 
 void addInflationLayer(
