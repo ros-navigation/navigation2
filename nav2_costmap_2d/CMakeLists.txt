@@ -47,6 +47,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/costmap_layer.cpp
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
+  src/footprint_collision_checker.cpp
 )
 
 # prevent pluginlib from using boost
@@ -94,7 +95,7 @@ target_link_libraries(layers
 add_library(nav2_costmap_2d_client SHARED
   src/footprint_subscriber.cpp
   src/costmap_subscriber.cpp
-  src/collision_checker.cpp
+  src/costmap_topic_collision_checker.cpp
 )
 
 ament_target_dependencies(nav2_costmap_2d_client

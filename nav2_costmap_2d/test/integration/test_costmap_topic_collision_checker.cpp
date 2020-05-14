@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/static_layer.hpp"
@@ -123,7 +123,7 @@ public:
       shared_from_this(),
       footprint_topic);
 
-    collision_checker_ = std::make_unique<nav2_costmap_2d::CollisionChecker>(
+    collision_checker_ = std::make_unique<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *costmap_sub_, *footprint_sub_, *tf_buffer_, get_name(), "map");
 
     layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
@@ -274,7 +274,7 @@ protected:
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
-  std::unique_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  std::unique_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 
   nav2_costmap_2d::LayeredCostmap * layers_{nullptr};
   std::string global_frame_;
