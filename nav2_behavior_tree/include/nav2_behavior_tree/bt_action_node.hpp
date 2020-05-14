@@ -179,7 +179,7 @@ public:
     if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
       if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
+        rclcpp::FutureReturnCode::SUCCESS)
       {
         RCLCPP_ERROR(
           node_->get_logger(),
@@ -202,13 +202,8 @@ protected:
     auto status = goal_handle_->get_status();
 
     // Check if the goal is still executing
-    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
-    {
-      return true;
-    }
-
-    return false;
+    return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+           status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
   }
 
 
