@@ -68,5 +68,9 @@
       <input_port name="hz">Rate</input_port>
     </Decorator>
 
+    <Decorator ID="DistanceController">
+      <input_port name="distance">Distance</input_port>
+    </Decorator>
+
   </TreeNodesModel>
 </root>
