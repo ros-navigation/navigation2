@@ -85,7 +85,7 @@ double CostmapTopicCollisionChecker::scorePose(
   return collision_checker_.footprintCost(getFootprint(pose));
 }
 
-Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & /*pose*/)
+Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
 {
   Footprint footprint;
   if (!footprint_sub_.getFootprint(footprint)) {
