@@ -187,7 +187,7 @@ planner_server:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
     planner_plugin_ids: ["GridBased"]
     use_sim_time: True
-    GridBased.tolerance: 2.0
+    GridBased.tolerance: 0.5
     GridBased.use_astar: false
     GridBased.allow_unknown: true
 
