@@ -37,6 +37,7 @@ control_nodes = [
     "Subtree",
     "Timeout",
     "RateController",
+    "DistanceController",
     "RecoveryNode",
     "PipelineSequence",
     "RoundRobin"

@@ -15,6 +15,8 @@
 #ifndef NAV2_UTIL__GEOMETRY_UTILS_HPP_
 #define NAV2_UTIL__GEOMETRY_UTILS_HPP_
 
+#include <cmath>
+
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
@@ -28,6 +30,16 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
   tf2::Quaternion q;
   q.setRPY(0, 0, angle);  // void returning function
   return tf2::toMsg(q);
+}
+
+inline double euclideanDistance(
+  const geometry_msgs::msg::Point pos1,
+  const geometry_msgs::msg::Point pos2)
+{
+  const double dx = pos1.x - pos2.x;
+  const double dy = pos1.y - pos2.y;
+  const double dz = pos1.z - pos2.z;
+  return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 }  // namespace geometry_utils

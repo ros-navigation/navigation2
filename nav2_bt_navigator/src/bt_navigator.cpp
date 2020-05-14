@@ -45,6 +45,7 @@ BtNavigator::BtNavigator()
     "nav2_goal_updated_condition_bt_node",
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
+    "nav2_distance_controller_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
