@@ -53,10 +53,7 @@ public:
 
   void on_tick() override
   {
-    int recovery_count = 0;
-    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
-    recovery_count += 1;
-    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+    increment_recovery_count();
   }
 
   static BT::PortsList providedPorts()

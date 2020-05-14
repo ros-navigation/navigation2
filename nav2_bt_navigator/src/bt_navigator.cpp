@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 
@@ -235,28 +237,24 @@ BtNavigator::navigateToPose()
 
       // action server feedback (pose, duration of task,
       // number of recoveries, and distance remaining to goal)
-      geometry_msgs::msg::TransformStamped transform;
-      geometry_msgs::msg::PoseStamped current_pose;
-      transform = tf_->lookupTransform(robot_frame_, global_frame_, tf2::TimePointZero);
-      current_pose.header = transform.header;
-      current_pose.pose.position.x = transform.transform.translation.x;
-      current_pose.pose.position.y = transform.transform.translation.y;
-      current_pose.pose.position.z = transform.transform.translation.z;
-      current_pose.pose.orientation = transform.transform.rotation;
-      feedback_msg->current_pose = current_pose;
+      nav2_util::getCurrentPose(feedback_msg->current_pose, *tf_);
 
-      geometry_msgs::msg::Point & c_pose = current_pose.pose.position;
       geometry_msgs::msg::PoseStamped goal_pose;
       blackboard_->get("goal", goal_pose);
-      feedback_msg->l2_distance_remaining = sqrt(
-        (c_pose.x - goal_pose.pose.position.x) * (c_pose.x - goal_pose.pose.position.x) +
-        (c_pose.y - goal_pose.pose.position.y) * (c_pose.y - goal_pose.pose.position.y));
+
+      feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+        feedback_msg->current_pose.pose, goal_pose.pose);
+
       int recovery_count = 0;
       blackboard_->get<int>("number_recoveries", recovery_count);
       feedback_msg->number_of_recoveries = recovery_count;
       feedback_msg->navigation_time = now() - start_time_;
       action_server_->publish_feedback(feedback_msg);
     };
+
+  // Reset state for new action feedback
+  start_time_ = now();
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
@@ -289,8 +287,6 @@ void
 BtNavigator::initializeGoalPose()
 {
   auto goal = action_server_->get_current_goal();
-  start_time_ = now();
-  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",

@@ -38,6 +38,7 @@ Spin::Spin()
 : Recovery<SpinAction>()
 {
   prev_yaw_ = 0.0;
+  feedback_ = std::make_shared<SpinAction::Feedback>();
 }
 
 Spin::~Spin()
@@ -103,15 +104,14 @@ Status Spin::onCycleUpdate()
   relative_yaw_ += delta_yaw;
   prev_yaw_ = current_yaw;
 
+  feedback_->angular_distance_traveled = relative_yaw_;
+  action_server_->publish_feedback(feedback_);
+
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
   if (remaining_yaw <= 0) {
     stopRobot();
     return Status::SUCCEEDED;
   }
-
-  auto feedback = std::make_shared<SpinAction::Feedback>();
-  feedback->angular_distance_traveled = relative_yaw;
-  action_server_->publish_feedback(feedback);
 
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);

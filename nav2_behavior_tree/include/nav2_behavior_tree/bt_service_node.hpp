@@ -127,6 +127,14 @@ public:
   }
 
 protected:
+  void increment_recovery_count()
+  {
+    int recovery_count = 0;
+    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+  }
+
   std::string service_name_, service_node_name_;
   typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
