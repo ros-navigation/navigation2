@@ -58,6 +58,7 @@ condition_nodes = [
     "IsStuck",
     "GoalReached",
     "initialPoseReceived",
+    "GoalUpdated",
     ]
 
 def main():

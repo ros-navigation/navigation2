@@ -11,9 +11,14 @@ add_library(pf_lib SHARED
   pf_draw.c
 )
 
+target_include_directories(pf_lib PRIVATE ../include)
+if(HAVE_DRAND48)
+  target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
+endif()
+
 install(TARGETS
   pf_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )

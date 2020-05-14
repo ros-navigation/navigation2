@@ -63,7 +63,7 @@ endif()
 install(TARGETS simple_goal_checker stopped_goal_checker standard_traj_generator
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION lib/${PROJECT_NAME}
+        RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/
         DESTINATION include/

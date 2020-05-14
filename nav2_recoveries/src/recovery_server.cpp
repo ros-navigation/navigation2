@@ -88,7 +88,7 @@ RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
 
-  for (uint i = 0; i != plugin_names_.size(); i++) {
+  for (size_t i = 0; i != plugin_names_.size(); i++) {
     try {
       RCLCPP_INFO(
         get_logger(), "Creating recovery plugin %s of type %s",

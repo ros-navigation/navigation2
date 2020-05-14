@@ -388,6 +388,14 @@ validate(
   boost::any_cast<option_sequence<T> &>(v).values.swap(result);
 }
 
+#ifdef _WIN32
+static const char * basename(const char * filepath)
+{
+  const char * base = std::strrchr(filepath, '/');
+  return base ? (base + 1) : filepath;
+}
+#endif
+
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);

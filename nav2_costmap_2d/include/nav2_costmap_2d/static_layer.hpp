@@ -110,6 +110,7 @@ private:
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
   bool map_received_{false};
+  tf2::Duration transform_tolerance_;
 };
 
 }  // namespace nav2_costmap_2d

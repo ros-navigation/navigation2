@@ -48,6 +48,8 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
+#include "portable_utils.h"
+
 using namespace std::placeholders;
 using namespace std::chrono_literals;
 
@@ -245,7 +247,7 @@ AmclNode::waitForTransforms()
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(
       global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-      tf2::durationFromSec(1.0), &tf_error))
+      transform_tolerance_, &tf_error))
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
@@ -749,7 +751,7 @@ bool AmclNode::addNewScanner(
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
   try {
-    tf_buffer_->transform(ident, laser_pose, base_frame_id_);
+    tf_buffer_->transform(ident, laser_pose, base_frame_id_, transform_tolerance_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       get_logger(), "Couldn't transform from %s to %s, "

@@ -22,6 +22,9 @@ include_directories(
   include
 )
 
+include(CheckSymbolExists)
+check_symbol_exists(drand48 stdlib.h HAVE_DRAND48)
+
 add_subdirectory(src/pf)
 add_subdirectory(src/map)
 add_subdirectory(src/motion_model)
@@ -38,6 +41,11 @@ set(library_name ${executable_name}_core)
 add_library(${library_name} SHARED
   src/amcl_node.cpp
 )
+
+target_include_directories(${library_name} PRIVATE src/include)
+if(HAVE_DRAND48)
+  target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
+endif()
 
 set(dependencies
   rclcpp
@@ -70,9 +78,13 @@ target_link_libraries(${library_name}
   map_lib motions_lib sensors_lib
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
