@@ -72,7 +72,7 @@ NavfnPlanner::configure(
 
   // Initialize parameters
   // Declare this plugin's parameters
-  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(2.0));
+  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(0.5));
   node_->get_parameter(name + ".tolerance", tolerance_);
   declare_parameter_if_not_declared(node_, name + ".use_astar", rclcpp::ParameterValue(false));
   node_->get_parameter(name + ".use_astar", use_astar_);

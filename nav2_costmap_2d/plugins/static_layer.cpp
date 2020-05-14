@@ -117,7 +117,7 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
-  double temp_tf_tol;
+  double temp_tf_tol = 0.0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
