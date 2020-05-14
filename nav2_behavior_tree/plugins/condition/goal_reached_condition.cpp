@@ -62,6 +62,9 @@ public:
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
     tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
+    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+    node_->get_parameter("transform_tolerance", transform_tolerance_);
+
     initialized_ = true;
   }
 
@@ -70,7 +73,7 @@ public:
   {
     geometry_msgs::msg::PoseStamped current_pose;
 
-    if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
+    if (!nav2_util::getCurrentPose(current_pose, *tf_, "map", "base_link", transform_tolerance_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
@@ -105,6 +108,7 @@ private:
 
   bool initialized_;
   double goal_reached_tol_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_behavior_tree
