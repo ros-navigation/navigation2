@@ -1,3 +1,9 @@
+<?xml version="1.0"?>
+<!--
+  For instructions on using Groot and description of the following BehaviorTree nodes,
+  please refer to the groot_instructions.md and REAMDE.md respectively located in the 
+  nav2_behavior_tree package.
+-->
 <root>
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
