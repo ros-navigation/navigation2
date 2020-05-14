@@ -44,7 +44,8 @@ public:
     FootprintSubscriber & footprint_sub,
     tf2_ros::Buffer & tf,
     std::string name = "collision_checker",
-    std::string global_frame = "map");
+    std::string global_frame = "map",
+    double transform_tolerance = 0.1);
 
   ~CollisionChecker();
 
@@ -68,6 +69,7 @@ protected:
   tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
+  double transform_tolerance_;
 };
 }  // namespace nav2_costmap_2d
 

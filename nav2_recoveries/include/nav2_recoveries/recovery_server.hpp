@@ -60,6 +60,8 @@ protected:
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+
+  double transform_tolerance_;
 };
 
 }  // namespace recovery_server
