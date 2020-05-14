@@ -46,7 +46,8 @@ public:
     FootprintSubscriber & footprint_sub,
     tf2_ros::Buffer & tf,
     std::string name = "collision_checker",
-    std::string global_frame = "map");
+    std::string global_frame = "map",
+    std::string robot_base_frame = "base_link");
 
   ~CostmapTopicCollisionChecker() = default;
 
@@ -61,6 +62,7 @@ protected:
   // Name used for logging
   std::string name_;
   std::string global_frame_;
+  std::string robot_base_frame_;
   tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;

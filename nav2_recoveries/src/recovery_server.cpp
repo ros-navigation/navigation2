@@ -45,6 +45,12 @@ RecoveryServer::RecoveryServer()
   declare_parameter(
     "plugin_types",
     rclcpp::ParameterValue(plugin_types));
+  declare_parameter(
+    "odom_frame",
+    rclcpp::ParameterValue("odom"));
+  declare_parameter(
+    "robot_base_frame",
+    rclcpp::ParameterValue("base_link"));
 }
 
 
@@ -71,8 +77,12 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
     shared_from_this(), footprint_topic, 1.0);
-  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), "odom");
+
+  std::string odom_frame, robot_base_frame;
+  this->get_parameter("odom_frame", odom_frame);
+  this->get_parameter("robot_base_frame", robot_base_frame);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CollisionChecker>(
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), odom_frame, robot_base_frame);
 
   this->get_parameter("plugin_names", plugin_names_);
   this->get_parameter("plugin_types", plugin_types_);
