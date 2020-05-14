@@ -67,11 +67,16 @@ TEST(collision_footprint, test_world_to_map)
 
   unsigned int x, y;
 
-  collision_checker.worldToMap(5.0, 5.0, x, y);
+  collision_checker.worldToMap(1.0, 1.0, x, y);
 
   auto value = collision_checker.pointCost(x, y);
 
   EXPECT_NEAR(value, 0.0, 0.001);
+
+  costmap_->setCost(50, 50, 200);
+  collision_checker.worldToMap(5.0, 5.0, x, y);
+
+  EXPECT_NEAR(collision_checker.pointCost(x, y), 200.0, 0.001);
 }
 
 TEST(collision_footprint, test_footprint_at_pose_with_movement)
@@ -143,6 +148,6 @@ TEST(collision_footprint, test_point_and_line_cost)
   auto left_value = collision_checker.footprintCostAtPose(4.9, 5.0, 0.0, footprint);
   EXPECT_NEAR(left_value, 254.0, 0.001);
 
-  auto right_value = collision_checker.footprintCostAtPose(double(5.20000), 5.0, 0.0, footprint);
+  auto right_value = collision_checker.footprintCostAtPose(5.2, 5.0, 0.0, footprint);
   EXPECT_NEAR(right_value, 254.0, 0.001);
 }

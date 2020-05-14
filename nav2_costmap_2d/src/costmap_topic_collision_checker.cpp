@@ -92,9 +92,9 @@ Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::P
     throw CollisionCheckerException("Current footprint not available.");
   }
 
-  // Footprint footprint_spec;
-  // unorientFootprint(footprint, footprint_spec);
-  // transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
+  Footprint footprint_spec;
+  unorientFootprint(footprint, footprint_spec);
+  transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
 
   return footprint;
 }
