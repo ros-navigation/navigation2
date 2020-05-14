@@ -22,16 +22,16 @@ FROM $FROM_IMAGE AS cacher
 # copy overlay source
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS/src
-# RUN echo "\
-# repositories: \n\
-#   ros-planning/navigation2: \n\
-#     type: git \n\
-#     url: https://github.com/ros-planning/navigation2.git \n\
-#     version: ${ROS_DISTRO}-devel \n\
-# " > ../overlay.repos
-# RUN vcs import ./ < ../overlay.repos && \
-#     find ./ -name ".git" | xargs rm -rf
-COPY ./ ./ros-planning/navigation2
+RUN echo "\
+repositories: \n\
+  ros-planning/navigation2: \n\
+    type: git \n\
+    url: https://github.com/ros-planning/navigation2.git \n\
+    version: ${ROS_DISTRO}-devel \n\
+" > ../overlay.repos
+RUN vcs import ./ < ../overlay.repos && \
+    find ./ -name ".git" | xargs rm -rf
+# COPY ./ ./ros-planning/navigation2
 
 # copy manifests for caching
 WORKDIR /opt
