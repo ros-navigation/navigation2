@@ -97,6 +97,8 @@ public:
     tf_ = tf;
 
     node_->get_parameter("cycle_frequency", cycle_frequency_);
+    node_->get_parameter("odom_frame", odom_frame_);
+    node_->get_parameter("robot_base_frame", robot_base_frame_);
 
     action_server_ = std::make_shared<ActionServer>(
       node_, recovery_name_,
@@ -140,6 +142,8 @@ protected:
 
   double cycle_frequency_;
   double enabled_;
+  std::string odom_frame_;
+  std::string robot_base_frame_;
 
   void execute()
   {

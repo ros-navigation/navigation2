@@ -60,6 +60,8 @@ public:
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+    node_->get_parameter_or<std::string>("global_frame", global_frame_, "map");
+    node_->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, "base_link");
     tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
     initialized_ = true;
@@ -70,7 +72,7 @@ public:
   {
     geometry_msgs::msg::PoseStamped current_pose;
 
-    if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
+    if (!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
@@ -105,6 +107,8 @@ private:
 
   bool initialized_;
   double goal_reached_tol_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree
