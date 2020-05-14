@@ -88,15 +88,12 @@ RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
 
-# ARG RUN_TESTS
-# ARG FAIL_ON_TEST_FAILURE
-# RUN if [ -z "$RUN_TESTS" ]; then \
-#         colcon test \
-#           --mixin $OVERLAY_MIXINS \
-#           --ctest-args --test-regex "test_.*"; \
-#         if [ -z "$FAIL_ON_TEST_FAILURE" ]; then \
-#             colcon test-result; \
-#         else \
-#             colcon test-result || true; \
-#         fi \
-#     fi
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=Ture
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . $OVERLAY_WS/install/setup.sh && \
+        colcon test \
+          --mixin $OVERLAY_MIXINS \
+        && colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
