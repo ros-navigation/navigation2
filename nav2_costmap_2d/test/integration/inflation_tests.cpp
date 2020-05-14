@@ -31,6 +31,9 @@
  * @author David Lu!!
  * Test harness for InflationLayer for Costmap2D
  */
+
+// Comment
+
 #include <gtest/gtest.h>
 
 #include <cmath>
