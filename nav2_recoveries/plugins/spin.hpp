@@ -50,6 +50,7 @@ protected:
   double prev_yaw_;
   double relative_yaw_;
   double simulate_ahead_time_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_recoveries
