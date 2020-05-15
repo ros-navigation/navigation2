@@ -200,13 +200,14 @@ planner_server_rclcpp_node:
 
 recoveries_server:
   ros__parameters:
-    costmap_topic: "local_costmap/costmap_raw"
-    footprint_topic: "local_costmap/published_footprint"
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
     plugin_names: ["spin", "back_up", "wait"]
     plugin_types: ["nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"]
-    odom_frame: odom
+    global_frame: odom
     robot_base_frame: base_link
+    use_sim_time: true
 
 recoveries_server_rclcpp_node:
   ros__parameters:
