@@ -35,22 +35,22 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
 }
 
 inline double euclidean_distance(
-  const geometry_msgs::msg::Point & a,
-  const geometry_msgs::msg::Point & b)
+  const geometry_msgs::msg::Point & pos1,
+  const geometry_msgs::msg::Point & pos2)
 {
-  double dx = a.x - b.x;
-  double dy = a.y - b.y;
-  double dz = a.z - b.z;
+  double dx = pos1.x - pos2.x;
+  double dy = pos1.y - pos2.y;
+  double dz = pos1.z - pos2.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 inline double euclidean_distance(
-  const geometry_msgs::msg::Pose & a,
-  const geometry_msgs::msg::Pose & b)
+  const geometry_msgs::msg::Pose & pos1,
+  const geometry_msgs::msg::Pose & pos2)
 {
-  double dx = a.position.x - b.position.x;
-  double dy = a.position.y - b.position.y;
-  double dz = a.position.z - b.position.z;
+  double dx = pos1.position.x - pos2.position.x;
+  double dy = pos1.position.y - pos2.position.y;
+  double dz = pos1.position.z - pos2.position.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 

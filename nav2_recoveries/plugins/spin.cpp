@@ -35,10 +35,10 @@ namespace nav2_recoveries
 {
 
 Spin::Spin()
-: Recovery<SpinAction>()
+: Recovery<SpinAction>(),
+  feedback_(std::make_shared<SpinAction::Feedback>()),
+  prev_yaw_(0.0)
 {
-  prev_yaw_ = 0.0;
-  feedback_ = std::make_shared<SpinAction::Feedback>();
 }
 
 Spin::~Spin()

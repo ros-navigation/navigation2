@@ -26,9 +26,9 @@ namespace nav2_recoveries
 {
 
 BackUp::BackUp()
-: Recovery<BackUpAction>()
+: Recovery<BackUpAction>(),
+  feedback_(std::make_shared<BackUpAction::Feedback>())
 {
-  feedback_ = std::make_shared<BackUpAction::Feedback>();
 }
 
 BackUp::~BackUp()

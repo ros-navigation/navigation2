@@ -22,9 +22,9 @@ namespace nav2_recoveries
 {
 
 Wait::Wait()
-: Recovery<WaitAction>()
+: Recovery<WaitAction>(),
+  feedback_(std::make_shared<WaitAction::Feedback>())
 {
-  feedback_ = std::make_shared<WaitAction::Feedback>();
 }
 
 Wait::~Wait()

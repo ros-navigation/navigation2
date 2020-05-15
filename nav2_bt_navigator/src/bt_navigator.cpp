@@ -252,10 +252,6 @@ BtNavigator::navigateToPose()
       action_server_->publish_feedback(feedback_msg);
     };
 
-  // Reset state for new action feedback
-  start_time_ = now();
-  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
-
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
   // Make sure that the Bt is not in a running state from a previous execution
@@ -291,6 +287,10 @@ BtNavigator::initializeGoalPose()
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
+
+  // Reset state for new action feedback
+  start_time_ = now();
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
   blackboard_->set("goal", goal->pose);
