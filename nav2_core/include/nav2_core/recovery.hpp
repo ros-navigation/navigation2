@@ -74,9 +74,6 @@ public:
   // TODO(stevemacenski) evaluate design for recoveries to not host
   // their own servers and utilize a recovery server exposed action.
   // virtual bool executeRecovery() = 0;
-
-protected:
-  double transform_tolerance_;
 };
 
 }  // namespace nav2_core

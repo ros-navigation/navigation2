@@ -65,8 +65,6 @@ void Spin::onConfigure()
     node_,
     "rotational_acc_lim", rclcpp::ParameterValue(3.2));
   node_->get_parameter("rotational_acc_lim", rotational_acc_lim_);
-
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)

@@ -40,7 +40,6 @@ void BackUp::onConfigure()
     node_,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
   node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
