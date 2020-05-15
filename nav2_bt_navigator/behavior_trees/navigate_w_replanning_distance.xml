@@ -5,6 +5,7 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="NavigateWithReplanning">
+      <TransformAvailable parent="map" child="base_link" />
       <DistanceController distance="1.0">
         <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
       </DistanceController>

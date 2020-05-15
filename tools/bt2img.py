@@ -59,6 +59,7 @@ condition_nodes = [
     "GoalReached",
     "initialPoseReceived",
     "GoalUpdated",
+    "TransformAvailable"
     ]
 
 def main():
