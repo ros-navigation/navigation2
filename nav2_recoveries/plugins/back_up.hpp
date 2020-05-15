@@ -51,7 +51,6 @@ protected:
   double command_x_;
   double command_speed_;
   double simulate_ahead_time_;
-  double transform_tolerance_;
 };
 
 }  // namespace nav2_recoveries
