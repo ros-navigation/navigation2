@@ -88,7 +88,7 @@ public:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker) override
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
   {
     RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());
 
@@ -136,7 +136,7 @@ protected:
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
-  std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   double cycle_frequency_;

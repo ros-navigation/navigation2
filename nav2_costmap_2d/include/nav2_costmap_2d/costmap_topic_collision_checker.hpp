@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Modified by: Shivang Patel (shivaan14@gmail.com)
 
-#ifndef NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
-#define NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_TOPIC_COLLISION_CHECKER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_TOPIC_COLLISION_CHECKER_HPP_
 
 #include <string>
 #include <vector>
@@ -24,6 +26,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -34,12 +37,11 @@
 
 namespace nav2_costmap_2d
 {
-typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
-class CollisionChecker
+class CostmapTopicCollisionChecker
 {
 public:
-  CollisionChecker(
+  CostmapTopicCollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
     tf2_ros::Buffer & tf,
@@ -47,21 +49,15 @@ public:
     std::string global_frame = "map",
     double transform_tolerance = 0.1);
 
-  ~CollisionChecker();
+  ~CostmapTopicCollisionChecker() = default;
 
   // Returns the obstacle footprint score for a particular pose
   double scorePose(const geometry_msgs::msg::Pose2D & pose);
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
 
 protected:
-  double lineCost(int x0, int x1, int y0, int y1) const;
-  double pointCost(int x, int y) const;
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
-  void worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
-  double footprintCost(const Footprint footprint);
-
-  std::shared_ptr<Costmap2D> costmap_;
 
   // Name used for logging
   std::string name_;
@@ -70,7 +66,9 @@ protected:
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
   double transform_tolerance_;
+  FootprintCollisionChecker collision_checker_;
 };
+
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COLLISION_CHECKER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_TOPIC_COLLISION_CHECKER_HPP_

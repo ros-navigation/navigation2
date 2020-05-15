@@ -89,14 +89,14 @@ list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 add_library(nav2_rate_controller_bt_node SHARED plugins/decorator/rate_controller.cpp)
 list(APPEND plugin_libs nav2_rate_controller_bt_node)
 
+add_library(nav2_distance_controller_bt_node SHARED plugins/decorator/distance_controller.cpp)
+list(APPEND plugin_libs nav2_distance_controller_bt_node)
+
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
 
 add_library(nav2_navigate_to_pose_action_bt_node SHARED plugins/action/navigate_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_action_bt_node)
-
-add_library(nav2_random_crawl_action_bt_node SHARED plugins/action/random_crawl_action.cpp)
-list(APPEND plugin_libs nav2_random_crawl_action_bt_node)
 
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
@@ -120,12 +120,18 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
+install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(
+  include
+)
 
 ament_export_libraries(
   ${library_name}

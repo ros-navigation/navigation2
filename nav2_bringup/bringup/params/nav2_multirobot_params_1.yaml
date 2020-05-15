@@ -49,6 +49,8 @@ amcl_rclcpp_node:
 bt_navigator:
   ros__parameters:
     use_sim_time: True
+    global_frame: map
+    robot_base_frame: base_link
     bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
@@ -63,6 +65,7 @@ bt_navigator:
     - nav2_initial_pose_received_condition_bt_node
     - nav2_reinitialize_global_localization_service_bt_node
     - nav2_rate_controller_bt_node
+    - nav2_distance_controller_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
     - nav2_transform_available_condition_bt_node
@@ -187,7 +190,7 @@ planner_server:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
     planner_plugin_ids: ["GridBased"]
     use_sim_time: True
-    GridBased.tolerance: 2.0
+    GridBased.tolerance: 0.5
     GridBased.use_astar: false
     GridBased.allow_unknown: true
 

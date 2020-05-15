@@ -107,7 +107,8 @@ protected:
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
+  using Action = nav2_msgs::action::FollowPath;
+  using ActionServer = nav2_util::SimpleActionServer<Action>;
 
   // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
@@ -215,6 +216,7 @@ protected:
 
   // Whether we've published the single controller warning yet
   bool single_controller_warning_given_{false};
+  geometry_msgs::msg::Pose end_pose_;
 };
 
 }  // namespace nav2_controller
