@@ -367,7 +367,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   // and the global frame is available
 
   std::string tf_error;
-  rclcpp::Rate r(frequency);    // 200ms by default
+  rclcpp::Rate tf_rate(2);
 
   RCLCPP_INFO(get_logger(), "Checking transform");
   while (rclcpp::ok() &&
@@ -382,11 +382,11 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
-    r.sleep();
+    tf_rate.sleep();
   }
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
-
+  rclcpp::Rate rate(frequency);    // 200ms by default
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
 
@@ -412,7 +412,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     }
 
     // Make sure to sleep for the remainder of our cycle time
-    r.sleep();
+    rate.sleep();
 
 #if 0
     // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()

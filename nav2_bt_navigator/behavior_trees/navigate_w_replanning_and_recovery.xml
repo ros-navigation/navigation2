@@ -5,7 +5,7 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <PipelineSequence name="InitialPoseCheck">
+    <PipelineSequence name="CompleteTFTreeAvailable">
       <TransformAvailable parent="map" child="base_link" />
       <RecoveryNode number_of_retries="6" name="NavigateRecovery">
         <PipelineSequence name="NavigateWithReplanning">
