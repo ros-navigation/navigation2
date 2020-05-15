@@ -33,8 +33,13 @@ public:
   GoalReachedCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf), initialized_(false)
+  : BT::ConditionNode(condition_name, conf),
+    initialized_(false),
+    global_frame_("map"),
+    robot_base_frame_("base_link")
   {
+    getInput("global_frame", global_frame_);
+    getInput("robot_base_frame", robot_base_frame_);
   }
 
   GoalReachedCondition() = delete;
@@ -60,8 +65,6 @@ public:
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-    node_->get_parameter_or<std::string>("global_frame", global_frame_, "map");
-    node_->get_parameter_or<std::string>("robot_base_frame", robot_base_frame_, "base_link");
     tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
     initialized_ = true;
@@ -88,7 +91,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination")
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
+      BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
     };
   }
 

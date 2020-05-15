@@ -22,7 +22,7 @@ namespace recovery_server
 {
 
 RecoveryServer::RecoveryServer()
-: nav2_util::LifecycleNode("nav2_recoveries", "", true),
+: LifecycleNode("recoveries_server", "", true),
   plugin_loader_("nav2_core", "nav2_core::Recovery")
 {
   declare_parameter(
@@ -45,12 +45,13 @@ RecoveryServer::RecoveryServer()
   declare_parameter(
     "plugin_types",
     rclcpp::ParameterValue(plugin_types));
+
   declare_parameter(
-    "odom_frame",
-    rclcpp::ParameterValue("odom"));
+    "global_frame",
+    rclcpp::ParameterValue(std::string("odom")));
   declare_parameter(
     "robot_base_frame",
-    rclcpp::ParameterValue("base_link"));
+    rclcpp::ParameterValue(std::string("base_link")));
 }
 
 
@@ -65,27 +66,27 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
+    get_node_base_interface(),
+    get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   std::string costmap_topic, footprint_topic;
-  this->get_parameter("costmap_topic", costmap_topic);
-  this->get_parameter("footprint_topic", footprint_topic);
+  get_parameter("costmap_topic", costmap_topic);
+  get_parameter("footprint_topic", footprint_topic);
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
     shared_from_this(), footprint_topic, 1.0);
 
-  std::string odom_frame, robot_base_frame;
-  this->get_parameter("odom_frame", odom_frame);
-  this->get_parameter("robot_base_frame", robot_base_frame);
-  collision_checker_ = std::make_shared<nav2_costmap_2d::CollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), odom_frame, robot_base_frame);
+  std::string global_frame, robot_base_frame;
+  get_parameter("global_frame", global_frame);
+  get_parameter("robot_base_frame", robot_base_frame);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), global_frame, robot_base_frame);
 
-  this->get_parameter("plugin_names", plugin_names_);
-  this->get_parameter("plugin_types", plugin_types_);
+  get_parameter("plugin_names", plugin_names_);
+  get_parameter("plugin_types", plugin_types_);
 
   loadRecoveryPlugins();
 
