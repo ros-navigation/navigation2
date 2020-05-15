@@ -50,6 +50,7 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  double transform_tolerance_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
   double distance_;
