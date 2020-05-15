@@ -47,7 +47,7 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(plugin_types));
 
   declare_parameter(
-    "tranceform_tolerance",
+    "transform_tolerance",
     rclcpp::ParameterValue(0.1));
 }
 
