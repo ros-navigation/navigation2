@@ -6,3 +6,5 @@ string controller_id
 std_msgs/Empty result
 ---
 #feedback
+float32 distance_to_goal
+float32 speed

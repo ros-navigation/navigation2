@@ -82,11 +82,7 @@ public:
     double dx = goal.pose.position.x - current_pose.pose.position.x;
     double dy = goal.pose.position.y - current_pose.pose.position.y;
 
-    if ( (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) ) {
-      return true;
-    } else {
-      return false;
-    }
+    return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_);
   }
 
   static BT::PortsList providedPorts()

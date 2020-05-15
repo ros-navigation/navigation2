@@ -51,6 +51,8 @@ protected:
   double command_x_;
   double command_speed_;
   double simulate_ahead_time_;
+
+  BackUpAction::Feedback::SharedPtr feedback_;
 };
 
 }  // namespace nav2_recoveries
