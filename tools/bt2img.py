@@ -38,6 +38,7 @@ control_nodes = [
     "Timeout",
     "RateController",
     "DistanceController",
+    "SpeedController",
     "RecoveryNode",
     "PipelineSequence",
     "RoundRobin"

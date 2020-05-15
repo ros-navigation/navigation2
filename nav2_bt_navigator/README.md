@@ -64,6 +64,8 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 
 * DistanceController: A custom control flow node, which controls the tick rate based on the distance traveled.  This custom node has only one child. The user can set the distance after which the planner should replan a new path.  This node returns RUNNING when it is not ticking its child. Currently, in navigation, the `DistanceController` is used to tick the  `ComputePathToPose` and `GoalReached` node after every 0.5 meters.
 
+* SpeedController: A custom control flow node, which controls the tick rate based on the current speed.  This decorator offers the most flexibility as the user can set the minimum/maximum tick rate which is adjusted according to the current speed.
+
 #### Condition Nodes
 * GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked.
 
