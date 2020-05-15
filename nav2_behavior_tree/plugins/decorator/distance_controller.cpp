@@ -35,9 +35,13 @@ DistanceController::DistanceController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   distance_(1.0),
+  global_frame_("map"),
+  robot_base_frame_("base_link"),
   first_time_(false)
 {
   getInput("distance", distance_);
+  getInput("global_frame", global_frame_);
+  getInput("robot_base_frame", robot_base_frame_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 }
@@ -47,7 +51,7 @@ inline BT::NodeStatus DistanceController::tick()
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
-    if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
+    if (!nav2_util::getCurrentPose(start_pose_, *tf_, global_frame_, robot_base_frame_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return BT::NodeStatus::FAILURE;
     }
@@ -58,7 +62,7 @@ inline BT::NodeStatus DistanceController::tick()
 
   // Determine distance travelled since we've started this iteration
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_)) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
@@ -81,7 +85,7 @@ inline BT::NodeStatus DistanceController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
+        if (!nav2_util::getCurrentPose(start_pose_, *tf_, global_frame_, robot_base_frame_)) {
           RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
           return BT::NodeStatus::FAILURE;
         }
