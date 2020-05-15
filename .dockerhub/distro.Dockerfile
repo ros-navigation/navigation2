@@ -88,6 +88,7 @@ RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
 
+# test overlay build
 ARG RUN_TESTS
 ARG FAIL_ON_TEST_FAILURE=Ture
 RUN if [ -n "$RUN_TESTS" ]; then \
