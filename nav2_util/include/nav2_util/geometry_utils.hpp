@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
@@ -32,13 +34,23 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
   return tf2::toMsg(q);
 }
 
-inline double euclideanDistance(
-  const geometry_msgs::msg::Point pos1,
-  const geometry_msgs::msg::Point pos2)
+inline double euclidean_distance(
+  const geometry_msgs::msg::Point & pos1,
+  const geometry_msgs::msg::Point & pos2)
 {
-  const double dx = pos1.x - pos2.x;
-  const double dy = pos1.y - pos2.y;
-  const double dz = pos1.z - pos2.z;
+  double dx = pos1.x - pos2.x;
+  double dy = pos1.y - pos2.y;
+  double dz = pos1.z - pos2.z;
+  return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+inline double euclidean_distance(
+  const geometry_msgs::msg::Pose & pos1,
+  const geometry_msgs::msg::Pose & pos2)
+{
+  double dx = pos1.position.x - pos2.position.x;
+  double dy = pos1.position.y - pos2.position.y;
+  double dz = pos1.position.z - pos2.position.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 

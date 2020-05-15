@@ -68,8 +68,8 @@ inline BT::NodeStatus DistanceController::tick()
   }
 
   // Get euclidean distance
-  auto travelled = nav2_util::geometry_utils::euclideanDistance(
-    start_pose_.pose.position, current_pose.pose.position);
+  auto travelled = nav2_util::geometry_utils::euclidean_distance(
+    start_pose_.pose, current_pose.pose);
 
   // The child gets ticked the first time through and every time the threshold
   // distance is crossed. In addition, once the child begins to run, it is

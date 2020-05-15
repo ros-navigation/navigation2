@@ -22,7 +22,8 @@ namespace nav2_recoveries
 {
 
 Wait::Wait()
-: Recovery<WaitAction>()
+: Recovery<WaitAction>(),
+  feedback_(std::make_shared<WaitAction::Feedback>())
 {
 }
 
@@ -42,6 +43,9 @@ Status Wait::onCycleUpdate()
   auto current_point = std::chrono::steady_clock::now();
   auto time_left =
     std::chrono::duration_cast<std::chrono::nanoseconds>(wait_end_ - current_point).count();
+
+  feedback_->time_left = rclcpp::Duration(time_left);
+  action_server_->publish_feedback(feedback_);
 
   if (time_left > 0) {
     return Status::RUNNING;

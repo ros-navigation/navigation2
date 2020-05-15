@@ -21,6 +21,7 @@
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/progress_checker.hpp"
 #include "nav2_controller/nav2_controller.hpp"
 
@@ -37,8 +38,8 @@ ControllerServer::ControllerServer()
 
   declare_parameter("controller_frequency", 20.0);
   std::vector<std::string> default_id, default_type;
-  default_type.push_back("dwb_core::DWBLocalPlanner");
-  default_id.push_back("FollowPath");
+  default_type.emplace_back("dwb_core::DWBLocalPlanner");
+  default_id.emplace_back("FollowPath");
   declare_parameter("controller_plugin_ids", default_id);
   declare_parameter("controller_plugin_types", default_type);
 
@@ -292,7 +293,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 {
   RCLCPP_DEBUG(
     get_logger(),
-    "Providing path to the controller %s", current_controller_);
+    "Providing path to the controller %s", current_controller_.c_str());
   if (path.poses.empty()) {
     throw nav2_core::PlannerException("Invalid path, Path is empty.");
   }
@@ -303,6 +304,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose.pose.position.x, end_pose.pose.position.y);
+  end_pose_ = end_pose.pose;
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -322,6 +324,11 @@ void ControllerServer::computeAndPublishVelocity()
     pose,
     nav_2d_utils::twist2Dto3D(twist));
 
+  std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
+  feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
+  feedback->distance_to_goal = nav2_util::geometry_utils::euclidean_distance(end_pose_, pose.pose);
+  action_server_->publish_feedback(feedback);
+
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
 }
@@ -337,7 +344,7 @@ void ControllerServer::updateGlobalPath()
     } else {
       RCLCPP_INFO(
         get_logger(), "Terminating action, invalid controller %s requested.",
-        goal->controller_id);
+        goal->controller_id.c_str());
       action_server_->terminate_current();
       return;
     }

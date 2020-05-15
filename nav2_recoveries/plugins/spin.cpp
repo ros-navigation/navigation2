@@ -35,9 +35,10 @@ namespace nav2_recoveries
 {
 
 Spin::Spin()
-: Recovery<SpinAction>()
+: Recovery<SpinAction>(),
+  feedback_(std::make_shared<SpinAction::Feedback>()),
+  prev_yaw_(0.0)
 {
-  prev_yaw_ = 0.0;
 }
 
 Spin::~Spin()
@@ -102,6 +103,9 @@ Status Spin::onCycleUpdate()
 
   relative_yaw_ += delta_yaw;
   prev_yaw_ = current_yaw;
+
+  feedback_->angular_distance_traveled = relative_yaw_;
+  action_server_->publish_feedback(feedback_);
 
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
   if (remaining_yaw <= 0) {

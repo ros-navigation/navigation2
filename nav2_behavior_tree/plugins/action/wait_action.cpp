@@ -46,6 +46,11 @@ public:
     goal_.time.sec = duration;
   }
 
+  void on_tick() override
+  {
+    increment_recovery_count();
+  }
+
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static BT::PortsList providedPorts()
   {
