@@ -236,9 +236,6 @@ BtNavigator::navigateToPose()
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
         initializeGoalPose();
-        blackboard_->set<bool>("new_goal_received", true);
-      } else {
-        blackboard_->set<bool>("new_goal_received", false);
       }
       topic_logger.flush();
 
@@ -301,7 +298,6 @@ BtNavigator::initializeGoalPose()
 
   // Update the goal pose on the blackboard
   blackboard_->set("goal", goal->pose);
-  blackboard_->set<bool>("new_goal_received", true);
 }
 
 void
