@@ -253,6 +253,10 @@ recoveries_server:
     global_frame: odom
     robot_base_frame: base_link
     use_sim_time: true
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
 
 recoveries_server_rclcpp_node:
   ros__parameters:
