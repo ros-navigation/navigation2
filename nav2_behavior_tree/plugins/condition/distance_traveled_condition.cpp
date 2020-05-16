@@ -16,92 +16,57 @@
 #ifndef NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
 
-#include <string>
-#include <memory>
-
-#include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.h"
+#include "nav2_util/geometry_utils.hpp"
+
+#include "distance_traveled_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class DistanceTraveledCondition : public BT::ConditionNode
+DistanceTraveledCondition::DistanceTraveledCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf),
+  distance_(1.0),
+  first_tick_(true)
 {
-public:
-  DistanceTraveledCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf),
-    distance_(1.0),
-    first_time_(true)
-  {
-    getInput("distance", distance_);
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-  }
+  getInput("distance", distance_);
+  getInput("global_frame", global_frame_);
+  getInput("robot_base_frame", robot_base_frame_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+}
 
-  DistanceTraveledCondition() = delete;
-
-  BT::NodeStatus tick() override
-  {
-    if (first_time_) {
-      if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
-        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-        return BT::NodeStatus::FAILURE;
-      }
-      first_time_ = false;
-      return BT::NodeStatus::SUCCESS;
-    }
-
-    // Determine distance travelled since we've started this iteration
-    geometry_msgs::msg::PoseStamped current_pose;
-    if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
+BT::NodeStatus DistanceTraveledCondition::tick()
+{
+  if (first_tick_) {
+    if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      return BT::NodeStatus::FAILURE;
     }
-
-    // Get euclidean distance
-    auto travelled = euclidean_distance(start_pose_, current_pose);
-
-    if (travelled < distance_) {
-      return BT::NodeStatus::FAILURE;
-    }
-
-    // Update start pose
-    start_pose_ = current_pose;
-
-    return BT::NodeStatus::SUCCESS;
+    return BT::NodeStatus::FAILURE;
   }
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<double>("distance", 1.0, "Distance")
-    };
+  // Determine distance travelled since we've started this iteration
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_)) {
+    RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+    return BT::NodeStatus::FAILURE;
   }
 
-private:
-  double euclidean_distance(
-    const geometry_msgs::msg::PoseStamped & pose1,
-    const geometry_msgs::msg::PoseStamped & pose2)
-  {
-    const double dx = pose1.pose.position.x - pose2.pose.position.x;
-    const double dy = pose1.pose.position.y - pose2.pose.position.y;
-    const double dz = pose1.pose.position.z - pose2.pose.position.z;
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
+  // Get euclidean distance
+  auto travelled = nav2_util::geometry_utils::euclidean_distance(
+    start_pose_.pose, current_pose.pose);
+
+  if (travelled < distance_) {
+    return BT::NodeStatus::FAILURE;
   }
 
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  // Update start pose
+  start_pose_ = current_pose;
 
-  geometry_msgs::msg::PoseStamped start_pose_;
-
-  double distance_;
-  bool first_time_;
-};
+  return BT::NodeStatus::SUCCESS;
+}
 
 }  // namespace nav2_behavior_tree
 

@@ -21,62 +21,44 @@
 
 #include "behaviortree_cpp_v3/condition_node.h"
 
+#include "time_expired_condition.hpp"
+
 namespace nav2_behavior_tree
 {
 
-class TimeExpiredCondition : public BT::ConditionNode
+TimeExpiredCondition::TimeExpiredCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf),
+  period_(1.0),
+  first_tick_(true)
 {
-public:
-  TimeExpiredCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf),
-    first_time_(true)
-  {
-    double hz = 1.0;
-    getInput("hz", hz);
-    period_ = 1.0 / hz;
+  getInput("seconds", period_);
+}
+
+BT::NodeStatus TimeExpiredCondition::tick()
+{
+  if (first_tick_) {
+    start_ = std::chrono::high_resolution_clock::now();
+    first_tick_ = false;
+    return BT::NodeStatus::FAILURE;
   }
 
-  TimeExpiredCondition() = delete;
+  // Determine how long its been since we've started this iteration
+  auto now = std::chrono::high_resolution_clock::now();
+  auto elapsed = now - start_;
 
-  BT::NodeStatus tick() override
-  {
-    if (first_time_) {
-      start_ = std::chrono::high_resolution_clock::now();
-      first_time_ = false;
-      return BT::NodeStatus::SUCCESS;
-    }
+  // Now, get that in seconds
+  typedef std::chrono::duration<float> float_seconds;
+  auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
 
-    // Determine how long its been since we've started this iteration
-    auto now = std::chrono::high_resolution_clock::now();
-    auto elapsed = now - start_;
-
-    // Now, get that in seconds
-    typedef std::chrono::duration<float> float_seconds;
-    auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
-
-    if (seconds.count() < period_) {
-      return BT::NodeStatus::FAILURE;
-    }
-
-    start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
-    return BT::NodeStatus::SUCCESS;
+  if (seconds.count() < period_) {
+    return BT::NodeStatus::FAILURE;
   }
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<double>("hz", 10.0, "Rate")
-    };
-  }
-
-private:
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-  double period_;
-  bool first_time_;
-};
+  start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
+  return BT::NodeStatus::SUCCESS;
+}
 
 }  // namespace nav2_behavior_tree
 
