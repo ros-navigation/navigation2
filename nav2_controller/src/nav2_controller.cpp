@@ -235,6 +235,7 @@ void ControllerServer::computeControl()
       action_server_->terminate_current();
       return;
     }
+    bool keep_running = action_server_->get_current_goal()->keep_running;
 
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
@@ -262,7 +263,7 @@ void ControllerServer::computeControl()
 
       computeAndPublishVelocity();
 
-      if (isGoalReached()) {
+      if (!keep_running && isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
       }
@@ -305,22 +306,70 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     end_pose.pose.position.x, end_pose.pose.position.y);
 }
 
+double getDistance(
+  const geometry_msgs::msg::PoseStamped & pose_a,
+  const geometry_msgs::msg::PoseStamped & pose_b)
+{
+  double x_diff = fabs(pose_a.pose.position.x - pose_b.pose.position.x);
+  double y_diff = fabs(pose_a.pose.position.y - pose_b.pose.position.y);
+
+  return std::hypot(x_diff, y_diff);
+}
+
+geometry_msgs::msg::TwistStamped getTwistToPose(
+  const geometry_msgs::msg::PoseStamped & pose_from,
+  const geometry_msgs::msg::PoseStamped & pose_to)
+{
+  double x_diff = pose_to.pose.position.x - pose_from.pose.position.x;
+  double y_diff = pose_to.pose.position.y - pose_from.pose.position.y;
+
+  tf2::Quaternion q;
+  tf2::fromMsg(pose_from.pose.orientation, q);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  geometry_msgs::msg::TwistStamped ret;
+  ret.header = pose_from.header;
+
+  // Get the angular speed (todo: control max vel)
+  double w = atan2(y_diff, x_diff) - yaw;
+  // Normalize [-pi, pi)
+  w = atan2(sin(w), cos(w));
+
+  ret.twist.angular.z = w;
+
+  return ret;
+}
+
+
 void ControllerServer::computeAndPublishVelocity()
 {
   geometry_msgs::msg::PoseStamped pose;
+  geometry_msgs::msg::PoseStamped last_path_pose = 
+    action_server_->get_current_goal()->path.poses.back();
+  double distance_to_goal = action_server_->get_current_goal()->distance_to_goal;
+  bool keep_running = action_server_->get_current_goal()->keep_running;
 
   if (!getRobotPose(pose)) {
     throw nav2_core::PlannerException("Failed to obtain robot pose");
   }
 
-  progress_checker_->check(pose);
-
+  if (!keep_running) {
+    progress_checker_->check(pose);
+  }
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
-  auto cmd_vel_2d =
-    controllers_[current_controller_]->computeVelocityCommands(
-    pose,
-    nav_2d_utils::twist2Dto3D(twist));
+  geometry_msgs::msg::TwistStamped cmd_vel_2d;
+
+  if (getDistance(pose, last_path_pose) > distance_to_goal) {
+    cmd_vel_2d =
+      controllers_[current_controller_]->computeVelocityCommands(
+      pose,
+      nav_2d_utils::twist2Dto3D(twist));
+  } else {
+    cmd_vel_2d = getTwistToPose(pose, last_path_pose);
+  }
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);

@@ -1,6 +1,8 @@
 #goal definition
 nav_msgs/Path path
 string controller_id
+float64 distance_to_goal 0.0
+bool keep_running false
 ---
 #result definition
 std_msgs/Empty result

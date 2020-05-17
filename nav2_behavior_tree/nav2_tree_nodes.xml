@@ -42,6 +42,10 @@
       <input_port name="wait_duration">Wait time</input_port>
     </Action>
 
+    <Action ID="UpdateGoalPose">
+      <input_port name="goal">Destination to plan to</input_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
         <input_port name="goal">Destination</input_port>

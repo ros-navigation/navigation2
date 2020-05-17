@@ -40,6 +40,8 @@ public:
   {
     getInput("path", goal_.path);
     getInput("controller_id", goal_.controller_id);
+    getInput("distance_to_goal", goal_.distance_to_goal);
+    getInput("keep_running", goal_.keep_running);
   }
 
   void on_wait_for_result() override
@@ -62,6 +64,8 @@ public:
       {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
+        BT::InputPort<double>("distance_to_goal", "Distance to goal to stop translation"),
+        BT::InputPort<bool>("keep_running", "The action never finish"),
       });
   }
 };
