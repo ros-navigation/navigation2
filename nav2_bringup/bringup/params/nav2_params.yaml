@@ -116,8 +116,10 @@ controller_server:
     FollowPath.stateful: True
     FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     FollowPath.BaseObstacle.scale: 0.02
-    FollowPath.PathAlign.scale: 0.0
-    FollowPath.GoalAlign.scale: 0.0
+    FollowPath.PathAlign.scale: 32.0
+    FollowPath.GoalAlign.scale: 24.0
+    FollowPath.PathAlign.forward_point_distance: 0.1
+    FollowPath.GoalAlign.forward_point_distance: 0.1
     FollowPath.PathDist.scale: 32.0
     FollowPath.GoalDist.scale: 24.0
     FollowPath.RotateToGoal.scale: 32.0
