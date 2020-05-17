@@ -17,6 +17,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__TIME_EXPIRED_CONDITION_HPP_
 
 #include <chrono>
+#include <string>
 
 #include "behaviortree_cpp_v3/condition_node.h"
 

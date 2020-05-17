@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <string>
+#include <memory>
 
 #include "behaviortree_cpp_v3/condition_node.h"
 

@@ -16,6 +16,8 @@
 #ifndef NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
 
+#include <string>
+
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
