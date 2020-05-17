@@ -209,10 +209,6 @@ recoveries_server:
     robot_base_frame: base_link
     use_sim_time: true
 
-recoveries_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
-
 robot_state_publisher:
   ros__parameters:
     use_sim_time: True
