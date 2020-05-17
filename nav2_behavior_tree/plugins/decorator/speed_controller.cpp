@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 #include "nav2_util/geometry_utils.hpp"
 
 #include "speed_controller.hpp"
@@ -23,9 +25,9 @@ namespace nav2_behavior_tree
 SpeedController::SpeedController(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-  : BT::DecoratorNode(name, conf),
-    first_time_(false),
-    period_(1.0)
+: BT::DecoratorNode(name, conf),
+  first_time_(false),
+  period_(1.0)
 {
   getInput("min_rate", min_rate_);
   getInput("max_rate", max_rate_);
@@ -90,8 +92,7 @@ inline BT::NodeStatus SpeedController::tick()
 void SpeedController::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   // Calculate speed using velocity components
-  double speed = std::sqrt(msg->twist.twist.linear.x * msg->twist.twist.linear.x +
-    msg->twist.twist.linear.y * msg->twist.twist.linear.y);
+  double speed = std::hypot(msg->twist.twist.linear.x, msg->twist.twist.linear.y);
 
   // Calculate scaled time period based on current speed
   period_ = 1.0 / getScaledRate(speed);

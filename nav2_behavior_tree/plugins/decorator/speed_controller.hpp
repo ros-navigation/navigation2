@@ -85,4 +85,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif //NAV2_BEHAVIOR_TREE_SPEED_CONTROLLER_HPP
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__SPEED_CONTROLLER_HPP_
