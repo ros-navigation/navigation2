@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
 #define NAV2_BEHAVIOR_TREE__BT_ACTION_NODE_HPP_
 
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -47,6 +48,11 @@ public:
     }
     createActionClient(action_name_);
 
+    // get action timeout duration in seconds
+    double timeout = 30.0;
+    getInput("timeout", timeout);
+    timeout_ = std::chrono::duration<double>(timeout);
+
     // Give the derive class a chance to do any initialization
     RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
@@ -74,7 +80,7 @@ public:
   {
     BT::PortsList basic = {
       BT::InputPort<std::string>("server_name", "Action server name"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+      BT::InputPort<double>("timeout", 30, "Timeout for action server")
     };
     basic.insert(addition.begin(), addition.end());
 
@@ -152,6 +158,14 @@ public:
 
       // check if, after invoking spin_some(), we finally received the result
       if (!goal_result_available_) {
+        // check if action has timed out
+        auto current_time = std::chrono::steady_clock::now();
+        if (current_time - start_time_ > timeout_) {
+          RCLCPP_WARN(
+            node_->get_logger(),
+            "Node timed out while executing action call to %s.", action_name_.c_str());
+          return BT::NodeStatus::FAILURE;
+        }
         // Yield this Action, returning RUNNING
         return BT::NodeStatus::RUNNING;
       }
@@ -231,6 +245,9 @@ protected:
     if (!goal_handle_) {
       throw std::runtime_error("Goal was rejected by the action server");
     }
+
+    // Get time when execution of goal was started
+    start_time_ = std::chrono::steady_clock::now();
   }
 
   void increment_recovery_count()
@@ -253,6 +270,11 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+
+  // The timeout value while to use in the tick loop while waiting for
+  // a result from the server
+  std::chrono::duration<double> timeout_;
+  std::chrono::steady_clock::time_point start_time_;
 };
 
 }  // namespace nav2_behavior_tree
