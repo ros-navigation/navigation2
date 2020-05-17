@@ -28,8 +28,7 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  distance_(1.0),
-  first_tick_(true)
+  distance_(1.0)
 {
   getInput("distance", distance_);
   getInput("global_frame", global_frame_);
@@ -40,7 +39,7 @@ DistanceTraveledCondition::DistanceTraveledCondition(
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
-  if (first_tick_) {
+  if (status() == BT::NodeStatus::IDLE) {
     if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     }

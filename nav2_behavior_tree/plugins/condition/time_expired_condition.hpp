@@ -45,7 +45,6 @@ public:
 private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
-  bool first_tick_;
 };
 
 }  // namespace nav2_behavior_tree

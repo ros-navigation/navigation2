@@ -30,17 +30,15 @@ TimeExpiredCondition::TimeExpiredCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  period_(1.0),
-  first_tick_(true)
+  period_(1.0)
 {
   getInput("seconds", period_);
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
-  if (first_tick_) {
+  if (status() == BT::NodeStatus::IDLE) {
     start_ = std::chrono::high_resolution_clock::now();
-    first_tick_ = false;
     return BT::NodeStatus::FAILURE;
   }
 
