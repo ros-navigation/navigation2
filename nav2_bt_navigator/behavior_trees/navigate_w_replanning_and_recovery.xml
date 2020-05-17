@@ -1,4 +1,3 @@
-
 <!--
   This Behavior Tree replans the global path periodically at 1 Hz and it also has
   recovery actions.
