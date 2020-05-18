@@ -70,8 +70,7 @@ references:
                 (echo vcs_export && cat) >> checksum.txt
               sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
-              rosdep update \
-                --rosdistro=$ROS_DISTRO
+              rosdep update
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
