@@ -40,6 +40,7 @@ FROM $FROM_IMAGE AS builder
 RUN apt-get update && apt-get install -q -y \
       ccache \
       lcov \
+    && rosdep update --rosdistro=$ROS_DISTRO \
     && rm -rf /var/lib/apt/lists/*
 
 # install underlay dependencies
