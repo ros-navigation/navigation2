@@ -74,10 +74,6 @@ references:
                 rosdep install -q -y \
                   --from-paths src \
                   --ignore-src \
-                  --skip-keys " \
-                    gazebo11 \
-                    libgazebo11-dev \
-                  " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
