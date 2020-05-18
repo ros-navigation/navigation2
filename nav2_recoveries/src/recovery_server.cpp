@@ -45,6 +45,10 @@ RecoveryServer::RecoveryServer()
   declare_parameter(
     "plugin_types",
     rclcpp::ParameterValue(plugin_types));
+
+  declare_parameter(
+    "transform_tolerance",
+    rclcpp::ParameterValue(0.1));
 }
 
 
@@ -67,12 +71,13 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string costmap_topic, footprint_topic;
   this->get_parameter("costmap_topic", costmap_topic);
   this->get_parameter("footprint_topic", footprint_topic);
+  this->get_parameter("transform_tolerance", transform_tolerance_);
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
     shared_from_this(), footprint_topic, 1.0);
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), "odom");
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), "odom", transform_tolerance_);
 
   this->get_parameter("plugin_names", plugin_names_);
   this->get_parameter("plugin_types", plugin_types_);

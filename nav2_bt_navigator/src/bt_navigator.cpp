@@ -58,6 +58,7 @@ BtNavigator::BtNavigator()
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
 }

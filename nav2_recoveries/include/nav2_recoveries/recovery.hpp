@@ -97,6 +97,7 @@ public:
     tf_ = tf;
 
     node_->get_parameter("cycle_frequency", cycle_frequency_);
+    node_->get_parameter("transform_tolerance", transform_tolerance_);
 
     action_server_ = std::make_shared<ActionServer>(
       node_, recovery_name_,
@@ -140,6 +141,7 @@ protected:
 
   double cycle_frequency_;
   double enabled_;
+  double transform_tolerance_;
 
   void execute()
   {

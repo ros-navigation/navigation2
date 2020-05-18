@@ -46,7 +46,8 @@ public:
     FootprintSubscriber & footprint_sub,
     tf2_ros::Buffer & tf,
     std::string name = "collision_checker",
-    std::string global_frame = "map");
+    std::string global_frame = "map",
+    double transform_tolerance = 0.1);
 
   ~CostmapTopicCollisionChecker() = default;
 
@@ -64,6 +65,7 @@ protected:
   tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
+  double transform_tolerance_;
   FootprintCollisionChecker collision_checker_;
 };
 
