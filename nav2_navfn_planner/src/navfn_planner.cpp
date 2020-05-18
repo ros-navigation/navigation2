@@ -224,7 +224,7 @@ NavfnPlanner::makePlan(
     found_legal = true;
   } else {
     // Goal is not reachable. Trying to find nearest to the goal
-    // reachable point within tolerance region
+    // reachable point within its tolerance region
     double best_sdist = std::numeric_limits<double>::max();
 
     p.position.y = goal.position.y - tolerance;
@@ -372,11 +372,11 @@ NavfnPlanner::validPointPotential(
   geometry_msgs::msg::Point p = world_point;
   double potential = getPointPotential(p);
   if (potential < POT_HIGH) {
-    // Goal is reachable by itself
+    // world_point is reachable by itself
     return true;
   } else {
-    // Goal is not reachable. Trying to find any
-    // reachable point within tolerance region
+    // world_point, is not reachable. Trying to find any
+    // reachable point within its tolerance region
     p.y = world_point.y - tolerance;
     while (p.y <= world_point.y + tolerance) {
       p.x = world_point.x - tolerance;
