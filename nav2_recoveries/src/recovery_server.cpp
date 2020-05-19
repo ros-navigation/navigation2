@@ -87,7 +87,7 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("global_frame", global_frame);
   get_parameter("robot_base_frame", robot_base_frame);
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), 
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
     global_frame, robot_base_frame, transform_tolerance_);
 
   get_parameter("plugin_names", plugin_names_);

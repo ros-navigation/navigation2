@@ -55,8 +55,8 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   command_speed_ = command->speed;
 
   if (!nav2_util::getCurrentPose(
-      initial_pose_, *tf_, global_frame_, robot_base_frame_, 
-      transform_tolerance_)) 
+      initial_pose_, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
   {
     RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
@@ -69,8 +69,8 @@ Status BackUp::onCycleUpdate()
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, 
-      transform_tolerance_)) 
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
   {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
