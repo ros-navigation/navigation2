@@ -16,13 +16,12 @@
 #ifndef NAV2_BEHAVIOR_TREE__TIME_EXPIRED_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__TIME_EXPIRED_CONDITION_HPP_
 
-#include <chrono>
 #include <string>
 #include <memory>
 
 #include "behaviortree_cpp_v3/condition_node.h"
 
-#include "time_expired_condition.hpp"
+#include "nav2_behavior_tree/plugins/time_expired_condition.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -34,28 +33,28 @@ TimeExpiredCondition::TimeExpiredCondition(
   period_(1.0)
 {
   getInput("seconds", period_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  start_ = node_->now();
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
-    start_ = std::chrono::high_resolution_clock::now();
+    start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }
 
   // Determine how long its been since we've started this iteration
-  auto now = std::chrono::high_resolution_clock::now();
-  auto elapsed = now - start_;
+  auto elapsed = node_->now() - start_;
 
   // Now, get that in seconds
-  typedef std::chrono::duration<float> float_seconds;
-  auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
+  auto seconds = elapsed.seconds();
 
-  if (seconds.count() < period_) {
+  if (seconds < period_) {
     return BT::NodeStatus::FAILURE;
   }
 
-  start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
+  start_ = node_->now();  // Reset the timer
   return BT::NodeStatus::SUCCESS;
 }
 

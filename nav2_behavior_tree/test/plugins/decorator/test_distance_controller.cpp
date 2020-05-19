@@ -24,7 +24,7 @@
 
 #include "../../test_transform_handler.hpp"
 #include "../../test_dummy_tree_node.hpp"
-#include "../../../plugins/decorator/distance_controller.hpp"
+#include "nav2_behavior_tree/plugins/distance_controller.hpp"
 
 class DistanceControllerTestFixture : public ::testing::Test
 {

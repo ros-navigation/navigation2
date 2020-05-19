@@ -22,7 +22,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
-#include "distance_traveled_condition.hpp"
+#include "nav2_behavior_tree/plugins/distance_traveled_condition.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -38,12 +38,16 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   getInput("robot_base_frame", robot_base_frame_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
-    if (!nav2_util::getCurrentPose(start_pose_, *tf_)) {
+    if (!nav2_util::getCurrentPose(
+        start_pose_, *tf_, global_frame_, robot_base_frame_,
+        transform_tolerance_))
+    {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     }
     return BT::NodeStatus::FAILURE;
@@ -51,7 +55,10 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
   // Determine distance travelled since we've started this iteration
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_)) {
+  if (!nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
+  {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
