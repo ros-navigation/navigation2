@@ -113,7 +113,6 @@ private:
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
-
 };
 
 }  // namespace nav2_behavior_tree
