@@ -38,9 +38,11 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
   tf2_ros::Buffer & tf,
   std::string name,
   std::string global_frame,
+  std::string robot_base_frame,
   double transform_tolerance)
 : name_(name),
   global_frame_(global_frame),
+  robot_base_frame_(robot_base_frame),
   tf_(tf),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub),
@@ -107,7 +109,7 @@ void CostmapTopicCollisionChecker::unorientFootprint(
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, tf_, global_frame_, "base_link",
+      current_pose, tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     throw CollisionCheckerException("Robot pose unavailable.");
