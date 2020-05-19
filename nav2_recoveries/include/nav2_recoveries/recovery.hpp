@@ -99,6 +99,7 @@ public:
     node_->get_parameter("cycle_frequency", cycle_frequency_);
     node_->get_parameter("global_frame", global_frame_);
     node_->get_parameter("robot_base_frame", robot_base_frame_);
+    node_->get_parameter("transform_tolerance", transform_tolerance_);
 
     action_server_ = std::make_shared<ActionServer>(
       node_, recovery_name_,
@@ -144,6 +145,7 @@ protected:
   double enabled_;
   std::string global_frame_;
   std::string robot_base_frame_;
+  double transform_tolerance_;
 
   void execute()
   {
