@@ -31,7 +31,10 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  distance_(1.0)
+  distance_(1.0),
+  transform_tolerance_(0.1),
+  global_frame_("map"),
+  robot_base_frame_("base_link")
 {
   getInput("distance", distance_);
   getInput("global_frame", global_frame_);
