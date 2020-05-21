@@ -23,6 +23,7 @@
 
 using std::string;
 using lifecycle_msgs::msg::Transition;
+using lifecycle_msgs::msg::State;
 
 namespace nav2_util
 {
@@ -95,6 +96,67 @@ void reset_lifecycle_nodes(
 {
   for (const auto & node_name : node_names) {
     resetLifecycleNode(node_name, service_call_timeout, retries);
+  }
+}
+
+static void processErrorLifecycleNode(
+  const std::string & node_name,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
+{
+  LifecycleServiceClient sc(node_name);
+  uint8_t transition;
+  // Each state of the lifecycle node has a specific transition
+  // to the ErrorProcessing state. Some states do not support transitions
+  // to ErrorProcessing.
+  switch (sc.get_state(service_call_timeout)) {
+    case State::PRIMARY_STATE_UNKNOWN:
+      return;
+    case State::PRIMARY_STATE_UNCONFIGURED:
+      return;
+    case State::PRIMARY_STATE_INACTIVE:
+      return;
+    case State::PRIMARY_STATE_ACTIVE:
+      return;
+    case State::PRIMARY_STATE_FINALIZED:
+      return;
+    case State::TRANSITION_STATE_CONFIGURING:
+      transition = Transition::TRANSITION_ON_CONFIGURE_ERROR;
+      break;
+    case State::TRANSITION_STATE_CLEANINGUP:
+      transition = Transition::TRANSITION_ON_CLEANUP_ERROR;
+      break;
+    case State::TRANSITION_STATE_SHUTTINGDOWN:
+      transition = Transition::TRANSITION_ON_SHUTDOWN_ERROR;
+      break;
+    case State::TRANSITION_STATE_ACTIVATING:
+      transition = Transition::TRANSITION_ON_ACTIVATE_ERROR;
+      break;
+    case State::TRANSITION_STATE_DEACTIVATING:
+      transition = Transition::TRANSITION_ON_DEACTIVATE_ERROR;
+      break;
+    case State::TRANSITION_STATE_ERRORPROCESSING:
+      transition = Transition::TRANSITION_ON_ERROR_ERROR;
+      break;
+    default:
+      return;
+  }
+
+  // Despite waiting for the service to be available and using reliable transport
+  // service calls still frequently hang. To get reliable reset it's necessary
+  // to timeout the service call and retry it when that happens.
+  RETRY(
+    sc.change_state(transition, service_call_timeout),
+    retries);
+}
+
+void process_error_lifecycle_nodes(
+  const std::vector<std::string> & node_names,
+  const std::chrono::seconds service_call_timeout,
+  const int retries)
+{
+  for (const auto & node_name : node_names) {
+    processErrorLifecycleNode(node_name, service_call_timeout, retries);
   }
 }
 
