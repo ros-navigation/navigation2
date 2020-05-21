@@ -33,8 +33,13 @@ public:
   GoalReachedCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf), initialized_(false)
+  : BT::ConditionNode(condition_name, conf),
+    initialized_(false),
+    global_frame_("map"),
+    robot_base_frame_("base_link")
   {
+    getInput("global_frame", global_frame_);
+    getInput("robot_base_frame", robot_base_frame_);
   }
 
   GoalReachedCondition() = delete;
@@ -62,6 +67,8 @@ public:
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
     tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
+    node_->get_parameter("transform_tolerance", transform_tolerance_);
+
     initialized_ = true;
   }
 
@@ -70,7 +77,7 @@ public:
   {
     geometry_msgs::msg::PoseStamped current_pose;
 
-    if (!nav2_util::getCurrentPose(current_pose, *tf_)) {
+    if (!nav2_util::getCurrentPose(current_pose, *tf_, "map", "base_link", transform_tolerance_)) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
@@ -86,7 +93,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination")
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
+      BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
     };
   }
 
@@ -101,6 +110,9 @@ private:
 
   bool initialized_;
   double goal_reached_tol_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_behavior_tree
