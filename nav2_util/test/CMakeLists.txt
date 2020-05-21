@@ -32,3 +32,7 @@ target_link_libraries(test_lifecycle_cli_node ${library_name})
 ament_add_gtest(test_geometry_utils test_geometry_utils.cpp)
 ament_target_dependencies(test_geometry_utils geometry_msgs)
 target_link_libraries(test_geometry_utils ${library_name})
+
+ament_add_gtest(test_odometry_utils test_odometry_utils.cpp)
+ament_target_dependencies(test_odometry_utils nav_msgs geometry_msgs)
+target_link_libraries(test_odometry_utils ${library_name})

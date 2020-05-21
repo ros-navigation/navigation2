@@ -7,7 +7,7 @@
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="2" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <SpeedController min_rate="0.1" max_rate="1.0" min_speed="0.0" max_speed="0.25">
+        <RateController rate="1.0">
           <RecoveryNode number_of_retries="4" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
             <ReactiveFallback name="PathToPoseFallback">
@@ -18,7 +18,7 @@
               </RoundRobin>
             </ReactiveFallback>
           </RecoveryNode>
-        </SpeedController>
+        </RateController>
         <RecoveryNode number_of_retries="4" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath"/>
           <ReactiveFallback name="FollowPathFallback">

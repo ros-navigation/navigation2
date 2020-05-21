@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <string>
+#include <memory>
 
 #include "nav2_util/geometry_utils.hpp"
 
@@ -39,37 +40,39 @@ SpeedController::SpeedController(
 
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&SpeedController::onOdomReceived, this, std::placeholders::_1));
+  double duration;
+  getInput("filter_duration", duration);
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, duration);
 }
 
 inline BT::NodeStatus SpeedController::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
-    // Reset the starting position since we're starting a new iteration of
+    // Reset the starting position and period
+    // since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
-    start_ = std::chrono::steady_clock::now();
+    period_ = 2.0 / (max_rate_ + min_rate_);
+    start_ = node_->now();
     first_time_ = true;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  auto now = std::chrono::steady_clock::now();
-  auto elapsed = now - start_;
-
-  // Now, get that in seconds
-  typedef std::chrono::duration<float> float_seconds;
-  auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
+  auto elapsed = node_->now() - start_;
 
   // The child gets ticked the first time through and any time the period has
   // expired. In addition, once the child begins to run, it is ticked each time
   // 'til completion
   if (first_time_ || (child_node_->status() == BT::NodeStatus::RUNNING) ||
-    seconds.count() >= period_)
+    elapsed.seconds() >= period_)
   {
     first_time_ = false;
+
+    // update period if the last period is exceeded
+    if (elapsed.seconds() >= period_) {
+      updatePeriod();
+    }
+
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
@@ -77,7 +80,7 @@ inline BT::NodeStatus SpeedController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        start_ = std::chrono::steady_clock::now();  // Reset the timer
+        start_ = node_->now();
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:
@@ -87,15 +90,6 @@ inline BT::NodeStatus SpeedController::tick()
   }
 
   return status();
-}
-
-void SpeedController::onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg)
-{
-  // Calculate speed using velocity components
-  double speed = std::hypot(msg->twist.twist.linear.x, msg->twist.twist.linear.y);
-
-  // Calculate scaled time period based on current speed
-  period_ = 1.0 / getScaledRate(speed);
 }
 
 }  // namespace nav2_behavior_tree

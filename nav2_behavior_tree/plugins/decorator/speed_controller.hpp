@@ -21,6 +21,8 @@
 #include <deque>
 
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_stamped.h"
+#include "nav2_util/odometry_utils.hpp"
 
 #include "behaviortree_cpp_v3/decorator_node.h"
 
@@ -41,17 +43,16 @@ public:
       BT::InputPort<double>("min_rate", 0.1, "Minimum rate"),
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),
       BT::InputPort<double>("min_speed", 0.0, "Minimum speed"),
-      BT::InputPort<double>("max_speed", 0.25, "Maximum speed")
+      BT::InputPort<double>("max_speed", 0.5, "Maximum speed"),
+      BT::InputPort<double>("filter_duration", 0.3, "Duration (secs) for velocity smoothing filter")
     };
   }
 
 private:
   BT::NodeStatus tick() override;
 
-  void onOdomReceived(nav_msgs::msg::Odometry::SharedPtr msg);
-
   // Scale the rate based speed
-  inline double getScaledRate(double speed)
+  inline double getScaledRate(const double & speed)
   {
     return std::max(
       std::min(
@@ -59,13 +60,21 @@ private:
         max_rate_), min_rate_);
   }
 
+  // Update period based on current smoothed speed and reset timer
+  inline void updatePeriod()
+  {
+    auto velocity = odom_smoother_->getTwist();
+    double speed = std::hypot(velocity.linear.x, velocity.linear.y);
+    period_ = 1.0 / getScaledRate(speed);
+  }
+
   rclcpp::Node::SharedPtr node_;
 
-  // Listen to odometry
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-
   // To keep track of time to reset
-  std::chrono::time_point<std::chrono::steady_clock> start_;
+  rclcpp::Time start_;
+
+  // To get a smoothed velocity
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   bool first_time_;
 
