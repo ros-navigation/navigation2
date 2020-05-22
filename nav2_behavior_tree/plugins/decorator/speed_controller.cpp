@@ -37,11 +37,10 @@ SpeedController::SpeedController(
   getInput("min_speed", min_speed_);
   getInput("max_speed", max_speed_);
 
-  if (min_rate_ <= 0) {
-    RCLCPP_WARN(
-      node_->get_logger(),
-      "min_rate cannot be <= 0, setting to a default value of 0.01 hz");
-    min_rate_ = 0.01;
+  if (min_rate_ <= 0 || max_rate_ <= 0) {
+    std::string err_msg = "SpeedController node cannot have rate <= 0";
+    RCLCPP_FATAL(node_->get_logger(), err_msg);
+    throw BT::BehaviorTreeException(err_msg);
   }
 
   d_rate_ = max_rate_ - min_rate_;
