@@ -23,7 +23,6 @@ The robots co-exist on a shared environment and are controlled by independent na
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
                             IncludeLaunchDescription, LogInfo)
@@ -31,7 +30,6 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import PushRosNamespace
-
 from nav2_common.launch import ReplaceString
 
 
@@ -54,6 +52,7 @@ def generate_launch_description():
     bt_xml_file = LaunchConfiguration('bt_xml_file')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
+    params_file = LaunchConfiguration('params_file')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
@@ -74,16 +73,6 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
-    declare_robot1_params_file_cmd = DeclareLaunchArgument(
-        'robot1_params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'),
-        description='Full path to the ROS2 parameters file to use for robot1 launched nodes')
-
-    declare_robot2_params_file_cmd = DeclareLaunchArgument(
-        'robot2_params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
-        description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
-
     declare_bt_xml_cmd = DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
@@ -99,6 +88,11 @@ def generate_launch_description():
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use')
+
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_namespaced_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for launched nodes')
 
     declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
         'use_robot_state_pub',
@@ -137,7 +131,9 @@ def generate_launch_description():
             source_file=rviz_config_file,
             replacements={'<robot_namespace>': ('/' + robot['name'])})
 
-        params_file = LaunchConfiguration(robot['name'] + '_params_file')
+        namespaced_params_file = ReplaceString(
+            source_file=params_file,
+            replacements={'<robot_namespace>': ('/' + robot['name'])})
 
         group = GroupAction([
             # TODO(orduno)
@@ -162,7 +158,7 @@ def generate_launch_description():
                                   'namespace': robot['name'],
                                   'map_yaml_file': map_yaml_file,
                                   'use_sim_time': 'True',
-                                  'params_file': params_file,
+                                  'params_file': namespaced_params_file,
                                   'bt_xml_file': bt_xml_file,
                                   'autostart': autostart,
                                   'use_remappings': 'True',
@@ -212,8 +208,7 @@ def generate_launch_description():
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_robot1_params_file_cmd)
-    ld.add_action(declare_robot2_params_file_cmd)
+    ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_autostart_cmd)

@@ -18,9 +18,9 @@ import argparse
 import os
 import xml.etree.ElementTree as ET
 
+import rclpy
 from ament_index_python.packages import get_package_share_directory
 from gazebo_msgs.srv import SpawnEntity
-import rclpy
 
 
 def main():
@@ -77,7 +77,7 @@ def main():
     root = tree.getroot()
     for plugin in root.iter('plugin'):
         # TODO(orduno) Handle case if an sdf file from non-turtlebot is provided
-        if 'turtlebot3_diff_drive' in plugin.attrib.values():
+        if 'libgazebo_ros_diff_drive.so' in plugin.attrib.values():
             # The only plugin we care for now is 'diff_drive' which is
             # broadcasting a transform between`odom` and `base_footprint`
             break
