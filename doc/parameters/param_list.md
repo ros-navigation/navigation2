@@ -1,0 +1,290 @@
+
+## Node: bt_navigator 
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| bt_xml_filename | N/A |  |
+| plugin_lib_names (has opts) | N/A |  |
+| transform_tolerance | 0.1 |  |
+| global_frame | "map" |  |
+| robot_base_frame | "base_link" |  |
+
+
+## Node: controller_server
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| controller_frequency | 20.0 | |
+| controller_plugin_ids | "FollowPath" | |
+| controller_plugin_types | "dwb_core::DWBLocalPlanner" | |
+| min_x_velocity_threshold | 0.0001 | |
+| min_y_velocity_threshold | 0.0001 | |
+| min_theta_velocity_threshold | 0.0001 | |
+| required_movement_radius | 0.5 | |
+| movement_time_allowance | 10.0 | |
+
+# costmaps
+## Node: costmap_2d_ros 
+
+Namespace: /parent_ns/local_ns
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| always_send_full_costmap | false | |
+| footprint_padding | 0.01 | |
+| footprint | "[]" | |
+| global_frame | "map" | |
+| height | 5 | |
+| width | 5 | |
+| lethal_cost_threshold | 100 | |
+| map_topic | "parent_namespace/map" | |
+| observation_sources | "" | |
+| origin_x | 0.0 | |
+| origin_y | 0.0 | |
+| plugin_names | {"static_layer", "obstacle_layer", "inflation_layer"} | |
+| plugin_types | {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"} | |
+| publish_frequency | 1.0 | |
+| resolution | 0.1 | |
+| robot_base_frame | "base_link" | |
+| robot_radius| 0.1 | |
+| rolling_window | false | |
+| track_unknown_space | false | |
+| transform_tolerance | 0.3 | |
+| trinary_costmap | true | |
+| unknown_cost_value | 255 | |
+| update_frequency | 5.0 | 
+| use_maximum | false | |
+| clearable_layers | "obstacle_layer" | |
+
+### static_layer plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| static_layer.enabled | true | |
+| static_layer.subscribe_to_updates | false | |
+| static_layer.subscribe_to_updates | false | |
+| static_layer.map_subscribe_transient_local | true | |
+| static_layer.transform_tolerance | 0.0 | |
+
+### inflation_layer plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| inflation_layer.enabled | true | |
+| inflation_layer.inflation_radius | 0.55 | |
+| inflation_layer.cost_scaling_factor | 10.0 | |
+| inflation_layer.inflate_unknown | false | |
+| inflation_layer.inflate_around_unknown | false | |
+
+### obstacle_layer plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| obstacle_layer.enabled | true | |
+| obstacle_layer.footprint_clearing_enabled | true | |
+| obstacle_layer.max_obstacle_height | 2.0 | |
+| obstacle_layer.combination_method | 1 | |
+| obstacle_layer.observation_sources | "" | [data source topic](#source-anchor) |
+| [source](#source-anchor).topic  | "" | |
+| [source](#source-anchor).sensor_frame | "" | |
+| [source](#source-anchor).observation_persistence | 0.0 | |
+| [source](#source-anchor).expected_update_rate | 0.0 | |
+| [source](#source-anchor).data_type | "LaserScan" | |
+| [source](#source-anchor).min_obstacle_height | 0.0 | |
+| [source](#source-anchor).max_obstacle_height | 0.0 | |
+| [source](#source-anchor).inf_is_valid | false | |
+| [source](#source-anchor).marking | true | |
+| [source](#source-anchor).clearing | false | |
+| [source](#source-anchor).obstacle_range | 2.5 | |
+| [source](#source-anchor).raytrace_range | 3.0 | | 
+
+### voxel_layer plugin
+
+*Note*: These parameters will only get declared if `"voxel_layer"` is appended to [plugin_names]() and `"nav2_costmap_2d::VoxelLayer"` is appended to [plugin_types]().
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| voxel_layer.enabled | true | |
+| voxel_layer.footprint_clearing_enabled | true | |
+| voxel_layer.max_obstacle_height | 2.0 | |
+| voxel_layer.z_voxels | 10 | |
+| voxel_layer.origin_z | 0.0 | |
+| voxel_layer.z_resolution | 0.2 | |
+| voxel_layer.unknown_threshold | 15 | |
+| voxel_layer.mark_threshold | 0 | |
+| voxel_layer.combination_method | 1 | |
+| voxel_layer.publish_voxel_map | false | |
+
+# dwb_controller
+
+### dwb_local_planner
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.critics | | |
+| dwb_plugin_name_.prune_plan | true | |
+| dwb_plugin_name_.prune_distance | 1.0 | |
+| dwb_plugin_name_.debug_trajectory_details | false | |
+| dwb_plugin_name_.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | |
+| dwb_plugin_name_.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | |
+| dwb_plugin_name_.transform_tolerance | 0.1 | |
+| dwb_plugin_name_.short_circuit_trajectory_evaluation | true | |
+| dwb_plugin_name_.path_distance_bias | N/A | |
+| dwb_plugin_name_.goal_distance_bias |  | |
+| dwb_plugin_name_.occdist_scale |  | |
+| dwb_plugin_name_.max_scaling_factor |  | |
+| dwb_plugin_name_.scaling_speed |  | |
+| dwb_plugin_name_.PathAlign.scale |  | |
+| dwb_plugin_name_.GoalAlign.scale |  | |
+| dwb_plugin_name_.PathDist.scale |  | |
+| dwb_plugin_name_.GoalDist.scale |  | |
+
+### publisher
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.publish_evaluation |true | |
+| dwb_plugin_name_.publish_global_plan | true | |
+| dwb_plugin_name_.publish_transformed_plan | true | |
+| dwb_plugin_name_.publish_local_plan | true | |
+| dwb_plugin_name_.publish_trajectories | true | |
+| dwb_plugin_name_.publish_cost_grid_pc | false | |
+| dwb_plugin_name_.marker_lifetime | 0.1 | |
+
+### map_grid
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.aggregation_type | "last" | |
+
+### oscillation
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.x_only_threshold | 0.05 | |
+
+### kinematic_parameters 
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.max_vel_theta | 0.0 | |
+| dwb_plugin_name_.min_speed_xy | 0.0 | |
+| dwb_plugin_name_.max_speed_xy | 0.0| |
+| dwb_plugin_name_.min_speed_theta | 0.0 | |
+| dwb_plugin_name_.min_vel_x | 0.0 | |
+| dwb_plugin_name_.min_vel_y | 0.0 | |
+| dwb_plugin_name_.max_vel_x | 0.0 | |
+| dwb_plugin_name_.max_vel_theta | 0.0 | |
+| dwb_plugin_name_.acc_lim_x | 0.0 | |
+| dwb_plugin_name_.acc_lim_y | 0.0 | |
+| dwb_plugin_name_.acc_lim_theta | 0.0 | |
+| dwb_plugin_name_.decel_lim_x | 0.0 | |
+| dwb_plugin_name_.decel_lim_y | 0.0 | |
+| dwb_plugin_name_.decel_lim_theta | 0.0 | |
+
+### xy_theta_iterator 
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.vx_samples | 20 | |
+| dwb_plugin_name_.vy_samples | 5 | |
+| dwb_plugin_name_.vtheta_samples | 20| |
+
+### base_obstacle TrajectoryCritic
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.sum_scores | false | |
+
+### prefer_forward TrajectoryCritic
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.penalty | 1.0 | |
+| dwb_plugin_name_.name.strafe_x | 0.1 | |
+| dwb_plugin_name_.name.strafe_theta | 0.2 | |
+| dwb_plugin_name_.name.theta_scale | 10.0 | |
+
+### twirling TrajectoryCritic
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.scale | 0.0 | |
+
+### simple_goal_checker plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.xy_goal_tolerance | 0.25 | |
+| dwb_plugin_name_.yaw_goal_tolerance | 0.25 | |
+| dwb_plugin_name_.stateful | true | |
+
+### standard_traj_generator plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.sim_time | 1.7 | |
+| dwb_plugin_name_.discretize_by_time | false | |
+| dwb_plugin_name_.time_granularity | 0.5 | |
+| dwb_plugin_name_.linear_granularity | 0.5 | |
+| dwb_plugin_name_.angular_granularity | 0.025 | |
+| dwb_plugin_name_.include_last_point | true | |
+
+### limited_accel_generator plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.sim_time | N/A | |
+
+### stopped_goal_checker plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.rot_stopped_velocity | 0.25 | |
+| dwb_plugin_name_.trans_stopped_velocity | 0.25 | |
+
+# lifecycle_manager
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| node_names | N/A | |
+| autostart | false | |
+
+# map_saver
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| save_map_timeout | 2000 | |
+| free_thresh_default | 0.25 | |
+| occupied_thresh_default | 0.65 | |
+
+# map_server
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| yaml_filename | N/A | |
+| topic_name | "map" | |
+| frame_id | "map" | |
+
+# planner_server
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| planner_plugin_ids | "GridBased" | |
+| planner_plugin_types | "nav2_navfn_planner/NavfnPlanner" | |
+
+# navfn_planner
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| name.tolerance  | 0.5 | |
+| name.use_astar | false | |
+| name.allow_unknown | true | |
+
+# waypoint_follower
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| stop_on_failure | true | |
+| loop_rate | 20 | |
+
+# recovers
+## recovery_server
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| costmap_topic | "local_costmap/costmap_raw" | |
+| footprint_topic | "local_costmap/published_footprint" | |
+| cycle_frequency | 10.0 | |
+| transform_tolerance | 0.1 | |
+| global_frame | "odom" | |
+| robot_base_frame | "base_link" | |
+| plugin_names | {"spin", "back_up", "wait"}| |
+| plugin_types | {""nav2_recoveries/Spin"", ""nav2_recoveries/BackUp"", ""nav2_recoveries/Wait""} | |
+
+## spin plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| simulate_ahead_time | 2.0 | |
+| max_rotational_vel | 1.0 | |
+| min_rotational_vel | 0.4 | |
+| rotational_acc_lim | 3.2 | |
+
+## back_up plugin
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| simulate_ahead_time | 2.0 | |
