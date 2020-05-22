@@ -62,6 +62,7 @@ BtNavigator::BtNavigator()
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
+  declare_parameter("odom_topic", std::string("odom"));
 }
 
 BtNavigator::~BtNavigator()

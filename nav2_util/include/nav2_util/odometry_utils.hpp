@@ -45,10 +45,12 @@ public:
    * @brief Constructor that subscribes to an Odometry topic
    * @param nh NodeHandle for creating subscriber
    * @param filter_duration Duration for odom history (seconds)
+   * @param odom_topic Topic on which odometry should be received
    */
   explicit OdomSmoother(
     rclcpp::Node::SharedPtr nh,
-    double filter_duration = 0.3);
+    double filter_duration = 0.3,
+    std::string odom_topic = "odom");
 
   inline geometry_msgs::msg::Twist getTwist() {return vel_smooth_.twist;}
   inline geometry_msgs::msg::TwistStamped getTwistStamped() {return vel_smooth_;}

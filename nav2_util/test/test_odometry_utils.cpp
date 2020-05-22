@@ -34,7 +34,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   auto node = std::make_shared<rclcpp::Node>("test_node");
   auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
 
-  nav2_util::OdomSmoother odom_smoother(node, 0.3);
+  nav2_util::OdomSmoother odom_smoother(node, 0.3, "odom");
 
   nav_msgs::msg::Odometry odom_msg;
   geometry_msgs::msg::Twist twist_msg;
@@ -56,7 +56,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.2);
+  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.1);
   odom_msg.twist.twist.linear.x = 2.0;
   odom_msg.twist.twist.linear.y = 2.0;
   odom_msg.twist.twist.angular.z = 2.0;
@@ -71,7 +71,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.4);
+  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.2);
   odom_msg.twist.twist.linear.x = 3.0;
   odom_msg.twist.twist.linear.y = 3.0;
   odom_msg.twist.twist.angular.z = 3.0;
@@ -80,13 +80,13 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
-  EXPECT_EQ(twist_msg.linear.x, 2.5);
-  EXPECT_EQ(twist_msg.linear.y, 2.5);
-  EXPECT_EQ(twist_msg.angular.z, 2.5);
+  EXPECT_EQ(twist_msg.linear.x, 2.0);
+  EXPECT_EQ(twist_msg.linear.y, 2.0);
+  EXPECT_EQ(twist_msg.angular.z, 2.0);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(1.0);
+  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.45);
   odom_msg.twist.twist.linear.x = 4.0;
   odom_msg.twist.twist.linear.y = 4.0;
   odom_msg.twist.twist.angular.z = 4.0;
@@ -95,7 +95,22 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
-  EXPECT_EQ(twist_msg.linear.x, 4.0);
-  EXPECT_EQ(twist_msg.linear.y, 4.0);
-  EXPECT_EQ(twist_msg.angular.z, 4.0);
+  EXPECT_EQ(twist_msg.linear.x, 3.5);
+  EXPECT_EQ(twist_msg.linear.y, 3.5);
+  EXPECT_EQ(twist_msg.angular.z, 3.5);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(1.0);
+  odom_msg.twist.twist.linear.x = 5.0;
+  odom_msg.twist.twist.linear.y = 5.0;
+  odom_msg.twist.twist.angular.z = 5.0;
+
+  odom_pub->publish(odom_msg);
+  rclcpp::spin_some(node);
+
+  twist_msg = odom_smoother.getTwist();
+  EXPECT_EQ(twist_msg.linear.x, 5.0);
+  EXPECT_EQ(twist_msg.linear.y, 5.0);
+  EXPECT_EQ(twist_msg.angular.z, 5.0);
 }

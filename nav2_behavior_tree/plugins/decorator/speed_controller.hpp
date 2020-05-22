@@ -21,7 +21,6 @@
 #include <deque>
 
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose_stamped.h"
 #include "nav2_util/odometry_utils.hpp"
 
 #include "behaviortree_cpp_v3/decorator_node.h"
@@ -65,7 +64,8 @@ private:
   {
     auto velocity = odom_smoother_->getTwist();
     double speed = std::hypot(velocity.linear.x, velocity.linear.y);
-    period_ = 1.0 / getScaledRate(speed);
+    double rate = getScaledRate(speed);
+    period_ = 1.0 / rate;
   }
 
   rclcpp::Node::SharedPtr node_;

@@ -30,19 +30,28 @@ SpeedController::SpeedController(
   first_time_(false),
   period_(1.0)
 {
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
   getInput("min_rate", min_rate_);
   getInput("max_rate", max_rate_);
   getInput("min_speed", min_speed_);
   getInput("max_speed", max_speed_);
 
+  if (min_rate_ <= 0) {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "min_rate cannot be <= 0, setting to a default value of 0.01 hz");
+    min_rate_ = 0.01;
+  }
+
   d_rate_ = max_rate_ - min_rate_;
   d_speed_ = max_speed_ - min_speed_;
 
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-
   double duration;
   getInput("filter_duration", duration);
-  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, duration);
+  std::string odom_topic;
+  node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, duration, odom_topic);
 }
 
 inline BT::NodeStatus SpeedController::tick()

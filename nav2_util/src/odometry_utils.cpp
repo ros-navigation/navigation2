@@ -25,12 +25,11 @@ namespace nav2_util
 
 OdomSmoother::OdomSmoother(
   rclcpp::Node::SharedPtr nh,
-  double filter_duration)
+  double filter_duration,
+  std::string odom_topic)
 : node_(nh),
   odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
 {
-  std::string odom_topic;
-  nh->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
   odom_sub_ = nh->create_subscription<nav_msgs::msg::Odometry>(
     odom_topic,
     rclcpp::SystemDefaultsQoS(),
