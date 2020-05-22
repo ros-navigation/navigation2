@@ -1,5 +1,6 @@
 
-## Node: bt_navigator 
+# bt_navigator 
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | bt_xml_filename | N/A |  |
@@ -9,7 +10,8 @@
 | robot_base_frame | "base_link" |  |
 
 
-## Node: controller_server
+## controller_server
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | |
@@ -22,6 +24,7 @@
 | movement_time_allowance | 10.0 | |
 
 # costmaps
+
 ## Node: costmap_2d_ros 
 
 Namespace: /parent_ns/local_ns
@@ -55,6 +58,7 @@ Namespace: /parent_ns/local_ns
 | clearable_layers | "obstacle_layer" | |
 
 ### static_layer plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | static_layer.enabled | true | |
@@ -64,6 +68,7 @@ Namespace: /parent_ns/local_ns
 | static_layer.transform_tolerance | 0.0 | |
 
 ### inflation_layer plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | inflation_layer.enabled | true | |
@@ -73,6 +78,7 @@ Namespace: /parent_ns/local_ns
 | inflation_layer.inflate_around_unknown | false | |
 
 ### obstacle_layer plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | obstacle_layer.enabled | true | |
@@ -95,7 +101,7 @@ Namespace: /parent_ns/local_ns
 
 ### voxel_layer plugin
 
-*Note*: These parameters will only get declared if `"voxel_layer"` is appended to [plugin_names]() and `"nav2_costmap_2d::VoxelLayer"` is appended to [plugin_types]().
+*Note*: These parameters will only get declared if `"voxel_layer"` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | voxel_layer.enabled | true | |
@@ -112,6 +118,7 @@ Namespace: /parent_ns/local_ns
 # dwb_controller
 
 ### dwb_local_planner
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.critics | | |
@@ -133,6 +140,7 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.GoalDist.scale |  | |
 
 ### publisher
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.publish_evaluation |true | |
@@ -144,16 +152,19 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.marker_lifetime | 0.1 | |
 
 ### map_grid
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.aggregation_type | "last" | |
 
 ### oscillation
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.x_only_threshold | 0.05 | |
 
 ### kinematic_parameters 
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.max_vel_theta | 0.0 | |
@@ -172,6 +183,7 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.decel_lim_theta | 0.0 | |
 
 ### xy_theta_iterator 
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.vx_samples | 20 | |
@@ -179,11 +191,13 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.vtheta_samples | 20| |
 
 ### base_obstacle TrajectoryCritic
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.sum_scores | false | |
 
 ### prefer_forward TrajectoryCritic
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.penalty | 1.0 | |
@@ -192,11 +206,13 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.name.theta_scale | 10.0 | |
 
 ### twirling TrajectoryCritic
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.scale | 0.0 | |
 
 ### simple_goal_checker plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.xy_goal_tolerance | 0.25 | |
@@ -204,6 +220,7 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.stateful | true | |
 
 ### standard_traj_generator plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.sim_time | 1.7 | |
@@ -214,23 +231,27 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.include_last_point | true | |
 
 ### limited_accel_generator plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.sim_time | N/A | |
 
 ### stopped_goal_checker plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.rot_stopped_velocity | 0.25 | |
 | dwb_plugin_name_.trans_stopped_velocity | 0.25 | |
 
 # lifecycle_manager
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | node_names | N/A | |
 | autostart | false | |
 
 # map_saver
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | save_map_timeout | 2000 | |
@@ -238,6 +259,7 @@ Namespace: /parent_ns/local_ns
 | occupied_thresh_default | 0.65 | |
 
 # map_server
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | yaml_filename | N/A | |
@@ -245,12 +267,14 @@ Namespace: /parent_ns/local_ns
 | frame_id | "map" | |
 
 # planner_server
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | planner_plugin_ids | "GridBased" | |
 | planner_plugin_types | "nav2_navfn_planner/NavfnPlanner" | |
 
 # navfn_planner
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | name.tolerance  | 0.5 | |
@@ -258,6 +282,7 @@ Namespace: /parent_ns/local_ns
 | name.allow_unknown | true | |
 
 # waypoint_follower
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | stop_on_failure | true | |
@@ -265,6 +290,7 @@ Namespace: /parent_ns/local_ns
 
 # recovers
 ## recovery_server
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | costmap_topic | "local_costmap/costmap_raw" | |
@@ -274,9 +300,10 @@ Namespace: /parent_ns/local_ns
 | global_frame | "odom" | |
 | robot_base_frame | "base_link" | |
 | plugin_names | {"spin", "back_up", "wait"}| |
-| plugin_types | {""nav2_recoveries/Spin"", ""nav2_recoveries/BackUp"", ""nav2_recoveries/Wait""} | |
+| plugin_types | {"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"} | |
 
 ## spin plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | simulate_ahead_time | 2.0 | |
@@ -285,6 +312,53 @@ Namespace: /parent_ns/local_ns
 | rotational_acc_lim | 3.2 | |
 
 ## back_up plugin
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | simulate_ahead_time | 2.0 | |
+
+# AMCL
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| alpha1 | 0.2 | |
+| alpha2 | 0.2 | |
+| alpha3 | 0.2 | |
+| alpha4 | 0.2 | |
+| alpha5 | 0.2 | |
+| base_frame_id | "base_footprint" | |
+| beam_skip_distance | 0.5 | |
+| beam_skip_error_threshold | 0.9 |
+| beam_skip_threshold | 0.3 | |
+| do_beamskip | false| |
+| global_frame_id | "map" | The name of the coordinate frame published by the localization system |
+| lambda_short | 0.1 | Exponential decay parameter for z_short part of model |
+| laser_likelihood_max_dist | 2.0 | Maximum distance to do obstacle inflation on map, for use in likelihood_field model |
+| laser_max_range | 100.0 | Maximum scan range to be considered, -1.0 will cause the laser's reported maximum range to be used |
+| laser_min_range | -1 | Minimum scan range to be considered, -1.0 will cause the laser's reported minimum range to be used |
+| laser_model_type | "likelihood_field" | Which model to use, either beam, likelihood_field, or likelihood_field_prob. Same as likelihood_field but incorporates the beamskip feature, if enabled |
+| set_initial_pose | false | Causes AMCL to set initial pose from the initial_pose* parameters instead of waiting for the initial_pose message |
+| initial_pose.x | 0.0 | X coordinate of the initial robot pose in the map frame |
+| initial_pose.y | 0.0 | Y coordinate of the initial robot pose in the map frame |
+| initial_pose.z | 0.0 | Z coordinate of the initial robot pose in the map frame |
+| initial_pose.yaw | 0.0 | Yaw of the initial robot pose in the map frame |
+| max_beams | 60 | How many evenly-spaced beams in each scan to be used when updating the filter |
+| max_particles | 2000 | Maximum allowed number of particles |
+| min_particles | 500 | Minimum allowed number of particles |
+| odom_frame_id | "odom" | Which frame to use for odometry |
+| pf_err | 0.05 | |
+| pf_z | 0.99 | |
+| recovery_alpha_fast | 0.0 | Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses. A good value might be 0.001|
+| resample_interval | 1 | Number of filter updates required before resampling |
+| robot_model_type | "differential" | |
+| save_pose_rate | 0.5 | Maximum rate (Hz) at which to store the last estimated pose and covariance to the parameter server, in the variables ~initial_pose_* and ~initial_cov_*. This saved pose will be used on subsequent runs to initialize the filter (-1.0 to disable) |
+| sigma_hit | 0.2 | |
+| tf_broadcast | true | Set this to false to prevent amcl from publishing the transform between the global frame and the odometry frame |
+| transform_tolerance | 1.0 |  Time with which to post-date the transform that is published, to indicate that this transform is valid into the future |
+| update_min_a | 0.2 | Rotational movement required before performing a filter update |
+| update_min_d | 0.25 | Translational movement required before performing a filter update |
+| z_hit | 0.5 | |
+| z_max | 0.05 | |
+| z_rand | 0.5 | |
+| z_short | 0.05 | |
+| always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
