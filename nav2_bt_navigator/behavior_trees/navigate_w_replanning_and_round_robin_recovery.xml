@@ -7,7 +7,7 @@
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="2" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <RateController rate="1.0">
+        <RateController hz="1.0">
           <RecoveryNode number_of_retries="4" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
             <ReactiveFallback name="PathToPoseFallback">
