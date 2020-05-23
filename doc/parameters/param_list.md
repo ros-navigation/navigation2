@@ -4,11 +4,10 @@
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | bt_xml_filename | N/A |  |
-| plugin_lib_names (has opts) | N/A |  |
+| plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] |  |
 | transform_tolerance | 0.1 |  |
 | global_frame | "map" |  |
 | robot_base_frame | "base_link" |  |
-
 
 ## controller_server
 
@@ -85,23 +84,24 @@ Namespace: /parent_ns/local_ns
 | obstacle_layer.footprint_clearing_enabled | true | |
 | obstacle_layer.max_obstacle_height | 2.0 | |
 | obstacle_layer.combination_method | 1 | |
-| obstacle_layer.observation_sources | "" | [data source topic](#source-anchor) |
-| [source](#source-anchor).topic  | "" | |
-| [source](#source-anchor).sensor_frame | "" | |
-| [source](#source-anchor).observation_persistence | 0.0 | |
-| [source](#source-anchor).expected_update_rate | 0.0 | |
-| [source](#source-anchor).data_type | "LaserScan" | |
-| [source](#source-anchor).min_obstacle_height | 0.0 | |
-| [source](#source-anchor).max_obstacle_height | 0.0 | |
-| [source](#source-anchor).inf_is_valid | false | |
-| [source](#source-anchor).marking | true | |
-| [source](#source-anchor).clearing | false | |
-| [source](#source-anchor).obstacle_range | 2.5 | |
-| [source](#source-anchor).raytrace_range | 3.0 | | 
+| obstacle_layer.observation_sources | "" | data source topic |
+| source.topic  | "" | |
+| source.sensor_frame | "" | |
+| source.observation_persistence | 0.0 | |
+| source.expected_update_rate | 0.0 | |
+| source.data_type | "LaserScan" | |
+| source.min_obstacle_height | 0.0 | |
+| source.max_obstacle_height | 0.0 | |
+| source.inf_is_valid | false | |
+| source.marking | true | |
+| source.clearing | false | |
+| source.obstacle_range | 2.5 | |
+| source.raytrace_range | 3.0 | | 
 
 ### voxel_layer plugin
 
 *Note*: These parameters will only get declared if `"voxel_layer"` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | voxel_layer.enabled | true | |
@@ -114,6 +114,19 @@ Namespace: /parent_ns/local_ns
 | voxel_layer.mark_threshold | 0 | |
 | voxel_layer.combination_method | 1 | |
 | voxel_layer.publish_voxel_map | false | |
+| voxel_layer.observation_sources | "" | data source topic |
+| source.topic  | "" | |
+| source.sensor_frame | "" | |
+| source.observation_persistence | 0.0 | |
+| source.expected_update_rate | 0.0 | |
+| source.data_type | "LaserScan" | |
+| source.min_obstacle_height | 0.0 | |
+| source.max_obstacle_height | 0.0 | |
+| source.inf_is_valid | false | |
+| source.marking | true | |
+| source.clearing | false | |
+| source.obstacle_range | 2.5 | |
+| source.raytrace_range | 3.0 | | 
 
 # dwb_controller
 
@@ -151,17 +164,15 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.publish_cost_grid_pc | false | |
 | dwb_plugin_name_.marker_lifetime | 0.1 | |
 
-### map_grid
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| dwb_plugin_name_.name.aggregation_type | "last" | |
-
 ### oscillation
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| dwb_plugin_name_.name.oscillation_reset_dist | 0.05 | |
+| dwb_plugin_name_.name.oscillation_reset_angle | 0.2 | |
+| dwb_plugin_name_.name.oscillation_reset_time | -1 | |
 | dwb_plugin_name_.name.x_only_threshold | 0.05 | |
+| dwb_plugin_name_.name.scale | 1.0 | |
 
 ### kinematic_parameters 
 
@@ -195,6 +206,14 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.sum_scores | false | |
+| dwb_plugin_name_.name.scale | 1.0 | |
+
+### obstacle_footprint TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.sum_scores | false | |
+| dwb_plugin_name_.name.scale | 1.0 | |
 
 ### prefer_forward TrajectoryCritic
 
@@ -204,12 +223,51 @@ Namespace: /parent_ns/local_ns
 | dwb_plugin_name_.name.strafe_x | 0.1 | |
 | dwb_plugin_name_.name.strafe_theta | 0.2 | |
 | dwb_plugin_name_.name.theta_scale | 10.0 | |
+| dwb_plugin_name_.name.scale | 1.0 | |
 
 ### twirling TrajectoryCritic
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | dwb_plugin_name_.name.scale | 0.0 | |
+
+### goal_align TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.forward_point_distance | 0.325 | |
+| dwb_plugin_name_.name.scale | 1.0 | |
+
+### map_grid TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.aggregation_type | "last" | |
+| dwb_plugin_name_.name.scale | 1.0 | |
+
+### path_dist TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.aggregation_type | "last" | |
+| dwb_plugin_name_.name.scale | 1.0 | |
+
+### path_align TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.name.forward_point_distance | 0.325 | |
+| dwb_plugin_name_.name.scale | 1.0 | |
+
+### rotate_to_goal TrajectoryCritic
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| dwb_plugin_name_.xy_goal_tolerance | 0.25 | |
+| dwb_plugin_name_.trans_stopped_velocity | 0.25 | |
+| dwb_plugin_name_.slowing_factor | 5.0 | |
+| dwb_plugin_name_.lookahead_time | -1 | |
+| dwb_plugin_name_.name.scale | 1.0 | |
 
 ### simple_goal_checker plugin
 
@@ -289,6 +347,7 @@ Namespace: /parent_ns/local_ns
 | loop_rate | 20 | |
 
 # recovers
+
 ## recovery_server
 
 | Parameter | Default | Description |
@@ -361,4 +420,4 @@ Namespace: /parent_ns/local_ns
 | z_max | 0.05 | |
 | z_rand | 0.5 | |
 | z_short | 0.05 | |
-| always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
+| always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize | --!>
