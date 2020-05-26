@@ -66,7 +66,8 @@ public:
     std::string default_topic = "odom")
   {
     std::string odom_topic;
-    nav2_util::declare_parameter_if_not_declared(nh, "odom_topic", rclcpp::ParameterValue(default_topic));    
+    nav2_util::declare_parameter_if_not_declared(nh, "odom_topic", 
+      rclcpp::ParameterValue(default_topic));    
     nh->get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
       nh->create_subscription<nav_msgs::msg::Odometry>(odom_topic,
