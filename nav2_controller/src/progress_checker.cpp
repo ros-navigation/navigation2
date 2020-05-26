@@ -24,7 +24,7 @@ namespace nav2_controller
 {
 static double pose_distance(const geometry_msgs::msg::Pose2D &, const geometry_msgs::msg::Pose2D &);
 
-ProgressChecker::ProgressChecker(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+ProgressChecker::ProgressChecker(const rclcpp::Node::SharedPtr & node)
 : nh_(node)
 {
   nav2_util::declare_parameter_if_not_declared(
