@@ -23,6 +23,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -59,6 +60,8 @@ public:
   void initialize()
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    nav2_util::declare_parameter_if_not_declared(node_, "goal_reached_tol", 
+      rclcpp::ParameterValue(0.25));    
     node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
     tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 

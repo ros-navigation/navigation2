@@ -18,6 +18,7 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_controller
 {
@@ -26,6 +27,10 @@ static double pose_distance(const geometry_msgs::msg::Pose2D &, const geometry_m
 ProgressChecker::ProgressChecker(const rclcpp::Node::SharedPtr & node)
 : nh_(node)
 {
+  nav2_util::declare_parameter_if_not_declared(
+    nh_, "required_movement_radius", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    nh_, "movement_time_allowance", rclcpp::ParameterValue(10.0));
   // Scale is set to 0 by default, so if it was not set otherwise, set to 0
   nh_->get_parameter_or("required_movement_radius", radius_, 0.5);
   double time_allowance_param;
