@@ -59,7 +59,7 @@ inline BT::NodeStatus SpeedController::tick()
     // Reset the starting position and period
     // since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
-    period_ = 2.0 / (max_rate_ + min_rate_);
+    period_ = 1.0 / max_rate_;
     start_ = node_->now();
     first_time_ = true;
   }
