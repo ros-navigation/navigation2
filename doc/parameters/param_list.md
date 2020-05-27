@@ -421,3 +421,120 @@ Namespace: /parent_ns/local_ns
 | z_rand | 0.5 | |
 | z_short | 0.05 | |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize | --!>
+
+---
+
+# Behavior Tree Nodes
+
+## Actions
+
+### BT Node BackUp
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| backup_dist | -0.15 | Distance to backup |
+| backup_speed | 0.025 | Speed at which to backup |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node ClearEntireCostmap
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| service_name | N/A | Server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node ComputePathToPose
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| goal | N/A | Destination to plan to |
+| planner_id | N/A | |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+| Output Port | Default | Description |
+| ----------- | ------- | ----------- |
+| path | N/A | Path created by ComputePathToPose node |
+
+### BT Node FollowPath
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| path | N/A | Path to follow |
+| controller_id | N/A | |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node NavigateToPose
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| position | N/A | Position |
+| orientation | N/A | Orientation |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node ReinitializeGlobalLocalization
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| service_name | N/A | Server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node Spin
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| spin_dist | 1.57 | Spin distance |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+### BT Node Wait
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| wait_duration | 1 | Wait time |
+| server_name | N/A | Action server name |
+| server_timeout | 10 | (milliseconds) |
+
+## Conditions
+
+### BT Node GoalReached
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| goal | N/A | Destination |
+| global_frame | "map" | Global frame |
+| robot_base_frame | "base_link" | Robot base frame |
+
+### BT Node TransformAvailable (condition)
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| child | "" | Child frame for transform |
+| parent | "" | parent frame for transform |
+
+## Controls
+
+### BT Node RecoveryNode
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| number_of_retries | 1 | Number of retries |
+
+## Decorators
+
+### BT Node DistanceController
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| distance | 1.0 | Distance |
+| global_frame | "map" | Global frame |
+| robot_base_frame | "base_link" | Robot base frame |
+
+### BT Node RateController
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| hz | 10.0 | Rate |
