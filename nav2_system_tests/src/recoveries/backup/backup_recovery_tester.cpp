@@ -23,6 +23,7 @@
 #include <iomanip>
 
 #include "backup_recovery_tester.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -39,7 +40,7 @@ BackupRecoveryTester::BackupRecoveryTester()
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  client_ptr_ = rclcpp_action::create_client<Backup>(
+  client_ptr_ = rclcpp_action::create_client<BackUp>(
     node_->get_node_base_interface(),
     node_->get_node_graph_interface(),
     node_->get_node_logging_interface(),
@@ -114,7 +115,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
   // Sleep to let recovery server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
-  auto goal_msg = Backup::Goal();
+  auto goal_msg = BackUp::Goal();
   goal_msg.target.x = target_dist;
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
@@ -135,7 +136,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<Backup>::SharedPtr goal_handle = goal_handle_future.get();
+  rclcpp_action::ClientGoalHandle<BackUp>::SharedPtr goal_handle = goal_handle_future.get();
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
     return false;
@@ -152,7 +153,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<Backup>::WrappedResult wrapped_result = result_future.get();
+  rclcpp_action::ClientGoalHandle<BackUp>::WrappedResult wrapped_result = result_future.get();
 
   switch (wrapped_result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED: break;

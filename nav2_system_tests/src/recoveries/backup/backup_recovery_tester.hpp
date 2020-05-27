@@ -25,7 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
-#include "nav2_msgs/action/backup.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -41,8 +41,8 @@ namespace nav2_system_tests
 class BackupRecoveryTester
 {
 public:
-  using Backup = nav2_msgs::action::Backup;
-  using GoalHandleBackup = rclcpp_action::ClientGoalHandle<Backup>;
+  using BackUp = nav2_msgs::action::BackUp;
+  using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
 
   BackupRecoveryTester();
   ~BackupRecoveryTester();
@@ -81,7 +81,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
 
   // Action client to call Backup action
-  rclcpp_action::Client<Backup>::SharedPtr client_ptr_;
+  rclcpp_action::Client<BackUp>::SharedPtr client_ptr_;
 };
 
 }  // namespace nav2_system_tests
