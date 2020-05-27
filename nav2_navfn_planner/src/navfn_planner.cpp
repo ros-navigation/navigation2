@@ -246,19 +246,20 @@ NavfnPlanner::smoothApproachToGoal(
 {
   // Replace the last pose of the computed path if it's actually further away
   // to the second to last pose than the goal pose.
-
-  auto second_to_last_pose = plan.poses.end()[-2];
-  auto last_pose = plan.poses.back();
-  if (
-    squared_distance(last_pose.pose, second_to_last_pose.pose) >
-    squared_distance(goal, second_to_last_pose.pose))
-  {
-    plan.poses.back().pose = goal;
-  } else {
-    geometry_msgs::msg::PoseStamped goal_copy;
-    goal_copy.pose = goal;
-    plan.poses.push_back(goal_copy);
+  if (plan.poses.size() >= 2) {
+    auto second_to_last_pose = plan.poses.end()[-2];
+    auto last_pose = plan.poses.back();
+    if (
+      squared_distance(last_pose.pose, second_to_last_pose.pose) >
+      squared_distance(goal, second_to_last_pose.pose))
+    {
+      plan.poses.back().pose = goal;
+      return;
+    }
   }
+  geometry_msgs::msg::PoseStamped goal_copy;
+  goal_copy.pose = goal;
+  plan.poses.push_back(goal_copy);
 }
 
 bool
