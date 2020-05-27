@@ -28,7 +28,11 @@ SpeedController::SpeedController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   first_time_(false),
-  period_(1.0)
+  period_(1.0),
+  min_rate_(0.1),
+  max_rate_(1.0),
+  min_speed_(0.0),
+  max_speed_(0.5)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -46,7 +50,7 @@ SpeedController::SpeedController(
   d_rate_ = max_rate_ - min_rate_;
   d_speed_ = max_speed_ - min_speed_;
 
-  double duration;
+  double duration = 0.3;
   getInput("filter_duration", duration);
   std::string odom_topic;
   node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
