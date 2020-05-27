@@ -2,7 +2,7 @@ ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  TIMEOUT 100
+  TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
@@ -16,7 +16,7 @@ ament_add_test(test_bt_navigator_with_dijkstra
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  TIMEOUT 100
+  TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
@@ -30,7 +30,7 @@ ament_add_test(test_dynamic_obstacle
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  TIMEOUT 100
+  TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
@@ -44,7 +44,7 @@ ament_add_test(test_dynamic_obstacle
 #   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
 #   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_multi_robot_launch.py"
 #   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-#   TIMEOUT 120
+#   TIMEOUT 180
 #   ENV
 #     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
 #     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
