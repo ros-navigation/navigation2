@@ -114,7 +114,7 @@ def generate_launch_description():
             node_executable='recoveries_server',
             node_name='recoveries_server',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[configured_params],
             remappings=remappings),
 
         Node(

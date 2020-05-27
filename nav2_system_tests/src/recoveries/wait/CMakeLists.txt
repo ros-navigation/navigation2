@@ -13,7 +13,7 @@ ament_add_test(test_wait_recovery
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_wait_recovery_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  TIMEOUT 100
+  TIMEOUT 180
   ENV
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
     TEST_EXECUTABLE=$<TARGET_FILE:${test_wait_recovery_exec}>
