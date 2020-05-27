@@ -34,9 +34,8 @@ class SpeedControllerTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    transform_handler_ = new nav2_behavior_tree::TransformHandler();
-    config_ = new BT::NodeConfiguration();
-    dummy_node_ = new nav2_behavior_tree::DummyNode();
+    transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>();
+    config_ = std::make_shared<BT::NodeConfiguration>();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
@@ -60,37 +59,41 @@ public:
   static void TearDownTestCase()
   {
     transform_handler_->deactivate();
-    delete transform_handler_;
-    delete config_;
-    delete dummy_node_;
-    transform_handler_ = nullptr;
-    config_ = nullptr;
-    dummy_node_ = nullptr;
   }
 
   void SetUp()
   {
     node_ = new nav2_behavior_tree::SpeedController("speed_controller", *config_);
+    dummy_node_ = new nav2_behavior_tree::DummyNode();
     node_->setChild(dummy_node_);
   }
 
   void TearDown()
   {
+    dummy_node_ = nullptr;
     node_ = nullptr;
   }
 
 protected:
-  static nav2_behavior_tree::TransformHandler * transform_handler_;
-  static BT::NodeConfiguration * config_;
+  static std::shared_ptr<nav2_behavior_tree::TransformHandler> transform_handler_;
+  static std::shared_ptr<BT::NodeConfiguration> config_;
   static nav2_behavior_tree::SpeedController * node_;
   static nav2_behavior_tree::DummyNode * dummy_node_;
 };
 
-nav2_behavior_tree::TransformHandler * SpeedControllerTestFixture::transform_handler_ = nullptr;
-BT::NodeConfiguration * SpeedControllerTestFixture::config_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::TransformHandler>
+SpeedControllerTestFixture::transform_handler_ = nullptr;
+std::shared_ptr<BT::NodeConfiguration> SpeedControllerTestFixture::config_ = nullptr;
 nav2_behavior_tree::SpeedController * SpeedControllerTestFixture::node_ = nullptr;
 nav2_behavior_tree::DummyNode * SpeedControllerTestFixture::dummy_node_ = nullptr;
 
+/*
+ * Test for speed controller behavior
+ * Speed controller calculates the period after which it should succeed
+ * based on the current velocity which is scaled to a pre-defined rate range
+ * Current velocity is set using odom messages
+ * The period is reset on the basis of current velocity after the last period is exceeded
+ */
 TEST_F(SpeedControllerTestFixture, test_behavior)
 {
   auto odom_pub = transform_handler_->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
