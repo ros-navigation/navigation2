@@ -31,7 +31,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", true),
+: nav2_util::LifecycleNode("bt_navigator", "", false),
   start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -76,9 +76,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      "-r", std::string("__node:=") + get_name() + "_client_node",
+      "-r", std::string("__node:=") + get_name() + "_rclcpp_node",
       "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
