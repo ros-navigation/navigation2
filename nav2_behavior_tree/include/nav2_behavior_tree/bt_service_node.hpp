@@ -45,6 +45,9 @@ public:
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(service_name_);
 
+    // Make a request for the service without parameter
+    request_ = std::make_shared<typename ServiceT::Request>();
+
     // Make sure the server is actually there before continuing
     RCLCPP_INFO(
       node_->get_logger(), "Waiting for \"%s\" service",
@@ -91,7 +94,6 @@ public:
   // Fill in service request with information if necessary
   virtual void on_tick()
   {
-    request_ = std::make_shared<typename ServiceT::Request>();
   }
 
   // Check the future and decide the status of Behaviortree
