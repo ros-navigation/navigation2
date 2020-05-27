@@ -420,7 +420,7 @@ Namespace: /parent_ns/local_ns
 | z_max | 0.05 | |
 | z_rand | 0.5 | |
 | z_short | 0.05 | |
-| always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize | --!>
+| always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
 
 ---
 
