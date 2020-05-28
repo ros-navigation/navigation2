@@ -117,6 +117,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
 
   auto goal_msg = BackUp::Goal();
   goal_msg.target.x = target_dist;
+  goal_msg.speed = 0.2;
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
 
