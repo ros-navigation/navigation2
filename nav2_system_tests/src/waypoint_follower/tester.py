@@ -31,7 +31,7 @@ from rclpy.qos import QoSProfile
 class WaypointFollowerTest(Node):
 
     def __init__(self):
-        super().__init__(node_name='nav2_waypoint_tester', namespace='')
+        super().__init__(name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
         self.action_client = ActionClient(self, FollowWaypoints, 'FollowWaypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
