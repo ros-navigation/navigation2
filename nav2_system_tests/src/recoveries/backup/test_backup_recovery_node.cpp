@@ -64,6 +64,10 @@ TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
   float target_dist = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
 
+  if (!backup_recovery_tester->isActive()) {
+    backup_recovery_tester->activate();
+  }
+
   bool success = false;
   success = backup_recovery_tester->defaultBackupRecoveryTest(target_dist, tolerance);
 

@@ -179,7 +179,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
 
   double dist = nav2_util::geometry_utils::euclidean_distance(initial_pose, current_pose);
 
-  if (fabs(dist - target_dist) > tolerance) {
+  if (fabs(dist) > fabs(target_dist) + tolerance) {
     RCLCPP_ERROR(
       node_->get_logger(),
       "Distance from goal is %lf (tolerance %lf)",
