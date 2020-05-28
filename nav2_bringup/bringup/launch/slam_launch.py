@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Samsung Research Russia
+# Copyright (c) 2020 Samsung Research Russia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
 # limitations under the License.
 
 import os
-import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -39,8 +38,6 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     slam_toolbox_dir = get_package_share_directory('slam_toolbox')
     slam_launch_file = os.path.join(slam_toolbox_dir, 'launch', 'online_sync_launch.py')
-    temp_dir = tempfile.gettempdir()
-    temp_map = os.path.join(temp_dir, 'output_map')
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -86,28 +83,11 @@ def generate_launch_description():
     start_lifecycle_manager_cmd = Node(
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_map_saver',
+            node_name='lifecycle_manager_slam',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
-
-    service_name = '/map_saver/save_map'
-    service_type = 'nav2_msgs/srv/SaveMap'
-    map_topic = 'map'
-    image_format = 'pgm'
-    map_mode = 'trinary'
-    free_thresh = '0.25'
-    occupied_thresh = '0.65'
-    service_line = '{map_topic: ' + map_topic + \
-                   ', map_url: ' + temp_map + \
-                   ', image_format: ' + image_format + \
-                   ', map_mode: ' + map_mode + \
-                   ', free_thresh: ' + free_thresh + \
-                   ', occupied_thresh: ' + occupied_thresh + '}'
-    map_saver_server_service_call_cmd = ExecuteProcess(
-        cmd=['ros2', 'service', 'call', service_name, service_type, service_line],
-        cwd=[bringup_dir], output='screen')
 
     ld = LaunchDescription()
 
@@ -123,6 +103,5 @@ def generate_launch_description():
     # Running Map Saver Server
     ld.add_action(start_map_saver_server_cmd)
     ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(map_saver_server_service_call_cmd)
 
     return ld
