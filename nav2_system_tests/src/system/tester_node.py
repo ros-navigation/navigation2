@@ -43,7 +43,7 @@ class NavTester(Node):
         goal_pose: Pose,
         namespace: str = ''
     ):
-        super().__init__(name='nav2_tester', namespace=namespace)
+        super().__init__(node_name='nav2_tester', namespace=namespace)
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
@@ -148,17 +148,17 @@ class NavTester(Node):
         self.info_msg('Distance from goal is: ' + str(distance))
         return distance
 
-    def wait_for_node_active(self, name: str):
+    def wait_for_node_active(self, node_name: str):
         # Waits for the node within the tester namespace to become active
-        self.info_msg('Waiting for ' + name + ' to become active')
-        node_service = name + '/get_state'
+        self.info_msg('Waiting for ' + node_name + ' to become active')
+        node_service = node_name + '/get_state'
         state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(node_service + ' service not available, waiting...')
         req = GetState.Request()  # empty request
         state = 'UNKNOWN'
         while (state != 'active'):
-            self.info_msg('Getting ' + name + ' state...')
+            self.info_msg('Getting ' + node_name + ' state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
