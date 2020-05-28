@@ -30,7 +30,7 @@ def generate_launch_description():
     # Nodes launching commands
     start_map_saver_server_cmd = launch_ros.actions.Node(
             package='nav2_map_server',
-            node_executable='map_saver_server',
+            executable='map_saver_server',
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'save_map_timeout': save_map_timeout},
@@ -39,8 +39,8 @@ def generate_launch_description():
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
             package='nav2_lifecycle_manager',
-            node_executable='lifecycle_manager',
-            node_name='lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager',
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
