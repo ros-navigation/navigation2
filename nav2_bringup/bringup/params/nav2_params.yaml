@@ -235,7 +235,7 @@ map_server:
 map_saver:
   ros__parameters:
     use_sim_time: True
-    save_map_timeout: 2000
+    save_map_timeout: 5000
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
 
