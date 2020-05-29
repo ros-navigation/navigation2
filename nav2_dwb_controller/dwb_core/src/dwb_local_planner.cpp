@@ -74,6 +74,7 @@ void DWBLocalPlanner::configure(
   tf_ = tf;
   dwb_plugin_name_ = name;
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".critics");
+  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".default_critic_namespaces");
   declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".prune_plan",
     rclcpp::ParameterValue(true));
