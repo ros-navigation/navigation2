@@ -10,7 +10,7 @@ The Dockerfiles for this project are built upon parent images from upstream repo
 * [Official ROS Docker Images](https://hub.docker.com/_/ros)
 * [Official OSRF Dockerfiles](https://github.com/osrf/docker_images)
 
-While main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a release ROS2 distro using available pre-built binary dependencies. We'll walk though the main Dockerfile here, although all of them follow the same basic pattern.
+While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a released ROS2 distro using available pre-built binary dependencies. We'll walk through the main Dockerfile here, although all of them follow the same basic pattern.
 
 ## Global Arguments
 
