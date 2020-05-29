@@ -18,31 +18,31 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| always_send_full_costmap | false | |
-| footprint_padding | 0.01 | |
-| footprint | "[]" | |
-| global_frame | "map" | |
-| height | 5 | |
-| width | 5 | |
-| lethal_cost_threshold | 100 | |
-| map_topic | "parent_namespace/map" | |
-| observation_sources | "" | |
-| origin_x | 0.0 | |
-| origin_y | 0.0 | |
-| plugin_names | {"static_layer", "obstacle_layer", "inflation_layer"} | |
-| plugin_types | {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"} | |
-| publish_frequency | 1.0 | |
-| resolution | 0.1 | |
-| robot_base_frame | "base_link" | |
-| robot_radius| 0.1 | |
-| rolling_window | false | |
-| track_unknown_space | false | |
-| transform_tolerance | 0.3 | |
-| trinary_costmap | true | |
-| unknown_cost_value | 255 | |
-| update_frequency | 5.0 | 
-| use_maximum | false | |
-| clearable_layers | "obstacle_layer" | |
+| always_send_full_costmap | false | Whether to send full costmap every update, rather than updates |
+| footprint_padding | 0.01 | Amount to pad footprint (m) |
+| footprint | "[]" | Ordered set of footprint points, must be closed set |
+| global_frame | "map" | Reference frame |
+| height | 5 | Height of costmap (m) |
+| width | 5 | Width of costmap (m) |
+| lethal_cost_threshold | 100 | Minimum cost of an occupancy grid map to be considered a lethal obstacle |
+| map_topic | "parent_namespace/map" | Topic of map from map_server or SLAM |
+| observation_sources | [""] | List of sources of sensors, to be used if not specified in plugin specific configurations |
+| origin_x | 0.0 | X origin of the costmap relative to width (m) |
+| origin_y | 0.0 | Y origin of the costmap relative to height (m) |
+| plugin_names | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
+| plugin_types | {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"} | List of registered plugins to map to names and load |
+| publish_frequency | 1.0 | Frequency to publish costmap to topic |
+| resolution | 0.1 | Resolution of the costmap, in pixels |
+| robot_base_frame | "base_link" | Robot base frame |
+| robot_radius| 0.1 | Robot radius to use, if footprint coordinates not provided |
+| rolling_window | false | Whether costmap should roll with robot base frame |
+| track_unknown_space | false | Whether to treat unknown space as free or unknown |
+| transform_tolerance | 0.3 | TF transform tolerance |
+| trinary_costmap | true | If occupancy grid map should be interpreted as only 3 values (free, occupied, unknown) or with its stored values |
+| unknown_cost_value | 255 | Cost of unknown space if tracking it |
+| update_frequency | 5.0 | Costmap update frequency |
+| use_maximum | false | whether when combining costmaps to use the maximum cost or override |
+| clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
 
 ## static_layer plugin
 
@@ -50,11 +50,10 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<static layer>`.enabled | true | |
-| `<static layer>`.subscribe_to_updates | false | |
-| `<static layer>`.subscribe_to_updates | false | |
-| `<static layer>`.map_subscribe_transient_local | true | |
-| `<static layer>`.transform_tolerance | 0.0 | |
+| `<static layer>`.enabled | true | Whether it is enabled |
+| `<static layer>`.subscribe_to_updates | false | Subscribe to static map updates after receiving first |
+| `<static layer>`.map_subscribe_transient_local | true | QoS settings for map topic |
+| `<static layer>`.transform_tolerance | 0.0 | TF tolerance |
 
 ## inflation_layer plugin
 
@@ -62,11 +61,11 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<inflation layer>`.enabled | true | |
-| `<inflation layer>`.inflation_radius | 0.55 | |
-| `<inflation layer>`.cost_scaling_factor | 10.0 | |
-| `<inflation layer>`.inflate_unknown | false | |
-| `<inflation layer>`.inflate_around_unknown | false | |
+| `<inflation layer>`.enabled | true | Whether it is enabled |
+| `<inflation layer>`.inflation_radius | 0.55 | Radius to inflate costmap around lethal obstacles |
+| `<inflation layer>`.cost_scaling_factor | 10.0 | Exponential decay factor across inflation radius |
+| `<inflation layer>`.inflate_unknown | false | Whether to inflate unknown cells as if lethal |
+| `<inflation layer>`.inflate_around_unknown | false | Whether to inflate unknown cells  |
 
 ## obstacle_layer plugin
 
@@ -75,23 +74,23 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<obstacle layer>`.enabled | true | |
-| `<obstacle layer>`.footprint_clearing_enabled | true | |
-| `<obstacle layer>`.max_obstacle_height | 2.0 | |
-| `<obstacle layer>`.combination_method | 1 | |
-| `<obstacle layer>`.observation_sources | "" | data source topic |
-| `<data source>`.topic  | "" | |
-| `<data source>`.sensor_frame | "" | |
-| `<data source>`.observation_persistence | 0.0 | |
-| `<data source>`.expected_update_rate | 0.0 | |
-| `<data source>`.data_type | "LaserScan" | |
-| `<data source>`.min_obstacle_height | 0.0 | |
-| `<data source>`.max_obstacle_height | 0.0 | |
-| `<data source>`.inf_is_valid | false | |
-| `<data source>`.marking | true | |
-| `<data source>`.clearing | false | |
-| `<data source>`.obstacle_range | 2.5 | |
-| `<data source>`.raytrace_range | 3.0 | | 
+| `<obstacle layer>`.enabled | true | Whether it is enabled |
+| `<obstacle layer>`.footprint_clearing_enabled | true | Clear any occupied cells under robot footprint |
+| `<obstacle layer>`.max_obstacle_height | 2.0 | Maximum height to add return to occupancy grid |
+| `<obstacle layer>`.combination_method | 1 | Enum for method to add data to master costmap, default to maximum |
+| `<obstacle layer>`.observation_sources | "" | namespace of sources of data |
+| `<data source>`.topic  | "" | Topic of data |
+| `<data source>`.sensor_frame | "" | frame of sensor, to use if not provided by message |
+| `<data source>`.observation_persistence | 0.0 | How long to store messages in a buffer to add to costmap before removing them (s) |
+| `<data source>`.expected_update_rate | 0.0 | Expected rate to get new data from sensor |
+| `<data source>`.data_type | "LaserScan" | Data type of input, LaserScan or PointCloud2 |
+| `<data source>`.min_obstacle_height | 0.0 | Minimum height to add return to occupancy grid |
+| `<data source>`.max_obstacle_height | 0.0 | Maximum height to add return to occupancy grid for this source |
+| `<data source>`.inf_is_valid | false | Are infinite returns from laser scanners valid measurements |
+| `<data source>`.marking | true | Whether source should mark in costmap |
+| `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
+| `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
 
 ## voxel_layer plugin
 
@@ -102,29 +101,29 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<voxel layer>`.enabled | true | |
-| `<voxel layer>`.footprint_clearing_enabled | true | |
-| `<voxel layer>`.max_obstacle_height | 2.0 | |
-| `<voxel layer>`.z_voxels | 10 | |
-| `<voxel layer>`.origin_z | 0.0 | |
-| `<voxel layer>`.z_resolution | 0.2 | |
-| `<voxel layer>`.unknown_threshold | 15 | |
-| `<voxel layer>`.mark_threshold | 0 | |
-| `<voxel layer>`.combination_method | 1 | |
-| `<voxel layer>`.publish_voxel_map | false | |
-| `<voxel layer>`.observation_sources | "" | data source topic |
-| `<data source>`.topic  | "" | |
-| `<data source>`.sensor_frame | "" | |
-| `<data source>`.observation_persistence | 0.0 | |
-| `<data source>`.expected_update_rate | 0.0 | |
-| `<data source>`.data_type | "LaserScan" | |
-| `<data source>`.min_obstacle_height | 0.0 | |
-| `<data source>`.max_obstacle_height | 0.0 | |
-| `<data source>`.inf_is_valid | false | |
-| `<data source>`.marking | true | |
-| `<data source>`.clearing | false | |
-| `<data source>`.obstacle_range | 2.5 | |
-| `<data source>`.raytrace_range | 3.0 | | 
+| `<voxel layer>`.enabled | true | Whether it is enabled |
+| `<voxel layer>`.footprint_clearing_enabled | true | Clear any occupied cells under robot footprint |
+| `<voxel layer>`.max_obstacle_height | 2.0 | Maximum height to add return to occupancy grid |
+| `<voxel layer>`.z_voxels | 10 | Number of voxels high to mark, maximum 16|
+| `<voxel layer>`.origin_z | 0.0 | Where to start marking voxels (m) |
+| `<voxel layer>`.z_resolution | 0.2 | Resolution of voxels in height (m) |
+| `<voxel layer>`.unknown_threshold | 15 | Minimum number of empty voxels in a column to mark as unknown in 2D occupancy grid |
+| `<voxel layer>`.mark_threshold | 0 | Minimum number of voxels in a column to mark as occupied in 2D occupancy grid |
+| `<voxel layer>`.combination_method | 1 | Enum for method to add data to master costmap, default to maximum |
+| `<voxel layer>`.publish_voxel_map | false | Whether to publish 3D voxel grid, computationally expensive |
+| `<voxel layer>`.observation_sources | "" | namespace of sources of data |
+| `<data source>`.topic  | "" | Topic of data |
+| `<data source>`.sensor_frame | "" | frame of sensor, to use if not provided by message |
+| `<data source>`.observation_persistence | 0.0 | How long to store messages in a buffer to add to costmap before removing them (s) |
+| `<data source>`.expected_update_rate | 0.0 | Expected rate to get new data from sensor |
+| `<data source>`.data_type | "LaserScan" | Data type of input, LaserScan or PointCloud2 |
+| `<data source>`.min_obstacle_height | 0.0 | Minimum height to add return to occupancy grid |
+| `<data source>`.max_obstacle_height | 0.0 | Maximum height to add return to occupancy grid for this source |
+| `<data source>`.inf_is_valid | false | Are infinite returns from laser scanners valid measurements |
+| `<data source>`.marking | true | Whether source should mark in costmap |
+| `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
+| `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
 
 # controller_server
 
