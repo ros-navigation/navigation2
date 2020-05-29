@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-export FROM_IMAGE=osrf/ros2:nightly
+export FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
 export FAIL_ON_BUILD_FAILURE=""
 export UNDERLAY_MIXINS="release ccache"
 export OVERLAY_MIXINS="release ccache"
