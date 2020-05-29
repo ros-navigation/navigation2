@@ -14,9 +14,12 @@ While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for d
 
 ## Global Arguments
 
-The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image.
+The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in a stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image. For multi-stage builds, the last stage is what is tagged as the final image. More info on multi-stage builds can be found here: 
 
-Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. Enabling project maintainers to spot breaking API changes and regressions as soon as they are merged into master upstream. Alternatively, an image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_distro_name>`, could also be substituted to compile the project, say for quickly experimenting with planners using complex reinforcement or deep learning framework dependencies.
+* [Use multi-stage builds
+](https://docs.docker.com/develop/develop-images/multistage-build)
+
+Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. This allows project maintainers to spot breaking API changes and regressions as soon as they are merged upstream. Alternatively, any image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_distro_name>`, could also be substituted to compile the project, say for quickly experimenting with planners ontop of complex reinforcement or deep learning framework dependencies.
 
 ## Cacher Stage
 
@@ -29,7 +32,7 @@ The `.repos` file is not copied directly into the `src` folder to avoid any rest
 
 The overlay workspace is then also created and populated using all the files in the docker build context, i.e. the [root](/) directory of the repo. This is done after the underlay is cloned to avoid having to re-download underlay source files if the `.repos` files are unchanged. However, if the `.repos` file is changed, and different source files are cloned, this can then bust the docker build cache. Other ephemeral or unessential project files are safely ignored using the [`.dockerignore`](/.dockerignore) config. If ever the docker build cache is cache is somehow stale, using the docker build flag `--no-cache` may be used to freshly build anew.
 
-Finally the `cacher` stage copies the all manifest related files in place within the `/opt` directory into a temporary mirrored directory that later stages can copy from without unnecessarily busting it's docker build cache. The [`source.Dockerfile`](/.dockerhub/source.Dockerfile) provides more a advance example of avoiding ignored package, or packages that are unnecessary as overlay dependencies.
+Finally the `cacher` stage copies all manifest related files in place within the `/opt` directory into a temporary mirrored directory that later stages can copy from without unnecessarily busting it's docker build cache. The [`source.Dockerfile`](/.dockerhub/source.Dockerfile) provides an advance example of avoiding ignored package, or packages that are unnecessary as overlay dependencies.
 
 ## Builder Stage
 
@@ -47,7 +50,7 @@ Dependencies for the underlay workspace are then installed using `rosdep` by poi
 * [rosdep](http://wiki.ros.org/rosdep)
   * CLI tool for installing system dependencies 
 
-The sourcing of the ROS setup file is done to permit rosdep to find additional packages within the installed ament index via `AMENT_PREFIX_PATH` environment variable, or potentially vendored packages unregistered in ament index via the legacy `ROS_PACKAGE_PATH` env. Cleanup of the apt list directory is done as a best practice in Docker to prevent from ever using stale apt list caches.
+The sourcing of the ROS setup file is done to permit rosdep to find additional packages within the installed in ament index via `AMENT_PREFIX_PATH` environment variable, or potentially vendored packages unregistered in ament index via the legacy `ROS_PACKAGE_PATH` env. Cleanup of the apt list directory is done as a best practice in Docker to prevent from ever using stale apt list caches.
 
 ### Build Source
 
@@ -60,11 +63,11 @@ The underlay workspace is then built using `colcon` by first copying over the re
 * [colcon-mixin-repository](https://github.com/colcon/colcon-mixin-repository)
   * Repository of common colcon CLI mixins
 
-The addition of the `ccache` mixin is used to pre-bake a warm ccache directory into the image as well as a pre-built underlay workspace. This will help speedup consecutive builds should later steps in the CI or maintainers have need to rebuild the underlay using the final image. The `console_direct` event handler is used to avoid CI timeout from inactive stdout for slower package builds while the `FAIL_ON_BUILD_FAILURE` env is used to control whether the docker image build should fail to complete upon failure from colcon build.
+The addition of the `ccache` mixin is used to pre-bake a warm ccache directory into the image as well as a pre-built underlay workspace. This will help speedup consecutive builds should later steps in the CI or maintainers have need to rebuild the underlay using the final image. The `console_direct` event handler is used to avoid CI timeout from inactive stdout for slower package builds while the `FAIL_ON_BUILD_FAILURE` env is used to control whether the docker image build should fail to complete upon encountering errors durring colcon build.
 
 ## Overlay Workspace
 
-The overlay workspace is then set up in a similar manner where the same steps are repeated, only now sourcing the underlay setup file, and by building within the overlay directory. The separation of underlay vs overlay workspace helps split caching of compilation across the two major points of change; that of external dependencies that change infrequently upon new releases vs local project source files that perpetually change during development. The overlay mixins are parameterized via `ARG` as well to allow the underlay and overlay to be independently configured by CI or local developers.
+The overlay workspace is then set up in a similar manner where the same steps are repeated, only now sourcing the underlay setup file, and by building within the overlay directory. The separation of underlay vs overlay workspace helps split caching of compilation across the two major points of change; that of external dependencies that change infrequently upon new releases vs local project source files that perpetually change during development. The overlay mixins are parameterized via `ARG` as well to allow the underlay and overlay to be independently configured by CI or local developers. This pattern can be repeated to chain together workspaces in one or multiple Dockerfiles; practically useful when working with a stack of related projects with deep recursive dependencies.
 
 ### Setup Entrypoint
 
@@ -82,7 +85,7 @@ A difference for other Dockerfiles, not needing to be built by DockerHub and thu
 ](https://docs.docker.com/develop/develop-images/build_enhancements)
 * [Buildkit repo](https://github.com/moby/buildkit)
 
-The [`distro.Dockerfile`][/.dockerhub/distro.Dockerfile] provides once such example of this. More info on using mounts for caching data across docker builds can be found here:
+The [`distro.Dockerfile`](/.dockerhub/distro.Dockerfile) provides once such example of this. More info on using mounts for caching data across docker builds can be found here:
 
 * [cache apt packages](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md#example-cache-apt-packages)
   * avoid unnecessarily re-downloading the same packages over the network, even if the docker image layer cache for that `RUN` directive in the Dockerfile is busted
