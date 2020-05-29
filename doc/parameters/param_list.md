@@ -1,18 +1,18 @@
 *NOTE: <> means plugin are namespaced by a name/id parameterization. The bracketed names may change due to your application configuration*
 
-# bt_navigator 
+# bt_navigator
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| bt_xml_filename | N/A |  |
-| plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] |  |
-| transform_tolerance | 0.1 |  |
-| global_frame | "map" |  |
-| robot_base_frame | "base_link" |  |
+| bt_xml_filename | N/A | path to behavior tree XML description |
+| plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] | list of behavior tree node shared library |
+| transform_tolerance | 0.1 | TF transform tolerance |
+| global_frame | "map" | Reference frame |
+| robot_base_frame | "base_link" | Robot base frame |
 
 # costmaps
 
-## Node: costmap_2d_ros 
+## Node: costmap_2d_ros
 
 Namespace: /parent_ns/local_ns
 
@@ -44,7 +44,7 @@ Namespace: /parent_ns/local_ns
 | use_maximum | false | |
 | clearable_layers | "obstacle_layer" | |
 
-### static_layer plugin
+## static_layer plugin
 
 * `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugin_names`, default value is `static_layer`
 
@@ -56,7 +56,7 @@ Namespace: /parent_ns/local_ns
 | `<static layer>`.map_subscribe_transient_local | true | |
 | `<static layer>`.transform_tolerance | 0.0 | |
 
-### inflation_layer plugin
+## inflation_layer plugin
 
 * `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugin_names`, default value is `inflation_layer`
 
@@ -68,7 +68,7 @@ Namespace: /parent_ns/local_ns
 | `<inflation layer>`.inflate_unknown | false | |
 | `<inflation layer>`.inflate_around_unknown | false | |
 
-### obstacle_layer plugin
+## obstacle_layer plugin
 
 * `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugin_names`, default value is `obstacle_layer`
 * `<data source>`: Name of a source provided in ``<obstacle layer>`.observation_sources`
@@ -93,7 +93,7 @@ Namespace: /parent_ns/local_ns
 | `<data source>`.obstacle_range | 2.5 | |
 | `<data source>`.raytrace_range | 3.0 | | 
 
-### voxel_layer plugin
+## voxel_layer plugin
 
 * `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugin_names`
 * `<data source>`: Name of a source provided in `<voxel layer>`.observation_sources`
@@ -126,24 +126,24 @@ Namespace: /parent_ns/local_ns
 | `<data source>`.obstacle_range | 2.5 | |
 | `<data source>`.raytrace_range | 3.0 | | 
 
-## controller_server
+# controller_server
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| controller_frequency | 20.0 | |
-| controller_plugin_ids | "FollowPath" | |
-| controller_plugin_types | "dwb_core::DWBLocalPlanner" | |
-| min_x_velocity_threshold | 0.0001 | |
-| min_y_velocity_threshold | 0.0001 | |
-| min_theta_velocity_threshold | 0.0001 | |
-| required_movement_radius | 0.5 | |
-| movement_time_allowance | 10.0 | |
+| controller_frequency | 20.0 | Frequency to run controller |
+| controller_plugin_ids | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
+| controller_plugin_types | ["dwb_core::DWBLocalPlanner"] | List of registered plugins to load |
+| min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
+| min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
+| min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
+| required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
+| movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
 
 # dwb_controller
 
 * `<dwb plugin>`: DWB plugin name defined in `controller_plugin_ids` in the controller_server parameters
 
-### dwb_local_planner
+## dwb_local_planner
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -166,7 +166,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.PathDist.scale |  | |
 | `<dwb plugin>`.GoalDist.scale |  | |
 
-### publisher
+## publisher
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -178,7 +178,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.publish_cost_grid_pc | false | |
 | `<dwb plugin>`.marker_lifetime | 0.1 | |
 
-### oscillation TrajectoryCritic
+## oscillation TrajectoryCritic
 
 * `<name>`: oscillation critic name defined in `<dwb plugin>.critics`
 
@@ -190,7 +190,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### kinematic_parameters 
+## kinematic_parameters 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -209,7 +209,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.decel_lim_y | 0.0 | |
 | `<dwb plugin>`.decel_lim_theta | 0.0 | |
 
-### xy_theta_iterator 
+## xy_theta_iterator 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -217,7 +217,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.vy_samples | 5 | |
 | `<dwb plugin>`.vtheta_samples | 20| |
 
-### base_obstacle TrajectoryCritic
+## base_obstacle TrajectoryCritic
 
 * `<name>`: base_obstacle critic name defined in `<dwb plugin>.critics`
 
@@ -226,7 +226,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.sum_scores | false | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### obstacle_footprint TrajectoryCritic
+## obstacle_footprint TrajectoryCritic
 
 * `<name>`: obstacle_footprint critic name defined in `<dwb plugin>.critics`
 
@@ -235,7 +235,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.sum_scores | false | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### prefer_forward TrajectoryCritic
+## prefer_forward TrajectoryCritic
 
 * `<name>`: prefer_forward critic name defined in `<dwb plugin>.critics`
 
@@ -247,7 +247,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.theta_scale | 10.0 | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### twirling TrajectoryCritic
+## twirling TrajectoryCritic
 
 * `<name>`: twirling critic name defined in `<dwb plugin>.critics`
 
@@ -255,7 +255,7 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | `<dwb plugin>`.`<name>`.scale | 0.0 | |
 
-### goal_align TrajectoryCritic
+## goal_align TrajectoryCritic
 
 * `<name>`: goal_align critic name defined in `<dwb plugin>.critics`
 
@@ -264,7 +264,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### map_grid TrajectoryCritic
+## map_grid TrajectoryCritic
 
 * `<name>`: map_grid critic name defined in `<dwb plugin>.critics`
 
@@ -273,7 +273,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### path_dist TrajectoryCritic
+## path_dist TrajectoryCritic
 
 * `<name>`: path_dist critic name defined in `<dwb plugin>.critics`
 
@@ -282,7 +282,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### path_align TrajectoryCritic
+## path_align TrajectoryCritic
 
 * `<name>`: path_align critic name defined in `<dwb plugin>.critics`
 
@@ -291,7 +291,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### rotate_to_goal TrajectoryCritic
+## rotate_to_goal TrajectoryCritic
 
 * `<name>`: rotate_to_goal critic name defined in `<dwb plugin>.critics`
 
@@ -303,7 +303,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.lookahead_time | -1 | |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
-### simple_goal_checker plugin
+## simple_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -311,7 +311,7 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.yaw_goal_tolerance | 0.25 | |
 | `<dwb plugin>`.stateful | true | |
 
-### standard_traj_generator plugin
+## standard_traj_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -322,13 +322,13 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.angular_granularity | 0.025 | |
 | `<dwb plugin>`.include_last_point | true | |
 
-### limited_accel_generator plugin
+## limited_accel_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<dwb plugin>`.sim_time | N/A | |
 
-### stopped_goal_checker plugin
+## stopped_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -339,76 +339,80 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| node_names | N/A | |
-| autostart | false | |
-
-# map_saver
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| save_map_timeout | 2000 | |
-| free_thresh_default | 0.25 | |
-| occupied_thresh_default | 0.65 | |
+| node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
+| autostart | false | Whether to transition nodes to active state on startup |
 
 # map_server
 
+## map_server
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| yaml_filename | N/A | |
-| topic_name | "map" | |
-| frame_id | "map" | |
+| save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
+| free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
+| occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
+
+## map_server
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| yaml_filename | N/A | Path to map yaml file |
+| topic_name | "map" | topic  to publish loaded map to |
+| frame_id | "map" | Frame to publish loaded map in |
 
 # planner_server
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| planner_plugin_ids | "GridBased" | |
-| planner_plugin_types | "nav2_navfn_planner/NavfnPlanner" | |
+| planner_plugin_ids | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
+| planner_plugin_types | ["nav2_navfn_planner/NavfnPlanner"] | List of registered pluginlib planner types to load |
 
 # navfn_planner
 
+* `<name>`: Corresponding planner plugin ID for this type
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| name.tolerance  | 0.5 | |
-| name.use_astar | false | |
-| name.allow_unknown | true | |
+| `<name>`.tolerance  | 0.5 | Tolerance in meters between requested goal pose and end of path |
+| `<name>`.use_astar | false | Whether to use A*, if false, uses Dijstra's expansion |
+| `<name>`.allow_unknown | true | Whether to allow planning in unknown space |
 
 # waypoint_follower
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| stop_on_failure | true | |
-| loop_rate | 20 | |
+| stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
+| loop_rate | 20 | Rate to check for results from current navigation task |
 
-# recovers
+# recoveries
 
 ## recovery_server
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| costmap_topic | "local_costmap/costmap_raw" | |
-| footprint_topic | "local_costmap/published_footprint" | |
-| cycle_frequency | 10.0 | |
-| transform_tolerance | 0.1 | |
-| global_frame | "odom" | |
-| robot_base_frame | "base_link" | |
-| plugin_names | {"spin", "back_up", "wait"}| |
-| plugin_types | {"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"} | |
+| costmap_topic | "local_costmap/costmap_raw" | Raw costmap topic for collision checking |
+| footprint_topic | "local_costmap/published_footprint" | Topic for footprint in the costmap frame |
+| cycle_frequency | 10.0 | Frequency to run recovery plugins |
+| transform_tolerance | 0.1 | TF transform tolerance |
+| global_frame | "odom" | Reference frame |
+| robot_base_frame | "base_link" | Robot base frame |
+| plugin_names | {"spin", "back_up", "wait"}| List of plugin names to use, also matches action server names |
+| plugin_types | {"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"} | List of registered plugin to map to names |
 
 ## spin plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| simulate_ahead_time | 2.0 | |
-| max_rotational_vel | 1.0 | |
-| min_rotational_vel | 0.4 | |
-| rotational_acc_lim | 3.2 | |
+| simulate_ahead_time | 2.0 | Time to look ahead for collisions (s) |
+| max_rotational_vel | 1.0 | Maximum rotational velocity (rad/s) |
+| min_rotational_vel | 0.4 | Minimum rotational velocity (rad/s) |
+| rotational_acc_lim | 3.2 | maximum rotational acceleration (rad/s^2) |
 
 ## back_up plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| simulate_ahead_time | 2.0 | |
+| simulate_ahead_time | 2.0 | Time to look ahead for collisions (s) |
 
 # AMCL
 
@@ -466,30 +470,30 @@ Namespace: /parent_ns/local_ns
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| backup_dist | -0.15 | Distance to backup |
-| backup_speed | 0.025 | Speed at which to backup |
+| backup_dist | -0.15 | Total distance to backup |
+| backup_speed | 0.025 | Backup speed |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node ClearEntireCostmap
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
 | service_name | N/A | Server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node ComputePathToPose
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| goal | N/A | Destination to plan to |
+| goal | N/A | Goal pose |
 | planner_id | N/A | |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 | Output Port | Default | Description |
 | ----------- | ------- | ----------- |
-| path | N/A | Path created by ComputePathToPose node |
+| path | N/A | Path created by action server |
 
 ### BT Node FollowPath
 
@@ -498,7 +502,7 @@ Namespace: /parent_ns/local_ns
 | path | N/A | Path to follow |
 | controller_id | N/A | |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node NavigateToPose
 
@@ -507,30 +511,30 @@ Namespace: /parent_ns/local_ns
 | position | N/A | Position |
 | orientation | N/A | Orientation |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node ReinitializeGlobalLocalization
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
 | service_name | N/A | Server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node Spin
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| spin_dist | 1.57 | Spin distance |
+| spin_dist | 1.57 | Spin distance (radians) |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ### BT Node Wait
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| wait_duration | 1 | Wait time |
+| wait_duration | 1 | Wait time (s) |
 | server_name | N/A | Action server name |
-| server_timeout | 10 | (milliseconds) |
+| server_timeout | 10 | Action server timeout (ms) |
 
 ## Conditions
 
@@ -538,8 +542,8 @@ Namespace: /parent_ns/local_ns
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| goal | N/A | Destination |
-| global_frame | "map" | Global frame |
+| goal | N/A | Destination to check |
+| global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 
 ### BT Node TransformAvailable (condition)
@@ -563,12 +567,12 @@ Namespace: /parent_ns/local_ns
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| distance | 1.0 | Distance |
-| global_frame | "map" | Global frame |
+| distance | 1.0 | Distance (m) |
+| global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 
 ### BT Node RateController
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| hz | 10.0 | Rate |
+| hz | 10.0 | Rate to throttle |
