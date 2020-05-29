@@ -148,6 +148,7 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<dwb plugin>`.critics | | |
+| `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | |
 | `<dwb plugin>`.prune_plan | true | |
 | `<dwb plugin>`.prune_distance | 1.0 | |
 | `<dwb plugin>`.debug_trajectory_details | false | |
