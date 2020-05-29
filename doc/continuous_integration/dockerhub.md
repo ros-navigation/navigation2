@@ -40,7 +40,7 @@ Rather than configuring the build rules on DockerHub, a build trigger URL can be
   * Legacy docs on using build triggers
 * [Example GitHub Action](https://github.com/osrf/docker_images/blob/master/.github/workflows/trigger_nightly.yaml)
   * Scheduled cron job used to rebuild a nightly image
-[Example Build Hook](https://github.com/osrf/docker_images/blob/master/ros2/nightly/nightly/hooks/post_push)
+* [Example Build Hook](https://github.com/osrf/docker_images/blob/master/ros2/nightly/nightly/hooks/post_push)
   * A hook to rebuild a child image post push or parent tag
 
 However, triggering builds via API rather than relying on the DockerHub build rules also means forgoing the convenience of repository linking, where a repo's image can be sure to be rebuilt as soon as a new version of the parent image tag is pushed to the registry without needing to monitor the parent image repos oneself. This helps keep the CI environment uptodate and in sync with upstream development. 
