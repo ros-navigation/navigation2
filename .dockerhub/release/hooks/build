@@ -12,4 +12,4 @@ docker build \
     --build-arg FAIL_ON_BUILD_FAILURE \
     --build-arg UNDERLAY_MIXINS \
     --build-arg OVERLAY_MIXINS \
-    --file ./Dockerfile ../../.
+    --file ../../Dockerfile ../../.
