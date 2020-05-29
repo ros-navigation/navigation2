@@ -9,8 +9,10 @@ Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide 
 
 The Dockerfiles for this project are built upon parent images from upstream repos on DockerHub, thus abbreviating environmental setup and build time, yet written in a parameterized style to remain ROS2 distro agnostic. This keeps them easily generalizable for future ROS2 releases or for switching between custom parent images. Given the use of multiple build stages, they're consequently best approached by reading from top to bottom in the order in which image layers are appended. Documentation for upstream repos on DockerHub can be found here:
 
-* [Official ROS Docker Images](https://hub.docker.com/_/ros)
-* [Official OSRF Dockerfiles](https://github.com/osrf/docker_images)
+* [ROS Docker Images](https://hub.docker.com/_/ros)
+  * DockerHub repo for official images
+* [ROS Dockerfiles](https://github.com/osrf/docker_images)
+  * GitHub repo for OSRF Dockerfiles
 
 While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a released ROS2 distro using available pre-built binary dependencies. We'll walk through the main Dockerfile here, although all of them follow the same basic pattern.
 
@@ -20,6 +22,7 @@ The Dockerfile first declares a number of optional `ARG` values and respective d
 
 * [Use multi-stage builds
 ](https://docs.docker.com/develop/develop-images/multistage-build)
+  * Optimize while keeping Dockerfiles readable and maintainable
 
 Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. This allows project maintainers to spot breaking API changes and regressions as soon as they are merged upstream. Alternatively, any image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_distro_name>`, could also be substituted to compile the project, say for quickly experimenting with planners ontop of complex reinforcement or deep learning framework dependencies.
 
@@ -34,7 +37,7 @@ The `.repos` file is not copied directly into the `src` folder to avoid any rest
 
 The overlay workspace is then also created and populated using all the files in the docker build context, i.e. the [root](/) directory of the repo. This is done after the underlay is cloned to avoid having to re-download underlay source files if the `.repos` files are unchanged. However, if the `.repos` file is changed, and different source files are cloned, this can then bust the docker build cache. Other ephemeral or unessential project files are safely ignored using the [`.dockerignore`](/.dockerignore) config. If ever the docker build cache is cache is somehow stale, using the docker build flag `--no-cache` may be used to freshly build anew.
 
-Finally the `cacher` stage copies all manifest related files in place within the `/opt` directory into a temporary mirrored directory that later stages can copy from without unnecessarily busting it's docker build cache. The [`source.Dockerfile`](/.dockerhub/source.Dockerfile) provides an advance example of avoiding ignored package, or packages that are unnecessary as overlay dependencies.
+Finally the `cacher` stage copies all manifest related files in place within the `/opt` directory into a temporary mirrored directory that later stages can copy from without unnecessarily busting it's docker build cache. The [`source.Dockerfile`](/.dockerhub/source.Dockerfile) provides an advance example of avoiding ignored packages, or packages that are unnecessary as overlay dependencies.
 
 ## Builder Stage
 
@@ -58,7 +61,7 @@ The sourcing of the ROS setup file is done to permit rosdep to find additional p
 
 The underlay workspace is then built using `colcon` by first copying over the rest of the source files from the original `src` directory from the `cacher` stage. The colcon flag `--symlink-install` is used to avoid the duplication of files for smaller image sizes, while mixin argument is also parameterized as a Dockerfile `ARG` to programmatically switch between `debug` or `release` builds in CI. More info on colcon can be found here:
 
-* [colcon](https://colcon.readthedocs.io/en/released)
+* [colcon](https://colcon.readthedocs.io)
   * CLI tool to build sets of software packages
 * [colcon-mixin](https://github.com/colcon/colcon-mixin)
   * An extension to fetch and manage CLI mixins from repositories
