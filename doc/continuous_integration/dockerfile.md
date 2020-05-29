@@ -1,3 +1,5 @@
+# Dockerfile Documentation
+
 Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
 
 * [Dockerfile reference
@@ -59,7 +61,7 @@ The underlay workspace is then built using `colcon` by first copying over the re
 * [colcon](https://colcon.readthedocs.io/en/released)
   * CLI tool to build sets of software packages
 * [colcon-mixin](https://github.com/colcon/colcon-mixin)
-  * An extension for colcon-core to fetch and manage CLI mixins from repositories
+  * An extension to fetch and manage CLI mixins from repositories
 * [colcon-mixin-repository](https://github.com/colcon/colcon-mixin-repository)
   * Repository of common colcon CLI mixins
 
