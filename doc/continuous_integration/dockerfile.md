@@ -16,6 +16,8 @@ While main [`Dockerfile`](/Dockerfile) at the root of the repo is used for devel
 
 The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image.
 
+Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. Enabling project maintainers to spot breaking API changes and regressions as soon as they are merged into master upstream. Alternatively, an image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_distro_name>`, could also be substituted to compile the project, say for quickly experimenting with planners using complex reinforcement or deep learning framework dependencies.
+
 ## Cacher Stage
 
 A `cacher` stage is then started to gather together the necessary source files to eventually build. A directory for the underlay workspace is then created and populated using `vcs` with the respective `.repos` file that defines the relevant repositories to pull and particular versions to checkout into the source directory. More info on vcstool can be found here: 
