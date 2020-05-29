@@ -1,12 +1,14 @@
 Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
 
-* https://docs.docker.com/engine/reference/builder
-* https://docs.docker.com/develop/develop-images/dockerfile_best-practices
+* [Dockerfile reference
+](https://docs.docker.com/engine/reference/builder)
+* [Best practices for writing Dockerfiles
+](https://docs.docker.com/develop/develop-images/dockerfile_best-practices)
 
 The Dockerfiles for this project are built upon parent images from upstream repos on DockerHub, thus abbreviating environmental setup and build time, yet written in a parameterized style to remain ROS2 distro agnostic. This keeps them easily generalizable for future ROS2 releases or for switching between custom parent images. Given the use of multiple build stages, they're consequently best approached by reading from top to bottom in the order in which image layers are appended. Documentation for upstream repos on DockerHub can be found here:
 
-* https://hub.docker.com/_/ros
-* https://github.com/osrf/docker_images
+* [Official ROS Docker Images](https://hub.docker.com/_/ros)
+* [Official OSRF Dockerfiles](https://github.com/osrf/docker_images)
 
 While main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a release ROS2 distro using available pre-built binary dependencies. We'll walk though the main Dockerfile here, although all of them follow the same basic pattern.
 
@@ -74,8 +76,9 @@ The overlay may then be optionaly tested using the same additional mixins. The r
 
 A difference for other Dockerfiles, not needing to be built by DockerHub and thus not limited in backwards compatibility, is the use of newer mount syntax options in buildkit, allowing for persistent caching of downloaded apt packages and ccache files across successful builds of the same Dockerfile. More info on buildkit can be found here: 
 
-* https://docs.docker.com/develop/develop-images/build_enhancements/
-* https://github.com/moby/buildkit
+* [Build images with BuildKit
+](https://docs.docker.com/develop/develop-images/build_enhancements)
+* [Buildkit repo](https://github.com/moby/buildkit)
 
 The [`distro.Dockerfile`][/.dockerhub/distro.Dockerfile] provides once such example of this. More info on using mounts for caching data across docker builds can be found here:
 
