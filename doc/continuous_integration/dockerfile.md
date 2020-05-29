@@ -1,33 +1,83 @@
-Dockerfiles are 
+Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
 
-configured via the [Dockerfile](/Dockerfile) yaml file within the `.circleci/` folder at the root of the GitHub repo. Further references on configuring CircleCI, such as syntax and structure can be found here:
+* https://docs.docker.com/engine/reference/builder
+* https://docs.docker.com/develop/develop-images/dockerfile_best-practices
 
-* https://circleci.com/docs/2.0/writing-yaml
-* https://circleci.com/docs/2.0/configuration-reference
-
-https://docs.docker.com/engine/reference/builder/
-
+The Dockerfiles for this project are built upon parent images from upstream repos on DockerHub, thus abbreviating environmental setup and build time, yet written in a parameterized style to remain ROS2 distro agnostic. This keeps them easily generalizable for future ROS2 releases or for switching between custom parent images. Given the use of multiple build stages, they're consequently best approached by reading from top to bottom in the order in which image layers are appended. Documentation for upstream repos on DockerHub can be found here:
 
 * https://hub.docker.com/_/ros
 * https://github.com/osrf/docker_images
 
+While main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a release ROS2 distro using available pre-built binary dependencies. We'll walk though the main Dockerfile here, although all of them follow the same basic pattern.
 
-* [colcon](https://colcon.readthedocs.io/en/released)
-  * CLI tool to build sets of software packages
-* [rosdep](http://wiki.ros.org/rosdep)
-  * CLI tool for installing system dependencies
+## Global Arguments
+
+The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image.
+
+## Cacher Stage
+
+A `cacher` stage is then started to gather together the necessary source files to eventually build. A directory for the underlay workspace is then created and populated using `vcs` with the respective `.repos` file that defines the relevant repositories to pull and particular versions to checkout into the source directory. More info on vcstool can be found here: 
+
 * [vcstool](https://github.com/dirk-thomas/vcstool)
   * CLI for working with multiple repositories easier
 
+The `.repos` file is not copied directly into the `src` folder to avoid any restructuring of the yaml data from unintentionally busting the docker build cache in later stages. The ephemeral files within `.git` repo folders are similarly removed and help bolster deterministic builds. 
 
+The overlay workspace is then also created and populated using all the files in the docker build context, i.e. the [root](/) directory of the repo. This is done after the underlay is cloned to avoid having to re-download underlay source files if the `.repos` files are unchanged. However, if the `.repos` file is changed, and different source files are cloned, this can then bust the docker build cache. Other ephemeral or unessential project files are safely ignored using the [`.dockerignore`](/.dockerignore) config. If ever the docker build cache is cache is somehow stale, using the docker build flag `--no-cache` may be used to freshly build anew.
+
+Finally the `cacher` stage copies the all manifest related files in place within the `/opt` directory into a temporary mirrored directory that later stages can copy from without unnecessarily busting it's docker build cache. The [`source.Dockerfile`](/.dockerhub/source.Dockerfile) provides more a advance example of avoiding ignored package, or packages that are unnecessary as overlay dependencies.
+
+## Builder Stage
+
+A `builder` stage is then started to install external dependencies and compile the respective workspaces. Static CI dependencies are first installed before any later potential cache busting directives. These include:
 
 * [ccache](https://ccache.dev)
   * Compiler cache for speeding up recompilation
 * [lcov](http://ltp.sourceforge.net/coverage/lcov.php)
   * Front-end for GCC's coverage testing tool gcov
 
+### Install Dependencies
+
+Dependencies for the underlay workspace are then installed using `rosdep` by pointing to the manifest files within the mirrored source directory copied from the `cacher` stage. This ensures the lengthy process of downloading, unpacking, and installing any external dependencies can be skipped using the docker build cache as long as the manifest files within the underlay remain unchanged. More info on rosdep can be found here:
+
+* [rosdep](http://wiki.ros.org/rosdep)
+  * CLI tool for installing system dependencies 
+
+The sourcing of the ROS setup file is done to permit rosdep to find additional packages within the installed ament index via `AMENT_PREFIX_PATH` environment variable, or potentially vendored packages unregistered in ament index via the legacy `ROS_PACKAGE_PATH` env. Cleanup of the apt list directory is done as a best practice in Docker to prevent from ever using stale apt list caches.
+
+### Build Source
+
+The underlay workspace is then built using `colcon` by first copying over the rest of the source files from the original `src` directory from the `cacher` stage. The colcon flag `--symlink-install` is used to avoid the duplication of files for smaller image sizes, while mixin argument is also parameterized as a Dockerfile `ARG` to programmatically switch between `debug` or `release` builds in CI. More info on colcon can be found here:
+
+* [colcon](https://colcon.readthedocs.io/en/released)
+  * CLI tool to build sets of software packages
+* [colcon-mixin](https://github.com/colcon/colcon-mixin)
+  * An extension for colcon-core to fetch and manage CLI mixins from repositories
+* [colcon-mixin-repository](https://github.com/colcon/colcon-mixin-repository)
+  * Repository of common colcon CLI mixins
+
+The addition of the `ccache` mixin is used to pre-bake a warm ccache directory into the image as well as a pre-built underlay workspace. This will help speedup consecutive builds should later steps in the CI or maintainers have need to rebuild the underlay using the final image. The `console_direct` event handler is used to avoid CI timeout from inactive stdout for slower package builds while the `FAIL_ON_BUILD_FAILURE` env is used to control whether the docker image build should fail to complete upon failure from colcon build.
+
+## Overlay Workspace
+
+The overlay workspace is then set up in a similar manner where the same steps are repeated, only now sourcing the underlay setup file, and by building within the overlay directory. The separation of underlay vs overlay workspace helps split caching of compilation across the two major points of change; that of external dependencies that change infrequently upon new releases vs local project source files that perpetually change during development. The overlay mixins are parameterized via `ARG` as well to allow the underlay and overlay to be independently configured by CI or local developers.
+
+### Setup Entrypoint
+
+The default entrypoint `ros_entrypoint.sh` inherited from the parent image is then updated to only source the top level overlay instead. The configured `ARG`s defining the paths used to the underlay and overlay are also exported to `ENV`s to persist in the final image as a developer convenience.
+
+### Testing Overlay
+
+The overlay may then be optionaly tested using the same additional mixins. The results of the test may also be used to optionaly fail the entire build; useful if the return code from `docker build` command itself is used as a primitive form of CI, or demonstrating to new contributors on how to locally test pull requests by invoking the colcon CLI.
+
+## Buildkit
+
+A difference for other Dockerfiles, not needing to be built by DockerHub and thus not limited in backwards compatibility, is the use of newer mount syntax options in buildkit, allowing for persistent caching of downloaded apt packages and ccache files across successful builds of the same Dockerfile. More info on buildkit can be found here: 
+
 * https://docs.docker.com/develop/develop-images/build_enhancements/
 * https://github.com/moby/buildkit
 
+The [`distro.Dockerfile`][/.dockerhub/distro.Dockerfile] provides once such example of this. More info on using mounts for caching data across docker builds can be found here:
 
-[cache apt packages](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md#example-cache-apt-packages) to avoid unnecessarily re-downloading the same packages from over the network, even if the docker image layer cache for that directive in the Dockerfile is busted.
+* [cache apt packages](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md#example-cache-apt-packages)
+  * avoid unnecessarily re-downloading the same packages over the network, even if the docker image layer cache for that `RUN` directive in the Dockerfile is busted
