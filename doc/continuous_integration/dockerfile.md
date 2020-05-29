@@ -24,7 +24,7 @@ The Dockerfile first declares a number of optional `ARG` values and respective d
 ](https://docs.docker.com/develop/develop-images/multistage-build)
   * Optimize while keeping Dockerfiles readable and maintainable
 
-Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. This allows project maintainers to spot breaking API changes and regressions as soon as they are merged upstream. Alternatively, any image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_distro_name>`, could also be substituted to compile the project, say for quickly experimenting with planners ontop of complex reinforcement or deep learning framework dependencies.
+Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, allowing the master branch to simply build against the bleeding edge of ROS2 core development. This allows project maintainers to spot breaking API changes and regressions as soon as they are merged upstream. Alternatively, any image tag based on a released ROS2 distro image, e.g. `ros:<ROS2_DISTRO>`, could also be substituted to compile the project, say for quickly experimenting with planners ontop of complex reinforcement or deep learning framework dependencies.
 
 ## Cacher Stage
 
