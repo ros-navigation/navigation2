@@ -1,3 +1,4 @@
+*NOTE: <> means plugin are namespaced by a name/id parameterization. The bracketed names may change due to your application configuration*
 
 # bt_navigator 
 
@@ -8,19 +9,6 @@
 | transform_tolerance | 0.1 |  |
 | global_frame | "map" |  |
 | robot_base_frame | "base_link" |  |
-
-## controller_server
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| controller_frequency | 20.0 | |
-| controller_plugin_ids | "FollowPath" | |
-| controller_plugin_types | "dwb_core::DWBLocalPlanner" | |
-| min_x_velocity_threshold | 0.0001 | |
-| min_y_velocity_threshold | 0.0001 | |
-| min_theta_velocity_threshold | 0.0001 | |
-| required_movement_radius | 0.5 | |
-| movement_time_allowance | 10.0 | |
 
 # costmaps
 
@@ -58,248 +46,293 @@ Namespace: /parent_ns/local_ns
 
 ### static_layer plugin
 
+* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugin_names`, default value is `static_layer`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| static_layer.enabled | true | |
-| static_layer.subscribe_to_updates | false | |
-| static_layer.subscribe_to_updates | false | |
-| static_layer.map_subscribe_transient_local | true | |
-| static_layer.transform_tolerance | 0.0 | |
+| `<static layer>`.enabled | true | |
+| `<static layer>`.subscribe_to_updates | false | |
+| `<static layer>`.subscribe_to_updates | false | |
+| `<static layer>`.map_subscribe_transient_local | true | |
+| `<static layer>`.transform_tolerance | 0.0 | |
 
 ### inflation_layer plugin
 
+* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugin_names`, default value is `inflation_layer`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| inflation_layer.enabled | true | |
-| inflation_layer.inflation_radius | 0.55 | |
-| inflation_layer.cost_scaling_factor | 10.0 | |
-| inflation_layer.inflate_unknown | false | |
-| inflation_layer.inflate_around_unknown | false | |
+| `<inflation layer>`.enabled | true | |
+| `<inflation layer>`.inflation_radius | 0.55 | |
+| `<inflation layer>`.cost_scaling_factor | 10.0 | |
+| `<inflation layer>`.inflate_unknown | false | |
+| `<inflation layer>`.inflate_around_unknown | false | |
 
 ### obstacle_layer plugin
 
+* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugin_names`, default value is `obstacle_layer`
+* `<data source>`: Name of a source provided in ``<obstacle layer>`.observation_sources`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| obstacle_layer.enabled | true | |
-| obstacle_layer.footprint_clearing_enabled | true | |
-| obstacle_layer.max_obstacle_height | 2.0 | |
-| obstacle_layer.combination_method | 1 | |
-| obstacle_layer.observation_sources | "" | data source topic |
-| source.topic  | "" | |
-| source.sensor_frame | "" | |
-| source.observation_persistence | 0.0 | |
-| source.expected_update_rate | 0.0 | |
-| source.data_type | "LaserScan" | |
-| source.min_obstacle_height | 0.0 | |
-| source.max_obstacle_height | 0.0 | |
-| source.inf_is_valid | false | |
-| source.marking | true | |
-| source.clearing | false | |
-| source.obstacle_range | 2.5 | |
-| source.raytrace_range | 3.0 | | 
+| `<obstacle layer>`.enabled | true | |
+| `<obstacle layer>`.footprint_clearing_enabled | true | |
+| `<obstacle layer>`.max_obstacle_height | 2.0 | |
+| `<obstacle layer>`.combination_method | 1 | |
+| `<obstacle layer>`.observation_sources | "" | data source topic |
+| `<data source>`.topic  | "" | |
+| `<data source>`.sensor_frame | "" | |
+| `<data source>`.observation_persistence | 0.0 | |
+| `<data source>`.expected_update_rate | 0.0 | |
+| `<data source>`.data_type | "LaserScan" | |
+| `<data source>`.min_obstacle_height | 0.0 | |
+| `<data source>`.max_obstacle_height | 0.0 | |
+| `<data source>`.inf_is_valid | false | |
+| `<data source>`.marking | true | |
+| `<data source>`.clearing | false | |
+| `<data source>`.obstacle_range | 2.5 | |
+| `<data source>`.raytrace_range | 3.0 | | 
 
 ### voxel_layer plugin
 
-*Note*: These parameters will only get declared if `"voxel_layer"` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
+* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugin_names`
+* `<data source>`: Name of a source provided in `<voxel layer>`.observation_sources`
+
+*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| voxel_layer.enabled | true | |
-| voxel_layer.footprint_clearing_enabled | true | |
-| voxel_layer.max_obstacle_height | 2.0 | |
-| voxel_layer.z_voxels | 10 | |
-| voxel_layer.origin_z | 0.0 | |
-| voxel_layer.z_resolution | 0.2 | |
-| voxel_layer.unknown_threshold | 15 | |
-| voxel_layer.mark_threshold | 0 | |
-| voxel_layer.combination_method | 1 | |
-| voxel_layer.publish_voxel_map | false | |
-| voxel_layer.observation_sources | "" | data source topic |
-| source.topic  | "" | |
-| source.sensor_frame | "" | |
-| source.observation_persistence | 0.0 | |
-| source.expected_update_rate | 0.0 | |
-| source.data_type | "LaserScan" | |
-| source.min_obstacle_height | 0.0 | |
-| source.max_obstacle_height | 0.0 | |
-| source.inf_is_valid | false | |
-| source.marking | true | |
-| source.clearing | false | |
-| source.obstacle_range | 2.5 | |
-| source.raytrace_range | 3.0 | | 
+| `<voxel layer>`.enabled | true | |
+| `<voxel layer>`.footprint_clearing_enabled | true | |
+| `<voxel layer>`.max_obstacle_height | 2.0 | |
+| `<voxel layer>`.z_voxels | 10 | |
+| `<voxel layer>`.origin_z | 0.0 | |
+| `<voxel layer>`.z_resolution | 0.2 | |
+| `<voxel layer>`.unknown_threshold | 15 | |
+| `<voxel layer>`.mark_threshold | 0 | |
+| `<voxel layer>`.combination_method | 1 | |
+| `<voxel layer>`.publish_voxel_map | false | |
+| `<voxel layer>`.observation_sources | "" | data source topic |
+| `<data source>`.topic  | "" | |
+| `<data source>`.sensor_frame | "" | |
+| `<data source>`.observation_persistence | 0.0 | |
+| `<data source>`.expected_update_rate | 0.0 | |
+| `<data source>`.data_type | "LaserScan" | |
+| `<data source>`.min_obstacle_height | 0.0 | |
+| `<data source>`.max_obstacle_height | 0.0 | |
+| `<data source>`.inf_is_valid | false | |
+| `<data source>`.marking | true | |
+| `<data source>`.clearing | false | |
+| `<data source>`.obstacle_range | 2.5 | |
+| `<data source>`.raytrace_range | 3.0 | | 
+
+## controller_server
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| controller_frequency | 20.0 | |
+| controller_plugin_ids | "FollowPath" | |
+| controller_plugin_types | "dwb_core::DWBLocalPlanner" | |
+| min_x_velocity_threshold | 0.0001 | |
+| min_y_velocity_threshold | 0.0001 | |
+| min_theta_velocity_threshold | 0.0001 | |
+| required_movement_radius | 0.5 | |
+| movement_time_allowance | 10.0 | |
 
 # dwb_controller
+
+* `<dwb plugin>`: DWB plugin name defined in `controller_plugin_ids` in the controller_server parameters
 
 ### dwb_local_planner
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.critics | | |
-| dwb_plugin_name_.prune_plan | true | |
-| dwb_plugin_name_.prune_distance | 1.0 | |
-| dwb_plugin_name_.debug_trajectory_details | false | |
-| dwb_plugin_name_.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | |
-| dwb_plugin_name_.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | |
-| dwb_plugin_name_.transform_tolerance | 0.1 | |
-| dwb_plugin_name_.short_circuit_trajectory_evaluation | true | |
-| dwb_plugin_name_.path_distance_bias | N/A | |
-| dwb_plugin_name_.goal_distance_bias |  | |
-| dwb_plugin_name_.occdist_scale |  | |
-| dwb_plugin_name_.max_scaling_factor |  | |
-| dwb_plugin_name_.scaling_speed |  | |
-| dwb_plugin_name_.PathAlign.scale |  | |
-| dwb_plugin_name_.GoalAlign.scale |  | |
-| dwb_plugin_name_.PathDist.scale |  | |
-| dwb_plugin_name_.GoalDist.scale |  | |
+| `<dwb plugin>`.critics | | |
+| `<dwb plugin>`.prune_plan | true | |
+| `<dwb plugin>`.prune_distance | 1.0 | |
+| `<dwb plugin>`.debug_trajectory_details | false | |
+| `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | |
+| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | |
+| `<dwb plugin>`.transform_tolerance | 0.1 | |
+| `<dwb plugin>`.short_circuit_trajectory_evaluation | true | |
+| `<dwb plugin>`.path_distance_bias | N/A | |
+| `<dwb plugin>`.goal_distance_bias |  | |
+| `<dwb plugin>`.occdist_scale |  | |
+| `<dwb plugin>`.max_scaling_factor |  | |
+| `<dwb plugin>`.scaling_speed |  | |
+| `<dwb plugin>`.PathAlign.scale |  | |
+| `<dwb plugin>`.GoalAlign.scale |  | |
+| `<dwb plugin>`.PathDist.scale |  | |
+| `<dwb plugin>`.GoalDist.scale |  | |
 
 ### publisher
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.publish_evaluation |true | |
-| dwb_plugin_name_.publish_global_plan | true | |
-| dwb_plugin_name_.publish_transformed_plan | true | |
-| dwb_plugin_name_.publish_local_plan | true | |
-| dwb_plugin_name_.publish_trajectories | true | |
-| dwb_plugin_name_.publish_cost_grid_pc | false | |
-| dwb_plugin_name_.marker_lifetime | 0.1 | |
+| `<dwb plugin>`.publish_evaluation |true | |
+| `<dwb plugin>`.publish_global_plan | true | |
+| `<dwb plugin>`.publish_transformed_plan | true | |
+| `<dwb plugin>`.publish_local_plan | true | |
+| `<dwb plugin>`.publish_trajectories | true | |
+| `<dwb plugin>`.publish_cost_grid_pc | false | |
+| `<dwb plugin>`.marker_lifetime | 0.1 | |
 
-### oscillation
+### oscillation TrajectoryCritic
+
+* `<name>`: oscillation critic name defined in `<dwb plugin>.critics`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.oscillation_reset_dist | 0.05 | |
-| dwb_plugin_name_.name.oscillation_reset_angle | 0.2 | |
-| dwb_plugin_name_.name.oscillation_reset_time | -1 | |
-| dwb_plugin_name_.name.x_only_threshold | 0.05 | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.oscillation_reset_dist | 0.05 | |
+| `<dwb plugin>`.`<name>`.oscillation_reset_angle | 0.2 | |
+| `<dwb plugin>`.`<name>`.oscillation_reset_time | -1 | |
+| `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### kinematic_parameters 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.max_vel_theta | 0.0 | |
-| dwb_plugin_name_.min_speed_xy | 0.0 | |
-| dwb_plugin_name_.max_speed_xy | 0.0| |
-| dwb_plugin_name_.min_speed_theta | 0.0 | |
-| dwb_plugin_name_.min_vel_x | 0.0 | |
-| dwb_plugin_name_.min_vel_y | 0.0 | |
-| dwb_plugin_name_.max_vel_x | 0.0 | |
-| dwb_plugin_name_.max_vel_theta | 0.0 | |
-| dwb_plugin_name_.acc_lim_x | 0.0 | |
-| dwb_plugin_name_.acc_lim_y | 0.0 | |
-| dwb_plugin_name_.acc_lim_theta | 0.0 | |
-| dwb_plugin_name_.decel_lim_x | 0.0 | |
-| dwb_plugin_name_.decel_lim_y | 0.0 | |
-| dwb_plugin_name_.decel_lim_theta | 0.0 | |
+| `<dwb plugin>`.max_vel_theta | 0.0 | |
+| `<dwb plugin>`.min_speed_xy | 0.0 | |
+| `<dwb plugin>`.max_speed_xy | 0.0| |
+| `<dwb plugin>`.min_speed_theta | 0.0 | |
+| `<dwb plugin>`.min_vel_x | 0.0 | |
+| `<dwb plugin>`.min_vel_y | 0.0 | |
+| `<dwb plugin>`.max_vel_x | 0.0 | |
+| `<dwb plugin>`.max_vel_theta | 0.0 | |
+| `<dwb plugin>`.acc_lim_x | 0.0 | |
+| `<dwb plugin>`.acc_lim_y | 0.0 | |
+| `<dwb plugin>`.acc_lim_theta | 0.0 | |
+| `<dwb plugin>`.decel_lim_x | 0.0 | |
+| `<dwb plugin>`.decel_lim_y | 0.0 | |
+| `<dwb plugin>`.decel_lim_theta | 0.0 | |
 
 ### xy_theta_iterator 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.vx_samples | 20 | |
-| dwb_plugin_name_.vy_samples | 5 | |
-| dwb_plugin_name_.vtheta_samples | 20| |
+| `<dwb plugin>`.vx_samples | 20 | |
+| `<dwb plugin>`.vy_samples | 5 | |
+| `<dwb plugin>`.vtheta_samples | 20| |
 
 ### base_obstacle TrajectoryCritic
 
+* `<name>`: base_obstacle critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.sum_scores | false | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.sum_scores | false | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### obstacle_footprint TrajectoryCritic
 
+* `<name>`: obstacle_footprint critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.sum_scores | false | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.sum_scores | false | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### prefer_forward TrajectoryCritic
 
+* `<name>`: prefer_forward critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.penalty | 1.0 | |
-| dwb_plugin_name_.name.strafe_x | 0.1 | |
-| dwb_plugin_name_.name.strafe_theta | 0.2 | |
-| dwb_plugin_name_.name.theta_scale | 10.0 | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.penalty | 1.0 | |
+| `<dwb plugin>`.`<name>`.strafe_x | 0.1 | |
+| `<dwb plugin>`.`<name>`.strafe_theta | 0.2 | |
+| `<dwb plugin>`.`<name>`.theta_scale | 10.0 | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### twirling TrajectoryCritic
 
+* `<name>`: twirling critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.scale | 0.0 | |
+| `<dwb plugin>`.`<name>`.scale | 0.0 | |
 
 ### goal_align TrajectoryCritic
 
+* `<name>`: goal_align critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.forward_point_distance | 0.325 | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### map_grid TrajectoryCritic
 
+* `<name>`: map_grid critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.aggregation_type | "last" | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### path_dist TrajectoryCritic
 
+* `<name>`: path_dist critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.aggregation_type | "last" | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### path_align TrajectoryCritic
 
+* `<name>`: path_align critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.name.forward_point_distance | 0.325 | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### rotate_to_goal TrajectoryCritic
 
+* `<name>`: rotate_to_goal critic name defined in `<dwb plugin>.critics`
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.xy_goal_tolerance | 0.25 | |
-| dwb_plugin_name_.trans_stopped_velocity | 0.25 | |
-| dwb_plugin_name_.slowing_factor | 5.0 | |
-| dwb_plugin_name_.lookahead_time | -1 | |
-| dwb_plugin_name_.name.scale | 1.0 | |
+| `<dwb plugin>`.xy_goal_tolerance | 0.25 | |
+| `<dwb plugin>`.trans_stopped_velocity | 0.25 | |
+| `<dwb plugin>`.slowing_factor | 5.0 | |
+| `<dwb plugin>`.lookahead_time | -1 | |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | |
 
 ### simple_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.xy_goal_tolerance | 0.25 | |
-| dwb_plugin_name_.yaw_goal_tolerance | 0.25 | |
-| dwb_plugin_name_.stateful | true | |
+| `<dwb plugin>`.xy_goal_tolerance | 0.25 | |
+| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | |
+| `<dwb plugin>`.stateful | true | |
 
 ### standard_traj_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.sim_time | 1.7 | |
-| dwb_plugin_name_.discretize_by_time | false | |
-| dwb_plugin_name_.time_granularity | 0.5 | |
-| dwb_plugin_name_.linear_granularity | 0.5 | |
-| dwb_plugin_name_.angular_granularity | 0.025 | |
-| dwb_plugin_name_.include_last_point | true | |
+| `<dwb plugin>`.sim_time | 1.7 | |
+| `<dwb plugin>`.discretize_by_time | false | |
+| `<dwb plugin>`.time_granularity | 0.5 | |
+| `<dwb plugin>`.linear_granularity | 0.5 | |
+| `<dwb plugin>`.angular_granularity | 0.025 | |
+| `<dwb plugin>`.include_last_point | true | |
 
 ### limited_accel_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.sim_time | N/A | |
+| `<dwb plugin>`.sim_time | N/A | |
 
 ### stopped_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| dwb_plugin_name_.rot_stopped_velocity | 0.25 | |
-| dwb_plugin_name_.trans_stopped_velocity | 0.25 | |
+| `<dwb plugin>`.rot_stopped_velocity | 0.25 | |
+| `<dwb plugin>`.trans_stopped_velocity | 0.25 | |
 
 # lifecycle_manager
 
