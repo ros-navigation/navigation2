@@ -20,7 +20,7 @@ GitHub is used for hosting the source repo, tickets and PRs, as well for managin
 
 Dockerfiles are used for generating the docker images for building and testing the project. They also self document the setup and configuration of upstream dependencies, ensuring contributors have a reproducible and repeatable development environment for collaboration.
 
-### [DockerHub](dockerfile.md)
+### [DockerHub](dockerhub.md)
 
 DockerHub is used to build and host the repo of tagged docker images, so that downstream services in the CI pipeline can quickly download and bootstrap the latest up-to-date development environment.
 
