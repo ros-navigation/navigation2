@@ -146,36 +146,36 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.critics | | |
-| `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | |
-| `<dwb plugin>`.prune_plan | true | |
-| `<dwb plugin>`.prune_distance | 1.0 | |
-| `<dwb plugin>`.debug_trajectory_details | false | |
-| `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | |
-| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | |
-| `<dwb plugin>`.transform_tolerance | 0.1 | |
-| `<dwb plugin>`.short_circuit_trajectory_evaluation | true | |
-| `<dwb plugin>`.path_distance_bias | N/A | |
-| `<dwb plugin>`.goal_distance_bias |  | |
-| `<dwb plugin>`.occdist_scale |  | |
-| `<dwb plugin>`.max_scaling_factor |  | |
-| `<dwb plugin>`.scaling_speed |  | |
-| `<dwb plugin>`.PathAlign.scale |  | |
-| `<dwb plugin>`.GoalAlign.scale |  | |
-| `<dwb plugin>`.PathDist.scale |  | |
-| `<dwb plugin>`.GoalDist.scale |  | |
+| `<dwb plugin>`.critics | N/A | List of critic plugins to use |
+| `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | Namespace to load critics in |
+| `<dwb plugin>`.prune_plan | true | Whether to prune the path of old, passed points |
+| `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
+| `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
+| `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | Trajectory generator plugin name |
+| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | Goal checker plugin name |
+| `<dwb plugin>`.transform_tolerance | 0.1 | TF transform tolerance |
+| `<dwb plugin>`.short_circuit_trajectory_evaluation | true | Stop evaluating scores after best score is found |
+| `<dwb plugin>`.path_distance_bias | N/A | Old version of `PathAlign.scale`, use that instead |
+| `<dwb plugin>`.goal_distance_bias | N/A | Old version of `GoalAlign.scale`, use that instead |
+| `<dwb plugin>`.occdist_scale | N/A | Old version of `ObstacleFootprint.scale`, use that instead |
+| `<dwb plugin>`.max_scaling_factor | N/A | Old version of `ObstacleFootprint.max_scaling_factor`, use that instead |
+| `<dwb plugin>`.scaling_speed | N/A | Old version of `ObstacleFootprint.scaling_speed`, use that instead |
+| `<dwb plugin>`.PathAlign.scale | 32.0 | Scale for path align critic |
+| `<dwb plugin>`.GoalAlign.scale | 24.0 | Scale for goal align critic |
+| `<dwb plugin>`.PathDist.scale | 32.0 | Scale for path distance critic |
+| `<dwb plugin>`.GoalDist.scale | 24.0 | Scale for goal distance critic |
 
 ## publisher
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.publish_evaluation |true | |
-| `<dwb plugin>`.publish_global_plan | true | |
-| `<dwb plugin>`.publish_transformed_plan | true | |
-| `<dwb plugin>`.publish_local_plan | true | |
-| `<dwb plugin>`.publish_trajectories | true | |
-| `<dwb plugin>`.publish_cost_grid_pc | false | |
-| `<dwb plugin>`.marker_lifetime | 0.1 | |
+| `<dwb plugin>`.publish_evaluation |true | Whether to publish the local plan evaluation |
+| `<dwb plugin>`.publish_global_plan | true | Whether to publish the global plan |
+| `<dwb plugin>`.publish_transformed_plan | true | Whether to publish the global plan in the odometry frame |
+| `<dwb plugin>`.publish_local_plan | true | Whether to publish the local planner's plan |
+| `<dwb plugin>`.publish_trajectories | true | Whether to publish debug trajectories |
+| `<dwb plugin>`.publish_cost_grid_pc | false | Whether to publish the cost grid |
+| `<dwb plugin>`.marker_lifetime | 0.1 | How long for the marker to remain |
 
 ## oscillation TrajectoryCritic
 
@@ -183,38 +183,38 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.oscillation_reset_dist | 0.05 | |
-| `<dwb plugin>`.`<name>`.oscillation_reset_angle | 0.2 | |
-| `<dwb plugin>`.`<name>`.oscillation_reset_time | -1 | |
-| `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.oscillation_reset_dist | 0.05 | Minimum distance to move to reset oscillation watchdog (m) |
+| `<dwb plugin>`.`<name>`.oscillation_reset_angle | 0.2 | Minimum angular distance to move to reset watchdog (rad) |
+| `<dwb plugin>`.`<name>`.oscillation_reset_time | -1 | Duration when a reset may be called |
+| `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | Threshold to check in the X velocity direction |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weighed scale for critic |
 
 ## kinematic_parameters 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.max_vel_theta | 0.0 | |
-| `<dwb plugin>`.min_speed_xy | 0.0 | |
-| `<dwb plugin>`.max_speed_xy | 0.0| |
-| `<dwb plugin>`.min_speed_theta | 0.0 | |
-| `<dwb plugin>`.min_vel_x | 0.0 | |
-| `<dwb plugin>`.min_vel_y | 0.0 | |
-| `<dwb plugin>`.max_vel_x | 0.0 | |
-| `<dwb plugin>`.max_vel_theta | 0.0 | |
-| `<dwb plugin>`.acc_lim_x | 0.0 | |
-| `<dwb plugin>`.acc_lim_y | 0.0 | |
-| `<dwb plugin>`.acc_lim_theta | 0.0 | |
-| `<dwb plugin>`.decel_lim_x | 0.0 | |
-| `<dwb plugin>`.decel_lim_y | 0.0 | |
-| `<dwb plugin>`.decel_lim_theta | 0.0 | |
+| `<dwb plugin>`.max_vel_theta | 0.0 | Maximum angular velocity (rad/s) |
+| `<dwb plugin>`.min_speed_xy | 0.0 | Minimum translational speed (m/s) |
+| `<dwb plugin>`.max_speed_xy | 0.0 | Maximum translational speed (m/s) |
+| `<dwb plugin>`.min_speed_theta | 0.0 | Minimum angular speed (rad/s) |
+| `<dwb plugin>`.min_vel_x | 0.0 | Minimum velocity X (m/s) |
+| `<dwb plugin>`.min_vel_y | 0.0 | Minimum velocity Y (m/s) |
+| `<dwb plugin>`.max_vel_x | 0.0 | Maximum velocity X (m/s) |
+| `<dwb plugin>`.max_vel_y | 0.0 | Maximum velocity Y (m/s) |
+| `<dwb plugin>`.acc_lim_x | 0.0 | Maximum acceleration X (m/s^2) |
+| `<dwb plugin>`.acc_lim_y | 0.0 | Maximum acceleration Y (m/s^2) |
+| `<dwb plugin>`.acc_lim_theta | 0.0 | Maximum acceleration rotation (rad/s^2) |
+| `<dwb plugin>`.decel_lim_x | 0.0 | Maximum deceleration X (m/s^2) |
+| `<dwb plugin>`.decel_lim_y | 0.0 | Maximum deceleration Y (m/s^2) |
+| `<dwb plugin>`.decel_lim_theta | 0.0 | Maximum deceleration rotation (rad/s^2) |
 
 ## xy_theta_iterator 
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.vx_samples | 20 | |
-| `<dwb plugin>`.vy_samples | 5 | |
-| `<dwb plugin>`.vtheta_samples | 20| |
+| `<dwb plugin>`.vx_samples | 20 | Number of  velocity samples in the X velocity direction |
+| `<dwb plugin>`.vy_samples | 5 | Number of velocity samples in the Y velocity direction |
+| `<dwb plugin>`.vtheta_samples | 20 | Number of velocity samples in the angular directions |
 
 ## base_obstacle TrajectoryCritic
 
@@ -222,8 +222,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.sum_scores | false | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.sum_scores | false | Whether to allow for scores to be sumed up |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## obstacle_footprint TrajectoryCritic
 
@@ -231,8 +231,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.sum_scores | false | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.sum_scores | false | Whether to allow for scores to be sumed up |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## prefer_forward TrajectoryCritic
 
@@ -240,11 +240,11 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.penalty | 1.0 | |
-| `<dwb plugin>`.`<name>`.strafe_x | 0.1 | |
-| `<dwb plugin>`.`<name>`.strafe_theta | 0.2 | |
-| `<dwb plugin>`.`<name>`.theta_scale | 10.0 | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.penalty | 1.0 | Penalty to apply to backward motion |
+| `<dwb plugin>`.`<name>`.strafe_x | 0.1 | Minimum X velocity before penalty |
+| `<dwb plugin>`.`<name>`.strafe_theta | 0.2 | Minimum angular velocity before penalty |
+| `<dwb plugin>`.`<name>`.theta_scale | 10.0 | Weight for angular velocity component |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## twirling TrajectoryCritic
 
@@ -252,7 +252,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.scale | 0.0 | |
+| `<dwb plugin>`.`<name>`.scale | 0.0 | Weight scale |
 
 ## goal_align TrajectoryCritic
 
@@ -260,8 +260,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | Point in front of robot to look ahead to compute angular change from |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## map_grid TrajectoryCritic
 
@@ -269,8 +269,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | last, sum, or product combination methods |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## path_dist TrajectoryCritic
 
@@ -278,8 +278,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.aggregation_type | "last" | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | last, sum, or product combination methods |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## path_align TrajectoryCritic
 
@@ -287,8 +287,8 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | Point in front of robot to look ahead to compute angular change from |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## rotate_to_goal TrajectoryCritic
 
@@ -296,43 +296,43 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.xy_goal_tolerance | 0.25 | |
-| `<dwb plugin>`.trans_stopped_velocity | 0.25 | |
-| `<dwb plugin>`.slowing_factor | 5.0 | |
-| `<dwb plugin>`.lookahead_time | -1 | |
-| `<dwb plugin>`.`<name>`.scale | 1.0 | |
+| `<dwb plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
+| `<dwb plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
+| `<dwb plugin>`.slowing_factor | 5.0 | Factor to slow robot motion by while rotating to goal |
+| `<dwb plugin>`.lookahead_time | -1 | If > 0, amount of time to look forward for a collision for. |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
 ## simple_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.xy_goal_tolerance | 0.25 | |
-| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | |
-| `<dwb plugin>`.stateful | true | |
+| `<dwb plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
+| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
+| `<dwb plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
 
 ## standard_traj_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.sim_time | 1.7 | |
-| `<dwb plugin>`.discretize_by_time | false | |
-| `<dwb plugin>`.time_granularity | 0.5 | |
-| `<dwb plugin>`.linear_granularity | 0.5 | |
-| `<dwb plugin>`.angular_granularity | 0.025 | |
-| `<dwb plugin>`.include_last_point | true | |
+| `<dwb plugin>`.sim_time | 1.7 | Time to simulate ahead by (s) |
+| `<dwb plugin>`.discretize_by_time | false | If true, forward simulate by time. If False, forward simulate by linear and angular granularity |
+| `<dwb plugin>`.time_granularity | 0.5 | Time ahead to project |
+| `<dwb plugin>`.linear_granularity | 0.5 | Linear distance forward to project |
+| `<dwb plugin>`.angular_granularity | 0.025 | Angular distance to project |
+| `<dwb plugin>`.include_last_point | true | Whether to include the last pose in the trajectory |
 
 ## limited_accel_generator plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.sim_time | N/A | |
+| `<dwb plugin>`.sim_time | N/A | Time to simulate ahead by (s) |
 
 ## stopped_goal_checker plugin
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| `<dwb plugin>`.rot_stopped_velocity | 0.25 | |
-| `<dwb plugin>`.trans_stopped_velocity | 0.25 | |
+| `<dwb plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
+| `<dwb plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # lifecycle_manager
 
