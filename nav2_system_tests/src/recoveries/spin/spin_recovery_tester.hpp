@@ -50,7 +50,8 @@ public:
   // Runs a single test with given target yaw
   bool defaultSpinRecoveryTest(
     float target_yaw,
-    double tolerance = 0.1);
+    double tolerance = 0.1,
+    bool obstacle_test = false);
 
   void activate();
 
@@ -63,6 +64,8 @@ public:
 
 private:
   void sendInitialPose();
+
+  void sendObstaclePose();
 
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
 

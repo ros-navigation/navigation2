@@ -104,12 +104,15 @@ void SpinRecoveryTester::deactivate()
 
 bool SpinRecoveryTester::defaultSpinRecoveryTest(
   const float target_yaw,
-  const double tolerance)
+  const double tolerance,
+  const bool obstacle_test)
 {
   if (!is_active_) {
     RCLCPP_ERROR(node_->get_logger(), "Not activated");
     return false;
   }
+
+  if (obstacle_test) {sendObstaclePose();}
 
   // Sleep to let recovery server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
@@ -213,6 +216,29 @@ void SpinRecoveryTester::sendInitialPose()
 
   publisher_->publish(pose);
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
+}
+
+void SpinRecoveryTester::sendObstaclePose()
+{
+  geometry_msgs::msg::PoseWithCovarianceStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp = rclcpp::Time();
+  pose.pose.pose.position.x = 0.0;
+  pose.pose.pose.position.y = 0.0;
+  pose.pose.pose.position.z = 0.0;
+  pose.pose.pose.orientation.x = 0.0;
+  pose.pose.pose.orientation.y = 0.0;
+  pose.pose.pose.orientation.z = 0.0;
+  pose.pose.pose.orientation.w = 1.0;
+  for (int i = 0; i < 35; i++) {
+    pose.pose.covariance[i] = 0.0;
+  }
+  pose.pose.covariance[0] = 0.08;
+  pose.pose.covariance[7] = 0.08;
+  pose.pose.covariance[35] = 0.05;
+
+  publisher_->publish(pose);
+  RCLCPP_INFO(node_->get_logger(), "Sent obstacle pose");
 }
 
 void SpinRecoveryTester::amclPoseCallback(
