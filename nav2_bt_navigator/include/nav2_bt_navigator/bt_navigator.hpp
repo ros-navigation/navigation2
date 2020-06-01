@@ -140,6 +140,7 @@ protected:
   rclcpp::Time start_time_;
   std::string robot_frame_;
   std::string global_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_bt_navigator

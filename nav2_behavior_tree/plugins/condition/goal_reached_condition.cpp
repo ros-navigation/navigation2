@@ -82,7 +82,9 @@ public:
   {
     geometry_msgs::msg::PoseStamped current_pose;
 
-    if (!nav2_util::getCurrentPose(current_pose, *tf_, "map", "base_link", transform_tolerance_)) {
+    if (!nav2_util::getCurrentPose(
+        current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+    {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return false;
     }
