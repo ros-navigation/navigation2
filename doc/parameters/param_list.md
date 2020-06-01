@@ -417,16 +417,16 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| alpha1 | 0.2 | |
-| alpha2 | 0.2 | |
-| alpha3 | 0.2 | |
-| alpha4 | 0.2 | |
-| alpha5 | 0.2 | |
-| base_frame_id | "base_footprint" | |
-| beam_skip_distance | 0.5 | |
-| beam_skip_error_threshold | 0.9 |
-| beam_skip_threshold | 0.3 | |
-| do_beamskip | false| |
+| alpha1 | 0.2 | Expected process noise in odometry's rotation estimate from rotation |
+| alpha2 | 0.2 | Expected process noise in odometry's rotation estimate from translation |
+| alpha3 | 0.2 | Expected process noise in odometry's translation estimate from translation |
+| alpha4 | 0.2 | Expected process noise in odometry's translation estimate from rotation |
+| alpha5 | 0.2 | For Omni models only: translation noise |
+| base_frame_id | "base_footprint" | Base frame |
+| beam_skip_distance | 0.5 | Ignore beams that most particles disagree with in Likelihood field model. Maximum distance to consider skipping for (m) |
+| beam_skip_error_threshold | 0.9 | Percentage of beams after not matching map to force full update due to bad convergance |
+| beam_skip_threshold | 0.3 | Percentage of beams required to skip |
+| do_beamskip | false | Whether to do beam skipping in Likelihood field model. |
 | global_frame_id | "map" | The name of the coordinate frame published by the localization system |
 | lambda_short | 0.1 | Exponential decay parameter for z_short part of model |
 | laser_likelihood_max_dist | 2.0 | Maximum distance to do obstacle inflation on map, for use in likelihood_field model |
@@ -442,21 +442,21 @@ Namespace: /parent_ns/local_ns
 | max_particles | 2000 | Maximum allowed number of particles |
 | min_particles | 500 | Minimum allowed number of particles |
 | odom_frame_id | "odom" | Which frame to use for odometry |
-| pf_err | 0.05 | |
-| pf_z | 0.99 | |
+| pf_err | 0.05 | Particle Filter population error |
+| pf_z | 0.99 | Particle filter population density |
 | recovery_alpha_fast | 0.0 | Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses. A good value might be 0.001|
 | resample_interval | 1 | Number of filter updates required before resampling |
 | robot_model_type | "differential" | |
 | save_pose_rate | 0.5 | Maximum rate (Hz) at which to store the last estimated pose and covariance to the parameter server, in the variables ~initial_pose_* and ~initial_cov_*. This saved pose will be used on subsequent runs to initialize the filter (-1.0 to disable) |
-| sigma_hit | 0.2 | |
+| sigma_hit | 0.2 | Standard deviation for Gaussian model used in z_hit part of the model. |
 | tf_broadcast | true | Set this to false to prevent amcl from publishing the transform between the global frame and the odometry frame |
 | transform_tolerance | 1.0 |  Time with which to post-date the transform that is published, to indicate that this transform is valid into the future |
 | update_min_a | 0.2 | Rotational movement required before performing a filter update |
 | update_min_d | 0.25 | Translational movement required before performing a filter update |
-| z_hit | 0.5 | |
-| z_max | 0.05 | |
-| z_rand | 0.5 | |
-| z_short | 0.05 | |
+| z_hit | 0.5 | Mixture weight for z_hit part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
+| z_max | 0.05 | Mixture weight for z_max part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
+| z_rand | 0.5 | Mixture weight for z_rand part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
+| z_short | 0.05 | Mixture weight for z_short part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
 
 ---
