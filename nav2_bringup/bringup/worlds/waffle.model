@@ -413,7 +413,7 @@
           <mass>0.035</mass>
         </inertial>
         <collision name="collision">
-          <pose>0 0.047 -0.004 0 0 0</pose>
+          <pose>0 0.047 -0.005 0 0 0</pose>
           <geometry>
             <box>
               <size>0.008 0.130 0.022</size>
@@ -441,7 +441,7 @@
         </sensor>
 
         <collision name="collision">
-          <pose>0 0.047 -0.004 0 0 0</pose>
+          <pose>0 0.047 -0.005 0 0 0</pose>
           <geometry>
             <box>
               <size>0.008 0.130 0.022</size>
