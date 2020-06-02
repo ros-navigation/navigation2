@@ -486,7 +486,7 @@ Namespace: /parent_ns/local_ns
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
 | goal | N/A | Goal pose |
-| planner_id | N/A | |
+| planner_id | N/A | Mapped name to the planner plugin type to use, e.g. GridBased |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
@@ -499,7 +499,7 @@ Namespace: /parent_ns/local_ns
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
 | path | N/A | Path to follow |
-| controller_id | N/A | |
+| controller_id | N/A | Mapped name of the controller plugin type to use, e.g. FollowPath |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
