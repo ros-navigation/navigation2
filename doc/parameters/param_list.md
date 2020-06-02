@@ -5,7 +5,7 @@
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | bt_xml_filename | N/A | path to behavior tree XML description |
-| plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] | list of behavior tree node shared library |
+| plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] | list of behavior tree node shared libraries |
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
@@ -32,11 +32,11 @@ Namespace: /parent_ns/local_ns
 | plugin_names | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
 | plugin_types | {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"} | List of registered plugins to map to names and load |
 | publish_frequency | 1.0 | Frequency to publish costmap to topic |
-| resolution | 0.1 | Resolution of the costmap, in pixels |
+| resolution | 0.1 | Resolution of 1 pixel of the costmap, in meters |
 | robot_base_frame | "base_link" | Robot base frame |
 | robot_radius| 0.1 | Robot radius to use, if footprint coordinates not provided |
 | rolling_window | false | Whether costmap should roll with robot base frame |
-| track_unknown_space | false | Whether to treat unknown space as free or unknown |
+| track_unknown_space | false | If false, treats unknown space as free space, else as unknown space |
 | transform_tolerance | 0.3 | TF transform tolerance |
 | trinary_costmap | true | If occupancy grid map should be interpreted as only 3 values (free, occupied, unknown) or with its stored values |
 | unknown_cost_value | 255 | Cost of unknown space if tracking it |
@@ -147,7 +147,7 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<dwb plugin>`.critics | N/A | List of critic plugins to use |
-| `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | Namespace to load critics in |
+| `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | Namespaces to load critics in |
 | `<dwb plugin>`.prune_plan | true | Whether to prune the path of old, passed points |
 | `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
 | `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
@@ -185,7 +185,7 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | `<dwb plugin>`.`<name>`.oscillation_reset_dist | 0.05 | Minimum distance to move to reset oscillation watchdog (m) |
 | `<dwb plugin>`.`<name>`.oscillation_reset_angle | 0.2 | Minimum angular distance to move to reset watchdog (rad) |
-| `<dwb plugin>`.`<name>`.oscillation_reset_time | -1 | Duration when a reset may be called |
+| `<dwb plugin>`.`<name>`.oscillation_reset_time | -1 | Duration when a reset may be called. If -1, cannot be reset. |
 | `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | Threshold to check in the X velocity direction |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weighed scale for critic |
 
