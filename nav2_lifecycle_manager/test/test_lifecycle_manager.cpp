@@ -13,10 +13,51 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <memory>
+#include <chrono>
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/node_thread.hpp"
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
+#include "lifecycle_node_test.hpp"
 
-TEST("LIFECYCLETEST", "TestingTest")
+class LifecycleClientTestFixture
+{
+public:
+  LifecycleClientTestFixture()
+  {
+    lf_node_ = std::make_shared<LifecycleNodeTest>();
+    lf_thread_ = std::make_unique<nav2_util::NodeThread>(lf_node_->get_node_base_interface());
+  }
+
+private:
+  std::shared_ptr<LifecycleNodeTest> lf_node_;
+  std::unique_ptr<nav2_util::NodeThread> lf_thread_;
+};
+
+TEST(LifecycleClientTest, TestingTest)
 {
   EXPECT_TRUE(true);
+}
+
+TEST(LifecycleClientTest, BasicTest)
+{
+  LifecycleClientTestFixture fix;
+  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test");
+  EXPECT_TRUE(client.startup());
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::TIMEOUT,
+    client.is_active(std::chrono::nanoseconds(1000)));
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::ACTIVE,
+    client.is_active(std::chrono::nanoseconds(1000000000)));
+  EXPECT_TRUE(client.pause());
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::INACTIVE,
+    client.is_active(std::chrono::nanoseconds(1000000000)));
+  EXPECT_TRUE(client.resume());
+  EXPECT_TRUE(client.reset());
+  EXPECT_TRUE(client.shutdown());
 }
 
 int main(int argc, char ** argv)

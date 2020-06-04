@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef LIFECYCLE_NODE_TEST_HPP_
+#define LIFECYCLE_NODE_TEST_HPP_
+
 #include <string>
 #include <memory>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -22,7 +25,8 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 class LifecycleNodeTest : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-  LifecycleNodeTest() : rclcpp_lifecycle::LifecycleNode("lifecycle_node_test") {}
+  LifecycleNodeTest()
+  : rclcpp_lifecycle::LifecycleNode("lifecycle_node_test") {}
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State & /*state*/) override
   {
@@ -30,7 +34,7 @@ public:
     return CallbackReturn::SUCCESS;
   }
 
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/) override 
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/) override
   {
     RCLCPP_INFO(get_logger(), "Lifecycle Test node is Activated!");
     return CallbackReturn::SUCCESS;
@@ -59,17 +63,6 @@ public:
     RCLCPP_INFO(get_logger(), "Lifecycle Test node is encountered an error!");
     return CallbackReturn::SUCCESS;
   }
-
-private:
-  std::string name_;
 };
 
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  auto node = std::shared_ptr<LifecycleNodeTest>();
-  rclcpp::spin(node->get_node_base_interface());
-  rclcpp::shutdown();
-
-  return 0;
-}
+#endif  // LIFECYCLE_NODE_TEST_HPP_
