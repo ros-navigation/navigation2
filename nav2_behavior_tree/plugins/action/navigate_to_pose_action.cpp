@@ -22,7 +22,6 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_behavior_tree
 {
