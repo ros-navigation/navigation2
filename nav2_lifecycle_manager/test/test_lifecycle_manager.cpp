@@ -95,6 +95,9 @@ TEST(LifecycleClientTest, BasicTest)
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::ACTIVE,
     client.is_active(std::chrono::nanoseconds(1000000000)));
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::ACTIVE,
+    client.is_active());
   EXPECT_TRUE(client.pause());
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::INACTIVE,
