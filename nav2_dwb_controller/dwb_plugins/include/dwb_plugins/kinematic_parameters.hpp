@@ -63,6 +63,7 @@ struct KinematicParameters
   inline double getDecelY() {return decel_lim_y_;}
 
   inline double getMinSpeedXY() {return min_speed_xy_;}
+  inline double getMaxSpeedXY() {return max_speed_xy_;}
 
   inline double getMinTheta() {return -max_vel_theta_;}
   inline double getMaxTheta() {return max_vel_theta_;}
@@ -70,23 +71,8 @@ struct KinematicParameters
   inline double getDecelTheta() {return decel_lim_theta_;}
   inline double getMinSpeedTheta() {return min_speed_theta_;}
 
-  /**
-   * @brief Check to see whether the combined x/y/theta velocities are valid
-   * @return True if the magnitude hypot(x,y) and theta are within the robot's absolute limits
-   *
-   * This is based on three parameters: min_speed_xy, max_speed_xy and min_speed_theta.
-   * The speed is valid if
-   *  1) The combined magnitude hypot(x,y) is less than max_speed_xy (or max_speed_xy is negative)
-   *  AND
-   *  2) min_speed_xy is negative or min_speed_theta is negative or
-   *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
-   *
-   * In English, it makes sure the diagonal motion is not too fast,
-   * and that the velocity is moving in some meaningful direction.
-   *
-   * In Latin, quod si motus sit signum quaerit et movere ieiunium et significantissime comprehendite.
-   */
-  bool isValidSpeed(double x, double y, double theta);
+  inline double getMinSpeedXY_SQ() {return min_speed_xy_sq_;}
+  inline double getMaxSpeedXY_SQ() {return max_speed_xy_sq_;}
 
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
@@ -122,8 +108,6 @@ public:
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
-
-  bool isValidSpeed(double x, double y, double theta);
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

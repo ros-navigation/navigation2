@@ -52,16 +52,6 @@ using std::placeholders::_1;
 namespace dwb_plugins
 {
 
-bool KinematicParameters::isValidSpeed(double x, double y, double theta)
-{
-  double vmag_sq = x * x + y * y;
-  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_ + EPSILON) {return false;}
-  if (min_speed_xy_ >= 0.0 && vmag_sq + EPSILON < min_speed_xy_sq_ &&
-    min_speed_theta_ >= 0.0 && fabs(theta) + EPSILON < min_speed_theta_) {return false;}
-  
-  return true;
-}
-
 KinematicsHandler::KinematicsHandler()
 {
   kinematics_.store(new KinematicParameters);
@@ -143,10 +133,6 @@ void KinematicsHandler::initialize(
   update_kinematics(kinematics);
 }
 
-bool KinematicsHandler::isValidSpeed(double x, double y, double theta)
-{
-  return kinematics_.load()->isValidSpeed(x, y, theta);
-}
 
 void
 KinematicsHandler::on_parameter_event_callback(
