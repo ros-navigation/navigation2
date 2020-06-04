@@ -19,7 +19,51 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
-#include "lifecycle_node_test.hpp"
+
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
+class LifecycleNodeTest : public rclcpp_lifecycle::LifecycleNode
+{
+public:
+  LifecycleNodeTest()
+  : rclcpp_lifecycle::LifecycleNode("lifecycle_node_test") {}
+
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is Configured!");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is Activated!");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is Deactivated!");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is Cleanup!");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is Shutdown!");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn on_error(const rclcpp_lifecycle::State & /*state*/) override
+  {
+    RCLCPP_INFO(get_logger(), "Lifecycle Test node is encountered an error!");
+    return CallbackReturn::SUCCESS;
+  }
+};
 
 class LifecycleClientTestFixture
 {
