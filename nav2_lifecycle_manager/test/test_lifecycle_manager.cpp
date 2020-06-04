@@ -79,11 +79,6 @@ private:
   std::unique_ptr<nav2_util::NodeThread> lf_thread_;
 };
 
-TEST(LifecycleClientTest, TestingTest)
-{
-  EXPECT_TRUE(true);
-}
-
 TEST(LifecycleClientTest, BasicTest)
 {
   LifecycleClientTestFixture fix;
@@ -105,6 +100,14 @@ TEST(LifecycleClientTest, BasicTest)
   EXPECT_TRUE(client.resume());
   EXPECT_TRUE(client.reset());
   EXPECT_TRUE(client.shutdown());
+}
+
+TEST(LifecycleClientTest, WithoutFixture)
+{
+  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test");
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::TIMEOUT,
+    client.is_active(std::chrono::nanoseconds(1000)));
 }
 
 int main(int argc, char ** argv)
