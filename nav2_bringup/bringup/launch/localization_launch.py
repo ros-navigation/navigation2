@@ -101,7 +101,7 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_localization',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
+            parameters=[{'use_sim_time': 'false'},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
     ])
