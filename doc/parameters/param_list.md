@@ -160,10 +160,10 @@ Namespace: /parent_ns/local_ns
 | `<dwb plugin>`.occdist_scale | N/A | Old version of `ObstacleFootprint.scale`, use that instead |
 | `<dwb plugin>`.max_scaling_factor | N/A | Old version of `ObstacleFootprint.max_scaling_factor`, use that instead |
 | `<dwb plugin>`.scaling_speed | N/A | Old version of `ObstacleFootprint.scaling_speed`, use that instead |
-| `<dwb plugin>`.PathAlign.scale | 32.0 | Scale for path align critic |
-| `<dwb plugin>`.GoalAlign.scale | 24.0 | Scale for goal align critic |
-| `<dwb plugin>`.PathDist.scale | 32.0 | Scale for path distance critic |
-| `<dwb plugin>`.GoalDist.scale | 24.0 | Scale for goal distance critic |
+| `<dwb plugin>`.PathAlign.scale | 32.0 | Scale for path align critic, overriding local default |
+| `<dwb plugin>`.GoalAlign.scale | 24.0 | Scale for goal align critic, overriding local default |
+| `<dwb plugin>`.PathDist.scale | 32.0 | Scale for path distance critic, overriding local default |
+| `<dwb plugin>`.GoalDist.scale | 24.0 | Scale for goal distance critic, overriding local default |
 
 ## publisher
 
@@ -254,6 +254,11 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | `<dwb plugin>`.`<name>`.scale | 0.0 | Weight scale |
 
+## goal_dist TrajectoryCritic
+
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | last, sum, or product combination methods |
+| `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
+
 ## goal_align TrajectoryCritic
 
 * `<name>`: goal_align critic name defined in `<dwb plugin>.critics`
@@ -262,6 +267,7 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | Point in front of robot to look ahead to compute angular change from |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | last, sum, or product combination methods |
 
 ## map_grid TrajectoryCritic
 
@@ -289,6 +295,7 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | `<dwb plugin>`.`<name>`.forward_point_distance | 0.325 | Point in front of robot to look ahead to compute angular change from |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
+| `<dwb plugin>`.`<name>`.aggregation_type | "last" | last, sum, or product combination methods |
 
 ## rotate_to_goal TrajectoryCritic
 
