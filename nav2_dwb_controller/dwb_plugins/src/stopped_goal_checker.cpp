@@ -32,45 +32,44 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cmath>
-#include <string>
-#include <memory>
 #include "dwb_plugins/stopped_goal_checker.hpp"
-#include "pluginlib/class_list_macros.hpp"
+#include <cmath>
+#include <memory>
+#include <string>
 #include "nav2_util/node_utils.hpp"
+#include "pluginlib/class_list_macros.hpp"
 
-using std::hypot;
 using std::fabs;
+using std::hypot;
 
-namespace dwb_plugins
-{
+namespace dwb_plugins {
 
 StoppedGoalChecker::StoppedGoalChecker()
-: SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
-{
-}
+    : SimpleGoalChecker(),
+      rot_stopped_velocity_(0.25),
+      trans_stopped_velocity_(0.25) {}
 
 void StoppedGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
-  const std::string & plugin_name)
-{
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr& nh,
+    const std::string& plugin_name) {
   SimpleGoalChecker::initialize(nh, plugin_name);
 
   nav2_util::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
+      nh, plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
+      nh, plugin_name + ".trans_stopped_velocity",
+      rclcpp::ParameterValue(0.25));
 
-  nh->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  nh->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  nh->get_parameter(plugin_name + ".rot_stopped_velocity",
+                    rot_stopped_velocity_);
+  nh->get_parameter(plugin_name + ".trans_stopped_velocity",
+                    trans_stopped_velocity_);
 }
 
 bool StoppedGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist & velocity)
-{
+    const geometry_msgs::msg::Pose& query_pose,
+    const geometry_msgs::msg::Pose& goal_pose,
+    const geometry_msgs::msg::Twist& velocity) {
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
   if (!ret) {
     return ret;

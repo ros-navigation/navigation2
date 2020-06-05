@@ -38,8 +38,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace dwb_plugins
-{
+namespace dwb_plugins {
 
 const double EPSILON = 1E-5;
 
@@ -53,8 +52,8 @@ const double EPSILON = 1E-5;
  * @param target target velocity
  * @return The velocity dt seconds after v0.
  */
-inline double projectVelocity(double v0, double accel, double decel, double dt, double target)
-{
+inline double projectVelocity(double v0, double accel, double decel, double dt,
+                              double target) {
   double v1;
   if (v0 < target) {
     v1 = v0 + accel * dt;
@@ -69,19 +68,19 @@ inline double projectVelocity(double v0, double accel, double decel, double dt, 
  * @class OneDVelocityIterator
  * @brief An iterator for generating a number of samples in a range
  *
- * In its simplest usage, this gives us N (num_samples) different velocities that are reachable
- * given our current velocity. However, there is some fancy logic around zero velocities and
- * the min/max velocities
+ * In its simplest usage, this gives us N (num_samples) different velocities
+ * that are reachable given our current velocity. However, there is some fancy
+ * logic around zero velocities and the min/max velocities
  *
- * If the current velocity is 2 m/s, and the acceleration limit is 1 m/ss and the acc_time is 1 s,
- * this class would provide velocities between 1 m/s and 3 m/s.
+ * If the current velocity is 2 m/s, and the acceleration limit is 1 m/ss and
+ * the acc_time is 1 s, this class would provide velocities between 1 m/s and 3
+ * m/s.
  *
  *
  *
  */
-class OneDVelocityIterator
-{
-public:
+class OneDVelocityIterator {
+ public:
   /**
    * @brief Constructor for the velocity iterator
    *
@@ -92,10 +91,8 @@ public:
    * @param decel_limit Deceleration Limit
    * @param num_samples The number of samples to return
    */
-  OneDVelocityIterator(
-    double current, double min, double max, double acc_limit, double decel_limit, double acc_time,
-    int num_samples)
-  {
+  OneDVelocityIterator(double current, double min, double max, double acc_limit,
+                       double decel_limit, double acc_time, int num_samples) {
     if (current < min) {
       current = min;
     } else if (current > max) {
@@ -118,20 +115,19 @@ public:
   /**
    * @brief Get the next velocity available
    */
-  double getVelocity() const
-  {
-    if (return_zero_now_) {return 0.0;}
+  double getVelocity() const {
+    if (return_zero_now_) {
+      return 0.0;
+    }
     return current_;
   }
 
   /**
    * @brief Increment the iterator
    */
-  OneDVelocityIterator & operator++()
-  {
+  OneDVelocityIterator& operator++() {
     if (return_zero_ && current_ < 0.0 && current_ + increment_ > 0.0 &&
-      current_ + increment_ <= max_vel_ + EPSILON)
-    {
+        current_ + increment_ <= max_vel_ + EPSILON) {
       return_zero_now_ = true;
       return_zero_ = false;
     } else {
@@ -144,8 +140,7 @@ public:
   /**
    * @brief Reset back to the first velocity
    */
-  void reset()
-  {
+  void reset() {
     current_ = min_vel_;
     return_zero_ = true;
     return_zero_now_ = false;
@@ -154,12 +149,9 @@ public:
   /**
    * If we have returned all the velocities for this iteration
    */
-  bool isFinished() const
-  {
-    return current_ > max_vel_ + EPSILON;
-  }
+  bool isFinished() const { return current_ > max_vel_ + EPSILON; }
 
-private:
+ private:
   bool return_zero_, return_zero_now_;
   double min_vel_, max_vel_;
   double current_;

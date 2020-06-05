@@ -35,22 +35,18 @@
 #include <memory>
 #include <string>
 
-#include "gtest/gtest.h"
 #include "dwb_plugins/simple_goal_checker.hpp"
 #include "dwb_plugins/stopped_goal_checker.hpp"
-#include "nav_2d_utils/conversions.hpp"
+#include "gtest/gtest.h"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav_2d_utils/conversions.hpp"
 
 using dwb_plugins::SimpleGoalChecker;
 using dwb_plugins::StoppedGoalChecker;
 
-void checkMacro(
-  nav2_core::GoalChecker & gc,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  bool expected_result)
-{
+void checkMacro(nav2_core::GoalChecker &gc, double x0, double y0, double theta0,
+                double x1, double y1, double theta1, double xv, double yv,
+                double thetav, bool expected_result) {
   gc.reset();
   geometry_msgs::msg::Pose2D pose0, pose1;
   pose0.x = x0;
@@ -64,89 +60,72 @@ void checkMacro(
   v.y = yv;
   v.theta = thetav;
   if (expected_result) {
-    EXPECT_TRUE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_TRUE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
+                                 nav_2d_utils::pose2DToPose(pose1),
+                                 nav_2d_utils::twist2Dto3D(v)));
   } else {
-    EXPECT_FALSE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_FALSE(gc.isGoalReached(nav_2d_utils::pose2DToPose(pose0),
+                                  nav_2d_utils::pose2DToPose(pose1),
+                                  nav_2d_utils::twist2Dto3D(v)));
   }
 }
 
-void sameResult(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  bool expected_result)
-{
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
+void sameResult(nav2_core::GoalChecker &gc0, nav2_core::GoalChecker &gc1,
+                double x0, double y0, double theta0, double x1, double y1,
+                double theta1, double xv, double yv, double thetav,
+                bool expected_result) {
+  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav,
+             expected_result);
+  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav,
+             expected_result);
 }
 
-void trueFalse(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav)
-{
+void trueFalse(nav2_core::GoalChecker &gc0, nav2_core::GoalChecker &gc1,
+               double x0, double y0, double theta0, double x1, double y1,
+               double theta1, double xv, double yv, double thetav) {
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
-class TestLifecycleNode : public nav2_util::LifecycleNode
-{
-public:
-  explicit TestLifecycleNode(const std::string & name)
-  : nav2_util::LifecycleNode(name)
-  {
-  }
+class TestLifecycleNode : public nav2_util::LifecycleNode {
+ public:
+  explicit TestLifecycleNode(const std::string &name)
+      : nav2_util::LifecycleNode(name) {}
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
-  {
+  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &) {
     return nav2_util::CallbackReturn::SUCCESS;
   }
 };
 
-TEST(VelocityIterator, goal_checker_reset)
-{
+TEST(VelocityIterator, goal_checker_reset) {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");
 
-  nav2_core::GoalChecker * gc = new SimpleGoalChecker;
+  nav2_core::GoalChecker *gc = new SimpleGoalChecker;
   gc->reset();
   delete gc;
   EXPECT_TRUE(true);
 }
 
-TEST(VelocityIterator, two_checks)
-{
+TEST(VelocityIterator, two_checks) {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");
 
   SimpleGoalChecker gc;
@@ -164,8 +143,7 @@ TEST(VelocityIterator, two_checks)
   trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1);
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

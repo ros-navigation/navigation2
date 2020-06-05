@@ -38,41 +38,43 @@
 #include <memory>
 #include <string>
 
-#include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/one_d_velocity_iterator.hpp"
+#include "dwb_plugins/velocity_iterator.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-namespace dwb_plugins
-{
-class XYThetaIterator : public VelocityIterator
-{
-public:
+namespace dwb_plugins {
+class XYThetaIterator : public VelocityIterator {
+ public:
   XYThetaIterator()
-  : kinematics_handler_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
-  void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicsHandler::Ptr kinematics,
-    const std::string & plugin_name) override;
-  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
+      : kinematics_handler_(nullptr),
+        x_it_(nullptr),
+        y_it_(nullptr),
+        th_it_(nullptr) {}
+  void initialize(const nav2_util::LifecycleNode::SharedPtr& nh,
+                  KinematicsHandler::Ptr kinematics,
+                  const std::string& plugin_name) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity,
+                         double dt) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
 
-protected:
+ protected:
   /**
    * @brief Check to see whether the combined x/y/theta velocities are valid
-   * @return True if the magnitude hypot(x,y) and theta are within the robot's absolute limits
+   * @return True if the magnitude hypot(x,y) and theta are within the robot's
+   * absolute limits
    *
-   * This is based on three parameters: min_speed_xy, max_speed_xy and min_speed_theta.
-   * The speed is valid if
-   *  1) The combined magnitude hypot(x,y) is less than max_speed_xy (or max_speed_xy is negative)
-   *  AND
-   *  2) min_speed_xy is negative or min_speed_theta is negative or
-   *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
+   * This is based on three parameters: min_speed_xy, max_speed_xy and
+   * min_speed_theta. The speed is valid if 1) The combined magnitude hypot(x,y)
+   * is less than max_speed_xy (or max_speed_xy is negative) AND 2) min_speed_xy
+   * is negative or min_speed_theta is negative or hypot(x,y) is greater than
+   * min_speed_xy or fabs(theta) is greater than min_speed_theta.
    *
    * In English, it makes sure the diagonal motion is not too fast,
    * and that the velocity is moving in some meaningful direction.
    *
-   * In Latin, quod si motus sit signum quaerit et movere ieiunium et significantissime comprehendite.
+   * In Latin, quod si motus sit signum quaerit et movere ieiunium et
+   * significantissime comprehendite.
    */
   bool isValidSpeed(double x, double y, double theta);
   virtual bool isValidVelocity();
