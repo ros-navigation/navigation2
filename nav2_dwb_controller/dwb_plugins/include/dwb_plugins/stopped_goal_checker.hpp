@@ -42,23 +42,27 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-namespace dwb_plugins {
+namespace dwb_plugins
+{
 
 /**
  * @class StoppedGoalChecker
  * @brief Goal Checker plugin that checks the position difference and velocity
  */
-class StoppedGoalChecker : public SimpleGoalChecker {
- public:
+class StoppedGoalChecker : public SimpleGoalChecker
+{
+public:
   StoppedGoalChecker();
   // Standard GoalChecker Interface
-  void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr& nh,
-                  const std::string& plugin_name) override;
-  bool isGoalReached(const geometry_msgs::msg::Pose& query_pose,
-                     const geometry_msgs::msg::Pose& goal_pose,
-                     const geometry_msgs::msg::Twist& velocity) override;
+  void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
- protected:
+protected:
   double rot_stopped_velocity_, trans_stopped_velocity_;
 };
 
