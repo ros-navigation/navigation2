@@ -59,7 +59,7 @@ BtNavigator::BtNavigator()
   };
 
   // Declare this node's parameters
-  declare_parameter("bt_xml_filename");
+  declare_parameter("default_bt_xml_filename", std::string(""));
   declare_parameter("plugin_lib_names", plugin_libs);
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
@@ -127,28 +127,47 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Get the BT filename to use from the node parameter
-  std::string bt_xml_filename;
-  get_parameter("bt_xml_filename", bt_xml_filename);
+  get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
+
+  if (!loadBehaviorTree(default_bt_xml_filename_)) {
+    RCLCPP_ERROR(get_logger(), "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+bool
+BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
+{
+  // Use previous BT if it is the existing one
+  if (bt_xml_filename != "" && current_bt_xml_filename_ == bt_xml_filename) {
+    return true;
+  }
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
 
   if (!xml_file.good()) {
     RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename.c_str());
-    return nav2_util::CallbackReturn::FAILURE;
+    return false;
   }
 
-  xml_string_ = std::string(
+  auto xml_string = std::string(
     std::istreambuf_iterator<char>(xml_file),
     std::istreambuf_iterator<char>());
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
+  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
+
+  // Create new BT to ensure it is a clean BT
+  tree_ = std::make_shared<BT::Tree>();
 
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->buildTreeFromText(xml_string_, blackboard_);
+  *tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
+  current_bt_xml_filename_ = bt_xml_filename;
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return true;
 }
 
 nav2_util::CallbackReturn
@@ -188,9 +207,8 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plugin_lib_names_.clear();
-  xml_string_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_->rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
@@ -230,7 +248,7 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  RosTopicLogger topic_logger(client_node_, tree_);
+  RosTopicLogger topic_logger(client_node_, *tree_);
   std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
@@ -259,11 +277,24 @@ BtNavigator::navigateToPose()
       action_server_->publish_feedback(feedback_msg);
     };
 
+  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+
+  // Empty id in request is default for backward compatibility
+  if (bt_xml_filename == "") {
+    bt_xml_filename = default_bt_xml_filename_;
+  }
+
+  if (!loadBehaviorTree(bt_xml_filename)) {
+    RCLCPP_WARN(
+      get_logger(), "BT id not found: %s. Using previous %s",
+      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
+  }
+
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_.get(), on_loop, is_canceling);
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_->rootNode());
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
