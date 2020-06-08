@@ -32,21 +32,21 @@
 namespace nav2_bt_navigator
 {
 /**
- * @class nav2_bt_navigator::BtNavigator
+ * @class nav2_bt_navigator::BtNavigatorBase
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class BtNavigator : public nav2_util::LifecycleNode
+class BtNavigatorBase : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for nav2_bt_navigator::BtNavigator class
+   * @brief A constructor for nav2_bt_navigator::BtNavigatorBase class
    */
-  BtNavigator();
+  BtNavigatorBase();
   /**
-   * @brief A destructor for nav2_bt_navigator::BtNavigator class
+   * @brief A destructor for nav2_bt_navigator::BtNavigatorBase class
    */
-  ~BtNavigator();
+  virtual ~BtNavigatorBase();
 
 protected:
   /**
@@ -57,38 +57,36 @@ protected:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in shutdown state
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in error state
    * @param state Reference to LifeCycle node state
    */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
-  using Action = nav2_msgs::action::NavigateToPose;
+  virtual nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using ActionServer = nav2_util::SimpleActionServer<Action>;
 
@@ -98,18 +96,13 @@ protected:
   /**
    * @brief Action server callbacks
    */
-  void navigateToPose();
-
-  /**
-   * @brief Goal pose initialization on the blackboard
-   */
-  void initializeGoalPose();
+  virtual void actionCallback() = 0;
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
    */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  virtual void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose) = 0;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
   BT::Tree tree_;
@@ -141,6 +134,37 @@ protected:
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;
+};
+
+class BtNavigator : public BtNavigatorBase
+{
+public:
+  /**
+   * @brief A constructor for nav2_bt_navigator::BtNavigator class
+   */
+  BtNavigator()
+    : BtNavigatorBase()
+  {}
+  /**
+   * @brief A destructor for nav2_bt_navigator::BtNavigator class
+   */
+  ~BtNavigator() = default;
+
+  /**
+   * @brief Action server callbacks
+   */
+  virtual void actionCallback() override;
+
+  /**
+   * @brief Goal pose initialization on the blackboard
+   */
+  void initializeGoalPose();
+
+  /**
+   * @brief A subscription and callback to handle the topic-based goal published
+   * from rviz
+   */
+  virtual void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose) override;
 };
 
 }  // namespace nav2_bt_navigator

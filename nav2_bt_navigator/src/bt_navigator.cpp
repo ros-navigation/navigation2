@@ -30,7 +30,7 @@
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator()
+BtNavigatorBase::BtNavigatorBase()
 : nav2_util::LifecycleNode("bt_navigator", "", false),
   start_time_(0)
 {
@@ -66,13 +66,13 @@ BtNavigator::BtNavigator()
   declare_parameter("robot_base_frame", std::string("base_link"));
 }
 
-BtNavigator::~BtNavigator()
+BtNavigatorBase::~BtNavigatorBase()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -97,14 +97,14 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+    std::bind(&BtNavigatorBase::onGoalPoseReceived, this, std::placeholders::_1));
 
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "navigate_to_pose", std::bind(&BtNavigator::navigateToPose, this), false);
+    "navigate_to_pose", std::bind(&BtNavigatorBase::actionCallback, this), false);
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
@@ -152,7 +152,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -162,7 +162,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -172,7 +172,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -198,21 +198,21 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+BtNavigatorBase::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void
-BtNavigator::navigateToPose()
+BtNavigator::actionCallback()
 {
   initializeGoalPose();
 
