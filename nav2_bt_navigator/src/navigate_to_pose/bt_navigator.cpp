@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_bt_navigator/navigate_to_pose_bt_navigator.hpp"
+#include "nav2_bt_navigator/navigate_to_pose/bt_navigator.hpp"
 
 #include <fstream>
 #include <memory>
