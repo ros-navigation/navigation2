@@ -116,19 +116,19 @@ protected:
   double transform_tolerance_;
 };
 
-class BtNavigator : public BtNavigatorBase
+class NavigateToPoseBtNavigator : public BtNavigatorBase
 {
 public:
   /**
-   * @brief A constructor for nav2_bt_navigator::BtNavigator class
+   * @brief A constructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
-  BtNavigator()
+  NavigateToPoseBtNavigator()
     : BtNavigatorBase()
   {}
   /**
-   * @brief A destructor for nav2_bt_navigator::BtNavigator class
+   * @brief A destructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
-  ~BtNavigator() = default;
+  ~NavigateToPoseBtNavigator() = default;
 
   /**
    * @brief Configures member variables

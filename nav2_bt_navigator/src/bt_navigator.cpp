@@ -188,7 +188,7 @@ BtNavigatorBase::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
+NavigateToPoseBtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   auto callback_return = BtNavigatorBase::on_configure(state);
 
@@ -197,7 +197,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "navigate_to_pose", std::bind(&BtNavigator::actionCallback, this), false);
+    "navigate_to_pose", std::bind(&NavigateToPoseBtNavigator::actionCallback, this), false);
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
     client_node_, "navigate_to_pose");
@@ -205,27 +205,27 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+    std::bind(&NavigateToPoseBtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   return callback_return;
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
+NavigateToPoseBtNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
   action_server_->activate();
   return BtNavigatorBase::on_activate(state);
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
+NavigateToPoseBtNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   action_server_->deactivate();
   return BtNavigatorBase::on_deactivate(state);
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
+NavigateToPoseBtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   goal_sub_.reset();
   self_client_.reset();
@@ -234,7 +234,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 }
 
 void
-BtNavigator::actionCallback()
+NavigateToPoseBtNavigator::actionCallback()
 {
   initializeGoalPose();
 
@@ -309,7 +309,7 @@ BtNavigator::actionCallback()
 }
 
 void
-BtNavigator::initializeGoalPose()
+NavigateToPoseBtNavigator::initializeGoalPose()
 {
   auto goal = action_server_->get_current_goal();
 
@@ -326,7 +326,7 @@ BtNavigator::initializeGoalPose()
 }
 
 void
-BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+NavigateToPoseBtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;

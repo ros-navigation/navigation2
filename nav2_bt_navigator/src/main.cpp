@@ -20,7 +20,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_bt_navigator::BtNavigator>();
+  auto node = std::make_shared<nav2_bt_navigator::NavigateToPoseBtNavigator>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 
