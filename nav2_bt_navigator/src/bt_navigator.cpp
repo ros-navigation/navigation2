@@ -26,8 +26,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigatorBase::BtNavigatorBase()
-: nav2_util::LifecycleNode("bt_navigator", "", false),
-  start_time_(0)
+: nav2_util::LifecycleNode("bt_navigator", "", false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -56,9 +55,6 @@ BtNavigatorBase::BtNavigatorBase()
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter("global_frame", std::string("map"));
-  declare_parameter("robot_base_frame", std::string("base_link"));
 }
 
 BtNavigatorBase::~BtNavigatorBase()
@@ -88,9 +84,6 @@ BtNavigatorBase::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
-  global_frame_ = get_parameter("global_frame").as_string();
-  robot_frame_ = get_parameter("robot_base_frame").as_string();
-  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);

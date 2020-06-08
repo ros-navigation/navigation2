@@ -36,9 +36,7 @@ public:
   /**
    * @brief A constructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
-  NavigateToPoseBtNavigator()
-    : BtNavigatorBase()
-  {}
+  NavigateToPoseBtNavigator();
   /**
    * @brief A destructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
@@ -99,6 +97,12 @@ public:
   rclcpp_action::Client<Action>::SharedPtr self_client_;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+
+  // Metrics for feedback
+  rclcpp::Time start_time_;
+  std::string robot_frame_;
+  std::string global_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_bt_navigator

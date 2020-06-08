@@ -30,9 +30,22 @@
 namespace nav2_bt_navigator
 {
 
+NavigateToPoseBtNavigator::NavigateToPoseBtNavigator()
+: BtNavigatorBase()
+{
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter("global_frame", std::string("map"));
+  declare_parameter("robot_base_frame", std::string("base_link"));
+}
+
 nav2_util::CallbackReturn
 NavigateToPoseBtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
+  start_time_ = rclcpp::Time(0);
+  global_frame_ = get_parameter("global_frame").as_string();
+  robot_frame_ = get_parameter("robot_base_frame").as_string();
+  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
+
   auto callback_return = BtNavigatorBase::on_configure(state);
 
   action_server_ = std::make_unique<ActionServer>(

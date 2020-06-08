@@ -103,12 +103,6 @@ protected:
   // Spinning transform that can be used by the BT nodes
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  // Metrics for feedback
-  rclcpp::Time start_time_;
-  std::string robot_frame_;
-  std::string global_frame_;
-  double transform_tolerance_;
 };
 
 }  // namespace nav2_bt_navigator
