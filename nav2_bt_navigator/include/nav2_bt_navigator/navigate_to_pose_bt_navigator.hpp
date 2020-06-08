@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
-#define NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BT_NAVIGATOR_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BT_NAVIGATOR_HPP_
+
+#include "nav2_bt_navigator/bt_navigator.hpp"
 
 #include <memory>
 #include <string>
@@ -31,24 +33,21 @@
 
 namespace nav2_bt_navigator
 {
-/**
- * @class nav2_bt_navigator::BtNavigatorBase
- * @brief An action server that uses behavior tree for navigating a robot to its
- * goal position.
- */
-class BtNavigatorBase : public nav2_util::LifecycleNode
+
+class NavigateToPoseBtNavigator : public BtNavigatorBase
 {
 public:
   /**
-   * @brief A constructor for nav2_bt_navigator::BtNavigatorBase class
+   * @brief A constructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
-  BtNavigatorBase();
+  NavigateToPoseBtNavigator()
+    : BtNavigatorBase()
+  {}
   /**
-   * @brief A destructor for nav2_bt_navigator::BtNavigatorBase class
+   * @brief A destructor for nav2_bt_navigator::NavigateToPoseBtNavigator class
    */
-  virtual ~BtNavigatorBase();
+  ~NavigateToPoseBtNavigator() = default;
 
-protected:
   /**
    * @brief Configures member variables
    *
@@ -76,46 +75,36 @@ protected:
    * @return SUCCESS or FAILURE
    */
   virtual nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
   /**
-   * @brief Called when in shutdown state
-   * @param state Reference to LifeCycle node state
-   * @return SUCCESS or FAILURE
+   * @brief Action server callbacks
    */
-  virtual nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  void actionCallback();
+
   /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
+   * @brief Goal pose initialization on the blackboard
    */
-  virtual nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+  void initializeGoalPose();
 
-  BT::Tree tree_;
+  /**
+   * @brief A subscription and callback to handle the topic-based goal published
+   * from rviz
+   */
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
-  // The blackboard shared by all of the nodes in the tree
-  BT::Blackboard::Ptr blackboard_;
+  using Action = nav2_msgs::action::NavigateToPose;
 
-  // The XML string that defines the Behavior Tree to create
-  std::string xml_string_;
+  using ActionServer = nav2_util::SimpleActionServer<Action>;
 
-  // The wrapper class for the BT functionality
-  std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
+  // Our action server implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
 
-  // Libraries to pull plugins (BT Nodes) from
-  std::vector<std::string> plugin_lib_names_;
+  // A client that we'll use to send a command message to our own task server
+  rclcpp_action::Client<Action>::SharedPtr self_client_;
 
-  // A regular, non-spinning ROS node that we can use for calls to the action client
-  rclcpp::Node::SharedPtr client_node_;
-
-  // Spinning transform that can be used by the BT nodes
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  // Metrics for feedback
-  rclcpp::Time start_time_;
-  std::string robot_frame_;
-  std::string global_frame_;
-  double transform_tolerance_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 };
 
 }  // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__BT_NAVIGATOR_HPP_
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATE_TO_POSE_BT_NAVIGATOR_HPP_

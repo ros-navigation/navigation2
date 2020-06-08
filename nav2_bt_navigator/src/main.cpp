@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "nav2_bt_navigator/bt_navigator.hpp"
+#include "nav2_bt_navigator/navigate_to_pose_bt_navigator.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
