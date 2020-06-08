@@ -22,17 +22,23 @@ include_directories(
   include
 )
 
+set(bt_navigator_library_name bt_navigator)
 set(navigate_to_pose_executable_name bt_navigator)
+set(follow_waypoints_executable_name follow_waypoints_bt_navigator)
 
 add_executable(${navigate_to_pose_executable_name}
   src/navigate_to_pose/main.cpp
 )
+add_executable(${follow_waypoints_executable_name}
+  src/follow_waypoints/main.cpp
+)
 
-set(library_name ${navigate_to_pose_executable_name}_core)
+set(library_name ${bt_navigator_library_name}_core)
 
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
   src/navigate_to_pose/bt_navigator.cpp
+  src/follow_waypoints/bt_navigator.cpp
   src/ros_topic_logger.cpp
 )
 
@@ -54,8 +60,12 @@ set(dependencies
 ament_target_dependencies(${navigate_to_pose_executable_name}
   ${dependencies}
 )
+ament_target_dependencies(${follow_waypoints_executable_name}
+  ${dependencies}
+)
 
 target_link_libraries(${navigate_to_pose_executable_name} ${library_name})
+target_link_libraries(${follow_waypoints_executable_name} ${library_name})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -67,7 +77,7 @@ install(TARGETS ${library_name}
   RUNTIME DESTINATION bin
 )
 
-install(TARGETS ${navigate_to_pose_executable_name}
+install(TARGETS ${navigate_to_pose_executable_name} ${follow_waypoints_executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
