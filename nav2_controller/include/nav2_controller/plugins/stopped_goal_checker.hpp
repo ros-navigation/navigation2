@@ -32,54 +32,39 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cmath>
-#include <string>
+#ifndef NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_
+
 #include <memory>
-#include "dwb_plugins/stopped_goal_checker.hpp"
-#include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/node_utils.hpp"
+#include <string>
 
-using std::hypot;
-using std::fabs;
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
-namespace dwb_plugins
+namespace nav2_controller
 {
 
-StoppedGoalChecker::StoppedGoalChecker()
-: SimpleGoalChecker(), rot_stopped_velocity_(0.25), trans_stopped_velocity_(0.25)
+/**
+ * @class StoppedGoalChecker
+ * @brief Goal Checker plugin that checks the position difference and velocity
+ */
+class StoppedGoalChecker : public SimpleGoalChecker
 {
-}
+public:
+  StoppedGoalChecker();
+  // Standard GoalChecker Interface
+  void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity) override;
 
-void StoppedGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
-  const std::string & plugin_name)
-{
-  SimpleGoalChecker::initialize(nh, plugin_name);
+protected:
+  double rot_stopped_velocity_, trans_stopped_velocity_;
+};
 
-  nav2_util::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
+}  // namespace nav2_controller
 
-  nh->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  nh->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
-}
-
-bool StoppedGoalChecker::isGoalReached(
-  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist & velocity)
-{
-  bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity);
-  if (!ret) {
-    return ret;
-  }
-
-  return fabs(velocity.angular.z) <= rot_stopped_velocity_ &&
-         hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
-}
-
-}  // namespace dwb_plugins
-
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::StoppedGoalChecker, nav2_core::GoalChecker)
+#endif  // NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_

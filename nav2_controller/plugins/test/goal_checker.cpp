@@ -36,13 +36,13 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "dwb_plugins/simple_goal_checker.hpp"
-#include "dwb_plugins/stopped_goal_checker.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
+#include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-using dwb_plugins::SimpleGoalChecker;
-using dwb_plugins::StoppedGoalChecker;
+using nav2_controller::SimpleGoalChecker;
+using nav2_controller::StoppedGoalChecker;
 
 void checkMacro(
   nav2_core::GoalChecker & gc,
@@ -151,8 +151,8 @@ TEST(VelocityIterator, two_checks)
 
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  gc.initialize(x, "dwb");
-  sgc.initialize(x, "dwb");
+  gc.initialize(x, "nav2_controller");
+  sgc.initialize(x, "nav2_controller");
   sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
   sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
   sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);

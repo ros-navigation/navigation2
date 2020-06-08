@@ -22,8 +22,9 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_controller/progress_checker.hpp"
 #include "nav2_controller/nav2_controller.hpp"
+#include "nav2_controller/plugins/simple_progress_checker.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 using namespace std::chrono_literals;
 
@@ -32,6 +33,8 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
+  progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
+  goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"}
@@ -41,6 +44,12 @@ ControllerServer::ControllerServer()
   declare_parameter("controller_frequency", 20.0);
 
   declare_parameter("controller_plugins", default_ids_);
+  declare_parameter(
+    "progress_checker_name",
+    rclcpp::ParameterValue(std::string("nav2_controller::SimpleProgressChecker")));
+  declare_parameter(
+    "goal_checker_name",
+    rclcpp::ParameterValue(std::string("nav2_controller::SimpleGoalChecker")));
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -62,6 +71,8 @@ nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
+  std::string progress_checker_name;
+  std::string goal_checker_name;
 
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
@@ -72,6 +83,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   controller_types_.resize(controller_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);
+  get_parameter("progress_checker_name", progress_checker_name);
+  get_parameter("goal_checker_name", goal_checker_name);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
   get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
@@ -81,7 +94,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  progress_checker_ = std::make_unique<ProgressChecker>(node);
+  progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_name);
+  progress_checker_->initialize(node, progress_checker_name);
+  goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
+  goal_checker_->initialize(node, goal_checker_name);
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
@@ -172,6 +188,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   vel_publisher_.reset();
   action_server_.reset();
+  goal_checker_->reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -295,6 +312,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->setPlan(path);
 
   auto end_pose = *(path.poses.end() - 1);
+  goal_checker_->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
@@ -375,7 +393,7 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return controllers_[current_controller_]->isGoalReached(pose, velocity);
+  return goal_checker_->isGoalReached(pose.pose, end_pose_, velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)

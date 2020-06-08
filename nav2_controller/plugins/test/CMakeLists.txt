@@ -1,0 +1,2 @@
+ament_add_gtest(gctest goal_checker.cpp)
+target_link_libraries(gctest simple_goal_checker stopped_goal_checker)
