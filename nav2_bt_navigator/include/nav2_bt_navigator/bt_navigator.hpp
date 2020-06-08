@@ -88,23 +88,6 @@ protected:
    */
   virtual nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
-
-  // Our action server implements the NavigateToPose action
-  std::unique_ptr<ActionServer> action_server_;
-
-  /**
-   * @brief Action server callbacks
-   */
-  virtual void actionCallback() = 0;
-
-  /**
-   * @brief A subscription and callback to handle the topic-based goal published
-   * from rviz
-   */
-  virtual void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose) = 0;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-
   BT::Tree tree_;
 
   // The blackboard shared by all of the nodes in the tree
@@ -118,9 +101,6 @@ protected:
 
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
-
-  // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<Action>::SharedPtr self_client_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -151,9 +131,37 @@ public:
   ~BtNavigator() = default;
 
   /**
+   * @brief Configures member variables
+   *
+   * Initializes action server for "NavigationToPose"; subscription to
+   * "goal_sub"; and builds behavior tree from xml file.
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  virtual nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  virtual nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  virtual nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Resets member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  virtual nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
+  /**
    * @brief Action server callbacks
    */
-  virtual void actionCallback() override;
+  void actionCallback();
 
   /**
    * @brief Goal pose initialization on the blackboard
@@ -164,7 +172,19 @@ public:
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
    */
-  virtual void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose) override;
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+
+  using Action = nav2_msgs::action::NavigateToPose;
+
+  using ActionServer = nav2_util::SimpleActionServer<Action>;
+
+  // Our action server implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // A client that we'll use to send a command message to our own task server
+  rclcpp_action::Client<Action>::SharedPtr self_client_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -84,27 +84,12 @@ BtNavigatorBase::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
-
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(), get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
-
-  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigatorBase::onGoalPoseReceived, this, std::placeholders::_1));
-
-  action_server_ = std::make_unique<ActionServer>(
-    get_node_base_interface(),
-    get_node_clock_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
-    "navigate_to_pose", std::bind(&BtNavigatorBase::actionCallback, this), false);
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
@@ -155,9 +140,6 @@ nav2_util::CallbackReturn
 BtNavigatorBase::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  action_server_->activate();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -165,9 +147,6 @@ nav2_util::CallbackReturn
 BtNavigatorBase::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-
-  action_server_->deactivate();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -178,15 +157,12 @@ BtNavigatorBase::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // TODO(orduno) Fix the race condition between the worker thread ticking the tree
   //              and the main thread resetting the resources, see #1344
-  goal_sub_.reset();
   client_node_.reset();
-  self_client_.reset();
 
   // Reset the listener before the buffer
   tf_listener_.reset();
   tf_.reset();
 
-  action_server_.reset();
   plugin_lib_names_.clear();
   xml_string_.clear();
   blackboard_.reset();
@@ -209,6 +185,52 @@ BtNavigatorBase::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
+{
+  auto callback_return = BtNavigatorBase::on_configure(state);
+
+  action_server_ = std::make_unique<ActionServer>(
+    get_node_base_interface(),
+    get_node_clock_interface(),
+    get_node_logging_interface(),
+    get_node_waitables_interface(),
+    "navigate_to_pose", std::bind(&BtNavigator::actionCallback, this), false);
+
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+    client_node_, "navigate_to_pose");
+
+  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+    "goal_pose",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
+  return callback_return;
+}
+
+nav2_util::CallbackReturn
+BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
+{
+  action_server_->activate();
+  return BtNavigatorBase::on_activate(state);
+}
+
+nav2_util::CallbackReturn
+BtNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+  action_server_->deactivate();
+  return BtNavigatorBase::on_deactivate(state);
+}
+
+nav2_util::CallbackReturn
+BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
+{
+  goal_sub_.reset();
+  self_client_.reset();
+  action_server_.reset();
+  return BtNavigatorBase::on_cleanup(state);
 }
 
 void
