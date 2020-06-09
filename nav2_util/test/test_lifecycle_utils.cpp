@@ -22,6 +22,7 @@
 
 using nav2_util::startup_lifecycle_nodes;
 using nav2_util::reset_lifecycle_nodes;
+using nav2_util::process_error_lifecycle_nodes;
 
 class RclCppFixture
 {
@@ -54,6 +55,25 @@ TEST(Lifecycle, interface)
   std::thread node_thread(SpinNodesUntilDone, nodes, &done);
   startup_lifecycle_nodes("/foo:/bar");
   reset_lifecycle_nodes("/foo:/bar");
+  done = true;
+  node_thread.join();
+  SUCCEED();
+}
+
+TEST(Lifecycle, error_transition)
+{
+  std::vector<rclcpp_lifecycle::LifecycleNode::SharedPtr> nodes;
+  nodes.push_back(rclcpp_lifecycle::LifecycleNode::make_shared("foo"));
+  nodes.push_back(rclcpp_lifecycle::LifecycleNode::make_shared("bar"));
+
+  std::atomic<bool> done(false);
+  std::thread node_thread(SpinNodesUntilDone, nodes, &done);
+  startup_lifecycle_nodes("/foo:/bar");
+
+  // At the moment, the lifecycle transitions to ErrorProcessing are not exposed
+  // to client nodes, so process_error_lifecycle_nodes will always return an exception.
+  EXPECT_THROW(process_error_lifecycle_nodes("/foo:/bar"), std::runtime_error);
+
   done = true;
   node_thread.join();
   SUCCEED();

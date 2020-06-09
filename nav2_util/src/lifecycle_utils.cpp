@@ -99,6 +99,9 @@ void reset_lifecycle_nodes(
   }
 }
 
+// TODO(gimait): This should be updated with the missing transitions to error after
+// PRs ros2/rcl_interfaces#97, ros2/rcl#618 and ros2/rclcpp#1064 are merged.
+// This tool should not be used for until then.
 static void processErrorLifecycleNode(
   const std::string & node_name,
   const std::chrono::seconds service_call_timeout,
@@ -110,16 +113,6 @@ static void processErrorLifecycleNode(
   // to the ErrorProcessing state. Some states do not support transitions
   // to ErrorProcessing.
   switch (sc.get_state(service_call_timeout)) {
-    case State::PRIMARY_STATE_UNKNOWN:
-      return;
-    case State::PRIMARY_STATE_UNCONFIGURED:
-      return;
-    case State::PRIMARY_STATE_INACTIVE:
-      return;
-    case State::PRIMARY_STATE_ACTIVE:
-      return;
-    case State::PRIMARY_STATE_FINALIZED:
-      return;
     case State::TRANSITION_STATE_CONFIGURING:
       transition = Transition::TRANSITION_ON_CONFIGURE_ERROR;
       break;
@@ -139,7 +132,7 @@ static void processErrorLifecycleNode(
       transition = Transition::TRANSITION_ON_ERROR_ERROR;
       break;
     default:
-      return;
+      throw std::runtime_error("Invalid state.");
   }
 
   // Despite waiting for the service to be available and using reliable transport
