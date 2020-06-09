@@ -141,7 +141,7 @@ bool
 BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Use previous BT if it is the existing one
-  if (bt_xml_filename != "" && current_bt_xml_filename_ == bt_xml_filename) {
+  if (current_bt_xml_filename_ == bt_xml_filename) {
     return true;
   }
 
@@ -161,7 +161,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
 
   // Create new BT to ensure it is a clean BT
-  tree_ = std::make_shared<BT::Tree>();
+  tree_ = std::make_unique<BT::Tree>();
 
   // Create the Behavior Tree from the XML input
   *tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
@@ -280,13 +280,11 @@ BtNavigator::navigateToPose()
   auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
   // Empty id in request is default for backward compatibility
-  if (bt_xml_filename == "") {
-    bt_xml_filename = default_bt_xml_filename_;
-  }
+  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_WARN(
-      get_logger(), "BT id not found: %s. Using previous %s",
+      get_logger(), "BT file not found: %s. Using previous %s",
       bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
   }
 

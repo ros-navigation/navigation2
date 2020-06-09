@@ -120,7 +120,7 @@ protected:
    */
   bool loadBehaviorTree(const std::string & bt_id);
 
-  std::shared_ptr<BT::Tree> tree_;
+  std::unique_ptr<BT::Tree> tree_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
