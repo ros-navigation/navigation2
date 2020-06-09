@@ -160,11 +160,8 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
 
-  // Create new BT to ensure it is a clean BT
-  tree_ = std::make_unique<BT::Tree>();
-
   // Create the Behavior Tree from the XML input
-  *tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
+  tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
 
   return true;
@@ -208,7 +205,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_.reset();
   plugin_lib_names_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_->rootNode());
+  bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
@@ -248,7 +245,7 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  RosTopicLogger topic_logger(client_node_, *tree_);
+  RosTopicLogger topic_logger(client_node_, tree_);
   std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
@@ -289,10 +286,10 @@ BtNavigator::navigateToPose()
   }
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(tree_.get(), on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_->rootNode());
+  bt_->haltAllActions(tree_.rootNode());
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
