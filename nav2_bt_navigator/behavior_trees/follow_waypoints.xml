@@ -9,10 +9,10 @@
       <SetCurrentGoal goals="{goals}" current_waypoint_idx="{current_waypoint_idx}" goal="{goal}" />
       <NavigateToPose goal="{goal}" />
       <!-- Return success if all goals are achieved, or update the `goal_updated` and `goal`, and then make it Running. -->
-      <ReactiveFallback name="CheckAndUpdateGoalIndex">
+      <ReactiveFallback name="CheckAndUpdateWaypointIndex">
         <BlackboardCheckInt value_A="{current_waypoint_idx}" value_B="{max_waypoint_idx}" />
         <Sequence>
-          <Add in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
+          <AddInt in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
           <KeepRunningUntilFailure>
             <AlwaysSuccess />
           </KeepRunningUntilFailure>
