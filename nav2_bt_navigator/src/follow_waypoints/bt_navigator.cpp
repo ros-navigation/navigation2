@@ -101,9 +101,9 @@ FollowWaypointsBtNavigator::actionCallback()
       }
       topic_logger.flush();
 
-      int current_waypoint = 0;
-      blackboard_->get<int>("current_waypoint", current_waypoint);
-      feedback_msg->current_waypoint;
+      int current_waypoint_idx = 0;
+      blackboard_->get<int>("current_waypoint_idx", current_waypoint_idx);
+      feedback_msg->current_waypoint = current_waypoint_idx;
       action_server_->publish_feedback(feedback_msg);
     };
 
@@ -141,7 +141,8 @@ FollowWaypointsBtNavigator::initializeGoalPose()
 
   // Update the goals on the blackboard
   blackboard_->set("goals", goal->poses);
-  blackboard_->set("current_waypoint", 0);
+  blackboard_->set("current_waypoint_idx", 0);
+  blackboard_->set("max_waypoint_idx", goal->poses.size() - 1);
 }
 
 }  // namespace nav2_bt_navigator

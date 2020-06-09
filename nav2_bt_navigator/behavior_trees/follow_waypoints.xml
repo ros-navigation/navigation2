@@ -1,0 +1,23 @@
+
+<!--
+  BT to process FollowWaypoints.action
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveSequence name="FollowWaypoints">
+      <!-- set current goal to goals[current_waypoint_idx]. Like ComputePathToPose and FollowPath use `path_updated`, we use `goal_updated` to notify you that a goal has been updated -->
+      <SetCurrentGoal goals="{goals}" current_waypoint_idx="{current_waypoint_idx}" goal="{goal}" />
+      <NavigateToPose goal="{goal}" />
+      <!-- Return success if all goals are achieved, or update the `goal_updated` and `goal`, and then make it Running. -->
+      <ReactiveFallback name="CheckAndUpdateGoalIndex">
+        <BlackboardCheckInt value_A="{current_waypoint_idx}" value_B="{max_waypoint_idx}" />
+        <Sequence>
+          <Add in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
+          <KeepRunningUntilFailure>
+            <AlwaysSuccess />
+          </KeepRunningUntilFailure>
+        </Sequence>
+      </ReactiveFallback>
+    </ReactiveSequence>
+  </BehaviorTree>
+</root>
