@@ -39,19 +39,7 @@ public:
 
   void on_tick() override
   {
-    // Use the position and orientation fields from the XML attributes to initialize the goal
-    geometry_msgs::msg::Point position;
-    geometry_msgs::msg::Quaternion orientation;
-
-    if (!getInput("position", position) || !getInput("orientation", orientation)) {
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "NavigateToPoseAction: position or orientation not provided");
-      return;
-    }
-
-    goal_.pose.pose.position = position;
-    goal_.pose.pose.orientation = orientation;
+    getInput("goal", goal_.pose);
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
@@ -59,8 +47,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::Point>("position", "Position"),
-        BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "Orientation")
+        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
       });
   }
 };
