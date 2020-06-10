@@ -39,7 +39,12 @@ public:
 
   void on_tick() override
   {
-    getInput("goal", goal_.pose);
+    if (!getInput("goal", goal_.pose)) {
+      RCLCPP_ERROR(
+        node_->get_logger(),
+        "NavigateToPoseAction: goal not provided");
+      return;
+    }
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
