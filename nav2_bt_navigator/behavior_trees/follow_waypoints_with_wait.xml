@@ -1,6 +1,6 @@
 
 <!--
-  BT to process FollowWaypoints.action
+  This Behavior Tree processes each of the given waypoints with NavigateToPose and wait if NavigateToPose is failed.
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
