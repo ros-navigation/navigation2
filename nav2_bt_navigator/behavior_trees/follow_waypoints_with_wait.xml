@@ -1,0 +1,28 @@
+
+<!--
+  BT to process FollowWaypoints.action
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveSequence name="FollowWaypoints">
+      <RecoveryNode number_of_retries="3" name="NavigateToPoseWithWaypointSkipRecovery">
+        <Sequence>
+          <!-- set current goal to goals[current_waypoint_idx] -->
+          <SetCurrentGoal goals="{goals}" current_waypoint_idx="{current_waypoint_idx}" goal="{goal}" />
+          <NavigateToPose goal="{goal}" />
+        </Sequence>
+        <Wait wait_duration="5" />
+      </RecoveryNode>
+      <!-- Return success if all goals are achieved, or update the `goal_updated` and `goal`, and then make it Running -->
+      <ReactiveFallback name="CheckAndUpdateWaypointIndex">
+        <BlackboardCheckInt value_A="{current_waypoint_idx}" value_B="{max_waypoint_idx}" />
+        <Sequence>
+          <AddInt in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
+          <KeepRunningUntilFailure name="AlwaysRunning">
+            <AlwaysSuccess />
+          </KeepRunningUntilFailure>
+        </Sequence>
+      </ReactiveFallback>
+    </ReactiveSequence>
+  </BehaviorTree>
+</root>
