@@ -27,7 +27,7 @@ SpeedController::SpeedController(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
-  first_time_(false),
+  first_tick_(false),
   period_(1.0),
   min_rate_(0.1),
   max_rate_(1.0),
@@ -59,13 +59,14 @@ SpeedController::SpeedController(
 
 inline BT::NodeStatus SpeedController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
-    // Reset the starting position and period
-    // since we're starting a new iteration of
-    // the distance controller (moving from IDLE to RUNNING)
+  auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
+
+  if (goal_ != current_goal) {
+    // Reset state and set period to max since we have a new goal
     period_ = 1.0 / max_rate_;
     start_ = node_->now();
-    first_time_ = true;
+    first_tick_ = true;
+    goal_ = current_goal;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -75,14 +76,15 @@ inline BT::NodeStatus SpeedController::tick()
   // The child gets ticked the first time through and any time the period has
   // expired. In addition, once the child begins to run, it is ticked each time
   // 'til completion
-  if (first_time_ || (child_node_->status() == BT::NodeStatus::RUNNING) ||
+  if (first_tick_ || (child_node_->status() == BT::NodeStatus::RUNNING) ||
     elapsed.seconds() >= period_)
   {
-    first_time_ = false;
+    first_tick_ = false;
 
     // update period if the last period is exceeded
     if (elapsed.seconds() >= period_) {
       updatePeriod();
+      start_ = node_->now();
     }
 
     const BT::NodeStatus child_state = child_node_->executeTick();
@@ -92,7 +94,6 @@ inline BT::NodeStatus SpeedController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        start_ = node_->now();
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:

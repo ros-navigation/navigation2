@@ -76,7 +76,7 @@ private:
   // To get a smoothed velocity
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
-  bool first_time_;
+  bool first_tick_;
 
   // Time period after which child node should be ticked
   double period_;
@@ -90,6 +90,9 @@ private:
   double min_speed_;
   double max_speed_;
   double d_speed_;
+
+  // current goal
+  geometry_msgs::msg::PoseStamped goal_;
 };
 
 }  // namespace nav2_behavior_tree
