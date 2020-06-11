@@ -236,6 +236,13 @@ map_server:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
 
+map_saver:
+  ros__parameters:
+    use_sim_time: True
+    save_map_timeout: 5000
+    free_thresh_default: 0.25
+    occupied_thresh_default: 0.65
+
 planner_server:
   ros__parameters:
     planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
@@ -254,7 +261,7 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    plugin_names: ["spin", "back_up", "wait"]
+    plugin_names: ["spin", "backup", "wait"]
     plugin_types: ["nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"]
     global_frame: odom
     robot_base_frame: base_link

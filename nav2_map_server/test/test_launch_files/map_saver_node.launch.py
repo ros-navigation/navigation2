@@ -28,7 +28,7 @@ def generate_launch_description():
 
     map_saver_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
-        node_executable='map_saver_server',
+        executable='map_saver_server',
         output='screen',
         parameters=[os.path.join(os.getenv('TEST_DIR'),
                     'map_saver_params.yaml')])

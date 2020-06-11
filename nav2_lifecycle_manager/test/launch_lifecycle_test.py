@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2018 Intel Corporation
+#! /usr/bin/env python3
+# Copyright (c) 2020 Shivang Patel
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,33 +19,32 @@ import sys
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-import launch_ros.actions
+from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py')
-    testExecutable = os.getenv('TEST_EXECUTABLE')
-
-    lifecycle_manager = launch_ros.actions.Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager',
-        output='screen',
-        parameters=[{'node_names': ['map_server']}, {'autostart': True}])
-
-    ld = LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
-        lifecycle_manager
+def generate_launch_description():
+    return LaunchDescription([
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_test',
+            output='screen',
+            parameters=[{'use_sim_time': False},
+                        {'autostart': False},
+                        {'node_names': ['lifecycle_node_test']}]),
     ])
+
+
+def main(argv=sys.argv[1:]):
+    ld = generate_launch_description()
+
+    testExecutable = os.getenv('TEST_EXECUTABLE')
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='costmap_tests',
-        output='screen'
-    )
+        name='test_lifecycle_node_gtest',
+        output='screen')
 
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)

@@ -31,7 +31,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", true),
+: nav2_util::LifecycleNode("bt_navigator", "", false),
   start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -78,9 +78,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      "-r", std::string("__node:=") + get_name() + "_client_node",
+      "-r", std::string("__node:=") + get_name() + "_rclcpp_node",
       "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
@@ -111,6 +112,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
+  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -243,7 +245,8 @@ BtNavigator::navigateToPose()
 
       // action server feedback (pose, duration of task,
       // number of recoveries, and distance remaining to goal)
-      nav2_util::getCurrentPose(feedback_msg->current_pose, *tf_);
+      nav2_util::getCurrentPose(
+        feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
 
       geometry_msgs::msg::PoseStamped goal_pose;
       blackboard_->get("goal", goal_pose);

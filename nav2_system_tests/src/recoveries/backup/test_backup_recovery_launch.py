@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright (c) 2019 Samsung Research America
+# Copyright (c) 2012 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,13 +59,13 @@ def generate_launch_description():
         #              using a local copy of TB3 urdf file
         Node(
             package='tf2_ros',
-            executable='static_transform_publisher',
+            node_executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
 
         Node(
             package='tf2_ros',
-            executable='static_transform_publisher',
+            node_executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 
@@ -84,9 +84,11 @@ def generate_launch_description():
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
+    testExecutable = os.getenv('TEST_EXECUTABLE')
+
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester.py')],
-        name='tester_node',
+        cmd=[testExecutable],
+        name='test_backup_recovery_node',
         output='screen')
 
     lts = LaunchTestService()

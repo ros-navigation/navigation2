@@ -18,6 +18,7 @@
 #include <cmath>
 
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -52,6 +53,13 @@ inline double euclidean_distance(
   double dy = pos1.position.y - pos2.position.y;
   double dz = pos1.position.z - pos2.position.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+inline double euclidean_distance(
+  const geometry_msgs::msg::PoseStamped & pos1,
+  const geometry_msgs::msg::PoseStamped & pos2)
+{
+  return euclidean_distance(pos1.pose, pos2.pose);
 }
 
 }  // namespace geometry_utils

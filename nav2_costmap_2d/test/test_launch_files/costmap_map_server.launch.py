@@ -25,8 +25,8 @@ def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
             package='nav2_map_server',
-            node_executable='map_server',
-            node_name='map_server',
+            executable='map_server',
+            name='map_server',
             output='screen',
             parameters=[{'yaml_filename': mapFile}])
     ])

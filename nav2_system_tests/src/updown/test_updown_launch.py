@@ -34,25 +34,25 @@ def generate_launch_description():
     # Specify the actions
     start_tf_cmd_1 = Node(
         package='tf2_ros',
-        node_executable='static_transform_publisher',
+        executable='static_transform_publisher',
         output='screen',
         arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'])
 
     start_tf_cmd_2 = Node(
         package='tf2_ros',
-        node_executable='static_transform_publisher',
+        executable='static_transform_publisher',
         output='screen',
         arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_footprint'])
 
     start_tf_cmd_3 = Node(
        package='tf2_ros',
-       node_executable='static_transform_publisher',
+       executable='static_transform_publisher',
        output='screen',
        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
 
     start_tf_cmd_4 = Node(
         package='tf2_ros',
-        node_executable='static_transform_publisher',
+        executable='static_transform_publisher',
         output='screen',
         arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
 
