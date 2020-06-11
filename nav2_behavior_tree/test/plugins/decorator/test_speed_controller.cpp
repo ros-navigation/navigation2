@@ -52,6 +52,10 @@ public:
     config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
 
+    geometry_msgs::msg::PoseStamped goal;
+    goal.header.stamp = transform_handler_->now();
+    config_->blackboard->set("goal", goal);
+
     transform_handler_->activate();
     transform_handler_->waitForTransform();
   }
