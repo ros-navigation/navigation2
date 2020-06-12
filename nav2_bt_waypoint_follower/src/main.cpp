@@ -14,13 +14,13 @@
 
 #include <memory>
 
-#include "nav2_bt_navigator/follow_waypoints/bt_navigator.hpp"
+#include "nav2_bt_waypoint_follower/bt_waypoint_follower.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_bt_navigator::FollowWaypointsBtNavigator>();
+  auto node = std::make_shared<nav2_bt_waypoint_follower::FollowWaypointsBtNavigator>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

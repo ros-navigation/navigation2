@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__FOLLOW_WAYPOINTS_BT_NAVIGATOR_HPP_
-#define NAV2_BT_NAVIGATOR__FOLLOW_WAYPOINTS_BT_NAVIGATOR_HPP_
+#ifndef NAV2_BT_WAYPOINT_FOLLOWER__BT_WAYPOINT_FOLLOWER_HPP_
+#define NAV2_BT_WAYPOINT_FOLLOWER__BT_WAYPOINT_FOLLOWER_HPP_
 
 #include "nav2_bt_navigator/bt_navigator.hpp"
 
@@ -27,18 +27,18 @@
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_bt_waypoint_follower
 {
 
-class FollowWaypointsBtNavigator : public BtNavigatorBase
+class FollowWaypointsBtNavigator : public nav2_bt_navigator::BtNavigatorBase
 {
 public:
   /**
-   * @brief A constructor for nav2_bt_navigator::FollowWaypointsBtNavigator class
+   * @brief A constructor for nav2_bt_waypoint_follower::FollowWaypointsBtNavigator class
    */
   FollowWaypointsBtNavigator();
   /**
-   * @brief A destructor for nav2_bt_navigator::FollowWaypointsBtNavigator class
+   * @brief A destructor for nav2_bt_waypoint_follower::FollowWaypointsBtNavigator class
    */
   ~FollowWaypointsBtNavigator() = default;
 
@@ -88,6 +88,6 @@ public:
   std::unique_ptr<ActionServer> action_server_;
 };
 
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_bt_waypoint_follower
 
-#endif  // NAV2_BT_NAVIGATOR__FOLLOW_WAYPOINTS_BT_NAVIGATOR_HPP_
+#endif  // NAV2_BT_WAYPOINT_FOLLOWER__BT_WAYPOINT_FOLLOWER_HPP_

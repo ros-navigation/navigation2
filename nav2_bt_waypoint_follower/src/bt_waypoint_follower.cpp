@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_bt_navigator/follow_waypoints/bt_navigator.hpp"
+#include "nav2_bt_waypoint_follower/bt_waypoint_follower.hpp"
 
 #include <fstream>
 #include <memory>
@@ -27,7 +27,7 @@
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_bt_waypoint_follower
 {
 
 FollowWaypointsBtNavigator::FollowWaypointsBtNavigator()
@@ -90,7 +90,7 @@ FollowWaypointsBtNavigator::actionCallback()
       return action_server_->is_cancel_requested();
     };
 
-  RosTopicLogger topic_logger(client_node_, tree_);
+  nav2_bt_navigator::RosTopicLogger topic_logger(client_node_, tree_);
   std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
@@ -145,4 +145,4 @@ FollowWaypointsBtNavigator::initializeGoalPose()
   blackboard_->set("max_waypoint_idx", goal->poses.size() - 1);
 }
 
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_bt_waypoint_follower
