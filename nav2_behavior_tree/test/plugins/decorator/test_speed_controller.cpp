@@ -63,6 +63,8 @@ public:
   static void TearDownTestCase()
   {
     transform_handler_->deactivate();
+    delete dummy_node_;
+    delete node_;
   }
 
   void SetUp()
