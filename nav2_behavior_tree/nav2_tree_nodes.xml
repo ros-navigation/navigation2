@@ -72,5 +72,13 @@
       <input_port name="distance">Distance</input_port>
     </Decorator>
 
+    <Decorator ID="SpeedController">
+      <input_port name="min_rate">Minimum rate</input_port>
+      <input_port name="max_rate">Maximum rate</input_port>
+      <input_port name="min_speed">Minimum speed</input_port>
+      <input_port name="max_speed">Maximum speed</input_port>
+      <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
+    </Decorator>
+
   </TreeNodesModel>
 </root>

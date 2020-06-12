@@ -8,6 +8,16 @@ ament_target_dependencies(test_decorator_distance_controller
   ${dependencies}
 )
 
+ament_add_gtest(test_decorator_speed_controller
+  plugins/decorator/test_speed_controller.cpp
+)
+target_link_libraries(test_decorator_speed_controller
+  nav2_speed_controller_bt_node
+)
+ament_target_dependencies(test_decorator_speed_controller
+  ${dependencies}
+)
+
 ament_add_gtest(test_condition_distance_traveled
   plugins/condition/test_distance_traveled.cpp
 )

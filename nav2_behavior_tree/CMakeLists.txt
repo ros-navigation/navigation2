@@ -98,6 +98,9 @@ list(APPEND plugin_libs nav2_rate_controller_bt_node)
 add_library(nav2_distance_controller_bt_node SHARED plugins/decorator/distance_controller.cpp)
 list(APPEND plugin_libs nav2_distance_controller_bt_node)
 
+add_library(nav2_speed_controller_bt_node SHARED plugins/decorator/speed_controller.cpp)
+list(APPEND plugin_libs nav2_speed_controller_bt_node)
+
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
 

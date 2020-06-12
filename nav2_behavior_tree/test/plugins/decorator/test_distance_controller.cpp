@@ -31,9 +31,8 @@ class DistanceControllerTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    transform_handler_ = new nav2_behavior_tree::TransformHandler();
-    config_ = new BT::NodeConfiguration();
-    dummy_node_ = new nav2_behavior_tree::DummyNode();
+    transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>();
+    config_ = std::make_shared<BT::NodeConfiguration>();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
@@ -57,34 +56,33 @@ public:
   static void TearDownTestCase()
   {
     transform_handler_->deactivate();
-    delete transform_handler_;
-    delete config_;
     delete dummy_node_;
-    transform_handler_ = nullptr;
-    config_ = nullptr;
-    dummy_node_ = nullptr;
+    delete node_;
   }
 
   void SetUp()
   {
     node_ = new nav2_behavior_tree::DistanceController("distance_controller", *config_);
+    dummy_node_ = new nav2_behavior_tree::DummyNode();
     node_->setChild(dummy_node_);
   }
 
   void TearDown()
   {
+    dummy_node_ = nullptr;
     node_ = nullptr;
   }
 
 protected:
-  static nav2_behavior_tree::TransformHandler * transform_handler_;
-  static BT::NodeConfiguration * config_;
+  static std::shared_ptr<nav2_behavior_tree::TransformHandler> transform_handler_;
+  static std::shared_ptr<BT::NodeConfiguration> config_;
   static nav2_behavior_tree::DistanceController * node_;
   static nav2_behavior_tree::DummyNode * dummy_node_;
 };
 
-nav2_behavior_tree::TransformHandler * DistanceControllerTestFixture::transform_handler_ = nullptr;
-BT::NodeConfiguration * DistanceControllerTestFixture::config_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::TransformHandler>
+DistanceControllerTestFixture::transform_handler_ = nullptr;
+std::shared_ptr<BT::NodeConfiguration> DistanceControllerTestFixture::config_ = nullptr;
 nav2_behavior_tree::DistanceController * DistanceControllerTestFixture::node_ = nullptr;
 nav2_behavior_tree::DummyNode * DistanceControllerTestFixture::dummy_node_ = nullptr;
 

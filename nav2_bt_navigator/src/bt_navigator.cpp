@@ -50,6 +50,7 @@ BtNavigator::BtNavigator()
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
+    "nav2_speed_controller_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
@@ -64,6 +65,7 @@ BtNavigator::BtNavigator()
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
+  declare_parameter("odom_topic", std::string("odom"));
 }
 
 BtNavigator::~BtNavigator()
