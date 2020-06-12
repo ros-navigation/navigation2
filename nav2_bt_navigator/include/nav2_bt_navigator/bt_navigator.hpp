@@ -112,13 +112,22 @@ protected:
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
+  /**
+   * @brief Replace current BT with another one
+   * @param bt_xml_filename The file containing the new BT
+   * @return true if the resulting BT correspond to the one in bt_xml_filename. false
+   * if something went wrong, and previous BT is mantained
+   */
+  bool loadBehaviorTree(const std::string & bt_id);
+
   BT::Tree tree_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
-  // The XML string that defines the Behavior Tree to create
-  std::string xml_string_;
+  // The XML fiñe that cointains the Behavior Tree to create
+  std::string current_bt_xml_filename_;
+  std::string default_bt_xml_filename_;
 
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
