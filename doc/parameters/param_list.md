@@ -9,6 +9,7 @@
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
+| odom_topic | "odom" | Odometry topic |
 
 # costmaps
 
@@ -582,3 +583,13 @@ Namespace: /parent_ns/local_ns
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
 | hz | 10.0 | Rate to throttle |
+
+### BT Node SpeedController
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| min_rate | 0.1 | Minimum rate (hz) |
+| max_rate | 1.0 | Maximum rate (hz) |
+| min_speed | 0.0 | Minimum speed (m/s) |
+| max_speed | 0.5 | Maximum speed (m/s) |
+| filter_duration | 0.3 | Duration (secs) for velocity smoothing filter |
