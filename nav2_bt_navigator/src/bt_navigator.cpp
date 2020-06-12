@@ -284,32 +284,33 @@ BtNavigator::navigateToPose()
       get_logger(), "BT file not found: %s. Navigation canceled",
       bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
     action_server_->terminate_current();
-  } else {
-    // Execute the BT that was previously created in the configure step
-    nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
-    // Make sure that the Bt is not in a running state from a previous execution
-    // note: if all the ControlNodes are implemented correctly, this is not needed.
-    bt_->haltAllActions(tree_.rootNode());
+    return;
+  }
 
-    switch (rc) {
-      case nav2_behavior_tree::BtStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "Navigation succeeded");
-        action_server_->succeeded_current();
-        break;
+  // Execute the BT that was previously created in the configure step
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  // Make sure that the Bt is not in a running state from a previous execution
+  // note: if all the ControlNodes are implemented correctly, this is not needed.
+  bt_->haltAllActions(tree_.rootNode());
 
-      case nav2_behavior_tree::BtStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "Navigation failed");
-        action_server_->terminate_current();
-        break;
+  switch (rc) {
+    case nav2_behavior_tree::BtStatus::SUCCEEDED:
+      RCLCPP_INFO(get_logger(), "Navigation succeeded");
+      action_server_->succeeded_current();
+      break;
 
-      case nav2_behavior_tree::BtStatus::CANCELED:
-        RCLCPP_INFO(get_logger(), "Navigation canceled");
-        action_server_->terminate_all();
-        break;
+    case nav2_behavior_tree::BtStatus::FAILED:
+      RCLCPP_ERROR(get_logger(), "Navigation failed");
+      action_server_->terminate_current();
+      break;
 
-      default:
-        throw std::logic_error("Invalid status return from BT");
-    }
+    case nav2_behavior_tree::BtStatus::CANCELED:
+      RCLCPP_INFO(get_logger(), "Navigation canceled");
+      action_server_->terminate_all();
+      break;
+
+    default:
+      throw std::logic_error("Invalid status return from BT");
   }
 }
 
