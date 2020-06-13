@@ -15,22 +15,28 @@
 #ifndef NAV2_BT_WAYPOINT_FOLLOWER__BT_WAYPOINT_FOLLOWER_HPP_
 #define NAV2_BT_WAYPOINT_FOLLOWER__BT_WAYPOINT_FOLLOWER_HPP_
 
-#include "nav2_bt_navigator/bt_navigator.hpp"
-
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_behavior_tree/behavior_tree_engine.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 
 namespace nav2_bt_waypoint_follower
 {
 
-class FollowWaypointsBtNavigator : public nav2_bt_navigator::BtNavigatorBase
+/**
+ * @class nav2_bt_waypoint_follower::FollowWaypointsBtNavigator
+ * @brief WIP
+ */
+class FollowWaypointsBtNavigator : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -40,8 +46,9 @@ public:
   /**
    * @brief A destructor for nav2_bt_waypoint_follower::FollowWaypointsBtNavigator class
    */
-  ~FollowWaypointsBtNavigator() = default;
+  ~FollowWaypointsBtNavigator();
 
+protected:
   /**
    * @brief Configures member variables
    *
@@ -69,16 +76,17 @@ public:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-
   /**
-   * @brief Action server callbacks
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
    */
-  void actionCallback();
-
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief Goal pose initialization on the blackboard
+   * @brief Called when in error state
+   * @param state Reference to LifeCycle node state
    */
-  void initializeGoalPose();
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::FollowWaypoints;
 
@@ -86,6 +94,37 @@ public:
 
   // Our action server implements the FollowWaypoints action
   std::unique_ptr<ActionServer> action_server_;
+
+  /**
+   * @brief Action server callbacks
+   */
+  void followWaypoints();
+
+  /**
+   * @brief Initialize blackboard
+   */
+  void initializeBlackboard();
+
+  BT::Tree tree_;
+
+  // The blackboard shared by all of the nodes in the tree
+  BT::Blackboard::Ptr blackboard_;
+
+  // The XML string that defines the Behavior Tree to create
+  std::string xml_string_;
+
+  // The wrapper class for the BT functionality
+  std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
+
+  // Libraries to pull plugins (BT Nodes) from
+  std::vector<std::string> plugin_lib_names_;
+
+  // A regular, non-spinning ROS node that we can use for calls to the action client
+  rclcpp::Node::SharedPtr client_node_;
+
+  // Spinning transform that can be used by the BT nodes
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_bt_waypoint_follower

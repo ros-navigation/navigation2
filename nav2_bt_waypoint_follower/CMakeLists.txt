@@ -6,10 +6,14 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav2_bt_navigator REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
@@ -22,6 +26,7 @@ set(executable_name bt_waypoint_follower)
 
 add_executable(${executable_name}
   src/main.cpp
+  src/ros_topic_logger.cpp
 )
 
 set(library_name ${executable_name}_core)
@@ -34,10 +39,14 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  std_msgs
+  geometry_msgs
+  nav2_behavior_tree
   nav_msgs
   nav2_msgs
+  behaviortree_cpp_v3
+  std_srvs
   nav2_util
-  nav2_bt_navigator
   tf2_ros
 )
 
