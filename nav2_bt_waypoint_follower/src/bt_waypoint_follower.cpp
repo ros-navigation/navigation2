@@ -30,8 +30,8 @@
 namespace nav2_bt_waypoint_follower
 {
 
-FollowWaypointsBtNavigator::FollowWaypointsBtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", false)
+BtWaypointFollower::BtWaypointFollower()
+: nav2_util::LifecycleNode("bt_waypoint_follower", "", false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -62,13 +62,13 @@ FollowWaypointsBtNavigator::FollowWaypointsBtNavigator()
   declare_parameter("plugin_lib_names", plugin_libs);
 }
 
-FollowWaypointsBtNavigator::~FollowWaypointsBtNavigator()
+BtWaypointFollower::~BtWaypointFollower()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -92,7 +92,7 @@ FollowWaypointsBtNavigator::on_configure(const rclcpp_lifecycle::State & /*state
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "FollowWaypoints", std::bind(&FollowWaypointsBtNavigator::followWaypoints, this), false);
+    "FollowWaypoints", std::bind(&BtWaypointFollower::followWaypoints, this), false);
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
@@ -137,7 +137,7 @@ FollowWaypointsBtNavigator::on_configure(const rclcpp_lifecycle::State & /*state
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -147,7 +147,7 @@ FollowWaypointsBtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -157,7 +157,7 @@ FollowWaypointsBtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*stat
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -181,21 +181,21 @@ FollowWaypointsBtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-FollowWaypointsBtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+BtWaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 void
-FollowWaypointsBtNavigator::followWaypoints()
+BtWaypointFollower::followWaypoints()
 {
   initializeBlackboard();
 
@@ -258,7 +258,7 @@ FollowWaypointsBtNavigator::followWaypoints()
 }
 
 void
-FollowWaypointsBtNavigator::initializeBlackboard()
+BtWaypointFollower::initializeBlackboard()
 {
   auto goal = action_server_->get_current_goal();
 

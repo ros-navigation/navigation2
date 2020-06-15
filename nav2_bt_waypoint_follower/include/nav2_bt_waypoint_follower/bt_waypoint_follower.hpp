@@ -33,20 +33,20 @@ namespace nav2_bt_waypoint_follower
 {
 
 /**
- * @class nav2_bt_waypoint_follower::FollowWaypointsBtNavigator
+ * @class nav2_bt_waypoint_follower::BtWaypointFollower
  * @brief WIP
  */
-class FollowWaypointsBtNavigator : public nav2_util::LifecycleNode
+class BtWaypointFollower : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for nav2_bt_waypoint_follower::FollowWaypointsBtNavigator class
+   * @brief A constructor for nav2_bt_waypoint_follower::BtWaypointFollower class
    */
-  FollowWaypointsBtNavigator();
+  BtWaypointFollower();
   /**
-   * @brief A destructor for nav2_bt_waypoint_follower::FollowWaypointsBtNavigator class
+   * @brief A destructor for nav2_bt_waypoint_follower::BtWaypointFollower class
    */
-  ~FollowWaypointsBtNavigator();
+  ~BtWaypointFollower();
 
 protected:
   /**
