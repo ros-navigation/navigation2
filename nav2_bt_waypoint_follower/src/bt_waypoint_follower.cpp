@@ -80,13 +80,6 @@ BtWaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(), get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  tf_->setUsingDedicatedThread(true);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
-
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
@@ -105,7 +98,6 @@ BtWaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Put items on the blackboard
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
@@ -164,10 +156,6 @@ BtWaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // TODO(orduno) Fix the race condition between the worker thread ticking the tree
   //              and the main thread resetting the resources, see #1344
   client_node_.reset();
-
-  // Reset the listener before the buffer
-  tf_listener_.reset();
-  tf_.reset();
 
   action_server_.reset();
   plugin_lib_names_.clear();
